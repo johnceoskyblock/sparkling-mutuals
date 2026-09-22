@@ -19,8 +19,8 @@ object SparklingMutuals : ModInitializer {
 
 		MutualsCommand.register()
 		TicketsCommand.register()
+		MissingCommand.register()
 		ApiKeyCommand.register()
-		ApiTestCommand.register()
 		PartyManager.init()
 	}
 
