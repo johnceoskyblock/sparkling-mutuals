@@ -143,9 +143,9 @@ object MissingCommand {
 
                 val message =
                     if (missing.isEmpty()) {
-                        "$ign: None"
+                        "Missing Timesave Sparklings for $ign: None"
                     } else {
-                        "$ign: " + missing.joinToString(", ")
+                        "Missing Timesave Sparklings for $ign: " + missing.joinToString(", ")
                     }
 
                 sendPartyMessage(message)
