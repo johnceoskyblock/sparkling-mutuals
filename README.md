@@ -2,7 +2,7 @@
 
 A Fabric client-side mod for Hypixel SkyBlock Safari.
 
-Sparkling Mutuals helps players find mutual sparkling critters between party members, check which Safari timesave sparkling critters a player is missing, and look up Safari ticket counts.
+Sparkling Mutuals helps players find mutual sparkling critters between party members, check which Safari timesave sparkling critters a player is missing, look up Safari ticket counts, and track Safari contests.
 
 ## Features
 
@@ -68,6 +68,39 @@ Returns:
 
 `JohnCEO: Basic (123), Economy (45), Premium (17), First-Class (3)`
 
+### Safari Contest HUD
+
+Use:
+
+`/sparkling gui`
+
+This opens the Safari Contest HUD editor.
+
+The HUD displays:
+
+* Current contest time remaining
+* Current contest tier and score
+* Tier-specific colors matching the SkyBlock contest brackets
+
+#### Moving the HUD
+
+1. Run `/sparkling gui`.
+2. Left-click and drag the HUD to move it.
+3. Release the mouse button when it is in the desired position.
+4. Close the GUI to save the position.
+
+#### Resizing the HUD
+
+1. Run `/sparkling gui`.
+2. Hover your mouse over the HUD.
+3. Scroll up to increase its size.
+4. Scroll down to decrease its size.
+5. Close the GUI to save the size.
+
+The HUD can be resized between 50% and 200%.
+
+The HUD position and size are saved automatically and persist between game sessions.
+
 ## Requirements
 
 * Minecraft 26.1.2
@@ -89,7 +122,7 @@ https://developer.hypixel.net
 
 Log in using your **Hypixel-linked Minecraft account**.
 
-Once logged in, find your API key and click **Regenerate API Key**.
+Once logged in, click **Create API Key**.
 
 Copy the newly generated API key to your clipboard.
 
@@ -109,9 +142,9 @@ The command is case-insensitive, so these also work:
 
 `/APIKEY YOUR_API_KEY`
 
-### 3. Update your API key every 6 hours
+### 3. Update your API key whenever it expires
 
-**Hypixel API keys expire after 6 hours.** You must regenerate your API key and update it in Sparkling Mutuals every 6 hours to continue using features that require the Hypixel API.
+**Hypixel API keys expire after a certain amount of time.** You must regenerate your API key and update it in Sparkling Mutuals to continue using features that require the Hypixel API.
 
 When your key expires:
 
@@ -120,10 +153,6 @@ When your key expires:
 3. Click **Regenerate API Key**.
 4. Copy the new key to your clipboard.
 5. Run `/apikey YOUR_NEW_API_KEY` in Minecraft.
-
-You do **not** need to reinstall the mod when your API key expires.
-
-Your API key is stored locally in your Minecraft configuration and is not included with the mod or published with the source code.
 
 ## Installation
 
@@ -141,6 +170,7 @@ Your API key is stored locally in your Minecraft configuration and is not includ
 | Command          | Description                                                 |
 | ---------------- | ----------------------------------------------------------- |
 | `/apikey <key>`  | Set or update your Hypixel API key                          |
+| `/sparkling gui` | Open the Safari Contest HUD editor                          |
 | `!mutual`        | Find mutual timesave sparkling critters among party members |
 | `!mutuals`       | Same as `!mutual`                                           |
 | `!missing <IGN>` | Find which timesave sparkling critters a player is missing  |
