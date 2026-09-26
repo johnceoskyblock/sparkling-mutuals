@@ -52,6 +52,8 @@ object SparklingMutuals : ModInitializer {
 			)
 		}
 
+		AlertManager.onInitialize()
+		AlertCommand.register()
 	}
 
 	fun id(path: String): Identifier =
