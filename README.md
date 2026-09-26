@@ -68,6 +68,26 @@ Returns:
 
 `JohnCEO: Basic (123), Economy (45), Premium (17), First-Class (3)`
 
+### Safari Party 30s Warp Leeching Alerts
+
+Use:
+
+`/alert`
+
+Toggles Safari party leeching alerts on and off.
+
+Use:
+
+`/alertdelay <seconds>`
+
+Sets the delay between alerts in seconds.
+
+The alerts remind you to use `/p warp` during Safari party leeching. You should set this to between 25s and 28s for best results depending on ping.
+
+Set a keybind for `/p warp` so that you can warp immediately when alert goes off.
+
+**Note:** The Hotspot perk must be unlocked in the Essence Shop for the alerts to work correctly.
+
 ### Safari Contest HUD
 
 Use:
@@ -167,15 +187,17 @@ When your key expires:
 
 ## Commands
 
-| Command          | Description                                                 |
-| ---------------- | ----------------------------------------------------------- |
-| `/apikey <key>`  | Set or update your Hypixel API key                          |
-| `/sparkling gui` | Open the Safari Contest HUD editor                          |
-| `!mutual`        | Find mutual timesave sparkling critters among party members |
-| `!mutuals`       | Same as `!mutual`                                           |
-| `!missing <IGN>` | Find which timesave sparkling critters a player is missing  |
-| `!ticket <IGN>`  | Look up a player's Safari ticket counts                     |
-| `!tickets <IGN>` | Same as `!ticket`                                           |
+| Command            | Description                                                 |
+| ------------------ | ----------------------------------------------------------- |
+| `/apikey <key>`    | Set or update your Hypixel API key                          |
+| `/alert`           | Toggle Safari party leeching alerts                         |
+| `/alertdelay <s>`  | Set the Safari party leeching alert delay in seconds        |
+| `/sparkling gui`   | Open the Safari Contest HUD editor                          |
+| `!mutual`          | Find mutual timesave sparkling critters among party members |
+| `!mutuals`         | Same as `!mutual`                                           |
+| `!missing <IGN>`   | Find which timesave sparkling critters a player is missing  |
+| `!ticket <IGN>`    | Look up a player's Safari ticket counts                     |
+| `!tickets <IGN>`   | Same as `!ticket`                                           |
 
 ## Building From Source
 
