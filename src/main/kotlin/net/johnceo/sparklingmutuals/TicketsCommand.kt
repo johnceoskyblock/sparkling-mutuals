@@ -38,8 +38,6 @@ object TicketsCommand {
 
             val text = message.string
 
-            println("Received game message: $text")
-
             if (!text.lowercase().contains("party")) {
                 return@register
             }
