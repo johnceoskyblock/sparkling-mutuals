@@ -18,6 +18,7 @@ or:
 
 The mod finds sparkling critters that **every party member** has discovered and reports the mutual Safari timesave critters.
 
+##
 ### Missing Timesave Sparkling Critters
 
 Use:
@@ -50,6 +51,7 @@ If the player has all timesave sparkling critters, the response will be:
 
 `JohnCEO: None`
 
+##
 ### Safari Tickets
 
 Use:
@@ -68,6 +70,7 @@ Returns:
 
 `JohnCEO: Basic (123), Economy (45), Premium (17), First-Class (3)`
 
+##
 ### Safari Party 30s Warp Leeching Alerts
 
 Use:
@@ -88,6 +91,7 @@ Set a keybind for `/p warp` so that you can warp immediately when alert goes off
 
 **Note:** The Hotspot perk must be unlocked in the Essence Shop for the alerts to work correctly.
 
+##
 ### Safari Contest HUD
 
 Use:
@@ -129,6 +133,7 @@ The HUD position and size are saved automatically and persist between game sessi
 * Fabric Language Kotlin
 * HMAPI
 * A Hypixel API key
+###
 
 ## API Key Setup
 
@@ -184,6 +189,7 @@ When your key expires:
 6. Copy the key to your clipboard.
 7. Enter `/apikey YOUR_API_KEY` in Minecraft.
 8. Sparkling Mutuals is now ready to use.
+###
 
 ## Commands
 
@@ -198,6 +204,7 @@ When your key expires:
 | `!missing <IGN>`   | Find which timesave sparkling critters a player is missing  |
 | `!ticket <IGN>`    | Look up a player's Safari ticket counts                     |
 | `!tickets <IGN>`   | Same as `!ticket`                                           |
+###
 
 ## Building From Source
 
