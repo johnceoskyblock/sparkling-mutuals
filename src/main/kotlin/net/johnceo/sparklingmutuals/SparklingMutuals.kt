@@ -22,6 +22,8 @@ object SparklingMutuals : ModInitializer {
 		MissingCommand.register()
 		ApiKeyCommand.register()
 		PartyManager.init()
+		AlertManager.onInitialize()
+		AlertCommand.register()
 	}
 
 	fun id(path: String): Identifier =
