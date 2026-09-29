@@ -4,36 +4,40 @@ import net.fabricmc.api.ModInitializer
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements
+import net.fabricmc.loader.api.FabricLoader
+import net.johnceo.sparklingmutuals.alerts.AlertManager
+import net.johnceo.sparklingmutuals.commands.*
+import net.johnceo.sparklingmutuals.config.ConfigManager
+import net.johnceo.sparklingmutuals.config.ContestConfig
+import net.johnceo.sparklingmutuals.contest.ContestHud
+import net.johnceo.sparklingmutuals.contest.ContestTracker
+import net.johnceo.sparklingmutuals.party.PartyManager
 import net.minecraft.resources.Identifier
 import org.slf4j.LoggerFactory
 
 object SparklingMutuals : ModInitializer {
 
-	const val MOD_ID: String = "sparkling-mutuals"
+	const val MOD_ID = "sparkling-mutuals"
 
-	private val LOGGER = LoggerFactory.getLogger(MOD_ID)
+	private val logger = LoggerFactory.getLogger(MOD_ID)
 
 	override fun onInitialize() {
-		LOGGER.info("Sparkling Mutuals loaded!")
+		logger.info("Sparkling Mutuals loaded!")
 
-		ConfigManager.init(
-			net.fabricmc.loader.api.FabricLoader
-				.getInstance()
-				.configDir
-		)
+		val configDirectory = FabricLoader.getInstance().configDir
 
-		ContestConfig.init(
-			net.fabricmc.loader.api.FabricLoader
-				.getInstance()
-				.configDir
-		)
+		ConfigManager.init(configDirectory)
+		ContestConfig.init(configDirectory)
 
 		MutualsCommand.register()
 		TicketsCommand.register()
 		MissingCommand.register()
 		ApiKeyCommand.register()
 		SparklingCommand.register()
+		AlertCommand.register()
+
 		PartyManager.init()
+		AlertManager.onInitialize()
 
 		ClientTickEvents.END_CLIENT_TICK.register { client ->
 			ContestTracker.onClientTick(client)
@@ -41,19 +45,10 @@ object SparklingMutuals : ModInitializer {
 
 		HudElementRegistry.attachElementBefore(
 			VanillaHudElements.CHAT,
-			Identifier.fromNamespaceAndPath(
-				MOD_ID,
-				"contest_hud"
-			)
+			id("contest_hud")
 		) { graphics, deltaTracker ->
-			ContestHud.render(
-				graphics,
-				deltaTracker
-			)
+			ContestHud.render(graphics, deltaTracker)
 		}
-
-		AlertManager.onInitialize()
-		AlertCommand.register()
 	}
 
 	fun id(path: String): Identifier =

@@ -1,4 +1,4 @@
-package net.johnceo.sparklingmutuals
+package net.johnceo.sparklingmutuals.party
 
 import net.azureaaron.hmapi.events.HypixelPacketEvents
 import net.azureaaron.hmapi.network.HypixelNetworking
@@ -8,8 +8,7 @@ import net.azureaaron.hmapi.network.packet.v2.s2c.PartyInfoS2CPacket
 
 object PartyManager {
 
-    private var partyMembers: List<String> = emptyList()
-
+    private var partyMembers = emptyList<String>()
     private var partyInfoCallback: (() -> Unit)? = null
 
     fun init() {
@@ -18,30 +17,18 @@ object PartyManager {
     }
 
     private fun handlePacket(packet: HypixelS2CPacket) {
-
         when (packet) {
-
-            is HelloS2CPacket -> {
-                requestPartyInfo()
-            }
-
-            is PartyInfoS2CPacket -> {
-                onPartyInfoPacket(packet)
-            }
+            is HelloS2CPacket -> requestPartyInfo()
+            is PartyInfoS2CPacket -> onPartyInfoPacket(packet)
         }
     }
 
-    private fun onPartyInfoPacket(
-        packet: PartyInfoS2CPacket
-    ) {
-
+    private fun onPartyInfoPacket(packet: PartyInfoS2CPacket) {
         partyMembers = packet.members
             ?.map { it.key.toString() }
             ?: emptyList()
 
-        println(
-            "PartyManager: Found ${partyMembers.size} party members."
-        )
+        println("PartyManager: Found ${partyMembers.size} party members.")
 
         partyInfoCallback?.invoke()
         partyInfoCallback = null
@@ -51,16 +38,10 @@ object PartyManager {
         HypixelNetworking.sendPartyInfoC2SPacket(2)
     }
 
-    fun refreshPartyInfo(
-        onUpdated: () -> Unit
-    ) {
-
+    fun refreshPartyInfo(onUpdated: () -> Unit) {
         partyInfoCallback = onUpdated
-
         requestPartyInfo()
     }
 
-    fun getMembers(): List<String> {
-        return partyMembers
-    }
+    fun getMembers(): List<String> = partyMembers
 }
