@@ -14,7 +14,12 @@ object SparklingCommand {
                     .then(
                         ClientCommands.literal("gui")
                             .executes {
-                                Minecraft.getInstance().setScreenAndShow(ContestGui())
+                                val client = Minecraft.getInstance()
+
+                                client.execute {
+                                    client.setScreenAndShow(ContestGui())
+                                }
+
                                 1
                             }
                     )
