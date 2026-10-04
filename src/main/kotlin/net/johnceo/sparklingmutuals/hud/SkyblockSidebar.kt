@@ -1,5 +1,6 @@
 package net.johnceo.sparklingmutuals.hud
 
+import net.johnceo.sparklingmutuals.contest.MiriaContestFilter
 import net.minecraft.client.Minecraft
 import net.minecraft.network.chat.Component
 import net.minecraft.world.scores.DisplaySlot
@@ -18,7 +19,7 @@ object SkyblockSidebar {
         val level = client.level ?: return emptyList()
         val scoreboard = level.scoreboard
 
-        return scoreboard.listPlayerScores(objective)
+        return MiriaContestFilter.sortScores(scoreboard.listPlayerScores(objective))
             .filterNot { it.isHidden }
             .map { entry ->
                 val team = scoreboard.getPlayersTeam(entry.owner())
