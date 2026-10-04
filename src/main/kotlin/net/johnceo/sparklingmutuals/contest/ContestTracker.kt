@@ -88,7 +88,7 @@ object ContestTracker {
         secondsToEnd() == 0
 
     private fun readSidebar(client: Minecraft) {
-        for (line in SkyblockSidebar.lines(client)) {
+        for (line in MiriaContestFilter.miriaLines(SkyblockSidebar.lines(client))) {
             val match = TIER_ROW.find(line) ?: continue
             val foundTier = match.groupValues[1]
 
