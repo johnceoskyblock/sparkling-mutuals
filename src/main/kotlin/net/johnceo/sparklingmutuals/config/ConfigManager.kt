@@ -3,6 +3,8 @@ package net.johnceo.sparklingmutuals.config
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.Properties
+import net.johnceo.sparklingmutuals.hud.SafariHud
+import net.johnceo.sparklingmutuals.safari.SafariPersonalBests
 
 object ConfigManager {
     private lateinit var configPath: Path
@@ -22,6 +24,7 @@ object ConfigManager {
     var sparklingPartyAnnouncer = true
     var catchCountPanel = false
     var showWhere = 1
+    val personalBests = SafariPersonalBests()
     private val flags = mapOf(::partyCommandsEnabled to true, ::warpAlertsEnabled to false,
         ::hideyhoQuestClicks to false, ::hideHauntedPaintings to true, ::shinyDetection to true,
         ::progressHud to true, ::countUniqueOnly to false, ::missingPanel to true,
@@ -36,6 +39,8 @@ object ConfigManager {
         flags.forEach { (property, default) -> property.set(properties.getProperty(property.name)?.toBooleanStrictOrNull() ?: default) }
         warpDelaySeconds = properties.getProperty("warpDelaySeconds", "25").toIntOrNull()?.coerceIn(1, 86400) ?: 25
         showWhere = properties.getProperty("showWhere")?.toIntOrNull()?.takeIf { it in 0..2 } ?: 1
+        SafariHud.load(properties)
+        personalBests.load(properties)
     }
 
     fun save() {
@@ -45,6 +50,8 @@ object ConfigManager {
             flags.forEach { (property, _) -> setProperty(property.name, property.get().toString()) }
             setProperty("warpDelaySeconds", warpDelaySeconds.toString())
             setProperty("showWhere", showWhere.coerceIn(0, 2).toString())
+            SafariHud.save(this)
+            personalBests.save(this)
             Files.newOutputStream(configPath).use { store(it, "Sparkling Mutuals configuration") }
         }
     }

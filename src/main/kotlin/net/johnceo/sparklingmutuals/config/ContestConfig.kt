@@ -35,6 +35,7 @@ object ContestConfig {
             hudY = getProperty("hudY", "10").toIntOrNull() ?: 10
             hudScale = getProperty("hudScale", "1.0")
                 .toFloatOrNull()
+                ?.takeIf(Float::isFinite)
                 ?.coerceIn(0.5f, 2.0f)
                 ?: 1.0f
 

@@ -46,8 +46,8 @@ class SafariSettings : Config() {
         @ConfigEditorText var sound = ContestConfig.contestSound
         @JvmField @ConfigOption(name = "Save sound", desc = "Apply the sound after editing.")
         @ConfigEditorButton(runnableId = 7, buttonText = "Save sound") var saveSound = false
-        @JvmField @ConfigOption(name = "Move and resize HUD", desc = "Drag to move; scroll to resize.")
-        @ConfigEditorButton(runnableId = 1, buttonText = "Edit HUD") var edit = false
+        @JvmField @ConfigOption(name = "Move and resize HUDs", desc = "Move any HUD independently; scroll to resize. Disabled HUDs have previews too.")
+        @ConfigEditorButton(runnableId = 1, buttonText = "Edit all HUDs") var edit = false
     }
     class Warp {
         @JvmField @ConfigOption(name = "Warp reminder", desc = "Remind you to /p warp after a Hotspot message. Requires the Hotspot perk.")
@@ -76,7 +76,7 @@ class SafariSettings : Config() {
         @ConfigEditorBoolean var announce = ConfigManager.sparklingPartyAnnouncer
     }
     class Tracking {
-        @JvmField @ConfigOption(name = "Progress HUD", desc = "Party coverage and your unique species across all four biomes. Enabled by default.")
+        @JvmField @ConfigOption(name = "Progress HUD", desc = "Collected species across all four biomes, with a timer starting on the boat. Enabled by default.")
         @ConfigEditorBoolean var progress = ConfigManager.progressHud
         @JvmField @ConfigOption(name = "Show where", desc = "Controls the progress, missing and capture-count HUD panels.")
         @ConfigEditorDropdown(values = ["Only in Safari", "Safari and entrance", "Everywhere"])
@@ -85,10 +85,12 @@ class SafariSettings : Config() {
         @ConfigEditorBoolean var unique = ConfigManager.countUniqueOnly
         @JvmField @ConfigOption(name = "Missing panel", desc = "List species still needed in your current biome using captures observed in chat. On by default.")
         @ConfigEditorBoolean var missing = ConfigManager.missingPanel
-        @JvmField @ConfigOption(name = "Biome capture counts", desc = "List all 9 or 10 species in your current biome and their You/Party totals. One successful message is one capture, regardless of shards. Resets each run. Off by default.")
+        @JvmField @ConfigOption(name = "Biome capture counts", desc = "Combined captures for all 9 or 10 species. Tracking continues while hidden; counts stay until the next run. One message is one capture. Off by default.")
         @ConfigEditorBoolean var counts = ConfigManager.catchCountPanel
         @JvmField @ConfigOption(name = "Capture count screen", desc = "Review the current or last run, including zero counts. Also available with /sparkling catches.")
         @ConfigEditorButton(runnableId = 8, buttonText = "View captures") var view = false
+        @JvmField @ConfigOption(name = "Move and resize HUDs", desc = "Drag any HUD and scroll over it to resize. Positions and sizes save separately.")
+        @ConfigEditorButton(runnableId = 1, buttonText = "Edit all HUDs") var edit = false
     }
     class Api {
         @JvmField @ConfigOption(name = "Hypixel API key", desc = "Open a masked key editor. Missing/invalid keys, unavailable data and request limits have distinct errors.")
