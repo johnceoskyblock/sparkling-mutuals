@@ -21,6 +21,11 @@ class SafariSettings : Config() {
     @JvmField @Category(name = "Safari helpers", desc = "Paintings and sparklings") val safari = Safari()
     @JvmField @Category(name = "Safari progress", desc = "Per-run captures and missing species") val tracking = Tracking()
     @JvmField @Category(name = "API key", desc = "Profile lookup authentication") val api = Api()
+    @JvmField @Category(name = "ESP · Floor drops", desc = "Safari floor drop tiles") val floorEsp = SafariFloorEspSettings()
+    @JvmField @Category(name = "ESP · Cavern", desc = "Cavern critter boxes") val cavernEsp = SafariCavernEspSettings()
+    @JvmField @Category(name = "ESP · Forest", desc = "Forest critter boxes") val forestEsp = SafariForestEspSettings()
+    @JvmField @Category(name = "ESP · Icy", desc = "Icy critter boxes") val icyEsp = SafariIcyEspSettings()
+    @JvmField @Category(name = "ESP · Haunted", desc = "Haunted critter boxes") val hauntedEsp = SafariHauntedEspSettings()
 
     class Party {
         @JvmField @ConfigOption(name = "Respond to party commands", desc = "Updated mod clients coordinate so one handles each request. All mod users should update.")
@@ -61,6 +66,8 @@ class SafariSettings : Config() {
         @ConfigEditorButton(runnableId = 5, buttonText = "Reset to 25s") var reset = false
     }
     class Safari {
+        @JvmField @ConfigOption(name = "Auto Clicker", desc = "Hold Mouse 0 (left mouse) in Safari to repeat attacks at 12 CPS for Rockmites. Pauses in menus, while using items or breaking blocks. On by default.")
+        @ConfigEditorBoolean var autoClicker = ConfigManager.autoClicker
         @JvmField @ConfigOption(name = "Hideyho quest clicks", desc = "After [MOB] Hideyho offers Sure, click anywhere with chat open to accept that button's server action. One click, one acceptance. Off by default.")
         @ConfigEditorBoolean var hideyho = ConfigManager.hideyhoQuestClicks
         @JvmField @ConfigOption(name = "Hide Haunted paintings", desc = "Hide paintings only in the Haunted Safari area. They remain in the world and hittable.")
@@ -138,8 +145,10 @@ class SafariSettings : Config() {
             ConfigManager::progressHud to tracking.progress, ConfigManager::countUniqueOnly to tracking.unique,
             ConfigManager::missingPanel to tracking.missing, ConfigManager::catchCountPanel to tracking.counts,
             ConfigManager::highlightBeeNests to safari.nests, ConfigManager::removeDarkness to safari.darkness,
-            ConfigManager::sparklingAlert to safari.alert, ConfigManager::sparklingPartyAnnouncer to safari.announce)
-        val generalChanged = changes.any { (property, value) -> property.get() != value } || ConfigManager.showWhere != tracking.where
+            ConfigManager::sparklingAlert to safari.alert, ConfigManager::sparklingPartyAnnouncer to safari.announce,
+            ConfigManager::autoClicker to safari.autoClicker)
+        val espChanged = listOf(floorEsp.applyFloor(), cavernEsp.apply(), forestEsp.apply(), icyEsp.apply(), hauntedEsp.apply()).any { it }
+        val generalChanged = espChanged || changes.any { (property, value) -> property.get() != value } || ConfigManager.showWhere != tracking.where
         changes.forEach { (property, value) -> property.set(value) }
         ConfigManager.showWhere = tracking.where.coerceIn(0, 2)
         if (generalChanged) ConfigManager.save()

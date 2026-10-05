@@ -23,13 +23,14 @@ object ConfigManager {
     var sparklingAlert = true
     var sparklingPartyAnnouncer = true
     var catchCountPanel = false
+    var autoClicker = true
     var showWhere = 1
     val personalBests = SafariPersonalBests()
     private val flags = mapOf(::partyCommandsEnabled to true, ::warpAlertsEnabled to false,
         ::hideyhoQuestClicks to false, ::hideHauntedPaintings to true, ::shinyDetection to true,
         ::progressHud to true, ::countUniqueOnly to false, ::missingPanel to true,
         ::highlightBeeNests to true, ::removeDarkness to true, ::sparklingAlert to true,
-        ::sparklingPartyAnnouncer to true, ::catchCountPanel to false)
+        ::sparklingPartyAnnouncer to true, ::catchCountPanel to false, ::autoClicker to true)
 
     fun init(configDirectory: Path) {
         configPath = configDirectory.resolve("sparkling-mutuals.properties")
@@ -41,6 +42,7 @@ object ConfigManager {
         showWhere = properties.getProperty("showWhere")?.toIntOrNull()?.takeIf { it in 0..2 } ?: 1
         SafariHud.load(properties)
         personalBests.load(properties)
+        SafariEspConfig.load(properties)
     }
 
     fun save() {
@@ -52,6 +54,7 @@ object ConfigManager {
             setProperty("showWhere", showWhere.coerceIn(0, 2).toString())
             SafariHud.save(this)
             personalBests.save(this)
+            SafariEspConfig.save(this)
             Files.newOutputStream(configPath).use { store(it, "Sparkling Mutuals configuration") }
         }
     }
