@@ -41,7 +41,8 @@ object PartyCommands {
                 pending.remove(token)?.task?.cancel(false)
             }
         }
-        val request = PartyCommand.fromChat(text) ?: return
+        val parsed = PartyCommand.fromChat(text) ?: return
+        val request = parsed.copy(command = parsed.command.forResponder(Minecraft.getInstance().player?.name?.string ?: return))
         val chatCursor = history.cursor
         if (now - (recent[request.token] ?: 0) < 10_000) return
         recent[request.token] = now

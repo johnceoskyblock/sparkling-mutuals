@@ -6,8 +6,8 @@ object CommandHelp {
         "!mutual / !mutuals" to "Shared timesave sparklings",
         "!missing <IGN>" to "A player's missing timesaves",
         "!ticket <IGN> / !tickets <IGN>" to "A player's Safari tickets",
-        "!pb doom" to "Responder's Doomspiral best time",
-        "!pb wumpa" to "Responder's Wumpa best time",
+        "!pb doom" to "Each mod user's Doomspiral best time",
+        "!pb wumpa" to "Each mod user's Wumpa best time",
         "!commands" to "This command list"
     )
     private val local = listOf(

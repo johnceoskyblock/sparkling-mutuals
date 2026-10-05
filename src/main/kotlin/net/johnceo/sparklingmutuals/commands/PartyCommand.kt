@@ -16,6 +16,9 @@ enum class PartyCommandKind { MUTUALS, MISSING, TICKETS, HELP, PB_DOOM, PB_WUMPA
 
 data class PartyCommand(val kind: PartyCommandKind, val ign: String = "") {
     val requiresApiKey get() = kind in listOf(PartyCommandKind.MUTUALS, PartyCommandKind.MISSING, PartyCommandKind.TICKETS)
+    // PB requests target this client's IGN; other commands retain their party-wide response scope.
+    fun forResponder(name: String) = if (kind == PartyCommandKind.PB_DOOM || kind == PartyCommandKind.PB_WUMPA)
+        copy(ign = name) else this
     private val failurePrefix: String get() = when (kind) {
         PartyCommandKind.MUTUALS -> "Mutual Timesave Sparkling Critters: "
         PartyCommandKind.MISSING -> "Missing Timesave Sparklings for $ign: "
@@ -37,7 +40,7 @@ data class PartyCommand(val kind: PartyCommandKind, val ign: String = "") {
             ).matches(body)
             PartyCommandKind.HELP -> body.startsWith("[SM] Commands: ")
             PartyCommandKind.PB_DOOM, PartyCommandKind.PB_WUMPA -> Regex(
-                "^[A-Za-z0-9_]{1,16}'s ${if (kind == PartyCommandKind.PB_DOOM) "Doomspiral" else "Wumpa"} PB: (?:\\d+:\\d{2}\\.\\d{3}|Not recorded yet)$",
+                "^${if (ign.isEmpty()) "[A-Za-z0-9_]{1,16}" else Regex.escape(ign)}'s ${if (kind == PartyCommandKind.PB_DOOM) "Doomspiral" else "Wumpa"} PB: (?:\\d+:\\d{2}\\.\\d{3}|Not recorded yet)$",
                 RegexOption.IGNORE_CASE).matches(body)
         }
     }
