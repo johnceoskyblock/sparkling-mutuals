@@ -25,6 +25,7 @@ object BeeNests {
     private val known = mutableSetOf<BlockPos>()
     private val punched = mutableSetOf<BlockPos>()
     private var ticks = 0
+    val unpunchedCount get() = known.count { it !in punched }
     private val lines = RenderType.create("sparkling-mutuals:nests", RenderSetup.builder(RenderPipelines.register(
         RenderPipeline.builder(RenderPipelines.LINES_SNIPPET).withLocation(SparklingMutuals.id("pipeline/nests"))
             .withDepthStencilState(DepthStencilState(CompareOp.ALWAYS_PASS, false)).build()))
@@ -44,7 +45,7 @@ object BeeNests {
         ticks = 0
         val level = client.level ?: return
         val centre = client.player?.blockPosition() ?: return
-        if (!ConfigManager.highlightBeeNests || SafariAssist.biome != SafariBiome.FOREST) return
+        if (!(ConfigManager.highlightBeeNests || ConfigManager.missingPanel) || SafariAssist.biome != SafariBiome.FOREST) return
         for (x in ((centre.x - 24) shr 4)..((centre.x + 24) shr 4)) for (z in ((centre.z - 24) shr 4)..((centre.z + 24) shr 4)) {
             val chunk = level.getChunk(x, z, ChunkStatus.FULL, false) as? LevelChunk ?: continue
             chunk.sections.forEachIndexed { index, section ->

@@ -11,13 +11,14 @@ object SafariAreaMap {
             }.toList()
         }.orEmpty()
     }
-    fun biomeAt(x: Double, y: Double, z: Double): Int? {
+    fun areaAt(x: Double, y: Double, z: Double): Int? {
         var best = 1600.0
         var area: Int? = null
         nodes.forEach { node ->
             val distance = (x - node.x) * (x - node.x) + (y - node.y) * (y - node.y) + (z - node.z) * (z - node.z)
-            if (distance <= best) { best = distance; area = node.area.takeIf { it in 1..4 } }
+            if (distance <= best) { best = distance; area = node.area.takeIf { it in 0..4 } }
         }
         return area
     }
+    fun biomeAt(x: Double, y: Double, z: Double) = areaAt(x, y, z)?.takeIf { it in 1..4 }
 }
