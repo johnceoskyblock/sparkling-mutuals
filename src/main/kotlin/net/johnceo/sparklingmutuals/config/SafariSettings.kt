@@ -11,6 +11,7 @@ import net.johnceo.sparklingmutuals.safari.CatchCountScreen
 import net.minecraft.client.Minecraft
 import net.minecraft.network.chat.Component
 import net.minecraft.resources.Identifier
+import net.minecraft.client.gui.screens.ChatScreen
 
 /** MoulConfig view model; the existing properties files remain the saved configuration. */
 class SafariSettings : Config() {
@@ -24,7 +25,7 @@ class SafariSettings : Config() {
     class Party {
         @JvmField @ConfigOption(name = "Respond to party commands", desc = "Updated mod clients coordinate so one handles each request. All mod users should update.")
         @ConfigEditorBoolean var enabled = ConfigManager.partyCommandsEnabled
-        @JvmField @ConfigOption(name = "Command help", desc = "List commands locally. Party members can also use !commands.")
+        @JvmField @ConfigOption(name = "Command help", desc = "Close settings and open chat with a readable command list. Party members can also use !commands.")
         @ConfigEditorButton(runnableId = 3, buttonText = "Show help") var help = false
     }
     class Miria {
@@ -78,14 +79,14 @@ class SafariSettings : Config() {
     class Tracking {
         @JvmField @ConfigOption(name = "Progress HUD", desc = "Collected species across all four biomes, with a timer starting on the boat. Enabled by default.")
         @ConfigEditorBoolean var progress = ConfigManager.progressHud
-        @JvmField @ConfigOption(name = "Show where", desc = "Controls the progress, missing and capture-count HUD panels.")
+        @JvmField @ConfigOption(name = "Show where", desc = "Progress HUD visibility. Entrance means only Critter Safari Entrance, not all of Torrhus Canyon. Biome panels only show during a run inside a biome.")
         @ConfigEditorDropdown(values = ["Only in Safari", "Safari and entrance", "Everywhere"])
         var where = ConfigManager.showWhere
         @JvmField @ConfigOption(name = "Count Unique Only", desc = "One catch completes a species. Off: require v0.9.0 quotas (Gemzie/Troodon 3, Gazer 4). Raw capture totals are unaffected.")
         @ConfigEditorBoolean var unique = ConfigManager.countUniqueOnly
-        @JvmField @ConfigOption(name = "Missing panel", desc = "List species still needed in your current biome using captures observed in chat. On by default.")
+        @JvmField @ConfigOption(name = "Missing panel", desc = "List missing species in your current biome. Hidden at the Safari center and outside a run. On by default.")
         @ConfigEditorBoolean var missing = ConfigManager.missingPanel
-        @JvmField @ConfigOption(name = "Biome capture counts", desc = "Combined captures for all 9 or 10 species. Tracking continues while hidden; counts stay until the next run. One message is one capture. Off by default.")
+        @JvmField @ConfigOption(name = "Biome capture counts", desc = "Combined captures in your current biome. Hidden at the center and outside a run. Counts continue while hidden and remain available in View captures. Off by default.")
         @ConfigEditorBoolean var counts = ConfigManager.catchCountPanel
         @JvmField @ConfigOption(name = "Capture count screen", desc = "Review the current or last run, including zero counts. Also available with /sparkling catches.")
         @ConfigEditorButton(runnableId = 8, buttonText = "View captures") var view = false
@@ -107,7 +108,10 @@ class SafariSettings : Config() {
         when (id) {
             1 -> { apply(); client.execute { client.setScreen(ContestGui(client.screen)) } }
             2 -> { miria.five = false; miria.three = false; miria.one = false; apply() }
-            3 -> feedback(SafariLookup.run(PartyCommand(PartyCommandKind.HELP), emptyList()).removePrefix("[SM] "))
+            3 -> client.execute {
+                client.setScreen(ChatScreen("", false))
+                client.player?.sendSystemMessage(Component.literal(CommandHelp.localLines().joinToString("\n")))
+            }
             4 -> client.execute { client.setScreen(ApiKeyScreen(client.screen)) }
             5 -> { warp.delay = "25"; saveDelay() }
             6 -> saveDelay()
