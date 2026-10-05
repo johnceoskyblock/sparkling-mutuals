@@ -22,29 +22,28 @@ object HideyhoQuest {
         ClientReceiveMessageEvents.GAME.register { message, overlay ->
             if (!overlay) Minecraft.getInstance().execute { receive(message) }
         }
+        ClientReceiveMessageEvents.CHAT.register { message, _, _, _, _ ->
+            Minecraft.getInstance().execute { receive(message) }
+        }
         ScreenEvents.AFTER_INIT.register { _, screen, _, _ ->
-            if (screen is ChatScreen) ScreenMouseEvents.allowMouseClick(screen).register { _, click ->
-                click.button() != 0 || !accept()
+            if (screen is ChatScreen) ScreenMouseEvents.allowMouseClick(screen).register { _, _ ->
+                !accept()
             }
         }
     }
     private fun receive(message: Component) {
-        if (!ConfigManager.hideyhoQuestClicks || !SafariAssist.inHaunted) { reset(); return }
+        if (!ConfigManager.hideyhoQuestClicks) { reset(); return }
+        val client = Minecraft.getInstance()
+        if (hasContext() && !sameContext(client)) reset()
         val text = SafariRules.strip(message.string)
         val now = System.currentTimeMillis()
-        if (text.startsWith("[NPC]")) pending = null
-        dialogue.observe(text, now)
+        if (SafariRules.isDialogue(text)) pending = null
+        dialogue.observe(text, now, client.level, client.connection)
+        if (SafariRules.isHideyhoDialogue(text)) { connection = client.connection; level = client.level }
         if (!text.startsWith("Select an option:")) return
         pending = null
         if (!dialogue.acceptsOptions(now)) return
-        // Styled visits preserve inherited click events. Only the exact Sure button is eligible.
-        val found = message.visit<ClickEvent>({ style, segment ->
-            val event = style.clickEvent
-            if (SafariRules.strip(segment).trim('[', ']').equals("Sure", true) &&
-                (event is ClickEvent.RunCommand || event is ClickEvent.Custom)) java.util.Optional.of(event)
-            else java.util.Optional.empty()
-        }, net.minecraft.network.chat.Style.EMPTY)
-        pending = found.orElse(null) ?: return
+        pending = HideyhoButton.find(message) ?: return
         offeredAt = now
         connection = Minecraft.getInstance().connection
         level = Minecraft.getInstance().level
@@ -53,7 +52,7 @@ object HideyhoQuest {
     private fun accept(): Boolean {
         val client = Minecraft.getInstance()
         val event = pending ?: return false
-        if (!ConfigManager.hideyhoQuestClicks || !SafariAssist.inHaunted ||
+        if (!ConfigManager.hideyhoQuestClicks ||
             client.connection !== connection || client.level !== level || System.currentTimeMillis() - offeredAt > 30000) { reset(); return false }
         val active = client.connection ?: return false
         reset()
@@ -66,7 +65,11 @@ object HideyhoQuest {
         return true
     }
     fun onClientTick(client: Minecraft) {
-        if (!ConfigManager.hideyhoQuestClicks || !SafariAssist.inHaunted || (pending != null && client.level !== level)) reset()
+        dialogue.synchronize(client.level, client.connection)
+        if (!ConfigManager.hideyhoQuestClicks || (hasContext() && !sameContext(client)) ||
+            (pending != null && System.currentTimeMillis() - offeredAt > 30000)) reset()
     }
+    private fun hasContext() = connection != null || level != null
+    private fun sameContext(client: Minecraft) = client.connection === connection && client.level === level
     fun reset() { pending = null; dialogue.reset(); connection = null; level = null; offeredAt = 0 }
 }

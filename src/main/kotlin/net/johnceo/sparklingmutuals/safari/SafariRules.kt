@@ -3,18 +3,17 @@ package net.johnceo.sparklingmutuals.safari
 /** Species and exact Sparkling-prefix matching adapted from CritterMod v0.9.0 (MIT). */
 object SafariRules {
     const val RADIUS = 80.0
-    private val species = ("Foxtrot,Bluebird,Honeybug,Treefrog,Woodchucker,Fluffling,Hideonfloor,Parakeet,Macaw," +
-        "Cavernfish,Flitter,Shyworm,Driftling,Chuckwalla,Rockmite,Scrappy,Snoozle,Gemzie," +
-        "Strongarm,Tepid,Polaris,Shuddersquid,Billygoat,Mantis Shrimp,Nozzlenose,Troodon,Wumpa," +
-        "Areita,Bloodbat,Duplico,Gazer,Litterbug,Solsnatcher,Gimmiegold,Hideonwall,Hideyho,Doomspiral")
-        .split(',').associateBy(String::lowercase)
+    private val formatting = Regex("§.")
+    private val glyphs = Regex("[\\p{Cf}\\p{Co}]")
+    private val dialogue = Regex("^\\[(?:NPC|MOB)] ", RegexOption.IGNORE_CASE)
+    private val hideyho = Regex("^\\[(?:NPC|MOB)] Hideyho:.*$", RegexOption.IGNORE_CASE)
 
-    fun strip(text: String) = text.replace(Regex("§."), "").replace(Regex("[\\p{Cf}\\p{Co}]"), "").trim()
+    fun strip(text: String) = text.replace(formatting, "").replace(glyphs, "").trim()
     fun withinRange(distanceSquared: Double) = distanceSquared >= 0 && distanceSquared <= RADIUS * RADIUS
     fun sparklingSpecies(text: String): String? {
         val name = strip(text)
         if (!name.startsWith("Sparkling ", ignoreCase = true)) return null
-        return species[name.substring(10).trim().lowercase()]
+        return SafariRoster.named(name.substring(10).trim())?.name
     }
     private fun zone(lines: List<String>): String? {
         val normalized = lines.map(::strip)
@@ -26,5 +25,8 @@ object SafariRules {
             it.lowercase() in setOf("forest biome", "cavern biome", "icy biome", "haunted biome", "haunted mansion")
     } ?: lines.any { strip(it).equals("Critter Safari", true) }
     fun isHaunted(lines: List<String>) = zone(lines)?.lowercase() in setOf("haunted biome", "haunted mansion")
-    fun isHideyhoDialogue(text: String) = Regex("^\\[NPC] Hideyho:.*$", RegexOption.IGNORE_CASE).matches(strip(text))
+    fun isEntrance(lines: List<String>) = zone(lines)?.lowercase() in setOf("safari entrance", "critter safari entrance", "safari entry", "critter safari entry")
+    fun isIslandName(lines: List<String>) = zone(lines)?.lowercase() in setOf("critter safari", "safari")
+    fun isDialogue(text: String) = dialogue.containsMatchIn(strip(text))
+    fun isHideyhoDialogue(text: String) = hideyho.matches(strip(text))
 }

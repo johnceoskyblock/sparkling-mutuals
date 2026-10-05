@@ -8,6 +8,7 @@ import net.minecraft.world.entity.Entity
 import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.entity.decoration.ArmorStand
 import net.minecraft.world.entity.player.Player
+import net.minecraft.world.effect.MobEffects
 import kotlin.math.sqrt
 
 /** Loaded-name scan and label/body pairing adapted from CritterMod's v0.9.0 CritterEntities. */
@@ -20,29 +21,45 @@ object SafariAssist {
         private set
     var inHaunted = false
         private set
+    var atEntrance = false
+        private set
+    var biome: SafariBiome? = null
+        private set
+    private var entered = false
+    fun markEntered() { entered = true; inSafari = true }
 
     fun onClientTick(client: Minecraft) {
         if (client.level !== lastLevel) { reset(); lastLevel = client.level }
         val player = client.player
         if (client.level == null || player == null) { reset(); return }
+        if (ConfigManager.removeDarkness && inSafari) player.removeEffect(MobEffects.DARKNESS)
         if (++ticks < 5) return
         ticks = 0
         val lines = SkyblockSidebar.areaName(client)?.let { listOf("Area: $it") }.orEmpty() + SkyblockSidebar.lines(client)
-        val biome = SafariAreaMap.biomeAt(player.x, player.y, player.z)
-        inSafari = SkyblockSidebar.inSkyblock(client) && SafariRules.isSafari(lines) && biome != null
-        inHaunted = inSafari && (SafariRules.isHaunted(lines) || biome == 4)
-        if (!inSafari || !ConfigManager.shinyDetection) { shinies = emptyList(); return }
+        val mappedBiome = SafariAreaMap.biomeAt(player.x, player.y, player.z)
+        atEntrance = SkyblockSidebar.inSkyblock(client) && (SafariRules.isEntrance(lines) ||
+            (SafariRules.isIslandName(lines) && mappedBiome == null))
+        if (lines.any { it.startsWith("Area: ") || it.contains('⏣') }) entered = SafariRules.isSafari(lines)
+        inSafari = SkyblockSidebar.inSkyblock(client) && !atEntrance && (SafariRules.isSafari(lines) || entered)
+        biome = if (inSafari) SafariBiome.mapped(mappedBiome) else null
+        inHaunted = inSafari && (SafariRules.isHaunted(lines) || biome == SafariBiome.HAUNTED)
+        SafariTracking.ensureRun(client)
+        if (!inSafari || !(ConfigManager.shinyDetection || ConfigManager.sparklingAlert || ConfigManager.sparklingPartyAnnouncer)) {
+            shinies = emptyList(); SparklingEncounters.leave(); return
+        }
         val entities = client.level!!.entitiesForRendering().filterNot { it.isRemoved }.toList()
         val bodies = entities.filter { it is LivingEntity && it !is ArmorStand && it !is Player }
         val matchedBodies = mutableSetOf<Int>()
         shinies = entities.mapNotNull { label ->
             val name = label.customName?.string?.let(SafariRules::sparklingSpecies) ?: return@mapNotNull null
-            val body = bodies.filter { it.position().distanceToSqr(label.position()) < 9 }
-                .minByOrNull { it.position().distanceToSqr(label.position()) } ?: label
+            val body = bodies.minByOrNull { it.position().distanceToSqr(label.position()) }
+                ?.takeIf { it.position().distanceToSqr(label.position()) < 9 } ?: label
             if (!SafariRules.withinRange(player.distanceToSqr(body)) ||
-                SafariAreaMap.biomeAt(body.x, body.y, body.z) != biome || !matchedBodies.add(body.id)) null
+                biome == null || SafariAreaMap.biomeAt(body.x, body.y, body.z) != mappedBiome || !matchedBodies.add(body.id)) null
             else Shiny(label, body, name)
         }.sortedBy { player.distanceToSqr(it.body) }
+        shinies.forEach { SparklingEncounters.observe(it.label.uuid, it.name, biome!!, it.body.blockPosition()) }
+        SparklingEncounters.tick(client)
     }
 
     @JvmStatic fun hidePaintings() = ConfigManager.hideHauntedPaintings && inHaunted
@@ -70,5 +87,6 @@ object SafariAssist {
         rows.forEachIndexed { index, row -> graphics.text(client.font, row, x + 6, y + 19 + index * 12, 0xFFF0E1BE.toInt(), true) }
     }
 
-    fun reset() { shinies = emptyList(); inSafari = false; inHaunted = false; ticks = 0; lastLevel = null }
+    fun reset() { shinies = emptyList(); inSafari = false; inHaunted = false; atEntrance = false;
+        biome = null; entered = false; ticks = 0; lastLevel = null; SparklingEncounters.reset() }
 }
