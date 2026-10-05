@@ -30,7 +30,7 @@ class SafariSettings : Config() {
     @JvmField @Category(name = "Customization", desc = "Waypoint, ESP and panel appearance") val customization = CustomizationSettings()
 
     class Party {
-        @JvmField @ConfigOption(name = "Respond to party commands", desc = "Reply to party !commands with one coordinated responder.")
+        @JvmField @ConfigOption(name = "Respond to party commands", desc = "Reply to party commands. PB requests get a reply from each mod user.")
         @ConfigEditorBoolean var enabled = ConfigManager.partyCommandsEnabled
         @JvmField @ConfigOption(name = "Command help", desc = "Close settings and show commands in chat.")
         @ConfigEditorButton(runnableId = 3, buttonText = "Show help") var help = false
