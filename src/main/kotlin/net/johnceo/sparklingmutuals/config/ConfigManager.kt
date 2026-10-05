@@ -19,6 +19,11 @@ object ConfigManager {
     var countUniqueOnly = false
     var missingPanel = true
     var highlightBeeNests = true
+    var highlightSnooperWalls = true
+    var showBeeNests = true
+    var showMoundCount = true
+    var showSnooperWalls = true
+    var showMoundStats = false
     var removeDarkness = true
     var sparklingAlert = true
     var sparklingPartyAnnouncer = true
@@ -35,7 +40,9 @@ object ConfigManager {
         ::progressHud to true, ::countUniqueOnly to false, ::missingPanel to true,
         ::highlightBeeNests to true, ::removeDarkness to true, ::sparklingAlert to true,
         ::sparklingPartyAnnouncer to true, ::catchCountPanel to false, ::autoClicker to true,
-        ::hideCaptureChat to false, ::hideGroundCapsules to true, ::hideFlyingCapsules to true)
+        ::hideCaptureChat to false, ::hideGroundCapsules to true, ::hideFlyingCapsules to true,
+        ::highlightSnooperWalls to true, ::showBeeNests to true, ::showMoundCount to true,
+        ::showSnooperWalls to true, ::showMoundStats to false)
 
     fun validCapsuleDistance(value: Float?) = value?.takeIf { it.isFinite() }?.coerceIn(.5f, 6f) ?: 2f
 
@@ -51,6 +58,7 @@ object ConfigManager {
         SafariHud.load(properties)
         personalBests.load(properties)
         SafariEspConfig.load(properties)
+        AppearanceConfig.load(properties)
     }
 
     fun save() {
@@ -64,6 +72,7 @@ object ConfigManager {
             SafariHud.save(this)
             personalBests.save(this)
             SafariEspConfig.save(this)
+            AppearanceConfig.save(this)
             Files.newOutputStream(configPath).use { store(it, "Sparkling Mutuals configuration") }
         }
     }
