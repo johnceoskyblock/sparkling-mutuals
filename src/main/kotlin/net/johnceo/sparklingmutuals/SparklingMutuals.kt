@@ -13,8 +13,7 @@ import net.johnceo.sparklingmutuals.config.ContestConfig
 import net.johnceo.sparklingmutuals.contest.ContestHud
 import net.johnceo.sparklingmutuals.contest.ContestTracker
 import net.johnceo.sparklingmutuals.party.PartyManager
-import net.johnceo.sparklingmutuals.safari.SafariAssist
-import net.johnceo.sparklingmutuals.safari.HideyhoQuest
+import net.johnceo.sparklingmutuals.safari.*
 import net.minecraft.resources.Identifier
 import org.slf4j.LoggerFactory
 
@@ -40,12 +39,16 @@ object SparklingMutuals : ModInitializer {
 		PartyManager.init()
 		AlertManager.onInitialize()
         HideyhoQuest.register()
+        SafariTracking.register()
+        BeeNests.register()
 
         ClientTickEvents.END_CLIENT_TICK.register { client ->
             PartyManager.onClientTick(client)
             PartyCommands.onClientTick(client)
             ContestTracker.onClientTick(client)
             SafariAssist.onClientTick(client)
+            SafariTracking.onClientTick(client)
+            BeeNests.tick(client)
             HideyhoQuest.onClientTick(client)
         }
 
@@ -55,6 +58,7 @@ object SparklingMutuals : ModInitializer {
             AlertManager.cancelPendingAlert()
             SafariAssist.reset()
             HideyhoQuest.reset()
+            SafariTracking.finish()
         }
 
 		HudElementRegistry.attachElementBefore(
@@ -63,6 +67,8 @@ object SparklingMutuals : ModInitializer {
 		) { graphics, deltaTracker ->
 			ContestHud.render(graphics, deltaTracker)
 			SafariAssist.render(graphics)
+            SafariTracking.render(graphics)
+            SparklingEncounters.render(graphics)
 		}
 	}
 
