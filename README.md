@@ -32,9 +32,9 @@ Send `!` commands in **party chat**, including through `/pc` or `/p chat`. Party
 
 ### One responder per party request
 
-Updated mod clients coordinate through a short `[SM] Checking …` party message before looking up a request. Other clients yield to that responder, and overlapping claims settle on one client. Only the selected client makes API requests and posts the result. Non-mod party members can still use the commands.
+Commands send only their final result or a single contextual error; there is no preliminary `[SM] Checking …` message. Updated clients stagger lookups by their position in the sorted party roster and cancel their response when they see a matching final reply. Non-mod party members can still use the commands. Slow lookups can overlap across clients, so API requests are not guaranteed to run on only one client.
 
-All mod users should install this update: older versions do not participate in coordination and may still respond. Coordination assumes timely party chat delivery and a stable roster; unusually delayed messages can cause duplicates. Identical requests from the same player are ignored for 10 seconds. A party information timeout is reported locally so the request can be retried.
+All mod users should install this update: older versions may still send preliminary messages or additional responses. Coordination assumes timely party chat delivery and a stable roster; unusually delayed messages can cause duplicates. Identical requests from the same player are ignored for 10 seconds. A party information timeout is reported locally so the request can be retried.
 
 ### Sparkling timesaves
 
