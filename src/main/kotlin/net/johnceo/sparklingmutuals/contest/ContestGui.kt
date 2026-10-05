@@ -2,6 +2,7 @@ package net.johnceo.sparklingmutuals.contest
 
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.config.ContestConfig
+import net.johnceo.sparklingmutuals.config.AppearanceConfig
 import net.johnceo.sparklingmutuals.hud.*
 import net.johnceo.sparklingmutuals.safari.*
 import net.minecraft.client.gui.GuiGraphicsExtractor
@@ -32,7 +33,8 @@ class ContestGui(private val parent: Screen? = null) : Screen(Component.literal(
             SafariPanels.missing(run, SafariBiome.FOREST, ConfigManager.countUniqueOnly, 3),
             SafariPanels.captures(run, SafariBiome.FOREST), SafariAssist.nearbyPanel(preview = true)!!)
         SafariHud.entries.zip(panels).forEach { (hud, panel) ->
-            previews.add(Preview(hud.label, hud.layout, panel.width(font::width), panel.height) { g, x, y -> panel.draw(g, x, y, hud.layout.scale) })
+            previews.add(Preview(hud.label, hud.layout, panel.width(font::width), panel.height) { g, x, y ->
+                panel.draw(g, x, y, hud.layout.scale, AppearanceConfig.panels.getValue(hud.name.lowercase())) })
         }
         addRenderableWidget(Button.builder(Component.literal("Reset positions")) {
             SafariHud.entries.forEach { it.layout.reset() }
