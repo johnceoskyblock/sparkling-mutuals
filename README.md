@@ -9,9 +9,10 @@ Run `/sparkling` or `/sparkling config` to open the **MoulConfig** settings scre
 - **Party commands:** toggle automatic responses and view command help locally. **Show help** closes settings and opens chat with colored sections, one described command per line, and an explanation of `<IGN>`. This help is local to you.
 - **Miria contest:** choose warning times, toggle the HUD and titles, adjust warning sound and volume, and open the HUD editor.
 - **Warp reminders:** toggle reminders and set their delay, which defaults to **25 seconds**.
-- **Safari helpers:** toggle capture chat hiding, ground/flying capsule hiding, Auto Clicker, Hideyho quest clicks, Haunted painting hiding, shiny detection, sparkling alerts/party announcements, bee-nest highlights and darkness removal.
-- **ESP · Floor drops / Cavern / Forest / Icy / Haunted:** through-terrain boxes with biome filters, individual critter toggles and color pickers.
-- **Safari progress:** configure progress, missing species, capture counts, unique-only completion and where the HUD appears.
+- **Safari helpers:** toggle capture chat hiding, ground/flying capsule hiding, Auto Clicker, Hideyho quest clicks, Haunted painting hiding, shiny detection, sparkling alerts/party announcements, bee-nest and Snooper-wall highlights, and darkness removal.
+- **ESP · Floor drops / Cavern / Forest / Icy / Haunted:** through-terrain highlights with biome filters and individual critter toggles.
+- **Safari progress:** configure progress, missing species, capture counts, unique-only completion, where the HUD appears, Bee Nests, Rockmite Mounds, Snooper Walls and optional mound results.
+- **Customization:** choose GUI borders, backgrounds and transparency, waypoint colors, floor-drop colors and all 37 critter ESP colors. Enter a six-digit hex color at the top and click **Set Color** for each target to apply the same color to multiple items. These buttons only change color; they never enable features. Each target also has its own color picker.
 - **API key:** enter, reveal or hide, and save your Hypixel API key.
 
 Toggles and sliders save immediately. Text fields have explicit Save buttons. Existing API keys and HUD settings are retained. Party responses are enabled by default; warp reminders are disabled until enabled.
@@ -36,7 +37,7 @@ Send `!` commands in **party chat**, including through `/pc` or `/p chat`. Party
 
 ### One responder per party request
 
-Commands send only their final result or a single contextual error; there is no preliminary `[SM] Checking …` message. Updated clients stagger lookups by their position in the sorted party roster and cancel their response when they see a matching final reply. Non-mod party members can still use the commands. Slow lookups can overlap across clients, so API requests are not guaranteed to run on only one client.
+Commands send only successful final results to party chat; there is no preliminary `[SM] Checking …` message. Missing API keys and all other lookup errors are shown locally, allowing another client with a working key to reply. Updated clients stagger lookups by their position in the sorted party roster and cancel their response when they see a matching successful reply. Party chat is also checked for replies received during the roster refresh or lookup, and again immediately before sending. Old error messages do not suppress a successful reply. Non-mod party members can still use the commands. Slow lookups can overlap across clients, so API requests are not guaranteed to run on only one client.
 
 All mod users should install this update: older versions may still send preliminary messages or additional responses. Coordination assumes timely party chat delivery and a stable roster; unusually delayed messages can cause duplicates. Identical requests from the same player are ignored for 10 seconds. A party information timeout is reported locally so the request can be retried.
 
@@ -114,13 +115,19 @@ Detection is adapted specifically from **CritterMod v0.9.0**, rather than its la
 
 **Bee nests:** enabled by default. Unpunched Forest nests show green boxes through terrain, with name/distance labels. Discovery checks already loaded nearby chunk sections every two seconds, skipping palettes without nests. It also finds decorative nests without block-entity data. Your own punch removes that nest's marker until the next run. Other players' punches leave no observable block change, so they cannot be tracked.
 
+**Highlight Snooper Walls:** enabled by default in Safari helpers. Marks intact walls at the five Cavern locations from CritterMod v0.9.0 with name/distance labels through terrain. Only loaded, non-air wall positions are highlighted. Customize wall, nest and sparkling highlight colors in **Customization**.
+
 **Remove darkness:** enabled by default. Clears the local darkness effect while inside Safari.
 
 ## Safari progress and capture counts
 
-The **Progress HUD** and **Missing Panel** default to on. **Show where** controls the Progress HUD: *Only in Safari*, *Safari and entrance* (default), or *Everywhere*. *Safari and entrance* shows progress inside Safari and at the named **Critter Safari Entrance** area in Torrhus Canyon; it does not show elsewhere in Torrhus Canyon. Progress shows one **Collected** total for all 37 critters, with separate colored biome progress bars. Safari panels use translucent black backgrounds and white borders like the Miria tracker.
+The **Progress HUD** and **Missing Panel** default to on. **Show where** controls the Progress HUD: *Only in Safari*, *Safari and entrance* (default), or *Everywhere*. *Safari and entrance* shows progress inside Safari and at the named **Critter Safari Entrance** area in Torrhus Canyon; it does not show elsewhere in Torrhus Canyon. Progress shows one **Collected** total for all 37 critters, with separate colored biome progress bars. Miria, progress, missing, captures, nearby sparklings and sparkling alerts each have independent appearance settings in **Customization**. Borders default to off, with white selected as their initial color. Backgrounds default to black with **20% transparency (80% opacity)**.
 
-The **Missing Panel** and **Biome capture counts HUD** appear only during an active run inside **Forest, Cavern, Icy or Haunted**. They disappear in Safari's middle zone, at the entrance, and outside a run, regardless of **Show where**. Missing species use their rarity colors, quota progress where needed, and a known unpunched Forest bee-nest count. Hiding these HUDs never erases captures or ends the timer.
+The **Missing Panel** and **Biome capture counts HUD** appear only during an active run inside **Forest, Cavern, Icy or Haunted**. They disappear in Safari's middle zone, at the entrance, and outside a run, regardless of **Show where**. Missing species use their rarity colors and quota progress where needed. Hiding these HUDs never erases captures or ends the timer.
+
+**Bee Nests**, **Rockmite Mounds** and **Snooper Walls** are separate, default-on toggles in **Safari progress**. Bee Nests adds the known unpunched nest count to the Forest Missing Panel independently of highlighting. Cavern shows nearby unbroken Rockmite mounds within **64 blocks** when any are found, excluding mounds occupied by visible critters. This is a count of loaded nearby mounds, not all mounds remaining in the biome. Snooper Walls shows intact walls, marks unloaded wall positions as unknown, and reports all broken only after confirming all five positions.
+
+**Mound results** defaults to off. Enable it to add **Mounds broken** and **Mounds with Rockmite** rows to the Cavern capture list. These count the server's empty-mound and Rockmite-reveal messages throughout the run, even while the display is disabled. They remain available with the current or last run until the next run starts, and do not increase critter capture totals.
 
 The timer starts from loading into the Safari, including the boat. It continues through the center's **Critter Safari** area and all four biomes. Returning to **Torrhus Canyon** ends the run and freezes its timer; world changes or another island also end it. Briefly missing sidebar data does not end a run.
 
@@ -142,7 +149,7 @@ Send **`!pb doom`** or **`!pb wumpa`** in party chat; capitalization does not ma
 
 Obtain a key through the [Hypixel Developer Portal](https://developer.hypixel.net), then save it in **API key** settings or run `/apikey YOUR_API_KEY`. Replace it there whenever it becomes invalid or expires. The HUD, reminders, Safari helpers and help menu work without a key.
 
-Lookups distinguish a missing key, an invalid key, a request limit, unavailable profile/Safari data, an unknown player and an unavailable service. Server error details and the API key are not included in party responses.
+Lookups distinguish a missing key, an invalid key, a request limit, unavailable profile/Safari data, an unknown player and an unavailable service. All lookup errors stay in local chat. Only successful results are eligible for party chat, and another matching successful reply suppresses them. Private server error details and the API key are never included in messages.
 
 ## Installation
 
@@ -165,13 +172,13 @@ On Windows, use `gradlew.bat build`. The build runs unit tests and puts the mod 
 
 The main source, including rendering mixins, is entirely Kotlin. Shared roster, parsing, configuration and HUD helpers reduce duplicated code; scans are throttled and never load chunks.
 
-Tests cover command parsing and responder elections, API errors, persisted defaults, warning settings, detection radius, sparkling-name matching, actual Hideyho MOB dialogue, styled buttons, capture parsing, quotas, boat/center/departure transitions, capture retention, HUD positioning and persistent personal bests. Party coordination, click packets and Safari rendering should also be tested in Minecraft before release.
+Tests cover command parsing and responder elections, local-only lookup errors, reply history and duplicate suppression, persisted defaults, shared color buttons that preserve toggles, GUI appearance, mound geometry and run results, wall counts, warning settings, detection radius, sparkling-name matching, actual Hideyho MOB dialogue, styled buttons, capture parsing, quotas, boat/center/departure transitions, capture retention, HUD positioning and persistent personal bests. Party coordination, click packets and Safari rendering should also be tested in Minecraft before release.
 
 ## Credits
 
 - [ShinyHunter](https://github.com/javabetter/ShinyHunter): Hideyho quest acceptance and painting suppression reference. Copyright 2026 GamingLegend123; MIT notice in `licenses/ShinyHunter-MIT.txt`.
 - [Nebulune](https://github.com/Gaeritag/Nebulune), commit `a573283c0553c3db338be1f2d547a53ccb77ac9d`: all Safari ESP identifiers, biome rules, box dimensions, textures and colors, and the simplified AutoClicker tick accumulator. Copyright 2025 Starred; BSD-3-Clause notice in `licenses/Nebulune-BSD-3-Clause.txt`.
-- [CritterMod v0.9.0](https://github.com/MrCloudy2/critterMod/tree/v0.9.0), commit `cdfcb8effb4b3158df50f0c0960c11e536931840`: sparkling detection/alerts/announcements, species/quotas, chat captures, progress/missing panels, nest tracking/waypoints, darkness removal and area lookup reference. Copyright 2026 MrCloudy2; MIT notice in `licenses/CritterMod-MIT.txt`.
+- [CritterMod v0.9.0](https://github.com/MrCloudy2/critterMod/tree/v0.9.0), commit `cdfcb8effb4b3158df50f0c0960c11e536931840`: sparkling detection/alerts/announcements, species/quotas, chat captures, progress/missing panels, nest tracking/waypoints, Snooper wall positions, Rockmite mound detection/results, darkness removal and area lookup reference. Copyright 2026 MrCloudy2; MIT notice in `licenses/CritterMod-MIT.txt`.
 - [SkyHanni 9.1.0](https://github.com/hannibal002/SkyHanni/tree/9.1.0): `CritterCapsuleHider.kt` and `CritterCapsuleRules.kt` adapt its capsule hiding behavior with two default-on toggles and close-only flying suppression. These adapted files retain LGPL-2.1; the full license is in `licenses/SkyHanni-LGPL-2.1.txt`, included in the built and source JARs. Their complete modified source is supplied in the source JAR and source archive.
 - The Safari area table bundled by CritterMod derives from SkyHanni's Safari path graph.
 - [MoulConfig](https://github.com/NotEnoughUpdates/MoulConfig) 4.7.2 supplies the settings UI and is bundled as a separate LGPL-3.0 library.
