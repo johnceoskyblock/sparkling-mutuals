@@ -25,8 +25,9 @@ Send `!` commands in **party chat**, including through `/pc` or `/p chat`. Party
 | `!mutual` / `!mutuals` | Find timesave sparkling critters discovered by every party member |
 | `!missing <IGN>` | List a player's missing timesave sparkling critters |
 | `!ticket <IGN>` / `!tickets <IGN>` | Show Basic, Economy, Premium and First-Class ticket counts |
+| `!pb doom` / `!pb wumpa` | Show the responding player's saved Doomspiral or Wumpa personal best; case-insensitive |
 | `/sparkling` / `/sparkling config` | Open the configuration screen |
-| `/sparkling gui` | Move and resize the Miria contest HUD |
+| `/sparkling gui` | Move and resize all HUDs independently, including Safari progress, missing critters, captures and nearby sparklings |
 | `/sparkling catches` | Review per-critter captures in the current or last Safari run |
 | `/alert` | Toggle warp reminders |
 | `/alertdelay <seconds>` | Set the warp reminder delay, from 1 to 86400 seconds |
@@ -62,7 +63,7 @@ The tracker reads **Miria contests only**. Agatha entries are excluded, includin
 
 Select any combination of **5m**, **3m** and **1m** warnings, or choose **None** to disable all end-of-contest warnings. All three times are selected by default. Warnings stop after reaching Uncommon or higher. Joining late produces one catch-up warning instead of several at once.
 
-Run `/sparkling gui` or use **Move and resize the HUD** in settings. Drag to move the HUD; hover and scroll to resize it between 50% and 200%. Closing the editor saves its position and size.
+Run `/sparkling gui` or use **Move and resize HUDs** in settings. Drag any panel to move it; hover and scroll to resize it between 50% and 200%. Each panel saves its own position and size. Disabled panels have previews, so the editor works outside Safari too. **Reset positions** restores the default layout.
 
 ## Warp reminders
 
@@ -88,13 +89,23 @@ Detection is adapted specifically from **CritterMod v0.9.0**, rather than its la
 
 ## Safari progress and capture counts
 
-The **Progress HUD** and **Missing Panel** default to on. **Show where** offers *Only in Safari*, *Safari and entrance* (default), or *Everywhere*. Progress lists observed party coverage and your unique species for all 37 critters and each biome. The missing panel lists unfinished species in your current biome.
+The **Progress HUD** and **Missing Panel** default to on. **Show where** offers *Only in Safari*, *Safari and entrance* (default), or *Everywhere*. Progress shows one **Collected** total for all 37 critters, with separate colored biome progress bars. The missing panel lists unfinished species in their rarity colors, quota progress where needed, and known unpunched Forest bee nests. Safari panels use translucent black backgrounds and white borders like the Miria tracker.
+
+The timer starts from loading into the Safari, including the boat. It continues through the center's **Critter Safari** area and all four biomes. Returning to **Torrhus Canyon** ends the run and freezes its timer; world changes or another island also end it. Briefly missing sidebar data does not end a run.
 
 **Count Unique Only** defaults to off: completion uses the actual v0.9.0 data quotas (Gemzie and Troodon: 3; Gazer: 4; other species: 1). Turn it on to complete each species with one catch. This changes completion and missing-species displays, never the raw catch counts.
 
-**Biome capture counts** defaults to off. Enable it for a panel listing all **9 Forest, 9 Cavern, 9 Icy or 10 Haunted species**, including zeros, in your current biome. `/sparkling catches` also opens a count screen with biome tabs. Counts **reset each Safari run**, remain when changing biomes within a run, and the last run can be reviewed after leaving.
+**Biome capture counts** defaults to off. Enable it for a matching panel listing all **9 Forest, 9 Cavern, 9 Icy or 10 Haunted species**, including zeros, in your current biome. `/sparkling catches` opens the same styled count panel with biome tabs, initially selecting the current or last visited biome. Tracking continues when the panel is off. Counts stay through biome/center changes, toggling the setting, and leaving the island; the last run remains available until a new Safari run starts. Run counts are kept for this Minecraft session.
 
-Each successful server `CAPTURE!` message adds one to **You** and **Party (seen)**. Each `LOOT SHARE!` message adds one to **Party (seen)**. A reward of multiple shards still represents one capture. Failed attempts, inventory transfers and quoted player chat do not count. Party totals include only captures this client observed; catches with no loot-share message are unavailable.
+Each successful server `CAPTURE!` or `LOOT SHARE!` message adds one to the same per-species capture count. The HUDs do not distinguish who caught it or store catcher identities. A reward of multiple shards still represents one capture. Failed attempts, inventory transfers and quoted player chat do not count. Only captures observed by this client are available.
+
+## Doomspiral and Wumpa personal bests
+
+Your own `CAPTURE! You caught a Doomspiral` and `CAPTURE! You caught a Wumpa` messages measure elapsed time from the start of the current Safari run. Each species has its own best time; only a faster capture replaces it. Loot-share messages never set a personal best.
+
+Best times save immediately as milliseconds in `config/sparkling-mutuals.properties`, under `pb.doomspiralMillis` and `pb.wumpaMillis`, and survive Minecraft restarts. They are separate from the per-run capture counts.
+
+Send **`!pb doom`** or **`!pb wumpa`** in party chat; capitalization does not matter and no API key is needed. The selected mod responder replies with its own saved best and player name, for example `JohnCEO's Doomspiral PB: 1:02.250`. If that responder has no best yet, it replies `Not recorded yet`. These commands use the same one-responder coordination as other party requests and are included in `!commands`.
 
 ## API setup and errors
 
@@ -123,7 +134,7 @@ On Windows, use `gradlew.bat build`. The build runs unit tests and puts the mod 
 
 The main source, including rendering mixins, is entirely Kotlin. Shared roster, parsing, configuration and HUD helpers reduce duplicated code; scans are throttled and never load chunks.
 
-Tests cover command parsing and responder elections, API errors, persisted defaults, warning settings, detection radius, sparkling-name matching, actual Hideyho MOB dialogue, styled buttons, capture parsing, quotas and per-run resets. Party coordination, click packets and Safari rendering should also be tested in Minecraft before release.
+Tests cover command parsing and responder elections, API errors, persisted defaults, warning settings, detection radius, sparkling-name matching, actual Hideyho MOB dialogue, styled buttons, capture parsing, quotas, boat/center/departure transitions, capture retention, HUD positioning and persistent personal bests. Party coordination, click packets and Safari rendering should also be tested in Minecraft before release.
 
 ## Credits
 
