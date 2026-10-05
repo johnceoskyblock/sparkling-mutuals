@@ -5,16 +5,16 @@ import net.johnceo.sparklingmutuals.api.ApiFailure
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.party.PartyManager
 import net.minecraft.client.Minecraft
-import net.minecraft.network.chat.Component
 import java.util.concurrent.Executors
+import java.util.concurrent.Future
 
 object PartyCommands {
-    private data class Pending(val request: PartyRequest, val roster: List<String>, val election: ResponderElection)
-    private data class Claim(val uuid: String, val time: Long)
-    private val claimPattern = Regex("""^\[SM] Checking ([a-f0-9]{12}) ([a-f0-9-]{36}): .+$""")
+    private data class Pending(val request: PartyRequest, val roster: List<String>, val election: ResponderElection,
+        var task: Future<*>? = null)
     private val pending = mutableMapOf<String, Pending>()
     private val recent = mutableMapOf<String, Long>()
-    private val claims = mutableMapOf<String, MutableList<Claim>>()
+    private val requests = mutableMapOf<String, PartyRequest>()
+    private val answered = mutableSetOf<String>()
     private val executor = Executors.newSingleThreadExecutor { Thread(it, "Sparkling Mutuals lookups").apply { isDaemon = true } }
 
     fun register() {
@@ -28,66 +28,65 @@ object PartyCommands {
         if (!ConfigManager.partyCommandsEnabled) return
         val chat = PartyChat.parse(text) ?: return
         val now = System.currentTimeMillis()
-        val claim = claimPattern.matchEntire(chat.body)
-        if (claim != null) {
-            val token = claim.groupValues[1]
-            val uuid = claim.groupValues[2]
-            val senderInfo = Minecraft.getInstance().connection?.getPlayerInfoIgnoreCase(chat.sender)
-            if (senderInfo != null && senderInfo.profile.id.toString() != uuid) return
-            // Buffer claims until our HMAPI party refresh finishes.
-            if (token in recent) {
-                claims.getOrPut(token) { mutableListOf() }.add(Claim(uuid, now))
-                pending[token]?.election?.observeClaim(uuid, now)
+        val senderUuid = Minecraft.getInstance().connection?.getPlayerInfoIgnoreCase(chat.sender)?.profile?.id?.toString()
+        // Also record replies arriving while HMAPI is still refreshing the party roster.
+        requests.forEach { (token, request) ->
+            if (request.command.matchesResponse(chat.body)) {
+                val state = pending[token]
+                if (state != null && senderUuid != null && senderUuid !in state.roster) return@forEach
+                state?.election?.observeResponse(senderUuid)
+                answered.add(token)
+                pending.remove(token)?.task?.cancel(false)
             }
-            return
         }
         val request = PartyCommand.fromChat(text) ?: return
         if (now - (recent[request.token] ?: 0) < 10_000) return
         recent[request.token] = now
-        claims.remove(request.token)
+        requests[request.token] = request
+        answered.remove(request.token)
+        pending.remove(request.token)?.task?.cancel(false)
         val client = Minecraft.getInstance()
         val connection = client.connection ?: return
         PartyManager.refreshPartyInfo {
-            if (client.connection !== connection || !ConfigManager.partyCommandsEnabled) return@refreshPartyInfo
+            if (client.connection !== connection || !ConfigManager.partyCommandsEnabled ||
+                request.token in answered || requests[request.token] !== request) return@refreshPartyInfo
             val roster = PartyManager.getMembers()
             val local = client.player?.uuid?.toString() ?: return@refreshPartyInfo
             if (local !in roster) return@refreshPartyInfo
             val election = ResponderElection(local, roster, System.currentTimeMillis())
-            claims[request.token]?.forEach { election.observeClaim(it.uuid, it.time) }
             pending[request.token] = Pending(request, roster, election)
         }
     }
 
     fun onClientTick(client: Minecraft) {
         if (client.player == null || client.connection == null) { reset(); return }
-        if (!ConfigManager.partyCommandsEnabled) { pending.clear(); return }
+        if (!ConfigManager.partyCommandsEnabled) { cancelPending(); return }
         val now = System.currentTimeMillis()
-        recent.entries.removeIf { now - it.value > 40_000 }
-        claims.keys.retainAll(recent.keys)
+        recent.entries.removeIf { now - it.value > 40_000 && it.key !in pending }
+        requests.keys.retainAll(recent.keys)
+        answered.retainAll(recent.keys)
         val iterator = pending.entries.iterator()
         while (iterator.hasNext()) {
             val (token, state) = iterator.next()
             if (state.election.expired(now) || state.roster.toSet() != PartyManager.getMembers().toSet()) {
+                state.task?.cancel(false)
                 iterator.remove(); continue
             }
-            if (state.election.shouldClaim(now)) {
-                val uuid = client.player!!.uuid.toString()
-                state.election.observeClaim(uuid, now)
-                client.player!!.connection.sendCommand("pc [SM] Checking $token $uuid: ${state.request.command.text}")
-            }
-            if (state.election.shouldRespond(now)) {
-                iterator.remove()
+            if (state.election.shouldStartLookup(now)) {
                 val connection = client.connection
                 val key = ConfigManager.apiKey
-                executor.execute {
+                state.task = executor.submit {
                     // Cache access and network calls stay on this single worker.
                     if (key != lastKey) { SafariLookup.clearCache(); lastKey = key }
                     val result = try { SafariLookup.run(state.request.command, state.roster) }
-                    catch (failure: ApiFailure) { "[SM] ${failure.message}" }
-                    catch (_: Exception) { "[SM] Lookup failed unexpectedly. Please try again." }
+                    catch (failure: ApiFailure) { state.request.command.failureResult(failure.message.orEmpty()) }
+                    catch (_: Exception) { state.request.command.failureResult("Lookup failed unexpectedly. Please try again.") }
                     client.execute {
-                        if (client.connection === connection && ConfigManager.partyCommandsEnabled &&
+                        if (pending[token] === state && state.election.canPublish(System.currentTimeMillis()) &&
+                            client.connection === connection && ConfigManager.partyCommandsEnabled &&
                             state.roster.toSet() == PartyManager.getMembers().toSet()) {
+                            pending.remove(token)
+                            answered.add(token)
                             client.player?.connection?.sendCommand("pc $result")
                         }
                     }
@@ -97,5 +96,9 @@ object PartyCommands {
     }
 
     private var lastKey = ""
-    fun reset() { pending.clear(); recent.clear(); claims.clear() }
+    private fun cancelPending() {
+        pending.values.forEach { it.task?.cancel(false) }
+        pending.clear()
+    }
+    fun reset() { cancelPending(); recent.clear(); requests.clear(); answered.clear() }
 }

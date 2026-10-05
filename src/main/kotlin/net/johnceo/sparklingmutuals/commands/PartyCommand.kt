@@ -15,6 +15,27 @@ data class PartyChat(val sender: String, val body: String) {
 enum class PartyCommandKind { MUTUALS, MISSING, TICKETS, HELP }
 
 data class PartyCommand(val kind: PartyCommandKind, val ign: String = "") {
+    private val failurePrefix: String get() = when (kind) {
+        PartyCommandKind.MUTUALS -> "Mutual Timesave Sparkling Critters: "
+        PartyCommandKind.MISSING -> "Missing Timesave Sparklings for $ign: "
+        PartyCommandKind.TICKETS -> "Safari Tickets for $ign: "
+        PartyCommandKind.HELP -> "Commands: "
+    }
+
+    fun failureResult(message: String): String = failurePrefix + message
+
+    fun matchesResponse(body: String): Boolean {
+        if (body.startsWith(failurePrefix, ignoreCase = true) && body.length > failurePrefix.length) return true
+        return when (kind) {
+            PartyCommandKind.TICKETS -> Regex(
+                "^${Regex.escape(ign)}: Basic \\(\\d+\\), Economy \\(\\d+\\), Premium \\(\\d+\\), First-Class \\(\\d+\\)$",
+                RegexOption.IGNORE_CASE
+            ).matches(body)
+            PartyCommandKind.HELP -> body.startsWith("[SM] Commands: ")
+            else -> false
+        }
+    }
+
     val text: String get() = when (kind) {
         PartyCommandKind.MUTUALS -> "!mutuals"
         PartyCommandKind.MISSING -> "!missing $ign"
