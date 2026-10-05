@@ -12,7 +12,7 @@ class HudLayout(private val defaultX: Float, private val defaultY: Float) {
     var x = defaultX
     var y = defaultY
     var scale = 1f
-        set(value) { field = if (value.isFinite()) value.coerceIn(.5f, 2f) else 1f }
+        set(value) { field = if (value.isFinite()) value.coerceIn(.15f, 2f) else 1f }
     fun bounds(screenWidth: Int, screenHeight: Int, panelWidth: Int, panelHeight: Int): HudBounds {
         val w = ceil(panelWidth * scale).toInt()
         val h = ceil(panelHeight * scale).toInt()
