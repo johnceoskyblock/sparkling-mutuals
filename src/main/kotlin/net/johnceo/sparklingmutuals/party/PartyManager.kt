@@ -5,11 +5,13 @@ import net.azureaaron.hmapi.network.HypixelNetworking
 import net.azureaaron.hmapi.network.packet.s2c.HelloS2CPacket
 import net.azureaaron.hmapi.network.packet.s2c.HypixelS2CPacket
 import net.azureaaron.hmapi.network.packet.v2.s2c.PartyInfoS2CPacket
+import net.minecraft.client.Minecraft
+import net.minecraft.network.chat.Component
 
 object PartyManager {
-
     private var partyMembers = emptyList<String>()
-    private var partyInfoCallback: (() -> Unit)? = null
+    private val callbacks = mutableListOf<() -> Unit>()
+    private var requestedAt = 0L
 
     fun init() {
         HypixelPacketEvents.HELLO.register(::handlePacket)
@@ -17,31 +19,41 @@ object PartyManager {
     }
 
     private fun handlePacket(packet: HypixelS2CPacket) {
-        when (packet) {
-            is HelloS2CPacket -> requestPartyInfo()
-            is PartyInfoS2CPacket -> onPartyInfoPacket(packet)
+        Minecraft.getInstance().execute {
+            when (packet) {
+                is HelloS2CPacket -> requestPartyInfo()
+                is PartyInfoS2CPacket -> {
+                    partyMembers = packet.members?.keys?.map { it.toString() } ?: emptyList()
+                    requestedAt = 0
+                    val ready = callbacks.toList()
+                    callbacks.clear()
+                    ready.forEach { it() }
+                }
+            }
         }
     }
 
-    private fun onPartyInfoPacket(packet: PartyInfoS2CPacket) {
-        partyMembers = packet.members
-            ?.map { it.key.toString() }
-            ?: emptyList()
-
-        println("PartyManager: Found ${partyMembers.size} party members.")
-
-        partyInfoCallback?.invoke()
-        partyInfoCallback = null
-    }
-
     fun requestPartyInfo() {
+        if (requestedAt != 0L) return
+        requestedAt = System.currentTimeMillis()
         HypixelNetworking.sendPartyInfoC2SPacket(2)
     }
 
     fun refreshPartyInfo(onUpdated: () -> Unit) {
-        partyInfoCallback = onUpdated
+        callbacks.add(onUpdated)
         requestPartyInfo()
     }
 
+    fun onClientTick(client: Minecraft) {
+        if (client.player == null || client.connection == null) { reset(); return }
+        if (requestedAt != 0L && System.currentTimeMillis() - requestedAt > 5000) {
+            requestedAt = 0
+            if (callbacks.isNotEmpty()) client.player?.sendSystemMessage(
+                Component.literal("[Sparkling Mutuals] Party information timed out. Please try the command again."))
+            callbacks.clear()
+        }
+    }
+
+    fun reset() { partyMembers = emptyList(); callbacks.clear(); requestedAt = 0 }
     fun getMembers(): List<String> = partyMembers
 }

@@ -7,6 +7,8 @@ plugins {
 }
 
 repositories {
+	mavenCentral()
+	maven { url = 'https://maven.notenoughupdates.org/releases' }
 	exclusiveContent {
 		forRepository {
 			maven {
@@ -43,8 +45,16 @@ dependencies {
 
 	// Hypixel Mod API
 	implementation(include("net.azureaaron:hm-api:1.0.3+26.1"))
+	implementation(include('org.notenoughupdates.moulconfig:modern-26.1:4.7.2'))
 
 	runtimeOnly("me.djtheredstoner:DevAuth-fabric:${property("devauth.version")}")
+	testImplementation platform('org.junit:junit-bom:5.11.4')
+	testImplementation 'org.junit.jupiter:junit-jupiter'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+	useJUnitPlatform()
 }
 
 processResources {
@@ -77,12 +87,17 @@ java {
 }
 
 jar {
+	from('licenses') { into 'licenses' }
 	def projectName = project.name
 	inputs.property "projectName", projectName
 
 	from("LICENSE") {
 		rename { "${it}_$projectName"}
 	}
+}
+
+tasks.named('sourcesJar') {
+	from('licenses') { into 'licenses' }
 }
 
 // configure the maven publication

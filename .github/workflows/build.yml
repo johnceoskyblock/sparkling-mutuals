@@ -6,6 +6,9 @@
 name: build
 on: [pull_request, push]
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-24.04
@@ -28,3 +31,42 @@ jobs:
         with:
           name: Artifacts
           path: build/libs/
+          if-no-files-found: error
+
+  publish-review-build:
+    name: Publish downloadable review JAR
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/features/safari-config-party-commands'
+    runs-on: ubuntu-24.04
+    permissions:
+      actions: read
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RUN_ID: ${{ github.run_id }}
+    steps:
+      - name: Download tested build artifacts
+        run: gh run download "$RUN_ID" --repo "$GITHUB_REPOSITORY" --name Artifacts --dir dist
+      - name: Publish review prerelease
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="review-${GITHUB_SHA:0:7}"
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            if [[ "$(gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json isDraft --jq '.isDraft')" == true ]]; then
+              gh release upload "$tag" dist/*.jar --repo "$GITHUB_REPOSITORY" --clobber
+              gh release edit "$tag" --repo "$GITHUB_REPOSITORY" --draft=false --prerelease --latest=false
+              exit 0
+            fi
+            jars=$(gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json assets --jq '[.assets[].name | select(endswith(".jar") and (endswith("-sources.jar") | not))] | length')
+            if [[ "$jars" == 0 ]]; then
+              echo "The existing review release has no downloadable mod JAR." >&2
+              exit 1
+            fi
+            echo "A downloadable review release already exists for this commit."
+            exit 0
+          fi
+          printf 'Review build of commit %s from the unmerged Safari branch.\n\nDownload sparkling-mutuals-1.0.0.jar to install the mod; the sources JAR contains its source code.\nBuilt and tested by GitHub Actions.\n' "$GITHUB_SHA" > release-notes.md
+          gh release create "$tag" dist/*.jar --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" --title "Safari review build ${GITHUB_SHA:0:7}" \
+            --notes-file release-notes.md --prerelease --latest=false

@@ -14,7 +14,23 @@ object SkyblockSidebar {
             ?.let { stripFormatting(it.displayName.string).trim() }
             ?: ""
 
-    fun lines(client: Minecraft): List<String> {
+    fun lines(client: Minecraft): List<String> = rawLines(client).map { stripFormatting(it).trim() }.filter(String::isNotEmpty)
+
+    /** Preserve Hypixel's colored area row before private glyphs/formatting are stripped. */
+    fun areaName(client: Minecraft): String? {
+        val areaPattern = Regex("\\s*§.(.) §.(.*)")
+        rawLines(client).forEach { row ->
+            val match = areaPattern.matchEntire(row) ?: return@forEach
+            if (match.groupValues[1] !in listOf("♲", "☀")) {
+                return net.johnceo.sparklingmutuals.safari.SafariRules.strip(match.groupValues[2])
+            }
+        }
+        return client.connection?.onlinePlayers?.mapNotNull { it.tabListDisplayName?.string }
+            ?.map(net.johnceo.sparklingmutuals.safari.SafariRules::strip)
+            ?.firstOrNull { it.startsWith("Area: ") }?.substringAfter("Area: ")
+    }
+
+    private fun rawLines(client: Minecraft): List<String> {
         val objective = sidebar(client) ?: return emptyList()
         val level = client.level ?: return emptyList()
         val scoreboard = level.scoreboard
@@ -30,7 +46,7 @@ object SkyblockSidebar {
                     entry.ownerName()
                 }
 
-                stripFormatting(rendered.string).trim()
+                rendered.string
             }
             .filter(String::isNotEmpty)
     }

@@ -1,6 +1,7 @@
 package net.johnceo.sparklingmutuals.contest
 
 import net.johnceo.sparklingmutuals.config.ContestConfig
+import net.johnceo.sparklingmutuals.config.AppearanceConfig
 import net.johnceo.sparklingmutuals.hud.SkyblockSidebar
 import net.minecraft.client.DeltaTracker
 import net.minecraft.client.Minecraft
@@ -22,6 +23,8 @@ object ContestHud {
         val client = Minecraft.getInstance()
 
         if (client.player == null || client.level == null) return
+        if (client.screen is ContestGui) return
+        if (!ContestConfig.trackContest) return
         if (!ContestTracker.isActive()) return
         if (!SkyblockSidebar.inSkyblock(client)) return
 
@@ -54,14 +57,7 @@ object ContestHud {
         graphics.pose().translate(x.toFloat(), y.toFloat())
         graphics.pose().scale(scale, scale)
 
-        val backgroundColor = 0xCC000000.toInt()
-        val borderColor = 0xFFFFFFFF.toInt()
-
-        graphics.fill(0, 0, WIDTH, HEIGHT, backgroundColor)
-        graphics.fill(0, 0, WIDTH, 1, borderColor)
-        graphics.fill(0, HEIGHT - 1, WIDTH, HEIGHT, borderColor)
-        graphics.fill(0, 0, 1, HEIGHT, borderColor)
-        graphics.fill(WIDTH - 1, 0, WIDTH, HEIGHT, borderColor)
+        AppearanceConfig.panels.getValue("miria").draw(graphics, WIDTH, HEIGHT)
 
         graphics.text(
             client.font,
