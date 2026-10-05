@@ -6,7 +6,7 @@ A Fabric client mod for Hypixel SkyBlock Safari: mutual sparkling critters, miss
 
 Run `/sparkling` or `/sparkling config` to open the **MoulConfig** settings screen, using the same library as CritterMod. Categories, search, toggles and sliders use its standard layout with forest green panels, sand text and gold accents. The API key opens a separate masked editor.
 
-- **Party commands:** toggle automatic responses and view command help locally.
+- **Party commands:** toggle automatic responses and view command help locally. **Show help** closes settings and opens chat with colored sections, one described command per line, and an explanation of `<IGN>`. This help is local to you.
 - **Miria contest:** choose warning times, toggle the HUD and titles, adjust warning sound and volume, and open the HUD editor.
 - **Warp reminders:** toggle reminders and set their delay, which defaults to **25 seconds**.
 - **Safari helpers:** toggle Hideyho quest clicks, Haunted painting hiding, shiny detection, sparkling alerts/party announcements, bee-nest highlights and darkness removal.
@@ -89,19 +89,21 @@ Detection is adapted specifically from **CritterMod v0.9.0**, rather than its la
 
 ## Safari progress and capture counts
 
-The **Progress HUD** and **Missing Panel** default to on. **Show where** offers *Only in Safari*, *Safari and entrance* (default), or *Everywhere*. Progress shows one **Collected** total for all 37 critters, with separate colored biome progress bars. The missing panel lists unfinished species in their rarity colors, quota progress where needed, and known unpunched Forest bee nests. Safari panels use translucent black backgrounds and white borders like the Miria tracker.
+The **Progress HUD** and **Missing Panel** default to on. **Show where** controls the Progress HUD: *Only in Safari*, *Safari and entrance* (default), or *Everywhere*. *Safari and entrance* shows progress inside Safari and at the named **Critter Safari Entrance** area in Torrhus Canyon; it does not show elsewhere in Torrhus Canyon. Progress shows one **Collected** total for all 37 critters, with separate colored biome progress bars. Safari panels use translucent black backgrounds and white borders like the Miria tracker.
+
+The **Missing Panel** and **Biome capture counts HUD** appear only during an active run inside **Forest, Cavern, Icy or Haunted**. They disappear in Safari's middle zone, at the entrance, and outside a run, regardless of **Show where**. Missing species use their rarity colors, quota progress where needed, and a known unpunched Forest bee-nest count. Hiding these HUDs never erases captures or ends the timer.
 
 The timer starts from loading into the Safari, including the boat. It continues through the center's **Critter Safari** area and all four biomes. Returning to **Torrhus Canyon** ends the run and freezes its timer; world changes or another island also end it. Briefly missing sidebar data does not end a run.
 
 **Count Unique Only** defaults to off: completion uses the actual v0.9.0 data quotas (Gemzie and Troodon: 3; Gazer: 4; other species: 1). Turn it on to complete each species with one catch. This changes completion and missing-species displays, never the raw catch counts.
 
-**Biome capture counts** defaults to off. Enable it for a matching panel listing all **9 Forest, 9 Cavern, 9 Icy or 10 Haunted species**, including zeros, in your current biome. `/sparkling catches` opens the same styled count panel with biome tabs, initially selecting the current or last visited biome. Tracking continues when the panel is off. Counts stay through biome/center changes, toggling the setting, and leaving the island; the last run remains available until a new Safari run starts. Run counts are kept for this Minecraft session.
+**Biome capture counts** defaults to off. Enable it for a matching panel listing all **9 Forest, 9 Cavern, 9 Icy or 10 Haunted species**, including zeros, while inside that biome. `/sparkling catches` opens the same styled count panel with biome tabs, initially selecting the current or last visited biome; this screen remains available at the center and after leaving. Tracking continues when the HUD is off or hidden. Counts stay through biome/center changes, toggling the setting, and leaving the island; the last run remains available until a new Safari run starts. Run counts are kept for this Minecraft session.
 
 Each successful server `CAPTURE!` or `LOOT SHARE!` message adds one to the same per-species capture count. The HUDs do not distinguish who caught it or store catcher identities. A reward of multiple shards still represents one capture. Failed attempts, inventory transfers and quoted player chat do not count. Only captures observed by this client are available.
 
 ## Doomspiral and Wumpa personal bests
 
-Your own `CAPTURE! You caught a Doomspiral` and `CAPTURE! You caught a Wumpa` messages measure elapsed time from the start of the current Safari run. Each species has its own best time; only a faster capture replaces it. Loot-share messages never set a personal best.
+Your own `CAPTURE! You caught a Doomspiral` and `CAPTURE! You caught a Wumpa` messages measure elapsed time from the start of the current Safari run. Each species has its own best time; only a faster capture replaces it. A new best saves immediately and sends a **local chat notification**, for example `[SM] New Doomspiral PB: 1:02.250!`. Equal or slower captures do not notify. Loot-share rewards, other players' captures and quoted player chat never set or announce your PB.
 
 Best times save immediately as milliseconds in `config/sparkling-mutuals.properties`, under `pb.doomspiralMillis` and `pb.wumpaMillis`, and survive Minecraft restarts. They are separate from the per-run capture counts.
 
