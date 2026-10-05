@@ -7,6 +7,7 @@ import io.github.notenoughupdates.moulconfig.processor.ProcessedCategory
 import net.johnceo.sparklingmutuals.alerts.AlertManager
 import net.johnceo.sparklingmutuals.commands.*
 import net.johnceo.sparklingmutuals.contest.ContestGui
+import net.johnceo.sparklingmutuals.safari.CatchCountScreen
 import net.minecraft.client.Minecraft
 import net.minecraft.network.chat.Component
 import net.minecraft.resources.Identifier
@@ -17,6 +18,7 @@ class SafariSettings : Config() {
     @JvmField @Category(name = "Miria contest", desc = "HUD and warnings") val miria = Miria()
     @JvmField @Category(name = "Warp reminders", desc = "Hotspot reminders") val warp = Warp()
     @JvmField @Category(name = "Safari helpers", desc = "Paintings and sparklings") val safari = Safari()
+    @JvmField @Category(name = "Safari progress", desc = "Per-run captures and missing species") val tracking = Tracking()
     @JvmField @Category(name = "API key", desc = "Profile lookup authentication") val api = Api()
 
     class Party {
@@ -58,12 +60,35 @@ class SafariSettings : Config() {
         @ConfigEditorButton(runnableId = 5, buttonText = "Reset to 25s") var reset = false
     }
     class Safari {
-        @JvmField @ConfigOption(name = "Hideyho quest clicks", desc = "With chat open, left-click anywhere to accept Hideyho's current Sure option. One click, one acceptance. Disabled by default.")
+        @JvmField @ConfigOption(name = "Hideyho quest clicks", desc = "After [MOB] Hideyho offers Sure, click anywhere with chat open to accept that button's server action. One click, one acceptance. Off by default.")
         @ConfigEditorBoolean var hideyho = ConfigManager.hideyhoQuestClicks
         @JvmField @ConfigOption(name = "Hide Haunted paintings", desc = "Hide paintings only in the Haunted Safari area. They remain in the world and hittable.")
         @ConfigEditorBoolean var paintings = ConfigManager.hideHauntedPaintings
         @JvmField @ConfigOption(name = "Nearby shiny detection", desc = "Gold highlights and name/distance within 80 blocks in your biome. Uses CritterMod 0.9.0 loaded nametags.")
         @ConfigEditorBoolean var shiny = ConfigManager.shinyDetection
+        @JvmField @ConfigOption(name = "Highlight bee nests", desc = "Forest nests show through terrain with name/distance. A nest you punch is hidden until the next run; other players' punches cannot be detected.")
+        @ConfigEditorBoolean var nests = ConfigManager.highlightBeeNests
+        @JvmField @ConfigOption(name = "Remove darkness", desc = "Remove the local darkness effect while inside Safari.")
+        @ConfigEditorBoolean var darkness = ConfigManager.removeDarkness
+        @JvmField @ConfigOption(name = "Sparkling alert", desc = "Show an on-screen alert once per sparkling critter each run. Loaded critters within 80 blocks in your biome.")
+        @ConfigEditorBoolean var alert = ConfigManager.sparklingAlert
+        @JvmField @ConfigOption(name = "Announce sparklings to party", desc = "Send each detected sparkling's name, biome and coordinates to party chat once per run. Messages are paced.")
+        @ConfigEditorBoolean var announce = ConfigManager.sparklingPartyAnnouncer
+    }
+    class Tracking {
+        @JvmField @ConfigOption(name = "Progress HUD", desc = "Party coverage and your unique species across all four biomes. Enabled by default.")
+        @ConfigEditorBoolean var progress = ConfigManager.progressHud
+        @JvmField @ConfigOption(name = "Show where", desc = "Controls the progress, missing and capture-count HUD panels.")
+        @ConfigEditorDropdown(values = ["Only in Safari", "Safari and entrance", "Everywhere"])
+        var where = ConfigManager.showWhere
+        @JvmField @ConfigOption(name = "Count Unique Only", desc = "One catch completes a species. Off: require v0.9.0 quotas (Gemzie/Troodon 3, Gazer 4). Raw capture totals are unaffected.")
+        @ConfigEditorBoolean var unique = ConfigManager.countUniqueOnly
+        @JvmField @ConfigOption(name = "Missing panel", desc = "List species still needed in your current biome using captures observed in chat. On by default.")
+        @ConfigEditorBoolean var missing = ConfigManager.missingPanel
+        @JvmField @ConfigOption(name = "Biome capture counts", desc = "List all 9 or 10 species in your current biome and their You/Party totals. One successful message is one capture, regardless of shards. Resets each run. Off by default.")
+        @ConfigEditorBoolean var counts = ConfigManager.catchCountPanel
+        @JvmField @ConfigOption(name = "Capture count screen", desc = "Review the current or last run, including zero counts. Also available with /sparkling catches.")
+        @ConfigEditorButton(runnableId = 8, buttonText = "View captures") var view = false
     }
     class Api {
         @JvmField @ConfigOption(name = "Hypixel API key", desc = "Open a masked key editor. Missing/invalid keys, unavailable data and request limits have distinct errors.")
@@ -85,9 +110,10 @@ class SafariSettings : Config() {
             5 -> { warp.delay = "25"; saveDelay() }
             6 -> saveDelay()
             7 -> saveSound()
+            8 -> { apply(); client.execute { client.setScreen(CatchCountScreen(client.screen)) } }
         }
     }
-    override fun isValidRunnable(id: Int) = id in 1..7
+    override fun isValidRunnable(id: Int) = id in 1..8
     private fun saveDelay() {
         val seconds = warp.delay.trim().toIntOrNull()
         if (seconds == null || seconds !in 1..86400) feedback("Enter a delay from 1 to 86400 seconds.")
@@ -101,13 +127,15 @@ class SafariSettings : Config() {
     fun saveTextFields() { saveDelay(); saveSound() }
     fun apply() {
         if (warp.enabled != ConfigManager.warpAlertsEnabled) AlertManager.toggleAlert()
-        val generalChanged = party.enabled != ConfigManager.partyCommandsEnabled ||
-            safari.paintings != ConfigManager.hideHauntedPaintings || safari.shiny != ConfigManager.shinyDetection ||
-            safari.hideyho != ConfigManager.hideyhoQuestClicks
-        ConfigManager.partyCommandsEnabled = party.enabled
-        ConfigManager.hideHauntedPaintings = safari.paintings
-        ConfigManager.shinyDetection = safari.shiny
-        ConfigManager.hideyhoQuestClicks = safari.hideyho
+        val changes = listOf(ConfigManager::partyCommandsEnabled to party.enabled, ConfigManager::hideHauntedPaintings to safari.paintings,
+            ConfigManager::shinyDetection to safari.shiny, ConfigManager::hideyhoQuestClicks to safari.hideyho,
+            ConfigManager::progressHud to tracking.progress, ConfigManager::countUniqueOnly to tracking.unique,
+            ConfigManager::missingPanel to tracking.missing, ConfigManager::catchCountPanel to tracking.counts,
+            ConfigManager::highlightBeeNests to safari.nests, ConfigManager::removeDarkness to safari.darkness,
+            ConfigManager::sparklingAlert to safari.alert, ConfigManager::sparklingPartyAnnouncer to safari.announce)
+        val generalChanged = changes.any { (property, value) -> property.get() != value } || ConfigManager.showWhere != tracking.where
+        changes.forEach { (property, value) -> property.set(value) }
+        ConfigManager.showWhere = tracking.where.coerceIn(0, 2)
         if (generalChanged) ConfigManager.save()
         val warnings = listOfNotNull(5.takeIf { miria.five }, 3.takeIf { miria.three }, 1.takeIf { miria.one })
         val contestChanged = ContestConfig.trackContest != miria.enabled || ContestConfig.contestWarnTitle != miria.titles ||

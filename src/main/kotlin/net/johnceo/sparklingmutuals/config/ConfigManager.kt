@@ -13,30 +13,38 @@ object ConfigManager {
     var hideyhoQuestClicks = false
     var hideHauntedPaintings = true
     var shinyDetection = true
+    var progressHud = true
+    var countUniqueOnly = false
+    var missingPanel = true
+    var highlightBeeNests = true
+    var removeDarkness = true
+    var sparklingAlert = true
+    var sparklingPartyAnnouncer = true
+    var catchCountPanel = false
+    var showWhere = 1
+    private val flags = mapOf(::partyCommandsEnabled to true, ::warpAlertsEnabled to false,
+        ::hideyhoQuestClicks to false, ::hideHauntedPaintings to true, ::shinyDetection to true,
+        ::progressHud to true, ::countUniqueOnly to false, ::missingPanel to true,
+        ::highlightBeeNests to true, ::removeDarkness to true, ::sparklingAlert to true,
+        ::sparklingPartyAnnouncer to true, ::catchCountPanel to false)
 
     fun init(configDirectory: Path) {
         configPath = configDirectory.resolve("sparkling-mutuals.properties")
         val properties = Properties()
         if (Files.exists(configPath)) Files.newInputStream(configPath).use(properties::load)
         apiKey = properties.getProperty("apiKey", "")
-        partyCommandsEnabled = properties.getProperty("partyCommandsEnabled", "true").toBoolean()
-        warpAlertsEnabled = properties.getProperty("warpAlertsEnabled", "false").toBoolean()
+        flags.forEach { (property, default) -> property.set(properties.getProperty(property.name)?.toBooleanStrictOrNull() ?: default) }
         warpDelaySeconds = properties.getProperty("warpDelaySeconds", "25").toIntOrNull()?.coerceIn(1, 86400) ?: 25
-        hideyhoQuestClicks = properties.getProperty("hideyhoQuestClicks", "false").toBoolean()
-        hideHauntedPaintings = properties.getProperty("hideHauntedPaintings", "true").toBoolean()
-        shinyDetection = properties.getProperty("shinyDetection", "true").toBoolean()
+        showWhere = properties.getProperty("showWhere")?.toIntOrNull()?.takeIf { it in 0..2 } ?: 1
     }
 
     fun save() {
         Files.createDirectories(configPath.parent)
         Properties().apply {
             setProperty("apiKey", apiKey)
-            setProperty("partyCommandsEnabled", partyCommandsEnabled.toString())
-            setProperty("warpAlertsEnabled", warpAlertsEnabled.toString())
+            flags.forEach { (property, _) -> setProperty(property.name, property.get().toString()) }
             setProperty("warpDelaySeconds", warpDelaySeconds.toString())
-            setProperty("hideyhoQuestClicks", hideyhoQuestClicks.toString())
-            setProperty("hideHauntedPaintings", hideHauntedPaintings.toString())
-            setProperty("shinyDetection", shinyDetection.toString())
+            setProperty("showWhere", showWhere.coerceIn(0, 2).toString())
             Files.newOutputStream(configPath).use { store(it, "Sparkling Mutuals configuration") }
         }
     }
