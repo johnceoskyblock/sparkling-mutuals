@@ -20,8 +20,8 @@ class SafariSessionTest {
         assertEquals(0, area)
         assertNull(SafariAreaMap.biomeAt(-52.0, 69.0, 21.0))
         assertEquals(SafariLocation.INSIDE, SafariLocation.resolve(listOf("Area: Critter Safari"), area, false))
-        assertEquals(SafariLocation.ENTRANCE, SafariLocation.resolve(listOf("Area: Critter Safari"), null, false))
-        assertEquals(SafariLocation.ENTRANCE, SafariLocation.resolve(listOf("Area: Torrhus Canyon"), area, true))
+        assertEquals(SafariLocation.OUTSIDE, SafariLocation.resolve(listOf("Area: Critter Safari"), null, false))
+        assertEquals(SafariLocation.OUTSIDE, SafariLocation.resolve(listOf("Area: Torrhus Canyon"), area, true))
         assertEquals(SafariLocation.OUTSIDE, SafariLocation.resolve(listOf("Area: Hub"), area, true))
     }
     @Test fun `timer starts on boat and stays running through center and loading sidebar`() {

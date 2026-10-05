@@ -7,6 +7,18 @@ import org.junit.jupiter.api.Test
 import java.util.Properties
 
 class SafariPersonalBestTest {
+    @Test fun `new best notice is only produced for your own faster capture`() {
+        val bests = SafariPersonalBests()
+        val run = SafariRun(1000)
+        assertNull(bests.newBest("LOOT SHARE! You received a Doomspiral Shard from Other catching a Doomspiral!", run, 2000))
+        assertNull(bests.newBest("Party > Other: CAPTURE! You caught a Wumpa!", run, 2000))
+        assertEquals("[SM] New Doomspiral PB: 1:01.000!", bests.newBest("CAPTURE! You caught a Doomspiral!", run, 62000))
+        assertNull(bests.newBest("CAPTURE! You caught a Doomspiral!", run, 62000))
+        assertNull(bests.newBest("CAPTURE! You caught a Doomspiral!", run, 63000))
+        assertEquals("[SM] New Wumpa PB: 1:02.000!", bests.newBest("CAPTURE! You caught a Wumpa!", run, 63000))
+        assertEquals(61000L, bests.time("Doomspiral"))
+        assertEquals(62000L, bests.time("Wumpa"))
+    }
     @Test fun `only own exact successful captures set independent personal bests`() {
         val bests = SafariPersonalBests()
         val run = SafariRun(1000)
