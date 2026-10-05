@@ -153,6 +153,8 @@ Lookups distinguish a missing key, an invalid key, a request limit, unavailable 
 
 ## Installation
 
+Download the mod JAR from [GitHub Releases](https://github.com/johnceoskyblock/sparkling-mutuals/releases). **Safari review build** prereleases contain changes from the unmerged review branch. Each successful push build on that branch publishes a separate prerelease with the tested mod and source JARs. The same files are also available under **Artifacts** on the corresponding GitHub Actions run. If GitHub runners are unavailable, a locally built and tested JAR can be attached to the review prerelease; its release notes identify that build method.
+
 Requires Minecraft **26.1.2**, Java **25**, Fabric Loader **0.19.5 or newer**, Fabric API and Fabric Language Kotlin. HMAPI and MoulConfig are included in the built mod JAR.
 
 1. Install Fabric and the dependencies for Minecraft 26.1.2.
