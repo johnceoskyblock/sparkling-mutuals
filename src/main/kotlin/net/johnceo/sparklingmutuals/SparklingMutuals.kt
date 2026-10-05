@@ -2,6 +2,7 @@ package net.johnceo.sparklingmutuals
 
 import net.fabricmc.api.ModInitializer
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements
 import net.fabricmc.loader.api.FabricLoader
@@ -12,6 +13,8 @@ import net.johnceo.sparklingmutuals.config.ContestConfig
 import net.johnceo.sparklingmutuals.contest.ContestHud
 import net.johnceo.sparklingmutuals.contest.ContestTracker
 import net.johnceo.sparklingmutuals.party.PartyManager
+import net.johnceo.sparklingmutuals.safari.SafariAssist
+import net.johnceo.sparklingmutuals.safari.HideyhoQuest
 import net.minecraft.resources.Identifier
 import org.slf4j.LoggerFactory
 
@@ -29,25 +32,37 @@ object SparklingMutuals : ModInitializer {
 		ConfigManager.init(configDirectory)
 		ContestConfig.init(configDirectory)
 
-		MutualsCommand.register()
-		TicketsCommand.register()
-		MissingCommand.register()
+        PartyCommands.register()
 		ApiKeyCommand.register()
 		SparklingCommand.register()
 		AlertCommand.register()
 
 		PartyManager.init()
 		AlertManager.onInitialize()
+        HideyhoQuest.register()
 
-		ClientTickEvents.END_CLIENT_TICK.register { client ->
-			ContestTracker.onClientTick(client)
-		}
+        ClientTickEvents.END_CLIENT_TICK.register { client ->
+            PartyManager.onClientTick(client)
+            PartyCommands.onClientTick(client)
+            ContestTracker.onClientTick(client)
+            SafariAssist.onClientTick(client)
+            HideyhoQuest.onClientTick(client)
+        }
+
+        ClientPlayConnectionEvents.DISCONNECT.register { _, _ ->
+            PartyCommands.reset()
+            PartyManager.reset()
+            AlertManager.cancelPendingAlert()
+            SafariAssist.reset()
+            HideyhoQuest.reset()
+        }
 
 		HudElementRegistry.attachElementBefore(
 			VanillaHudElements.CHAT,
 			id("contest_hud")
 		) { graphics, deltaTracker ->
 			ContestHud.render(graphics, deltaTracker)
+			SafariAssist.render(graphics)
 		}
 	}
 
