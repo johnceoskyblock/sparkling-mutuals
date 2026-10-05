@@ -41,6 +41,8 @@ object SparklingMutuals : ModInitializer {
         HideyhoQuest.register()
         SafariTracking.register()
         BeeNests.register()
+        SafariEsp.register()
+        ClientTickEvents.START_CLIENT_TICK.register(AutoClicker::tick)
 
         ClientTickEvents.END_CLIENT_TICK.register { client ->
             PartyManager.onClientTick(client)
@@ -49,6 +51,7 @@ object SparklingMutuals : ModInitializer {
             SafariAssist.onClientTick(client)
             SafariTracking.onClientTick(client)
             BeeNests.tick(client)
+            SafariEsp.tick(client)
             HideyhoQuest.onClientTick(client)
         }
 
@@ -59,6 +62,8 @@ object SparklingMutuals : ModInitializer {
             SafariAssist.reset()
             HideyhoQuest.reset()
             SafariTracking.finish()
+            SafariEsp.reset()
+            AutoClicker.reset()
         }
 
 		HudElementRegistry.attachElementBefore(
