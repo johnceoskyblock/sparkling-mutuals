@@ -47,10 +47,20 @@ data class SafariCatch(val critter: SafariCritter) {
     }
 }
 class SafariRun(val startedAt: Long) {
+    var brokenMounds = 0
+        private set
+    var rockmiteMounds = 0
+        private set
     var endedAt: Long? = null
     var lastBiome: SafariBiome? = null
     private val counts = mutableMapOf<String, Int>()
     fun record(catch: SafariCatch) { counts.merge(catch.critter.name, 1, Int::plus) }
+    fun recordMound(raw: String): Boolean {
+        val found = SafariMounds.outcome(raw) ?: return false
+        brokenMounds++
+        if (found) rockmiteMounds++
+        return true
+    }
     fun count(name: String) = counts[name] ?: 0
     fun elapsed(now: Long) = ((endedAt ?: now) - startedAt).coerceAtLeast(0)
     fun complete(critter: SafariCritter, unique: Boolean) = count(critter.name) >= critter.required(unique)

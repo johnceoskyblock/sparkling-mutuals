@@ -1,6 +1,8 @@
 package net.johnceo.sparklingmutuals.safari
 
 import net.johnceo.sparklingmutuals.config.ConfigManager
+import net.johnceo.sparklingmutuals.config.AppearanceConfig
+import net.johnceo.sparklingmutuals.config.SafariEspConfig
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.core.BlockPos
@@ -40,10 +42,13 @@ object SparklingEncounters {
         val client = Minecraft.getInstance()
         val alpha = (255 * (remaining / 1200.0).coerceAtMost(1.0)).toInt()
         val y = client.window.guiScaledHeight / 3
-        graphics.fill(0, y - 8, client.window.guiScaledWidth, y + 48, ((alpha / 5) shl 24) or 0xE3BB67)
+        graphics.pose().pushMatrix(); graphics.pose().translate(0f, (y - 8).toFloat())
+        AppearanceConfig.panels.getValue("alert").draw(graphics, client.window.guiScaledWidth, 56)
+        graphics.pose().popMatrix()
         listOf("SPARKLING!", name, where).forEachIndexed { index, line ->
             graphics.centeredText(client.font, net.minecraft.network.chat.Component.literal(line),
-                client.window.guiScaledWidth / 2, y + index * 14, (alpha shl 24) or 0xFFD700)
+                client.window.guiScaledWidth / 2, y + index * 14,
+                (alpha shl 24) or (SafariEspConfig.rgb(AppearanceConfig.sparklingColor) and 0xFFFFFF))
         }
     }
     fun leave() { queue.clear(); banner = null }

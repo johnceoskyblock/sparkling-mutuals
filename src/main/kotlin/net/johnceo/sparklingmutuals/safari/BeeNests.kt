@@ -8,6 +8,8 @@ import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents
 import net.fabricmc.fabric.api.event.player.AttackBlockCallback
 import net.johnceo.sparklingmutuals.SparklingMutuals
 import net.johnceo.sparklingmutuals.config.ConfigManager
+import net.johnceo.sparklingmutuals.config.AppearanceConfig
+import net.johnceo.sparklingmutuals.config.SafariEspConfig
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.Font
 import net.minecraft.client.renderer.RenderPipelines
@@ -45,7 +47,7 @@ object BeeNests {
         ticks = 0
         val level = client.level ?: return
         val centre = client.player?.blockPosition() ?: return
-        if (!(ConfigManager.highlightBeeNests || ConfigManager.missingPanel) || SafariAssist.biome != SafariBiome.FOREST) return
+        if (!(ConfigManager.highlightBeeNests || ConfigManager.missingPanel && ConfigManager.showBeeNests) || SafariAssist.biome != SafariBiome.FOREST) return
         for (x in ((centre.x - 24) shr 4)..((centre.x + 24) shr 4)) for (z in ((centre.z - 24) shr 4)..((centre.z + 24) shr 4)) {
             val chunk = level.getChunk(x, z, ChunkStatus.FULL, false) as? LevelChunk ?: continue
             chunk.sections.forEachIndexed { index, section ->
@@ -65,13 +67,19 @@ object BeeNests {
     private fun render(context: LevelRenderContext) {
         val client = Minecraft.getInstance()
         val level = client.level ?: return
-        if (client.player == null || client.options.hideGui || !ConfigManager.highlightBeeNests || SafariAssist.biome != SafariBiome.FOREST) return
+        if (client.player == null || client.options.hideGui || !SafariAssist.inSafari) return
         val camera = client.gameRenderer.mainCamera.position()
         val poses = context.poseStack()
         val buffers = context.bufferSource()
         val vertices = buffers.getBuffer(lines)
-        val nests = known.filter { it !in punched && level.isLoaded(it) && it.distToCenterSqr(camera) < 40000 }
-        for (pos in nests) {
+        val markers = when {
+            SafariAssist.biome == SafariBiome.FOREST && ConfigManager.highlightBeeNests ->
+                known.filter { it !in punched }.map { Triple(it, "Nest", SafariEspConfig.rgb(AppearanceConfig.nestColor)) }
+            SafariAssist.biome == SafariBiome.CAVERN && ConfigManager.highlightSnooperWalls ->
+                SafariStructures.intactWalls.map { Triple(it, "Snooper wall", SafariEspConfig.rgb(AppearanceConfig.snooperColor)) }
+            else -> emptyList()
+        }.filter { level.isLoaded(it.first) && !level.getBlockState(it.first).isAir && it.first.distToCenterSqr(camera) < 40000 }
+        for ((pos, _, color) in markers) {
             poses.pushPose(); poses.translate(pos.x - camera.x, pos.y - camera.y, pos.z - camera.z)
             val pose = poses.last()
             corners.forEachIndexed { i, a ->
@@ -80,7 +88,7 @@ object BeeNests {
                     val axis = if (bit == 1) 0 else if (bit == 2) 1 else 2
                     repeat(2) { endpoint ->
                         val point = if (endpoint == 0) a else b
-                        vertices.addVertex(pose, point[0], point[1], point[2]).setColor(0xFF55FF55.toInt())
+                        vertices.addVertex(pose, point[0], point[1], point[2]).setColor(color)
                             .setNormal(pose, if (axis == 0) 1f else 0f, if (axis == 1) 1f else 0f, if (axis == 2) 1f else 0f).setLineWidth(3f)
                     }
                 }
@@ -88,11 +96,11 @@ object BeeNests {
             poses.popPose()
         }
         buffers.endBatch(lines)
-        for (pos in nests) {
-            val text = "Nest · ${kotlin.math.sqrt(pos.distToCenterSqr(camera)).toInt()}m"
+        for ((pos, label, color) in markers) {
+            val text = "$label · ${kotlin.math.sqrt(pos.distToCenterSqr(camera)).toInt()}m"
             poses.pushPose(); poses.translate(pos.x + .5 - camera.x, pos.y + 1.4 - camera.y, pos.z + .5 - camera.z)
             poses.mulPose(client.gameRenderer.mainCamera.rotation()); poses.scale(.025f, -.025f, .025f)
-            client.font.drawInBatch(text, -client.font.width(text) / 2f, 0f, 0xFF55FF55.toInt(), false,
+            client.font.drawInBatch(text, -client.font.width(text) / 2f, 0f, color, false,
                 Matrix4f(poses.last().pose()), buffers, Font.DisplayMode.SEE_THROUGH, 0x40000000, LightCoordsUtil.FULL_BRIGHT)
             poses.popPose()
         }

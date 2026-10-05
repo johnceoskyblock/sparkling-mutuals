@@ -23,7 +23,7 @@ object SafariTracking {
     private fun syncWorld(client: Minecraft) {
         if (client.level !== level) { ledger.worldChanged(System.currentTimeMillis()); resetEncounters(); level = client.level }
     }
-    private fun resetEncounters() { BeeNests.reset(); SparklingEncounters.reset() }
+    private fun resetEncounters() { BeeNests.reset(); SparklingEncounters.reset(); SafariStructures.reset() }
     private fun receive(raw: String) {
         val client = Minecraft.getInstance()
         if (client.level == null || client.player == null) return
@@ -34,6 +34,10 @@ object SafariTracking {
             val previous = ledger.current
             ledger.confirmEntry(now); SafariAssist.markEntered()
             if (previous !== ledger.current) resetEncounters()
+        }
+        if (SafariMounds.outcome(text) != null) {
+            if (SafariAssist.inSafari) { ensureRun(client); ledger.current?.recordMound(text) }
+            return
         }
         val catch = SafariCatch.parse(text) ?: return
         SafariAssist.markEntered()
@@ -61,7 +65,8 @@ object SafariTracking {
         if (ConfigManager.progressHud) SafariPanels.progress(run, unique, System.currentTimeMillis()).draw(graphics, SafariHud.PROGRESS)
         if (!SafariVisibility.biomePanels(ConfigManager.showWhere, SafariAssist.inSafari, ledger.current != null, SafariAssist.biome)) return
         val biome = SafariAssist.biome ?: return
-        if (ConfigManager.missingPanel) SafariPanels.missing(run, biome, unique, BeeNests.unpunchedCount).draw(graphics, SafariHud.MISSING)
+        if (ConfigManager.missingPanel) SafariPanels.missing(run, biome, unique, BeeNests.unpunchedCount,
+            SafariStructures.nearbyMounds, SafariStructures.walls).draw(graphics, SafariHud.MISSING)
         if (ConfigManager.catchCountPanel) SafariPanels.captures(run, biome).draw(graphics, SafariHud.CAPTURES)
     }
 }
