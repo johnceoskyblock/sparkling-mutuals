@@ -16,8 +16,7 @@ object SafariLookup {
     fun run(command: PartyCommand, members: List<String>, localName: String = "You"): String = when (command.kind) {
         PartyCommandKind.PB_DOOM -> ConfigManager.personalBests.response(localName, "Doomspiral")
         PartyCommandKind.PB_WUMPA -> ConfigManager.personalBests.response(localName, "Wumpa")
-        PartyCommandKind.HELP -> "[SM] Commands: !mutual(s); !missing <IGN>; !ticket(s) <IGN>; !pb doom; !pb wumpa; !commands | " +
-            "Local: /sparkling (config), /sparkling gui (HUD), /sparkling catches, /alert, /alertdelay <s>, /apikey <key>"
+        PartyCommandKind.HELP -> CommandHelp.partyReply()
         PartyCommandKind.MUTUALS -> {
             val discoveries = members.map { uuid ->
                 val cached = cache[uuid]
