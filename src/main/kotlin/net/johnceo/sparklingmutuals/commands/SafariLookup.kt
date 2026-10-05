@@ -14,7 +14,7 @@ object SafariLookup {
 
     fun run(command: PartyCommand, members: List<String>): String = when (command.kind) {
         PartyCommandKind.HELP -> "[SM] Commands: !mutual(s); !missing <IGN>; !ticket(s) <IGN>; !commands | " +
-            "Local: /sparkling (config), /sparkling gui (HUD), /alert, /alertdelay <s>, /apikey <key>"
+            "Local: /sparkling (config), /sparkling gui (HUD), /sparkling catches, /alert, /alertdelay <s>, /apikey <key>"
         PartyCommandKind.MUTUALS -> {
             val discoveries = members.map { uuid ->
                 val cached = cache[uuid]
