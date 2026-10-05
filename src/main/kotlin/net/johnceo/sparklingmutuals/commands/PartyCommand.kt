@@ -15,6 +15,7 @@ data class PartyChat(val sender: String, val body: String) {
 enum class PartyCommandKind { MUTUALS, MISSING, TICKETS, HELP, PB_DOOM, PB_WUMPA }
 
 data class PartyCommand(val kind: PartyCommandKind, val ign: String = "") {
+    val requiresApiKey get() = kind in listOf(PartyCommandKind.MUTUALS, PartyCommandKind.MISSING, PartyCommandKind.TICKETS)
     private val failurePrefix: String get() = when (kind) {
         PartyCommandKind.MUTUALS -> "Mutual Timesave Sparkling Critters: "
         PartyCommandKind.MISSING -> "Missing Timesave Sparklings for $ign: "
@@ -27,8 +28,9 @@ data class PartyCommand(val kind: PartyCommandKind, val ign: String = "") {
     fun failureResult(message: String): String = failurePrefix + message
 
     fun matchesResponse(body: String): Boolean {
-        if (body.startsWith(failurePrefix, ignoreCase = true) && body.length > failurePrefix.length) return true
         return when (kind) {
+            PartyCommandKind.MISSING, PartyCommandKind.MUTUALS -> body.startsWith(failurePrefix, ignoreCase = true) &&
+                timesaveResult.matches(body.substring(failurePrefix.length))
             PartyCommandKind.TICKETS -> Regex(
                 "^${Regex.escape(ign)}: Basic \\(\\d+\\), Economy \\(\\d+\\), Premium \\(\\d+\\), First-Class \\(\\d+\\)$",
                 RegexOption.IGNORE_CASE
@@ -37,7 +39,6 @@ data class PartyCommand(val kind: PartyCommandKind, val ign: String = "") {
             PartyCommandKind.PB_DOOM, PartyCommandKind.PB_WUMPA -> Regex(
                 "^[A-Za-z0-9_]{1,16}'s ${if (kind == PartyCommandKind.PB_DOOM) "Doomspiral" else "Wumpa"} PB: (?:\\d+:\\d{2}\\.\\d{3}|Not recorded yet)$",
                 RegexOption.IGNORE_CASE).matches(body)
-            else -> false
         }
     }
 
@@ -51,6 +52,8 @@ data class PartyCommand(val kind: PartyCommandKind, val ign: String = "") {
     }
 
     companion object {
+        private const val TIMESAVES = "Rockmite|Snoozle|Gemzie|Honeybug|Gazer|Gimmiegold|Doomspiral|Wumpa|All Birds"
+        private val timesaveResult = Regex("^(?:None|(?:$TIMESAVES)(?:, (?:$TIMESAVES))*)$", RegexOption.IGNORE_CASE)
         private val lookup = Regex("""^!(missing|tickets?)\s+([A-Za-z0-9_]{1,16})$""", RegexOption.IGNORE_CASE)
         fun fromChat(text: String): PartyRequest? {
             val chat = PartyChat.parse(text) ?: return null

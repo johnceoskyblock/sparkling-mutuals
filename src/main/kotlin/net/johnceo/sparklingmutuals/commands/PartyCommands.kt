@@ -1,20 +1,21 @@
 package net.johnceo.sparklingmutuals.commands
 
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents
-import net.johnceo.sparklingmutuals.api.ApiFailure
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.party.PartyManager
 import net.minecraft.client.Minecraft
+import net.minecraft.network.chat.Component
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
 
 object PartyCommands {
-    private data class Pending(val request: PartyRequest, val roster: List<String>, val election: ResponderElection,
+    private data class Pending(val request: PartyRequest, val roster: List<String>, val election: ResponderElection, val chatCursor: Long,
         var task: Future<*>? = null)
     private val pending = mutableMapOf<String, Pending>()
     private val recent = mutableMapOf<String, Long>()
     private val requests = mutableMapOf<String, PartyRequest>()
     private val answered = mutableSetOf<String>()
+    private val history = PartyResponseHistory()
     private val executor = Executors.newSingleThreadExecutor { Thread(it, "Sparkling Mutuals lookups").apply { isDaemon = true } }
 
     fun register() {
@@ -29,6 +30,7 @@ object PartyCommands {
         val chat = PartyChat.parse(text) ?: return
         val now = System.currentTimeMillis()
         val senderUuid = Minecraft.getInstance().connection?.getPlayerInfoIgnoreCase(chat.sender)?.profile?.id?.toString()
+        history.record(chat.body, senderUuid)
         // Also record replies arriving while HMAPI is still refreshing the party roster.
         requests.forEach { (token, request) ->
             if (request.command.matchesResponse(chat.body)) {
@@ -40,6 +42,7 @@ object PartyCommands {
             }
         }
         val request = PartyCommand.fromChat(text) ?: return
+        val chatCursor = history.cursor
         if (now - (recent[request.token] ?: 0) < 10_000) return
         recent[request.token] = now
         requests[request.token] = request
@@ -51,10 +54,11 @@ object PartyCommands {
             if (client.connection !== connection || !ConfigManager.partyCommandsEnabled ||
                 request.token in answered || requests[request.token] !== request) return@refreshPartyInfo
             val roster = PartyManager.getMembers()
+            if (history.hasReply(request.command, chatCursor, roster)) return@refreshPartyInfo
             val local = client.player?.uuid?.toString() ?: return@refreshPartyInfo
             if (local !in roster) return@refreshPartyInfo
             val election = ResponderElection(local, roster, System.currentTimeMillis())
-            pending[request.token] = Pending(request, roster, election)
+            pending[request.token] = Pending(request, roster, election, chatCursor)
         }
     }
 
@@ -79,16 +83,19 @@ object PartyCommands {
                 state.task = executor.submit {
                     // Cache access and network calls stay on this single worker.
                     if (key != lastKey) { SafariLookup.clearCache(); lastKey = key }
-                    val result = try { SafariLookup.run(state.request.command, state.roster, localName) }
-                    catch (failure: ApiFailure) { state.request.command.failureResult(failure.message.orEmpty()) }
-                    catch (_: Exception) { state.request.command.failureResult("Lookup failed unexpectedly. Please try again.") }
+                    val result = PartyLookupResult.fetch(state.request.command, key) {
+                        SafariLookup.run(state.request.command, state.roster, localName)
+                    }
                     client.execute {
                         if (pending[token] === state && state.election.canPublish(System.currentTimeMillis()) &&
                             client.connection === connection && ConfigManager.partyCommandsEnabled &&
-                            state.roster.toSet() == PartyManager.getMembers().toSet()) {
+                            state.roster.toSet() == PartyManager.getMembers().toSet() &&
+                            !history.hasReply(state.request.command, state.chatCursor, state.roster)) {
                             pending.remove(token)
-                            answered.add(token)
-                            client.player?.connection?.sendCommand("pc $result")
+                            if (result.successful) {
+                                answered.add(token)
+                                client.player?.connection?.sendCommand("pc ${result.partyMessage}")
+                            } else client.player?.sendSystemMessage(Component.literal(result.text))
                         }
                     }
                 }
@@ -101,5 +108,5 @@ object PartyCommands {
         pending.values.forEach { it.task?.cancel(false) }
         pending.clear()
     }
-    fun reset() { cancelPending(); recent.clear(); requests.clear(); answered.clear() }
+    fun reset() { cancelPending(); recent.clear(); requests.clear(); answered.clear(); history.clear() }
 }
