@@ -9,7 +9,8 @@ Run `/sparkling` or `/sparkling config` to open the **MoulConfig** settings scre
 - **Party commands:** toggle automatic responses and view command help locally.
 - **Miria contest:** choose warning times, toggle the HUD and titles, adjust warning sound and volume, and open the HUD editor.
 - **Warp reminders:** toggle reminders and set their delay, which defaults to **25 seconds**.
-- **Safari helpers:** toggle Hideyho quest clicks, Haunted painting hiding and nearby shiny detection.
+- **Safari helpers:** toggle Hideyho quest clicks, Haunted painting hiding, shiny detection, sparkling alerts/party announcements, bee-nest highlights and darkness removal.
+- **Safari progress:** configure progress, missing species, capture counts, unique-only completion and where the HUD appears.
 - **API key:** enter, reveal or hide, and save your Hypixel API key.
 
 Toggles and sliders save immediately. Text fields have explicit Save buttons. Existing API keys and HUD settings are retained. Party responses are enabled by default; warp reminders are disabled until enabled.
@@ -26,6 +27,7 @@ Send `!` commands in **party chat**, including through `/pc` or `/p chat`. Party
 | `!ticket <IGN>` / `!tickets <IGN>` | Show Basic, Economy, Premium and First-Class ticket counts |
 | `/sparkling` / `/sparkling config` | Open the configuration screen |
 | `/sparkling gui` | Move and resize the Miria contest HUD |
+| `/sparkling catches` | Review per-critter captures in the current or last Safari run |
 | `/alert` | Toggle warp reminders |
 | `/alertdelay <seconds>` | Set the warp reminder delay, from 1 to 86400 seconds |
 | `/apikey <key>` | Set or update your Hypixel API key (`/apiKey` and `/APIKEY` also work) |
@@ -70,13 +72,29 @@ The Hotspot perk must be unlocked in the Essence Shop. The reminder tells you wh
 
 ## Safari helpers
 
-**Hideyho quest clicks:** enable this toggle, open chat after Hideyho's dialogue offers a `Sure` option, and left-click anywhere to accept it. Each click can accept one current prompt; it does not repeatedly click or move the player. Only the server-provided command/custom action attached to `Sure` is used. Other NPC dialogue, old prompts and disconnects clear the offer. Disabled by default.
+**Hideyho quest clicks:** enable this toggle, wait for `[MOB] Hideyho: How about it?` and `Select an option: [Sure] [No thanks...]`, then click anywhere with chat open to accept. Both game and chat message events are listened to, and split/inherited button styles are supported, matching ShinyHunter's QuestAccepter. Each click accepts one current prompt using its exact server-provided command/custom action. Other NPC/MOB dialogue, old prompts and world/connection changes clear the offer. Disabled by default.
 
 **Haunted painting hider:** stops rendering paintings only in the Haunted Safari area. Paintings remain in the world and can still be interacted with. Enabled by default.
 
 **Nearby shiny detection:** scans loaded `Sparkling <species>` nametags, pairs them with a nearby critter body, and shows gold highlights plus a nearby list with names and distance. The scan covers a spherical **80-block radius** within the player's current Safari biome. Enabled by default.
 
 Detection is adapted specifically from **CritterMod v0.9.0**, rather than its later releases. It needs a sparkling nametag and loaded entity data; it cannot detect critters that the server has not sent or identify an unnamed critter as sparkling. Biome lookup uses the area table shipped in that release.
+
+**Sparkling alerts and party announcements:** both enabled by default and independently configurable. Each loaded sparkling within the same 80-block biome scan produces an on-screen alert and `SPARKLING <critter>! (<biome> <x> <y> <z>)` party message once per run. Messages are paced to avoid a burst; leaving or disabling announcements clears pending messages. These announcements do not require an API key.
+
+**Bee nests:** enabled by default. Unpunched Forest nests show green boxes through terrain, with name/distance labels. Discovery checks already loaded nearby chunk sections every two seconds, skipping palettes without nests. It also finds decorative nests without block-entity data. Your own punch removes that nest's marker until the next run. Other players' punches leave no observable block change, so they cannot be tracked.
+
+**Remove darkness:** enabled by default. Clears the local darkness effect while inside Safari.
+
+## Safari progress and capture counts
+
+The **Progress HUD** and **Missing Panel** default to on. **Show where** offers *Only in Safari*, *Safari and entrance* (default), or *Everywhere*. Progress lists observed party coverage and your unique species for all 37 critters and each biome. The missing panel lists unfinished species in your current biome.
+
+**Count Unique Only** defaults to off: completion uses the actual v0.9.0 data quotas (Gemzie and Troodon: 3; Gazer: 4; other species: 1). Turn it on to complete each species with one catch. This changes completion and missing-species displays, never the raw catch counts.
+
+**Biome capture counts** defaults to off. Enable it for a panel listing all **9 Forest, 9 Cavern, 9 Icy or 10 Haunted species**, including zeros, in your current biome. `/sparkling catches` also opens a count screen with biome tabs. Counts **reset each Safari run**, remain when changing biomes within a run, and the last run can be reviewed after leaving.
+
+Each successful server `CAPTURE!` message adds one to **You** and **Party (seen)**. Each `LOOT SHARE!` message adds one to **Party (seen)**. A reward of multiple shards still represents one capture. Failed attempts, inventory transfers and quoted player chat do not count. Party totals include only captures this client observed; catches with no loot-share message are unavailable.
 
 ## API setup and errors
 
@@ -103,12 +121,14 @@ With JDK 25 configured, run:
 
 On Windows, use `gradlew.bat build`. The build runs unit tests and puts the mod and source JARs in `build/libs/`. To run only tests, use `./gradlew test`.
 
-Tests cover command parsing and responder elections, API errors, persisted defaults, warning settings, detection radius and exact sparkling-name matching. Party coordination and Safari rendering should also be tested in Minecraft before release.
+The main source, including rendering mixins, is entirely Kotlin. Shared roster, parsing, configuration and HUD helpers reduce duplicated code; scans are throttled and never load chunks.
+
+Tests cover command parsing and responder elections, API errors, persisted defaults, warning settings, detection radius, sparkling-name matching, actual Hideyho MOB dialogue, styled buttons, capture parsing, quotas and per-run resets. Party coordination, click packets and Safari rendering should also be tested in Minecraft before release.
 
 ## Credits
 
 - [ShinyHunter](https://github.com/javabetter/ShinyHunter): Hideyho quest acceptance and painting suppression reference. Copyright 2026 GamingLegend123; MIT notice in `licenses/ShinyHunter-MIT.txt`.
-- [CritterMod v0.9.0](https://github.com/MrCloudy2/critterMod/tree/v0.9.0), commit `cdfcb8effb4b3158df50f0c0960c11e536931840`: sparkling-name matching, label/body pairing, species data and area lookup reference. Copyright 2026 MrCloudy2; MIT notice in `licenses/CritterMod-MIT.txt`.
+- [CritterMod v0.9.0](https://github.com/MrCloudy2/critterMod/tree/v0.9.0), commit `cdfcb8effb4b3158df50f0c0960c11e536931840`: sparkling detection/alerts/announcements, species/quotas, chat captures, progress/missing panels, nest tracking/waypoints, darkness removal and area lookup reference. Copyright 2026 MrCloudy2; MIT notice in `licenses/CritterMod-MIT.txt`.
 - The Safari area table bundled by CritterMod derives from SkyHanni's Safari path graph.
 - [MoulConfig](https://github.com/NotEnoughUpdates/MoulConfig) 4.7.2 supplies the settings UI and is bundled as a separate LGPL-3.0 library.
 
