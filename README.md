@@ -27,7 +27,7 @@ Send `!` commands in **party chat**, including through `/pc` or `/p chat`. Party
 | `!mutual` / `!mutuals` | Find timesave sparkling critters discovered by every party member |
 | `!missing <IGN>` | List a player's missing timesave sparkling critters |
 | `!ticket <IGN>` / `!tickets <IGN>` | Show Basic, Economy, Premium and First-Class ticket counts |
-| `!pb doom` / `!pb wumpa` | Show the responding player's saved Doomspiral or Wumpa personal best; case-insensitive |
+| `!pb doom` / `!pb wumpa` | Every party member with the mod replies with their own saved Doomspiral or Wumpa PB; case-insensitive |
 | `/sparkling` / `/sparkling config` | Open the configuration screen |
 | `/sparkling gui` | Move and resize all HUDs independently, including Safari progress, missing critters, captures and nearby sparklings |
 | `/sparkling catches` | Review per-critter captures in the current or last Safari run |
@@ -35,11 +35,13 @@ Send `!` commands in **party chat**, including through `/pc` or `/p chat`. Party
 | `/alertdelay <seconds>` | Set the warp reminder delay, from 1 to 86400 seconds |
 | `/apikey <key>` | Set or update your Hypixel API key (`/apiKey` and `/APIKEY` also work) |
 
-### One responder per party request
+### Party response coordination
 
 Commands send only successful final results to party chat; there is no preliminary `[SM] Checking …` message. Missing API keys and all other lookup errors are shown locally, allowing another client with a working key to reply. Updated clients stagger lookups by their position in the sorted party roster and cancel their response when they see a matching successful reply. Party chat is also checked for replies received during the roster refresh or lookup, and again immediately before sending. Old error messages do not suppress a successful reply. Non-mod party members can still use the commands. Slow lookups can overlap across clients, so API requests are not guaranteed to run on only one client.
 
 All mod users should install this update: older versions may still send preliminary messages or additional responses. Coordination assumes timely party chat delivery and a stable roster; unusually delayed messages can cause duplicates. Identical requests from the same player are ignored for 10 seconds. A party information timeout is reported locally so the request can be retried.
+
+**PB requests are answered by every party member with this update and party responses enabled.** Replies are staggered and include each player's name. Another player's PB does not cancel yours; duplicate protection applies to your own reply. Other commands still use one responder per party request.
 
 ### Sparkling timesaves
 
@@ -143,7 +145,7 @@ Your own `CAPTURE! You caught a Doomspiral` and `CAPTURE! You caught a Wumpa` me
 
 Best times save immediately as milliseconds in `config/sparkling-mutuals.properties`, under `pb.doomspiralMillis` and `pb.wumpaMillis`, and survive Minecraft restarts. They are separate from the per-run capture counts.
 
-Send **`!pb doom`** or **`!pb wumpa`** in party chat; capitalization does not matter and no API key is needed. The selected mod responder replies with its own saved best and player name, for example `JohnCEO's Doomspiral PB: 1:02.250`. If that responder has no best yet, it replies `Not recorded yet`. These commands use the same one-responder coordination as other party requests and are included in `!commands`.
+Send **`!pb doom`** or **`!pb wumpa`** in party chat; capitalization does not matter and no API key is needed. Every party member with this update and party responses enabled replies with their own saved best and player name, for example `JohnCEO's Doomspiral PB: 1:02.250`. A player without a saved best replies `Not recorded yet`. Replies are staggered, and each player replies once per request. These commands are included in `!commands`.
 
 ## API setup and errors
 
