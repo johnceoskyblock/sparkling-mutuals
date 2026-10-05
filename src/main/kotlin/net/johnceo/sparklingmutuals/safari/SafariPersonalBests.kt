@@ -17,6 +17,12 @@ class SafariPersonalBests {
         if (species == "Doomspiral") doom = elapsed else wumpa = elapsed
         return true
     }
+    fun newBest(raw: String, run: SafariRun, now: Long): String? {
+        if (!record(raw, run, now)) return null
+        val species = capture.matchEntire(SafariRules.strip(raw))!!.groupValues[1]
+        return "[SM] New $species PB: ${formatTime(time(species)!!)}!"
+    }
+    private fun formatTime(millis: Long) = java.lang.String.format(java.util.Locale.ROOT, "%d:%02d.%03d", millis / 60000, millis / 1000 % 60, millis % 1000)
     fun load(properties: Properties) {
         fun read(key: String) = properties.getProperty("pb.${key}Millis")?.toLongOrNull()?.takeIf { it >= 0 }
         doom = read("doomspiral"); wumpa = read("wumpa")
@@ -26,7 +32,7 @@ class SafariPersonalBests {
         wumpa?.let { properties.setProperty("pb.wumpaMillis", it.toString()) }
     }
     fun response(player: String, species: String): String {
-        val formatted = time(species)?.let { "%d:%02d.%03d".format(it / 60000, it / 1000 % 60, it % 1000) } ?: "Not recorded yet"
+        val formatted = time(species)?.let(::formatTime) ?: "Not recorded yet"
         return "$player's $species PB: $formatted"
     }
 }

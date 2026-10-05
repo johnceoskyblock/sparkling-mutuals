@@ -6,6 +6,7 @@ import net.johnceo.sparklingmutuals.contest.ContestGui
 import net.johnceo.sparklingmutuals.hud.SafariHud
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphicsExtractor
+import net.minecraft.network.chat.Component
 
 /** Tracking is independent of display toggles. Last-run data lives until the next arrival. */
 object SafariTracking {
@@ -38,7 +39,10 @@ object SafariTracking {
         SafariAssist.markEntered()
         ensureRun(client)
         ledger.current!!.record(catch)
-        if (ConfigManager.personalBests.record(text, ledger.current!!, now)) ConfigManager.save()
+        ConfigManager.personalBests.newBest(text, ledger.current!!, now)?.let { notice ->
+            ConfigManager.save()
+            client.player?.sendSystemMessage(Component.literal(notice))
+        }
     }
     fun onClientTick(client: Minecraft) = ensureRun(client)
     fun ensureRun(client: Minecraft) {
@@ -55,7 +59,8 @@ object SafariTracking {
         val run = run
         val unique = ConfigManager.countUniqueOnly
         if (ConfigManager.progressHud) SafariPanels.progress(run, unique, System.currentTimeMillis()).draw(graphics, SafariHud.PROGRESS)
-        val biome = displayBiome ?: return
+        if (!SafariVisibility.biomePanels(ConfigManager.showWhere, SafariAssist.inSafari, ledger.current != null, SafariAssist.biome)) return
+        val biome = SafariAssist.biome ?: return
         if (ConfigManager.missingPanel) SafariPanels.missing(run, biome, unique, BeeNests.unpunchedCount).draw(graphics, SafariHud.MISSING)
         if (ConfigManager.catchCountPanel) SafariPanels.captures(run, biome).draw(graphics, SafariHud.CAPTURES)
     }
