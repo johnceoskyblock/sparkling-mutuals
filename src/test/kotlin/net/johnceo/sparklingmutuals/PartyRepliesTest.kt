@@ -8,6 +8,35 @@ import org.junit.jupiter.api.Test
 class PartyRepliesTest {
     private val tickets = PartyCommand(PartyCommandKind.TICKETS, "JohnCEO")
     private val result = "JohnCEO: Basic (233), Economy (0), Premium (0), First-Class (5)"
+    @Test fun `each party member can publish their PB after earlier members reply`() {
+        val names = listOf("Alice", "Bob", "Charlie")
+        val roster = listOf("first", "second", "third")
+        for (kind in listOf(PartyCommandKind.PB_DOOM, PartyCommandKind.PB_WUMPA)) {
+            val critter = if (kind == PartyCommandKind.PB_DOOM) "Doomspiral" else "Wumpa"
+            val history = PartyResponseHistory()
+            val clients = roster.map { ResponderElection(it, roster, 0) }
+            names.forEachIndexed { index, name ->
+                val command = PartyCommand(kind, name)
+                assertFalse(history.hasReply(command, 0, roster), "$name still owes their own PB")
+                assertTrue(clients[index].shouldStartLookup(200L + index * 800L))
+                assertTrue(clients[index].canPublish(200L + index * 800L))
+                history.record("$name's $critter PB: 1:02.250", roster[index])
+                assertTrue(history.hasReply(command, 0, roster), "Suppress another copy of $name's PB")
+                assertFalse(history.hasReply(command, history.cursor, roster), "A new request can get a new reply")
+            }
+        }
+    }
+    @Test fun `PB cancellation matches only the local players complete response`() {
+        val doom = PartyCommand(PartyCommandKind.PB_DOOM, "Alice")
+        assertFalse(doom.matchesResponse("Bob's Doomspiral PB: 1:02.250"))
+        assertFalse(doom.matchesResponse("AliceOther's Doomspiral PB: 1:02.250"))
+        assertTrue(doom.matchesResponse("aLiCe's Doomspiral PB: Not recorded yet"))
+        assertFalse(doom.matchesResponse("Alice's Wumpa PB: 1:02.250"))
+        assertFalse(doom.matchesResponse("Alice's Doomspiral PB: Lookup failed"))
+        val history = PartyResponseHistory()
+        history.record(result, "second")
+        assertTrue(history.hasReply(tickets, 0, listOf("first", "second")), "Tickets keep one party-wide response")
+    }
     @Test fun `missing key skips network and produces a local message only`() {
         val reply = PartyLookupResult.fetch(tickets, "") { fail<String>("Must not start a lookup without a key") }
         assertFalse(reply.successful)

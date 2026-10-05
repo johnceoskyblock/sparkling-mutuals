@@ -44,14 +44,18 @@ class SafariPersonalBestTest {
         assertEquals("Player's Wumpa PB: 1:02.250", restored.response("Player", "Wumpa"))
         assertEquals("Player's Doomspiral PB: Not recorded yet", restored.response("Player", "Doomspiral"))
     }
-    @Test fun `pb party commands are case insensitive and participate in response coordination`() {
-        val doom = PartyCommand.fromChat("Party > [VIP] Test: !PB DoOm")!!.command
-        val wumpa = PartyCommand.fromChat("Party > Test: !pB WuMpA")!!.command
+    @Test fun `pb party commands are case insensitive and coordinate separately for each responder`() {
+        val doom = PartyCommand.fromChat("Party > [VIP] Test: !PB DoOm")!!.command.forResponder("Player")
+        val wumpa = PartyCommand.fromChat("Party > Test: !pB WuMpA")!!.command.forResponder("Player")
         assertEquals(PartyCommandKind.PB_DOOM, doom.kind)
         assertEquals(PartyCommandKind.PB_WUMPA, wumpa.kind)
         assertTrue(doom.matchesResponse("Player's Doomspiral PB: 1:02.250"))
         assertFalse(doom.matchesResponse("Player's Wumpa PB: 1:02.250"))
         assertTrue(wumpa.matchesResponse("Player's Wumpa PB: Not recorded yet"))
+        assertFalse(doom.matchesResponse("Other's Doomspiral PB: 1:02.250"))
+        assertFalse(wumpa.matchesResponse("Other's Wumpa PB: Not recorded yet"))
+        assertEquals(PartyCommand(PartyCommandKind.TICKETS, "Test"),
+            PartyCommand.fromChat("Party > Requester: !tickets Test")!!.command.forResponder("Player"))
         assertNull(PartyCommand.fromChat("Party > Test: !pb doom extra"))
     }
 }
