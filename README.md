@@ -64,7 +64,7 @@ The tracker reads **Miria contests only**. Agatha entries are excluded, includin
 
 Select any combination of **5m**, **3m** and **1m** warnings, or choose **None** to disable all end-of-contest warnings. All three times are selected by default. Warnings stop after reaching Uncommon or higher. Joining late produces one catch-up warning instead of several at once.
 
-Run `/sparkling gui` or use **Move and resize HUDs** in settings. Drag any panel to move it; hover and scroll to resize it between 50% and 200%. Each panel saves its own position and size. Disabled panels have previews, so the editor works outside Safari too. **Reset positions** restores the default layout.
+Run `/sparkling gui` or use **Move and resize HUDs** in settings. Drag any panel to move it; hover and scroll to resize it between 15% and 200%. Each panel saves its own position and size. Disabled panels have previews, so the editor works outside Safari too. **Reset positions** restores the default layout.
 
 ## Warp reminders
 
