@@ -22,16 +22,14 @@ object ContestConfig {
     fun init(configDirectory: Path) {
         configPath = configDirectory.resolve("sparkling-mutuals-contest.properties")
 
-        if (Files.exists(configPath)) {
-            load()
-        } else {
-            save()
-        }
+        val exists = Files.exists(configPath)
+        load()
+        if (!exists) save()
     }
 
     private fun load() {
         Properties().apply {
-            Files.newInputStream(configPath).use(::load)
+            if (Files.exists(configPath)) Files.newInputStream(configPath).use(::load)
 
             hudX = getProperty("hudX", "10").toIntOrNull() ?: 10
             hudY = getProperty("hudY", "10").toIntOrNull() ?: 10
@@ -47,6 +45,19 @@ object ContestConfig {
             contestSound = getProperty("contestSound", "minecraft:block.bell.use")
             contestSoundVolume = getProperty("contestSoundVolume", "100").toIntOrNull() ?: 100
         }
+    }
+
+    fun warningMinutes(): List<Int> = if (!contestWarnEnabled) emptyList() else
+        contestWarnMinutes.split(Regex("[,\\s]+"))
+            .mapNotNull { it.toIntOrNull() }
+            .filter { it in setOf(5, 3, 1) }
+            .distinct().sortedDescending()
+
+    fun setWarningMinutes(minutes: Collection<Int>) {
+        val selected = minutes.filter { it in setOf(5, 3, 1) }.distinct().sortedDescending()
+        contestWarnMinutes = selected.joinToString(", ")
+        contestWarnEnabled = selected.isNotEmpty()
+        save()
     }
 
     fun save() {
