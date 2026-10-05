@@ -5,6 +5,7 @@
 	"mixins": [
 		"ExampleMixin"
 	],
+    "client": ["SafariPaintingMixin", "SafariShinyMixin", "SafariMoulThemeMixin"],
 	"injectors": {
 		"defaultRequire": 1
 	},
