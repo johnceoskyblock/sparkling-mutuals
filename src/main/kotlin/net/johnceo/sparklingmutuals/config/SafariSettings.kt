@@ -66,6 +66,15 @@ class SafariSettings : Config() {
         @ConfigEditorButton(runnableId = 5, buttonText = "Reset to 25s") var reset = false
     }
     class Safari {
+        @JvmField @ConfigOption(name = "Hide capture chat", desc = "Hide capsule throws, CAPTURE!, critter escapes and LOOT SHARE! messages. Captures and personal bests still track; PB notices remain visible. Off by default.")
+        @ConfigEditorBoolean var hideCaptureChat = ConfigManager.hideCaptureChat
+        @JvmField @ConfigOption(name = "Hide capsules on ground", desc = "Hide ordinary Critter Capsules lying on the ground in Safari. Masterful Capsules remain visible. On by default.")
+        @ConfigEditorBoolean var hideGroundCapsules = ConfigManager.hideGroundCapsules
+        @JvmField @ConfigOption(name = "Hide flying capsules", desc = "Hide ordinary and Masterful Critter Capsules in the air at the configured camera distance or closer, only in Safari. On by default.")
+        @ConfigEditorBoolean var hideFlyingCapsules = ConfigManager.hideFlyingCapsules
+        @JvmField @ConfigOption(name = "Flying capsule distance", desc = "Hide flying capsules within this many blocks of the camera, including the boundary. Default: 2 blocks.")
+        @ConfigEditorSlider(minValue = .5f, maxValue = 6f, minStep = .5f)
+        var capsuleHideDistance = ConfigManager.capsuleHideDistance
         @JvmField @ConfigOption(name = "Auto Clicker", desc = "Hold Mouse 0 (left mouse) in Safari to repeat attacks at 12 CPS for Rockmites. Pauses in menus, while using items or breaking blocks. On by default.")
         @ConfigEditorBoolean var autoClicker = ConfigManager.autoClicker
         @JvmField @ConfigOption(name = "Hideyho quest clicks", desc = "After [MOB] Hideyho offers Sure, click anywhere with chat open to accept that button's server action. One click, one acceptance. Off by default.")
@@ -146,11 +155,15 @@ class SafariSettings : Config() {
             ConfigManager::missingPanel to tracking.missing, ConfigManager::catchCountPanel to tracking.counts,
             ConfigManager::highlightBeeNests to safari.nests, ConfigManager::removeDarkness to safari.darkness,
             ConfigManager::sparklingAlert to safari.alert, ConfigManager::sparklingPartyAnnouncer to safari.announce,
-            ConfigManager::autoClicker to safari.autoClicker)
+            ConfigManager::autoClicker to safari.autoClicker, ConfigManager::hideCaptureChat to safari.hideCaptureChat,
+            ConfigManager::hideGroundCapsules to safari.hideGroundCapsules, ConfigManager::hideFlyingCapsules to safari.hideFlyingCapsules)
         val espChanged = listOf(floorEsp.applyFloor(), cavernEsp.apply(), forestEsp.apply(), icyEsp.apply(), hauntedEsp.apply()).any { it }
-        val generalChanged = espChanged || changes.any { (property, value) -> property.get() != value } || ConfigManager.showWhere != tracking.where
+        val distance = ConfigManager.validCapsuleDistance(safari.capsuleHideDistance)
+        val generalChanged = espChanged || changes.any { (property, value) -> property.get() != value } ||
+            ConfigManager.showWhere != tracking.where || ConfigManager.capsuleHideDistance != distance
         changes.forEach { (property, value) -> property.set(value) }
         ConfigManager.showWhere = tracking.where.coerceIn(0, 2)
+        ConfigManager.capsuleHideDistance = distance
         if (generalChanged) ConfigManager.save()
         val warnings = listOfNotNull(5.takeIf { miria.five }, 3.takeIf { miria.three }, 1.takeIf { miria.one })
         val contestChanged = ContestConfig.trackContest != miria.enabled || ContestConfig.contestWarnTitle != miria.titles ||

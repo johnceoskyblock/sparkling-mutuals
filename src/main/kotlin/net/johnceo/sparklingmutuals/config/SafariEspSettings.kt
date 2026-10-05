@@ -4,9 +4,9 @@ import io.github.notenoughupdates.moulconfig.annotations.*
 
 /** Shared controls keep the four biome categories consistent. */
 open class SafariEspGroupSettings(private val group: String) {
-    @JvmField @ConfigOption(name = "Enable ESP", desc = "Show through-terrain boxes for this group. Off by default.")
+    @JvmField @ConfigOption(name = "Enable ESP", desc = "Show through-terrain boxes for this group. On by default.")
     @ConfigEditorBoolean var enabled = SafariEspConfig.groups.getValue(group).enabled
-    @JvmField @ConfigOption(name = "Only in current biome", desc = "Hide this group unless you are in the same biome. Off: show across Safari.")
+    @JvmField @ConfigOption(name = "Only in current biome", desc = "Hide this group unless you are in the same biome. On by default. Off: show across Safari.")
     @ConfigEditorBoolean var onlyInBiome = SafariEspConfig.groups.getValue(group).onlyInBiome
     fun apply(): Boolean {
         val saved = SafariEspConfig.groups.getValue(group)

@@ -5,10 +5,12 @@ import net.johnceo.sparklingmutuals.safari.SafariEspRules
 import java.util.Properties
 
 object SafariEspConfig {
-    data class Group(var enabled: Boolean = false, var onlyInBiome: Boolean = false)
-    data class Mob(var enabled: Boolean = true, var color: String)
+    data class Group(var enabled: Boolean = true, var onlyInBiome: Boolean = true)
+    data class Mob(var enabled: Boolean, var color: String)
+    private val defaultMobs = setOf("Rockmite", "Treefrog", "Woodchucker", "Hideonfloor", "Shuddersquid",
+        "Billygoat", "Nozzlenose", "Duplico", "Hideonwall", "Hideyho", "Doomspiral")
     val groups = listOf("floor", "cavern", "forest", "icy", "haunted").associateWith { Group() }
-    val mobs = SafariEspRules.mobs.associate { it.name to Mob(color = defaultColor(it.color)) }
+    val mobs = SafariEspRules.mobs.associate { it.name to Mob(it.name in defaultMobs, defaultColor(it.color)) }
     var floorColor = defaultColor(0xFF00FF00.toInt())
     private fun defaultColor(rgb: Int) = ChromaColour.special(0, 255, rgb)
     fun validColor(value: String?, fallback: String): String = value?.takeIf { color ->
@@ -19,11 +21,11 @@ object SafariEspConfig {
     private fun key(name: String) = name.lowercase().replace(' ', '_')
     fun load(properties: Properties) {
         groups.forEach { (name, group) ->
-            group.enabled = properties.getProperty("esp.$name.enabled")?.toBooleanStrictOrNull() ?: false
-            group.onlyInBiome = properties.getProperty("esp.$name.onlyInBiome")?.toBooleanStrictOrNull() ?: false
+            group.enabled = properties.getProperty("esp.$name.enabled")?.toBooleanStrictOrNull() ?: true
+            group.onlyInBiome = properties.getProperty("esp.$name.onlyInBiome")?.toBooleanStrictOrNull() ?: true
         }
         mobs.forEach { (name, mob) ->
-            mob.enabled = properties.getProperty("esp.${key(name)}.enabled")?.toBooleanStrictOrNull() ?: true
+            mob.enabled = properties.getProperty("esp.${key(name)}.enabled")?.toBooleanStrictOrNull() ?: (name in defaultMobs)
             mob.color = validColor(properties.getProperty("esp.${key(name)}.color"), defaultColor(SafariEspRules.mobs.first { it.name == name }.color))
         }
         floorColor = validColor(properties.getProperty("esp.floor.color"), defaultColor(0xFF00FF00.toInt()))
