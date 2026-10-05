@@ -36,7 +36,7 @@ object ContestConfig {
             hudScale = getProperty("hudScale", "1.0")
                 .toFloatOrNull()
                 ?.takeIf(Float::isFinite)
-                ?.coerceIn(0.5f, 2.0f)
+                ?.coerceIn(0.15f, 2.0f)
                 ?: 1.0f
 
             trackContest = getProperty("trackContest", "true").toBoolean()
