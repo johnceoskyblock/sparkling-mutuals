@@ -6,7 +6,7 @@ import net.minecraft.client.gui.screens.Screen
 import net.minecraft.client.input.MouseButtonEvent
 import net.minecraft.network.chat.Component
 
-class ContestGui : Screen(Component.literal("Sparkling Mutuals HUD")) {
+class ContestGui(private val parent: Screen? = null) : Screen(Component.literal("Sparkling Mutuals HUD")) {
 
     private var dragging = false
     private var dragOffsetX = 0
@@ -112,7 +112,7 @@ class ContestGui : Screen(Component.literal("Sparkling Mutuals HUD")) {
 
     override fun onClose() {
         ContestConfig.save()
-        minecraft.setScreen(null)
+        minecraft.setScreen(parent)
     }
 
     private fun isInsideHud(mouseX: Double, mouseY: Double): Boolean {

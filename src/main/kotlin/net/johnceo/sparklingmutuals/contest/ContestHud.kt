@@ -22,6 +22,7 @@ object ContestHud {
         val client = Minecraft.getInstance()
 
         if (client.player == null || client.level == null) return
+        if (!ContestConfig.trackContest) return
         if (!ContestTracker.isActive()) return
         if (!SkyblockSidebar.inSkyblock(client)) return
 

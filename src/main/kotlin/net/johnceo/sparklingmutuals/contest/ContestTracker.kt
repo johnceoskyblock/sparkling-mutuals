@@ -121,22 +121,16 @@ object ContestTracker {
         }
 
         val remaining = secondsToEnd()
-        var rang = false
-
-        for (minutes in warnMinutes()) {
-            if (remaining <= minutes * 60 && warnedMinutes.add(minutes)) {
-                rang = true
-
-                client.player?.sendSystemMessage(
+        val due = ContestConfig.warningMinutes().filter { remaining <= it * 60 && it !in warnedMinutes }
+        if (due.isEmpty()) return
+        warnedMinutes.addAll(due)
+        // Joining late produces one warning instead of all elapsed warnings at once.
+        client.player?.sendSystemMessage(
                     Component.literal(
                         "§b[Sparkling Mutuals] §c§lContest not complete§r — " +
                                 "${formatRemaining(remaining)} left."
                     )
-                )
-            }
-        }
-
-        if (!rang) return
+        )
 
         playSound(client)
 
@@ -144,14 +138,6 @@ object ContestTracker {
             showTitle(client, remaining)
         }
     }
-
-    private fun warnMinutes(): List<Int> =
-        ContestConfig.contestWarnMinutes
-            .split(Regex("[,\\s]+"))
-            .mapNotNull { it.toIntOrNull() }
-            .filter { it > 0 }
-            .distinct()
-            .sortedDescending()
 
     private fun playSound(client: Minecraft) {
         val id = Identifier.tryParse(ContestConfig.contestSound.trim()) ?: return
