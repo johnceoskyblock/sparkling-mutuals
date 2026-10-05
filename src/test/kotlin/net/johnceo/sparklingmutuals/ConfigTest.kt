@@ -7,9 +7,28 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Files
 import java.nio.file.Path
+import net.johnceo.sparklingmutuals.safari.SafariRun
+import net.johnceo.sparklingmutuals.hud.SafariHud
 
 class ConfigTest {
     @TempDir lateinit var dir: Path
+    @Test fun `HUD layouts and personal bests survive actual configuration saving`() {
+        ConfigManager.init(dir)
+        ConfigManager.personalBests.record("CAPTURE! You caught a Doomspiral!", SafariRun(1000), 62000)
+        SafariHud.CAPTURES.layout.x = .4f
+        SafariHud.CAPTURES.layout.scale = 1.3f
+        ConfigManager.catchCountPanel = true
+        ConfigManager.save()
+        ConfigManager.init(dir)
+        assertEquals(61000L, ConfigManager.personalBests.time("Doomspiral"))
+        assertNull(ConfigManager.personalBests.time("Wumpa"))
+        assertEquals(.4f, SafariHud.CAPTURES.layout.x)
+        assertEquals(1.3f, SafariHud.CAPTURES.layout.scale)
+        assertTrue(ConfigManager.catchCountPanel)
+        val saved = Files.readString(dir.resolve("sparkling-mutuals.properties"))
+        assertTrue(saved.contains("pb.doomspiralMillis=61000"))
+        assertTrue(saved.contains("hud.captures.scale=1.3"))
+    }
 
     @Test
     fun `legacy API configuration gets the new defaults and preserves its key`() {
