@@ -9,7 +9,8 @@ Run `/sparkling` or `/sparkling config` to open the **MoulConfig** settings scre
 - **Party commands:** toggle automatic responses and view command help locally. **Show help** closes settings and opens chat with colored sections, one described command per line, and an explanation of `<IGN>`. This help is local to you.
 - **Miria contest:** choose warning times, toggle the HUD and titles, adjust warning sound and volume, and open the HUD editor.
 - **Warp reminders:** toggle reminders and set their delay, which defaults to **25 seconds**.
-- **Safari helpers:** toggle Hideyho quest clicks, Haunted painting hiding, shiny detection, sparkling alerts/party announcements, bee-nest highlights and darkness removal.
+- **Safari helpers:** toggle Auto Clicker, Hideyho quest clicks, Haunted painting hiding, shiny detection, sparkling alerts/party announcements, bee-nest highlights and darkness removal.
+- **ESP · Floor drops / Cavern / Forest / Icy / Haunted:** through-terrain boxes with biome filters, individual critter toggles and color pickers.
 - **Safari progress:** configure progress, missing species, capture counts, unique-only completion and where the HUD appears.
 - **API key:** enter, reveal or hide, and save your Hypixel API key.
 
@@ -72,6 +73,20 @@ Enable **Warp reminder** in settings or run `/alert`. Each `HOTSPOT! Your Huntin
 The Hotspot perk must be unlocked in the Essence Shop. The reminder tells you when to use `/p warp`; assign that command in your preferred keybind mod if desired.
 
 ## Safari helpers
+
+**Auto Clicker:** enabled by default. Hold **Mouse 0** (the left mouse button, also called Mouse 1 by some interfaces) while in Safari to repeat the normal attack action at a fixed **12 CPS**. Intended for Rockmites; it works on other targets too. It pauses when you release the button, leave Safari, open a screen, lose game focus, use an item or target/break a solid block. Normal block breaking remains available. There are no right-click, jitter, whitelist or adjustable-CPS controls. The rate uses a client tick accumulator (12 attacks per 20 ticks), so client lag can lower the real-time rate.
+
+### Safari ESP
+
+Adapted from [Nebulune's SafariESP](https://github.com/Gaeritag/Nebulune/blob/a573283c0553c3db338be1f2d547a53ccb77ac9d/src/main/kotlin/foo/starred/nebulune/modules/impl/render/SafariESP.kt), without requiring Athen or Nebulune. Enable each of the five ESP groups in settings; groups are **off by default**, with individual critters selected so enabling a biome shows all its critters. Each group has an **Only in current biome** option; off allows highlighting across the loaded Safari biomes. These options do not change the existing 80-block sparkling detector.
+
+- **Floor drops:** one translucent outlined tile per block containing at least three string item displays; configurable color.
+- **Cavern:** Cavernfish, Flitter, Shyworm, Driftling, Chuckwalla, Rockmite (silverfish and display forms), Scrappy, Snoozle and Gemzie.
+- **Forest:** Foxtrot, Bluebird, Honeybug, Treefrog, Woodchucker, Fluffling, Hideonfloor, Parakeet and Macaw.
+- **Icy:** Strongarm, Tepid, Polaris, Shuddersquid, Billygoat, Mantis Shrimp, Nozzlenose, Troodon and Wumpa.
+- **Haunted:** Areita, Bloodbat, Duplico, Gazer, Litterbug, Solsnatcher, Gimmiegold, Hideonwall, Hideyho and Doomspiral.
+
+All 37 species have independent highlight toggles and colors, initially using Nebulune's palette. Detection preserves its entity, head/skin texture, fish/parrot variant and colored shulker rules, including invisible/passenger silverfish exclusions. Boxes use its critter/display/head dimensions and render through terrain. Only loaded entities are scanned, every five ticks; nothing is highlighted outside Safari. Floor drops and biome ESP have no added 80-block limit.
 
 **Hideyho quest clicks:** enable this toggle, wait for `[MOB] Hideyho: How about it?` and `Select an option: [Sure] [No thanks...]`, then click anywhere with chat open to accept. Both game and chat message events are listened to, and split/inherited button styles are supported, matching ShinyHunter's QuestAccepter. Each click accepts one current prompt using its exact server-provided command/custom action. Other NPC/MOB dialogue, old prompts and world/connection changes clear the offer. Disabled by default.
 
@@ -141,8 +156,9 @@ Tests cover command parsing and responder elections, API errors, persisted defau
 ## Credits
 
 - [ShinyHunter](https://github.com/javabetter/ShinyHunter): Hideyho quest acceptance and painting suppression reference. Copyright 2026 GamingLegend123; MIT notice in `licenses/ShinyHunter-MIT.txt`.
+- [Nebulune](https://github.com/Gaeritag/Nebulune), commit `a573283c0553c3db338be1f2d547a53ccb77ac9d`: all Safari ESP identifiers, biome rules, box dimensions, textures and colors, and the simplified AutoClicker tick accumulator. Copyright 2025 Starred; BSD-3-Clause notice in `licenses/Nebulune-BSD-3-Clause.txt`.
 - [CritterMod v0.9.0](https://github.com/MrCloudy2/critterMod/tree/v0.9.0), commit `cdfcb8effb4b3158df50f0c0960c11e536931840`: sparkling detection/alerts/announcements, species/quotas, chat captures, progress/missing panels, nest tracking/waypoints, darkness removal and area lookup reference. Copyright 2026 MrCloudy2; MIT notice in `licenses/CritterMod-MIT.txt`.
 - The Safari area table bundled by CritterMod derives from SkyHanni's Safari path graph.
 - [MoulConfig](https://github.com/NotEnoughUpdates/MoulConfig) 4.7.2 supplies the settings UI and is bundled as a separate LGPL-3.0 library.
 
-The original Sparkling Mutuals license remains in `LICENSE`; adapted third-party portions retain their MIT notices, included in the built JAR.
+The original Sparkling Mutuals license remains in `LICENSE`; adapted third-party portions retain their MIT and BSD-3-Clause notices, included in the built JAR and source JAR.
