@@ -83,7 +83,7 @@ class SafariEspClickerTest {
         settings.cavernEsp.enabled = true
         settings.cavernEsp.onlyInBiome = true
         settings.cavernEsp.rockmite.enabled = true
-        settings.cavernEsp.rockmite.color = "0:255:255:0:0"
+        settings.customization.rockmite.color = "0:255:255:0:0"
         settings.floorEsp.enabled = true
         settings.apply()
         ConfigManager.init(dir)

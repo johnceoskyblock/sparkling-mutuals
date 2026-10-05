@@ -90,12 +90,12 @@ class PartyCommandTest {
     }
 
     @Test
-    fun `failures are single contextual replies without an SM prefix`() {
+    fun `lookup errors cannot cancel another clients successful result`() {
         for (kind in listOf(PartyCommandKind.MISSING, PartyCommandKind.TICKETS, PartyCommandKind.MUTUALS)) {
             val command = PartyCommand(kind, "JohnCEO")
             val reply = command.failureResult("The Hypixel API key is invalid.")
             assertFalse(reply.contains("[SM]"))
-            assertTrue(command.matchesResponse(reply))
+            assertFalse(command.matchesResponse(reply))
         }
     }
 
