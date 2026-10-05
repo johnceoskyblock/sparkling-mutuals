@@ -12,7 +12,7 @@ data class PartyChat(val sender: String, val body: String) {
     }
 }
 
-enum class PartyCommandKind { MUTUALS, MISSING, TICKETS, HELP }
+enum class PartyCommandKind { MUTUALS, MISSING, TICKETS, HELP, PB_DOOM, PB_WUMPA }
 
 data class PartyCommand(val kind: PartyCommandKind, val ign: String = "") {
     private val failurePrefix: String get() = when (kind) {
@@ -20,6 +20,8 @@ data class PartyCommand(val kind: PartyCommandKind, val ign: String = "") {
         PartyCommandKind.MISSING -> "Missing Timesave Sparklings for $ign: "
         PartyCommandKind.TICKETS -> "Safari Tickets for $ign: "
         PartyCommandKind.HELP -> "Commands: "
+        PartyCommandKind.PB_DOOM -> "Doomspiral PB: "
+        PartyCommandKind.PB_WUMPA -> "Wumpa PB: "
     }
 
     fun failureResult(message: String): String = failurePrefix + message
@@ -32,6 +34,9 @@ data class PartyCommand(val kind: PartyCommandKind, val ign: String = "") {
                 RegexOption.IGNORE_CASE
             ).matches(body)
             PartyCommandKind.HELP -> body.startsWith("[SM] Commands: ")
+            PartyCommandKind.PB_DOOM, PartyCommandKind.PB_WUMPA -> Regex(
+                "^[A-Za-z0-9_]{1,16}'s ${if (kind == PartyCommandKind.PB_DOOM) "Doomspiral" else "Wumpa"} PB: (?:\\d+:\\d{2}\\.\\d{3}|Not recorded yet)$",
+                RegexOption.IGNORE_CASE).matches(body)
             else -> false
         }
     }
@@ -41,6 +46,8 @@ data class PartyCommand(val kind: PartyCommandKind, val ign: String = "") {
         PartyCommandKind.MISSING -> "!missing $ign"
         PartyCommandKind.TICKETS -> "!tickets $ign"
         PartyCommandKind.HELP -> "!commands"
+        PartyCommandKind.PB_DOOM -> "!pb doom"
+        PartyCommandKind.PB_WUMPA -> "!pb wumpa"
     }
 
     companion object {
@@ -50,6 +57,8 @@ data class PartyCommand(val kind: PartyCommandKind, val ign: String = "") {
             val command = when (chat.body.lowercase()) {
                 "!mutual", "!mutuals" -> PartyCommand(PartyCommandKind.MUTUALS)
                 "!commands" -> PartyCommand(PartyCommandKind.HELP)
+                "!pb doom" -> PartyCommand(PartyCommandKind.PB_DOOM)
+                "!pb wumpa" -> PartyCommand(PartyCommandKind.PB_WUMPA)
                 else -> {
                     val match = lookup.matchEntire(chat.body) ?: return null
                     PartyCommand(if (match.groupValues[1].equals("missing", true))

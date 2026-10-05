@@ -1,6 +1,7 @@
 package net.johnceo.sparklingmutuals.commands
 
 import net.johnceo.sparklingmutuals.api.HypixelApi
+import net.johnceo.sparklingmutuals.config.ConfigManager
 
 object SafariLookup {
     private data class Cached(val discoveries: Set<String>, val timestamp: Long)
@@ -12,8 +13,10 @@ object SafariLookup {
 
     fun clearCache() = cache.clear()
 
-    fun run(command: PartyCommand, members: List<String>): String = when (command.kind) {
-        PartyCommandKind.HELP -> "[SM] Commands: !mutual(s); !missing <IGN>; !ticket(s) <IGN>; !commands | " +
+    fun run(command: PartyCommand, members: List<String>, localName: String = "You"): String = when (command.kind) {
+        PartyCommandKind.PB_DOOM -> ConfigManager.personalBests.response(localName, "Doomspiral")
+        PartyCommandKind.PB_WUMPA -> ConfigManager.personalBests.response(localName, "Wumpa")
+        PartyCommandKind.HELP -> "[SM] Commands: !mutual(s); !missing <IGN>; !ticket(s) <IGN>; !pb doom; !pb wumpa; !commands | " +
             "Local: /sparkling (config), /sparkling gui (HUD), /sparkling catches, /alert, /alertdelay <s>, /apikey <key>"
         PartyCommandKind.MUTUALS -> {
             val discoveries = members.map { uuid ->

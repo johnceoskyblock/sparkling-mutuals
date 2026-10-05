@@ -75,10 +75,11 @@ object PartyCommands {
             if (state.election.shouldStartLookup(now)) {
                 val connection = client.connection
                 val key = ConfigManager.apiKey
+                val localName = client.player!!.name.string
                 state.task = executor.submit {
                     // Cache access and network calls stay on this single worker.
                     if (key != lastKey) { SafariLookup.clearCache(); lastKey = key }
-                    val result = try { SafariLookup.run(state.request.command, state.roster) }
+                    val result = try { SafariLookup.run(state.request.command, state.roster, localName) }
                     catch (failure: ApiFailure) { state.request.command.failureResult(failure.message.orEmpty()) }
                     catch (_: Exception) { state.request.command.failureResult("Lookup failed unexpectedly. Please try again.") }
                     client.execute {
