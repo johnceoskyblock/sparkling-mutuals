@@ -1,6 +1,9 @@
 package net.johnceo.sparklingmutuals.config
 
 import io.github.notenoughupdates.moulconfig.annotations.*
+import net.johnceo.sparklingmutuals.safari.SafariAssist
+import net.johnceo.sparklingmutuals.safari.SafariBiome
+import net.johnceo.sparklingmutuals.safari.SafariFloorDrops
 
 /** Shared controls keep the four biome categories consistent. */
 open class SafariEspGroupSettings(private val group: String) {
@@ -28,7 +31,24 @@ class SafariEspMobSettings(private val name: String) {
         return changed
     }
 }
-class SafariFloorEspSettings : SafariEspGroupSettings("floor")
+class SafariFloorEspSettings : SafariEspGroupSettings("floor") {
+    init { enabled = SafariFloorDrops.enabled() }
+    private var previous = enabled
+    override fun apply(): Boolean {
+        val saved = SafariEspConfig.groups.getValue("floor")
+        val changed = previous != enabled || saved.onlyInBiome != onlyInBiome
+        if (previous != enabled) {
+            if (SafariAssist.biome in setOf(SafariBiome.CAVERN, SafariBiome.ICY)) {
+                SafariFloorDrops.state.visit(SafariAssist.biome)
+                SafariFloorDrops.state.force(enabled)
+            } else saved.enabled = enabled
+        }
+        saved.onlyInBiome = onlyInBiome
+        enabled = SafariFloorDrops.enabled()
+        previous = enabled
+        return changed
+    }
+}
 
 class SafariCavernEspSettings : SafariEspGroupSettings("cavern") {
     @JvmField @ConfigOption(name = "Cavernfish", desc = "Highlight this critter.") @Accordion val cavernfish = SafariEspMobSettings("Cavernfish")
