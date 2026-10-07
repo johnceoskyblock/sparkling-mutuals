@@ -155,7 +155,7 @@ All three bird capture numbers turn green together only after three **Bag of See
 
 The Cavern capture row is **Rockmite**. After **Total captures**, a blank row separates **Rockmite Mounds** and **Mounds with Rockmite**; mound actions do not increase total captures.
 
-**Off** hides the capture HUD/mound results, enables unique-only completion, and disables floor-drop and unlisted critter ESP. It keeps these critters highlighted: Driftling; Rockmite **mounds only**; Foxtrot, Treefrog, Woodchucker, Fluffling, Hideonfloor; Tepid, Shuddersquid, Billygoat, Mantis Shrimp, Nozzlenose, Wumpa; Bloodbat, Duplico, Litterbug, Solsnatcher, Hideonwall, Hideyho, Doomspiral. Neither preset changes colors or erases captures. Biome filters remain customizable.
+**Off** hides the capture HUD/mound results, enables unique-only completion, keeps floor-drop ESP enabled, and disables unlisted critter ESP. It keeps these critters highlighted: Driftling; Rockmite **mounds only**; Foxtrot, Treefrog, Woodchucker, Fluffling, Hideonfloor; Tepid, Shuddersquid, Billygoat, Mantis Shrimp, Nozzlenose, Wumpa; Bloodbat, Duplico, Litterbug, Solsnatcher, Hideonwall, Hideyho, Doomspiral. Neither preset changes colors or erases captures. Biome filters remain customizable.
 
 | Biome | Critter minimums |
 | --- | --- |
