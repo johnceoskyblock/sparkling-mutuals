@@ -15,25 +15,31 @@ import net.minecraft.client.gui.screens.ChatScreen
 
 /** MoulConfig view model; the existing properties files remain the saved configuration. */
 class SafariSettings : Config() {
-    @JvmField @Category(name = "Party commands", desc = "Responses and help") val party = Party()
-    @JvmField @Category(name = "Miria contest", desc = "HUD and warnings") val miria = Miria()
-    @JvmField @Category(name = "Warp reminders", desc = "Warp reminders") val warp = Warp()
-    @JvmField @Category(name = "Safari helpers", desc = "Paintings and sparklings") val safari = Safari()
-    @JvmField @Category(name = "Safari progress", desc = "Per-run captures and missing species") val tracking = Tracking()
-    @JvmField @Category(name = "API key", desc = "Profile lookup authentication") val api = Api()
-    @JvmField @Category(name = "ESP · Floor drops", desc = "Safari floor drop tiles") val floorEsp = SafariFloorEspSettings()
-    @JvmField @Category(name = "ESP · Cavern", desc = "Cavern critter boxes") val cavernEsp = SafariCavernEspSettings()
-    @JvmField @Category(name = "ESP · Forest", desc = "Forest critter boxes") val forestEsp = SafariForestEspSettings()
-    @JvmField @Category(name = "ESP · Icy", desc = "Icy critter boxes") val icyEsp = SafariIcyEspSettings()
-    @JvmField @Category(name = "ESP · Haunted", desc = "Haunted critter boxes") val hauntedEsp = SafariHauntedEspSettings()
+    @JvmField @Category(name = "General", desc = "") val general = General()
+    @JvmField @Category(name = "Party commands", desc = "") val party = Party()
+    @JvmField @Category(name = "Miria contest", desc = "") val miria = Miria()
+    @JvmField @Category(name = "Warp reminders", desc = "") val warp = Warp()
+    @JvmField @Category(name = "Safari helpers", desc = "") val safari = Safari()
+    @JvmField @Category(name = "Safari progress", desc = "") val tracking = Tracking()
+    @JvmField @Category(name = "API key", desc = "") val api = Api()
+    @JvmField @Category(name = "ESP · Floor drops", desc = "") val floorEsp = SafariFloorEspSettings()
+    @JvmField @Category(name = "ESP · Cavern", desc = "") val cavernEsp = SafariCavernEspSettings()
+    @JvmField @Category(name = "ESP · Forest", desc = "") val forestEsp = SafariForestEspSettings()
+    @JvmField @Category(name = "ESP · Icy", desc = "") val icyEsp = SafariIcyEspSettings()
+    @JvmField @Category(name = "ESP · Haunted", desc = "") val hauntedEsp = SafariHauntedEspSettings()
 
-    @JvmField @Category(name = "Customization", desc = "Waypoint, ESP and panel appearance") val customization = CustomizationSettings()
+    @JvmField @Category(name = "Customization", desc = "") val customization = CustomizationSettings()
 
+    class General {
+        @JvmField @ConfigOption(name = "Command help", desc = "Close settings and show commands in chat.")
+        @ConfigEditorButton(runnableId = 3, buttonText = "Show help") var help = false
+        @JvmField @ConfigOption(name = "Move and resize HUDs", desc = "Drag HUDs to move them; scroll to resize.")
+        @ConfigEditorButton(runnableId = 1, buttonText = "Edit all HUDs") var edit = false
+    }
     class Party {
         @JvmField @ConfigOption(name = "Respond to party commands", desc = "Reply to party commands. PB requests get a reply from each mod user.")
         @ConfigEditorBoolean var enabled = ConfigManager.partyCommandsEnabled
-        @JvmField @ConfigOption(name = "Command help", desc = "Close settings and show commands in chat.")
-        @ConfigEditorButton(runnableId = 3, buttonText = "Show help") var help = false
+
     }
     class Miria {
         @JvmField @ConfigOption(name = "Contest HUD and tracking", desc = "Track Miria contests.")
@@ -57,8 +63,7 @@ class SafariSettings : Config() {
         var sound
             get() = warning.sound
             set(value) { warning.sound = value }
-        @JvmField @ConfigOption(name = "Move and resize HUDs", desc = "Drag HUDs to move them; scroll to resize.")
-        @ConfigEditorButton(runnableId = 1, buttonText = "Edit all HUDs") var edit = false
+
     }
     class Warning {
         @JvmField @ConfigOption(name = "5 minute warning", desc = "Warn at 5 minutes if below Uncommon.")
@@ -136,8 +141,7 @@ class SafariSettings : Config() {
         @ConfigEditorBoolean var missing = ConfigManager.missingPanel
         @JvmField @ConfigOption(name = "Capture count screen", desc = "Review the current or last run's captures.")
         @ConfigEditorButton(runnableId = 8, buttonText = "View captures") var view = false
-        @JvmField @ConfigOption(name = "Move and resize HUDs", desc = "Drag HUDs to move them; scroll to resize.")
-        @ConfigEditorButton(runnableId = 1, buttonText = "Edit all HUDs") var edit = false
+
     }
     class Api {
         @JvmField @ConfigOption(name = "Hypixel API key", desc = "Edit the key used for profile lookups.")
