@@ -5,17 +5,7 @@ import net.johnceo.sparklingmutuals.config.SafariEspConfig
 
 data class BiomeClearEvidence(val observed: Boolean = false, val nearbyCritters: Int = 0,
     val moundsCleared: Boolean = false, val wallsCleared: Boolean = false,
-    val nestsChecked: Boolean = false, val floorDropsCleared: Boolean = false, val nearbyMacaws: Int = 0)
-
-/** Missing entities outside loaded chunks never complete a previously observed site. */
-class ClearSiteSurvey {
-    private val sites = mutableMapOf<Triple<Int, Int, Int>, Boolean>()
-    val allCleared get() = sites.isNotEmpty() && sites.values.all { it }
-    fun scan(present: Set<Triple<Int, Int, Int>>, observable: (Triple<Int, Int, Int>) -> Boolean) {
-        present.forEach { sites[it] = false }
-        sites.keys.filter { it !in present && observable(it) }.forEach { sites[it] = true }
-    }
-}
+    val nestsChecked: Boolean = false, val nearbyMacaws: Int = 0)
 
 /** Command-owned presets change presentation, never the per-run capture ledger. */
 object SafariFullClear {
@@ -35,21 +25,16 @@ object SafariFullClear {
     fun minimum(species: String) = minimums.getValue(species)
     fun eligible(run: SafariRun, biome: SafariBiome, evidence: BiomeClearEvidence): Boolean {
         val macawException = biome == SafariBiome.FOREST && evidence.nearbyMacaws > 0 &&
-            evidence.nearbyCritters == evidence.nearbyMacaws && run.birdsComplete(setOf("Macaw"), personalOnly = true)
+            evidence.nearbyCritters == evidence.nearbyMacaws
         if (run.endedAt != null || !evidence.observed || evidence.nearbyCritters != 0 && !macawException) return false
-        if (biome.critters.any { critter ->
-            val quota = minimum(critter.name)
-            val observed = run.observedCount(critter.name) - if (macawException && critter.name == "Macaw") evidence.nearbyMacaws else 0
-            val required = if (biome == SafariBiome.FOREST) maxOf(quota, observed) else if (quota == 0) observed else quota
-            run.personalCount(critter.name) < required
-        }) return false
-        return when (biome) {
-            SafariBiome.CAVERN -> run.brokenMounds >= MOUND_MINIMUM && evidence.moundsCleared && evidence.wallsCleared
-            SafariBiome.FOREST -> evidence.nestsChecked && run.birdCount(personalOnly = true) >= 7 &&
-                (macawException || run.birdsComplete(emptySet(), personalOnly = true) || evidence.floorDropsCleared ||
-                listOf("Bluebird", "Parakeet", "Macaw").sumOf(run::personalCount) >= 9)
-            else -> true
-        }
+        val remaining = if (macawException) setOf("Macaw") else emptySet()
+        return biome.critters.all { run.captureComplete(it.name, personalOnly = true, remaining, evidence) }
+    }
+    fun recordClear(run: SafariRun, biome: SafariBiome, evidence: BiomeClearEvidence,
+        bests: SafariPersonalBests, now: Long): String? {
+        if (biome in run.biomeClears || !eligible(run, biome, evidence)) return null
+        run.biomeClears.add(biome)
+        return bests.recordBiome(biome, run, now)
     }
     fun toggle(): Boolean {
         ConfigManager.fullClearMode = !ConfigManager.fullClearMode

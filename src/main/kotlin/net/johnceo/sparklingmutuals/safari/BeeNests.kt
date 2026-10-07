@@ -28,7 +28,7 @@ object BeeNests {
     private val punched = mutableSetOf<BlockPos>()
     private var ticks = 0
     val unpunchedCount get() = known.count { it !in punched }
-    val allChecked get() = known.isNotEmpty() && known.all { it in punched }
+    val allChecked get() = (known.isNotEmpty() || punched.isNotEmpty()) && known.all { it in punched }
     private val lines = RenderType.create("sparkling-mutuals:nests", RenderSetup.builder(RenderPipelines.register(
         RenderPipeline.builder(RenderPipelines.LINES_SNIPPET).withLocation(SparklingMutuals.id("pipeline/nests"))
             .withDepthStencilState(DepthStencilState(CompareOp.ALWAYS_PASS, false)).build()))
@@ -38,7 +38,10 @@ object BeeNests {
 
     fun register() {
         AttackBlockCallback.EVENT.register { _, level, _, pos, _ ->
-            if (level.isClientSide && SafariAssist.inSafari && level.getBlockState(pos).`is`(Blocks.BEE_NEST)) punched.add(pos.immutable())
+            if (level.isClientSide && SafariAssist.inSafari && level.getBlockState(pos).`is`(Blocks.BEE_NEST)) {
+                val nest = pos.immutable()
+                known.add(nest); punched.add(nest)
+            }
             InteractionResult.PASS
         }
         LevelRenderEvents.AFTER_TRANSLUCENT_FEATURES.register(::render)

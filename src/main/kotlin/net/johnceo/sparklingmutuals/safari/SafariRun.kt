@@ -61,6 +61,7 @@ class SafariRun(val startedAt: Long) {
     private val birdFood = mutableMapOf<String, Int>()
     private val nearby = mutableMapOf<SafariBiome, Set<String>>()
     private var wallsChecked = false
+    private var nestsChecked = false
     private val birds = setOf("Bluebird", "Parakeet", "Macaw")
     val birdFoodsComplete get() = listOf("Bag of Seeds", "Wriggleworm", "Yogi Berry").all { (birdFood[it] ?: 0) >= 3 }
     fun recordBirdFood(raw: String): Boolean {
@@ -70,9 +71,10 @@ class SafariRun(val startedAt: Long) {
         birdFood.merge(food, 1, Int::plus)
         return true
     }
-    fun updateCaptureEvidence(biome: SafariBiome, speciesInRange: Set<String>, allWallsChecked: Boolean) {
+    fun updateCaptureEvidence(biome: SafariBiome, speciesInRange: Set<String>, allWallsChecked: Boolean, allNestsChecked: Boolean = false) {
         nearby[biome] = speciesInRange
         wallsChecked = allWallsChecked
+        nestsChecked = allNestsChecked
     }
     fun birdCount(personalOnly: Boolean = false) = birds.sumOf { if (personalOnly) personalCount(it) else count(it) }
     private fun birdComplete(species: String, speciesInRange: Set<String>?, personalOnly: Boolean = false) =
@@ -80,15 +82,21 @@ class SafariRun(val startedAt: Long) {
             (species !in speciesInRange || species == "Macaw" && (if (personalOnly) personalCount(species) else count(species)) >= 1)
     fun birdsComplete(speciesInRange: Set<String>?, personalOnly: Boolean = false) =
         birds.all { birdComplete(it, speciesInRange, personalOnly) }
-    fun captureComplete(species: String): Boolean = when (species) {
-        in birds -> birdComplete(species, nearby[SafariBiome.FOREST])
-        "Snoozle" -> wallsChecked && nearby[SafariBiome.CAVERN]?.contains(species) == false
-        "Rockmite" -> allMoundsBroken && count(species) >= maxOf(rockmiteMounds, observedCount(species)) &&
-            nearby[SafariBiome.CAVERN]?.none { it == "Rockmite" || it == "Rockmite Mound" } == true && moundSurvey.remaining == 0
-        else -> count(species) >= SafariFullClear.minimum(species) &&
-            nearby[SafariRoster.named(species)!!.biome]?.contains(species) == false
+    fun captureComplete(species: String, personalOnly: Boolean = false,
+        speciesInRange: Set<String>? = nearby[SafariRoster.named(species)!!.biome], structures: BiomeClearEvidence? = null): Boolean {
+        val remaining = speciesInRange ?: return false
+        val captured = if (personalOnly) personalCount(species) else count(species)
+        if (captured < SafariFullClear.minimum(species)) return false
+        if (species in birds) return birdComplete(species, remaining, personalOnly)
+        if (species in remaining) return false
+        return when (species) {
+            "Honeybug" -> structures?.nestsChecked ?: nestsChecked
+            "Snoozle" -> structures?.wallsCleared ?: wallsChecked
+            "Rockmite" -> (structures?.moundsCleared ?: (allMoundsBroken && moundSurvey.remaining == 0)) &&
+                captured >= rockmiteMounds && "Rockmite Mound" !in remaining
+            else -> true
+        }
     }
-    val floorSurvey = ClearSiteSurvey()
     val biomeClears = mutableSetOf<SafariBiome>()
     val moundSurvey = MoundSurvey()
     val allMoundsBroken get() = brokenMounds >= 20 || moundSurvey.allBroken
