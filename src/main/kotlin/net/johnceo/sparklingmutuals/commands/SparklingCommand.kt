@@ -20,25 +20,12 @@ object SparklingCommand {
 
     fun register() {
         ClientCommandRegistrationCallback.EVENT.register { dispatcher, _ ->
-            dispatcher.register(ClientCommands.literal("pb").then(ClientCommands.literal("toggle").executes { context ->
-                val type = ConfigManager.personalBests.toggleBiomeType()
-                ConfigManager.save()
-                context.source.sendFeedback(Component.literal("[SM] Biome PB replies: ${type.label}. Both PB types are tracked separately."))
-                1
-            }))
             dispatcher.register(
                 ClientCommands.literal("sparkling")
                     .executes { open(::SafariConfigScreen) }
-                    .then(ClientCommands.literal("full").then(ClientCommands.literal("clear").executes { context ->
+                    .then(ClientCommands.literal("fc").executes { context ->
                         val enabled = SafariFullClear.toggle()
-                        ConfigManager.save()
-                        context.source.sendFeedback(Component.literal("[SM] Full clear mode: ${if (enabled) "on" else "off"}."))
-                        1
-                    }))
-                    .then(ClientCommands.literal("timesave").executes { context ->
-                        ConfigManager.timesaveOnly = !ConfigManager.timesaveOnly
-                        ConfigManager.save()
-                        context.source.sendFeedback(Component.literal("[SM] Timesave mode: ${if (ConfigManager.timesaveOnly) "on" else "off"}."))
+                        context.source.sendFeedback(Component.literal("[SM] Full clear: ${if (enabled) "on" else "off"} | PBs: ${ConfigManager.personalBests.biomeType.label} | Timesaves: ${if (ConfigManager.timesaveOnly) "on" else "off"}."))
                         1
                     })
                     .then(ClientCommands.literal("config").executes { open(::SafariConfigScreen) })
