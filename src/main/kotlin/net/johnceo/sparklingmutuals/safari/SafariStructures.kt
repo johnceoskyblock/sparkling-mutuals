@@ -18,22 +18,31 @@ object SafariStructures {
     private val scaffolding = setOf(EntityType.ARMOR_STAND, EntityType.ITEM_DISPLAY, EntityType.BLOCK_DISPLAY,
         EntityType.TEXT_DISPLAY, EntityType.PLAYER, EntityType.ITEM, EntityType.INTERACTION)
     fun tick(client: Minecraft) {
-        if (SafariAssist.biome != SafariBiome.CAVERN) { reset(); return }
+        if (SafariAssist.biome != SafariBiome.CAVERN) { nearbyMounds = 0; ticks = 0; return }
         val level = client.level ?: return
         val player = client.player ?: return
         if (++ticks < 10) return
         ticks = 0
-        if (ConfigManager.highlightSnooperWalls || ConfigManager.showSnooperWalls) states = snooperPositions.associateWith {
-            when { !level.isLoaded(it) -> WallState.UNKNOWN; level.getBlockState(it).isAir -> WallState.BROKEN; else -> WallState.INTACT }
+        states = snooperPositions.associateWith {
+            when { !level.isLoaded(it) -> states.getValue(it).takeIf { state -> state == WallState.BROKEN } ?: WallState.UNKNOWN
+                level.getBlockState(it).isAir -> WallState.BROKEN; else -> WallState.INTACT }
         }
-        if (!ConfigManager.showMoundCount) { nearbyMounds = 0; return }
+        val run = SafariTracking.ledger.current ?: return
+        level.entitiesForRendering().filterNot { it.isRemoved }.forEach {
+            if (SafariEspRules.biomeAt(it.x, it.z) == SafariBiome.CAVERN)
+                run.observe(EspEntity(it.type.toShortString(), invisible = it.isInvisible, passengers = it.passengers.isNotEmpty()))
+        }
         val entities = level.entitiesForRendering().filter { !it.isRemoved && player.distanceToSqr(it) <= 4096 }.toList()
         val creatures = entities.filter { it.type !in scaffolding }
-        nearbyMounds = entities.filter { it.type == EntityType.INTERACTION }.filter { box ->
+        val mounds = entities.filter { it.type == EntityType.INTERACTION }.filter { box ->
             SafariMounds.detected(MoundShape(box.x, box.y, box.z, box.boundingBox.xsize, box.boundingBox.ysize,
                 player.distanceToSqr(box), creatures.any { kotlin.math.abs(it.x - box.x) <= .35 &&
                     kotlin.math.abs(it.z - box.z) <= .35 && kotlin.math.abs(it.y - box.y) <= 1.0 }))
-        }.map { it.blockPosition() }.distinct().size
+        }.map { it.blockPosition() }.toSet()
+        nearbyMounds = mounds.size
+        run.moundSurvey.scan(mounds.map { Triple(it.x, it.y, it.z) }.toSet()) { (x, y, z) ->
+            level.isLoaded(BlockPos(x, y, z)) && player.distanceToSqr(x + .5, y + .5, z + .5) <= 56.0 * 56
+        }
     }
     fun reset() { states = snooperPositions.associateWith { WallState.UNKNOWN }; nearbyMounds = 0; ticks = 0 }
 }

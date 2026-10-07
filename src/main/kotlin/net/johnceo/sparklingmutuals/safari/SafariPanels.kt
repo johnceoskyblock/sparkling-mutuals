@@ -30,12 +30,17 @@ object SafariPanels {
             }
             if (biome == SafariBiome.CAVERN) {
                 if (ConfigManager.showSnooperWalls && walls.states.isNotEmpty()) {
-                    add(HudRow())
-                    add(if (walls.allBroken) HudRow("Snooper walls all broken", color = 0xFF55FF55.toInt())
-                        else HudRow("Snooper walls to break", walls.remaining, HudRow.GOLD, HudRow.GRAY))
+                    val row = when {
+                        !walls.allBroken -> HudRow("Snooper walls to break", walls.remaining, HudRow.GOLD, HudRow.GRAY)
+                        run != null && !run.encountered("Snoozle") -> HudRow("No snoozles this run", color = HudRow.GRAY)
+                        else -> null
+                    }
+                    if (row != null) { add(HudRow()); add(row) }
                 }
                 if (ConfigManager.showMoundCount && mounds > 0) {
                     add(HudRow()); add(HudRow("Mounds to break", "$mounds", HudRow.GOLD, HudRow.GRAY))
+                } else if (ConfigManager.showMoundCount && run?.allMoundsBroken == true && !run.encountered("Rockmite")) {
+                    add(HudRow()); add(HudRow("No rockmites this run", color = HudRow.GRAY))
                 }
             }
         }

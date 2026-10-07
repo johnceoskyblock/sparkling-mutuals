@@ -54,6 +54,13 @@ class SafariRun(val startedAt: Long) {
     var endedAt: Long? = null
     var lastBiome: SafariBiome? = null
     private val counts = mutableMapOf<String, Int>()
+    private val sightings = mutableSetOf<String>()
+    val moundSurvey = MoundSurvey()
+    val allMoundsBroken get() = brokenMounds >= 20 || moundSurvey.allBroken
+    fun encountered(name: String) = count(name) > 0 || name in sightings || name == "Rockmite" && rockmiteMounds > 0
+    fun observe(entity: EspEntity) {
+        if (entity.type == "silverfish" || entity.type == "sniffer") SafariEspRules.identify(entity)?.let { sightings.add(it.name) }
+    }
     fun record(catch: SafariCatch) { counts.merge(catch.critter.name, 1, Int::plus) }
     fun recordMound(raw: String): Boolean {
         val found = SafariMounds.outcome(raw) ?: return false

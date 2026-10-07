@@ -126,7 +126,7 @@ object SafariEsp {
             val setting = SafariEspConfig.mobs.getValue(mob.name)
             val mobBiome = SafariEspRules.biomeAt(e.x, e.z)
             if (setting.enabled && mobBiome == mob.biome && SafariEspRules.visible(true, group.enabled, group.onlyInBiome, playerBiome, mobBiome))
-                frame(bounds(target, delta), SafariEspConfig.rgb(setting.color))
+                frame(bounds(target, delta), SafariEspConfig.rgb(SafariEspConfig.entityColor(mob.name, e is Display.ItemDisplay)))
         }
         val floor = SafariEspConfig.groups.getValue("floor")
         val tiles = drops.filter { SafariEspRules.visible(true, floor.enabled, floor.onlyInBiome, playerBiome,
