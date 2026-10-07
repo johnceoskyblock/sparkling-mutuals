@@ -65,6 +65,23 @@ class SafariPanelSeparationTest {
         assertTrue(SafariPanels.captures(run, SafariBiome.FOREST).rows.filter { it.label in listOf("Bluebird", "Parakeet", "Macaw") }.all { it.valueColor == 0xFF55FF55.toInt() })
         assertFalse(SafariRun(0).birdFoodsComplete)
     }
+    @Test fun `only Macaws remaining completes bird colors after food and capture requirements`() {
+        ConfigManager.init(dir); SafariFullClear.toggle()
+        val run = SafariRun(0)
+        run.updateCaptureEvidence(SafariBiome.FOREST, setOf("Macaw"), false)
+        assertFalse(run.captureComplete("Macaw"))
+        repeat(7) { run.record(SafariCatch(SafariRoster.named("Bluebird")!!)) }
+        assertFalse(run.captureComplete("Macaw"))
+        run.record(SafariCatch(SafariRoster.named("Parakeet")!!))
+        assertFalse(run.captureComplete("Macaw"))
+        repeat(3) { for (food in listOf("Bag of Seeds", "Wriggleworm", "Yogi Berry")) run.recordBirdFood("FLOOR DROP! $food") }
+        val birds = setOf("Bluebird", "Parakeet", "Macaw")
+        assertTrue(SafariPanels.captures(run, SafariBiome.FOREST).rows.filter { it.label in birds }.all { it.valueColor == 0xFF55FF55.toInt() })
+        for (other in listOf("Bluebird", "Parakeet", "Foxtrot")) {
+            run.updateCaptureEvidence(SafariBiome.FOREST, setOf("Macaw", other), false)
+            assertFalse(run.captureComplete("Macaw"))
+        }
+    }
     @Test fun `Cavern colors require checked structures collected rockmites and no nearby entities`() {
         ConfigManager.init(dir); SafariFullClear.toggle()
         val run = SafariRun(0)
