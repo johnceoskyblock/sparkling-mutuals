@@ -60,7 +60,6 @@ object SafariFullClear {
             ConfigManager.showBeeNests = true; ConfigManager.showMoundCount = true; ConfigManager.showSnooperWalls = true
         }
         SafariEspConfig.groups.values.forEach { it.enabled = true }
-        SafariEspConfig.groups.getValue("floor").enabled = enabled
         SafariEspConfig.mobs.forEach { (species, setting) -> setting.enabled = enabled || species in regularEsp }
         SafariEspConfig.rockmiteMoundEnabled = true
     }
