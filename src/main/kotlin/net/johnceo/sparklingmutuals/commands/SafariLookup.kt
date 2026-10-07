@@ -2,6 +2,7 @@ package net.johnceo.sparklingmutuals.commands
 
 import net.johnceo.sparklingmutuals.api.HypixelApi
 import net.johnceo.sparklingmutuals.config.ConfigManager
+import net.johnceo.sparklingmutuals.safari.SafariRoster
 
 object SafariLookup {
     private data class Cached(val discoveries: Set<String>, val timestamp: Long)
@@ -16,6 +17,10 @@ object SafariLookup {
     fun run(command: PartyCommand, members: List<String>, localName: String = "You"): String = when (command.kind) {
         PartyCommandKind.PB_DOOM -> ConfigManager.personalBests.response(localName, "Doomspiral")
         PartyCommandKind.PB_WUMPA -> ConfigManager.personalBests.response(localName, "Wumpa")
+        PartyCommandKind.PB_FOREST -> ConfigManager.personalBests.response(localName, "Forest")
+        PartyCommandKind.PB_HAUNTED -> ConfigManager.personalBests.response(localName, "Haunted")
+        PartyCommandKind.PB_ICY -> ConfigManager.personalBests.response(localName, "Icy")
+        PartyCommandKind.PB_CAVERN -> ConfigManager.personalBests.response(localName, "Cavern")
         PartyCommandKind.HELP -> CommandHelp.partyReply()
         PartyCommandKind.MUTUALS -> {
             val discoveries = members.map { uuid ->
@@ -25,14 +30,13 @@ object SafariLookup {
                     cache[uuid] = Cached(it, System.currentTimeMillis())
                 }
             }.reduceOrNull(Set<String>::intersect).orEmpty()
-            "Mutual Timesave Sparkling Critters: ${formatTimesaves(discoveries).ifEmpty { listOf("None") }.joinToString(", ")}"
+            "Mutual ${if (ConfigManager.timesaveOnly) "Timesave " else ""}Sparkling Critters: ${formatDiscoveries(discoveries, ConfigManager.timesaveOnly).ifEmpty { listOf("None") }.joinToString(", ")}"
         }
         PartyCommandKind.MISSING -> {
             val uuid = HypixelApi.getPlayerUuid(command.ign)
             val discovered = HypixelApi.getSparklingCritters(uuid, HypixelApi.getCurrentProfileUuid(uuid))
-            val missing = timesaves.filterKeys { it !in discovered }.values.toMutableList()
-            if (!discovered.containsAll(birds)) missing.add("All Birds")
-            "Missing Timesave Sparklings for ${command.ign}: ${missing.ifEmpty { listOf("None") }.joinToString(", ")}"
+            val missing = formatMissing(discovered, ConfigManager.timesaveOnly)
+            "Missing ${if (ConfigManager.timesaveOnly) "Timesave " else ""}Sparklings for ${command.ign}: ${missing.ifEmpty { listOf("None") }.joinToString(", ")}"
         }
         PartyCommandKind.TICKETS -> {
             val uuid = HypixelApi.getPlayerUuid(command.ign)
@@ -41,6 +45,13 @@ object SafariLookup {
                 "Premium (${tickets["premium"]}), First-Class (${tickets["first_class"]})"
         }
     }
+
+    private fun discoveryKey(name: String) = name.uppercase(java.util.Locale.ROOT).replace(' ', '_')
+    fun formatDiscoveries(discoveries: Set<String>, timesaveOnly: Boolean): List<String> =
+        if (timesaveOnly) formatTimesaves(discoveries) else SafariRoster.all.filter { discoveryKey(it.name) in discoveries }.map { it.name }
+    fun formatMissing(discoveries: Set<String>, timesaveOnly: Boolean): List<String> =
+        if (!timesaveOnly) SafariRoster.all.filter { discoveryKey(it.name) !in discoveries }.map { it.name }
+        else timesaves.filterKeys { it !in discoveries }.values.toMutableList().also { if (!discoveries.containsAll(birds)) it.add("All Birds") }
 
     private fun formatTimesaves(discoveries: Set<String>): List<String> =
         timesaves.filterKeys { it in discoveries }.values.toMutableList().also {

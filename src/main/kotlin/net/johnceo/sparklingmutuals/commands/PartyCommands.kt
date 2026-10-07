@@ -16,6 +16,9 @@ object PartyCommands {
     private val requests = mutableMapOf<String, PartyRequest>()
     private val answered = mutableSetOf<String>()
     private val history = PartyResponseHistory()
+    private data class QueuedReply(val token: String, val body: String, val roster: Set<String>)
+    private val replies = ArrayDeque<QueuedReply>()
+    private var sentReplyAt = 0L
     private val executor = Executors.newSingleThreadExecutor { Thread(it, "Sparkling Mutuals lookups").apply { isDaemon = true } }
 
     fun register() {
@@ -37,6 +40,8 @@ object PartyCommands {
                 val state = pending[token]
                 if (state != null && senderUuid != null && senderUuid !in state.roster) return@forEach
                 state?.election?.observeResponse(senderUuid)
+                val ownReply = chat.sender.equals(Minecraft.getInstance().player?.name?.string, true)
+                if (!ownReply) replies.removeAll { it.token == token }
                 answered.add(token)
                 pending.remove(token)?.task?.cancel(false)
             }
@@ -67,6 +72,13 @@ object PartyCommands {
         if (client.player == null || client.connection == null) { reset(); return }
         if (!ConfigManager.partyCommandsEnabled) { cancelPending(); return }
         val now = System.currentTimeMillis()
+        if (replies.isNotEmpty() && now - sentReplyAt >= 1500) {
+            val reply = replies.removeFirst()
+            if (reply.roster == PartyManager.getMembers().toSet()) {
+                client.player?.connection?.sendCommand("pc ${reply.body}")
+                sentReplyAt = now
+            }
+        }
         recent.entries.removeIf { now - it.value > 40_000 && it.key !in pending }
         requests.keys.retainAll(recent.keys)
         answered.retainAll(recent.keys)
@@ -95,7 +107,9 @@ object PartyCommands {
                             pending.remove(token)
                             if (result.successful) {
                                 answered.add(token)
-                                client.player?.connection?.sendCommand("pc ${result.partyMessage}")
+                                PartyReplyChunks.split(result.partyMessage!!).forEach { body ->
+                                    replies.addLast(QueuedReply(token, body, state.roster.toSet()))
+                                }
                             } else client.player?.sendSystemMessage(Component.literal(result.text))
                         }
                     }
@@ -108,6 +122,7 @@ object PartyCommands {
     private fun cancelPending() {
         pending.values.forEach { it.task?.cancel(false) }
         pending.clear()
+        replies.clear()
     }
     fun reset() { cancelPending(); recent.clear(); requests.clear(); answered.clear(); history.clear() }
 }

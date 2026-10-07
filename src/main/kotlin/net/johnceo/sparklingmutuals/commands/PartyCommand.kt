@@ -1,6 +1,7 @@
 package net.johnceo.sparklingmutuals.commands
 
 import java.security.MessageDigest
+import net.johnceo.sparklingmutuals.safari.SafariRoster
 
 data class PartyChat(val sender: String, val body: String) {
     companion object {
@@ -12,12 +13,21 @@ data class PartyChat(val sender: String, val body: String) {
     }
 }
 
-enum class PartyCommandKind { MUTUALS, MISSING, TICKETS, HELP, PB_DOOM, PB_WUMPA }
+enum class PartyCommandKind { MUTUALS, MISSING, TICKETS, HELP, PB_DOOM, PB_WUMPA, PB_FOREST, PB_HAUNTED, PB_ICY, PB_CAVERN }
 
 data class PartyCommand(val kind: PartyCommandKind, val ign: String = "") {
     val requiresApiKey get() = kind in listOf(PartyCommandKind.MUTUALS, PartyCommandKind.MISSING, PartyCommandKind.TICKETS)
+    val pbName get() = when (kind) {
+        PartyCommandKind.PB_DOOM -> "Doomspiral"
+        PartyCommandKind.PB_WUMPA -> "Wumpa"
+        PartyCommandKind.PB_FOREST -> "Forest"
+        PartyCommandKind.PB_HAUNTED -> "Haunted"
+        PartyCommandKind.PB_ICY -> "Icy"
+        PartyCommandKind.PB_CAVERN -> "Cavern"
+        else -> null
+    }
     // PB requests target this client's IGN; other commands retain their party-wide response scope.
-    fun forResponder(name: String) = if (kind == PartyCommandKind.PB_DOOM || kind == PartyCommandKind.PB_WUMPA)
+    fun forResponder(name: String) = if (pbName != null)
         copy(ign = name) else this
     private val failurePrefix: String get() = when (kind) {
         PartyCommandKind.MUTUALS -> "Mutual Timesave Sparkling Critters: "
@@ -25,22 +35,33 @@ data class PartyCommand(val kind: PartyCommandKind, val ign: String = "") {
         PartyCommandKind.TICKETS -> "Safari Tickets for $ign: "
         PartyCommandKind.HELP -> "Commands: "
         PartyCommandKind.PB_DOOM -> "Doomspiral PB: "
-        PartyCommandKind.PB_WUMPA -> "Wumpa PB: "
+        else -> "$pbName PB: "
     }
 
     fun failureResult(message: String): String = failurePrefix + message
 
     fun matchesResponse(body: String): Boolean {
         return when (kind) {
-            PartyCommandKind.MISSING, PartyCommandKind.MUTUALS -> body.startsWith(failurePrefix, ignoreCase = true) &&
-                timesaveResult.matches(body.substring(failurePrefix.length))
+            PartyCommandKind.MISSING, PartyCommandKind.MUTUALS -> {
+                val prefixes = if (kind == PartyCommandKind.MISSING)
+                    listOf("Missing Timesave Sparklings for $ign: ", "Missing Sparklings for $ign: ")
+                else listOf("Mutual Timesave Sparkling Critters: ", "Mutual Sparkling Critters: ")
+                prefixes.any { prefix ->
+                    if (body.startsWith(prefix, true)) lookupResult.matches(body.substring(prefix.length))
+                    else {
+                        val chunk = Regex("^${Regex.escape(prefix.removeSuffix(": "))} \\[([1-9][0-9]*)/([1-9][0-9]*)\\]: (.+)$", RegexOption.IGNORE_CASE).matchEntire(body)
+                        chunk != null && (chunk.groupValues[1].toIntOrNull() ?: Int.MAX_VALUE) <=
+                            (chunk.groupValues[2].toIntOrNull() ?: 0) && lookupResult.matches(chunk.groupValues[3])
+                    }
+                }
+            }
             PartyCommandKind.TICKETS -> Regex(
                 "^${Regex.escape(ign)}: Basic \\(\\d+\\), Economy \\(\\d+\\), Premium \\(\\d+\\), First-Class \\(\\d+\\)$",
                 RegexOption.IGNORE_CASE
             ).matches(body)
             PartyCommandKind.HELP -> body.startsWith("[SM] Commands: ")
-            PartyCommandKind.PB_DOOM, PartyCommandKind.PB_WUMPA -> Regex(
-                "^${if (ign.isEmpty()) "[A-Za-z0-9_]{1,16}" else Regex.escape(ign)}'s ${if (kind == PartyCommandKind.PB_DOOM) "Doomspiral" else "Wumpa"} PB: (?:\\d+:\\d{2}\\.\\d{3}|Not recorded yet)$",
+            else -> Regex(
+                "^${if (ign.isEmpty()) "[A-Za-z0-9_]{1,16}" else Regex.escape(ign)}'s ${pbName} PB: (?:\\d+:\\d{2}\\.\\d{3}|Not recorded yet)$",
                 RegexOption.IGNORE_CASE).matches(body)
         }
     }
@@ -52,11 +73,12 @@ data class PartyCommand(val kind: PartyCommandKind, val ign: String = "") {
         PartyCommandKind.HELP -> "!commands"
         PartyCommandKind.PB_DOOM -> "!pb doom"
         PartyCommandKind.PB_WUMPA -> "!pb wumpa"
+        else -> "!pb ${pbName!!.lowercase()}"
     }
 
     companion object {
-        private const val TIMESAVES = "Rockmite|Snoozle|Gemzie|Honeybug|Gazer|Gimmiegold|Doomspiral|Wumpa|All Birds"
-        private val timesaveResult = Regex("^(?:None|(?:$TIMESAVES)(?:, (?:$TIMESAVES))*)$", RegexOption.IGNORE_CASE)
+        private val names = (SafariRoster.all.map { Regex.escape(it.name) } + "All Birds").joinToString("|")
+        private val lookupResult = Regex("^(?:None|(?:$names)(?:, (?:$names))*)$", RegexOption.IGNORE_CASE)
         private val lookup = Regex("""^!(missing|tickets?)\s+([A-Za-z0-9_]{1,16})$""", RegexOption.IGNORE_CASE)
         fun fromChat(text: String): PartyRequest? {
             val chat = PartyChat.parse(text) ?: return null
@@ -65,6 +87,10 @@ data class PartyCommand(val kind: PartyCommandKind, val ign: String = "") {
                 "!commands" -> PartyCommand(PartyCommandKind.HELP)
                 "!pb doom" -> PartyCommand(PartyCommandKind.PB_DOOM)
                 "!pb wumpa" -> PartyCommand(PartyCommandKind.PB_WUMPA)
+                "!pb forest" -> PartyCommand(PartyCommandKind.PB_FOREST)
+                "!pb haunted" -> PartyCommand(PartyCommandKind.PB_HAUNTED)
+                "!pb icy" -> PartyCommand(PartyCommandKind.PB_ICY)
+                "!pb cavern" -> PartyCommand(PartyCommandKind.PB_CAVERN)
                 else -> {
                     val match = lookup.matchEntire(chat.body) ?: return null
                     PartyCommand(if (match.groupValues[1].equals("missing", true))
