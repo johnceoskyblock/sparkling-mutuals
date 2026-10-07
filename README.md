@@ -20,6 +20,8 @@ A Fabric mod for Hypixel SkyBlock Safari, sparkling discoveries, and Miria conte
 
 ## Safari helpers
 
+- **Miria contest HUD:** tracks Miria's contest timer, tier, and score, with configurable end warnings.
+- **Warp reminders:** sends title to warp party before afk timeout. Useful for party leeching so that other players can have a chance to get sparkling critters without using a ticket. Use `/alert` and `/alertdelay <seconds>` to control reminders.
 - **Critter ESP:** highlights critters in Forest, Cavern, Icy, and Haunted, with individual toggles and biome filters. Rockmite mounds and silverfish have separate controls.
 - **Floor drop ESP:** highlights Safari floor drops.
 - **Sparkling detection:** highlights nearby sparkling critters and shows their names and distances.
@@ -32,10 +34,8 @@ A Fabric mod for Hypixel SkyBlock Safari, sparkling discoveries, and Miria conte
 - **Capture chat filter:** hides capture-related spam while tracking continues.
 - **Capsule hiding:** hides ground capsules and nearby flying capsules.
 
-## Contests and customization
+## Settings and customization
 
-- **Miria contest HUD:** tracks Miria's contest timer, tier, and score, with configurable end warnings.
-- **Warp reminders:** reminds you to warp after a Hunting Hotspot message. Use `/alert` and `/alertdelay <seconds>` to control reminders.
 - **Settings:** `/sparkling` opens feature settings, command help, and API key setup.
 - **HUD editor:** `/sparkling gui` lets you move and resize panels.
 - **Appearance:** customize ESP and waypoint colors, HUD backgrounds, transparency, and borders.
