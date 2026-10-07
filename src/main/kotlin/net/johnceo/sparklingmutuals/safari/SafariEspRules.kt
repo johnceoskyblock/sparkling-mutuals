@@ -7,7 +7,31 @@ data class EspEntity(val type: String, val texture: String? = null, val shulker:
     val fish: String? = null, val variant: String? = null, val invisible: Boolean = false, val passengers: Boolean = false)
 data class EspMob(val name: String, val biome: SafariBiome, val color: Int, val identifiers: List<EspEntity>)
 data class EspDrop(val id: Int, val x: Int, val y: Int, val z: Int)
+data class EspCaptureCandidate(val id: Int, val species: String, val display: Boolean, val mound: Boolean,
+    val rangeSquared: Double, val aimSquared: Double)
+class EspCaptureMemory {
+    private data class Attempt(val id: java.util.UUID, val species: String, val at: Long)
+    private val pending = mutableListOf<Attempt>()
+    private val captured = mutableSetOf<java.util.UUID>()
+    fun aimed(id: java.util.UUID, species: String, now: Long) {
+        pending.removeAll { now - it.at !in 0..10000 }
+        if (pending.none { it.id == id }) pending.add(Attempt(id, species, now))
+    }
+    fun caught(species: String, now: Long): java.util.UUID? {
+        pending.removeAll { now - it.at !in 0..10000 }
+        val attempt = pending.firstOrNull { it.species == species } ?: return null
+        pending.remove(attempt); captured.add(attempt.id)
+        return attempt.id
+    }
+    fun hidden(id: java.util.UUID) = id in captured
+    fun reset() { pending.clear(); captured.clear() }
+}
 object SafariEspRules {
+    fun modelVisible(x: Float, y: Float, z: Float) = listOf(x, y, z).all { it.isFinite() } &&
+        maxOf(kotlin.math.abs(x), kotlin.math.abs(y), kotlin.math.abs(z)) > .001f
+    fun capturedDisplay(species: String, candidates: List<EspCaptureCandidate>) = candidates.filter {
+        it.species == species && it.display && !it.mound && it.rangeSquared <= 80.0 * 80
+    }.minByOrNull { it.aimSquared + it.rangeSquared * .001 }?.id
     val mobs = listOf(
         EspMob("Cavernfish", SafariBiome.CAVERN, 0xFFB4641E.toInt(), listOf(EspEntity("tropical_fish", fish = "CLAYFISH/GRAY/BROWN"))),
         EspMob("Flitter", SafariBiome.CAVERN, 0xFF285A6E.toInt(), listOf(EspEntity("item_display", texture = "a89a76deedd42b410344100df2fa79b6eeac7e6f287745d656179368340ffade"))),

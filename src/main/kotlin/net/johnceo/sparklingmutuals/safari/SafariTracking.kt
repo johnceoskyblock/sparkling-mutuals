@@ -23,13 +23,14 @@ object SafariTracking {
     private fun syncWorld(client: Minecraft) {
         if (client.level !== level) { ledger.worldChanged(System.currentTimeMillis()); resetEncounters(); level = client.level }
     }
-    private fun resetEncounters() { BeeNests.reset(); SparklingEncounters.reset(); SafariStructures.reset() }
+    private fun resetEncounters() { BeeNests.reset(); SparklingEncounters.reset(); SafariStructures.reset(); SafariEsp.clearCaptured() }
     private fun receive(raw: String) {
         val client = Minecraft.getInstance()
         if (client.level == null || client.player == null) return
         syncWorld(client)
         val text = SafariRules.strip(raw)
         val now = System.currentTimeMillis()
+        if (text.startsWith("You threw a") && SafariAssist.inSafari) SafariEsp.threw(client)
         if (SafariMessages.enteredBy(text, client.player!!.name.string)) {
             val previous = ledger.current
             ledger.confirmEntry(now); SafariAssist.markEntered()
@@ -47,6 +48,7 @@ object SafariTracking {
         SafariAssist.markEntered()
         ensureRun(client)
         ledger.current!!.record(catch)
+        if (catch.personal) SafariEsp.caught(catch.critter.name)
         ConfigManager.personalBests.newBest(text, ledger.current!!, now)?.let { notice ->
             ConfigManager.save()
             client.player?.sendSystemMessage(Component.literal(notice))

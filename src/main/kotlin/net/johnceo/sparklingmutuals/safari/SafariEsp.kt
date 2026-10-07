@@ -38,6 +38,7 @@ object SafariEsp {
     private var ticks = 0
     private var scanned = false
     private var stringDisplays = emptyList<EspDrop>()
+    private val captures = EspCaptureMemory()
     private fun renderType(name: String, snippet: RenderPipeline.Snippet) = RenderType.create("sparkling-mutuals:$name",
         RenderSetup.builder(RenderPipelines.register(RenderPipeline.builder(snippet)
             .withLocation(SparklingMutuals.id("pipeline/$name"))
@@ -67,8 +68,35 @@ object SafariEsp {
         }
         return EspEntity(entity.type.toShortString(), texture, shulker?.name,
             (entity as? TropicalFish)?.let { "${it.pattern.name}/${it.baseColor.name}/${it.patternColor.name}" },
-            (entity as? Parrot)?.variant?.name, entity.isInvisible, entity.passengers.isNotEmpty())
+            (entity as? Parrot)?.variant?.name, entity.isInvisible || !modelVisible(entity), entity.passengers.isNotEmpty())
     }
+    private fun modelVisible(entity: Entity): Boolean {
+        if (entity !is Display) return true
+        val scale = entity.renderState()?.transformation()?.get(1f)?.scale() ?: return false
+        return entity.shouldRenderAtSqrDistance(0.0) && SafariEspRules.modelVisible(scale.x(), scale.y(), scale.z())
+    }
+    /** Associate a throw with the aimed display before capture removes or hides its model. */
+    fun threw(client: Minecraft) {
+        val player = client.player ?: return
+        val eye = player.eyePosition
+        val look = player.lookAngle
+        val candidates = targets.filter { live(it, client) }.map {
+            val offset = it.entity.position().subtract(eye)
+            val along = offset.dot(look)
+            EspCaptureCandidate(it.entity.id, it.species, it.entity is Display,
+                it.species == "Rockmite" && it.entity is Display.ItemDisplay,
+                player.distanceToSqr(it.entity), if (along < 0) Double.POSITIVE_INFINITY else (offset.lengthSqr() - along * along).coerceAtLeast(0.0))
+        }
+        val aimed = candidates.filter { it.display && !it.mound && it.rangeSquared <= 80.0 * 80 && it.aimSquared <= 16 }
+            .minByOrNull { it.aimSquared + it.rangeSquared * .001 } ?: return
+        val id = SafariEspRules.capturedDisplay(aimed.species, candidates.filter { it.aimSquared <= 16 }) ?: return
+        targets.firstOrNull { it.entity.id == id }?.let { captures.aimed(it.entity.uuid, it.species, System.currentTimeMillis()) }
+    }
+    fun caught(species: String) {
+        val id = captures.caught(species, System.currentTimeMillis()) ?: return
+        targets = targets.filterNot { it.entity.uuid == id }
+    }
+    fun clearCaptured() { captures.reset() }
     fun tick(client: Minecraft) {
         if (level !== client.level) { reset(); level = client.level }
         if (!SafariAssist.inSafari || client.player == null || client.level == null) {
@@ -77,7 +105,7 @@ object SafariEsp {
         if (++ticks < 5) return
         ticks = 0
         val strings = mutableListOf<EspDrop>()
-        targets = client.level!!.entitiesForRendering().filter { !it.isRemoved && client.level!!.getEntity(it.id) === it }.mapNotNull { entity ->
+        targets = client.level!!.entitiesForRendering().filter { !it.isRemoved && !captures.hidden(it.uuid) && client.level!!.getEntity(it.id) === it }.mapNotNull { entity ->
             if (entity is Display.ItemDisplay && !entity.isInvisible && entity.itemStack.`is`(Items.STRING)) {
                 val pos = entity.blockPosition()
                 strings.add(EspDrop(entity.id, pos.x, pos.y, pos.z))
@@ -94,7 +122,7 @@ object SafariEsp {
     private fun live(target: Target, client: Minecraft): Boolean {
         val entity = target.entity
         return SafariEspRules.targetCurrent(target.species, describe(entity), entity.isRemoved,
-            client.level?.getEntity(entity.id) === entity, entity.level() === client.level)
+            !captures.hidden(entity.uuid) && client.level?.getEntity(entity.id) === entity, entity.level() === client.level)
     }
     /** Loaded server entities only; observations do not depend on ESP switches or biome filtering. */
     fun observations(): SafariEspObservations {
@@ -175,5 +203,5 @@ object SafariEsp {
         }
         buffers.endBatch(fill)
     }
-    fun reset() { targets = emptyList(); drops = emptyList(); level = null; ticks = 0; stringDisplays = emptyList(); scanned = false }
+    fun reset() { targets = emptyList(); drops = emptyList(); level = null; ticks = 0; stringDisplays = emptyList(); scanned = false; clearCaptured() }
 }

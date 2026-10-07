@@ -7,6 +7,13 @@ import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.core.BlockPos
 import java.util.UUID
+import net.johnceo.sparklingmutuals.hud.HudPanel
+import net.johnceo.sparklingmutuals.hud.HudRow
+
+object SparklingAlert {
+    fun panel(name: String, where: String, color: Int = HudRow.GOLD) =
+        HudPanel("SPARKLING $name!", color, listOf(HudRow(where, color = color)))
+}
 
 class SparklingMemory {
     private val alerted = mutableSetOf<UUID>()
@@ -41,15 +48,10 @@ object SparklingEncounters {
         if (remaining <= 0) { banner = null; return }
         val client = Minecraft.getInstance()
         val alpha = (255 * (remaining / 1200.0).coerceAtMost(1.0)).toInt()
-        val y = client.window.guiScaledHeight / 3
-        graphics.pose().pushMatrix(); graphics.pose().translate(0f, (y - 8).toFloat())
-        AppearanceConfig.panels.getValue("alert").draw(graphics, client.window.guiScaledWidth, 56)
-        graphics.pose().popMatrix()
-        listOf("SPARKLING!", name, where).forEachIndexed { index, line ->
-            graphics.centeredText(client.font, net.minecraft.network.chat.Component.literal(line),
-                client.window.guiScaledWidth / 2, y + index * 14,
-                (alpha shl 24) or (SafariEspConfig.rgb(AppearanceConfig.sparklingColor) and 0xFFFFFF))
-        }
+        val color = (alpha.coerceAtLeast(4) shl 24) or (SafariEspConfig.rgb(AppearanceConfig.sparklingColor) and 0xFFFFFF)
+        val panel = SparklingAlert.panel(name, where, color)
+        panel.draw(graphics, (client.window.guiScaledWidth - panel.width(client.font::width)) / 2,
+            (client.window.guiScaledHeight / 8).coerceAtLeast(8), style = AppearanceConfig.panels.getValue("alert"))
     }
     fun leave() { queue.clear(); banner = null }
     fun reset() { leave(); memory.reset(); sentAt = 0 }
