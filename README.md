@@ -23,7 +23,7 @@ A Fabric mod for Hypixel SkyBlock Safari, sparkling discoveries, and Miria conte
 - **Miria contest HUD:** tracks Miria's contest timer, tier, and score, with configurable end warnings.
 - **Warp reminders:** sends title to warp party before afk timeout. Useful for party leeching so that other players can have a chance to get sparkling critters without using a ticket. Use `/alert` and `/alertdelay <seconds>` to control reminders.
 - **Critter ESP:** highlights critters in all four biomes, with individual toggles and biome filters. Unique runs hide collected species until the next run; Rockmite mounds and Snooper walls remain available for shiny checks. Mounds and silverfish have separate controls.
-- **Floor drop ESP:** highlights Safari floor drops.
+- **Floor drop ESP:** highlights Safari drops until all Cavern gems or both Icy Icebreakers are found; Icy drops are hidden in unique runs. Cavern and Icy overrides last until you leave the biome. Forest and Haunted keep normal highlighting.
 - **Sparkling detection:** highlights nearby sparkling critters and shows their names and distances.
 - **Sparkling alerts:** displays an on-screen alert and can announce the critter, biome, and coordinates in party chat.
 - **Inventory alerts:** notifies when you have all three gem types in Cavern, three of each bird food in Forest, or four Soothing Incense in Haunted.
