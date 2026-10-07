@@ -98,6 +98,7 @@ class SafariRun(val startedAt: Long) {
         }
     }
     val biomeClears = mutableSetOf<SafariBiome>()
+    val uniqueBiomeClears = mutableSetOf<SafariBiome>()
     val moundSurvey = MoundSurvey()
     val allMoundsBroken get() = brokenMounds >= SafariFullClear.MOUND_MINIMUM || moundSurvey.allBroken
     fun encountered(name: String) = count(name) > 0 || name in sightings || name == "Rockmite" && rockmiteMounds > 0

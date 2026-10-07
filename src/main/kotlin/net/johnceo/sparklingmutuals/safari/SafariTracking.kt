@@ -48,7 +48,12 @@ object SafariTracking {
         SafariAssist.markEntered()
         ensureRun(client)
         ledger.current!!.record(catch)
-        if (catch.personal) SafariEsp.caught(catch.critter.name)
+        if (catch.personal) {
+            SafariEsp.caught(catch.critter.name)
+            ConfigManager.personalBests.recordUnique(catch.critter.biome, ledger.current!!, now)?.let { notice ->
+                ConfigManager.save(); client.player?.sendSystemMessage(Component.literal(notice))
+            }
+        }
         ConfigManager.personalBests.newBest(text, ledger.current!!, now)?.let { notice ->
             ConfigManager.save()
             client.player?.sendSystemMessage(Component.literal(notice))
