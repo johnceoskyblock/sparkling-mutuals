@@ -8,7 +8,7 @@ class SafariClearConsistencyTest {
     @Test fun `Rockmite needs no captures after empty mounds but requires every revealed critter`() {
         val run = SafariRun(0)
         run.updateCaptureEvidence(SafariBiome.CAVERN, emptySet(), true)
-        repeat(19) { run.recordMound("The mound falls apart, but nothing is inside...") }
+        repeat(9) { run.recordMound("The mound falls apart, but nothing is inside...") }
         assertFalse(run.captureComplete("Rockmite"))
         run.recordMound("The mound falls apart, but nothing is inside...")
         assertTrue(run.captureComplete("Rockmite"))

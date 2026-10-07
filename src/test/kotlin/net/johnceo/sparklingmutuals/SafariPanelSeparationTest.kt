@@ -9,6 +9,37 @@ import java.nio.file.Path
 
 class SafariPanelSeparationTest {
     @TempDir lateinit var dir: Path
+    @Test fun `normal missing panel needs one capture and never shows quotas`() {
+        ConfigManager.init(dir)
+        val run = SafariRun(0)
+        for (name in listOf("Scrappy", "Gemzie", "Troodon", "Gazer")) {
+            val critter = SafariRoster.named(name)!!
+            assertTrue(SafariPanels.missing(run, critter.biome, true, 0).rows.any { it.label == name && it.value == null })
+            run.record(SafariCatch(critter))
+            assertFalse(SafariPanels.missing(run, critter.biome, true, 0).rows.any { it.label == name })
+        }
+    }
+    @Test fun `ten verified mounds complete Rockmite only after revealed critters are caught`() {
+        ConfigManager.init(dir); SafariFullClear.toggle()
+        val run = SafariRun(0)
+        run.updateCaptureEvidence(SafariBiome.CAVERN, emptySet(), true)
+        repeat(9) { run.recordMound("The mound falls apart, but nothing is inside") }
+        run.recordMound("The mound fell apart, revealing a Rockmite hidden inside!")
+        assertFalse(run.captureComplete("Rockmite"))
+        run.record(SafariCatch(SafariRoster.named("Rockmite")!!))
+        assertTrue(run.captureComplete("Rockmite"))
+        run.updateCaptureEvidence(SafariBiome.CAVERN, setOf("Rockmite Mound"), true)
+        assertFalse(run.captureComplete("Rockmite"))
+        run.updateCaptureEvidence(SafariBiome.CAVERN, setOf("Rockmite"), true)
+        assertFalse(run.captureComplete("Rockmite"))
+        val sites = (0..9).map { Triple(it, 0, 0) }.toSet()
+        val surveyed = SafariRun(0)
+        surveyed.updateCaptureEvidence(SafariBiome.CAVERN, emptySet(), true)
+        surveyed.moundSurvey.scan(sites) { true }
+        assertFalse(surveyed.captureComplete("Rockmite"))
+        surveyed.moundSurvey.scan(emptySet()) { true }
+        assertTrue(surveyed.captureComplete("Rockmite"))
+    }
     @Test fun `full clear never precompletes progress or changes its one catch logic`() {
         ConfigManager.init(dir); SafariFullClear.toggle()
         val run = SafariRun(0)

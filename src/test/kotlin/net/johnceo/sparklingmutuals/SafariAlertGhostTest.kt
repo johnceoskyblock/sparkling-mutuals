@@ -5,6 +5,19 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class SafariAlertGhostTest {
+    @Test fun `Driftling armor stand capture retires its model without hiding another critter`() {
+        val driftling = SafariEspRules.identify(EspEntity("armor_stand",
+            texture = "f4c4f8e5fce1ec2d299cb8a395792ecddc497a1d8af86faaa5e20373016c7225"))!!
+        val candidates = listOf(EspCaptureCandidate(7, driftling.name, SafariEspRules.captureModel("armor_stand"), false, 9.0, 0.0),
+            EspCaptureCandidate(8, "Driftling", true, false, 100.0, 9.0))
+        assertEquals(7, SafariEspRules.capturedDisplay("Driftling", candidates))
+        val memory = EspCaptureMemory()
+        val id = java.util.UUID(0, 7)
+        memory.aimed(id, driftling.name, 0)
+        assertEquals(id, memory.caught("Driftling", 500))
+        assertTrue(memory.hidden(id))
+        assertFalse(memory.hidden(java.util.UUID(0, 8)))
+    }
     @Test fun `sparkling alert has one heading with location below it`() {
         val panel = SparklingAlert.panel("Flitter", "Cavern 1 2 3")
         assertEquals("SPARKLING Flitter!", panel.title)

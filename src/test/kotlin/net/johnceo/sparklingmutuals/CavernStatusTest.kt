@@ -23,10 +23,10 @@ class CavernStatusTest {
             it.label.contains("snoozles", true) || it.label.startsWith("Snooper walls")
         })
     }
-    @Test fun `twenty empty mound outcomes show absence but a revealed Rockmite suppresses it`() {
+    @Test fun `ten empty mound outcomes show absence but a revealed Rockmite suppresses it`() {
         ConfigManager.init(dir)
         val run = SafariRun(0)
-        repeat(19) { run.recordMound("The mound falls apart, but nothing is inside...") }
+        repeat(9) { run.recordMound("The mound falls apart, but nothing is inside...") }
         assertFalse(SafariPanels.missing(run, SafariBiome.CAVERN, false, 0).rows.any { it.label == "No rockmites this run" })
         run.recordMound("The mound falls apart, but nothing is inside...")
         assertEquals(HudRow.GRAY, SafariPanels.missing(run, SafariBiome.CAVERN, false, 0).rows.first {
