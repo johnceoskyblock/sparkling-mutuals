@@ -54,6 +54,7 @@ object SparklingMutuals : ModInitializer {
             SafariStructures.tick(client)
             SafariEsp.tick(client)
             SafariBiomeClearTracking.tick(client)
+            SafariInventoryAlerts.tick(client)
             HideyhoQuest.onClientTick(client)
         }
 
