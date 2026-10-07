@@ -39,6 +39,10 @@ object SafariTracking {
             if (SafariAssist.inSafari) { ensureRun(client); ledger.current?.recordMound(text) }
             return
         }
+        if (text.startsWith("FLOOR DROP!") && SafariAssist.inSafari) {
+            ensureRun(client); ledger.current?.recordBirdFood(text)
+            return
+        }
         val catch = SafariCatch.parse(text) ?: return
         SafariAssist.markEntered()
         ensureRun(client)

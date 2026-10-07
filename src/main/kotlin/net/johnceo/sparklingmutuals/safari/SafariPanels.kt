@@ -11,7 +11,7 @@ object SafariPanels {
         val time = "%d:%02d".format(seconds / 60, seconds % 60)
         val title = when { run == null -> "Critter Safari (ready)"; run.endedAt != null -> "Last Safari  $time"; else -> "Critter Safari  $time" }
         fun bar(label: String, critters: List<SafariCritter>, color: Int): HudRow {
-            val count = run?.progress(critters, unique, ConfigManager.fullClearMode) ?: 0
+            val count = run?.progress(critters, true) ?: 0
             return HudRow(label, "$count/${critters.size}", color, color, count.toFloat() / critters.size)
         }
         return HudPanel(title, rows = listOf(bar("Collected", SafariRoster.all, HudRow.WHITE), HudRow()) +
@@ -19,10 +19,9 @@ object SafariPanels {
     }
     fun missing(run: SafariRun?, biome: SafariBiome, unique: Boolean, nests: Int, mounds: Int = 0,
         walls: WallSummary = WallSummary(emptyList())): HudPanel {
-        val full = ConfigManager.fullClearMode
-        val missing = biome.critters.filter { run?.complete(it, unique, full) != true }
+        val missing = biome.critters.filter { run?.complete(it, false) != true }
         val rows = missing.map { critter ->
-            HudRow(critter.name, if (critter.required(unique, full) > 1) "${run?.count(critter.name) ?: 0}/${critter.required(unique, full)}" else null,
+            HudRow(critter.name, if (critter.quota > 1) "${run?.count(critter.name) ?: 0}/${critter.quota}" else null,
                 critter.color, HudRow.GRAY)
         }.ifEmpty { listOf(HudRow("All caught!", color = biome.color)) }
         val footer = buildList {
@@ -51,14 +50,13 @@ object SafariPanels {
         else if (count >= minimum) 0xFF55FF55.toInt() else 0xFFFF5555.toInt()
     fun captures(run: SafariRun?, biome: SafariBiome) = HudPanel("${biome.label} captures", biome.color, buildList {
         biome.critters.forEach { val count = run?.count(it.name) ?: 0
-            add(HudRow(if (it.name == "Rockmite" && ConfigManager.fullClearMode) "Rockmite (Silverfish)" else it.name,
-                "$count", it.color, captureColor(count, SafariFullClear.minimum(it.name)))) }
-        if (biome == SafariBiome.CAVERN && ConfigManager.fullClearMode)
-            add(HudRow("Rockmite Mounds", "${run?.brokenMounds ?: 0}", HudRow.GOLD,
-                captureColor(run?.brokenMounds ?: 0, SafariFullClear.MOUND_MINIMUM)))
+            add(HudRow(it.name, "$count", it.color, if (!ConfigManager.fullClearMode) HudRow.WHITE
+                else if (run?.captureComplete(it.name) == true) 0xFF55FF55.toInt() else 0xFFFF5555.toInt())) }
         add(HudRow()); add(HudRow("Total captures", "${biome.critters.sumOf { run?.count(it.name) ?: 0 }}", HudRow.GRAY))
         if (biome == SafariBiome.CAVERN && ConfigManager.showMoundStats) {
-            if (!ConfigManager.fullClearMode) add(HudRow("Mounds broken", "${run?.brokenMounds ?: 0}", HudRow.GOLD))
+            add(HudRow())
+            add(HudRow("Rockmite Mounds", "${run?.brokenMounds ?: 0}", HudRow.GOLD,
+                captureColor(run?.brokenMounds ?: 0, SafariFullClear.MOUND_MINIMUM)))
             add(HudRow("Mounds with Rockmite", "${run?.rockmiteMounds ?: 0}", HudRow.GOLD))
         }
     })

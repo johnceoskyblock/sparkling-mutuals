@@ -20,6 +20,10 @@ object SafariBiomeClearTracking {
         val snapshot = SafariEsp.observations()
         if (!snapshot.scanned) return
         snapshot.critters.filterNot { it.mound }.forEach { run.observeCritter(it.id, it.species) }
+        run.updateCaptureEvidence(biome, snapshot.critters.filter {
+            it.biome == biome && player.distanceToSqr(it.x, it.y, it.z) <= 80.0 * 80
+        }.map { if (it.mound) "Rockmite Mound" else it.species }.toSet(),
+            SafariStructures.walls.states.size == 5 && SafariStructures.walls.allBroken)
         if (biome == SafariBiome.FOREST) run.floorSurvey.scan(snapshot.floorDrops.filter {
             SafariEspRules.biomeAt(it.x.toDouble(), it.z.toDouble()) == SafariBiome.FOREST
         }.map { Triple(it.x, it.y, it.z) }.toSet()) { (x, y, z) ->
