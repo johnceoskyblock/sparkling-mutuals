@@ -7,12 +7,12 @@ A Fabric client mod for Hypixel SkyBlock Safari: mutual sparkling critters, miss
 Run `/sparkling` or `/sparkling config` to open the **MoulConfig** settings screen, using the same library as CritterMod. Categories, search, toggles and sliders use its standard layout with forest green panels, sand text and gold accents. The API key opens a separate masked editor.
 
 - **Party commands:** toggle automatic responses and view command help locally. **Show help** closes settings and opens chat with colored sections, one described command per line, and an explanation of `<IGN>`. This help is local to you.
-- **Miria contest:** choose warning times, toggle the HUD and titles, adjust warning sound and volume, and open the HUD editor.
+- **Miria contest:** toggle the HUD and open its editor. The **Warning** dropdown groups the 5m, 3m and 1m toggles, None button, titles, sound and volume.
 - **Warp reminders:** toggle reminders and set their delay, which defaults to **25 seconds**.
-- **Safari helpers:** toggle capture chat hiding, ground/flying capsule hiding, Auto Clicker, Hideyho quest clicks, Haunted painting hiding, shiny detection, sparkling alerts/party announcements, bee-nest and Snooper-wall highlights, and darkness removal.
+- **Safari helpers:** toggle capture chat hiding, capsule hiding, Auto Clicker, Hideyho quest clicks, paintings, shiny detection, alerts/announcements, highlights and darkness removal. **Remaining** groups Bee Nests, Rockmite Mounds and Snooper Walls.
 - **ESP · Floor drops / Cavern / Forest / Icy / Haunted:** through-terrain highlights with biome filters and individual critter toggles.
-- **Safari progress:** configure progress, missing species, capture counts, unique-only completion, where the HUD appears, Bee Nests, Rockmite Mounds, Snooper Walls and optional mound results.
-- **Customization:** choose GUI borders, backgrounds and transparency, waypoint colors, floor-drop colors and all 37 critter ESP colors. Rockmite has separate **mound** and **silverfish** colors. Enter a six-digit hex color at the top and click **Set Color** for each target to apply the same color to multiple items. These buttons only change color; they never enable features. Each target also has its own color picker. Existing Rockmite colors are retained for both forms until customized separately.
+- **Safari progress:** configure the progress and missing HUDs, where progress appears, and open the captures screen or HUD editor. Capture HUD, unique-only completion and mound results are controlled by `/sparkling full clear`.
+- **Customization:** choose borders/backgrounds for each HUD, waypoint colors and floor-drop colors. **Missing panel HUD** and **Sparkling alert HUD** use explicit HUD labels. Critter colors are grouped into **Cavern, Forest, Icy and Haunted** dropdowns. Rockmite has separate **mound** and **silverfish** colors and ESP toggles. Enter a six-digit hex color at the top and click **Set Color** for each target. Color actions never enable features. Valid saved colors are retained when defaults change.
 - **API key:** enter, reveal or hide, and save your Hypixel API key.
 
 Toggles and sliders save immediately. Text fields have explicit Save buttons. Existing API keys and HUD settings are retained. Party responses are enabled by default; warp reminders are disabled until enabled.
@@ -24,13 +24,16 @@ Send `!` commands in **party chat**, including through `/pc` or `/p chat`. Party
 | Command | Description |
 | --- | --- |
 | `!commands` | Show a party help menu listing party and local commands; no API key required |
-| `!mutual` / `!mutuals` | Find timesave sparkling critters discovered by every party member |
-| `!missing <IGN>` | List a player's missing timesave sparkling critters |
+| `!mutual` / `!mutuals` | Find shared sparkling discoveries, using timesaves or all species |
+| `!missing <IGN>` | List a player's missing sparkling discoveries, using timesaves or all species |
 | `!ticket <IGN>` / `!tickets <IGN>` | Show Basic, Economy, Premium and First-Class ticket counts |
 | `!pb doom` / `!pb wumpa` | Every party member with the mod replies with their own saved Doomspiral or Wumpa PB; case-insensitive |
+| `!pb forest` / `!pb haunted` / `!pb icy` / `!pb cavern` | Every mod user replies with their saved personal biome-clear PB |
 | `/sparkling` / `/sparkling config` | Open the configuration screen |
 | `/sparkling gui` | Move and resize all HUDs independently, including Safari progress, missing critters, captures and nearby sparklings |
 | `/sparkling catches` | Review per-critter captures in the current or last Safari run |
+| `/sparkling full clear` | Toggle the full-clear preset and report on/off locally |
+| `/sparkling timesave` | Toggle timesaves-only versus all 37 sparkling species and report on/off locally |
 | `/alert` | Toggle warp reminders |
 | `/alertdelay <seconds>` | Set the warp reminder delay, from 1 to 86400 seconds |
 | `/apikey <key>` | Set or update your Hypixel API key (`/apiKey` and `/APIKEY` also work) |
@@ -46,6 +49,8 @@ All mod users should install this update: older versions may still send prelimin
 ### Sparkling timesaves
 
 The tracked timesaves are Rockmite, Snoozle, Gemzie, Honeybug, Gazer, Gimmiegold, Doomspiral and Wumpa. **All Birds** means Bluebird, Parakeet and Macaw have all been discovered; it remains a single group in results.
+
+Timesaves-only starts enabled. `/sparkling timesave` switches `!missing` and `!mutual(s)` to all 37 species, listing birds separately, and saves the choice. Long successful lists use numbered party messages, paced 1.5 seconds apart and kept within Minecraft's chat limit. Another matching responder cancels pending chunks; the sender's own echo does not.
 
 `!mutuals` intersects discoveries across every party member. Successful discoveries used by this command are cached for **60 seconds**, so a newly discovered critter may take up to a minute to appear. Changing the API key clears that cache before the next lookup. Missing-critters and ticket lookups fetch current data.
 
@@ -103,7 +108,7 @@ Every other individual critter starts **off** and can be enabled separately. The
 - **Icy:** Strongarm, Tepid, Polaris, Shuddersquid, Billygoat, Mantis Shrimp, Nozzlenose, Troodon and Wumpa.
 - **Haunted:** Areita, Bloodbat, Duplico, Gazer, Litterbug, Solsnatcher, Gimmiegold, Hideonwall, Hideyho and Doomspiral.
 
-All 37 species have independent highlight toggles and colors, initially using Nebulune's palette. Detection preserves its entity, head/skin texture, fish/parrot variant and colored shulker rules, including invisible/passenger silverfish exclusions. Boxes use its critter/display/head dimensions and render through terrain. Only loaded entities are scanned, every five ticks; nothing is highlighted outside Safari. Floor drops and biome ESP have no added 80-block limit.
+All 37 species have independent highlight toggles and colors, using the default colors listed below. Detection preserves its entity, head/skin texture, fish/parrot variant and colored shulker rules, including invisible/passenger silverfish exclusions. Boxes use its critter/display/head dimensions and render through terrain. Only loaded entities are scanned, every five ticks; nothing is highlighted outside Safari. Floor drops and biome ESP have no added 80-block limit.
 
 **Hideyho quest clicks:** enable this toggle, wait for `[MOB] Hideyho: How about it?` and `Select an option: [Sure] [No thanks...]`, then click anywhere with chat open to accept. Both game and chat message events are listened to, and split/inherited button styles are supported, matching ShinyHunter's QuestAccepter. Each click accepts one current prompt using its exact server-provided command/custom action. Other NPC/MOB dialogue, old prompts and world/connection changes clear the offer. Disabled by default.
 
@@ -127,19 +132,49 @@ The **Progress HUD** and **Missing Panel** default to on. **Show where** control
 
 The **Missing Panel** and **Biome capture counts HUD** appear only during an active run inside **Forest, Cavern, Icy or Haunted**. They disappear in Safari's middle zone, at the entrance, and outside a run, regardless of **Show where**. Missing species use their rarity colors and quota progress where needed. Hiding these HUDs never erases captures or ends the timer.
 
-**Bee Nests**, **Rockmite Mounds** and **Snooper Walls** are separate, default-on toggles in **Safari progress**. Bee Nests adds the known unpunched nest count to the Forest Missing Panel independently of highlighting. Cavern shows nearby unbroken Rockmite mounds within **64 blocks** when any are found, excluding mounds occupied by visible critters. This is a count of loaded nearby mounds, not all mounds remaining in the biome. Snooper Walls shows intact walls, marks unloaded wall positions as unknown, and reports all broken only after confirming all five positions.
+**Bee Nests**, **Rockmite Mounds** and **Snooper Walls** are separate, default-on toggles under **Safari helpers → Remaining**. Bee Nests adds the known unpunched nest count to the Forest Missing Panel independently of highlighting. Cavern shows nearby unbroken Rockmite mounds within **64 blocks**, excluding mounds occupied by visible critters. This is a nearby loaded count. Snooper Walls shows intact walls, marks unconfirmed unloaded positions as unknown, and confirms clearing only after checking all five positions.
 
-**Mound results** defaults to off. Enable it to add **Mounds broken** and **Mounds with Rockmite** rows to the Cavern capture list. These count the server's empty-mound and Rockmite-reveal messages throughout the run, even while the display is disabled. They remain available with the current or last run until the next run starts, and do not increase critter capture totals.
+Mound outcomes count the server's empty-mound and Rockmite-reveal messages throughout the run. Full-clear mode displays **Rockmite Mounds** and **Mounds with Rockmite** in the Cavern capture list. These actions do not increase critter capture totals.
 
 The timer starts from loading into the Safari, including the boat. It continues through the center's **Critter Safari** area and all four biomes. Returning to **Torrhus Canyon** ends the run and freezes its timer; world changes or another island also end it. Briefly missing sidebar data does not end a run.
 
-**Count Unique Only** defaults to off: completion uses the actual v0.9.0 data quotas (Gemzie and Troodon: 3; Gazer: 4; other species: 1). Turn it on to complete each species with one catch. This changes completion and missing-species displays, never the raw catch counts.
+Full-clear mode uses the minimums below for completion and missing counts, including **Scrappy 0/3**. Turning the preset off uses one catch per species for the missing/progress HUDs. Raw counts are never erased or reduced.
 
-**Biome capture counts** defaults to off. Enable it for a matching panel listing all **9 Forest, 9 Cavern, 9 Icy or 10 Haunted species**, including zeros, while inside that biome. `/sparkling catches` opens the same styled count panel with biome tabs, initially selecting the current or last visited biome; this screen remains available at the center and after leaving. Tracking continues when the HUD is off or hidden. Counts stay through biome/center changes, toggling the setting, and leaving the island; the last run remains available until a new Safari run starts. Run counts are kept for this Minecraft session.
+The full-clear preset enables the matching biome capture HUD, including zeros. `/sparkling catches` opens the same panel with biome tabs, selecting the current or last visited biome; this screen remains available at the center and after leaving. Tracking continues with the preset or HUD off. Counts stay through biome/center changes, preset toggles and departure; the last run remains available until a new Safari run starts. Run counts are kept for this Minecraft session.
 
-Each successful server `CAPTURE!` or `LOOT SHARE!` message adds one to the same per-species capture count. The HUDs do not distinguish who caught it or store catcher identities. A reward of multiple shards still represents one capture. Failed attempts, inventory transfers and quoted player chat do not count. Only captures observed by this client are available.
+Each successful server `CAPTURE!` or `LOOT SHARE!` adds one to the combined per-species GUI count. A separate personal count supports biome PB eligibility; catcher names are not stored or shown. Multiple shards still represent one capture. Failed attempts, transfers and quoted player chat do not count. Only captures observed by this client are available.
 
 After all five Snooper walls are confirmed broken, the Cavern Missing Panel shows gray **No snoozles this run** if no Snoozle has been caught or seen. If one was encountered, the wall footer disappears. After all 20 mounds are confirmed opened, it shows gray **No rockmites this run** if none were revealed, caught or seen as a silverfish. A Rockmite encounter removes that message. Sightings never add captures. Observations survive biome changes and display toggles, then reset for the next run. Mound completion requires 20 observed sites confirmed gone while loaded and within scan range, or 20 server mound-outcome messages; zero nearby mounds alone does not mean the biome is cleared.
+
+## Full-clear mode and biome personal bests
+
+`/sparkling full clear` toggles a saved preset and reports **on/off** locally. **On** enables every critter ESP (both Rockmite forms), floor-drop ESP, all Remaining counters, the capture HUD and mound results, and disables unique-only completion. Capture numbers stay **red** below their minimum and become **green** at or above it; zero-minimum species start green. Mounds count openings, not silverfish captures.
+
+**Off** hides the capture HUD/mound results, enables unique-only completion, and disables floor-drop and unlisted critter ESP. It keeps these critters highlighted: Driftling; Rockmite **mounds only**; Foxtrot, Treefrog, Woodchucker, Fluffling, Hideonfloor; Tepid, Shuddersquid, Billygoat, Mantis Shrimp, Nozzlenose, Wumpa; Bloodbat, Duplico, Litterbug, Solsnatcher, Hideonwall, Hideyho, Doomspiral. Neither preset changes colors or erases captures. Biome filters remain customizable.
+
+| Biome | Critter minimums |
+| --- | --- |
+| Forest | Foxtrot 6; Bluebird 0; Honeybug 3; Treefrog 3; Woodchucker 3; Fluffling 1; Hideonfloor 1; Parakeet 0; Macaw 0 |
+| Cavern | Cavernfish 4; Flitter 6; Shyworm 4; Driftling 3; Chuckwalla 2; Rockmite Mounds 10; Rockmite Silverfish 0; Scrappy 3; Snoozle 0; Gemzie 3 |
+| Icy | Strongarm 6; Tepid 6; Polaris 2; Shuddersquid 3; Billygoat 2; Mantis Shrimp 3; Nozzlenose 2; Troodon 3; Wumpa 1 |
+| Haunted | Areita 3; Bloodbat 3; Duplico 2; Gazer 4; Litterbug 4; Solsnatcher 4; Gimmiegold 3; Hideonwall 2; Hideyho 1; Doomspiral 1 |
+
+Biome PBs time from **Safari run start** until the first confirmed clear. Your **own captures** must meet every minimum; loot shares still show in the GUI but cannot qualify a personal clear. Observed zero-minimum critters must also be caught. No loaded critter can remain in that biome, and the local 80-block observation radius must be loaded. Cavern also requires at least ten mound openings, no outstanding known/nearby mounds and all five walls checked. Forest requires every known hive punched and either nine personal bird catches in total or the observed floor-drop sites confirmed cleared. Gemzie, Gazer, Doomspiral and Wumpa cannot be skipped by an empty entity scan.
+
+Known sites remain outstanding when unloaded; an empty, never-observed floor scan cannot prove clearing. Tracking continues with full-clear mode off. Client observations cannot prove that an unseen or unloaded part of the biome contains nothing; visit/check all relevant structures. Each biome records once per run, saves only a faster PB and sends a local notification. `!pb forest`, `!pb haunted`, `!pb icy` and `!pb cavern` are case-insensitive and each mod user replies with their own result. Saved keys are `pb.forestMillis`, `pb.hauntedMillis`, `pb.icyMillis`, `pb.cavernMillis`.
+
+### Default ESP colors
+
+Valid existing colors are retained. New/missing selections use:
+
+| Biome | Critter colors |
+| --- | --- |
+| Forest | Foxtrot #F26F14; Bluebird #173AE8; Honeybug #F0BE1E; Treefrog #39FF57; Woodchucker #F32F13; Fluffling #66DAFA; Hideonfloor #0095FF; Parakeet #6BEE3B; Macaw #FFD200 |
+| Cavern | Cavernfish #F68929; Flitter #55C0EB; Shyworm #79F24C; Driftling #FFEC5B; Chuckwalla #E3C0A2; Rockmite Mounds #FFFFFF; Rockmite Silverfish #525252; Scrappy #EA5577; Snoozle #EB3B3B; Gemzie #9132FF |
+| Icy | Strongarm #E47D15; Tepid, Polaris, Shuddersquid, Billygoat, Mantis Shrimp, Nozzlenose, Troodon and Wumpa #FF0000 |
+| Haunted | Areita #00F7FF; Bloodbat #F31C12; Duplico #D7D7D7; Gazer #07CFF3; Litterbug #AB00FF; Solsnatcher #FF0000; Gimmiegold #F3C900; Hideonwall #FF00F2; Hideyho #FFFFFF; Doomspiral #00F0EF |
+
+ESP validates current entity registration, visibility and appearance before drawing each cached box. Removed or transformed Gimmiegold displays no longer keep stale highlights.
 
 ## Doomspiral and Wumpa personal bests
 
