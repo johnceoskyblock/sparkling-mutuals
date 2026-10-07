@@ -28,7 +28,7 @@ class SafariFullClearTest {
         assertTrue(SafariEspConfig.mobs.getValue("Foxtrot").enabled)
         assertFalse(SafariEspConfig.mobs.getValue("Gemzie").enabled)
         assertFalse(SafariEspConfig.mobs.getValue("Gazer").enabled)
-        assertFalse(SafariEspConfig.groups.getValue("floor").enabled)
+        assertTrue(SafariEspConfig.groups.getValue("floor").enabled)
         assertEquals(1, run.count("Foxtrot"))
         assertFalse(ConfigManager.catchCountPanel); assertFalse(ConfigManager.showMoundStats)
         ConfigManager.init(dir); assertFalse(ConfigManager.fullClearMode)
