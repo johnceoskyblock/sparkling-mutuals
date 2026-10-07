@@ -119,7 +119,7 @@ All 37 species have independent highlight toggles and colors, using the default 
 
 Detection is adapted specifically from **CritterMod v0.9.0**, rather than its later releases. It needs a sparkling nametag and loaded entity data; it cannot detect critters that the server has not sent or identify an unnamed critter as sparkling. Biome lookup uses the area table shipped in that release.
 
-**Sparkling alerts and party announcements:** both enabled by default and independently configurable. Each loaded sparkling within the same 80-block biome scan produces an on-screen alert and `SPARKLING <critter>! (<biome> <x> <y> <z>)` party message once per run. Messages are paced to avoid a burst; leaving or disabling announcements clears pending messages. These announcements do not require an API key.
+**Sparkling alerts and party announcements:** both enabled by default and independently configurable. The alert is one compact **SPARKLING <critter>!** heading with its location below, near the top of the screen. It replaces the wide screen band and separate title/name lines, leaving the central title area clear. Each loaded sparkling within the same 80-block biome scan produces an on-screen alert and `SPARKLING <critter>! (<biome> <x> <y> <z>)` party message once per run. Messages are paced to avoid a burst; leaving or disabling announcements clears pending messages. These announcements do not require an API key.
 
 **Bee nests:** enabled by default. Unpunched Forest nests show green boxes through terrain, with name/distance labels. Discovery checks already loaded nearby chunk sections every two seconds, skipping palettes without nests. It also finds decorative nests without block-entity data. Your own punch removes that nest's marker until the next run. Other players' punches leave no observable block change, so they cannot be tracked.
 
@@ -179,7 +179,7 @@ Valid existing colors are retained. New/missing selections use:
 | Icy | Strongarm #E47D15; Tepid, Polaris, Shuddersquid, Billygoat, Mantis Shrimp, Nozzlenose, Troodon and Wumpa #FF0000 |
 | Haunted | Areita #00F7FF; Bloodbat #F31C12; Duplico #D7D7D7; Gazer #07CFF3; Litterbug #AB00FF; Solsnatcher #FF0000; Gimmiegold #F3C900; Hideonwall #FF00F2; Hideyho #FFFFFF; Doomspiral #00F0EF |
 
-ESP validates current entity registration, visibility and appearance before drawing each cached box. Removed or transformed Gimmiegold displays no longer keep stale highlights.
+ESP validates current entity registration, visibility, model scale and appearance before drawing each cached box. Zero-scale or view-range-hidden displays are excluded. On your own successful capture, a display associated with a recent aimed capsule throw is retired for that run, preventing its leftover model from returning on the next scan. This covers Chuckwalla, Flitter, Gimmiegold and other display critters without removing neighbouring critters or Rockmite mounds. Capture messages contain no entity ID, so throw association uses aim and species; live server testing is still needed.
 
 ## Doomspiral and Wumpa personal bests
 
