@@ -14,6 +14,8 @@ class SafariFullClearTest {
         val run = SafariRun(10)
         run.record(SafariCatch.parse("CAPTURE! You caught a Foxtrot!")!!)
         assertTrue(SafariFullClear.toggle())
+        assertFalse(ConfigManager.timesaveOnly)
+        assertEquals(BiomePbType.FULL_CLEAR, ConfigManager.personalBests.biomeType)
         assertTrue(ConfigManager.catchCountPanel); assertTrue(ConfigManager.showMoundStats)
         assertFalse(ConfigManager.countUniqueOnly)
         assertTrue(SafariEspConfig.mobs.values.all { it.enabled })
@@ -22,6 +24,8 @@ class SafariFullClearTest {
         assertTrue(ConfigManager.showBeeNests && ConfigManager.showSnooperWalls && ConfigManager.showMoundCount)
         ConfigManager.init(dir); assertTrue(ConfigManager.fullClearMode)
         assertFalse(SafariFullClear.toggle())
+        assertTrue(ConfigManager.timesaveOnly)
+        assertEquals(BiomePbType.UNIQUE, ConfigManager.personalBests.biomeType)
         assertFalse(SafariEspConfig.mobs.getValue("Rockmite").enabled)
         assertTrue(SafariEspConfig.rockmiteMoundEnabled)
         assertTrue(SafariEspConfig.mobs.getValue("Driftling").enabled)
@@ -32,6 +36,8 @@ class SafariFullClearTest {
         assertEquals(1, run.count("Foxtrot"))
         assertFalse(ConfigManager.catchCountPanel); assertFalse(ConfigManager.showMoundStats)
         ConfigManager.init(dir); assertFalse(ConfigManager.fullClearMode)
+        assertTrue(ConfigManager.timesaveOnly)
+        assertEquals(BiomePbType.UNIQUE, ConfigManager.personalBests.biomeType)
     }
     @Test fun `full clear numbers turn green at the user minimum and Scrappy remains missing until three`() {
         ConfigManager.init(dir); SafariFullClear.toggle()

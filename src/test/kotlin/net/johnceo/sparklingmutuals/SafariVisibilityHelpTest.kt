@@ -14,8 +14,8 @@ class SafariVisibilityHelpTest {
         assertTrue(reply.contains("/sparkling catches"))
         assertTrue(reply.contains("!pb doom"))
         assertTrue(reply.contains("doom/wumpa/forest/haunted/icy/cavern"))
-        assertTrue(reply.contains("full clear=preset"))
-        assertTrue(reply.contains("timesave=timesaves/all"))
+        assertTrue(reply.contains("fc=mode/PBs/lookups"))
+        assertFalse(reply.contains("/pb toggle"))
     }
     @Test fun `entrance visibility is limited to the actual named subarea`() {
         assertFalse(SafariRules.isEntrance(listOf("Area: Torrhus Canyon")))
