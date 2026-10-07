@@ -94,6 +94,7 @@ class SafariSettings : Config() {
         @ConfigEditorButton(runnableId = 5, buttonText = "Reset to 25s") var reset = false
     }
     class Safari {
+        @JvmField @ConfigOption(name = "Alert", desc = "") @Accordion val alerts = Alerts()
         @JvmField @ConfigOption(name = "Remaining", desc = "Show remaining nests, mounds and walls in the missing HUD.") @Accordion val remaining = Remaining()
         @JvmField @ConfigOption(name = "Highlight Snooper Walls", desc = "Mark unbroken Cavern walls with name and distance.")
         @ConfigEditorBoolean var snooperHighlight = ConfigManager.highlightSnooperWalls
@@ -122,6 +123,14 @@ class SafariSettings : Config() {
         @ConfigEditorBoolean var alert = ConfigManager.sparklingAlert
         @JvmField @ConfigOption(name = "Announce sparklings to party", desc = "Send each detected sparkling's name, biome and coordinates to party chat.")
         @ConfigEditorBoolean var announce = ConfigManager.sparklingPartyAnnouncer
+    }
+    class Alerts {
+        @JvmField @ConfigOption(name = "All Gems Alert", desc = "Cavern: one Purple, Lime and Orange Gem in inventory.")
+        @ConfigEditorBoolean var gems = ConfigManager.allGemsAlert
+        @JvmField @ConfigOption(name = "All Bird Food Alert", desc = "Forest: three Yogi Berries, Wriggleworms and Bags of Seeds in inventory.")
+        @ConfigEditorBoolean var birdFood = ConfigManager.allBirdFoodAlert
+        @JvmField @ConfigOption(name = "All Incense Alert", desc = "Haunted: four Soothing Incense in inventory.")
+        @ConfigEditorBoolean var incense = ConfigManager.allIncenseAlert
     }
     class Remaining {
         @JvmField @ConfigOption(name = "Bee Nests", desc = "Show unpunched Forest nests in the missing panel.")
@@ -191,6 +200,8 @@ class SafariSettings : Config() {
             ConfigManager::sparklingAlert to safari.alert, ConfigManager::sparklingPartyAnnouncer to safari.announce,
             ConfigManager::autoClicker to safari.autoClicker, ConfigManager::hideCaptureChat to safari.hideCaptureChat,
             ConfigManager::highlightSnooperWalls to safari.snooperHighlight,
+            ConfigManager::allGemsAlert to safari.alerts.gems, ConfigManager::allBirdFoodAlert to safari.alerts.birdFood,
+            ConfigManager::allIncenseAlert to safari.alerts.incense,
             ConfigManager::showBeeNests to safari.remaining.nests, ConfigManager::showMoundCount to safari.remaining.mounds,
             ConfigManager::showSnooperWalls to safari.remaining.walls,
             ConfigManager::hideGroundCapsules to safari.hideGroundCapsules, ConfigManager::hideFlyingCapsules to safari.hideFlyingCapsules)

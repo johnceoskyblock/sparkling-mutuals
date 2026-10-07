@@ -5,6 +5,7 @@ import java.nio.file.Path
 import java.util.Properties
 import net.johnceo.sparklingmutuals.hud.SafariHud
 import net.johnceo.sparklingmutuals.safari.SafariPersonalBests
+import net.johnceo.sparklingmutuals.safari.SafariFullClear
 
 object ConfigManager {
     private lateinit var configPath: Path
@@ -28,6 +29,9 @@ object ConfigManager {
     var showMoundStats = false
     var removeDarkness = true
     var sparklingAlert = true
+    var allGemsAlert = true
+    var allBirdFoodAlert = true
+    var allIncenseAlert = true
     var sparklingPartyAnnouncer = true
     var catchCountPanel = false
     var autoClicker = true
@@ -44,7 +48,8 @@ object ConfigManager {
         ::sparklingPartyAnnouncer to true, ::catchCountPanel to false, ::autoClicker to true,
         ::hideCaptureChat to false, ::hideGroundCapsules to true, ::hideFlyingCapsules to true,
         ::highlightSnooperWalls to true, ::showBeeNests to true, ::showMoundCount to true,
-        ::showSnooperWalls to true, ::showMoundStats to false)
+        ::showSnooperWalls to true, ::showMoundStats to false,
+        ::allGemsAlert to true, ::allBirdFoodAlert to true, ::allIncenseAlert to true)
 
     fun validCapsuleDistance(value: Float?) = value?.takeIf { it.isFinite() }?.coerceIn(.5f, 6f) ?: 2f
 
@@ -59,6 +64,7 @@ object ConfigManager {
         capsuleHideDistance = validCapsuleDistance(properties.getProperty("capsuleHideDistance")?.toFloatOrNull())
         SafariHud.load(properties)
         personalBests.load(properties)
+        SafariFullClear.syncMode()
         SafariEspConfig.load(properties)
         AppearanceConfig.load(properties)
     }
