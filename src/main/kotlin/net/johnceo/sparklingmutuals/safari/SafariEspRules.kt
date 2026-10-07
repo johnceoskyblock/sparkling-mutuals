@@ -27,6 +27,7 @@ class EspCaptureMemory {
     fun reset() { pending.clear(); captured.clear() }
 }
 object SafariEspRules {
+    fun captureModel(type: String) = type.endsWith("display") || type == "armor_stand"
     fun modelVisible(x: Float, y: Float, z: Float) = listOf(x, y, z).all { it.isFinite() } &&
         maxOf(kotlin.math.abs(x), kotlin.math.abs(y), kotlin.math.abs(z)) > .001f
     fun capturedDisplay(species: String, candidates: List<EspCaptureCandidate>) = candidates.filter {

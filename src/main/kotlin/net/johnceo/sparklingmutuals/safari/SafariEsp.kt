@@ -75,7 +75,7 @@ object SafariEsp {
         val scale = entity.renderState()?.transformation()?.get(1f)?.scale() ?: return false
         return entity.shouldRenderAtSqrDistance(0.0) && SafariEspRules.modelVisible(scale.x(), scale.y(), scale.z())
     }
-    /** Associate a throw with the aimed display before capture removes or hides its model. */
+    /** Associate a throw with the aimed model before capture removes or hides it. */
     fun threw(client: Minecraft) {
         val player = client.player ?: return
         val eye = player.eyePosition
@@ -83,7 +83,7 @@ object SafariEsp {
         val candidates = targets.filter { live(it, client) }.map {
             val offset = it.entity.position().subtract(eye)
             val along = offset.dot(look)
-            EspCaptureCandidate(it.entity.id, it.species, it.entity is Display,
+            EspCaptureCandidate(it.entity.id, it.species, SafariEspRules.captureModel(it.entity.type.toShortString()),
                 it.species == "Rockmite" && it.entity is Display.ItemDisplay,
                 player.distanceToSqr(it.entity), if (along < 0) Double.POSITIVE_INFINITY else (offset.lengthSqr() - along * along).coerceAtLeast(0.0))
         }

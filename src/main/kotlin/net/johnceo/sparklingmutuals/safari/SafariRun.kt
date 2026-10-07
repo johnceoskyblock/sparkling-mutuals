@@ -99,7 +99,7 @@ class SafariRun(val startedAt: Long) {
     }
     val biomeClears = mutableSetOf<SafariBiome>()
     val moundSurvey = MoundSurvey()
-    val allMoundsBroken get() = brokenMounds >= 20 || moundSurvey.allBroken
+    val allMoundsBroken get() = brokenMounds >= SafariFullClear.MOUND_MINIMUM || moundSurvey.allBroken
     fun encountered(name: String) = count(name) > 0 || name in sightings || name == "Rockmite" && rockmiteMounds > 0
     fun observe(entity: EspEntity) {
         if (entity.type == "silverfish" || entity.type == "sniffer") SafariEspRules.identify(entity)?.let { sightings.add(it.name) }

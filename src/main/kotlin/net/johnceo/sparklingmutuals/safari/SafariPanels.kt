@@ -19,9 +19,9 @@ object SafariPanels {
     }
     fun missing(run: SafariRun?, biome: SafariBiome, unique: Boolean, nests: Int, mounds: Int = 0,
         walls: WallSummary = WallSummary(emptyList())): HudPanel {
-        val missing = biome.critters.filter { run?.complete(it, false) != true }
+        val missing = biome.critters.filter { run?.complete(it, !ConfigManager.fullClearMode) != true }
         val rows = missing.map { critter ->
-            HudRow(critter.name, if (critter.quota > 1) "${run?.count(critter.name) ?: 0}/${critter.quota}" else null,
+            HudRow(critter.name, if (ConfigManager.fullClearMode && critter.quota > 1) "${run?.count(critter.name) ?: 0}/${critter.quota}" else null,
                 critter.color, HudRow.GRAY)
         }.ifEmpty { listOf(HudRow("All caught!", color = biome.color)) }
         val footer = buildList {
