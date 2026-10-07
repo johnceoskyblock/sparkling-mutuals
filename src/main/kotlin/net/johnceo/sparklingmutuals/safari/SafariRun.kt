@@ -8,11 +8,11 @@ enum class SafariBiome(val label: String, val color: Int) {
     companion object { fun mapped(id: Int?) = entries.getOrNull((id ?: 0) - 1) }
 }
 data class SafariCritter(val name: String, val biome: SafariBiome, val quota: Int = 1) {
-    fun required(unique: Boolean) = if (unique) 1 else quota
+    fun required(unique: Boolean, fullClear: Boolean = false) = if (fullClear) SafariFullClear.minimum(name) else if (unique) 1 else quota
     val color get() = SafariRoster.color(name)
 }
 object SafariRoster {
-    private val quotas = mapOf("Gemzie" to 3, "Troodon" to 3, "Gazer" to 4)
+    private val quotas = mapOf("Gemzie" to 3, "Troodon" to 3, "Gazer" to 4, "Scrappy" to 3)
     private val colors = listOf(
         0xFF55FF55.toInt() to "Bluebird,Honeybug,Treefrog,Woodchucker,Driftling,Polaris,Shuddersquid,Areita,Bloodbat,Duplico,Gazer,Litterbug,Solsnatcher",
         0xFF5555FF.toInt() to "Fluffling,Hideonfloor,Parakeet,Chuckwalla,Rockmite,Scrappy,Snoozle,Billygoat,Mantis Shrimp,Nozzlenose,Troodon,Gimmiegold,Hideonwall,Hideyho",
@@ -34,7 +34,7 @@ object SafariRoster {
     fun inBiome(biome: SafariBiome) = byBiome.getValue(biome)
     fun findIn(text: String) = patterns.firstOrNull { it.second.containsMatchIn(text) }?.first
 }
-data class SafariCatch(val critter: SafariCritter) {
+data class SafariCatch(val critter: SafariCritter, val personal: Boolean = true) {
     companion object {
         private val catcher = Regex("\\bfrom\\s+(\\w{1,16})\\s+(?:catching|finding)\\b")
         fun parse(raw: String): SafariCatch? {
@@ -42,7 +42,8 @@ data class SafariCatch(val critter: SafariCritter) {
             val own = text.startsWith("CAPTURE!")
             if (!own && !text.startsWith("LOOT SHARE!")) return null
             val species = SafariRoster.findIn(text) ?: return null
-            return if (own || catcher.containsMatchIn(text)) SafariCatch(species) else null
+            return if (own || catcher.containsMatchIn(text)) SafariCatch(species,
+                own && Regex("^CAPTURE! You (?:caught|found)\\b").containsMatchIn(text)) else null
         }
     }
 }
@@ -54,14 +55,23 @@ class SafariRun(val startedAt: Long) {
     var endedAt: Long? = null
     var lastBiome: SafariBiome? = null
     private val counts = mutableMapOf<String, Int>()
+    private val personal = mutableMapOf<String, Int>()
     private val sightings = mutableSetOf<String>()
+    private val observedCritters = mutableMapOf<String, MutableSet<Int>>()
+    val floorSurvey = ClearSiteSurvey()
+    val biomeClears = mutableSetOf<SafariBiome>()
     val moundSurvey = MoundSurvey()
     val allMoundsBroken get() = brokenMounds >= 20 || moundSurvey.allBroken
     fun encountered(name: String) = count(name) > 0 || name in sightings || name == "Rockmite" && rockmiteMounds > 0
     fun observe(entity: EspEntity) {
         if (entity.type == "silverfish" || entity.type == "sniffer") SafariEspRules.identify(entity)?.let { sightings.add(it.name) }
     }
-    fun record(catch: SafariCatch) { counts.merge(catch.critter.name, 1, Int::plus) }
+    fun observeCritter(id: Int, species: String) { observedCritters.getOrPut(species) { mutableSetOf() }.add(id); sightings.add(species) }
+    fun observedCount(species: String) = observedCritters[species]?.size ?: 0
+    fun record(catch: SafariCatch) {
+        counts.merge(catch.critter.name, 1, Int::plus)
+        if (catch.personal) personal.merge(catch.critter.name, 1, Int::plus)
+    }
     fun recordMound(raw: String): Boolean {
         val found = SafariMounds.outcome(raw) ?: return false
         brokenMounds++
@@ -69,9 +79,10 @@ class SafariRun(val startedAt: Long) {
         return true
     }
     fun count(name: String) = counts[name] ?: 0
+    fun personalCount(name: String) = personal[name] ?: 0
     fun elapsed(now: Long) = ((endedAt ?: now) - startedAt).coerceAtLeast(0)
-    fun complete(critter: SafariCritter, unique: Boolean) = count(critter.name) >= critter.required(unique)
-    fun progress(critters: List<SafariCritter>, unique: Boolean) = critters.count { complete(it, unique) }
+    fun complete(critter: SafariCritter, unique: Boolean, fullClear: Boolean = false) = count(critter.name) >= critter.required(unique, fullClear)
+    fun progress(critters: List<SafariCritter>, unique: Boolean, fullClear: Boolean = false) = critters.count { complete(it, unique, fullClear) }
 }
 class SafariLedger {
     private var pendingArrival: Long? = null

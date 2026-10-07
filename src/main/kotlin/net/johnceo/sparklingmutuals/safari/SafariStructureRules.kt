@@ -31,6 +31,7 @@ data class WallSummary(val states: List<WallState>) {
 class MoundSurvey {
     private val sites = mutableMapOf<Triple<Int, Int, Int>, Boolean>()
     val allBroken get() = sites.size >= 20 && sites.values.all { it }
+    val remaining get() = sites.values.count { !it }
     fun scan(present: Set<Triple<Int, Int, Int>>, observable: (Triple<Int, Int, Int>) -> Boolean) {
         present.forEach { sites[it] = false }
         sites.keys.filter { it !in present && observable(it) }.forEach { sites[it] = true }

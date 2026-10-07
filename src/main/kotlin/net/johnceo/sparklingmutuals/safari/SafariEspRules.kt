@@ -49,12 +49,15 @@ object SafariEspRules {
     )
     private val byType = mobs.flatMap { mob -> mob.identifiers.map { it.type to (mob to it) } }.groupBy({ it.first }, { it.second })
     fun identify(entity: EspEntity): EspMob? {
+        if (entity.type.endsWith("display") && entity.invisible) return null
         if (entity.type == "silverfish" && (entity.invisible || entity.passengers)) return null
         return byType[entity.type]?.firstOrNull { (_, rule) ->
             (rule.texture == null || rule.texture == entity.texture) && (rule.shulker == null || rule.shulker == entity.shulker) &&
             (rule.fish == null || rule.fish == entity.fish) && (rule.variant == null || rule.variant == entity.variant)
         }?.first
     }
+    fun targetCurrent(species: String, descriptor: EspEntity, removed: Boolean, registered: Boolean, sameLevel: Boolean) =
+        !removed && registered && sameLevel && identify(descriptor)?.name == species
     fun textureHash(encoded: String?): String? = try {
         val json = String(Base64.getDecoder().decode(encoded ?: return null), Charsets.UTF_8)
         Regex("textures\\.minecraft\\.net/texture/([a-fA-F0-9]{64})(?![a-fA-F0-9])").find(json)?.groupValues?.get(1)?.lowercase()

@@ -26,6 +26,9 @@ import net.minecraft.world.level.block.Block
 import net.minecraft.world.level.block.ShulkerBoxBlock
 import net.minecraft.world.phys.AABB
 
+data class EspCritterObservation(val id: Int, val species: String, val biome: SafariBiome, val x: Double, val y: Double, val z: Double, val mound: Boolean)
+data class SafariEspObservations(val critters: List<EspCritterObservation>, val floorDrops: List<EspDrop>, val scanned: Boolean = false)
+
 /** Nebulune SafariESP identification and box offsets, adapted to our Fabric renderer without Athen. */
 object SafariEsp {
     private data class Target(val entity: Entity, val species: String, val shulker: Boolean)
@@ -33,6 +36,8 @@ object SafariEsp {
     private var drops = emptyList<EspDrop>()
     private var level: Any? = null
     private var ticks = 0
+    private var scanned = false
+    private var stringDisplays = emptyList<EspDrop>()
     private fun renderType(name: String, snippet: RenderPipeline.Snippet) = RenderType.create("sparkling-mutuals:$name",
         RenderSetup.builder(RenderPipelines.register(RenderPipeline.builder(snippet)
             .withLocation(SparklingMutuals.id("pipeline/$name"))
@@ -66,14 +71,14 @@ object SafariEsp {
     }
     fun tick(client: Minecraft) {
         if (level !== client.level) { reset(); level = client.level }
-        if (!SafariAssist.inSafari || client.player == null || client.level == null || SafariEspConfig.groups.values.none { it.enabled }) {
-            targets = emptyList(); drops = emptyList(); ticks = 0; return
+        if (!SafariAssist.inSafari || client.player == null || client.level == null) {
+            targets = emptyList(); drops = emptyList(); stringDisplays = emptyList(); ticks = 0; scanned = false; return
         }
         if (++ticks < 5) return
         ticks = 0
         val strings = mutableListOf<EspDrop>()
-        targets = client.level!!.entitiesForRendering().filterNot { it.isRemoved }.mapNotNull { entity ->
-            if (entity is Display.ItemDisplay && entity.itemStack.`is`(Items.STRING)) {
+        targets = client.level!!.entitiesForRendering().filter { !it.isRemoved && client.level!!.getEntity(it.id) === it }.mapNotNull { entity ->
+            if (entity is Display.ItemDisplay && !entity.isInvisible && entity.itemStack.`is`(Items.STRING)) {
                 val pos = entity.blockPosition()
                 strings.add(EspDrop(entity.id, pos.x, pos.y, pos.z))
                 return@mapNotNull null
@@ -82,7 +87,36 @@ object SafariEsp {
             val descriptor = mob.identifiers.any { it.shulker != null }
             Target(entity, mob.name, descriptor)
         }.toList()
+        stringDisplays = strings.toList()
         drops = SafariEspRules.floorDrops(strings)
+        scanned = true
+    }
+    private fun live(target: Target, client: Minecraft): Boolean {
+        val entity = target.entity
+        return SafariEspRules.targetCurrent(target.species, describe(entity), entity.isRemoved,
+            client.level?.getEntity(entity.id) === entity, entity.level() === client.level)
+    }
+    /** Loaded server entities only; observations do not depend on ESP switches or biome filtering. */
+    fun observations(): SafariEspObservations {
+        val client = Minecraft.getInstance()
+        if (!SafariAssist.inSafari || client.level == null || client.level !== level) return SafariEspObservations(emptyList(), emptyList())
+        targets = targets.filter { live(it, client) }
+        val critters = targets.mapNotNull { target ->
+            val e = target.entity
+            val biome = SafariEspRules.biomeAt(e.x, e.z) ?: return@mapNotNull null
+            if (SafariRoster.named(target.species)?.biome != biome) return@mapNotNull null
+            EspCritterObservation(e.id, target.species, biome, e.x, e.y, e.z, target.species == "Rockmite" && e is Display.ItemDisplay)
+        }
+        return SafariEspObservations(critters, liveDrops(client), scanned)
+    }
+    private fun liveDrops(client: Minecraft): List<EspDrop> {
+        val strings = stringDisplays.filter { drop ->
+            val entity = client.level?.getEntity(drop.id) as? Display.ItemDisplay ?: return@filter false
+            val p = entity.blockPosition()
+            !entity.isRemoved && !entity.isInvisible && entity.itemStack.`is`(Items.STRING) &&
+                p.x == drop.x && p.y == drop.y && p.z == drop.z
+        }
+        return SafariEspRules.floorDrops(strings)
     }
     private fun bounds(target: Target, delta: Float): AABB {
         val e = target.entity
@@ -118,18 +152,17 @@ object SafariEsp {
             }
         }
         val delta = client.deltaTracker.getGameTimeDeltaPartialTick(false)
+        targets = targets.filter { live(it, client) }
         for (target in targets) {
             val e = target.entity
-            if (e.isRemoved || e.level() !== client.level) continue
             val mob = SafariRoster.named(target.species)!!
             val group = SafariEspConfig.groups.getValue(mob.biome.name.lowercase())
-            val setting = SafariEspConfig.mobs.getValue(mob.name)
             val mobBiome = SafariEspRules.biomeAt(e.x, e.z)
-            if (setting.enabled && mobBiome == mob.biome && SafariEspRules.visible(true, group.enabled, group.onlyInBiome, playerBiome, mobBiome))
+            if (SafariEspConfig.entityEnabled(mob.name, e is Display.ItemDisplay) && mobBiome == mob.biome && SafariEspRules.visible(true, group.enabled, group.onlyInBiome, playerBiome, mobBiome))
                 frame(bounds(target, delta), SafariEspConfig.rgb(SafariEspConfig.entityColor(mob.name, e is Display.ItemDisplay)))
         }
         val floor = SafariEspConfig.groups.getValue("floor")
-        val tiles = drops.filter { SafariEspRules.visible(true, floor.enabled, floor.onlyInBiome, playerBiome,
+        val tiles = liveDrops(client).filter { SafariEspRules.visible(true, floor.enabled, floor.onlyInBiome, playerBiome,
             SafariEspRules.biomeAt(it.x.toDouble(), it.z.toDouble())) }
         val color = SafariEspConfig.rgb(SafariEspConfig.floorColor)
         tiles.forEach { frame(AABB(it.x.toDouble(), it.y + 1.0, it.z.toDouble(), it.x + 1.0, it.y + 1.0, it.z + 1.0), color) }
@@ -142,5 +175,5 @@ object SafariEsp {
         }
         buffers.endBatch(fill)
     }
-    fun reset() { targets = emptyList(); drops = emptyList(); level = null; ticks = 0 }
+    fun reset() { targets = emptyList(); drops = emptyList(); level = null; ticks = 0; stringDisplays = emptyList(); scanned = false }
 }
