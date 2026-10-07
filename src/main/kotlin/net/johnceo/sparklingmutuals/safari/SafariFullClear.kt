@@ -17,7 +17,7 @@ object SafariFullClear {
         "Fluffling" to 1, "Hideonfloor" to 1, "Parakeet" to 0, "Macaw" to 0,
         "Cavernfish" to 4, "Flitter" to 6, "Shyworm" to 4, "Driftling" to 3, "Chuckwalla" to 2,
         "Rockmite" to 0, "Scrappy" to 3, "Snoozle" to 0, "Gemzie" to 3,
-        "Strongarm" to 6, "Tepid" to 6, "Polaris" to 2, "Shuddersquid" to 3, "Billygoat" to 2,
+        "Strongarm" to 4, "Tepid" to 6, "Polaris" to 2, "Shuddersquid" to 3, "Billygoat" to 2,
         "Mantis Shrimp" to 3, "Nozzlenose" to 2, "Troodon" to 3, "Wumpa" to 1,
         "Areita" to 3, "Bloodbat" to 3, "Duplico" to 2, "Gazer" to 4, "Litterbug" to 4,
         "Solsnatcher" to 4, "Gimmiegold" to 3, "Hideonwall" to 2, "Hideyho" to 1, "Doomspiral" to 1)
