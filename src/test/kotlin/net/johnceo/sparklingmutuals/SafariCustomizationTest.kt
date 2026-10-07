@@ -11,11 +11,12 @@ import net.johnceo.sparklingmutuals.safari.*
 
 class SafariCustomizationTest {
     @TempDir lateinit var dir: Path
-    @Test fun `settings expose a customization tab and the requested warp description`() {
+    @Test fun `settings categories omit descriptors and general owns shared actions`() {
         ConfigManager.init(dir)
         ContestConfig.init(dir)
         val categories = SafariSettings::class.java.fields.mapNotNull { it.getAnnotation(Category::class.java) }
-        assertEquals("Warp reminders", categories.first { it.name == "Warp reminders" }.desc)
+        assertTrue(categories.all { it.desc.isEmpty() })
+        assertTrue(categories.any { it.name == "General" })
         assertTrue(categories.any { it.name == "Customization" })
     }
     @Test fun `defaults separate missing panel counts from highlights and disable mound results`() {
@@ -94,8 +95,11 @@ class SafariCustomizationTest {
     }
     @Test fun `warning and remaining controls live in their accordions and full clear controls are absent`() {
         fun names(type: Class<*>) = type.fields.mapNotNull { it.getAnnotation(io.github.notenoughupdates.moulconfig.annotations.ConfigOption::class.java)?.name }
-        assertEquals(setOf("Contest HUD and tracking", "Warning", "Move and resize HUDs"), names(SafariSettings.Miria::class.java).toSet())
+        assertEquals(setOf("Contest HUD and tracking", "Warning"), names(SafariSettings.Miria::class.java).toSet())
         assertEquals(setOf("5 minute warning", "3 minute warning", "1 minute warning", "No contest warnings", "Warning titles", "Sound volume", "Warning sound", "Save sound"), names(SafariSettings.Warning::class.java).toSet())
+        assertEquals(setOf("Command help", "Move and resize HUDs"), names(SafariSettings.General::class.java).toSet())
+        assertFalse(names(SafariSettings.Party::class.java).contains("Command help"))
+        assertFalse(names(SafariSettings.Tracking::class.java).contains("Move and resize HUDs"))
         assertTrue(names(SafariSettings.Safari::class.java).contains("Remaining"))
         assertEquals(setOf("Bee Nests", "Rockmite Mounds", "Snooper Walls"), names(SafariSettings.Remaining::class.java).toSet())
         assertFalse(names(SafariSettings.Tracking::class.java).any { it in setOf("Bee Nests", "Rockmite Mounds", "Snooper Walls", "Mound results", "Count Unique Only", "Biome capture counts") })
