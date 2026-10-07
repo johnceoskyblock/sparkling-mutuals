@@ -8,7 +8,7 @@ open class SafariEspGroupSettings(private val group: String) {
     @ConfigEditorBoolean var enabled = SafariEspConfig.groups.getValue(group).enabled
     @JvmField @ConfigOption(name = "Only in current biome", desc = "Show only targets in your current biome.")
     @ConfigEditorBoolean var onlyInBiome = SafariEspConfig.groups.getValue(group).onlyInBiome
-    fun apply(): Boolean {
+    open fun apply(): Boolean {
         val saved = SafariEspConfig.groups.getValue(group)
         var changed = saved.enabled != enabled || saved.onlyInBiome != onlyInBiome
         saved.enabled = enabled; saved.onlyInBiome = onlyInBiome
@@ -36,7 +36,14 @@ class SafariCavernEspSettings : SafariEspGroupSettings("cavern") {
     @JvmField @ConfigOption(name = "Shyworm", desc = "Highlight this critter.") @Accordion val shyworm = SafariEspMobSettings("Shyworm")
     @JvmField @ConfigOption(name = "Driftling", desc = "Highlight this critter.") @Accordion val driftling = SafariEspMobSettings("Driftling")
     @JvmField @ConfigOption(name = "Chuckwalla", desc = "Highlight this critter.") @Accordion val chuckwalla = SafariEspMobSettings("Chuckwalla")
-    @JvmField @ConfigOption(name = "Rockmite", desc = "Highlight this critter.") @Accordion val rockmite = SafariEspMobSettings("Rockmite")
+    @JvmField @ConfigOption(name = "Rockmite silverfish", desc = "Highlight this critter.") @Accordion val rockmite = SafariEspMobSettings("Rockmite")
+    @JvmField @ConfigOption(name = "Rockmite mound", desc = "Highlight unbroken Rockmite mounds.")
+    @ConfigEditorBoolean var rockmiteMound = SafariEspConfig.rockmiteMoundEnabled
+    override fun apply(): Boolean {
+        val changed = SafariEspConfig.rockmiteMoundEnabled != rockmiteMound
+        SafariEspConfig.rockmiteMoundEnabled = rockmiteMound
+        return super.apply() || changed
+    }
     @JvmField @ConfigOption(name = "Scrappy", desc = "Highlight this critter.") @Accordion val scrappy = SafariEspMobSettings("Scrappy")
     @JvmField @ConfigOption(name = "Snoozle", desc = "Highlight this critter.") @Accordion val snoozle = SafariEspMobSettings("Snoozle")
     @JvmField @ConfigOption(name = "Gemzie", desc = "Highlight this critter.") @Accordion val gemzie = SafariEspMobSettings("Gemzie")

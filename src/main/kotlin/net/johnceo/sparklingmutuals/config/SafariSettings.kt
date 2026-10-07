@@ -38,6 +38,29 @@ class SafariSettings : Config() {
     class Miria {
         @JvmField @ConfigOption(name = "Contest HUD and tracking", desc = "Track Miria contests.")
         @ConfigEditorBoolean var enabled = ContestConfig.trackContest
+        @JvmField @ConfigOption(name = "Warning", desc = "Contest warnings and sound.") @Accordion val warning = Warning()
+        var five
+            get() = warning.five
+            set(value) { warning.five = value }
+        var three
+            get() = warning.three
+            set(value) { warning.three = value }
+        var one
+            get() = warning.one
+            set(value) { warning.one = value }
+        var titles
+            get() = warning.titles
+            set(value) { warning.titles = value }
+        var volume
+            get() = warning.volume
+            set(value) { warning.volume = value }
+        var sound
+            get() = warning.sound
+            set(value) { warning.sound = value }
+        @JvmField @ConfigOption(name = "Move and resize HUDs", desc = "Drag HUDs to move them; scroll to resize.")
+        @ConfigEditorButton(runnableId = 1, buttonText = "Edit all HUDs") var edit = false
+    }
+    class Warning {
         @JvmField @ConfigOption(name = "5 minute warning", desc = "Warn at 5 minutes if below Uncommon.")
         @ConfigEditorBoolean var five = 5 in ContestConfig.warningMinutes()
         @JvmField @ConfigOption(name = "3 minute warning", desc = "Warn at 3 minutes if below Uncommon.")
@@ -54,8 +77,6 @@ class SafariSettings : Config() {
         @ConfigEditorText var sound = ContestConfig.contestSound
         @JvmField @ConfigOption(name = "Save sound", desc = "Apply the warning sound.")
         @ConfigEditorButton(runnableId = 7, buttonText = "Save sound") var saveSound = false
-        @JvmField @ConfigOption(name = "Move and resize HUDs", desc = "Drag HUDs to move them; scroll to resize.")
-        @ConfigEditorButton(runnableId = 1, buttonText = "Edit all HUDs") var edit = false
     }
     class Warp {
         @JvmField @ConfigOption(name = "Warp reminder", desc = "Remind you to /p warp after a Hotspot.")
@@ -68,6 +89,7 @@ class SafariSettings : Config() {
         @ConfigEditorButton(runnableId = 5, buttonText = "Reset to 25s") var reset = false
     }
     class Safari {
+        @JvmField @ConfigOption(name = "Remaining", desc = "Show remaining nests, mounds and walls in the missing HUD.") @Accordion val remaining = Remaining()
         @JvmField @ConfigOption(name = "Highlight Snooper Walls", desc = "Mark unbroken Cavern walls with name and distance.")
         @ConfigEditorBoolean var snooperHighlight = ConfigManager.highlightSnooperWalls
         @JvmField @ConfigOption(name = "Hide capture chat", desc = "Hide throws, captures, escapes and loot shares; tracking continues.")
@@ -96,26 +118,22 @@ class SafariSettings : Config() {
         @JvmField @ConfigOption(name = "Announce sparklings to party", desc = "Send each detected sparkling's name, biome and coordinates to party chat.")
         @ConfigEditorBoolean var announce = ConfigManager.sparklingPartyAnnouncer
     }
-    class Tracking {
+    class Remaining {
         @JvmField @ConfigOption(name = "Bee Nests", desc = "Show unpunched Forest nests in the missing panel.")
         @ConfigEditorBoolean var nests = ConfigManager.showBeeNests
         @JvmField @ConfigOption(name = "Rockmite Mounds", desc = "Show nearby unbroken Cavern mounds in the missing panel.")
         @ConfigEditorBoolean var mounds = ConfigManager.showMoundCount
         @JvmField @ConfigOption(name = "Snooper Walls", desc = "Show remaining Cavern walls in the missing panel.")
         @ConfigEditorBoolean var walls = ConfigManager.showSnooperWalls
-        @JvmField @ConfigOption(name = "Mound results", desc = "Add mounds broken and mounds with Rockmites to Cavern capture counts.")
-        @ConfigEditorBoolean var moundStats = ConfigManager.showMoundStats
+    }
+    class Tracking {
         @JvmField @ConfigOption(name = "Progress HUD", desc = "Show Safari completion and elapsed time.")
         @ConfigEditorBoolean var progress = ConfigManager.progressHud
         @JvmField @ConfigOption(name = "Show where", desc = "Where the Progress HUD appears.")
         @ConfigEditorDropdown(values = ["Only in Safari", "Safari and entrance", "Everywhere"])
         var where = ConfigManager.showWhere
-        @JvmField @ConfigOption(name = "Count Unique Only", desc = "Complete each species with one catch instead of its quota.")
-        @ConfigEditorBoolean var unique = ConfigManager.countUniqueOnly
         @JvmField @ConfigOption(name = "Missing panel", desc = "List missing critters in your current biome.")
         @ConfigEditorBoolean var missing = ConfigManager.missingPanel
-        @JvmField @ConfigOption(name = "Biome capture counts", desc = "Show this run's captures for each critter in your current biome.")
-        @ConfigEditorBoolean var counts = ConfigManager.catchCountPanel
         @JvmField @ConfigOption(name = "Capture count screen", desc = "Review the current or last run's captures.")
         @ConfigEditorButton(runnableId = 8, buttonText = "View captures") var view = false
         @JvmField @ConfigOption(name = "Move and resize HUDs", desc = "Drag HUDs to move them; scroll to resize.")
@@ -163,14 +181,14 @@ class SafariSettings : Config() {
         if (warp.enabled != ConfigManager.warpAlertsEnabled) AlertManager.toggleAlert()
         val changes = listOf(ConfigManager::partyCommandsEnabled to party.enabled, ConfigManager::hideHauntedPaintings to safari.paintings,
             ConfigManager::shinyDetection to safari.shiny, ConfigManager::hideyhoQuestClicks to safari.hideyho,
-            ConfigManager::progressHud to tracking.progress, ConfigManager::countUniqueOnly to tracking.unique,
-            ConfigManager::missingPanel to tracking.missing, ConfigManager::catchCountPanel to tracking.counts,
+            ConfigManager::progressHud to tracking.progress,
+            ConfigManager::missingPanel to tracking.missing,
             ConfigManager::highlightBeeNests to safari.nests, ConfigManager::removeDarkness to safari.darkness,
             ConfigManager::sparklingAlert to safari.alert, ConfigManager::sparklingPartyAnnouncer to safari.announce,
             ConfigManager::autoClicker to safari.autoClicker, ConfigManager::hideCaptureChat to safari.hideCaptureChat,
             ConfigManager::highlightSnooperWalls to safari.snooperHighlight,
-            ConfigManager::showBeeNests to tracking.nests, ConfigManager::showMoundCount to tracking.mounds,
-            ConfigManager::showSnooperWalls to tracking.walls, ConfigManager::showMoundStats to tracking.moundStats,
+            ConfigManager::showBeeNests to safari.remaining.nests, ConfigManager::showMoundCount to safari.remaining.mounds,
+            ConfigManager::showSnooperWalls to safari.remaining.walls,
             ConfigManager::hideGroundCapsules to safari.hideGroundCapsules, ConfigManager::hideFlyingCapsules to safari.hideFlyingCapsules)
         val espChanged = listOf(floorEsp.apply(), cavernEsp.apply(), forestEsp.apply(), icyEsp.apply(), hauntedEsp.apply()).any { it }
         val customizationChanged = customization.apply()
