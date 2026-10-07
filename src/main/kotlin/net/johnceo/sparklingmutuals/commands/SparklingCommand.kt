@@ -20,6 +20,12 @@ object SparklingCommand {
 
     fun register() {
         ClientCommandRegistrationCallback.EVENT.register { dispatcher, _ ->
+            dispatcher.register(ClientCommands.literal("pb").then(ClientCommands.literal("toggle").executes { context ->
+                val type = ConfigManager.personalBests.toggleBiomeType()
+                ConfigManager.save()
+                context.source.sendFeedback(Component.literal("[SM] Biome PB replies: ${type.label}. Both PB types are tracked separately."))
+                1
+            }))
             dispatcher.register(
                 ClientCommands.literal("sparkling")
                     .executes { open(::SafariConfigScreen) }

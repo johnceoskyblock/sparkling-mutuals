@@ -61,7 +61,7 @@ data class PartyCommand(val kind: PartyCommandKind, val ign: String = "") {
             ).matches(body)
             PartyCommandKind.HELP -> body.startsWith("[SM] Commands: ")
             else -> Regex(
-                "^${if (ign.isEmpty()) "[A-Za-z0-9_]{1,16}" else Regex.escape(ign)}'s ${pbName} PB: (?:\\d+:\\d{2}\\.\\d{3}|Not recorded yet)$",
+                "^${if (ign.isEmpty()) "[A-Za-z0-9_]{1,16}" else Regex.escape(ign)}'s ${pbName}${if (kind in listOf(PartyCommandKind.PB_FOREST, PartyCommandKind.PB_HAUNTED, PartyCommandKind.PB_ICY, PartyCommandKind.PB_CAVERN)) "(?: (?:Full Clear|Unique Run))?" else ""} PB: (?:\\d+:\\d{2}\\.\\d{3}|Not recorded yet)$",
                 RegexOption.IGNORE_CASE).matches(body)
         }
     }

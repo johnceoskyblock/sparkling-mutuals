@@ -8,10 +8,10 @@ object CommandHelp {
         "!ticket <IGN> / !tickets <IGN>" to "A player's Safari tickets",
         "!pb doom" to "Each mod user's Doomspiral best time",
         "!pb wumpa" to "Each mod user's Wumpa best time",
-        "!pb forest" to "Each mod user's Forest full clear best time",
-        "!pb haunted" to "Each mod user's Haunted full clear best time",
-        "!pb icy" to "Each mod user's Icy full clear best time",
-        "!pb cavern" to "Each mod user's Cavern full clear best time",
+        "!pb forest" to "Each mod user's selected Forest biome PB",
+        "!pb haunted" to "Each mod user's selected Haunted biome PB",
+        "!pb icy" to "Each mod user's selected Icy biome PB",
+        "!pb cavern" to "Each mod user's selected Cavern biome PB",
         "!commands" to "This command list"
     )
     private val local = listOf(
@@ -19,6 +19,7 @@ object CommandHelp {
         "/sparkling gui" to "Move and resize HUDs",
         "/sparkling catches" to "View current or last run captures",
         "/sparkling full clear" to "Toggle the full clear preset",
+        "/pb toggle" to "Switch biome PB replies between Full Clear and Unique Run",
         "/sparkling timesave" to "Toggle timesaves versus all species for party lookups",
         "/alert" to "Toggle warp reminders",
         "/alertdelay <seconds>" to "Set warp reminder delay",
@@ -28,6 +29,6 @@ object CommandHelp {
         party.map { (command, description) -> "§b$command §7— $description" } +
         listOf("§eLocal commands") + local.map { (command, description) -> "§b$command §7— $description" } +
         listOf("§7<IGN> means Minecraft username. Use /pc for party commands.")
-    fun partyReply() = "[SM] Commands: Party: !mutual(s), !missing <IGN>, !ticket(s) <IGN>, !pb doom/wumpa/forest/haunted/icy/cavern, !commands | " +
-        "Local: /sparkling [gui|full clear=preset|timesave=timesaves/all], /sparkling catches, /alert, /alertdelay <s>, /apikey <key>"
+    fun partyReply() = "[SM] Commands: Party: !mutual, !missing <IGN>, !ticket <IGN>, !pb doom/wumpa/forest/haunted/icy/cavern, !commands | " +
+        "Local: /sparkling [gui|full clear=preset|timesave=timesaves/all], /sparkling catches, /pb toggle, /alert, /alertdelay <s>, /apikey <key>"
 }
