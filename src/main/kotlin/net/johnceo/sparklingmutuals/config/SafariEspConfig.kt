@@ -12,6 +12,9 @@ object SafariEspConfig {
     val groups = listOf("floor", "cavern", "forest", "icy", "haunted").associateWith { Group() }
     val mobs = SafariEspRules.mobs.associate { it.name to Mob(it.name in defaultMobs, defaultColor(it.color)) }
     var floorColor = defaultColor(0xFF00FF00.toInt())
+    var rockmiteMoundColor = mobs.getValue("Rockmite").color
+    fun entityColor(name: String, mound: Boolean = false) =
+        if (name == "Rockmite" && mound) rockmiteMoundColor else mobs.getValue(name).color
     private fun defaultColor(rgb: Int) = ChromaColour.special(0, 255, rgb)
     fun validColor(value: String?, fallback: String): String = value?.takeIf { color ->
         val parts = color.split(':')
@@ -29,6 +32,7 @@ object SafariEspConfig {
             mob.color = validColor(properties.getProperty("esp.${key(name)}.color"), defaultColor(SafariEspRules.mobs.first { it.name == name }.color))
         }
         floorColor = validColor(properties.getProperty("esp.floor.color"), defaultColor(0xFF00FF00.toInt()))
+        rockmiteMoundColor = validColor(properties.getProperty("esp.rockmite.moundColor"), mobs.getValue("Rockmite").color)
     }
     fun save(properties: Properties) {
         groups.forEach { (name, group) ->
@@ -40,5 +44,6 @@ object SafariEspConfig {
             properties.setProperty("esp.${key(name)}.color", mob.color)
         }
         properties.setProperty("esp.floor.color", floorColor)
+        properties.setProperty("esp.rockmite.moundColor", rockmiteMoundColor)
     }
 }

@@ -67,7 +67,9 @@ class CustomizationSettings {
     @JvmField @ConfigOption(name = "Shyworm ESP", desc = "") @Accordion val shyworm = mob("Shyworm")
     @JvmField @ConfigOption(name = "Driftling ESP", desc = "") @Accordion val driftling = mob("Driftling")
     @JvmField @ConfigOption(name = "Chuckwalla ESP", desc = "") @Accordion val chuckwalla = mob("Chuckwalla")
-    @JvmField @ConfigOption(name = "Rockmite ESP", desc = "") @Accordion val rockmite = mob("Rockmite")
+    @JvmField @ConfigOption(name = "Rockmite silverfish ESP", desc = "") @Accordion val rockmite = mob("Rockmite")
+    @JvmField @ConfigOption(name = "Rockmite mound ESP", desc = "") @Accordion val rockmiteMound = ColorChoice(
+        { SafariEspConfig.rockmiteMoundColor }, { SafariEspConfig.rockmiteMoundColor = it }) { selectedHex }
     @JvmField @ConfigOption(name = "Scrappy ESP", desc = "") @Accordion val scrappy = mob("Scrappy")
     @JvmField @ConfigOption(name = "Snoozle ESP", desc = "") @Accordion val snoozle = mob("Snoozle")
     @JvmField @ConfigOption(name = "Gemzie ESP", desc = "") @Accordion val gemzie = mob("Gemzie")
