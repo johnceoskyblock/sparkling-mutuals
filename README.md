@@ -7,7 +7,7 @@ A Fabric mod for Hypixel SkyBlock Safari, sparkling discoveries, and Miria conte
 - **Mutual sparklings:** `!mutual` finds sparkling discoveries shared by your party.
 - **Missing sparklings:** `!missing <IGN>` lists a player's missing discoveries. `/sparkling timesave` switches between timesaves and all species.
 - **Safari tickets:** `!tickets <IGN>` shows a player's ticket counts.
-- **Personal bests:** `!pb doom`, `!pb wumpa`, and `!pb forest|cavern|icy|haunted` share saved times. Each mod user replies with their own PB.
+- **Personal bests:** `!pb doom`, `!pb wumpa`, and `!pb forest|cavern|icy|haunted` share saved times. `/pb toggle` switches biome replies between Full Clear and Unique Run PBs; each mod user replies with their own labeled record.
 - **Command help:** `!commands` shows the available commands. Duplicate lookup replies are suppressed, and lookup errors appear only locally.
 
 ## Safari tracking
@@ -16,7 +16,7 @@ A Fabric mod for Hypixel SkyBlock Safari, sparkling discoveries, and Miria conte
 - **Missing panel:** lists uncaught critters and remaining bee nests, Rockmite mounds, and Snooper walls.
 - **Capture counts:** tracks catches per critter and Rockmite mound results. `/sparkling catches` opens the current or last run's counts.
 - **Full-clear mode:** `/sparkling full clear` enables the capture HUD, completion colors, remaining counters, and critter ESP. Numbers turn green when capture and nearby-clear requirements are met.
-- **PB tracking:** saves your fastest Doomspiral, Wumpa, and biome-clear times from the start of a run and announces new records locally. Only your own catches qualify for PBs.
+- **PB tracking:** saves your fastest Doomspiral, Wumpa, full-clear, and unique-biome times from the start of a run and announces new records locally. Unique clears require one personal catch of every species; only your own catches qualify for either biome PB type.
 
 ## Safari helpers
 
