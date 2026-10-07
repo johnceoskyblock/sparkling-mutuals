@@ -43,10 +43,9 @@ class SafariCustomizationTest {
         settings.customization.macaw.setColor.run()
         settings.customization.beeNests.setColor.run()
         settings.customization.captures.transparency = 65
-        settings.tracking.nests = false
-        settings.tracking.mounds = false
-        settings.tracking.walls = false
-        settings.tracking.moundStats = true
+        settings.safari.remaining.nests = false
+        settings.safari.remaining.mounds = false
+        settings.safari.remaining.walls = false
         settings.safari.snooperHighlight = false
         settings.apply()
         ConfigManager.init(dir)
@@ -62,7 +61,7 @@ class SafariCustomizationTest {
         assertFalse(ConfigManager.showMoundCount)
         assertFalse(ConfigManager.showSnooperWalls)
         assertFalse(ConfigManager.highlightSnooperWalls)
-        assertTrue(ConfigManager.showMoundStats)
+        assertFalse(ConfigManager.showMoundStats)
     }
     @Test fun `invalid hex colors do not change targets and valid hex preserves alpha and chroma`() {
         assertEquals("3:70:18:52:86", AppearanceConfig.withHex("3:70:0:0:0", " #123456 "))
@@ -87,11 +86,50 @@ class SafariCustomizationTest {
     @Test fun `customization offers every existing critter color exactly once`() {
         ConfigManager.init(dir)
         val choices = CustomizationSettings()
-        val names = choices.javaClass.fields.filter { it.type == ColorChoice::class.java }.map {
+        val names = listOf(choices.cavern, choices.forest, choices.icy, choices.haunted).flatMap { group -> group.javaClass.fields.toList() }.filter { it.type == ColorChoice::class.java }.map {
             it.getAnnotation(io.github.notenoughupdates.moulconfig.annotations.ConfigOption::class.java).name
         }
         SafariRoster.all.filter { it.name != "Rockmite" }.forEach { assertEquals(1, names.count { name -> name == "${it.name} ESP" }) }
         assertTrue(names.containsAll(listOf("Rockmite silverfish ESP", "Rockmite mound ESP")))
+    }
+    @Test fun `warning and remaining controls live in their accordions and full clear controls are absent`() {
+        fun names(type: Class<*>) = type.fields.mapNotNull { it.getAnnotation(io.github.notenoughupdates.moulconfig.annotations.ConfigOption::class.java)?.name }
+        assertEquals(setOf("Contest HUD and tracking", "Warning", "Move and resize HUDs"), names(SafariSettings.Miria::class.java).toSet())
+        assertEquals(setOf("5 minute warning", "3 minute warning", "1 minute warning", "No contest warnings", "Warning titles", "Sound volume", "Warning sound", "Save sound"), names(SafariSettings.Warning::class.java).toSet())
+        assertTrue(names(SafariSettings.Safari::class.java).contains("Remaining"))
+        assertEquals(setOf("Bee Nests", "Rockmite Mounds", "Snooper Walls"), names(SafariSettings.Remaining::class.java).toSet())
+        assertFalse(names(SafariSettings.Tracking::class.java).any { it in setOf("Bee Nests", "Rockmite Mounds", "Snooper Walls", "Mound results", "Count Unique Only", "Biome capture counts") })
+        ConfigManager.init(dir)
+        ContestConfig.init(dir)
+        val settings = SafariSettings()
+        ConfigManager.showMoundStats = true
+        ConfigManager.countUniqueOnly = true
+        ConfigManager.catchCountPanel = true
+        settings.apply()
+        assertTrue(ConfigManager.showMoundStats)
+        assertTrue(ConfigManager.countUniqueOnly)
+        assertTrue(ConfigManager.catchCountPanel)
+    }
+    @Test fun `biome colors and rockmite toggles remain independent`() {
+        ConfigManager.init(dir)
+        ContestConfig.init(dir)
+        val settings = SafariSettings()
+        val labels = CustomizationSettings::class.java.fields.mapNotNull {
+            it.getAnnotation(io.github.notenoughupdates.moulconfig.annotations.ConfigOption::class.java)?.name
+        }
+        assertTrue(labels.containsAll(listOf("Missing panel HUD", "Sparkling alert HUD", "Cavern critter colors", "Forest critter colors", "Icy critter colors", "Haunted critter colors")))
+        assertFalse(labels.any { it.endsWith(" ESP") && it != "Floor drop ESP" })
+        settings.customization.selectedHex = "#123456"
+        settings.customization.cavern.rockmiteMound.setColor.run()
+        settings.customization.cavern.rockmite.color = "0:255:101:102:103"
+        settings.cavernEsp.rockmiteMound = false
+        settings.cavernEsp.rockmite.enabled = true
+        settings.apply()
+        ConfigManager.init(dir)
+        assertEquals(0xFF123456.toInt(), SafariEspConfig.rgb(SafariEspConfig.rockmiteMoundColor))
+        assertEquals(0xFF656667.toInt(), SafariEspConfig.rgb(SafariEspConfig.mobs.getValue("Rockmite").color))
+        assertFalse(SafariEspConfig.rockmiteMoundEnabled)
+        assertTrue(SafariEspConfig.mobs.getValue("Rockmite").enabled)
     }
     @Test fun `panel footer toggles are independent and unknown walls are never claimed broken`() {
         ConfigManager.init(dir)

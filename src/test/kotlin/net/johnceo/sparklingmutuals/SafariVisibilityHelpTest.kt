@@ -8,11 +8,14 @@ import org.junit.jupiter.api.Test
 class SafariVisibilityHelpTest {
     @Test fun `party help fits the server command length and lists both command groups`() {
         val reply = CommandHelp.partyReply()
-        assertTrue(reply.length + "pc ".length <= 256, "Help reply has ${reply.length} characters")
+        assertTrue(reply.length + "/pc ".length <= 256, "Help reply has ${reply.length} characters")
         assertTrue(reply.contains("Party:"))
         assertTrue(reply.contains("Local:"))
         assertTrue(reply.contains("/sparkling catches"))
         assertTrue(reply.contains("!pb doom"))
+        assertTrue(reply.contains("doom/wumpa/forest/haunted/icy/cavern"))
+        assertTrue(reply.contains("full clear=preset"))
+        assertTrue(reply.contains("timesave=timesaves/all"))
     }
     @Test fun `entrance visibility is limited to the actual named subarea`() {
         assertFalse(SafariRules.isEntrance(listOf("Area: Torrhus Canyon")))
