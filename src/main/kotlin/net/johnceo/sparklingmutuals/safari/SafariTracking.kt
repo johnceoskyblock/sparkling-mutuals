@@ -23,14 +23,17 @@ object SafariTracking {
     private fun syncWorld(client: Minecraft) {
         if (client.level !== level) { ledger.worldChanged(System.currentTimeMillis()); resetEncounters(); level = client.level }
     }
-    private fun resetEncounters() { BeeNests.reset(); SparklingEncounters.reset(); SafariStructures.reset(); SafariEsp.clearCaptured(); SafariInventoryAlerts.reset() }
+    private fun resetEncounters() { BeeNests.reset(); SparklingEncounters.reset(); SafariStructures.reset(); SafariEsp.clearCaptured(); SafariInventoryAlerts.reset(); SafariFloorDrops.state.reset() }
     private fun receive(raw: String) {
         val client = Minecraft.getInstance()
         if (client.level == null || client.player == null) return
         syncWorld(client)
         val text = SafariRules.strip(raw)
         val now = System.currentTimeMillis()
-        if (text.startsWith("You threw a") && SafariAssist.inSafari) SafariEsp.threw(client)
+        if (SafariAssist.inSafari) {
+            SafariEspRules.thrownSpecies(text)?.let(SafariEsp::threw)
+            SafariEspRules.escapedSpecies(text)?.let(SafariEsp::escaped)
+        }
         if (SafariMessages.enteredBy(text, client.player!!.name.string)) {
             val previous = ledger.current
             ledger.confirmEntry(now); SafariAssist.markEntered()
@@ -42,6 +45,7 @@ object SafariTracking {
         }
         if (text.startsWith("FLOOR DROP!") && SafariAssist.inSafari) {
             ensureRun(client); ledger.current?.recordBirdFood(text)
+            SafariFloorDrops.state.record(text, SafariAssist.biome)
             return
         }
         val catch = SafariCatch.parse(text) ?: return

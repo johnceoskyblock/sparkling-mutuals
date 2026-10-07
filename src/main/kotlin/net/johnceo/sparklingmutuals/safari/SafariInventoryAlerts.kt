@@ -45,6 +45,7 @@ object SafariInventoryAlerts {
         val inventory = player.inventory
         val stacks = (0 until inventory.containerSize).map { inventory.getItem(it) }.filterNot { it.isEmpty }
             .map { it.hoverName.string to it.count }
+        SafariFloorDrops.state.inventory(stacks)
         state.poll(SafariAssist.biome, stacks, enabled).forEach {
             client.gui.setTimes(5, 60, 15)
             client.gui.setSubtitle(Component.literal(it.detail))

@@ -13,20 +13,52 @@ class EspCaptureMemory {
     private data class Attempt(val id: java.util.UUID, val species: String, val at: Long)
     private val pending = mutableListOf<Attempt>()
     private val captured = mutableSetOf<java.util.UUID>()
+    private val recent = mutableMapOf<String, Attempt>()
+    private data class Throw(val at: Long, val aim: Map<String, Attempt>)
+    private val input = mutableListOf<Throw>()
+    fun sighted(id: java.util.UUID, species: String, now: Long) {
+        if (!hidden(id)) recent[species] = Attempt(id, species, now)
+    }
+    /** Freeze aim at item use, before a capsule impact or camera turn changes the scan. */
+    fun throwing(now: Long) {
+        input.removeAll { now - it.at !in 0..3000 }
+        val aim = recent.filterValues { now - it.at in 0..250 && !hidden(it.id) }
+        if (aim.isNotEmpty()) input.add(Throw(now, aim))
+    }
+    fun threw(species: String, now: Long) {
+        input.removeAll { now - it.at !in 0..3000 }
+        val index = input.indexOfFirst { it.aim[species]?.let { aim -> !hidden(aim.id) } == true }
+        val attempt = if (index >= 0) input.removeAt(index).aim.getValue(species)
+            else recent[species]?.takeIf { now - it.at in 0..1000 } ?: return
+        aimed(attempt.id, species, now)
+    }
+    private fun expire(now: Long) { pending.removeAll { now - it.at !in 0..60000 } }
     fun aimed(id: java.util.UUID, species: String, now: Long) {
-        pending.removeAll { now - it.at !in 0..10000 }
-        if (pending.none { it.id == id }) pending.add(Attempt(id, species, now))
+        expire(now)
+        if (hidden(id)) return
+        val index = pending.indexOfFirst { it.id == id }
+        if (index < 0) pending.add(Attempt(id, species, now)) else pending[index] = Attempt(id, species, now)
+    }
+    fun escaped(species: String, now: Long) {
+        expire(now)
+        pending.firstOrNull { it.species == species }?.let(pending::remove)
     }
     fun caught(species: String, now: Long): java.util.UUID? {
-        pending.removeAll { now - it.at !in 0..10000 }
+        expire(now)
         val attempt = pending.firstOrNull { it.species == species } ?: return null
         pending.remove(attempt); captured.add(attempt.id)
+        recent.entries.removeAll { it.value.id == attempt.id }
         return attempt.id
     }
     fun hidden(id: java.util.UUID) = id in captured
-    fun reset() { pending.clear(); captured.clear() }
+    fun reset() { pending.clear(); captured.clear(); recent.clear(); input.clear() }
 }
 object SafariEspRules {
+    private val throwMessage = Regex("^You threw a (?:Masterful )?Critter Capsule at the (.+)!$")
+    private val escapeMessage = Regex("^The (.+?) (?:escaped your (?:Masterful )?Critter Capsule|dodged your critter capsule)[!.]?$")
+    private fun captureSpecies(name: String) = SafariRules.sparklingSpecies(name) ?: SafariRoster.named(name)?.name
+    fun thrownSpecies(text: String) = throwMessage.matchEntire(text)?.groupValues?.get(1)?.let(::captureSpecies)
+    fun escapedSpecies(text: String) = escapeMessage.matchEntire(text)?.groupValues?.get(1)?.let(::captureSpecies)
     fun neededForRun(species: String, mound: Boolean, run: SafariRun?, fullClear: Boolean) =
         fullClear || species == "Rockmite" && mound || (run?.count(species) ?: 0) == 0
     fun captureModel(type: String) = type.endsWith("display") || type == "armor_stand"

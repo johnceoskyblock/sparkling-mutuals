@@ -6,6 +6,7 @@ import com.mojang.blaze3d.pipeline.RenderPipeline
 import com.mojang.blaze3d.platform.CompareOp
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents
+import net.fabricmc.fabric.api.event.player.UseItemCallback
 import net.johnceo.sparklingmutuals.SparklingMutuals
 import net.johnceo.sparklingmutuals.config.SafariEspConfig
 import net.johnceo.sparklingmutuals.config.ConfigManager
@@ -14,6 +15,7 @@ import net.minecraft.client.renderer.RenderPipelines
 import net.minecraft.client.renderer.rendertype.*
 import net.minecraft.core.component.DataComponents
 import net.minecraft.world.entity.Display
+import net.minecraft.world.InteractionResult
 import net.minecraft.world.entity.Entity
 import net.minecraft.world.entity.EquipmentSlot
 import net.minecraft.world.entity.animal.fish.TropicalFish
@@ -50,7 +52,19 @@ object SafariEsp {
     private val lines = renderType("safari_esp", RenderPipelines.LINES_SNIPPET)
     private val fill = renderType("safari_drops", RenderPipelines.DEBUG_FILLED_SNIPPET)
 
-    fun register() { LevelRenderEvents.AFTER_TRANSLUCENT_FEATURES.register(::render) }
+    fun register() {
+        LevelRenderEvents.AFTER_TRANSLUCENT_FEATURES.register(::render)
+        UseItemCallback.EVENT.register { player, world, hand ->
+            val client = Minecraft.getInstance()
+            val id = player.getItemInHand(hand).get(DataComponents.CUSTOM_DATA)?.copyTag()?.getStringOr("id", "")
+            if (world === client.level && player === client.player && SafariAssist.inSafari &&
+                id in setOf("CRITTER_CAPSULE", "MASTERFUL_CRITTER_CAPSULE")) {
+                rememberAim(client)
+                captures.throwing(System.currentTimeMillis())
+            }
+            InteractionResult.PASS
+        }
+    }
     private fun texture(profile: GameProfile?) = SafariEspRules.textureHash(profile?.properties()?.get("textures")?.firstOrNull()?.value())
     private fun texture(stack: ItemStack) = texture(stack.get(DataComponents.PROFILE)?.partialProfile())
     private fun describe(entity: Entity): EspEntity {
@@ -76,23 +90,26 @@ object SafariEsp {
         val scale = entity.renderState()?.transformation()?.get(1f)?.scale() ?: return false
         return entity.shouldRenderAtSqrDistance(0.0) && SafariEspRules.modelVisible(scale.x(), scale.y(), scale.z())
     }
-    /** Associate a throw with the aimed model before capture removes or hides it. */
-    fun threw(client: Minecraft) {
+    /** Keep per-species aim; server chat names the target after the original model can disappear. */
+    private fun rememberAim(client: Minecraft) {
         val player = client.player ?: return
         val eye = player.eyePosition
         val look = player.lookAngle
         val candidates = targets.filter { live(it, client) }.map {
-            val offset = it.entity.position().subtract(eye)
+            val offset = bounds(it, 1f).center.subtract(eye)
             val along = offset.dot(look)
             EspCaptureCandidate(it.entity.id, it.species, SafariEspRules.captureModel(it.entity.type.toShortString()),
                 it.species == "Rockmite" && it.entity is Display.ItemDisplay,
                 player.distanceToSqr(it.entity), if (along < 0) Double.POSITIVE_INFINITY else (offset.lengthSqr() - along * along).coerceAtLeast(0.0))
         }
-        val aimed = candidates.filter { it.display && !it.mound && it.rangeSquared <= 80.0 * 80 && it.aimSquared <= 16 }
-            .minByOrNull { it.aimSquared + it.rangeSquared * .001 } ?: return
-        val id = SafariEspRules.capturedDisplay(aimed.species, candidates.filter { it.aimSquared <= 16 }) ?: return
-        targets.firstOrNull { it.entity.id == id }?.let { captures.aimed(it.entity.uuid, it.species, System.currentTimeMillis()) }
+        val now = System.currentTimeMillis()
+        candidates.filter { it.aimSquared <= 16 }.groupBy { it.species }.forEach { (species, aimed) ->
+            val id = SafariEspRules.capturedDisplay(species, aimed)
+            targets.firstOrNull { it.entity.id == id }?.let { captures.sighted(it.entity.uuid, species, now) }
+        }
     }
+    fun threw(species: String) { captures.threw(species, System.currentTimeMillis()) }
+    fun escaped(species: String) { captures.escaped(species, System.currentTimeMillis()) }
     fun caught(species: String) {
         val id = captures.caught(species, System.currentTimeMillis()) ?: return
         targets = targets.filterNot { it.entity.uuid == id }
@@ -100,9 +117,11 @@ object SafariEsp {
     fun clearCaptured() { captures.reset() }
     fun tick(client: Minecraft) {
         if (level !== client.level) { reset(); level = client.level }
+        SafariFloorDrops.state.visit(SafariAssist.biome)
         if (!SafariAssist.inSafari || client.player == null || client.level == null) {
             targets = emptyList(); drops = emptyList(); stringDisplays = emptyList(); ticks = 0; scanned = false; return
         }
+        rememberAim(client)
         if (++ticks < 5) return
         ticks = 0
         val strings = mutableListOf<EspDrop>()
@@ -119,6 +138,7 @@ object SafariEsp {
         stringDisplays = strings.toList()
         drops = SafariEspRules.floorDrops(strings)
         scanned = true
+        rememberAim(client)
     }
     private fun live(target: Target, client: Minecraft): Boolean {
         val entity = target.entity
@@ -192,8 +212,10 @@ object SafariEsp {
                 frame(bounds(target, delta), SafariEspConfig.rgb(SafariEspConfig.entityColor(mob.name, e is Display.ItemDisplay)))
         }
         val floor = SafariEspConfig.groups.getValue("floor")
-        val tiles = liveDrops(client).filter { SafariEspRules.visible(true, floor.enabled, floor.onlyInBiome, playerBiome,
-            SafariEspRules.biomeAt(it.x.toDouble(), it.z.toDouble())) }
+        val tiles = liveDrops(client).filter {
+            val biome = SafariEspRules.biomeAt(it.x.toDouble(), it.z.toDouble())
+            SafariEspRules.visible(true, SafariFloorDrops.enabled(biome), floor.onlyInBiome, playerBiome, biome)
+        }
         val color = SafariEspConfig.rgb(SafariEspConfig.floorColor)
         tiles.forEach { frame(AABB(it.x.toDouble(), it.y + 1.0, it.z.toDouble(), it.x + 1.0, it.y + 1.0, it.z + 1.0), color) }
         buffers.endBatch(lines)
