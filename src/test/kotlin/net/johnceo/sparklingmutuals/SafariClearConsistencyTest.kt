@@ -77,7 +77,7 @@ class SafariClearConsistencyTest {
         assertTrue(run.biomeClears.isEmpty())
         run.updateCaptureEvidence(SafariBiome.FOREST, setOf("Macaw"), false, allNestsChecked = true)
         assertTrue(SafariBiome.FOREST.critters.all { run.captureComplete(it.name) })
-        assertEquals("[SM] New Forest PB: 1:01.000!", SafariFullClear.recordClear(run, SafariBiome.FOREST, ready, bests, 62000))
+        assertEquals("[SM] New Forest Full Clear PB: 1:01.000!", SafariFullClear.recordClear(run, SafariBiome.FOREST, ready, bests, 62000))
         assertTrue(SafariBiome.FOREST in run.biomeClears)
         assertNull(SafariFullClear.recordClear(run, SafariBiome.FOREST, ready, bests, 65000))
         val saved = java.util.Properties().also(bests::save)

@@ -11,7 +11,7 @@ class SafariBiomePersonalBestTest {
         val bests = SafariPersonalBests()
         SafariBiome.entries.forEachIndexed { index, biome ->
             val now = 62000L + index
-            assertEquals("[SM] New ${biome.label} PB: 1:01.${index.toString().padStart(3, '0')}!", bests.recordBiome(biome, SafariRun(1000), now))
+            assertEquals("[SM] New ${biome.label} Full Clear PB: 1:01.${index.toString().padStart(3, '0')}!", bests.recordBiome(biome, SafariRun(1000), now))
             assertNull(bests.recordBiome(biome, SafariRun(1000), now))
             assertNull(bests.recordBiome(biome, SafariRun(1000), now + 1))
         }
