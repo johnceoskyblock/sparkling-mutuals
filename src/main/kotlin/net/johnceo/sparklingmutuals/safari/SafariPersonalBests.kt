@@ -12,6 +12,7 @@ class SafariPersonalBests {
     private val uniqueBiomes = java.util.concurrent.ConcurrentHashMap<String, Long>()
     @Volatile var biomeType = BiomePbType.FULL_CLEAR
         private set
+    fun selectBiomeType(type: BiomePbType) { biomeType = type }
     fun toggleBiomeType(): BiomePbType {
         biomeType = if (biomeType == BiomePbType.FULL_CLEAR) BiomePbType.UNIQUE else BiomePbType.FULL_CLEAR
         return biomeType

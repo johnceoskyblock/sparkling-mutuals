@@ -27,6 +27,8 @@ class EspCaptureMemory {
     fun reset() { pending.clear(); captured.clear() }
 }
 object SafariEspRules {
+    fun neededForRun(species: String, mound: Boolean, run: SafariRun?, fullClear: Boolean) =
+        fullClear || species == "Rockmite" && mound || (run?.count(species) ?: 0) == 0
     fun captureModel(type: String) = type.endsWith("display") || type == "armor_stand"
     fun modelVisible(x: Float, y: Float, z: Float) = listOf(x, y, z).all { it.isFinite() } &&
         maxOf(kotlin.math.abs(x), kotlin.math.abs(y), kotlin.math.abs(z)) > .001f

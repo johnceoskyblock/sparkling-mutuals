@@ -23,7 +23,7 @@ object SafariTracking {
     private fun syncWorld(client: Minecraft) {
         if (client.level !== level) { ledger.worldChanged(System.currentTimeMillis()); resetEncounters(); level = client.level }
     }
-    private fun resetEncounters() { BeeNests.reset(); SparklingEncounters.reset(); SafariStructures.reset(); SafariEsp.clearCaptured() }
+    private fun resetEncounters() { BeeNests.reset(); SparklingEncounters.reset(); SafariStructures.reset(); SafariEsp.clearCaptured(); SafariInventoryAlerts.reset() }
     private fun receive(raw: String) {
         val client = Minecraft.getInstance()
         if (client.level == null || client.player == null) return

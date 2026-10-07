@@ -38,9 +38,14 @@ object SafariFullClear {
     }
     fun toggle(): Boolean {
         ConfigManager.fullClearMode = !ConfigManager.fullClearMode
+        syncMode()
         apply(ConfigManager.fullClearMode)
         ConfigManager.save()
         return ConfigManager.fullClearMode
+    }
+    fun syncMode() {
+        ConfigManager.timesaveOnly = !ConfigManager.fullClearMode
+        ConfigManager.personalBests.selectBiomeType(if (ConfigManager.fullClearMode) BiomePbType.FULL_CLEAR else BiomePbType.UNIQUE)
     }
     private fun apply(enabled: Boolean) {
         ConfigManager.catchCountPanel = enabled
@@ -52,5 +57,6 @@ object SafariFullClear {
         SafariEspConfig.groups.values.forEach { it.enabled = true }
         SafariEspConfig.mobs.forEach { (species, setting) -> setting.enabled = enabled || species in regularEsp }
         SafariEspConfig.rockmiteMoundEnabled = true
+        ConfigManager.highlightSnooperWalls = true
     }
 }
