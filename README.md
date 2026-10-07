@@ -6,16 +6,17 @@ A Fabric client mod for Hypixel SkyBlock Safari: mutual sparkling critters, miss
 
 Run `/sparkling` or `/sparkling config` to open the **MoulConfig** settings screen, using the same library as CritterMod. Categories, search, toggles and sliders use its standard layout with forest green panels, sand text and gold accents. The API key opens a separate masked editor.
 
-- **Party commands:** toggle automatic responses and view command help locally. **Show help** closes settings and opens chat with colored sections, one described command per line, and an explanation of `<IGN>`. This help is local to you.
-- **Miria contest:** toggle the HUD and open its editor. The **Warning** dropdown groups the 5m, 3m and 1m toggles, None button, titles, sound and volume.
+- **General:** command help and **Move and resize HUDs**. **Show help** closes settings and opens chat with colored sections, one described command per line, and an explanation of `<IGN>`. This help is local to you.
+- **Party commands:** toggle automatic party responses.
+- **Miria contest:** toggle the HUD and configure warnings. The **Warning** dropdown groups the 5m, 3m and 1m toggles, None button, titles, sound and volume.
 - **Warp reminders:** toggle reminders and set their delay, which defaults to **25 seconds**.
 - **Safari helpers:** toggle capture chat hiding, capsule hiding, Auto Clicker, Hideyho quest clicks, paintings, shiny detection, alerts/announcements, highlights and darkness removal. **Remaining** groups Bee Nests, Rockmite Mounds and Snooper Walls.
 - **ESP · Floor drops / Cavern / Forest / Icy / Haunted:** through-terrain highlights with biome filters and individual critter toggles.
-- **Safari progress:** configure the progress and missing HUDs, where progress appears, and open the captures screen or HUD editor. Capture HUD, unique-only completion and mound results are controlled by `/sparkling full clear`.
+- **Safari progress:** configure the progress and missing HUDs, where progress appears, and open the captures screen. Capture HUD and mound results are controlled by `/sparkling full clear`.
 - **Customization:** choose borders/backgrounds for each HUD, waypoint colors and floor-drop colors. **Missing panel HUD** and **Sparkling alert HUD** use explicit HUD labels. Critter colors are grouped into **Cavern, Forest, Icy and Haunted** dropdowns. Rockmite has separate **mound** and **silverfish** colors and ESP toggles. Enter a six-digit hex color at the top and click **Set Color** for each target. Color actions never enable features. Valid saved colors are retained when defaults change.
 - **API key:** enter, reveal or hide, and save your Hypixel API key.
 
-Toggles and sliders save immediately. Text fields have explicit Save buttons. Existing API keys and HUD settings are retained. Party responses are enabled by default; warp reminders are disabled until enabled.
+Tab descriptors are omitted. Toggles and sliders save immediately. Text fields have explicit Save buttons. Existing API keys and HUD settings are retained. Party responses are enabled by default; warp reminders are disabled until enabled.
 
 ## Commands
 
@@ -110,7 +111,7 @@ Every other individual critter starts **off** and can be enabled separately. The
 
 All 37 species have independent highlight toggles and colors, using the default colors listed below. Detection preserves its entity, head/skin texture, fish/parrot variant and colored shulker rules, including invisible/passenger silverfish exclusions. Boxes use its critter/display/head dimensions and render through terrain. Only loaded entities are scanned, every five ticks; nothing is highlighted outside Safari. Floor drops and biome ESP have no added 80-block limit.
 
-**Hideyho quest clicks:** enable this toggle, wait for `[MOB] Hideyho: How about it?` and `Select an option: [Sure] [No thanks...]`, then click anywhere with chat open to accept. Both game and chat message events are listened to, and split/inherited button styles are supported, matching ShinyHunter's QuestAccepter. Each click accepts one current prompt using its exact server-provided command/custom action. Other NPC/MOB dialogue, old prompts and world/connection changes clear the offer. Disabled by default.
+**Hideyho quest clicks:** enable this toggle, wait for `[MOB] Hideyho: How about it?` and `Select an option: [Sure] [No thanks...]`, then click anywhere with chat open to accept. Both game and chat message events are listened to, and split/inherited button styles are supported, matching ShinyHunter's QuestAccepter. Each click accepts one current prompt using its exact server-provided command/custom action. Other NPC/MOB dialogue, old prompts and world/connection changes clear the offer. Enabled by default; existing saved choices are retained.
 
 **Haunted painting hider:** stops rendering paintings only in the Haunted Safari area. Paintings remain in the world and can still be interacted with. Enabled by default.
 
@@ -138,7 +139,7 @@ Mound outcomes count the server's empty-mound and Rockmite-reveal messages throu
 
 The timer starts from loading into the Safari, including the boat. It continues through the center's **Critter Safari** area and all four biomes. Returning to **Torrhus Canyon** ends the run and freezes its timer; world changes or another island also end it. Briefly missing sidebar data does not end a run.
 
-Full-clear mode uses the minimums below for completion and missing counts, including **Scrappy 0/3**. Turning the preset off uses one catch per species for the missing/progress HUDs. Raw counts are never erased or reduced.
+Progress always counts each species once, independent of full-clear mode. The Missing Panel requires one catch for each species except **Scrappy x/3**, **Gemzie x/3**, **Troodon x/3** and **Gazer x/4**; only these four show fractions. Capture quotas below apply to the capture GUI, not progress or missing panels. Raw counts are never erased or reduced.
 
 The full-clear preset enables the matching biome capture HUD, including zeros. `/sparkling catches` opens the same panel with biome tabs, selecting the current or last visited biome; this screen remains available at the center and after leaving. Tracking continues with the preset or HUD off. Counts stay through biome/center changes, preset toggles and departure; the last run remains available until a new Safari run starts. Run counts are kept for this Minecraft session.
 
@@ -148,7 +149,11 @@ After all five Snooper walls are confirmed broken, the Cavern Missing Panel show
 
 ## Full-clear mode and biome personal bests
 
-`/sparkling full clear` toggles a saved preset and reports **on/off** locally. **On** enables every critter ESP (both Rockmite forms), floor-drop ESP, all Remaining counters, the capture HUD and mound results, and disables unique-only completion. Capture numbers stay **red** below their minimum and become **green** at or above it; zero-minimum species start green. Mounds count openings, not silverfish captures.
+`/sparkling full clear` toggles a saved preset and reports **on/off** locally. **On** enables every critter ESP (both Rockmite forms), floor-drop ESP, all Remaining counters, the capture HUD and mound results, and enables full-clear capture quotas. Capture numbers stay **red** below their minimum and become **green** at or above it; birds, Snoozle and Rockmite require the clear checks described below. Mounds count openings, not silverfish captures.
+
+All three bird capture numbers turn green together only after three **Bag of Seeds**, three **Wriggleworm** and three **Yogi Berry** pickups, at least eight combined bird captures, and no bird entities within 80 blocks. Each matching server **FLOOR DROP!** message counts one pickup. Snoozle turns green after all five walls are checked broken and no Snoozle is within 80 blocks. Rockmite turns green after all 20 mound sites are confirmed opened, all revealed/observed Rockmites are captured, no Rockmite or mound remains nearby and no known mound is outstanding. These checks keep updating after a PB is recorded and with the capture HUD hidden. Food counts reset with each new run.
+
+The Cavern capture row is **Rockmite**. After **Total captures**, a blank row separates **Rockmite Mounds** and **Mounds with Rockmite**; mound actions do not increase total captures.
 
 **Off** hides the capture HUD/mound results, enables unique-only completion, and disables floor-drop and unlisted critter ESP. It keeps these critters highlighted: Driftling; Rockmite **mounds only**; Foxtrot, Treefrog, Woodchucker, Fluffling, Hideonfloor; Tepid, Shuddersquid, Billygoat, Mantis Shrimp, Nozzlenose, Wumpa; Bloodbat, Duplico, Litterbug, Solsnatcher, Hideonwall, Hideyho, Doomspiral. Neither preset changes colors or erases captures. Biome filters remain customizable.
 
