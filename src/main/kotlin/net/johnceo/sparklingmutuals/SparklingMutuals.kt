@@ -53,6 +53,7 @@ object SparklingMutuals : ModInitializer {
             BeeNests.tick(client)
             SafariStructures.tick(client)
             SafariEsp.tick(client)
+            SafariBiomeClearTracking.tick(client)
             HideyhoQuest.onClientTick(client)
         }
 
