@@ -5,7 +5,7 @@ import net.johnceo.sparklingmutuals.config.SafariEspConfig
 
 data class BiomeClearEvidence(val observed: Boolean = false, val nearbyCritters: Int = 0,
     val moundsCleared: Boolean = false, val wallsCleared: Boolean = false,
-    val nestsChecked: Boolean = false, val floorDropsCleared: Boolean = false)
+    val nestsChecked: Boolean = false, val floorDropsCleared: Boolean = false, val nearbyMacaws: Int = 0)
 
 /** Missing entities outside loaded chunks never complete a previously observed site. */
 class ClearSiteSurvey {
@@ -34,14 +34,18 @@ object SafariFullClear {
     const val MOUND_MINIMUM = 10
     fun minimum(species: String) = minimums.getValue(species)
     fun eligible(run: SafariRun, biome: SafariBiome, evidence: BiomeClearEvidence): Boolean {
-        if (run.endedAt != null || !evidence.observed || evidence.nearbyCritters != 0) return false
+        val macawException = biome == SafariBiome.FOREST && evidence.nearbyMacaws > 0 &&
+            evidence.nearbyCritters == evidence.nearbyMacaws && run.birdsComplete(setOf("Macaw"), personalOnly = true)
+        if (run.endedAt != null || !evidence.observed || evidence.nearbyCritters != 0 && !macawException) return false
         if (biome.critters.any { critter ->
             val quota = minimum(critter.name)
-            run.personalCount(critter.name) < if (quota == 0) run.observedCount(critter.name) else quota
+            val observed = run.observedCount(critter.name) - if (macawException && critter.name == "Macaw") evidence.nearbyMacaws else 0
+            val required = if (biome == SafariBiome.FOREST) maxOf(quota, observed) else if (quota == 0) observed else quota
+            run.personalCount(critter.name) < required
         }) return false
         return when (biome) {
             SafariBiome.CAVERN -> run.brokenMounds >= MOUND_MINIMUM && evidence.moundsCleared && evidence.wallsCleared
-            SafariBiome.FOREST -> evidence.nestsChecked && (evidence.floorDropsCleared ||
+            SafariBiome.FOREST -> evidence.nestsChecked && (macawException || run.birdsComplete(emptySet(), personalOnly = true) || evidence.floorDropsCleared ||
                 listOf("Bluebird", "Parakeet", "Macaw").sumOf(run::personalCount) >= 9)
             else -> true
         }

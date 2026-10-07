@@ -39,7 +39,8 @@ object SafariBiomeClearTracking {
             snapshot.critters.count { it.biome == biome && !it.mound },
             run.brokenMounds >= SafariFullClear.MOUND_MINIMUM && run.moundSurvey.remaining == 0 &&
                 SafariStructures.nearbyMounds == 0 && snapshot.critters.none { it.mound },
-            SafariStructures.walls.allBroken, BeeNests.allChecked, run.floorSurvey.allCleared)
+            SafariStructures.walls.allBroken, BeeNests.allChecked, run.floorSurvey.allCleared,
+            snapshot.critters.count { it.biome == biome && !it.mound && it.species == "Macaw" })
         if (!SafariFullClear.eligible(run, biome, evidence)) return
         run.biomeClears.add(biome)
         ConfigManager.personalBests.recordBiome(biome, run, System.currentTimeMillis())?.let {

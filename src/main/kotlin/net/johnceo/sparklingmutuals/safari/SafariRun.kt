@@ -74,8 +74,12 @@ class SafariRun(val startedAt: Long) {
         nearby[biome] = speciesInRange
         wallsChecked = allWallsChecked
     }
+    fun birdsComplete(speciesInRange: Set<String>?, personalOnly: Boolean = false) = birdFoodsComplete &&
+        birds.sumOf { if (personalOnly) personalCount(it) else count(it) } >= 8 && speciesInRange?.let {
+            it.none { species -> species in birds } || it == setOf("Macaw")
+        } == true
     fun captureComplete(species: String): Boolean = when (species) {
-        in birds -> birdFoodsComplete && birds.sumOf(::count) >= 8 && nearby[SafariBiome.FOREST]?.none { it in birds } == true
+        in birds -> birdsComplete(nearby[SafariBiome.FOREST])
         "Snoozle" -> wallsChecked && nearby[SafariBiome.CAVERN]?.contains(species) == false
         "Rockmite" -> allMoundsBroken && count(species) >= maxOf(rockmiteMounds, observedCount(species)) &&
             nearby[SafariBiome.CAVERN]?.none { it == "Rockmite" || it == "Rockmite Mound" } == true && moundSurvey.remaining == 0
