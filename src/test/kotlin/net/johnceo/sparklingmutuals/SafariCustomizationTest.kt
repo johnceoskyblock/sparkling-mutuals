@@ -90,7 +90,8 @@ class SafariCustomizationTest {
         val names = choices.javaClass.fields.filter { it.type == ColorChoice::class.java }.map {
             it.getAnnotation(io.github.notenoughupdates.moulconfig.annotations.ConfigOption::class.java).name
         }
-        SafariRoster.all.forEach { assertEquals(1, names.count { name -> name == "${it.name} ESP" }) }
+        SafariRoster.all.filter { it.name != "Rockmite" }.forEach { assertEquals(1, names.count { name -> name == "${it.name} ESP" }) }
+        assertTrue(names.containsAll(listOf("Rockmite silverfish ESP", "Rockmite mound ESP")))
     }
     @Test fun `panel footer toggles are independent and unknown walls are never claimed broken`() {
         ConfigManager.init(dir)
