@@ -45,7 +45,8 @@ object SafariFullClear {
         }) return false
         return when (biome) {
             SafariBiome.CAVERN -> run.brokenMounds >= MOUND_MINIMUM && evidence.moundsCleared && evidence.wallsCleared
-            SafariBiome.FOREST -> evidence.nestsChecked && (macawException || run.birdsComplete(emptySet(), personalOnly = true) || evidence.floorDropsCleared ||
+            SafariBiome.FOREST -> evidence.nestsChecked && run.birdCount(personalOnly = true) >= 7 &&
+                (macawException || run.birdsComplete(emptySet(), personalOnly = true) || evidence.floorDropsCleared ||
                 listOf("Bluebird", "Parakeet", "Macaw").sumOf(run::personalCount) >= 9)
             else -> true
         }
