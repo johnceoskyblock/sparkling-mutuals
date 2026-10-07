@@ -80,7 +80,7 @@ class SafariBiomeClearTest {
     }
     private fun forest(personal: Boolean = true) = SafariRun(1000).apply {
         listOf("Foxtrot" to 6, "Honeybug" to 3, "Treefrog" to 3, "Woodchucker" to 3,
-            "Fluffling" to 1, "Hideonfloor" to 1, "Bluebird" to 7, "Parakeet" to 1).forEach { (name, amount) ->
+            "Fluffling" to 1, "Hideonfloor" to 1, "Bluebird" to 6, "Parakeet" to 1).forEach { (name, amount) ->
             repeat(amount) { record(SafariCatch(SafariRoster.named(name)!!, personal)) }
         }
         repeat(3) { for (food in listOf("Bag of Seeds", "Wriggleworm", "Yogi Berry")) recordBirdFood("FLOOR DROP! $food") }
@@ -106,6 +106,8 @@ class SafariBiomeClearTest {
         val run = forest()
         repeat(2) { run.observeCritter(100 + it, "Macaw") }
         val ready = BiomeClearEvidence(observed = true, nearbyCritters = 2, nestsChecked = true, nearbyMacaws = 2)
+        assertFalse(SafariFullClear.eligible(run, SafariBiome.FOREST, ready))
+        run.record(SafariCatch(SafariRoster.named("Macaw")!!))
         assertTrue(SafariFullClear.eligible(run, SafariBiome.FOREST, ready))
         assertFalse(SafariFullClear.eligible(run, SafariBiome.FOREST, ready.copy(nearbyCritters = 3)))
         assertFalse(SafariFullClear.eligible(run, SafariBiome.FOREST, ready.copy(observed = false)))
@@ -113,6 +115,7 @@ class SafariBiomeClearTest {
         assertFalse(SafariFullClear.eligible(forest(false), SafariBiome.FOREST, ready))
         // A Macaw previously seen and now absent must have been personally caught.
         run.observeCritter(102, "Macaw")
+        run.observeCritter(103, "Macaw")
         assertFalse(SafariFullClear.eligible(run, SafariBiome.FOREST, ready))
         run.record(SafariCatch(SafariRoster.named("Macaw")!!))
         assertTrue(SafariFullClear.eligible(run, SafariBiome.FOREST, ready))
