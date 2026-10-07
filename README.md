@@ -43,9 +43,9 @@ A Fabric mod for Hypixel SkyBlock Safari, sparkling discoveries, and Miria conte
 
 ## Installation
 
-Download the mod JAR from [Releases](https://github.com/johnceoskyblock/sparkling-mutuals/releases) and put it in your `mods` folder. Requires Minecraft 26.1.2, Java 25, Fabric Loader, Fabric API, and Fabric Language Kotlin.
+Open a successful build in [Actions](https://github.com/johnceoskyblock/sparkling-mutuals/actions), download its **Artifacts** ZIP, and extract the mod JAR into your `mods` folder. Use the JAR without `-sources` in its name. Requires Minecraft 26.1.2, Java 25, Fabric Loader, Fabric API, and Fabric Language Kotlin.
 
-Player lookups require a [Hypixel API key](https://developer.hypixel.net), entered through settings or `/apikey <key>`. Review builds are published from the review branch.
+Player lookups require a [Hypixel API key](https://developer.hypixel.net), entered through settings or `/apikey <key>`.
 
 ## Credits
 
