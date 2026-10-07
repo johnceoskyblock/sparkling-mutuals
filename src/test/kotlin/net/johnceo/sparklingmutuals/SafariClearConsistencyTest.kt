@@ -5,6 +5,31 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class SafariClearConsistencyTest {
+    @Test fun `Rockmite needs no captures after empty mounds but requires every revealed critter`() {
+        val run = SafariRun(0)
+        run.updateCaptureEvidence(SafariBiome.CAVERN, emptySet(), true)
+        repeat(19) { run.recordMound("The mound falls apart, but nothing is inside...") }
+        assertFalse(run.captureComplete("Rockmite"))
+        run.recordMound("The mound falls apart, but nothing is inside...")
+        assertTrue(run.captureComplete("Rockmite"))
+        run.recordMound("The mound fell apart, revealing a Rockmite hidden inside!")
+        assertFalse(run.captureComplete("Rockmite"))
+        run.record(SafariCatch(SafariRoster.named("Rockmite")!!))
+        run.updateCaptureEvidence(SafariBiome.CAVERN, setOf("Rockmite"), true)
+        assertFalse(run.captureComplete("Rockmite"))
+        run.updateCaptureEvidence(SafariBiome.CAVERN, emptySet(), true)
+        assertTrue(run.captureComplete("Rockmite"))
+    }
+    @Test fun `Strongarm turns green at four captures only after nearby entities clear`() {
+        val run = SafariRun(0)
+        run.updateCaptureEvidence(SafariBiome.ICY, emptySet(), false)
+        repeat(3) { run.record(SafariCatch(SafariRoster.named("Strongarm")!!)) }
+        assertFalse(run.captureComplete("Strongarm"))
+        run.record(SafariCatch(SafariRoster.named("Strongarm")!!))
+        assertTrue(run.captureComplete("Strongarm"))
+        run.updateCaptureEvidence(SafariBiome.ICY, setOf("Strongarm"), false)
+        assertFalse(run.captureComplete("Strongarm"))
+    }
     private fun forest() = SafariRun(1000).apply {
         mapOf("Foxtrot" to 6, "Honeybug" to 3, "Treefrog" to 3, "Woodchucker" to 3,
             "Fluffling" to 1, "Hideonfloor" to 1, "Bluebird" to 6, "Macaw" to 1).forEach { (name, amount) ->
@@ -61,7 +86,7 @@ class SafariClearConsistencyTest {
     }
     @Test fun `Icy and Haunted record PB when their last detected critter clears after minimums`() {
         val captures = mapOf(
-            SafariBiome.ICY to mapOf("Strongarm" to 6, "Tepid" to 6, "Polaris" to 2, "Shuddersquid" to 3,
+            SafariBiome.ICY to mapOf("Strongarm" to 4, "Tepid" to 6, "Polaris" to 2, "Shuddersquid" to 3,
                 "Billygoat" to 2, "Mantis Shrimp" to 3, "Nozzlenose" to 2, "Troodon" to 3, "Wumpa" to 1),
             SafariBiome.HAUNTED to mapOf("Areita" to 3, "Bloodbat" to 3, "Duplico" to 2, "Gazer" to 4,
                 "Litterbug" to 4, "Solsnatcher" to 4, "Gimmiegold" to 3, "Hideonwall" to 2, "Hideyho" to 1, "Doomspiral" to 1))
