@@ -10,6 +10,10 @@ import net.minecraft.network.chat.Component
 
 object PartyManager {
     private var partyMembers = emptyList<String>()
+    var revision = 0L
+        private set
+    var hasInfo = false
+        private set
     private val callbacks = mutableListOf<() -> Unit>()
     private var requestedAt = 0L
 
@@ -24,6 +28,8 @@ object PartyManager {
                 is HelloS2CPacket -> requestPartyInfo()
                 is PartyInfoS2CPacket -> {
                     partyMembers = packet.members?.keys?.map { it.toString() } ?: emptyList()
+                    hasInfo = true
+                    revision++
                     requestedAt = 0
                     val ready = callbacks.toList()
                     callbacks.clear()
@@ -54,6 +60,6 @@ object PartyManager {
         }
     }
 
-    fun reset() { partyMembers = emptyList(); callbacks.clear(); requestedAt = 0 }
+    fun reset() { hasInfo = false; revision++; partyMembers = emptyList(); callbacks.clear(); requestedAt = 0 }
     fun getMembers(): List<String> = partyMembers
 }
