@@ -43,8 +43,12 @@ object SafariTracking {
             if (SafariAssist.inSafari) { ensureRun(client); ledger.current?.recordMound(text) }
             return
         }
+        if (SafariAssist.inSafari) {
+            ensureRun(client)
+            if (ledger.current?.birds?.spawn(text) == true) return
+        }
         if (text.startsWith("FLOOR DROP!") && SafariAssist.inSafari) {
-            ensureRun(client); ledger.current?.recordBirdFood(text)
+            ensureRun(client); ledger.current?.recordBirdFood(text, SafariAssist.biome)
             SafariFloorDrops.state.record(text, SafariAssist.biome)
             return
         }

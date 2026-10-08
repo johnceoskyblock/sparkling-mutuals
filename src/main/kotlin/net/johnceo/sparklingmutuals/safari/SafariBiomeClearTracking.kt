@@ -21,7 +21,8 @@ object SafariBiomeClearTracking {
         run.updateCaptureEvidence(biome, snapshot.critters.filter {
             it.biome == biome && player.distanceToSqr(it.x, it.y, it.z) <= 80.0 * 80
         }.map { if (it.mound) "Rockmite Mound" else it.species }.toSet(),
-            SafariStructures.walls.states.size == 5 && SafariStructures.walls.allBroken, BeeNests.allChecked)
+            SafariStructures.walls.states.size == 5 && SafariStructures.walls.allBroken, BeeNests.allChecked,
+            macawsInRange = snapshot.critters.count { it.biome == biome && it.species == "Macaw" && player.distanceToSqr(it.x, it.y, it.z) <= 80.0 * 80 })
         if (biome in run.biomeClears) return
         // A completed entity scan is sufficient; unloaded surrounding chunks must not block a PB.
         val evidence = BiomeClearEvidence(snapshot.scanned,

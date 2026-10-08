@@ -44,6 +44,7 @@ object SafariEsp {
     private var stringDisplays = emptyList<EspDrop>()
     private val captures = EspCaptureMemory()
     private val modelLabels = EspModelLabels()
+    private val motion = EspMotion()
     private val logger = LoggerFactory.getLogger("sparkling-mutuals/esp")
     private fun renderType(name: String, snippet: RenderPipeline.Snippet) = RenderType.create("sparkling-mutuals:$name",
         RenderSetup.builder(RenderPipelines.register(RenderPipeline.builder(snippet)
@@ -123,7 +124,7 @@ object SafariEsp {
         logger.info("Retired captured {} model {}.", species, id)
         targets = targets.filterNot { it.entity.uuid == id }
     }
-    fun clearCaptured() { captures.reset(); modelLabels.reset() }
+    fun clearCaptured() { captures.reset(); modelLabels.reset(); motion.reset() }
     fun tick(client: Minecraft) {
         if (level !== client.level) { reset(); level = client.level }
         SafariFloorDrops.state.visit(SafariAssist.biome)
@@ -149,6 +150,11 @@ object SafariEsp {
             Target(entity, mob.name, descriptor)
         }
         val now = System.currentTimeMillis()
+        motion.retain(targets.map { it.entity.uuid }.toSet())
+        targets.forEach { target ->
+            val e = target.entity
+            motion.observe(e.uuid, target.species, e.x, e.y, e.z, client.player!!.distanceToSqr(e), now)
+        }
         targets.filter(::trackedModel).forEach { target ->
             val nearby = labels[target.species].orEmpty().filter { it.distanceToSqr(target.entity) <= 9 }
             val separate = nearby.filter { it !== target.entity }
@@ -167,6 +173,7 @@ object SafariEsp {
         val entity = target.entity
         return SafariEspRules.targetCurrent(target.species, describe(entity), entity.isRemoved,
             !captures.hidden(entity.uuid) && client.level?.getEntity(entity.id) === entity, entity.level() === client.level) &&
+            motion.current(entity.uuid, System.currentTimeMillis()) &&
             (!trackedModel(target) || modelLabels.current(entity.uuid, System.currentTimeMillis()))
     }
     fun debug(client: Minecraft) {

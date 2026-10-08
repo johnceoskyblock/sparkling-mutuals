@@ -21,7 +21,6 @@ object SafariFullClear {
         "Mantis Shrimp" to 3, "Nozzlenose" to 2, "Troodon" to 3, "Wumpa" to 1,
         "Areita" to 3, "Bloodbat" to 3, "Duplico" to 2, "Gazer" to 4, "Litterbug" to 4,
         "Solsnatcher" to 4, "Gimmiegold" to 3, "Hideonwall" to 2, "Hideyho" to 1, "Doomspiral" to 1)
-    const val MOUND_MINIMUM = 10
     fun minimum(species: String) = minimums.getValue(species)
     fun eligible(run: SafariRun, biome: SafariBiome, evidence: BiomeClearEvidence): Boolean {
         val macawException = biome == SafariBiome.FOREST && evidence.nearbyMacaws > 0 &&
@@ -37,11 +36,15 @@ object SafariFullClear {
         return bests.recordBiome(biome, run, now)
     }
     fun toggle(): Boolean {
-        ConfigManager.fullClearMode = !ConfigManager.fullClearMode
+        setEnabled(!ConfigManager.fullClearMode)
+        return ConfigManager.fullClearMode
+    }
+    fun setEnabled(enabled: Boolean) {
+        if (ConfigManager.fullClearMode == enabled) return
+        ConfigManager.fullClearMode = enabled
         syncMode()
         apply(ConfigManager.fullClearMode)
         ConfigManager.save()
-        return ConfigManager.fullClearMode
     }
     fun syncMode() {
         ConfigManager.timesaveOnly = !ConfigManager.fullClearMode

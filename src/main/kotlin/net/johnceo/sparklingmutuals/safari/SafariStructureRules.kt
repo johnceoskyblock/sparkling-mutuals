@@ -30,9 +30,11 @@ data class WallSummary(val states: List<WallState>) {
 /** Retain unopened sites until they can be checked again, even across biome changes. */
 class MoundSurvey {
     private val sites = mutableMapOf<Triple<Int, Int, Int>, Boolean>()
-    val allBroken get() = sites.size >= SafariFullClear.MOUND_MINIMUM && sites.values.all { it }
+    private var scanned = false
+    val allBroken get() = scanned && sites.values.all { it }
     val remaining get() = sites.values.count { !it }
     fun scan(present: Set<Triple<Int, Int, Int>>, observable: (Triple<Int, Int, Int>) -> Boolean) {
+        scanned = true
         present.forEach { sites[it] = false }
         sites.keys.filter { it !in present && observable(it) }.forEach { sites[it] = true }
     }
