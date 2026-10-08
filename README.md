@@ -15,15 +15,16 @@ A Fabric mod for Hypixel SkyBlock Safari, sparkling discoveries, and Miria conte
 - **Progress HUD:** shows the run timer and collected species in each biome.
 - **Missing panel:** lists uncaught critters and remaining bee nests, Rockmite mounds, and Snooper walls.
 - **Capture counts:** tracks catches per critter and Rockmite mound results. `/captures` opens the current or last run's counts.
-- **Run mode:** `/fc` selects full clear, Full Clear PBs and all-species lookups. `/unique` selects unique runs, Unique Run PBs and timesaves. Full-clear capture numbers stay white until you visit a biome, then turn green when completion requirements are met. You can also select the run mode in General settings.
+- **Run mode:** `/fc` selects full clear, Full Clear PBs and all-species lookups. `/unique` selects unique runs, Unique Run PBs and timesaves. Full-clear capture numbers stay white until you visit a biome, then turn green when completion requirements are met. The Modes tab also offers these controls and Sparkling mode.
 - **PB tracking:** saves your fastest Doomspiral, Wumpa, full-clear, and unique-biome times from the start of a run and announces new records locally. Unique clears require one personal catch of every species; only your own catches qualify for either biome PB type.
 
 ## Safari helpers
 
 - **Miria contest HUD:** tracks Miria's contest timer, tier, and score, with configurable end warnings.
 - **Warp reminders:** sends title to warp party before afk timeout. Useful for party leeching so that other players can have a chance to get sparkling critters without using a ticket. Use `/alert` and `/alertdelay <seconds>` to control reminders.
+- **Sparkling mode:** `/sparkle` highlights species still missing from at least one party member’s sparkling discoveries, including yours. Targets stay enabled for the run, with a separate profitable-shards option. Requires an API key; failed lookups keep the last complete party result.
 - **Critter ESP:** excludes nearby stationary leftover moving-critter models after two seconds and restores them if they move. Highlights critters in all four biomes, with individual toggles and biome filters. Unique runs hide collected species until the next run, with an optional exception for Hideonfloor, Hideonwall, Chuckwalla, Fluffling and Mantis Shrimp; Rockmite mounds and Snooper walls remain available for shiny checks. Mounds and silverfish have separate controls.
-- **Floor drop ESP:** highlights Safari drops until all Cavern gems or both Icy Icebreakers are found; Icy drops are hidden in unique runs. Cavern and Icy overrides last until you leave the biome. Unique Forest hides drops after all nine bird food pickups; full-clear Forest and Haunted keep normal highlighting.
+- **Floor drop ESP:** highlights useful Safari drops. Cavern drops hide after finding all gems, catching Gemzie, or confirming everyone has sparkling Gemzie. Icy drops hide in unique runs or after two Icebreakers in other modes. Forest drops hide when everyone has all sparkling birds, or after nine bird-food pickups in unique runs. Haunted drops stay available for coins while anyone needs sparkling Gimmiegold; otherwise they hide after four incense or a Doomspiral capture. Cavern and Icy manual overrides reset when you leave the biome.
 - **Sparkling detection:** highlights nearby sparkling critters and shows their names and distances.
 - **Sparkling alerts:** displays an on-screen alert and can announce the critter, biome, and coordinates in party chat.
 - **Inventory alerts:** notifies when you have all three gem types in Cavern, all nine Forest bird food pickups, or four Soothing Incense in Haunted.
