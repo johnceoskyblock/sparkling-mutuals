@@ -20,11 +20,11 @@ class SafariProfitableUniqueTest {
             assertTrue(SafariEspRules.neededForRun(critter.name, false, run, true, false))
         }
     }
-    @Test fun `profitable option defaults on and General subsetting persists without changing full clear`() {
+    @Test fun `profitable option defaults on and Modes subsetting persists without changing full clear`() {
         ConfigManager.init(dir)
         assertTrue(ConfigManager.profitableShardEsp)
         val settings = SafariSettings()
-        settings.general.unique.profitable = false
+        settings.modes.unique.profitable = false
         settings.apply(); ConfigManager.init(dir)
         assertFalse(ConfigManager.profitableShardEsp)
         SafariFullClear.setEnabled(true); SafariFullClear.setEnabled(false)

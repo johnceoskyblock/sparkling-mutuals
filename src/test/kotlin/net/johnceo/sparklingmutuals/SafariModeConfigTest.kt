@@ -10,10 +10,10 @@ import java.nio.file.Path
 
 class SafariModeConfigTest {
     @TempDir lateinit var dir: Path
-    @Test fun `General mode selects the same presets as the command and survives repeated GUI ticks`() {
+    @Test fun `Modes setting selects the same presets as the command and survives repeated GUI ticks`() {
         ConfigManager.init(dir)
         val settings = SafariSettings()
-        settings.general.mode = 1
+        settings.modes.fullClear.enabled = true
         settings.apply()
         assertTrue(ConfigManager.fullClearMode)
         assertEquals(BiomePbType.FULL_CLEAR, ConfigManager.personalBests.biomeType)
@@ -25,7 +25,7 @@ class SafariModeConfigTest {
         settings.forestEsp.macaw.enabled = false
         settings.apply()
         assertFalse(SafariEspConfig.mobs.getValue("Macaw").enabled)
-        settings.general.mode = 0
+        settings.modes.unique.enabled = true
         settings.apply()
         repeat(3) { settings.apply() }
         assertFalse(ConfigManager.fullClearMode)
@@ -35,7 +35,7 @@ class SafariModeConfigTest {
         assertFalse(SafariEspConfig.mobs.getValue("Macaw").enabled)
         assertTrue(SafariEspConfig.mobs.getValue("Driftling").enabled)
         ConfigManager.init(dir)
-        assertEquals(0, SafariSettings().general.mode)
+        assertTrue(SafariSettings().modes.unique.enabled)
     }
     @Test fun `setting the existing mode preserves individual manual ESP choices`() {
         ConfigManager.init(dir)
