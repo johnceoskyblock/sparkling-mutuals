@@ -11,8 +11,8 @@ import net.minecraft.network.chat.Component
 
 class SafariConfigScreen(private val settings: SafariSettings = SafariSettings()) :
     MoulConfigScreenComponent(Component.literal("Sparkling Mutuals settings"), context(settings), null) {
-    override fun tick() { settings.apply() }
-    override fun removed() { settings.apply(); settings.saveTextFields(); super.removed() }
+    override fun tick() { settings.apply(notifyMode = true) }
+    override fun removed() { settings.apply(notifyMode = true); settings.saveTextFields(); super.removed() }
     override fun isPauseScreen() = false
     override fun extractRenderState(graphics: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, delta: Float) {
         graphics.fill(0, 0, width, height, 0xDA16211A.toInt())

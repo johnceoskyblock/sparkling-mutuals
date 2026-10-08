@@ -9,6 +9,7 @@ import net.johnceo.sparklingmutuals.commands.*
 import net.johnceo.sparklingmutuals.contest.ContestGui
 import net.johnceo.sparklingmutuals.safari.CatchCountScreen
 import net.johnceo.sparklingmutuals.safari.SafariFullClear
+import net.johnceo.sparklingmutuals.safari.SafariMode
 import net.minecraft.client.Minecraft
 import net.minecraft.network.chat.Component
 import net.minecraft.resources.Identifier
@@ -17,6 +18,7 @@ import net.minecraft.client.gui.screens.ChatScreen
 /** MoulConfig view model; the existing properties files remain the saved configuration. */
 class SafariSettings : Config() {
     @JvmField @Category(name = "General", desc = "") val general = General()
+    @JvmField @Category(name = "Modes", desc = "") val modes = Modes()
     @JvmField @Category(name = "Party commands", desc = "") val party = Party()
     @JvmField @Category(name = "Miria contest", desc = "") val miria = Miria()
     @JvmField @Category(name = "Warp reminders", desc = "") val warp = Warp()
@@ -32,16 +34,42 @@ class SafariSettings : Config() {
     @JvmField @Category(name = "Customization", desc = "") val customization = CustomizationSettings()
 
     class General {
-        @JvmField @ConfigOption(name = "Run mode", desc = "Choose unique runs or full clears.")
-        @ConfigEditorDropdown(values = ["Unique run", "Full clear"])
-        var mode = if (ConfigManager.fullClearMode) 1 else 0
-        @JvmField @ConfigOption(name = "Unique mode", desc = "") @Accordion val unique = Unique()
         @JvmField @ConfigOption(name = "Command help", desc = "Close settings and show commands in chat.")
         @ConfigEditorButton(runnableId = 3, buttonText = "Show help") var help = false
         @JvmField @ConfigOption(name = "Move and resize HUDs", desc = "Drag HUDs to move them; scroll to resize.")
         @ConfigEditorButton(runnableId = 1, buttonText = "Edit all HUDs") var edit = false
     }
+    class Modes {
+        @JvmField @ConfigOption(name = "Unique mode", desc = "") @Accordion val unique = Unique()
+        @JvmField @ConfigOption(name = "Full clear mode", desc = "") @Accordion val fullClear = FullClear()
+        @JvmField @ConfigOption(name = "Sparkling mode", desc = "") @Accordion val sparkling = Sparkling()
+        private var selected = SafariFullClear.mode
+        fun selection(): SafariMode {
+            val toggles = listOf(SafariMode.UNIQUE to unique.enabled, SafariMode.FULL_CLEAR to fullClear.enabled,
+                SafariMode.SPARKLING to sparkling.enabled)
+            return toggles.firstOrNull { (mode, enabled) -> enabled && mode != selected }?.first
+                ?: selected.takeIf { mode -> toggles.any { it.first == mode && it.second } } ?: SafariMode.UNIQUE
+        }
+        fun refresh() {
+            selected = SafariFullClear.mode
+            unique.enabled = selected == SafariMode.UNIQUE
+            fullClear.enabled = selected == SafariMode.FULL_CLEAR
+            sparkling.enabled = selected == SafariMode.SPARKLING
+        }
+    }
+    class FullClear {
+        @JvmField @ConfigOption(name = "Full clear mode", desc = "Highlight all critters and track full-clear PBs.")
+        @ConfigEditorBoolean var enabled = SafariFullClear.mode == SafariMode.FULL_CLEAR
+    }
+    class Sparkling {
+        @JvmField @ConfigOption(name = "Sparkling Mode", desc = "Highlight critters your party still needs as sparkling discoveries. Requires an API key.")
+        @ConfigEditorBoolean var enabled = ConfigManager.sparklingMode
+        @JvmField @ConfigOption(name = "Critter ESP for profitable shards", desc = "Also highlight Hideonfloor, Hideonwall, Chuckwalla, Fluffling and Mantis Shrimp.")
+        @ConfigEditorBoolean var profitable = ConfigManager.sparklingProfitableShardEsp
+    }
     class Unique {
+        @JvmField @ConfigOption(name = "Unique mode", desc = "Highlight missing uniques and track unique-run PBs.")
+        @ConfigEditorBoolean var enabled = SafariFullClear.mode == SafariMode.UNIQUE
         @JvmField @ConfigOption(name = "Critter ESP for profitable shards", desc = "Keep Hideonfloor, Hideonwall, Chuckwalla, Fluffling and Mantis Shrimp highlighted after their first catch.")
         @ConfigEditorBoolean var profitable = ConfigManager.profitableShardEsp
     }
@@ -199,9 +227,9 @@ class SafariSettings : Config() {
         else if (ContestConfig.contestSound != sound) { ContestConfig.contestSound = sound; ContestConfig.save() }
     }
     fun saveTextFields() { saveDelay(); saveSound() }
-    fun apply() {
+    fun apply(notifyMode: Boolean = false) {
         if (warp.enabled != ConfigManager.warpAlertsEnabled) AlertManager.toggleAlert()
-        val changes = listOf(ConfigManager::profitableShardEsp to general.unique.profitable, ConfigManager::partyCommandsEnabled to party.enabled, ConfigManager::hideHauntedPaintings to safari.paintings,
+        val changes = listOf(ConfigManager::profitableShardEsp to modes.unique.profitable, ConfigManager::sparklingProfitableShardEsp to modes.sparkling.profitable, ConfigManager::partyCommandsEnabled to party.enabled, ConfigManager::hideHauntedPaintings to safari.paintings,
             ConfigManager::shinyDetection to safari.shiny, ConfigManager::hideyhoQuestClicks to safari.hideyho,
             ConfigManager::progressHud to tracking.progress,
             ConfigManager::missingPanel to tracking.missing,
@@ -232,8 +260,12 @@ class SafariSettings : Config() {
         ContestConfig.contestWarnMinutes = warnings.joinToString(", ")
         ContestConfig.contestWarnEnabled = warnings.isNotEmpty()
         if (contestChanged) ContestConfig.save()
-        if ((general.mode == 1) != ConfigManager.fullClearMode) {
-            SafariFullClear.setEnabled(general.mode == 1)
+        val selection = modes.selection()
+        if (selection != SafariFullClear.mode) {
+            SafariFullClear.select(selection)
+            if (notifyMode) SafariFullClear.modeLines().forEach {
+                Minecraft.getInstance().player?.sendSystemMessage(Component.literal(it))
+            }
             listOf(floorEsp, cavernEsp, forestEsp, icyEsp, hauntedEsp).forEach { it.refreshPreset() }
             cavernEsp.rockmiteMound = SafariEspConfig.rockmiteMoundEnabled
             safari.snooperHighlight = ConfigManager.highlightSnooperWalls
@@ -241,5 +273,6 @@ class SafariSettings : Config() {
             safari.remaining.mounds = ConfigManager.showMoundCount
             safari.remaining.walls = ConfigManager.showSnooperWalls
         }
+        modes.refresh()
     }
 }
