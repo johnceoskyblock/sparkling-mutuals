@@ -20,7 +20,7 @@ object AlertCommand {
                     .executes {
                         val enabled = AlertManager.toggleAlert()
                         it.source.sendFeedback(
-                            Component.literal("Alerts ${if (enabled) "enabled" else "disabled"}")
+                            Component.literal("[SM] Warp reminders ${if (enabled) "on" else "off"}.")
                         )
                         1
                     }
@@ -36,7 +36,7 @@ object AlertCommand {
                             val seconds = it.getArgument("seconds", Int::class.java)
                             AlertManager.setDelay(seconds)
                             it.source.sendFeedback(
-                                Component.literal("Alert delay set to ${seconds}s")
+                                Component.literal("[SM] Warp reminder delay: ${seconds}s.")
                             )
                             1
                         }

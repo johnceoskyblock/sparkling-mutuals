@@ -34,7 +34,7 @@ object SparklingCommand {
                     .then(ClientCommands.literal("gui").executes { open { ContestGui() } })
                     .then(ClientCommands.literal("debug").executes { context ->
                         SafariEsp.debug(Minecraft.getInstance())
-                        context.source.sendFeedback(Component.literal("[SM] Nearby critter diagnostics saved to latest.log."))
+                        context.source.sendFeedback(Component.literal("[SM] Entity diagnostics saved to latest.log."))
                         1
                     })
             )

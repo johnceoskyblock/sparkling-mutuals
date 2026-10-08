@@ -3,6 +3,8 @@ package net.johnceo.sparklingmutuals.commands
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.party.PartyManager
+import net.johnceo.sparklingmutuals.safari.SafariMode
+import net.johnceo.sparklingmutuals.safari.SafariFullClear
 import net.minecraft.client.Minecraft
 import net.minecraft.network.chat.Component
 import java.util.concurrent.Executors
@@ -10,13 +12,13 @@ import java.util.concurrent.Future
 
 object PartyCommands {
     private data class Pending(val request: PartyRequest, val roster: List<String>, val election: ResponderElection, val chatCursor: Long,
-        var task: Future<*>? = null)
+        val mode: SafariMode = SafariFullClear.mode, var task: Future<*>? = null)
     private val pending = mutableMapOf<String, Pending>()
     private val recent = mutableMapOf<String, Long>()
     private val requests = mutableMapOf<String, PartyRequest>()
     private val answered = mutableSetOf<String>()
     private val history = PartyResponseHistory()
-    private data class QueuedReply(val token: String, val body: String, val roster: Set<String>)
+    private data class QueuedReply(val token: String, val body: String, val roster: Set<String>, val mode: SafariMode)
     private val replies = ArrayDeque<QueuedReply>()
     private var sentReplyAt = 0L
     private val executor = Executors.newSingleThreadExecutor { Thread(it, "Sparkling Mutuals lookups").apply { isDaemon = true } }
@@ -48,6 +50,7 @@ object PartyCommands {
         }
         val parsed = PartyCommand.fromChat(text) ?: return
         val request = parsed.copy(command = parsed.command.forResponder(Minecraft.getInstance().player?.name?.string ?: return))
+        if (!request.command.allowed()) return
         val chatCursor = history.cursor
         if (now - (recent[request.token] ?: 0) < 10_000) return
         recent[request.token] = now
@@ -58,7 +61,7 @@ object PartyCommands {
         val connection = client.connection ?: return
         PartyManager.refreshPartyInfo {
             if (client.connection !== connection || !ConfigManager.partyCommandsEnabled ||
-                request.token in answered || requests[request.token] !== request) return@refreshPartyInfo
+                request.token in answered || requests[request.token] !== request || !request.command.allowed()) return@refreshPartyInfo
             val roster = PartyManager.getMembers()
             if (history.hasReply(request.command, chatCursor, roster)) return@refreshPartyInfo
             val local = client.player?.uuid?.toString() ?: return@refreshPartyInfo
@@ -74,7 +77,7 @@ object PartyCommands {
         val now = System.currentTimeMillis()
         if (replies.isNotEmpty() && now - sentReplyAt >= 1500) {
             val reply = replies.removeFirst()
-            if (reply.roster == PartyManager.getMembers().toSet()) {
+            if (reply.mode == SafariFullClear.mode && reply.roster == PartyManager.getMembers().toSet()) {
                 client.player?.connection?.sendCommand("pc ${reply.body}")
                 sentReplyAt = now
             }
@@ -85,7 +88,7 @@ object PartyCommands {
         val iterator = pending.entries.iterator()
         while (iterator.hasNext()) {
             val (token, state) = iterator.next()
-            if (state.election.expired(now) || state.roster.toSet() != PartyManager.getMembers().toSet()) {
+            if (state.mode != SafariFullClear.mode || !state.request.command.allowed() || state.election.expired(now) || state.roster.toSet() != PartyManager.getMembers().toSet()) {
                 state.task?.cancel(false)
                 iterator.remove(); continue
             }
@@ -100,14 +103,14 @@ object PartyCommands {
                     }
                     client.execute {
                         if (pending[token] === state && state.election.canPublish(System.currentTimeMillis()) &&
-                            client.connection === connection && ConfigManager.partyCommandsEnabled &&
+                            client.connection === connection && ConfigManager.partyCommandsEnabled && state.mode == SafariFullClear.mode && state.request.command.allowed() &&
                             state.roster.toSet() == PartyManager.getMembers().toSet() &&
                             !history.hasReply(state.request.command, state.chatCursor, state.roster)) {
                             pending.remove(token)
                             if (result.successful) {
                                 answered.add(token)
                                 PartyReplyChunks.split(result.partyMessage!!).forEach { body ->
-                                    replies.addLast(QueuedReply(token, body, state.roster.toSet()))
+                                    replies.addLast(QueuedReply(token, body, state.roster.toSet(), state.mode))
                                 }
                             } else client.player?.sendSystemMessage(Component.literal(result.text))
                         }

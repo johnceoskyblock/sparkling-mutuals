@@ -2,6 +2,8 @@ package net.johnceo.sparklingmutuals.commands
 
 import java.security.MessageDigest
 import net.johnceo.sparklingmutuals.safari.SafariRoster
+import net.johnceo.sparklingmutuals.safari.SafariMode
+import net.johnceo.sparklingmutuals.safari.SafariFullClear
 
 data class PartyChat(val sender: String, val body: String) {
     companion object {
@@ -25,6 +27,11 @@ data class PartyCommand(val kind: PartyCommandKind, val ign: String = "") {
         PartyCommandKind.PB_ICY -> "Icy"
         PartyCommandKind.PB_CAVERN -> "Cavern"
         else -> null
+    }
+    fun allowed(mode: SafariMode = SafariFullClear.mode) = when {
+        pbName == null -> true
+        kind == PartyCommandKind.PB_DOOM || kind == PartyCommandKind.PB_WUMPA -> mode != SafariMode.FULL_CLEAR
+        else -> mode != SafariMode.SPARKLING
     }
     // PB requests target this client's IGN; other commands retain their party-wide response scope.
     fun forResponder(name: String) = if (pbName != null)

@@ -18,7 +18,7 @@ object ApiKeyCommand {
                                 .executes {
                                     ConfigManager.apiKey = StringArgumentType.getString(it, "key")
                                     ConfigManager.save()
-                                    it.source.sendFeedback(Component.literal("Hypixel API key updated."))
+                                    it.source.sendFeedback(Component.literal("[SM] API key updated."))
                                     1
                                 }
                         )

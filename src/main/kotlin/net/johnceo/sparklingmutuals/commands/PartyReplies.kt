@@ -7,11 +7,10 @@ data class PartyLookupResult(val text: String, val successful: Boolean) {
     val partyMessage get() = text.takeIf { successful }
     companion object {
         fun fetch(command: PartyCommand, key: String, lookup: () -> String): PartyLookupResult {
-            if (command.requiresApiKey && key.isBlank()) return PartyLookupResult(command.failureResult(
-                "No Hypixel API key is configured. Set one with /apikey or in settings."), false)
+            if (command.requiresApiKey && key.isBlank()) return PartyLookupResult("[SM] No Hypixel API key. Use /apikey or settings.", false)
             return try { PartyLookupResult(lookup(), true) }
-            catch (failure: ApiFailure) { PartyLookupResult(command.failureResult(failure.message.orEmpty()), false) }
-            catch (_: Exception) { PartyLookupResult(command.failureResult("Lookup failed unexpectedly. Please try again."), false) }
+            catch (failure: ApiFailure) { PartyLookupResult("[SM] ${failure.message.orEmpty()}", false) }
+            catch (_: Exception) { PartyLookupResult("[SM] Lookup failed. Try again.", false) }
         }
     }
 }
