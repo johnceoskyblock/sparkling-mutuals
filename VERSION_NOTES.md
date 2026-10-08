@@ -1,5 +1,8 @@
 # Sparkling modes and Safari helpers update
 
+- Party-cleared biome capture displays now use minimum catches and absence of rendered critters after your first visit, including Honeybug, Rockmite, Snoozle and birds. Previously collected Forest nests stop highlighting. Personal PB requirements stay unchanged.
+- Restored the centered sparkling title, critter name, location and tinted screen flash. Added customizable sparkling sound, volume and sound preview in Safari Helpers → Alert.
+
 - `!commands` now returns only party commands; local commands remain in settings help.
 
 - Settings now open with `/sm`; use `/sm gui` for the HUD editor and `/sm debug` for diagnostics.

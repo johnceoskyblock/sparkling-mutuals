@@ -14,7 +14,7 @@ A Fabric mod for Hypixel SkyBlock Safari, sparkling discoveries, and Miria conte
 
 - **Progress HUD:** shows the run timer and collected species in each biome.
 - **Missing panel:** lists uncaught critters and remaining bee nests, Rockmite mounds, and Snooper walls.
-- **Capture counts:** tracks catches per critter and Rockmite mound results. `/captures` opens the current or last run's counts.
+- **Capture counts:** tracks catches per critter and Rockmite mound results. `/captures` opens the current or last run's counts. First visiting a biome with earlier party catches and none of your own uses minimum counts and remaining rendered critters to verify party progress.
 - **Run mode:** `/fc` selects full clear, Full Clear PBs and all-species lookups. `/unique` selects unique runs, Unique Run PBs and timesaves. Full-clear capture numbers stay white until you visit a biome, then turn green when completion requirements are met. The Modes tab also offers these controls and Sparkling mode.
 - **PB tracking:** saves your fastest Doomspiral, Wumpa, full-clear, and unique-biome times from the start of a run and announces new records locally. Unique clears require one personal catch of every species; only your own catches qualify for either biome PB type.
 
@@ -26,10 +26,10 @@ A Fabric mod for Hypixel SkyBlock Safari, sparkling discoveries, and Miria conte
 - **Critter ESP:** modes select highlights in all four biomes. Unique runs hide collected species, with an optional profitable-shard exception; mounds and walls remain available for shiny checks. Nearby stationary leftover moving-critter models are excluded after two seconds and restored if they move.
 - **Floor drop ESP:** hides completed or unneeded drops using discoveries, pickups, inventory and captures. Unique Icy keeps drops hidden; Haunted keeps coin drops while anyone needs Gimmiegold.
 - **Sparkling detection:** highlights nearby sparkling critters and shows their names and distances.
-- **Sparkling alerts:** displays an on-screen alert and can announce the critter, biome, and coordinates in party chat.
+- **Sparkling alerts:** displays a centered title, critter, location and screen flash, with a customizable sound and volume. Can announce discoveries in party chat.
 - **Inventory alerts:** notifies when you have all three gem types in Cavern, all nine Forest bird food pickups, or four Soothing Incense in Haunted.
 - **Forest birds:** tracks food pickups and feeding, adjusts capture requirements for Macaw pairs and spare Macaws, and includes starting bird food.
-- **Bee nests and Snooper walls:** highlights structures that still need checking. Honeybug completion also requires punched nests.
+- **Bee nests and Snooper walls:** highlights structures that still need checking. Honeybug completion requires punched nests in your own biome; nests stop highlighting when you enter a party-cleared Forest with earlier Honeybug catches.
 - **Hideyho quest clicks:** lets you accept the current Hideyho quest prompt by clicking with chat open.
 - **Auto Clicker:** repeats attacks at 12 CPS while holding Mouse 0 on Rockmite mounds.
 - **Full candle hitbox:** makes Haunted candles easier to click while holding Soothing Incense.
