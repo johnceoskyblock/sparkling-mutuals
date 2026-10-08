@@ -8,7 +8,7 @@ A Fabric mod for Hypixel SkyBlock Safari, sparkling discoveries, and Miria conte
 - **Missing sparklings:** `!missing <IGN>` lists a player's missing discoveries: all species in Full Clear mode or timesaves in Unique and Sparkling modes.
 - **Safari tickets:** `!tickets <IGN>` shows a player's ticket counts.
 - **Personal bests:** `!pb doom`, `!pb wumpa`, and `!pb forest|cavern|icy|haunted` share each mod user’s saved times. Full Clear returns biome PBs only; Unique returns biome and Doomspiral/Wumpa PBs; Sparkling returns Doomspiral/Wumpa PBs only. Biome records identify their type.
-- **Command help:** `!commands` shows the available commands. Duplicate lookup replies are suppressed, and lookup errors appear only locally.
+- **Command help:** `!commands` shows the available commands. Replies are staggered by UUID, matching results are suppressed, and lookup errors appear only locally.
 
 ## Safari tracking
 
@@ -22,9 +22,9 @@ A Fabric mod for Hypixel SkyBlock Safari, sparkling discoveries, and Miria conte
 
 - **Miria contest HUD:** tracks Miria's contest timer, tier, and score, with configurable end warnings.
 - **Warp reminders:** sends title to warp party before afk timeout. Useful for party leeching so that other players can have a chance to get sparkling critters without using a ticket. Use `/alert` and `/alertdelay <seconds>` to control reminders.
-- **Sparkling mode:** `/sparkle` highlights the party’s missing sparkling discoveries for the run, including yours, with optional profitable-shard ESP. Requires an API key.
-- **Critter ESP:** excludes nearby stationary leftover moving-critter models after two seconds and restores them if they move. Highlights critters in all four biomes, with individual toggles and biome filters. Unique runs hide collected species until the next run, with an optional exception for Hideonfloor, Hideonwall, Chuckwalla, Fluffling and Mantis Shrimp; Rockmite mounds and Snooper walls remain available for shiny checks. Mounds and silverfish have separate controls.
-- **Floor drop ESP:** hides completed or unneeded drops using party discoveries, pickups, inventory and captures. Unique Icy keeps drops hidden; Haunted keeps coin drops while anyone needs Gimmiegold. Cavern/Icy manual overrides last for the current biome visit.
+- **Sparkling mode:** `/sparkle` highlights your missing sparkling discoveries when solo, or the party's combined missing discoveries. Updates when players join or leave, with optional profitable-shard ESP. Requires an API key.
+- **Critter ESP:** modes select highlights in all four biomes. Unique runs hide collected species, with an optional profitable-shard exception; mounds and walls remain available for shiny checks. Nearby stationary leftover moving-critter models are excluded after two seconds and restored if they move.
+- **Floor drop ESP:** hides completed or unneeded drops using discoveries, pickups, inventory and captures. Unique Icy keeps drops hidden; Haunted keeps coin drops while anyone needs Gimmiegold.
 - **Sparkling detection:** highlights nearby sparkling critters and shows their names and distances.
 - **Sparkling alerts:** displays an on-screen alert and can announce the critter, biome, and coordinates in party chat.
 - **Inventory alerts:** notifies when you have all three gem types in Cavern, all nine Forest bird food pickups, or four Soothing Incense in Haunted.
@@ -40,9 +40,10 @@ A Fabric mod for Hypixel SkyBlock Safari, sparkling discoveries, and Miria conte
 
 ## Settings and customization
 
-- **Settings:** `/sparkling` opens feature settings, command help, and API key setup.
-- **Troubleshooting:** `/sparkling debug` saves nearby critter tracking details to your game log.
-- **HUD editor:** `/sparkling gui` lets you move and resize panels.
+- **Settings:** `/sm` opens feature settings, command help, and API key setup.
+- **Troubleshooting:** `/sm debug` saves nearby critter tracking details to your game log.
+- **HUD editor:** `/sm gui` lets you move and resize panels.
+- **ESP visibility:** the ESP tab has independent current-biome filters for floor drops and each biome's critters. Disable a filter to show eligible targets across loaded biomes.
 - **Appearance:** customize ESP and waypoint colors, HUD backgrounds, transparency, and borders.
 
 ## Installation
