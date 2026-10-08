@@ -20,12 +20,12 @@ class SafariInventoryAlertsTest {
         assertTrue(state.poll(SafariBiome.CAVERN, gems.dropLast(1), enabled).isEmpty())
         assertEquals(listOf(InventoryAlert.GEMS), state.poll(SafariBiome.CAVERN, gems, enabled))
     }
-    @Test fun `bird food counts split stacks but nine of one food does not qualify`() {
+    @Test fun `bird food inventory alone never qualifies without Forest pickup evidence`() {
         val state = InventoryAlertState()
         assertTrue(state.poll(SafariBiome.FOREST, listOf("Yogi Berry" to 9), enabled).isEmpty())
         val food = listOf("Yogi Berry" to 1, "Yogi Berry" to 2, "Wriggleworm" to 3, "Bag of Seeds" to 2)
         assertTrue(state.poll(SafariBiome.FOREST, food, enabled).isEmpty())
-        assertEquals(listOf(InventoryAlert.BIRD_FOOD), state.poll(SafariBiome.FOREST, food + ("Bag of Seeds" to 1), enabled))
+        assertTrue(state.poll(SafariBiome.FOREST, food + ("Bag of Seeds" to 1), enabled).isEmpty())
         assertTrue(state.poll(SafariBiome.FOREST, food + ("Bag of Seeds" to 1), enabled).isEmpty())
     }
     @Test fun `incense needs four in Haunted and toggles biome exit and new runs reset readiness`() {

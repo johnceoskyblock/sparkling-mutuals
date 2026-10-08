@@ -51,9 +51,12 @@ class SafariBiomeClearTest {
         assertFalse(SafariFullClear.eligible(run, SafariBiome.FOREST, ready))
         repeat(8) { run.record(SafariCatch(SafariRoster.named("Bluebird")!!)) }
         assertFalse(SafariFullClear.eligible(run, SafariBiome.FOREST, ready))
-        run.record(SafariCatch(SafariRoster.named("Macaw")!!))
+        repeat(2) { run.record(SafariCatch(SafariRoster.named("Macaw")!!)) }
         assertFalse(SafariFullClear.eligible(run, SafariBiome.FOREST, ready))
         repeat(3) { for (food in listOf("Bag of Seeds", "Wriggleworm", "Yogi Berry")) run.recordBirdFood("FLOOR DROP! $food") }
+        repeat(8) { run.birds.spawn("A Bluebird was attracted to the Birdfeeder!") }
+        run.birds.spawn("Two Macaws were attracted to the Birdfeeder!")
+        run.birds.inventory(emptyList())
         assertTrue(SafariFullClear.eligible(run, SafariBiome.FOREST, ready))
         assertFalse(SafariFullClear.eligible(run, SafariBiome.FOREST, ready.copy(nestsChecked = false)))
     }
@@ -70,12 +73,15 @@ class SafariBiomeClearTest {
         run.record(SafariCatch(SafariRoster.named("Doomspiral")!!))
         assertTrue(SafariFullClear.eligible(run, SafariBiome.HAUNTED, ready))
     }
-    private fun forest(personal: Boolean = true) = SafariRun(1000).apply {
+    private fun forest(personal: Boolean = true, pairs: Int = 0) = SafariRun(1000).apply {
         listOf("Foxtrot" to 6, "Honeybug" to 3, "Treefrog" to 3, "Woodchucker" to 3,
-            "Fluffling" to 1, "Hideonfloor" to 1, "Bluebird" to 6, "Parakeet" to 1).forEach { (name, amount) ->
+            "Fluffling" to 1, "Hideonfloor" to 1, "Bluebird" to (8 - pairs), "Parakeet" to 1).forEach { (name, amount) ->
             repeat(amount) { record(SafariCatch(SafariRoster.named(name)!!, personal)) }
         }
         repeat(3) { for (food in listOf("Bag of Seeds", "Wriggleworm", "Yogi Berry")) recordBirdFood("FLOOR DROP! $food") }
+        repeat(9 - pairs) { birds.spawn("A Bluebird was attracted to the Birdfeeder!") }
+        repeat(pairs) { birds.spawn("Two Macaws were attracted to the Birdfeeder!") }
+        birds.inventory(emptyList())
     }
     @Test fun `Forest PB accepts personally completed birds with all food collected`() {
         val ready = BiomeClearEvidence(observed = true, nestsChecked = true)
@@ -96,13 +102,13 @@ class SafariBiomeClearTest {
         assertTrue(SafariFullClear.eligible(missed, SafariBiome.FOREST, ready))
     }
     @Test fun `Forest Macaw exception ignores only remaining Macaws and saves eligible PB`() {
-        val run = forest()
+        val run = forest(pairs = 2)
         repeat(2) { run.observeCritter(100 + it, "Macaw") }
-        val ready = BiomeClearEvidence(observed = true, nearbyCritters = 2, nestsChecked = true, nearbyMacaws = 2)
+        val ready = BiomeClearEvidence(observed = true, nearbyCritters = 3, nestsChecked = true, nearbyMacaws = 3)
         assertFalse(SafariFullClear.eligible(run, SafariBiome.FOREST, ready))
         run.record(SafariCatch(SafariRoster.named("Macaw")!!))
         assertTrue(SafariFullClear.eligible(run, SafariBiome.FOREST, ready))
-        assertFalse(SafariFullClear.eligible(run, SafariBiome.FOREST, ready.copy(nearbyCritters = 3)))
+        assertFalse(SafariFullClear.eligible(run, SafariBiome.FOREST, ready.copy(nearbyCritters = 4)))
         assertFalse(SafariFullClear.eligible(run, SafariBiome.FOREST, ready.copy(observed = false)))
         assertFalse(SafariFullClear.eligible(run, SafariBiome.FOREST, ready.copy(nestsChecked = false)))
         assertFalse(SafariFullClear.eligible(forest(false), SafariBiome.FOREST, ready))

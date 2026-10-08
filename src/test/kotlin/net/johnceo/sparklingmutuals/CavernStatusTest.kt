@@ -23,12 +23,13 @@ class CavernStatusTest {
             it.label.contains("snoozles", true) || it.label.startsWith("Snooper walls")
         })
     }
-    @Test fun `ten empty mound outcomes show absence but a revealed Rockmite suppresses it`() {
+    @Test fun `surveyed empty mounds show absence but a revealed Rockmite suppresses it`() {
         ConfigManager.init(dir)
         val run = SafariRun(0)
         repeat(9) { run.recordMound("The mound falls apart, but nothing is inside...") }
         assertFalse(SafariPanels.missing(run, SafariBiome.CAVERN, false, 0).rows.any { it.label == "No rockmites this run" })
         run.recordMound("The mound falls apart, but nothing is inside...")
+        run.moundSurvey.scan(emptySet()) { true }
         assertEquals(HudRow.GRAY, SafariPanels.missing(run, SafariBiome.CAVERN, false, 0).rows.first {
             it.label == "No rockmites this run"
         }.color)
@@ -62,9 +63,10 @@ class CavernStatusTest {
         assertFalse(next.encountered("Rockmite")); assertFalse(next.encountered("Snoozle"))
         assertTrue(SafariPanels.missing(next, SafariBiome.CAVERN, false, 0, walls = broken).rows.any { it.label == "No snoozles this run" })
     }
-    @Test fun `zero nearby mounds and unloaded sites do not imply all mounds broken`() {
+    @Test fun `empty completed scan permits mid-run arrival but unloaded known sites block completion`() {
         val survey = MoundSurvey()
-        survey.scan(emptySet()) { true }; assertFalse(survey.allBroken)
+        assertFalse(survey.allBroken)
+        survey.scan(emptySet()) { true }; assertTrue(survey.allBroken)
         val sites = (0 until 20).map { Triple(it, 40, 30) }.toSet()
         survey.scan(sites) { true }
         survey.scan(emptySet()) { false }; assertFalse(survey.allBroken)

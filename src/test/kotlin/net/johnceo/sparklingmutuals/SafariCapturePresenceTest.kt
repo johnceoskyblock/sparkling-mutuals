@@ -23,10 +23,13 @@ class SafariCapturePresenceTest {
             assertFalse(unscanned.captureComplete(name))
         }
     }
-    @Test fun `birds require seven total and independently clear with caught Macaw exception`() {
+    @Test fun `birds require the food derived total and independently clear with caught Macaw exception`() {
         val run = SafariRun(0)
         repeat(3) { for (food in listOf("Bag of Seeds", "Wriggleworm", "Yogi Berry")) run.recordBirdFood("FLOOR DROP! $food") }
-        repeat(6) { run.record(SafariCatch(SafariRoster.named("Bluebird")!!)) }
+        repeat(8) { run.record(SafariCatch(SafariRoster.named("Bluebird")!!)) }
+        repeat(8) { run.birds.spawn("A Bluebird was attracted to the Birdfeeder!") }
+        run.birds.spawn("Two Macaws were attracted to the Birdfeeder!")
+        run.birds.inventory(emptyList())
         run.updateCaptureEvidence(SafariBiome.FOREST, emptySet(), false)
         assertFalse(run.captureComplete("Parakeet"))
         run.record(SafariCatch(SafariRoster.named("Macaw")!!))
@@ -39,9 +42,12 @@ class SafariCapturePresenceTest {
         assertTrue(run.captureComplete("Bluebird"))
         assertTrue(run.birdsComplete(setOf("Macaw"), personalOnly = true))
         val uncaughtMacaw = SafariRun(0)
-        repeat(7) { uncaughtMacaw.record(SafariCatch(SafariRoster.named("Bluebird")!!)) }
+        repeat(8) { uncaughtMacaw.record(SafariCatch(SafariRoster.named("Bluebird")!!)) }
         repeat(3) { for (food in listOf("Bag of Seeds", "Wriggleworm", "Yogi Berry")) uncaughtMacaw.recordBirdFood("FLOOR DROP! $food") }
-        uncaughtMacaw.updateCaptureEvidence(SafariBiome.FOREST, setOf("Macaw"), false)
+        repeat(8) { uncaughtMacaw.birds.spawn("A Bluebird was attracted to the Birdfeeder!") }
+        uncaughtMacaw.birds.spawn("Two Macaws were attracted to the Birdfeeder!")
+        uncaughtMacaw.birds.inventory(emptyList())
+        uncaughtMacaw.updateCaptureEvidence(SafariBiome.FOREST, setOf("Macaw"), false, macawsInRange = 2)
         assertFalse(uncaughtMacaw.captureComplete("Macaw"))
         assertTrue(uncaughtMacaw.captureComplete("Bluebird"))
         assertFalse(uncaughtMacaw.birdsComplete(setOf("Macaw"), personalOnly = true))

@@ -10,7 +10,7 @@ class SafariClearConsistencyTest {
         run.updateCaptureEvidence(SafariBiome.CAVERN, emptySet(), true)
         repeat(9) { run.recordMound("The mound falls apart, but nothing is inside...") }
         assertFalse(run.captureComplete("Rockmite"))
-        run.recordMound("The mound falls apart, but nothing is inside...")
+        run.moundSurvey.scan(emptySet()) { true }
         assertTrue(run.captureComplete("Rockmite"))
         run.recordMound("The mound fell apart, revealing a Rockmite hidden inside!")
         assertFalse(run.captureComplete("Rockmite"))
@@ -32,10 +32,13 @@ class SafariClearConsistencyTest {
     }
     private fun forest() = SafariRun(1000).apply {
         mapOf("Foxtrot" to 6, "Honeybug" to 3, "Treefrog" to 3, "Woodchucker" to 3,
-            "Fluffling" to 1, "Hideonfloor" to 1, "Bluebird" to 6, "Macaw" to 1).forEach { (name, amount) ->
+            "Fluffling" to 1, "Hideonfloor" to 1, "Bluebird" to 7, "Macaw" to 1).forEach { (name, amount) ->
             repeat(amount) { record(SafariCatch(SafariRoster.named(name)!!)) }
         }
         repeat(3) { for (food in listOf("Bag of Seeds", "Wriggleworm", "Yogi Berry")) recordBirdFood("FLOOR DROP! $food") }
+        repeat(7) { birds.spawn("A Bluebird was attracted to the Birdfeeder!") }
+        repeat(2) { birds.spawn("Two Macaws were attracted to the Birdfeeder!") }
+        birds.inventory(emptyList())
     }
     @Test fun `Honeybug minimum and empty scan cannot turn green before nests are punched`() {
         val run = forest()
@@ -49,10 +52,10 @@ class SafariClearConsistencyTest {
     @Test fun `Forest clear uses current entities instead of accumulated entity ids`() {
         val run = forest()
         repeat(40) { run.observeCritter(it, "Foxtrot"); run.observeCritter(100 + it, "Macaw") }
-        val ready = BiomeClearEvidence(observed = true, nearbyCritters = 2, nearbyMacaws = 2, nestsChecked = true)
+        val ready = BiomeClearEvidence(observed = true, nearbyCritters = 3, nearbyMacaws = 3, nestsChecked = true)
         assertTrue(SafariFullClear.eligible(run, SafariBiome.FOREST, ready))
         assertFalse(SafariFullClear.eligible(run, SafariBiome.FOREST, ready.copy(nestsChecked = false)))
-        assertFalse(SafariFullClear.eligible(run, SafariBiome.FOREST, ready.copy(nearbyCritters = 3)))
+        assertFalse(SafariFullClear.eligible(run, SafariBiome.FOREST, ready.copy(nearbyCritters = 4)))
         assertFalse(SafariFullClear.eligible(run, SafariBiome.FOREST, ready.copy(observed = false)))
     }
     @Test fun `Cavern requires all structures but old Snoozle sightings do not block an empty scan`() {
@@ -75,7 +78,7 @@ class SafariClearConsistencyTest {
         val ready = BiomeClearEvidence(observed = true, nearbyCritters = 3, nearbyMacaws = 3, nestsChecked = true)
         assertNull(SafariFullClear.recordClear(run, SafariBiome.FOREST, ready.copy(nestsChecked = false), bests, 60000))
         assertTrue(run.biomeClears.isEmpty())
-        run.updateCaptureEvidence(SafariBiome.FOREST, setOf("Macaw"), false, allNestsChecked = true)
+        run.updateCaptureEvidence(SafariBiome.FOREST, setOf("Macaw"), false, allNestsChecked = true, macawsInRange = 3)
         assertTrue(SafariBiome.FOREST.critters.all { run.captureComplete(it.name) })
         assertEquals("[SM] New Forest Full Clear PB: 1:01.000!", SafariFullClear.recordClear(run, SafariBiome.FOREST, ready, bests, 62000))
         assertTrue(SafariBiome.FOREST in run.biomeClears)

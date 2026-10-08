@@ -11,7 +11,7 @@ class SafariVisibilityHelpTest {
         assertTrue(reply.length + "/pc ".length <= 256, "Help reply has ${reply.length} characters")
         assertTrue(reply.contains("Party:"))
         assertTrue(reply.contains("Local:"))
-        assertTrue(reply.contains("/sparkling catches"))
+        assertTrue(reply.contains("/captures"))
         assertTrue(reply.contains("!pb doom"))
         assertTrue(reply.contains("doom/wumpa/forest/haunted/icy/cavern"))
         assertTrue(reply.contains("fc=mode/PBs/lookups"))
@@ -43,7 +43,7 @@ class SafariVisibilityHelpTest {
         assertTrue(lines.any { it == "Party chat commands" })
         assertTrue(lines.any { it == "Local commands" })
         for (command in listOf("!mutual", "!missing", "!ticket", "!pb doom", "!pb wumpa", "!commands",
-            "/sparkling", "/sparkling gui", "/sparkling catches", "/alert", "/alertdelay", "/apikey")) {
+            "/sparkling", "/sparkling gui", "/captures", "/alert", "/alertdelay", "/apikey")) {
             assertTrue(lines.any { it.startsWith(command) && it.contains(" — ") }, command)
         }
     }

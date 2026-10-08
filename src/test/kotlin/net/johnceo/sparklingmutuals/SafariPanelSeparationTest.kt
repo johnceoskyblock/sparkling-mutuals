@@ -19,7 +19,7 @@ class SafariPanelSeparationTest {
             assertFalse(SafariPanels.missing(run, critter.biome, true, 0).rows.any { it.label == name })
         }
     }
-    @Test fun `ten verified mounds complete Rockmite only after revealed critters are caught`() {
+    @Test fun `scanned empty mounds complete Rockmite only after revealed critters are caught`() {
         ConfigManager.init(dir); SafariFullClear.toggle()
         val run = SafariRun(0)
         run.updateCaptureEvidence(SafariBiome.CAVERN, emptySet(), true)
@@ -27,6 +27,7 @@ class SafariPanelSeparationTest {
         run.recordMound("The mound fell apart, revealing a Rockmite hidden inside!")
         assertFalse(run.captureComplete("Rockmite"))
         run.record(SafariCatch(SafariRoster.named("Rockmite")!!))
+        run.moundSurvey.scan(emptySet()) { true }
         assertTrue(run.captureComplete("Rockmite"))
         run.updateCaptureEvidence(SafariBiome.CAVERN, setOf("Rockmite Mound"), true)
         assertFalse(run.captureComplete("Rockmite"))
@@ -63,7 +64,7 @@ class SafariPanelSeparationTest {
         for ((biome, names) in listOf(SafariBiome.FOREST to listOf("Bluebird", "Parakeet", "Macaw"),
             SafariBiome.CAVERN to listOf("Rockmite", "Snoozle"))) {
             val rows = SafariPanels.captures(run, biome).rows
-            names.forEach { name -> assertEquals(0xFFFF5555.toInt(), rows.first { it.label == name }.valueColor) }
+            names.forEach { name -> assertEquals(-1, rows.first { it.label == name }.valueColor) }
         }
     }
     @Test fun `Rockmite capture and two mound rows are separated below the total`() {
@@ -85,6 +86,7 @@ class SafariPanelSeparationTest {
         assertEquals("16", row.value)
         assertEquals(0xFFFF5555.toInt(), row.valueColor)
         run.updateCaptureEvidence(SafariBiome.CAVERN, emptySet(), true)
+        run.moundSurvey.scan(emptySet()) { true }
         assertEquals(0xFF55FF55.toInt(), SafariPanels.captures(run, SafariBiome.CAVERN).rows.first { it.label == row.label }.valueColor)
     }
     @Test fun `mound counter stays red for unobservable known mound even after empty nearby scan`() {
@@ -103,7 +105,8 @@ class SafariPanelSeparationTest {
         ConfigManager.init(dir); SafariFullClear.toggle()
         val run = SafariRun(0)
         repeat(16) { run.recordMound("The mound fell apart, revealing a Rockmite hidden inside!") }
-        assertEquals(0xFFFF5555.toInt(), SafariPanels.captures(run, SafariBiome.CAVERN).rows.first { it.label == "Rockmite Mounds" }.valueColor)
+        assertEquals(-1, SafariPanels.captures(run, SafariBiome.CAVERN).rows.first { it.label == "Rockmite Mounds" }.valueColor)
+        run.moundSurvey.scan(emptySet()) { true }
         run.updateCaptureEvidence(SafariBiome.CAVERN, setOf("Rockmite"), true)
         val rows = SafariPanels.captures(run, SafariBiome.CAVERN).rows
         assertEquals(0xFF55FF55.toInt(), rows.first { it.label == "Rockmite Mounds" }.valueColor)
@@ -111,17 +114,19 @@ class SafariPanelSeparationTest {
         ConfigManager.fullClearMode = false
         assertEquals(-1, SafariPanels.captures(run, SafariBiome.CAVERN).rows.first { it.label == "Rockmite Mounds" }.valueColor)
     }
-    @Test fun `bird colors require three of each food seven catches and no same species nearby`() {
+    @Test fun `bird colors require all pickups food used sufficient catches and no same species nearby`() {
         ConfigManager.init(dir); SafariFullClear.toggle()
         val run = SafariRun(0)
         fun green() = SafariPanels.captures(run, SafariBiome.FOREST).rows.first { it.label == "Bluebird" }.valueColor == 0xFF55FF55.toInt()
         assertFalse(run.recordBirdFood("Party > Friend: FLOOR DROP! Bag of Seeds"))
         assertFalse(run.recordBirdFood("FLOOR DROP! Something else"))
         repeat(3) { assertTrue(run.recordBirdFood("§aFLOOR DROP! Bag of Seeds")); run.recordBirdFood("FLOOR DROP! Wriggleworm") }
-        repeat(6) { run.record(SafariCatch(SafariRoster.named("Bluebird")!!)) }
+        repeat(8) { run.record(SafariCatch(SafariRoster.named("Bluebird")!!)) }
+        repeat(9) { run.birds.spawn("A Bluebird was attracted to the Birdfeeder!") }
         run.updateCaptureEvidence(SafariBiome.FOREST, emptySet(), false)
         assertFalse(green())
         repeat(3) { run.recordBirdFood("FLOOR DROP! Yogi Berry") }
+        run.birds.inventory(emptyList())
         assertFalse(green())
         run.record(SafariCatch(SafariRoster.named("Parakeet")!!))
         assertTrue(green())
@@ -136,11 +141,14 @@ class SafariPanelSeparationTest {
         val run = SafariRun(0)
         run.updateCaptureEvidence(SafariBiome.FOREST, setOf("Macaw"), false)
         assertFalse(run.captureComplete("Macaw"))
-        repeat(7) { run.record(SafariCatch(SafariRoster.named("Bluebird")!!)) }
+        repeat(8) { run.record(SafariCatch(SafariRoster.named("Bluebird")!!)) }
         assertFalse(run.captureComplete("Macaw"))
         run.record(SafariCatch(SafariRoster.named("Macaw")!!))
         assertFalse(run.captureComplete("Macaw"))
         repeat(3) { for (food in listOf("Bag of Seeds", "Wriggleworm", "Yogi Berry")) run.recordBirdFood("FLOOR DROP! $food") }
+        repeat(8) { run.birds.spawn("A Bluebird was attracted to the Birdfeeder!") }
+        run.birds.spawn("Two Macaws were attracted to the Birdfeeder!")
+        run.birds.inventory(emptyList())
         val birds = setOf("Bluebird", "Parakeet", "Macaw")
         assertTrue(SafariPanels.captures(run, SafariBiome.FOREST).rows.filter { it.label in birds }.all { it.valueColor == 0xFF55FF55.toInt() })
         for (other in listOf("Bluebird", "Parakeet", "Foxtrot")) {
@@ -162,6 +170,7 @@ class SafariPanelSeparationTest {
         run.recordMound("The mound fell apart, revealing a Rockmite hidden inside!")
         assertFalse(green("Rockmite"))
         run.record(SafariCatch(SafariRoster.named("Rockmite")!!))
+        run.moundSurvey.scan(emptySet()) { true }
         assertTrue(green("Rockmite"))
         run.updateCaptureEvidence(SafariBiome.CAVERN, setOf("Rockmite"), true)
         assertFalse(green("Rockmite"))

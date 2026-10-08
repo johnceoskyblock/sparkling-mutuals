@@ -97,7 +97,7 @@ class SafariCustomizationTest {
         fun names(type: Class<*>) = type.fields.mapNotNull { it.getAnnotation(io.github.notenoughupdates.moulconfig.annotations.ConfigOption::class.java)?.name }
         assertEquals(setOf("Contest HUD and tracking", "Warning"), names(SafariSettings.Miria::class.java).toSet())
         assertEquals(setOf("5 minute warning", "3 minute warning", "1 minute warning", "No contest warnings", "Warning titles", "Sound volume", "Warning sound", "Save sound"), names(SafariSettings.Warning::class.java).toSet())
-        assertEquals(setOf("Command help", "Move and resize HUDs"), names(SafariSettings.General::class.java).toSet())
+        assertEquals(setOf("Run mode", "Command help", "Move and resize HUDs"), names(SafariSettings.General::class.java).toSet())
         assertFalse(names(SafariSettings.Party::class.java).contains("Command help"))
         assertFalse(names(SafariSettings.Tracking::class.java).contains("Move and resize HUDs"))
         assertTrue(names(SafariSettings.Safari::class.java).contains("Remaining"))

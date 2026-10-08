@@ -45,6 +45,7 @@ class SafariFullClearTest {
         repeat(2) { run.record(SafariCatch.parse("CAPTURE! You caught a Scrappy!")!!) }
         val missing = SafariPanels.missing(run, SafariBiome.CAVERN, false, 0).rows.first { it.label == "Scrappy" }
         assertEquals("2/3", missing.value)
+        run.updateCaptureEvidence(SafariBiome.CAVERN, emptySet(), false)
         var row = SafariPanels.captures(run, SafariBiome.CAVERN).rows.first { it.label == "Scrappy" }
         assertEquals("2", row.value); assertEquals(0xFFFF5555.toInt(), row.valueColor)
         run.record(SafariCatch.parse("CAPTURE! You caught a Scrappy!")!!)
