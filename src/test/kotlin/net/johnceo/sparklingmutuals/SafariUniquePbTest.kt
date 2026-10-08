@@ -63,6 +63,7 @@ class SafariUniquePbTest {
         val bests = SafariPersonalBests()
         bests.toggleBiomeType()
         assertEquals("Player's Doomspiral PB: Not recorded yet", bests.response("Player", "Doomspiral"))
-        assertTrue(CommandHelp.localLines().any { it.contains("/sparkling fc") })
+        assertTrue(CommandHelp.localLines().any { it.contains("/unique") })
+        assertFalse(CommandHelp.localLines().any { it.contains("/sparkling fc") })
     }
 }

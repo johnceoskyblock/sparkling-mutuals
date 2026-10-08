@@ -14,7 +14,8 @@ class SafariVisibilityHelpTest {
         assertTrue(reply.contains("/captures"))
         assertTrue(reply.contains("!pb doom"))
         assertTrue(reply.contains("doom/wumpa/forest/haunted/icy/cavern"))
-        assertTrue(reply.contains("fc=mode/PBs/lookups"))
+        assertTrue(reply.contains("/fc or /unique"))
+        assertFalse(reply.contains("/sparkling fc"))
         assertFalse(reply.contains("/pb toggle"))
     }
     @Test fun `entrance visibility is limited to the actual named subarea`() {
@@ -43,7 +44,7 @@ class SafariVisibilityHelpTest {
         assertTrue(lines.any { it == "Party chat commands" })
         assertTrue(lines.any { it == "Local commands" })
         for (command in listOf("!mutual", "!missing", "!ticket", "!pb doom", "!pb wumpa", "!commands",
-            "/sparkling", "/sparkling gui", "/captures", "/alert", "/alertdelay", "/apikey")) {
+            "/sparkling", "/sparkling gui", "/captures", "/fc", "/unique", "/alert", "/alertdelay", "/apikey")) {
             assertTrue(lines.any { it.startsWith(command) && it.contains(" — ") }, command)
         }
     }

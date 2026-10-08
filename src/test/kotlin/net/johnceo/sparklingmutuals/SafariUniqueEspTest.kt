@@ -14,12 +14,12 @@ class SafariUniqueEspTest {
         ConfigManager.init(dir)
         val run = SafariRun(0)
         for (critter in SafariRoster.all) {
-            assertTrue(SafariEspRules.neededForRun(critter.name, false, run, false))
+            assertTrue(SafariEspRules.neededForRun(critter.name, false, run, false, false))
             run.record(SafariCatch(critter))
             assertFalse(SafariPanels.missing(run, critter.biome, true, 0).rows.any { it.label == critter.name })
-            assertFalse(SafariEspRules.neededForRun(critter.name, false, run, false))
+            assertFalse(SafariEspRules.neededForRun(critter.name, false, run, false, false))
             assertTrue(SafariEspRules.neededForRun(critter.name, false, run, true))
-            assertTrue(SafariEspRules.neededForRun(critter.name, false, SafariRun(1000), false))
+            assertTrue(SafariEspRules.neededForRun(critter.name, false, SafariRun(1000), false, false))
         }
     }
     @Test fun `mound and wall shiny checks survive unique captures without changing ESP settings`() {
@@ -29,14 +29,14 @@ class SafariUniqueEspTest {
         run.record(SafariCatch(SafariRoster.named("Rockmite")!!))
         run.record(SafariCatch(SafariRoster.named("Snoozle")!!))
         run.record(SafariCatch(SafariRoster.named("Foxtrot")!!, false))
-        assertTrue(SafariEspRules.neededForRun("Rockmite", true, run, false))
-        assertFalse(SafariEspRules.neededForRun("Rockmite", false, run, false))
-        assertFalse(SafariEspRules.neededForRun("Snoozle", false, run, false))
-        assertFalse(SafariEspRules.neededForRun("Foxtrot", false, run, false))
+        assertTrue(SafariEspRules.neededForRun("Rockmite", true, run, false, false))
+        assertFalse(SafariEspRules.neededForRun("Rockmite", false, run, false, false))
+        assertFalse(SafariEspRules.neededForRun("Snoozle", false, run, false, false))
+        assertFalse(SafariEspRules.neededForRun("Foxtrot", false, run, false, false))
         assertTrue(SafariEspConfig.rockmiteMoundEnabled)
         assertTrue(ConfigManager.highlightSnooperWalls)
         assertTrue(SafariEspConfig.mobs.getValue("Foxtrot").enabled)
-        assertTrue(SafariEspRules.neededForRun("Foxtrot", false, SafariRun(2000), false))
+        assertTrue(SafariEspRules.neededForRun("Foxtrot", false, SafariRun(2000), false, false))
     }
     @Test fun `loading old mismatched settings aligns PB and lookups to the run mode`() {
         Files.writeString(dir.resolve("sparkling-mutuals.properties"), "fullClearMode=false\ntimesaveOnly=false\npb.biomeType=FULL_CLEAR\npb.forestMillis=90000\n")
