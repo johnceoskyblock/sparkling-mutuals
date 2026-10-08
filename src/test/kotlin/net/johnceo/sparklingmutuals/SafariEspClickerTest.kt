@@ -72,8 +72,8 @@ class SafariEspClickerTest {
             ClickConditions(enabled = false), ClickConditions(inSafari = false),
             ClickConditions(mouseHeld = false), ClickConditions(inGame = false),
             ClickConditions(usingItem = true), ClickConditions(breakingBlock = true),
-            ClickConditions(targetBlock = true))) assertFalse(conditions.allowed())
-        assertTrue(ClickConditions().allowed())
+            ClickConditions(targetBlock = true))) assertFalse(conditions.copy(rockmiteMound = true).allowed())
+        assertTrue(ClickConditions(rockmiteMound = true).allowed())
     }
     @Test fun `ESP and auto clicker settings survive saving and existing configuration upgrades`() {
         ConfigManager.init(dir)

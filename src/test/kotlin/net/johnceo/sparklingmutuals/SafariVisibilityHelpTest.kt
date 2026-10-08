@@ -7,14 +7,14 @@ import org.junit.jupiter.api.Test
 
 class SafariVisibilityHelpTest {
     @Test fun `party help fits the server command length and lists both command groups`() {
-        val reply = CommandHelp.partyReply()
+        val reply = CommandHelp.partyReply(SafariMode.UNIQUE)
         assertTrue(reply.length + "/pc ".length <= 256, "Help reply has ${reply.length} characters")
         assertTrue(reply.contains("Party:"))
         assertTrue(reply.contains("Local:"))
         assertTrue(reply.contains("/captures"))
         assertTrue(reply.contains("!pb doom"))
-        assertTrue(reply.contains("doom/wumpa/forest/haunted/icy/cavern"))
-        assertTrue(reply.contains("/fc or /unique"))
+        assertTrue(reply.contains("!pb haunted"))
+        assertTrue(reply.contains("/fc, /unique"))
         assertFalse(reply.contains("/sparkling fc"))
         assertFalse(reply.contains("/pb toggle"))
     }
@@ -40,7 +40,7 @@ class SafariVisibilityHelpTest {
         }
     }
     @Test fun `local help has separate sections and readable descriptions for every command`() {
-        val lines = CommandHelp.localLines().map(SafariRules::strip)
+        val lines = CommandHelp.localLines(SafariMode.UNIQUE).map(SafariRules::strip)
         assertTrue(lines.any { it == "Party chat commands" })
         assertTrue(lines.any { it == "Local commands" })
         for (command in listOf("!mutual", "!missing", "!ticket", "!pb doom", "!pb wumpa", "!commands",

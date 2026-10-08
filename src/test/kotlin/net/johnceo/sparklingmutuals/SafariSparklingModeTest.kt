@@ -98,7 +98,7 @@ class SafariSparklingModeTest {
         ConfigManager.init(dir)
         assertEquals(SafariMode.SPARKLING, SafariFullClear.mode)
         assertFalse(ConfigManager.fullClearMode)
-        assertFalse(ConfigManager.timesaveOnly)
+        assertTrue(ConfigManager.timesaveOnly)
         SafariFullClear.select(SafariMode.FULL_CLEAR)
         ConfigManager.init(dir)
         assertEquals(SafariMode.FULL_CLEAR, SafariFullClear.mode)
