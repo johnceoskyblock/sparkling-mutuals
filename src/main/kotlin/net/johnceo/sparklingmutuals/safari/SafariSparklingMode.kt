@@ -59,7 +59,7 @@ object SafariSparklingMode {
         }
         if (!active) return
         if (currentKey.isBlank()) {
-            if (ConfigManager.sparklingMode) local(client, "No Hypixel API key is configured. Set one with /apikey or in settings.")
+            if (ConfigManager.sparklingMode) local(client, "No Hypixel API key. Use /apikey or settings.")
             return
         }
         val now = System.currentTimeMillis()
@@ -71,7 +71,7 @@ object SafariSparklingMode {
         waitingRevision?.let {
             if (PartyManager.revision == it) {
                 if (now - partyRefreshAt > 5000) {
-                    local(client, "Party information is unavailable. Sparkling filters are waiting for the complete party roster.")
+                    local(client, "Party roster unavailable. Sparkling filters are waiting.")
                     state.reset(); invalidate(); waitingRevision = null
                 }
                 return

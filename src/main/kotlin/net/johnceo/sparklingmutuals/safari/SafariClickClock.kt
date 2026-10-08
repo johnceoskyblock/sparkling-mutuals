@@ -13,6 +13,6 @@ class SafariClickClock {
 }
 data class ClickConditions(val enabled: Boolean = true, val inSafari: Boolean = true,
     val mouseHeld: Boolean = true, val inGame: Boolean = true, val usingItem: Boolean = false,
-    val breakingBlock: Boolean = false, val targetBlock: Boolean = false) {
-    fun allowed() = enabled && inSafari && mouseHeld && inGame && !usingItem && !breakingBlock && !targetBlock
+    val breakingBlock: Boolean = false, val targetBlock: Boolean = false, val rockmiteMound: Boolean = false) {
+    fun allowed() = enabled && inSafari && mouseHeld && inGame && !usingItem && !breakingBlock && !targetBlock && rockmiteMound
 }

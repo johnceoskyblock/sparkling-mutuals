@@ -65,7 +65,7 @@ object SafariFullClear {
     }
     fun syncMode() {
         if (ConfigManager.sparklingMode) ConfigManager.fullClearMode = false
-        ConfigManager.timesaveOnly = mode == SafariMode.UNIQUE
+        ConfigManager.timesaveOnly = mode != SafariMode.FULL_CLEAR
         ConfigManager.personalBests.selectBiomeType(if (ConfigManager.fullClearMode) BiomePbType.FULL_CLEAR else BiomePbType.UNIQUE)
     }
     private fun apply(selected: SafariMode) {

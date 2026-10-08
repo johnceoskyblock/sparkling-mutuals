@@ -89,6 +89,11 @@ object SafariEsp {
             (entity as? TropicalFish)?.let { "${it.pattern.name}/${it.baseColor.name}/${it.patternColor.name}" },
             (entity as? Parrot)?.variant?.name, entity.isInvisible || !modelVisible(entity), entity.passengers.isNotEmpty())
     }
+    fun isRockmiteMound(entity: Entity, client: Minecraft): Boolean {
+        if (entity.isRemoved || client.level?.getEntity(entity.id) !== entity || !SafariAssist.inSafari) return false
+        return entity is Display.ItemDisplay && SafariEspRules.identify(describe(entity))?.name == "Rockmite" ||
+            entity.type == net.minecraft.world.entity.EntityType.INTERACTION && SafariStructures.isMound(entity, client)
+    }
     private fun modelVisible(entity: Entity): Boolean {
         if (entity !is Display) return true
         val scale = entity.renderState()?.transformation()?.get(1f)?.scale() ?: return false

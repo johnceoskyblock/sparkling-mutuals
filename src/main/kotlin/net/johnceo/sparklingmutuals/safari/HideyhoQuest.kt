@@ -47,7 +47,7 @@ object HideyhoQuest {
         offeredAt = now
         connection = Minecraft.getInstance().connection
         level = Minecraft.getInstance().level
-        Minecraft.getInstance().player?.sendSystemMessage(Component.literal("[SM] Click anywhere with chat open to accept Hideyho."))
+        Minecraft.getInstance().player?.sendSystemMessage(Component.literal("[SM] Click with chat open to accept Hideyho."))
     }
     private fun accept(): Boolean {
         val client = Minecraft.getInstance()
