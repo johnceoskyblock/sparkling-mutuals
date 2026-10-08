@@ -62,19 +62,19 @@ class SafariSettings : Config() {
         @ConfigEditorBoolean var enabled = SafariFullClear.mode == SafariMode.FULL_CLEAR
     }
     class Sparkling {
-        @JvmField @ConfigOption(name = "Sparkling Mode", desc = "Highlight critters your party still needs as sparkling discoveries. Requires an API key.")
+        @JvmField @ConfigOption(name = "Sparkling Mode", desc = "Highlight your party's missing sparkling critters. Requires an API key.")
         @ConfigEditorBoolean var enabled = ConfigManager.sparklingMode
-        @JvmField @ConfigOption(name = "Critter ESP for profitable shards", desc = "Also highlight Hideonfloor, Hideonwall, Chuckwalla, Fluffling and Mantis Shrimp.")
+        @JvmField @ConfigOption(name = "Critter ESP for profitable shards", desc = "Keep profitable critters highlighted throughout the run.")
         @ConfigEditorBoolean var profitable = ConfigManager.sparklingProfitableShardEsp
     }
     class Unique {
         @JvmField @ConfigOption(name = "Unique mode", desc = "Highlight missing uniques and track unique-run PBs.")
         @ConfigEditorBoolean var enabled = SafariFullClear.mode == SafariMode.UNIQUE
-        @JvmField @ConfigOption(name = "Critter ESP for profitable shards", desc = "Keep Hideonfloor, Hideonwall, Chuckwalla, Fluffling and Mantis Shrimp highlighted after their first catch.")
+        @JvmField @ConfigOption(name = "Critter ESP for profitable shards", desc = "Keep profitable critters highlighted after their first catch.")
         @ConfigEditorBoolean var profitable = ConfigManager.profitableShardEsp
     }
     class Party {
-        @JvmField @ConfigOption(name = "Respond to party commands", desc = "Reply to party commands. PB requests get a reply from each mod user.")
+        @JvmField @ConfigOption(name = "Respond to party commands", desc = "Reply to party commands; each mod user shares their PB.")
         @ConfigEditorBoolean var enabled = ConfigManager.partyCommandsEnabled
 
     }
@@ -121,7 +121,7 @@ class SafariSettings : Config() {
         @ConfigEditorButton(runnableId = 7, buttonText = "Save sound") var saveSound = false
     }
     class Warp {
-        @JvmField @ConfigOption(name = "Warp reminder", desc = "Remind you to /p warp after a Hotspot.")
+        @JvmField @ConfigOption(name = "Warp reminder", desc = "Remind you to warp party leechers in before entry closes.")
         @ConfigEditorBoolean var enabled = ConfigManager.warpAlertsEnabled
         @JvmField @ConfigOption(name = "Delay in seconds", desc = "Reminder delay, from 1 to 86400 seconds.")
         @ConfigEditorText var delay = ConfigManager.warpDelaySeconds.toString()
@@ -141,12 +141,14 @@ class SafariSettings : Config() {
         @ConfigEditorBoolean var hideGroundCapsules = ConfigManager.hideGroundCapsules
         @JvmField @ConfigOption(name = "Hide flying capsules", desc = "Hide flying capsules near the camera in Safari.")
         @ConfigEditorBoolean var hideFlyingCapsules = ConfigManager.hideFlyingCapsules
-        @JvmField @ConfigOption(name = "Flying capsule distance", desc = "Maximum camera distance for hiding flying capsules, in blocks.")
+        @JvmField @ConfigOption(name = "Flying capsule distance", desc = "Hide flying capsules within this distance, in blocks.")
         @ConfigEditorSlider(minValue = .5f, maxValue = 6f, minStep = .5f)
         var capsuleHideDistance = ConfigManager.capsuleHideDistance
-        @JvmField @ConfigOption(name = "Auto Clicker", desc = "Hold left mouse in Safari for 12 CPS; pauses in menus, during item use and block breaking.")
+        @JvmField @ConfigOption(name = "Full candle hitbox", desc = "Easier candle clicks in Haunted while holding Soothing Incense.")
+        @ConfigEditorBoolean var candleHitbox = ConfigManager.candleHitbox
+        @JvmField @ConfigOption(name = "Auto Clicker", desc = "Hold Mouse 0 on Rockmite mounds for 12 CPS.")
         @ConfigEditorBoolean var autoClicker = ConfigManager.autoClicker
-        @JvmField @ConfigOption(name = "Hideyho quest clicks", desc = "With chat open, click anywhere to accept Hideyho's current offer.")
+        @JvmField @ConfigOption(name = "Hideyho quest clicks", desc = "Click with chat open to accept Hideyho’s offer.")
         @ConfigEditorBoolean var hideyho = ConfigManager.hideyhoQuestClicks
         @JvmField @ConfigOption(name = "Hide Haunted paintings", desc = "Hide paintings in the Haunted biome.")
         @ConfigEditorBoolean var paintings = ConfigManager.hideHauntedPaintings
@@ -158,7 +160,7 @@ class SafariSettings : Config() {
         @ConfigEditorBoolean var darkness = ConfigManager.removeDarkness
         @JvmField @ConfigOption(name = "Sparkling alert", desc = "Show an alert for each detected sparkling critter.")
         @ConfigEditorBoolean var alert = ConfigManager.sparklingAlert
-        @JvmField @ConfigOption(name = "Announce sparklings to party", desc = "Send each detected sparkling's name, biome and coordinates to party chat.")
+        @JvmField @ConfigOption(name = "Announce sparklings to party", desc = "Announce sparkling critters with biome and coordinates.")
         @ConfigEditorBoolean var announce = ConfigManager.sparklingPartyAnnouncer
     }
     class Alerts {
@@ -172,7 +174,7 @@ class SafariSettings : Config() {
     class Remaining {
         @JvmField @ConfigOption(name = "Bee Nests", desc = "Show unpunched Forest nests in the missing panel.")
         @ConfigEditorBoolean var nests = ConfigManager.showBeeNests
-        @JvmField @ConfigOption(name = "Rockmite Mounds", desc = "Show nearby unbroken Cavern mounds in the missing panel.")
+        @JvmField @ConfigOption(name = "Rockmite Mounds", desc = "Show unbroken Cavern mounds in the missing panel.")
         @ConfigEditorBoolean var mounds = ConfigManager.showMoundCount
         @JvmField @ConfigOption(name = "Snooper Walls", desc = "Show remaining Cavern walls in the missing panel.")
         @ConfigEditorBoolean var walls = ConfigManager.showSnooperWalls
@@ -235,7 +237,7 @@ class SafariSettings : Config() {
             ConfigManager::missingPanel to tracking.missing,
             ConfigManager::highlightBeeNests to safari.nests, ConfigManager::removeDarkness to safari.darkness,
             ConfigManager::sparklingAlert to safari.alert, ConfigManager::sparklingPartyAnnouncer to safari.announce,
-            ConfigManager::autoClicker to safari.autoClicker, ConfigManager::hideCaptureChat to safari.hideCaptureChat,
+            ConfigManager::autoClicker to safari.autoClicker, ConfigManager::candleHitbox to safari.candleHitbox, ConfigManager::hideCaptureChat to safari.hideCaptureChat,
             ConfigManager::highlightSnooperWalls to safari.snooperHighlight,
             ConfigManager::allGemsAlert to safari.alerts.gems, ConfigManager::allBirdFoodAlert to safari.alerts.birdFood,
             ConfigManager::allIncenseAlert to safari.alerts.incense,
