@@ -50,6 +50,7 @@ object SparklingMutuals : ModInitializer {
             ContestTracker.onClientTick(client)
             SafariAssist.onClientTick(client)
             SafariTracking.onClientTick(client)
+            SafariSparklingMode.tick(client)
             BeeNests.tick(client)
             SafariStructures.tick(client)
             SafariEsp.tick(client)
@@ -61,6 +62,7 @@ object SparklingMutuals : ModInitializer {
         ClientPlayConnectionEvents.DISCONNECT.register { _, _ ->
             PartyCommands.reset()
             PartyManager.reset()
+            SafariSparklingMode.reset()
             AlertManager.cancelPendingAlert()
             SafariAssist.reset()
             HideyhoQuest.reset()
