@@ -14,19 +14,20 @@ A Fabric mod for Hypixel SkyBlock Safari, sparkling discoveries, and Miria conte
 
 - **Progress HUD:** shows the run timer and collected species in each biome.
 - **Missing panel:** lists uncaught critters and remaining bee nests, Rockmite mounds, and Snooper walls.
-- **Capture counts:** tracks catches per critter and Rockmite mound results. `/sparkling catches` opens the current or last run's counts.
-- **Run mode:** `/sparkling fc` switches the full-clear preset, PB reply type, and discovery lookups together. On uses Full Clear PBs and all-species lookups; off uses Unique Run PBs and timesaves. Full-clear capture numbers turn green when completion requirements are met.
+- **Capture counts:** tracks catches per critter and Rockmite mound results. `/captures` opens the current or last run's counts.
+- **Run mode:** `/fc` or `/sparkling fc` switches the full-clear preset, PB reply type, and discovery lookups together. On uses Full Clear PBs and all-species lookups; off uses Unique Run PBs and timesaves. Full-clear capture numbers stay white until you visit a biome, then turn green when completion requirements are met. You can also select the run mode in General settings.
 - **PB tracking:** saves your fastest Doomspiral, Wumpa, full-clear, and unique-biome times from the start of a run and announces new records locally. Unique clears require one personal catch of every species; only your own catches qualify for either biome PB type.
 
 ## Safari helpers
 
 - **Miria contest HUD:** tracks Miria's contest timer, tier, and score, with configurable end warnings.
 - **Warp reminders:** sends title to warp party before afk timeout. Useful for party leeching so that other players can have a chance to get sparkling critters without using a ticket. Use `/alert` and `/alertdelay <seconds>` to control reminders.
-- **Critter ESP:** highlights critters in all four biomes, with individual toggles and biome filters. Unique runs hide collected species until the next run; Rockmite mounds and Snooper walls remain available for shiny checks. Mounds and silverfish have separate controls.
+- **Critter ESP:** excludes nearby stationary leftover moving-critter models after two seconds and restores them if they move. Highlights critters in all four biomes, with individual toggles and biome filters. Unique runs hide collected species until the next run; Rockmite mounds and Snooper walls remain available for shiny checks. Mounds and silverfish have separate controls.
 - **Floor drop ESP:** highlights Safari drops until all Cavern gems or both Icy Icebreakers are found; Icy drops are hidden in unique runs. Cavern and Icy overrides last until you leave the biome. Forest and Haunted keep normal highlighting.
 - **Sparkling detection:** highlights nearby sparkling critters and shows their names and distances.
 - **Sparkling alerts:** displays an on-screen alert and can announce the critter, biome, and coordinates in party chat.
-- **Inventory alerts:** notifies when you have all three gem types in Cavern, three of each bird food in Forest, or four Soothing Incense in Haunted.
+- **Inventory alerts:** notifies when you have all three gem types in Cavern, all nine Forest bird food pickups, or four Soothing Incense in Haunted.
+- **Forest birds:** tracks food pickups and feeding, adjusts capture requirements for Macaw pairs and spare Macaws, and includes starting bird food.
 - **Bee nests and Snooper walls:** highlights structures that still need checking. Honeybug completion also requires punched nests.
 - **Hideyho quest clicks:** lets you accept the current Hideyho quest prompt by clicking with chat open.
 - **Auto Clicker:** repeats left clicks while you hold the mouse button in Safari, useful for Rockmites.
