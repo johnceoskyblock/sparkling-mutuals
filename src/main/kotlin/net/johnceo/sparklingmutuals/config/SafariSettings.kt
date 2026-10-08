@@ -160,6 +160,12 @@ class SafariSettings : Config() {
         @ConfigEditorBoolean var announce = ConfigManager.sparklingPartyAnnouncer
     }
     class Alerts {
+        @JvmField @ConfigOption(name = "Sparkling sound", desc = "Minecraft sound identifier for sparkling alerts.")
+        @ConfigEditorText var sound = ConfigManager.sparklingSound
+        @JvmField @ConfigOption(name = "Sparkling sound volume", desc = "Set to zero to mute.")
+        @ConfigEditorSlider(minValue = 0f, maxValue = 100f, minStep = 1f) var volume = ConfigManager.sparklingSoundVolume
+        @JvmField @ConfigOption(name = "Save sparkling sound", desc = "Apply and preview the sound.")
+        @ConfigEditorButton(runnableId = 9, buttonText = "Save sound") var saveSound = false
         @JvmField @ConfigOption(name = "All Gems Alert", desc = "Cavern: one Purple, Lime and Orange Gem in inventory.")
         @ConfigEditorBoolean var gems = ConfigManager.allGemsAlert
         @JvmField @ConfigOption(name = "All Bird Food Alert", desc = "Alert after collecting three of each Forest bird food.")
@@ -211,9 +217,10 @@ class SafariSettings : Config() {
             6 -> saveDelay()
             7 -> saveSound()
             8 -> { apply(); client.execute { client.setScreen(CatchCountScreen(client.screen)) } }
+            9 -> { apply(); if (saveSparklingSound()) net.johnceo.sparklingmutuals.safari.SparklingEncounters.playSound(client) }
         }
     }
-    override fun isValidRunnable(id: Int) = id in 1..8
+    override fun isValidRunnable(id: Int) = id in 1..9
     private fun saveDelay() {
         val seconds = warp.delay.trim().toIntOrNull()
         if (seconds == null || seconds !in 1..86400) feedback("Enter a delay from 1 to 86400 seconds.")
@@ -224,7 +231,13 @@ class SafariSettings : Config() {
         if (Identifier.tryParse(sound) == null) feedback("Enter a valid Minecraft sound identifier.")
         else if (ContestConfig.contestSound != sound) { ContestConfig.contestSound = sound; ContestConfig.save() }
     }
-    fun saveTextFields() { saveDelay(); saveSound() }
+    private fun saveSparklingSound(): Boolean {
+        val sound = safari.alerts.sound.trim()
+        if (Identifier.tryParse(sound) == null) { feedback("Enter a valid Minecraft sound identifier."); return false }
+        if (ConfigManager.sparklingSound != sound) { ConfigManager.sparklingSound = sound; ConfigManager.save() }
+        return true
+    }
+    fun saveTextFields() { saveDelay(); saveSound(); saveSparklingSound() }
     fun apply(notifyMode: Boolean = false) {
         if (warp.enabled != ConfigManager.warpAlertsEnabled) AlertManager.toggleAlert()
         val changes = listOf(ConfigManager::profitableShardEsp to modes.unique.profitable, ConfigManager::sparklingProfitableShardEsp to modes.sparkling.profitable, ConfigManager::partyCommandsEnabled to party.enabled, ConfigManager::hideHauntedPaintings to safari.paintings,
@@ -244,10 +257,12 @@ class SafariSettings : Config() {
         val customizationChanged = customization.apply()
         val distance = ConfigManager.validCapsuleDistance(safari.capsuleHideDistance)
         val generalChanged = espChanged || customizationChanged || changes.any { (property, value) -> property.get() != value } ||
-            ConfigManager.showWhere != tracking.where || ConfigManager.capsuleHideDistance != distance
+            ConfigManager.showWhere != tracking.where || ConfigManager.capsuleHideDistance != distance ||
+            ConfigManager.sparklingSoundVolume != safari.alerts.volume.coerceIn(0, 100)
         changes.forEach { (property, value) -> property.set(value) }
         ConfigManager.showWhere = tracking.where.coerceIn(0, 2)
         ConfigManager.capsuleHideDistance = distance
+        ConfigManager.sparklingSoundVolume = safari.alerts.volume.coerceIn(0, 100)
         if (generalChanged) ConfigManager.save()
         val warnings = listOfNotNull(5.takeIf { miria.five }, 3.takeIf { miria.three }, 1.takeIf { miria.one })
         val contestChanged = ContestConfig.trackContest != miria.enabled || ContestConfig.contestWarnTitle != miria.titles ||

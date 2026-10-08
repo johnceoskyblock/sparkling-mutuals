@@ -6,6 +6,7 @@ import java.util.Properties
 import net.johnceo.sparklingmutuals.hud.SafariHud
 import net.johnceo.sparklingmutuals.safari.SafariPersonalBests
 import net.johnceo.sparklingmutuals.safari.SafariFullClear
+import net.minecraft.resources.Identifier
 
 object ConfigManager {
     private lateinit var configPath: Path
@@ -32,6 +33,8 @@ object ConfigManager {
     var showMoundStats = false
     var removeDarkness = true
     var sparklingAlert = true
+    var sparklingSound = "minecraft:block.amethyst_block.chime"
+    var sparklingSoundVolume = 100
     var allGemsAlert = true
     var allBirdFoodAlert = true
     var allIncenseAlert = true
@@ -56,12 +59,15 @@ object ConfigManager {
         ::allGemsAlert to true, ::allBirdFoodAlert to true, ::allIncenseAlert to true)
 
     fun validCapsuleDistance(value: Float?) = value?.takeIf { it.isFinite() }?.coerceIn(.5f, 6f) ?: 2f
+    fun validSparklingSound(value: String?) = value?.trim()?.let(Identifier::tryParse)?.toString() ?: "minecraft:block.amethyst_block.chime"
 
     fun init(configDirectory: Path) {
         configPath = configDirectory.resolve("sparkling-mutuals.properties")
         val properties = Properties()
         if (Files.exists(configPath)) Files.newInputStream(configPath).use(properties::load)
         apiKey = properties.getProperty("apiKey", "")
+        sparklingSound = validSparklingSound(properties.getProperty("sparklingSound"))
+        sparklingSoundVolume = properties.getProperty("sparklingSoundVolume")?.toIntOrNull()?.coerceIn(0, 100) ?: 100
         flags.forEach { (property, default) -> property.set(properties.getProperty(property.name)?.toBooleanStrictOrNull() ?: default) }
         warpDelaySeconds = properties.getProperty("warpDelaySeconds", "25").toIntOrNull()?.coerceIn(1, 86400) ?: 25
         showWhere = properties.getProperty("showWhere")?.toIntOrNull()?.takeIf { it in 0..2 } ?: 1
@@ -78,6 +84,8 @@ object ConfigManager {
         Files.createDirectories(configPath.parent)
         Properties().apply {
             setProperty("apiKey", apiKey)
+            setProperty("sparklingSound", validSparklingSound(sparklingSound))
+            setProperty("sparklingSoundVolume", sparklingSoundVolume.coerceIn(0, 100).toString())
             flags.forEach { (property, _) -> setProperty(property.name, property.get().toString()) }
             setProperty("warpDelaySeconds", warpDelaySeconds.toString())
             setProperty("showWhere", showWhere.coerceIn(0, 2).toString())
