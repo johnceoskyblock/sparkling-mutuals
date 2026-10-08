@@ -10,11 +10,12 @@ import java.util.Properties
 
 class SafariQolTest {
     @TempDir lateinit var dir: Path
-    @Test fun `new installations enable biome restricted ESP with precisely the requested species`() {
+    @Test fun `new installations use the unique mode ESP preset with biome restrictions`() {
         ConfigManager.init(dir)
         assertTrue(SafariEspConfig.groups.values.all { it.enabled && it.onlyInBiome })
-        assertEquals(setOf("Rockmite", "Treefrog", "Woodchucker", "Hideonfloor", "Shuddersquid",
-            "Billygoat", "Nozzlenose", "Duplico", "Hideonwall", "Hideyho", "Doomspiral"),
+        assertEquals(setOf("Driftling", "Chuckwalla", "Foxtrot", "Treefrog", "Woodchucker", "Fluffling", "Hideonfloor",
+            "Tepid", "Shuddersquid", "Billygoat", "Mantis Shrimp", "Nozzlenose", "Wumpa", "Bloodbat", "Duplico",
+            "Litterbug", "Solsnatcher", "Hideonwall", "Hideyho", "Doomspiral"),
             SafariEspConfig.mobs.filterValues { it.enabled }.keys)
     }
     @Test fun `ESP upgrades retain explicit user preferences`() {

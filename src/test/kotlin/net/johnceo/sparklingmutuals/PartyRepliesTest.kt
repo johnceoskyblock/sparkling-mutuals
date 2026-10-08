@@ -18,8 +18,9 @@ class PartyRepliesTest {
             names.forEachIndexed { index, name ->
                 val command = PartyCommand(kind, name)
                 assertFalse(history.hasReply(command, 0, roster), "$name still owes their own PB")
-                assertTrue(clients[index].shouldStartLookup(200L + index * 800L))
-                assertTrue(clients[index].canPublish(200L + index * 800L))
+                assertTrue(clients[index].shouldStartLookup(0))
+                clients[index].lookupReady(0)
+                assertTrue(clients[index].canPublish(1500))
                 history.record("$name's $critter PB: 1:02.250", roster[index])
                 assertTrue(history.hasReply(command, 0, roster), "Suppress another copy of $name's PB")
                 assertFalse(history.hasReply(command, history.cursor, roster), "A new request can get a new reply")

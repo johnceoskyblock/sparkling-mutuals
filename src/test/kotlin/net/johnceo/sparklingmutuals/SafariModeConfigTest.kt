@@ -22,9 +22,6 @@ class SafariModeConfigTest {
         assertTrue(SafariEspConfig.mobs.values.all { it.enabled })
         repeat(3) { settings.apply() }
         assertTrue(SafariEspConfig.mobs.values.all { it.enabled })
-        settings.forestEsp.macaw.enabled = false
-        settings.apply()
-        assertFalse(SafariEspConfig.mobs.getValue("Macaw").enabled)
         settings.modes.unique.enabled = true
         settings.apply()
         repeat(3) { settings.apply() }
@@ -37,12 +34,12 @@ class SafariModeConfigTest {
         ConfigManager.init(dir)
         assertTrue(SafariSettings().modes.unique.enabled)
     }
-    @Test fun `setting the existing mode preserves individual manual ESP choices`() {
+    @Test fun `setting the existing mode preserves biome visibility choices`() {
         ConfigManager.init(dir)
         val settings = SafariSettings()
-        settings.forestEsp.foxtrot.enabled = false
+        settings.esp.forest = false
         settings.apply(); settings.apply()
-        assertFalse(SafariEspConfig.mobs.getValue("Foxtrot").enabled)
+        assertFalse(SafariEspConfig.groups.getValue("forest").onlyInBiome)
         assertTrue(CommandHelp.localLines().any { it.contains("/fc") })
     }
 }

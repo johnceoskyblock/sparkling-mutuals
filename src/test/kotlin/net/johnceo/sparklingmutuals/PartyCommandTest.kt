@@ -32,8 +32,10 @@ class PartyCommandTest {
     @Test
     fun `one updated mod responds when all party members have it`() {
         val clients = members.map { ResponderElection(it, members, 0) }
-        assertEquals(listOf(true, false, false), clients.map { it.shouldStartLookup(200) })
-        clients.forEach { it.observeResponse(members[0]) }
+        assertEquals(listOf(true, true, true), clients.map { it.shouldStartLookup(0) })
+        clients.forEach { it.lookupReady(200) }
+        assertEquals(listOf(false, false, true), clients.map { it.canPublish(200) })
+        clients.forEach { it.observeResponse(members[2]) }
         assertEquals(listOf(false, false, false), clients.map { it.shouldStartLookup(1800) })
         assertFalse(clients[0].canPublish(1800), "A reply must cancel even a lookup already running")
         assertFalse(clients[0].shouldStartLookup(1900), "A request must not execute twice")
@@ -41,10 +43,11 @@ class PartyCommandTest {
 
     @Test
     fun `a mod user responds even if earlier party members do not have the mod`() {
-        val client = ResponderElection(members[2], members.reversed(), 0)
-        assertFalse(client.shouldStartLookup(1799))
-        assertTrue(client.shouldStartLookup(1800))
-        assertTrue(client.canPublish(2800))
+        val client = ResponderElection(members[0], members.reversed(), 0)
+        assertTrue(client.shouldStartLookup(0))
+        client.lookupReady(500)
+        assertFalse(client.canPublish(1499))
+        assertTrue(client.canPublish(1500))
     }
 
     @Test

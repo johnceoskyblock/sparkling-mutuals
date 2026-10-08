@@ -80,11 +80,9 @@ class SafariEspClickerTest {
         assertTrue(ConfigManager.autoClicker)
         val settings = SafariSettings()
         settings.safari.autoClicker = false
-        settings.cavernEsp.enabled = true
-        settings.cavernEsp.onlyInBiome = true
-        settings.cavernEsp.rockmite.enabled = true
+        settings.modes.fullClear.enabled = true
+        settings.esp.cavern = true
         settings.customization.rockmite.color = "0:255:255:0:0"
-        settings.floorEsp.enabled = true
         settings.apply()
         ConfigManager.init(dir)
         assertFalse(ConfigManager.autoClicker)

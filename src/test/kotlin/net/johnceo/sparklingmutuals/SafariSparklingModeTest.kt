@@ -72,9 +72,9 @@ class SafariSparklingModeTest {
         assertFalse(ConfigManager.sparklingProfitableShardEsp)
         assertTrue(ConfigManager.profitableShardEsp)
         assertTrue(SafariEspConfig.mobs.values.all { it.enabled })
-        settings.forestEsp.foxtrot.enabled = false
+        settings.esp.forest = false
         settings.apply()
-        assertFalse(SafariEspConfig.mobs.getValue("Foxtrot").enabled)
+        assertFalse(SafariEspConfig.groups.getValue("forest").onlyInBiome)
         settings.modes.fullClear.enabled = true
         settings.apply(); settings.apply()
         assertTrue(ConfigManager.fullClearMode)

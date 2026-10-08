@@ -49,6 +49,8 @@ class SafariCustomizationTest {
         settings.safari.remaining.walls = false
         settings.safari.snooperHighlight = false
         settings.apply()
+        assertFalse(SafariEspConfig.groups.getValue("forest").enabled)
+        assertFalse(SafariEspConfig.mobs.getValue("Macaw").enabled)
         ConfigManager.init(dir)
         assertEquals(0xFF126AFE.toInt(), SafariEspConfig.rgb(AppearanceConfig.panels.getValue("miria").borderColor))
         assertEquals(0xCC126AFE.toInt(), AppearanceConfig.panels.getValue("missing").backgroundArgb)
@@ -56,7 +58,7 @@ class SafariCustomizationTest {
         assertEquals(0xFF126AFE.toInt(), SafariEspConfig.rgb(SafariEspConfig.mobs.getValue("Macaw").color))
         assertEquals(0xFF126AFE.toInt(), SafariEspConfig.rgb(AppearanceConfig.nestColor))
         assertFalse(AppearanceConfig.panels.getValue("miria").borderEnabled)
-        assertFalse(SafariEspConfig.groups.getValue("forest").enabled)
+        assertTrue(SafariEspConfig.groups.getValue("forest").enabled)
         assertFalse(SafariEspConfig.mobs.getValue("Macaw").enabled)
         assertFalse(ConfigManager.showBeeNests)
         assertFalse(ConfigManager.showMoundCount)
@@ -114,7 +116,7 @@ class SafariCustomizationTest {
         assertTrue(ConfigManager.countUniqueOnly)
         assertTrue(ConfigManager.catchCountPanel)
     }
-    @Test fun `biome colors and rockmite toggles remain independent`() {
+    @Test fun `biome colors and rockmite form colors remain independent`() {
         ConfigManager.init(dir)
         ContestConfig.init(dir)
         val settings = SafariSettings()
@@ -126,14 +128,12 @@ class SafariCustomizationTest {
         settings.customization.selectedHex = "#123456"
         settings.customization.cavern.rockmiteMound.setColor.run()
         settings.customization.cavern.rockmite.color = "0:255:101:102:103"
-        settings.cavernEsp.rockmiteMound = false
-        settings.cavernEsp.rockmite.enabled = true
         settings.apply()
         ConfigManager.init(dir)
         assertEquals(0xFF123456.toInt(), SafariEspConfig.rgb(SafariEspConfig.rockmiteMoundColor))
         assertEquals(0xFF656667.toInt(), SafariEspConfig.rgb(SafariEspConfig.mobs.getValue("Rockmite").color))
-        assertFalse(SafariEspConfig.rockmiteMoundEnabled)
-        assertTrue(SafariEspConfig.mobs.getValue("Rockmite").enabled)
+        assertTrue(SafariEspConfig.rockmiteMoundEnabled)
+        assertFalse(SafariEspConfig.mobs.getValue("Rockmite").enabled)
     }
     @Test fun `panel footer toggles are independent and unknown walls are never claimed broken`() {
         ConfigManager.init(dir)
