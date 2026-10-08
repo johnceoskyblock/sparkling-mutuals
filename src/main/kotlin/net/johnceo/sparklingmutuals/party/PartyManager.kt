@@ -55,7 +55,7 @@ object PartyManager {
         if (requestedAt != 0L && System.currentTimeMillis() - requestedAt > 5000) {
             requestedAt = 0
             if (callbacks.isNotEmpty()) client.player?.sendSystemMessage(
-                Component.literal("[Sparkling Mutuals] Party information timed out. Please try the command again."))
+                Component.literal("[SM] Party lookup timed out. Try again."))
             callbacks.clear()
         }
     }
