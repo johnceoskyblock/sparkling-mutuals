@@ -23,7 +23,9 @@ class EspMotionTest {
         state.observe(id, "Macaw", 0.0, 0.0, 0.0, 900.0, 10000)
         assertTrue(state.current(id, 11999)); assertFalse(state.current(id, 12000))
         state.observe(id, "Macaw", 0.0, 0.0, 0.0, 901.0, 12001)
-        assertTrue(state.current(id, 12001))
+        assertFalse(state.current(id, 12001))
+        state.observe(id, "Macaw", 1.0, 0.0, 0.0, 901.0, 13000)
+        assertTrue(state.current(id, 13000))
     }
     @Test fun `only requested moving species use stationary detection`() {
         val state = EspMotion()
