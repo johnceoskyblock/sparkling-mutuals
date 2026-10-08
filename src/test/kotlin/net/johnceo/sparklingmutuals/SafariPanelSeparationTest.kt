@@ -76,6 +76,41 @@ class SafariPanelSeparationTest {
         assertEquals("Rockmite Mounds", rows[total + 2].label)
         assertEquals("Mounds with Rockmite", rows[total + 3].label)
     }
+    @Test fun `sixteen broken mounds cannot make mound counter green while a mound remains loaded`() {
+        ConfigManager.init(dir); SafariFullClear.toggle()
+        val run = SafariRun(0)
+        repeat(16) { run.recordMound("The mound falls apart, but nothing is inside") }
+        run.updateCaptureEvidence(SafariBiome.CAVERN, setOf("Rockmite Mound"), true)
+        val row = SafariPanels.captures(run, SafariBiome.CAVERN).rows.first { it.label == "Rockmite Mounds" }
+        assertEquals("16", row.value)
+        assertEquals(0xFFFF5555.toInt(), row.valueColor)
+        run.updateCaptureEvidence(SafariBiome.CAVERN, emptySet(), true)
+        assertEquals(0xFF55FF55.toInt(), SafariPanels.captures(run, SafariBiome.CAVERN).rows.first { it.label == row.label }.valueColor)
+    }
+    @Test fun `mound counter stays red for unobservable known mound even after empty nearby scan`() {
+        ConfigManager.init(dir); SafariFullClear.toggle()
+        val run = SafariRun(0)
+        repeat(16) { run.recordMound("The mound falls apart, but nothing is inside") }
+        run.updateCaptureEvidence(SafariBiome.CAVERN, emptySet(), true)
+        val site = Triple(-100, 40, 30)
+        run.moundSurvey.scan(setOf(site)) { true }
+        run.moundSurvey.scan(emptySet()) { false }
+        assertEquals(0xFFFF5555.toInt(), SafariPanels.captures(run, SafariBiome.CAVERN).rows.first { it.label == "Rockmite Mounds" }.valueColor)
+        run.moundSurvey.scan(emptySet()) { true }
+        assertEquals(0xFF55FF55.toInt(), SafariPanels.captures(run, SafariBiome.CAVERN).rows.first { it.label == "Rockmite Mounds" }.valueColor)
+    }
+    @Test fun `mound counter needs scan evidence but not the captures of spawned Rockmites`() {
+        ConfigManager.init(dir); SafariFullClear.toggle()
+        val run = SafariRun(0)
+        repeat(16) { run.recordMound("The mound fell apart, revealing a Rockmite hidden inside!") }
+        assertEquals(0xFFFF5555.toInt(), SafariPanels.captures(run, SafariBiome.CAVERN).rows.first { it.label == "Rockmite Mounds" }.valueColor)
+        run.updateCaptureEvidence(SafariBiome.CAVERN, setOf("Rockmite"), true)
+        val rows = SafariPanels.captures(run, SafariBiome.CAVERN).rows
+        assertEquals(0xFF55FF55.toInt(), rows.first { it.label == "Rockmite Mounds" }.valueColor)
+        assertEquals(0xFFFF5555.toInt(), rows.first { it.label == "Rockmite" }.valueColor)
+        ConfigManager.fullClearMode = false
+        assertEquals(-1, SafariPanels.captures(run, SafariBiome.CAVERN).rows.first { it.label == "Rockmite Mounds" }.valueColor)
+    }
     @Test fun `bird colors require three of each food seven catches and no same species nearby`() {
         ConfigManager.init(dir); SafariFullClear.toggle()
         val run = SafariRun(0)
