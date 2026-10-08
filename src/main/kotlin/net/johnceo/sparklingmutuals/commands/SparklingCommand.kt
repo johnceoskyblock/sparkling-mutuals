@@ -10,13 +10,12 @@ import net.minecraft.client.gui.screens.Screen
 import net.johnceo.sparklingmutuals.safari.CatchCountScreen
 import net.johnceo.sparklingmutuals.safari.SafariFullClear
 import net.johnceo.sparklingmutuals.safari.SafariEsp
-import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.minecraft.network.chat.Component
 
 object SparklingCommand {
-    private fun mode(source: FabricClientCommandSource): Int {
-        val enabled = SafariFullClear.toggle()
-        source.sendFeedback(Component.literal("[SM] Full clear: ${if (enabled) "on" else "off"} | PBs: ${ConfigManager.personalBests.biomeType.label} | Timesaves: ${if (ConfigManager.timesaveOnly) "on" else "off"}."))
+    private fun mode(source: FabricClientCommandSource, fullClear: Boolean): Int {
+        SafariFullClear.setEnabled(fullClear)
+        source.sendFeedback(Component.literal(SafariFullClear.modeMessage()))
         return 1
     }
     private fun open(screen: () -> Screen): Int {
@@ -30,7 +29,6 @@ object SparklingCommand {
             dispatcher.register(
                 ClientCommands.literal("sparkling")
                     .executes { open(::SafariConfigScreen) }
-                    .then(ClientCommands.literal("fc").executes { mode(it.source) })
                     .then(ClientCommands.literal("config").executes { open(::SafariConfigScreen) })
                     .then(ClientCommands.literal("gui").executes { open { ContestGui() } })
                     .then(ClientCommands.literal("debug").executes { context ->
@@ -40,7 +38,8 @@ object SparklingCommand {
                     })
             )
             dispatcher.register(ClientCommands.literal("captures").executes { open { CatchCountScreen() } })
-            dispatcher.register(ClientCommands.literal("fc").executes { mode(it.source) })
+            dispatcher.register(ClientCommands.literal("unique").executes { mode(it.source, false) })
+            dispatcher.register(ClientCommands.literal("fc").executes { mode(it.source, true) })
         }
     }
 }

@@ -19,7 +19,8 @@ object CommandHelp {
         "/sparkling gui" to "Move and resize HUDs",
         "/captures" to "View current or last run captures",
         "/sparkling debug" to "Save nearby critter tracking details to latest.log",
-        "/fc (or /sparkling fc)" to "Full clear: Full Clear PBs and all-species lookups; off: Unique Run PBs and timesaves",
+        "/fc" to "Select full clear, Full Clear PBs and all-species lookups",
+        "/unique" to "Select unique runs, Unique Run PBs and timesave lookups",
         "/alert" to "Toggle warp reminders",
         "/alertdelay <seconds>" to "Set warp reminder delay",
         "/apikey <key>" to "Save your Hypixel API key"
@@ -29,5 +30,5 @@ object CommandHelp {
         listOf("§eLocal commands") + local.map { (command, description) -> "§b$command §7— $description" } +
         listOf("§7<IGN> means Minecraft username. Use /pc for party commands.")
     fun partyReply() = "[SM] Commands: Party: !mutual, !missing <IGN>, !ticket <IGN>, !pb doom/wumpa/forest/haunted/icy/cavern, !commands | " +
-        "Local: /sparkling [gui], /fc=mode/PBs/lookups, /captures, /alert, /alertdelay <s>, /apikey <key>"
+        "Local: /sparkling [gui], /fc or /unique, /captures, /alert, /alertdelay <s>, /apikey <key>"
 }
