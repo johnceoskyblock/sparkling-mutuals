@@ -18,6 +18,7 @@ object CommandHelp {
         "/sparkling" to "Open settings",
         "/sparkling gui" to "Move and resize HUDs",
         "/sparkling catches" to "View current or last run captures",
+        "/sparkling debug" to "Save nearby critter tracking details to latest.log",
         "/sparkling fc" to "Full clear: Full Clear PBs and all-species lookups; off: Unique Run PBs and timesaves",
         "/alert" to "Toggle warp reminders",
         "/alertdelay <seconds>" to "Set warp reminder delay",

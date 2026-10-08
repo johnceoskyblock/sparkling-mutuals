@@ -8,6 +8,7 @@ import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.screens.Screen
 import net.johnceo.sparklingmutuals.safari.CatchCountScreen
 import net.johnceo.sparklingmutuals.safari.SafariFullClear
+import net.johnceo.sparklingmutuals.safari.SafariEsp
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.minecraft.network.chat.Component
 
@@ -31,6 +32,11 @@ object SparklingCommand {
                     .then(ClientCommands.literal("config").executes { open(::SafariConfigScreen) })
                     .then(ClientCommands.literal("gui").executes { open { ContestGui() } })
                     .then(ClientCommands.literal("catches").executes { open { CatchCountScreen() } })
+                    .then(ClientCommands.literal("debug").executes { context ->
+                        SafariEsp.debug(Minecraft.getInstance())
+                        context.source.sendFeedback(Component.literal("[SM] Nearby critter diagnostics saved to latest.log."))
+                        1
+                    })
             )
         }
     }
