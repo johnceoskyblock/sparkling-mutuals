@@ -83,8 +83,9 @@ object SafariEspRules {
     fun labelSpecies(raw: String) = SafariRules.strip(raw).let { SafariRules.sparklingSpecies(it) ?: SafariRoster.named(it)?.name }
     fun thrownSpecies(text: String) = throwMessage.matchEntire(text)?.groupValues?.get(1)?.let(::labelSpecies)
     fun escapedSpecies(text: String) = escapeMessage.matchEntire(text)?.groupValues?.get(1)?.let(::labelSpecies)
-    fun neededForRun(species: String, mound: Boolean, run: SafariRun?, fullClear: Boolean) =
-        fullClear || species == "Rockmite" && mound || (run?.count(species) ?: 0) == 0
+    private val profitableSpecies = setOf("Hideonfloor", "Hideonwall", "Chuckwalla", "Fluffling", "Mantis Shrimp")
+    fun neededForRun(species: String, mound: Boolean, run: SafariRun?, fullClear: Boolean, profitable: Boolean = true) =
+        fullClear || species == "Rockmite" && mound || profitable && species in profitableSpecies || (run?.count(species) ?: 0) == 0
     fun captureModel(type: String) = type.endsWith("display") || type == "armor_stand"
     fun requiresModelLabel(species: String, type: String) = captureModel(type) && !(species == "Rockmite" && type == "item_display")
     fun modelVisible(x: Float, y: Float, z: Float) = listOf(x, y, z).all { it.isFinite() } &&

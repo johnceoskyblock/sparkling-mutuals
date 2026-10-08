@@ -24,10 +24,11 @@ class FloorDropState {
         inventoryPickaxes = maxOf(inventoryPickaxes, stacks.filter { SafariRules.strip(it.first).equals("Icebreaker", true) }.sumOf { it.second.coerceAtLeast(0) })
     }
     fun force(enabled: Boolean) { if (biome in setOf(SafariBiome.CAVERN, SafariBiome.ICY)) override = enabled }
-    fun enabled(biome: SafariBiome?, fullClear: Boolean, configured: Boolean): Boolean {
+    fun enabled(biome: SafariBiome?, fullClear: Boolean, configured: Boolean, forestFoodComplete: Boolean = false): Boolean {
         if (biome == this.biome && override != null) return override!!
         return when (biome) {
             SafariBiome.CAVERN -> gems.size < 3
+            SafariBiome.FOREST -> configured && (fullClear || !forestFoodComplete)
             SafariBiome.ICY -> fullClear && maxOf(pickaxes, inventoryPickaxes) < 2
             else -> configured
         }
@@ -39,6 +40,7 @@ object SafariFloorDrops {
     val state = FloorDropState()
     fun enabled(biome: SafariBiome? = SafariAssist.biome): Boolean {
         state.visit(SafariAssist.biome)
-        return state.enabled(biome, ConfigManager.fullClearMode, SafariEspConfig.groups.getValue("floor").enabled)
+        return state.enabled(biome, ConfigManager.fullClearMode, SafariEspConfig.groups.getValue("floor").enabled,
+            SafariTracking.ledger.current?.birdFoodsComplete == true)
     }
 }

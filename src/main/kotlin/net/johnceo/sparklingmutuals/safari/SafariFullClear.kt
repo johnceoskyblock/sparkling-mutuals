@@ -9,7 +9,7 @@ data class BiomeClearEvidence(val observed: Boolean = false, val nearbyCritters:
 
 /** Command-owned presets change presentation, never the per-run capture ledger. */
 object SafariFullClear {
-    private val regularEsp = setOf("Driftling", "Foxtrot", "Treefrog", "Woodchucker", "Fluffling", "Hideonfloor",
+    private val regularEsp = setOf("Driftling", "Chuckwalla", "Foxtrot", "Treefrog", "Woodchucker", "Fluffling", "Hideonfloor",
         "Tepid", "Shuddersquid", "Billygoat", "Mantis Shrimp", "Nozzlenose", "Wumpa", "Bloodbat", "Duplico",
         "Litterbug", "Solsnatcher", "Hideonwall", "Hideyho", "Doomspiral")
     private val minimums = mapOf(
@@ -35,6 +35,7 @@ object SafariFullClear {
         run.biomeClears.add(biome)
         return bests.recordBiome(biome, run, now)
     }
+    fun modeMessage() = if (ConfigManager.fullClearMode) "[SM] Full clear mode on." else "[SM] Unique run mode on."
     fun toggle(): Boolean {
         setEnabled(!ConfigManager.fullClearMode)
         return ConfigManager.fullClearMode
