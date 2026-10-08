@@ -5,9 +5,9 @@ A Fabric mod for Hypixel SkyBlock Safari, sparkling discoveries, and Miria conte
 ## Party commands
 
 - **Mutual sparklings:** `!mutual` finds sparkling discoveries shared by your party.
-- **Missing sparklings:** `!missing <IGN>` lists a player's missing discoveries: all species in full-clear mode or timesaves in unique mode.
+- **Missing sparklings:** `!missing <IGN>` lists a player's missing discoveries: all species in Full Clear mode or timesaves in Unique and Sparkling modes.
 - **Safari tickets:** `!tickets <IGN>` shows a player's ticket counts.
-- **Personal bests:** `!pb doom`, `!pb wumpa`, and `!pb forest|cavern|icy|haunted` share saved times. Each mod user replies with their own record, labeled Full Clear or Unique Run according to their mode.
+- **Personal bests:** `!pb doom`, `!pb wumpa`, and `!pb forest|cavern|icy|haunted` share each mod user’s saved times. Full Clear returns biome PBs only; Unique returns biome and Doomspiral/Wumpa PBs; Sparkling returns Doomspiral/Wumpa PBs only. Biome records identify their type.
 - **Command help:** `!commands` shows the available commands. Duplicate lookup replies are suppressed, and lookup errors appear only locally.
 
 ## Safari tracking
@@ -22,16 +22,17 @@ A Fabric mod for Hypixel SkyBlock Safari, sparkling discoveries, and Miria conte
 
 - **Miria contest HUD:** tracks Miria's contest timer, tier, and score, with configurable end warnings.
 - **Warp reminders:** sends title to warp party before afk timeout. Useful for party leeching so that other players can have a chance to get sparkling critters without using a ticket. Use `/alert` and `/alertdelay <seconds>` to control reminders.
-- **Sparkling mode:** `/sparkle` highlights species still missing from at least one party member’s sparkling discoveries, including yours. Targets stay enabled for the run, with a separate profitable-shards option. Requires an API key; failed lookups keep the last complete party result.
+- **Sparkling mode:** `/sparkle` highlights the party’s missing sparkling discoveries for the run, including yours, with optional profitable-shard ESP. Requires an API key.
 - **Critter ESP:** excludes nearby stationary leftover moving-critter models after two seconds and restores them if they move. Highlights critters in all four biomes, with individual toggles and biome filters. Unique runs hide collected species until the next run, with an optional exception for Hideonfloor, Hideonwall, Chuckwalla, Fluffling and Mantis Shrimp; Rockmite mounds and Snooper walls remain available for shiny checks. Mounds and silverfish have separate controls.
-- **Floor drop ESP:** highlights useful Safari drops. Cavern drops hide after finding all gems, catching Gemzie, or confirming everyone has sparkling Gemzie. Icy drops hide in unique runs or after two Icebreakers in other modes. Forest drops hide when everyone has all sparkling birds, or after nine bird-food pickups in unique runs. Haunted drops stay available for coins while anyone needs sparkling Gimmiegold; otherwise they hide after four incense or a Doomspiral capture. Cavern and Icy manual overrides reset when you leave the biome.
+- **Floor drop ESP:** hides completed or unneeded drops using party discoveries, pickups, inventory and captures. Unique Icy keeps drops hidden; Haunted keeps coin drops while anyone needs Gimmiegold. Cavern/Icy manual overrides last for the current biome visit.
 - **Sparkling detection:** highlights nearby sparkling critters and shows their names and distances.
 - **Sparkling alerts:** displays an on-screen alert and can announce the critter, biome, and coordinates in party chat.
 - **Inventory alerts:** notifies when you have all three gem types in Cavern, all nine Forest bird food pickups, or four Soothing Incense in Haunted.
 - **Forest birds:** tracks food pickups and feeding, adjusts capture requirements for Macaw pairs and spare Macaws, and includes starting bird food.
 - **Bee nests and Snooper walls:** highlights structures that still need checking. Honeybug completion also requires punched nests.
 - **Hideyho quest clicks:** lets you accept the current Hideyho quest prompt by clicking with chat open.
-- **Auto Clicker:** repeats left clicks while you hold the mouse button in Safari, useful for Rockmites.
+- **Auto Clicker:** repeats attacks at 12 CPS while holding Mouse 0 on Rockmite mounds.
+- **Full candle hitbox:** makes Haunted candles easier to click while holding Soothing Incense.
 - **Painting hider:** hides paintings in the Haunted biome.
 - **Darkness removal:** clears the darkness effect in Safari.
 - **Capture chat filter:** hides capture-related spam while tracking continues.
