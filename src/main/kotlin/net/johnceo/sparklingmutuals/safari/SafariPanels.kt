@@ -46,17 +46,16 @@ object SafariPanels {
         }
         return HudPanel("${biome.label} Biome — ${missing.size} left", biome.color, rows + footer)
     }
-    private fun captureColor(count: Int, minimum: Int) = if (!ConfigManager.fullClearMode) HudRow.WHITE
-        else if (count >= minimum) 0xFF55FF55.toInt() else 0xFFFF5555.toInt()
+    private fun captureColor(complete: Boolean) = if (!ConfigManager.fullClearMode) HudRow.WHITE
+        else if (complete) 0xFF55FF55.toInt() else 0xFFFF5555.toInt()
     fun captures(run: SafariRun?, biome: SafariBiome) = HudPanel("${biome.label} captures", biome.color, buildList {
         biome.critters.forEach { val count = run?.count(it.name) ?: 0
-            add(HudRow(it.name, "$count", it.color, if (!ConfigManager.fullClearMode) HudRow.WHITE
-                else if (run?.captureComplete(it.name) == true) 0xFF55FF55.toInt() else 0xFFFF5555.toInt())) }
+            add(HudRow(it.name, "$count", it.color, captureColor(run?.captureComplete(it.name) == true))) }
         add(HudRow()); add(HudRow("Total captures", "${biome.critters.sumOf { run?.count(it.name) ?: 0 }}", HudRow.GRAY))
         if (biome == SafariBiome.CAVERN && ConfigManager.showMoundStats) {
             add(HudRow())
             add(HudRow("Rockmite Mounds", "${run?.brokenMounds ?: 0}", HudRow.GOLD,
-                captureColor(run?.brokenMounds ?: 0, SafariFullClear.MOUND_MINIMUM)))
+                captureColor(run?.moundsComplete() == true)))
             add(HudRow("Mounds with Rockmite", "${run?.rockmiteMounds ?: 0}", HudRow.GOLD))
         }
     })

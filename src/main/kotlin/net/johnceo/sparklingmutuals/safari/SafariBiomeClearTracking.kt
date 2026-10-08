@@ -26,7 +26,7 @@ object SafariBiomeClearTracking {
         // A completed entity scan is sufficient; unloaded surrounding chunks must not block a PB.
         val evidence = BiomeClearEvidence(snapshot.scanned,
             snapshot.critters.count { it.biome == biome && !it.mound },
-            run.allMoundsBroken && run.moundSurvey.remaining == 0 &&
+            run.moundsComplete() &&
                 SafariStructures.nearbyMounds == 0 && snapshot.critters.none { it.mound },
             SafariStructures.walls.states.size == 5 && SafariStructures.walls.allBroken, BeeNests.allChecked,
             nearbyMacaws = snapshot.critters.count { it.biome == biome && !it.mound && it.species == "Macaw" })

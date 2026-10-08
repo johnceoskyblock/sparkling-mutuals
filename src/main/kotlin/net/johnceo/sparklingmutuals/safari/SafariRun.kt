@@ -92,7 +92,7 @@ class SafariRun(val startedAt: Long) {
         return when (species) {
             "Honeybug" -> structures?.nestsChecked ?: nestsChecked
             "Snoozle" -> structures?.wallsCleared ?: wallsChecked
-            "Rockmite" -> (structures?.moundsCleared ?: (allMoundsBroken && moundSurvey.remaining == 0)) &&
+            "Rockmite" -> (structures?.moundsCleared ?: moundsComplete(remaining)) &&
                 captured >= rockmiteMounds && "Rockmite Mound" !in remaining
             else -> true
         }
@@ -101,6 +101,8 @@ class SafariRun(val startedAt: Long) {
     val uniqueBiomeClears = mutableSetOf<SafariBiome>()
     val moundSurvey = MoundSurvey()
     val allMoundsBroken get() = brokenMounds >= SafariFullClear.MOUND_MINIMUM || moundSurvey.allBroken
+    fun moundsComplete(remaining: Set<String>? = nearby[SafariBiome.CAVERN]) = remaining != null &&
+        allMoundsBroken && moundSurvey.remaining == 0 && "Rockmite Mound" !in remaining
     fun encountered(name: String) = count(name) > 0 || name in sightings || name == "Rockmite" && rockmiteMounds > 0
     fun observe(entity: EspEntity) {
         if (entity.type == "silverfish" || entity.type == "sniffer") SafariEspRules.identify(entity)?.let { sightings.add(it.name) }
