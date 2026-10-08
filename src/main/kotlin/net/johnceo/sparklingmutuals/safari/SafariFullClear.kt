@@ -76,9 +76,13 @@ object SafariFullClear {
         if (allEsp) {
             ConfigManager.showBeeNests = true; ConfigManager.showMoundCount = true; ConfigManager.showSnooperWalls = true
         }
+        applyEspPreset()
+        ConfigManager.highlightSnooperWalls = true
+    }
+    fun applyEspPreset() {
+        val allEsp = mode != SafariMode.UNIQUE
         SafariEspConfig.groups.values.forEach { it.enabled = true }
         SafariEspConfig.mobs.forEach { (species, setting) -> setting.enabled = allEsp || species in regularEsp }
         SafariEspConfig.rockmiteMoundEnabled = true
-        ConfigManager.highlightSnooperWalls = true
     }
 }

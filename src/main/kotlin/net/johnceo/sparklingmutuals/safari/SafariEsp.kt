@@ -232,7 +232,7 @@ object SafariEsp {
         val client = Minecraft.getInstance()
         if (!SafariAssist.inSafari || client.player == null || client.level == null || client.options.hideGui) return
         val camera = client.gameRenderer.mainCamera.position()
-        val playerBiome = SafariEspRules.biomeAt(client.player!!.x, client.player!!.z)
+        val playerBiome = SafariAssist.biome
         val poses = context.poseStack()
         val buffers = context.bufferSource()
         val vertices = buffers.getBuffer(lines)

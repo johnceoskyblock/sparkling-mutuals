@@ -38,12 +38,11 @@ object SafariSparklingMode {
     private var roster = emptySet<String>()
     private var key = ""
     private var partyRefreshAt = 0L
-    private var waitingRevision: Long? = null
     private var attemptedAt = 0L
     private var loadedRun: SafariRun? = null
     private var refresh = false
     private var warning: String? = null
-    fun requestRefresh() { refresh = true; partyRefreshAt = 0 }
+    fun requestRefresh() { invalidate(); refresh = true }
     private fun local(client: Minecraft, message: String) {
         if (warning == message) return
         warning = message
@@ -64,23 +63,16 @@ object SafariSparklingMode {
         }
         val now = System.currentTimeMillis()
         if (now - partyRefreshAt >= 60_000) {
-            waitingRevision = PartyManager.revision
             partyRefreshAt = now
             PartyManager.requestPartyInfo()
         }
-        waitingRevision?.let {
-            if (PartyManager.revision == it) {
-                if (now - partyRefreshAt > 5000) {
-                    local(client, "Party roster unavailable. Sparkling filters are waiting.")
-                    state.reset(); invalidate(); waitingRevision = null
-                }
-                return
-            }
-            waitingRevision = null
+        // A confirmed empty roster is solo. Unknown membership cannot be treated as solo.
+        val members = PartyManager.withLocal(client.player!!.uuid.toString())
+        if (members == null) {
+            if (roster.isNotEmpty()) { invalidate(); roster = emptySet(); state.reset(); refresh = true }
+            PartyManager.requestPartyInfo()
+            return
         }
-        if (!PartyManager.hasInfo) return
-        // Include yourself even when HMAPI reports no party or omits the local member.
-        val members = (PartyManager.getMembers() + client.player!!.uuid.toString()).toSet()
         if (members != roster) { invalidate(); roster = members; state.select(members); warning = null }
         val run = SafariTracking.ledger.current
         if (task != null || (!refresh && state.ready && loadedRun === run) || now - attemptedAt < 60_000) return
@@ -92,7 +84,7 @@ object SafariSparklingMode {
             val result = runCatching { members.associateWith { SafariLookup.discoveries(it, currentKey) } }
             client.execute {
                 if (revision != generation || client.connection !== connection || ConfigManager.apiKey != currentKey ||
-                    (PartyManager.getMembers() + client.player?.uuid.toString()).toSet() != members) return@execute
+                    client.player?.uuid?.toString()?.let(PartyManager::withLocal) != members) return@execute
                 task = null
                 result.fold({ discoveries ->
                     if (state.accept(members, discoveries)) { loadedRun = run; warning = null }
@@ -102,6 +94,6 @@ object SafariSparklingMode {
     }
     fun reset() {
         invalidate(); state.reset(); roster = emptySet(); key = ""; partyRefreshAt = 0
-        waitingRevision = null; loadedRun = null; refresh = false; warning = null
+        loadedRun = null; refresh = false; warning = null
     }
 }
