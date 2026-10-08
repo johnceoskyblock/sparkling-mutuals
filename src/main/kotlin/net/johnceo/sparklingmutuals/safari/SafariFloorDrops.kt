@@ -9,6 +9,8 @@ class FloorDropState {
     private val gemNames = setOf("Purple Gem", "Lime Gem", "Orange Gem")
     private var pickaxes = 0
     private var inventoryPickaxes = 0
+    private var incensePickups = 0
+    private var incenseReady = false
     private var biome: SafariBiome? = null
     private var override: Boolean? = null
     fun visit(biome: SafariBiome?) {
@@ -16,31 +18,40 @@ class FloorDropState {
     }
     fun record(text: String, biome: SafariBiome?) {
         if (!text.startsWith("FLOOR DROP!")) return
-        if (biome == SafariBiome.CAVERN) gems.addAll(gemNames.filter(text::contains))
+        gems.addAll(gemNames.filter(text::contains))
+        if (text.contains("Soothing Incense", true)) incensePickups++
         if (biome == SafariBiome.ICY && Regex("\\bIcebreaker\\b", RegexOption.IGNORE_CASE).containsMatchIn(text)) pickaxes++
     }
     fun inventory(stacks: List<Pair<String, Int>>) {
+        if (stacks.filter { SafariRules.strip(it.first).equals("Soothing Incense", true) }.sumOf { it.second.coerceAtLeast(0) } >= 4) incenseReady = true
         stacks.filter { it.second > 0 }.forEach { (name, _) -> SafariRules.strip(name).takeIf { it in gemNames }?.let(gems::add) }
         inventoryPickaxes = maxOf(inventoryPickaxes, stacks.filter { SafariRules.strip(it.first).equals("Icebreaker", true) }.sumOf { it.second.coerceAtLeast(0) })
     }
     fun force(enabled: Boolean) { if (biome in setOf(SafariBiome.CAVERN, SafariBiome.ICY)) override = enabled }
-    fun enabled(biome: SafariBiome?, fullClear: Boolean, configured: Boolean, forestFoodComplete: Boolean = false): Boolean {
+    fun enabled(biome: SafariBiome?, fullClear: Boolean, configured: Boolean, forestFoodComplete: Boolean = false,
+        partyBirdsComplete: Boolean = false, partyGemzieComplete: Boolean = false,
+        partyGimmiegoldComplete: Boolean = false, gemzieCaught: Boolean = false, doomCaught: Boolean = false): Boolean {
         if (biome == this.biome && override != null) return override!!
         return when (biome) {
-            SafariBiome.CAVERN -> gems.size < 3
-            SafariBiome.FOREST -> configured && (fullClear || !forestFoodComplete)
+            SafariBiome.CAVERN -> gems.size < 3 && !partyGemzieComplete && !gemzieCaught
+            SafariBiome.FOREST -> configured && !partyBirdsComplete && (fullClear || !forestFoodComplete)
+            SafariBiome.HAUNTED -> configured && (!partyGimmiegoldComplete || !incenseReady && incensePickups < 4 && !doomCaught)
             SafariBiome.ICY -> fullClear && maxOf(pickaxes, inventoryPickaxes) < 2
             else -> configured
         }
     }
-    fun reset() { gems.clear(); pickaxes = 0; inventoryPickaxes = 0; biome = null; override = null }
+    fun reset() { gems.clear(); pickaxes = 0; inventoryPickaxes = 0; incensePickups = 0; incenseReady = false; biome = null; override = null }
 }
 
 object SafariFloorDrops {
     val state = FloorDropState()
     fun enabled(biome: SafariBiome? = SafariAssist.biome): Boolean {
         state.visit(SafariAssist.biome)
-        return state.enabled(biome, ConfigManager.fullClearMode, SafariEspConfig.groups.getValue("floor").enabled,
-            SafariTracking.ledger.current?.birdFoodsComplete == true)
+        val run = SafariTracking.ledger.current
+        val party = SafariSparklingMode.state
+        return state.enabled(biome, SafariFullClear.mode != SafariMode.UNIQUE, SafariEspConfig.groups.getValue("floor").enabled,
+            run?.birdFoodsComplete == true, party.everyoneHas("Bluebird", "Parakeet", "Macaw"),
+            party.everyoneHas("Gemzie"), party.everyoneHas("Gimmiegold"),
+            (run?.count("Gemzie") ?: 0) > 0, (run?.count("Doomspiral") ?: 0) > 0)
     }
 }

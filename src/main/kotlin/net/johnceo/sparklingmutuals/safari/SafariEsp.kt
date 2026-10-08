@@ -253,7 +253,10 @@ object SafariEsp {
             val mob = SafariRoster.named(target.species)!!
             val group = SafariEspConfig.groups.getValue(mob.biome.name.lowercase())
             val mobBiome = SafariEspRules.biomeAt(e.x, e.z)
-            if (SafariEspRules.neededForRun(mob.name, e is Display.ItemDisplay, SafariTracking.ledger.current, ConfigManager.fullClearMode, ConfigManager.profitableShardEsp) &&
+            val needed = if (ConfigManager.sparklingMode)
+                SafariEspRules.neededForSparkling(mob.name, e is Display.ItemDisplay, SafariSparklingMode.state, ConfigManager.sparklingProfitableShardEsp)
+            else SafariEspRules.neededForRun(mob.name, e is Display.ItemDisplay, SafariTracking.ledger.current, ConfigManager.fullClearMode, ConfigManager.profitableShardEsp)
+            if (needed &&
                 SafariEspConfig.entityEnabled(mob.name, e is Display.ItemDisplay) && mobBiome == mob.biome && SafariEspRules.visible(true, group.enabled, group.onlyInBiome, playerBiome, mobBiome))
                 frame(bounds(target, delta), SafariEspConfig.rgb(SafariEspConfig.entityColor(mob.name, e is Display.ItemDisplay)))
         }

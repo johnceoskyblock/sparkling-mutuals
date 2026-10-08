@@ -3,6 +3,8 @@ package net.johnceo.sparklingmutuals.safari
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.config.SafariEspConfig
 
+enum class SafariMode { UNIQUE, FULL_CLEAR, SPARKLING }
+
 data class BiomeClearEvidence(val observed: Boolean = false, val nearbyCritters: Int = 0,
     val moundsCleared: Boolean = false, val wallsCleared: Boolean = false,
     val nestsChecked: Boolean = false, val nearbyMacaws: Int = 0)
@@ -35,31 +37,47 @@ object SafariFullClear {
         run.biomeClears.add(biome)
         return bests.recordBiome(biome, run, now)
     }
-    fun modeMessage() = if (ConfigManager.fullClearMode) "[SM] Full clear mode on." else "[SM] Unique run mode on."
+    val mode: SafariMode get() = when {
+        ConfigManager.sparklingMode -> SafariMode.SPARKLING
+        ConfigManager.fullClearMode -> SafariMode.FULL_CLEAR
+        else -> SafariMode.UNIQUE
+    }
+    fun modeMessage() = when (mode) {
+        SafariMode.SPARKLING -> "[SM] Sparkling mode on."
+        SafariMode.FULL_CLEAR -> "[SM] Full clear mode on."
+        SafariMode.UNIQUE -> "[SM] Unique run mode on."
+    }
+    fun modeLines() = listOf(modeMessage()) + if (mode == SafariMode.SPARKLING)
+        listOf("Make sure you have an API key set up for sparkling mode to work correctly.") else emptyList()
     fun toggle(): Boolean {
         setEnabled(!ConfigManager.fullClearMode)
         return ConfigManager.fullClearMode
     }
-    fun setEnabled(enabled: Boolean) {
-        if (ConfigManager.fullClearMode == enabled) return
-        ConfigManager.fullClearMode = enabled
+    fun setEnabled(enabled: Boolean) = select(if (enabled) SafariMode.FULL_CLEAR else SafariMode.UNIQUE)
+    fun select(selected: SafariMode) {
+        if (mode == selected) return
+        ConfigManager.sparklingMode = selected == SafariMode.SPARKLING
+        ConfigManager.fullClearMode = selected == SafariMode.FULL_CLEAR
         syncMode()
-        apply(ConfigManager.fullClearMode)
+        apply(selected)
+        SafariSparklingMode.requestRefresh()
         ConfigManager.save()
     }
     fun syncMode() {
-        ConfigManager.timesaveOnly = !ConfigManager.fullClearMode
+        if (ConfigManager.sparklingMode) ConfigManager.fullClearMode = false
+        ConfigManager.timesaveOnly = mode == SafariMode.UNIQUE
         ConfigManager.personalBests.selectBiomeType(if (ConfigManager.fullClearMode) BiomePbType.FULL_CLEAR else BiomePbType.UNIQUE)
     }
-    private fun apply(enabled: Boolean) {
-        ConfigManager.catchCountPanel = enabled
-        ConfigManager.showMoundStats = enabled
-        ConfigManager.countUniqueOnly = !enabled
-        if (enabled) {
+    private fun apply(selected: SafariMode) {
+        val allEsp = selected != SafariMode.UNIQUE
+        ConfigManager.catchCountPanel = selected == SafariMode.FULL_CLEAR
+        ConfigManager.showMoundStats = selected == SafariMode.FULL_CLEAR
+        ConfigManager.countUniqueOnly = selected != SafariMode.FULL_CLEAR
+        if (allEsp) {
             ConfigManager.showBeeNests = true; ConfigManager.showMoundCount = true; ConfigManager.showSnooperWalls = true
         }
         SafariEspConfig.groups.values.forEach { it.enabled = true }
-        SafariEspConfig.mobs.forEach { (species, setting) -> setting.enabled = enabled || species in regularEsp }
+        SafariEspConfig.mobs.forEach { (species, setting) -> setting.enabled = allEsp || species in regularEsp }
         SafariEspConfig.rockmiteMoundEnabled = true
         ConfigManager.highlightSnooperWalls = true
     }
