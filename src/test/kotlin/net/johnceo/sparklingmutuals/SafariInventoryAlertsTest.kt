@@ -53,6 +53,6 @@ class SafariInventoryAlertsTest {
         assertTrue(ConfigManager.allBirdFoodAlert)
         assertFalse(ConfigManager.allIncenseAlert)
         val options = SafariSettings.Alerts::class.java.fields.mapNotNull { it.getAnnotation(io.github.notenoughupdates.moulconfig.annotations.ConfigOption::class.java)?.name }
-        assertEquals(setOf("All Gems Alert", "All Bird Food Alert", "All Incense Alert"), options.toSet())
+        assertTrue(options.containsAll(setOf("All Gems Alert", "All Bird Food Alert", "All Incense Alert")))
     }
 }

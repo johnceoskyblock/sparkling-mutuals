@@ -122,8 +122,8 @@ class SafariAlertGhostTest {
     }
     @Test fun `sparkling alert has one heading with location below it`() {
         val panel = SparklingAlert.panel("Flitter", "Cavern 1 2 3")
-        assertEquals("SPARKLING Flitter!", panel.title)
-        assertEquals(listOf("Cavern 1 2 3"), panel.rows.map { it.label })
+        assertEquals("SPARKLING!", panel.title)
+        assertEquals(listOf("Flitter", "Cavern 1 2 3"), panel.rows.map { it.label })
     }
     @Test fun `zero scale display models cannot retain ESP`() {
         assertFalse(SafariEspRules.modelVisible(0f, 0f, 0f))
