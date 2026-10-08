@@ -32,7 +32,7 @@ class SafariNotesTwoTest {
             assertTrue(help.length + 4 <= 256)
             assertFalse(help.contains("doom/wumpa"))
             assertFalse(help.contains("[gui]"))
-            assertTrue(help.contains("/sm gui"))
+            assertFalse(help.contains("/sm gui"))
             for (kind in PartyCommandKind.entries.filter { PartyCommand(it).pbName != null }) {
                 val command = PartyCommand(kind)
                 assertEquals(command.allowed(mode), help.contains(command.text), "$mode / ${command.text}")

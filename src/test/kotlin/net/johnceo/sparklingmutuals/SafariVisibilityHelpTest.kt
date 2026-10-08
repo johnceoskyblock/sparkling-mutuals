@@ -6,17 +6,22 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class SafariVisibilityHelpTest {
-    @Test fun `party help fits the server command length and lists both command groups`() {
+    @Test fun `party help fits the server command length and excludes local commands`() {
         val reply = CommandHelp.partyReply(SafariMode.UNIQUE)
         assertTrue(reply.length + "/pc ".length <= 256, "Help reply has ${reply.length} characters")
         assertTrue(reply.contains("Party:"))
-        assertTrue(reply.contains("Local:"))
-        assertTrue(reply.contains("/captures"))
+        assertFalse(reply.contains("Local:"))
+        assertFalse(reply.contains("/"))
         assertTrue(reply.contains("!pb doom"))
         assertTrue(reply.contains("!pb haunted"))
-        assertTrue(reply.contains("/fc, /unique"))
         assertFalse(reply.contains("/sparkling fc"))
         assertFalse(reply.contains("/pb toggle"))
+        for (mode in SafariMode.entries) {
+            val commands = CommandHelp.partyReply(mode)
+            assertTrue(commands.contains("!commands"))
+            assertTrue(commands.length + "/pc ".length <= 256)
+            assertFalse(commands.contains("/"), "Party help leaked local commands in $mode")
+        }
     }
     @Test fun `entrance visibility is limited to the actual named subarea`() {
         assertFalse(SafariRules.isEntrance(listOf("Area: Torrhus Canyon")))
