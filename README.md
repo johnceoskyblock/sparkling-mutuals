@@ -8,7 +8,7 @@ A Fabric mod for Hypixel SkyBlock Safari, sparkling discoveries, and Miria conte
 - **Missing sparklings:** `!missing <IGN>` lists a player's missing discoveries: all species in Full Clear mode or timesaves in Unique and Sparkling modes.
 - **Safari tickets:** `!tickets <IGN>` shows a player's ticket counts.
 - **Personal bests:** `!pb doom`, `!pb wumpa`, and `!pb forest|cavern|icy|haunted` share each mod user’s saved times. Full Clear returns biome PBs only; Unique returns biome and Doomspiral/Wumpa PBs; Sparkling returns Doomspiral/Wumpa PBs only. Biome records identify their type.
-- **Command help:** `!commands` shows the available commands. Replies are staggered by UUID, matching results are suppressed, and lookup errors appear only locally.
+- **Command help:** `!commands` lists available party commands. Settings help also lists local commands. Replies are staggered by UUID, matching results are suppressed, and lookup errors appear only locally.
 
 ## Safari tracking
 

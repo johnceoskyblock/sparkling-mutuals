@@ -1,5 +1,7 @@
 # Sparkling modes and Safari helpers update
 
+- `!commands` now returns only party commands; local commands remain in settings help.
+
 - Settings now open with `/sm`; use `/sm gui` for the HUD editor and `/sm debug` for diagnostics.
 
 - Consolidated ESP settings into one tab with independent “Only in current biome” toggles for floor drops, Forest, Cavern, Icy and Haunted. Modes manage targets; all color customizations remain available.
