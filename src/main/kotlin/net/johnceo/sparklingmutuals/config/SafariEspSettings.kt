@@ -11,6 +11,12 @@ open class SafariEspGroupSettings(private val group: String) {
     @ConfigEditorBoolean var enabled = SafariEspConfig.groups.getValue(group).enabled
     @JvmField @ConfigOption(name = "Only in current biome", desc = "Show only targets in your current biome.")
     @ConfigEditorBoolean var onlyInBiome = SafariEspConfig.groups.getValue(group).onlyInBiome
+    open fun refreshPreset() {
+        enabled = SafariEspConfig.groups.getValue(group).enabled
+        javaClass.fields.filter { it.type == SafariEspMobSettings::class.java }.forEach {
+            (it.get(this) as SafariEspMobSettings).refreshPreset()
+        }
+    }
     open fun apply(): Boolean {
         val saved = SafariEspConfig.groups.getValue(group)
         var changed = saved.enabled != enabled || saved.onlyInBiome != onlyInBiome
@@ -24,6 +30,7 @@ open class SafariEspGroupSettings(private val group: String) {
 class SafariEspMobSettings(private val name: String) {
     @JvmField @ConfigOption(name = "Highlight", desc = "Draw this critter's box when its biome ESP is enabled.")
     @ConfigEditorBoolean var enabled = SafariEspConfig.mobs.getValue(name).enabled
+    fun refreshPreset() { enabled = SafariEspConfig.mobs.getValue(name).enabled }
     fun apply(): Boolean {
         val saved = SafariEspConfig.mobs.getValue(name)
         val changed = saved.enabled != enabled
@@ -34,6 +41,7 @@ class SafariEspMobSettings(private val name: String) {
 class SafariFloorEspSettings : SafariEspGroupSettings("floor") {
     init { enabled = SafariFloorDrops.enabled() }
     private var previous = enabled
+    override fun refreshPreset() { enabled = SafariFloorDrops.enabled(); previous = enabled }
     override fun apply(): Boolean {
         val saved = SafariEspConfig.groups.getValue("floor")
         val changed = previous != enabled || saved.onlyInBiome != onlyInBiome

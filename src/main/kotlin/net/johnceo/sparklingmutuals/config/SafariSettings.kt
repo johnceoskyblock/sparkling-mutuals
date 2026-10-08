@@ -8,6 +8,7 @@ import net.johnceo.sparklingmutuals.alerts.AlertManager
 import net.johnceo.sparklingmutuals.commands.*
 import net.johnceo.sparklingmutuals.contest.ContestGui
 import net.johnceo.sparklingmutuals.safari.CatchCountScreen
+import net.johnceo.sparklingmutuals.safari.SafariFullClear
 import net.minecraft.client.Minecraft
 import net.minecraft.network.chat.Component
 import net.minecraft.resources.Identifier
@@ -31,6 +32,9 @@ class SafariSettings : Config() {
     @JvmField @Category(name = "Customization", desc = "") val customization = CustomizationSettings()
 
     class General {
+        @JvmField @ConfigOption(name = "Run mode", desc = "Select capture, ESP, PB and discovery lookup presets.")
+        @ConfigEditorDropdown(values = ["Unique run", "Full clear"])
+        var mode = if (ConfigManager.fullClearMode) 1 else 0
         @JvmField @ConfigOption(name = "Command help", desc = "Close settings and show commands in chat.")
         @ConfigEditorButton(runnableId = 3, buttonText = "Show help") var help = false
         @JvmField @ConfigOption(name = "Move and resize HUDs", desc = "Drag HUDs to move them; scroll to resize.")
@@ -127,7 +131,7 @@ class SafariSettings : Config() {
     class Alerts {
         @JvmField @ConfigOption(name = "All Gems Alert", desc = "Cavern: one Purple, Lime and Orange Gem in inventory.")
         @ConfigEditorBoolean var gems = ConfigManager.allGemsAlert
-        @JvmField @ConfigOption(name = "All Bird Food Alert", desc = "Forest: three Yogi Berries, Wriggleworms and Bags of Seeds in inventory.")
+        @JvmField @ConfigOption(name = "All Bird Food Alert", desc = "Alert after collecting three of each Forest bird food.")
         @ConfigEditorBoolean var birdFood = ConfigManager.allBirdFoodAlert
         @JvmField @ConfigOption(name = "All Incense Alert", desc = "Haunted: four Soothing Incense in inventory.")
         @ConfigEditorBoolean var incense = ConfigManager.allIncenseAlert
@@ -223,5 +227,14 @@ class SafariSettings : Config() {
         ContestConfig.contestWarnMinutes = warnings.joinToString(", ")
         ContestConfig.contestWarnEnabled = warnings.isNotEmpty()
         if (contestChanged) ContestConfig.save()
+        if ((general.mode == 1) != ConfigManager.fullClearMode) {
+            SafariFullClear.setEnabled(general.mode == 1)
+            listOf(floorEsp, cavernEsp, forestEsp, icyEsp, hauntedEsp).forEach { it.refreshPreset() }
+            cavernEsp.rockmiteMound = SafariEspConfig.rockmiteMoundEnabled
+            safari.snooperHighlight = ConfigManager.highlightSnooperWalls
+            safari.remaining.nests = ConfigManager.showBeeNests
+            safari.remaining.mounds = ConfigManager.showMoundCount
+            safari.remaining.walls = ConfigManager.showSnooperWalls
+        }
     }
 }
