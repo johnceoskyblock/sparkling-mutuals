@@ -28,6 +28,7 @@ import net.minecraft.world.item.Items
 import net.minecraft.world.level.block.Block
 import net.minecraft.world.level.block.ShulkerBoxBlock
 import net.minecraft.world.phys.AABB
+import org.slf4j.LoggerFactory
 
 data class EspCritterObservation(val id: Int, val species: String, val biome: SafariBiome, val x: Double, val y: Double, val z: Double, val mound: Boolean)
 data class SafariEspObservations(val critters: List<EspCritterObservation>, val floorDrops: List<EspDrop>, val scanned: Boolean = false)
@@ -42,6 +43,8 @@ object SafariEsp {
     private var scanned = false
     private var stringDisplays = emptyList<EspDrop>()
     private val captures = EspCaptureMemory()
+    private val modelLabels = EspModelLabels()
+    private val logger = LoggerFactory.getLogger("sparkling-mutuals/esp")
     private fun renderType(name: String, snippet: RenderPipeline.Snippet) = RenderType.create("sparkling-mutuals:$name",
         RenderSetup.builder(RenderPipelines.register(RenderPipeline.builder(snippet)
             .withLocation(SparklingMutuals.id("pipeline/$name"))
@@ -109,12 +112,18 @@ object SafariEsp {
         }
     }
     fun threw(species: String) { captures.threw(species, System.currentTimeMillis()) }
-    fun escaped(species: String) { captures.escaped(species, System.currentTimeMillis()) }
+    fun escaped(species: String) { captures.escaped(species, System.currentTimeMillis())?.let(modelLabels::release) }
     fun caught(species: String) {
-        val id = captures.caught(species, System.currentTimeMillis()) ?: return
+        val id = captures.caught(species, System.currentTimeMillis())
+        if (id == null) {
+            if (targets.any { it.species == species && trackedModel(it) })
+                logger.info("Capture of {} had no throw/model association; checking name-tag lifecycle instead.", species)
+            return
+        }
+        logger.info("Retired captured {} model {}.", species, id)
         targets = targets.filterNot { it.entity.uuid == id }
     }
-    fun clearCaptured() { captures.reset() }
+    fun clearCaptured() { captures.reset(); modelLabels.reset() }
     fun tick(client: Minecraft) {
         if (level !== client.level) { reset(); level = client.level }
         SafariFloorDrops.state.visit(SafariAssist.biome)
@@ -125,7 +134,11 @@ object SafariEsp {
         if (++ticks < 5) return
         ticks = 0
         val strings = mutableListOf<EspDrop>()
-        targets = client.level!!.entitiesForRendering().filter { !it.isRemoved && !captures.hidden(it.uuid) && client.level!!.getEntity(it.id) === it }.mapNotNull { entity ->
+        val entities = client.level!!.entitiesForRendering().filter { !it.isRemoved && client.level!!.getEntity(it.id) === it }.toList()
+        val labels = entities.mapNotNull { entity ->
+            entity.customName?.string?.let(SafariEspRules::labelSpecies)?.let { name -> entity to name }
+        }.groupBy({ it.second }, { it.first })
+        targets = entities.filterNot { captures.hidden(it.uuid) }.mapNotNull { entity ->
             if (entity is Display.ItemDisplay && !entity.isInvisible && entity.itemStack.`is`(Items.STRING)) {
                 val pos = entity.blockPosition()
                 strings.add(EspDrop(entity.id, pos.x, pos.y, pos.z))
@@ -134,16 +147,42 @@ object SafariEsp {
             val mob = SafariEspRules.identify(describe(entity)) ?: return@mapNotNull null
             val descriptor = mob.identifiers.any { it.shulker != null }
             Target(entity, mob.name, descriptor)
-        }.toList()
+        }
+        val now = System.currentTimeMillis()
+        targets.filter(::trackedModel).forEach { target ->
+            val nearby = labels[target.species].orEmpty().filter { it.distanceToSqr(target.entity) <= 9 }
+            val separate = nearby.filter { it !== target.entity }
+            modelLabels.observe(target.entity.uuid, target.species, (separate.ifEmpty { nearby }).map {
+                EspModelLabel(it.uuid, target.species, it.distanceToSqr(target.entity), it.isCustomNameVisible)
+            }, now)
+        }
+        targets = targets.filter { live(it, client) }
         stringDisplays = strings.toList()
         drops = SafariEspRules.floorDrops(strings)
         scanned = true
         rememberAim(client)
     }
+    private fun trackedModel(target: Target) = SafariEspRules.requiresModelLabel(target.species, target.entity.type.toShortString())
     private fun live(target: Target, client: Minecraft): Boolean {
         val entity = target.entity
         return SafariEspRules.targetCurrent(target.species, describe(entity), entity.isRemoved,
-            !captures.hidden(entity.uuid) && client.level?.getEntity(entity.id) === entity, entity.level() === client.level)
+            !captures.hidden(entity.uuid) && client.level?.getEntity(entity.id) === entity, entity.level() === client.level) &&
+            (!trackedModel(target) || modelLabels.current(entity.uuid, System.currentTimeMillis()))
+    }
+    fun debug(client: Minecraft) {
+        val player = client.player ?: return
+        val entities = client.level?.entitiesForRendering()?.filter { !it.isRemoved && player.distanceToSqr(it) <= 6400 }?.toList() ?: return
+        logger.info("Safari ESP diagnostics: biome={}, fullClear={}, collected={}", SafariAssist.biome,
+            ConfigManager.fullClearMode, SafariRoster.all.associate { it.name to (SafariTracking.run?.count(it.name) ?: 0) })
+        entities.mapNotNull { entity -> SafariEspRules.identify(describe(entity))?.let { entity to it.name } }.forEach { (entity, species) ->
+            val tag = modelLabels.label(entity.uuid)
+            val label = entities.firstOrNull { it.uuid == tag }
+            logger.info("ESP model species={} id={} uuid={} type={} pos={} retired={} label={} labelName={} labelVisible={} labelDistance={} labelCurrent={} descriptor={} vehicle={} passengers={} modelName={} nearbyLabels={}",
+                species, entity.id, entity.uuid, entity.type.toShortString(), entity.position(), captures.hidden(entity.uuid), tag,
+                label?.customName?.string, label?.isCustomNameVisible, label?.distanceToSqr(entity),
+                modelLabels.current(entity.uuid, System.currentTimeMillis()), describe(entity), entity.vehicle?.id, entity.passengers.map { it.id }, entity.customName?.string,
+                entities.filter { it.customName != null && it.distanceToSqr(entity) <= 9 }.map { "${it.id}:${it.customName?.string}:${it.isCustomNameVisible}" })
+        }
     }
     /** Loaded server entities only; observations do not depend on ESP switches or biome filtering. */
     fun observations(): SafariEspObservations {

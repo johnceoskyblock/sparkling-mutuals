@@ -9,6 +9,28 @@ data class EspMob(val name: String, val biome: SafariBiome, val color: Int, val 
 data class EspDrop(val id: Int, val x: Int, val y: Int, val z: Int)
 data class EspCaptureCandidate(val id: Int, val species: String, val display: Boolean, val mound: Boolean,
     val rangeSquared: Double, val aimSquared: Double)
+data class EspModelLabel(val id: java.util.UUID, val species: String, val distanceSquared: Double, val visible: Boolean = true)
+class EspModelLabels {
+    private data class Binding(val species: String, val label: java.util.UUID, var visible: Boolean, var seenAt: Long)
+    private val bindings = mutableMapOf<java.util.UUID, Binding>()
+    /** Once paired, retain label identity instead of adopting another nearby critter's name tag. */
+    fun observe(id: java.util.UUID, species: String, labels: List<EspModelLabel>, now: Long) {
+        val nearby = labels.filter { it.species == species && it.distanceSquared in 0.0..9.0 }
+        if (bindings[id]?.species != species) bindings.remove(id)
+        val binding = bindings[id] ?: nearby.minByOrNull { it.distanceSquared }?.let {
+            Binding(species, it.id, it.visible, now).also { bound -> bindings[id] = bound }
+        } ?: return
+        nearby.firstOrNull { it.id == binding.label && (!binding.visible || it.visible) }?.let {
+            binding.visible = binding.visible || it.visible
+            binding.seenAt = now
+        }
+    }
+    // Unknown models remain conservative; a known label gets four scan intervals of packet grace.
+    fun current(id: java.util.UUID, now: Long) = bindings[id]?.let { now - it.seenAt in 0..1000 } ?: true
+    fun label(id: java.util.UUID) = bindings[id]?.label
+    fun release(id: java.util.UUID) { bindings.remove(id) }
+    fun reset() { bindings.clear() }
+}
 class EspCaptureMemory {
     private data class Attempt(val id: java.util.UUID, val species: String, val at: Long)
     private val pending = mutableListOf<Attempt>()
@@ -39,9 +61,11 @@ class EspCaptureMemory {
         val index = pending.indexOfFirst { it.id == id }
         if (index < 0) pending.add(Attempt(id, species, now)) else pending[index] = Attempt(id, species, now)
     }
-    fun escaped(species: String, now: Long) {
+    fun escaped(species: String, now: Long): java.util.UUID? {
         expire(now)
-        pending.firstOrNull { it.species == species }?.let(pending::remove)
+        val attempt = pending.firstOrNull { it.species == species } ?: return null
+        pending.remove(attempt)
+        return attempt.id
     }
     fun caught(species: String, now: Long): java.util.UUID? {
         expire(now)
@@ -56,12 +80,13 @@ class EspCaptureMemory {
 object SafariEspRules {
     private val throwMessage = Regex("^You threw a (?:Masterful )?Critter Capsule at the (.+)!$")
     private val escapeMessage = Regex("^The (.+?) (?:escaped your (?:Masterful )?Critter Capsule|dodged your critter capsule)[!.]?$")
-    private fun captureSpecies(name: String) = SafariRules.sparklingSpecies(name) ?: SafariRoster.named(name)?.name
-    fun thrownSpecies(text: String) = throwMessage.matchEntire(text)?.groupValues?.get(1)?.let(::captureSpecies)
-    fun escapedSpecies(text: String) = escapeMessage.matchEntire(text)?.groupValues?.get(1)?.let(::captureSpecies)
+    fun labelSpecies(raw: String) = SafariRules.strip(raw).let { SafariRules.sparklingSpecies(it) ?: SafariRoster.named(it)?.name }
+    fun thrownSpecies(text: String) = throwMessage.matchEntire(text)?.groupValues?.get(1)?.let(::labelSpecies)
+    fun escapedSpecies(text: String) = escapeMessage.matchEntire(text)?.groupValues?.get(1)?.let(::labelSpecies)
     fun neededForRun(species: String, mound: Boolean, run: SafariRun?, fullClear: Boolean) =
         fullClear || species == "Rockmite" && mound || (run?.count(species) ?: 0) == 0
     fun captureModel(type: String) = type.endsWith("display") || type == "armor_stand"
+    fun requiresModelLabel(species: String, type: String) = captureModel(type) && !(species == "Rockmite" && type == "item_display")
     fun modelVisible(x: Float, y: Float, z: Float) = listOf(x, y, z).all { it.isFinite() } &&
         maxOf(kotlin.math.abs(x), kotlin.math.abs(y), kotlin.math.abs(z)) > .001f
     fun capturedDisplay(species: String, candidates: List<EspCaptureCandidate>) = candidates.filter {
