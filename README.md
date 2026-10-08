@@ -38,6 +38,7 @@ A Fabric mod for Hypixel SkyBlock Safari, sparkling discoveries, and Miria conte
 ## Settings and customization
 
 - **Settings:** `/sparkling` opens feature settings, command help, and API key setup.
+- **Troubleshooting:** `/sparkling debug` saves nearby critter tracking details to your game log.
 - **HUD editor:** `/sparkling gui` lets you move and resize panels.
 - **Appearance:** customize ESP and waypoint colors, HUD backgrounds, transparency, and borders.
 
