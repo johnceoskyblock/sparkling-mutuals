@@ -94,8 +94,7 @@ object PartyCommands {
                 val key = ConfigManager.apiKey
                 val localName = client.player!!.name.string
                 state.task = executor.submit {
-                    // Cache access and network calls stay on this single worker.
-                    if (key != lastKey) { SafariLookup.clearCache(); lastKey = key }
+                    // Network calls stay off the client thread; the shared cache is key-scoped.
                     val result = PartyLookupResult.fetch(state.request.command, key) {
                         SafariLookup.run(state.request.command, state.roster, localName)
                     }
@@ -118,7 +117,6 @@ object PartyCommands {
         }
     }
 
-    private var lastKey = ""
     private fun cancelPending() {
         pending.values.forEach { it.task?.cancel(false) }
         pending.clear()

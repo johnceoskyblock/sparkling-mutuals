@@ -9,13 +9,14 @@ import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.screens.Screen
 import net.johnceo.sparklingmutuals.safari.CatchCountScreen
 import net.johnceo.sparklingmutuals.safari.SafariFullClear
+import net.johnceo.sparklingmutuals.safari.SafariMode
 import net.johnceo.sparklingmutuals.safari.SafariEsp
 import net.minecraft.network.chat.Component
 
 object SparklingCommand {
-    private fun mode(source: FabricClientCommandSource, fullClear: Boolean): Int {
-        SafariFullClear.setEnabled(fullClear)
-        source.sendFeedback(Component.literal(SafariFullClear.modeMessage()))
+    private fun mode(source: FabricClientCommandSource, selected: SafariMode): Int {
+        SafariFullClear.select(selected)
+        SafariFullClear.modeLines().forEach { source.sendFeedback(Component.literal(it)) }
         return 1
     }
     private fun open(screen: () -> Screen): Int {
@@ -38,8 +39,9 @@ object SparklingCommand {
                     })
             )
             dispatcher.register(ClientCommands.literal("captures").executes { open { CatchCountScreen() } })
-            dispatcher.register(ClientCommands.literal("unique").executes { mode(it.source, false) })
-            dispatcher.register(ClientCommands.literal("fc").executes { mode(it.source, true) })
+            dispatcher.register(ClientCommands.literal("unique").executes { mode(it.source, SafariMode.UNIQUE) })
+            dispatcher.register(ClientCommands.literal("sparkle").executes { mode(it.source, SafariMode.SPARKLING) })
+            dispatcher.register(ClientCommands.literal("fc").executes { mode(it.source, SafariMode.FULL_CLEAR) })
         }
     }
 }

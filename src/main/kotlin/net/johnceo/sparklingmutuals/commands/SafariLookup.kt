@@ -6,13 +6,26 @@ import net.johnceo.sparklingmutuals.safari.SafariRoster
 
 object SafariLookup {
     private data class Cached(val discoveries: Set<String>, val timestamp: Long)
-    private val cache = mutableMapOf<String, Cached>()
+    private data class CacheKey(val key: String, val uuid: String)
+    private val cache = mutableMapOf<CacheKey, Cached>()
     private val timesaves = linkedMapOf("ROCKMITE" to "Rockmite", "SNOOZLE" to "Snoozle",
         "GEMZIE" to "Gemzie", "HONEYBUG" to "Honeybug", "GAZER" to "Gazer",
         "GIMMIEGOLD" to "Gimmiegold", "DOOMSPIRAL" to "Doomspiral", "WUMPA" to "Wumpa")
     private val birds = setOf("BLUEBIRD", "PARAKEET", "MACAW")
 
-    fun clearCache() = cache.clear()
+    @Synchronized fun clearCache() = cache.clear()
+    /** Both party commands and mode refreshes share a key-scoped, serialized 60-second cache. */
+    @Synchronized fun discoveries(uuid: String, key: String = ConfigManager.apiKey): Set<String> {
+        check(key == ConfigManager.apiKey) { "API key changed during lookup" }
+        val id = CacheKey(key, uuid)
+        val now = System.currentTimeMillis()
+        cache[id]?.takeIf { now - it.timestamp < 60_000 }?.let { return it.discoveries }
+        val result = HypixelApi.getSparklingCritters(uuid, HypixelApi.getCurrentProfileUuid(uuid))
+        check(key == ConfigManager.apiKey) { "API key changed during lookup" }
+        cache[id] = Cached(result, System.currentTimeMillis())
+        cache.entries.removeIf { System.currentTimeMillis() - it.value.timestamp > 60_000 }
+        return result
+    }
 
     fun run(command: PartyCommand, members: List<String>, localName: String = "You"): String = when (command.kind) {
         PartyCommandKind.PB_DOOM -> ConfigManager.personalBests.response(localName, "Doomspiral")
@@ -23,13 +36,7 @@ object SafariLookup {
         PartyCommandKind.PB_CAVERN -> ConfigManager.personalBests.response(localName, "Cavern")
         PartyCommandKind.HELP -> CommandHelp.partyReply()
         PartyCommandKind.MUTUALS -> {
-            val discoveries = members.map { uuid ->
-                val cached = cache[uuid]
-                if (cached != null && System.currentTimeMillis() - cached.timestamp < 60_000) cached.discoveries
-                else HypixelApi.getSparklingCritters(uuid, HypixelApi.getCurrentProfileUuid(uuid)).also {
-                    cache[uuid] = Cached(it, System.currentTimeMillis())
-                }
-            }.reduceOrNull(Set<String>::intersect).orEmpty()
+            val discoveries = members.map { discoveries(it) }.reduceOrNull(Set<String>::intersect).orEmpty()
             "Mutual ${if (ConfigManager.timesaveOnly) "Timesave " else ""}Sparkling Critters: ${formatDiscoveries(discoveries, ConfigManager.timesaveOnly).ifEmpty { listOf("None") }.joinToString(", ")}"
         }
         PartyCommandKind.MISSING -> {
