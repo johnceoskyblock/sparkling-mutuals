@@ -28,7 +28,7 @@ object SparklingCommand {
     fun register() {
         ClientCommandRegistrationCallback.EVENT.register { dispatcher, _ ->
             dispatcher.register(
-                ClientCommands.literal("sparkling")
+                ClientCommands.literal("sm")
                     .executes { open(::SafariConfigScreen) }
                     .then(ClientCommands.literal("config").executes { open(::SafariConfigScreen) })
                     .then(ClientCommands.literal("gui").executes { open { ContestGui() } })

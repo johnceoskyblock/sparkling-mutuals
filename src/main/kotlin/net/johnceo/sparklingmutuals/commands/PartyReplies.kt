@@ -28,5 +28,9 @@ class PartyResponseHistory {
     fun hasReply(command: PartyCommand, after: Long, roster: List<String>) = messages.any {
         it.id > after && (it.senderUuid == null || roster.any { id -> id.equals(it.senderUuid, true) }) && command.matchesResponse(it.text)
     }
+    fun containsResult(result: String, after: Long, roster: List<String>) = messages.any {
+        it.id > after && (it.senderUuid == null || roster.any { id -> id.equals(it.senderUuid, true) }) &&
+            result.isNotEmpty() && it.text.contains(result)
+    }
     fun clear() { messages.clear(); cursor = 0 }
 }

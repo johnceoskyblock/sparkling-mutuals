@@ -18,10 +18,10 @@ object CommandHelp {
         PartyCommandKind.HELP to "Command list"
     )
     private val local = listOf(
-        "/sparkling" to "Settings",
-        "/sparkling gui" to "Move and resize HUDs",
+        "/sm" to "Settings",
+        "/sm gui" to "Move and resize HUDs",
         "/captures" to "Current or last run captures",
-        "/sparkling debug" to "Save entity diagnostics",
+        "/sm debug" to "Save entity diagnostics",
         "/fc" to "Full clear mode",
         "/unique" to "Unique run mode",
         "/sparkle" to "Sparkling run mode",
@@ -37,5 +37,5 @@ object CommandHelp {
         listOf("§7<IGN> = Minecraft username. Party commands use /pc.")
     fun partyReply(mode: SafariMode = SafariFullClear.mode) = "[SM] Commands: Party: " +
         available(mode).joinToString(", ") { it.first.text } +
-        ". Local: /sparkling, /sparkling gui, /fc, /unique, /sparkle, /captures, /alert, /alertdelay <s>, /apikey <key>"
+        ". Local: /sm, /sm gui, /fc, /unique, /sparkle, /captures, /alert, /alertdelay <s>, /apikey <key>"
 }
