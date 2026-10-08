@@ -36,6 +36,5 @@ object CommandHelp {
         listOf("§eLocal commands") + local.map { (command, description) -> "§b$command §7— $description" } +
         listOf("§7<IGN> = Minecraft username. Party commands use /pc.")
     fun partyReply(mode: SafariMode = SafariFullClear.mode) = "[SM] Commands: Party: " +
-        available(mode).joinToString(", ") { it.first.text } +
-        ". Local: /sm, /sm gui, /fc, /unique, /sparkle, /captures, /alert, /alertdelay <s>, /apikey <key>"
+        available(mode).joinToString(", ") { it.first.text }
 }
