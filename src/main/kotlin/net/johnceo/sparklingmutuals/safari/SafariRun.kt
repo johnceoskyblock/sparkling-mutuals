@@ -56,6 +56,14 @@ class SafariRun(val startedAt: Long) {
     var lastBiome: SafariBiome? = null
     private val counts = mutableMapOf<String, Int>()
     private val personal = mutableMapOf<String, Int>()
+    private val visited = mutableSetOf<SafariBiome>()
+    private val inheritedBiomes = mutableSetOf<SafariBiome>()
+    fun visitBiome(biome: SafariBiome) {
+        lastBiome = biome
+        if (visited.add(biome) && biome.critters.none { personalCount(it.name) > 0 } &&
+            biome.critters.any { count(it.name) > 0 }) inheritedBiomes.add(biome)
+    }
+    val partyNestsHandled get() = SafariBiome.FOREST in inheritedBiomes && count("Honeybug") > 0
     private val sightings = mutableSetOf<String>()
     private val observedCritters = mutableMapOf<String, MutableSet<Int>>()
     val birds = SafariBirdLedger()
@@ -88,6 +96,7 @@ class SafariRun(val startedAt: Long) {
         val remaining = speciesInRange ?: return false
         val captured = if (personalOnly) personalCount(species) else count(species)
         if (captured < SafariFullClear.minimum(species)) return false
+        if (!personalOnly && SafariRoster.named(species)!!.biome in inheritedBiomes) return species !in remaining
         if (species in birdSpecies) return birdComplete(species, remaining, personalOnly, structures?.nearbyMacaws ?: nearbyMacaws)
         if (species in remaining) return false
         return when (species) {
@@ -140,7 +149,7 @@ class SafariLedger {
     fun confirmEntry(now: Long) = arrive(now)
     fun update(location: SafariLocation, biome: SafariBiome?, now: Long) {
         when (location) {
-            SafariLocation.INSIDE -> { arrive(now); if (biome != null) current!!.lastBiome = biome }
+            SafariLocation.INSIDE -> { arrive(now); if (biome != null) current!!.visitBiome(biome) }
             SafariLocation.ENTRANCE, SafariLocation.OUTSIDE -> leave(now)
             SafariLocation.UNKNOWN -> Unit
         }

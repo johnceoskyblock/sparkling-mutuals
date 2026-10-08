@@ -27,7 +27,8 @@ object BeeNests {
     private val known = mutableSetOf<BlockPos>()
     private val punched = mutableSetOf<BlockPos>()
     private var ticks = 0
-    val unpunchedCount get() = known.count { it !in punched }
+    private val handledByParty get() = ConfigManager.fullClearMode && SafariTracking.ledger.current?.partyNestsHandled == true
+    val unpunchedCount get() = if (handledByParty) 0 else known.count { it !in punched }
     val allChecked get() = (known.isNotEmpty() || punched.isNotEmpty()) && known.all { it in punched }
     private val lines = RenderType.create("sparkling-mutuals:nests", RenderSetup.builder(RenderPipelines.register(
         RenderPipeline.builder(RenderPipelines.LINES_SNIPPET).withLocation(SparklingMutuals.id("pipeline/nests"))
@@ -77,7 +78,7 @@ object BeeNests {
         val buffers = context.bufferSource()
         val vertices = buffers.getBuffer(lines)
         val markers = when {
-            SafariAssist.biome == SafariBiome.FOREST && ConfigManager.highlightBeeNests ->
+            SafariAssist.biome == SafariBiome.FOREST && ConfigManager.highlightBeeNests && !handledByParty ->
                 known.filter { it !in punched }.map { Triple(it, "Nest", SafariEspConfig.rgb(AppearanceConfig.nestColor)) }
             SafariAssist.biome == SafariBiome.CAVERN && ConfigManager.highlightSnooperWalls ->
                 SafariStructures.intactWalls.map { Triple(it, "Snooper wall", SafariEspConfig.rgb(AppearanceConfig.snooperColor)) }
