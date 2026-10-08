@@ -70,6 +70,7 @@ object ConfigManager {
         personalBests.load(properties)
         SafariFullClear.syncMode()
         SafariEspConfig.load(properties)
+        SafariFullClear.applyEspPreset()
         AppearanceConfig.load(properties)
     }
 

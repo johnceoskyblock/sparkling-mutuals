@@ -25,11 +25,7 @@ class SafariSettings : Config() {
     @JvmField @Category(name = "Safari helpers", desc = "") val safari = Safari()
     @JvmField @Category(name = "Safari progress", desc = "") val tracking = Tracking()
     @JvmField @Category(name = "API key", desc = "") val api = Api()
-    @JvmField @Category(name = "ESP · Floor drops", desc = "") val floorEsp = SafariFloorEspSettings()
-    @JvmField @Category(name = "ESP · Cavern", desc = "") val cavernEsp = SafariCavernEspSettings()
-    @JvmField @Category(name = "ESP · Forest", desc = "") val forestEsp = SafariForestEspSettings()
-    @JvmField @Category(name = "ESP · Icy", desc = "") val icyEsp = SafariIcyEspSettings()
-    @JvmField @Category(name = "ESP · Haunted", desc = "") val hauntedEsp = SafariHauntedEspSettings()
+    @JvmField @Category(name = "ESP", desc = "") val esp = SafariEspSettings()
 
     @JvmField @Category(name = "Customization", desc = "") val customization = CustomizationSettings()
 
@@ -62,7 +58,7 @@ class SafariSettings : Config() {
         @ConfigEditorBoolean var enabled = SafariFullClear.mode == SafariMode.FULL_CLEAR
     }
     class Sparkling {
-        @JvmField @ConfigOption(name = "Sparkling Mode", desc = "Highlight your party's missing sparkling critters. Requires an API key.")
+        @JvmField @ConfigOption(name = "Sparkling Mode", desc = "Highlight missing sparklings for you or your party. Requires an API key.")
         @ConfigEditorBoolean var enabled = ConfigManager.sparklingMode
         @JvmField @ConfigOption(name = "Critter ESP for profitable shards", desc = "Keep profitable critters highlighted throughout the run.")
         @ConfigEditorBoolean var profitable = ConfigManager.sparklingProfitableShardEsp
@@ -244,7 +240,7 @@ class SafariSettings : Config() {
             ConfigManager::showBeeNests to safari.remaining.nests, ConfigManager::showMoundCount to safari.remaining.mounds,
             ConfigManager::showSnooperWalls to safari.remaining.walls,
             ConfigManager::hideGroundCapsules to safari.hideGroundCapsules, ConfigManager::hideFlyingCapsules to safari.hideFlyingCapsules)
-        val espChanged = listOf(floorEsp.apply(), cavernEsp.apply(), forestEsp.apply(), icyEsp.apply(), hauntedEsp.apply()).any { it }
+        val espChanged = esp.apply()
         val customizationChanged = customization.apply()
         val distance = ConfigManager.validCapsuleDistance(safari.capsuleHideDistance)
         val generalChanged = espChanged || customizationChanged || changes.any { (property, value) -> property.get() != value } ||
@@ -268,8 +264,6 @@ class SafariSettings : Config() {
             if (notifyMode) SafariFullClear.modeLines().forEach {
                 Minecraft.getInstance().player?.sendSystemMessage(Component.literal(it))
             }
-            listOf(floorEsp, cavernEsp, forestEsp, icyEsp, hauntedEsp).forEach { it.refreshPreset() }
-            cavernEsp.rockmiteMound = SafariEspConfig.rockmiteMoundEnabled
             safari.snooperHighlight = ConfigManager.highlightSnooperWalls
             safari.remaining.nests = ConfigManager.showBeeNests
             safari.remaining.mounds = ConfigManager.showMoundCount

@@ -1,115 +1,26 @@
 package net.johnceo.sparklingmutuals.config
 
 import io.github.notenoughupdates.moulconfig.annotations.*
-import net.johnceo.sparklingmutuals.safari.SafariAssist
-import net.johnceo.sparklingmutuals.safari.SafariBiome
-import net.johnceo.sparklingmutuals.safari.SafariFloorDrops
 
-/** Shared controls keep the four biome categories consistent. */
-open class SafariEspGroupSettings(private val group: String) {
-    @JvmField @ConfigOption(name = "Enable ESP", desc = "Show highlights through terrain.")
-    @ConfigEditorBoolean var enabled = SafariEspConfig.groups.getValue(group).enabled
-    @JvmField @ConfigOption(name = "Only in current biome", desc = "Show only targets in your current biome.")
-    @ConfigEditorBoolean var onlyInBiome = SafariEspConfig.groups.getValue(group).onlyInBiome
-    open fun refreshPreset() {
-        enabled = SafariEspConfig.groups.getValue(group).enabled
-        javaClass.fields.filter { it.type == SafariEspMobSettings::class.java }.forEach {
-            (it.get(this) as SafariEspMobSettings).refreshPreset()
-        }
-    }
-    open fun apply(): Boolean {
-        val saved = SafariEspConfig.groups.getValue(group)
-        var changed = saved.enabled != enabled || saved.onlyInBiome != onlyInBiome
-        saved.enabled = enabled; saved.onlyInBiome = onlyInBiome
-        javaClass.fields.filter { it.type == SafariEspMobSettings::class.java }.forEach {
-            if ((it.get(this) as SafariEspMobSettings).apply()) changed = true
-        }
-        return changed
-    }
-}
-class SafariEspMobSettings(private val name: String) {
-    @JvmField @ConfigOption(name = "Highlight", desc = "Highlight this critter when biome ESP is on.")
-    @ConfigEditorBoolean var enabled = SafariEspConfig.mobs.getValue(name).enabled
-    fun refreshPreset() { enabled = SafariEspConfig.mobs.getValue(name).enabled }
+/** Modes own targets; these switches only control where their highlights appear. */
+class SafariEspSettings {
+    @JvmField @ConfigOption(name = "Floor drops: only in current biome", desc = "Limit floor highlights to your current biome.")
+    @ConfigEditorBoolean var floor = SafariEspConfig.groups.getValue("floor").onlyInBiome
+    @JvmField @ConfigOption(name = "Forest: only in current biome", desc = "Limit Forest critter highlights to Forest.")
+    @ConfigEditorBoolean var forest = SafariEspConfig.groups.getValue("forest").onlyInBiome
+    @JvmField @ConfigOption(name = "Cavern: only in current biome", desc = "Limit Cavern critter highlights to Cavern.")
+    @ConfigEditorBoolean var cavern = SafariEspConfig.groups.getValue("cavern").onlyInBiome
+    @JvmField @ConfigOption(name = "Icy: only in current biome", desc = "Limit Icy critter highlights to Icy.")
+    @ConfigEditorBoolean var icy = SafariEspConfig.groups.getValue("icy").onlyInBiome
+    @JvmField @ConfigOption(name = "Haunted: only in current biome", desc = "Limit Haunted critter highlights to Haunted.")
+    @ConfigEditorBoolean var haunted = SafariEspConfig.groups.getValue("haunted").onlyInBiome
     fun apply(): Boolean {
-        val saved = SafariEspConfig.mobs.getValue(name)
-        val changed = saved.enabled != enabled
-        saved.enabled = enabled
-        return changed
-    }
-}
-class SafariFloorEspSettings : SafariEspGroupSettings("floor") {
-    init { enabled = SafariFloorDrops.enabled() }
-    private var previous = enabled
-    override fun refreshPreset() { enabled = SafariFloorDrops.enabled(); previous = enabled }
-    override fun apply(): Boolean {
-        val saved = SafariEspConfig.groups.getValue("floor")
-        val changed = previous != enabled || saved.onlyInBiome != onlyInBiome
-        if (previous != enabled) {
-            if (SafariAssist.biome in setOf(SafariBiome.CAVERN, SafariBiome.ICY)) {
-                SafariFloorDrops.state.visit(SafariAssist.biome)
-                SafariFloorDrops.state.force(enabled)
-            } else saved.enabled = enabled
+        var changed = false
+        mapOf("floor" to floor, "forest" to forest, "cavern" to cavern, "icy" to icy, "haunted" to haunted).forEach { (key, value) ->
+            val group = SafariEspConfig.groups.getValue(key)
+            if (group.onlyInBiome != value) changed = true
+            group.onlyInBiome = value
         }
-        saved.onlyInBiome = onlyInBiome
-        enabled = SafariFloorDrops.enabled()
-        previous = enabled
         return changed
     }
-}
-
-class SafariCavernEspSettings : SafariEspGroupSettings("cavern") {
-    @JvmField @ConfigOption(name = "Cavernfish", desc = "") @Accordion val cavernfish = SafariEspMobSettings("Cavernfish")
-    @JvmField @ConfigOption(name = "Flitter", desc = "") @Accordion val flitter = SafariEspMobSettings("Flitter")
-    @JvmField @ConfigOption(name = "Shyworm", desc = "") @Accordion val shyworm = SafariEspMobSettings("Shyworm")
-    @JvmField @ConfigOption(name = "Driftling", desc = "") @Accordion val driftling = SafariEspMobSettings("Driftling")
-    @JvmField @ConfigOption(name = "Chuckwalla", desc = "") @Accordion val chuckwalla = SafariEspMobSettings("Chuckwalla")
-    @JvmField @ConfigOption(name = "Rockmite silverfish", desc = "") @Accordion val rockmite = SafariEspMobSettings("Rockmite")
-    @JvmField @ConfigOption(name = "Rockmite mound", desc = "Highlight unbroken Rockmite mounds.")
-    @ConfigEditorBoolean var rockmiteMound = SafariEspConfig.rockmiteMoundEnabled
-    override fun apply(): Boolean {
-        val changed = SafariEspConfig.rockmiteMoundEnabled != rockmiteMound
-        SafariEspConfig.rockmiteMoundEnabled = rockmiteMound
-        return super.apply() || changed
-    }
-    @JvmField @ConfigOption(name = "Scrappy", desc = "") @Accordion val scrappy = SafariEspMobSettings("Scrappy")
-    @JvmField @ConfigOption(name = "Snoozle", desc = "") @Accordion val snoozle = SafariEspMobSettings("Snoozle")
-    @JvmField @ConfigOption(name = "Gemzie", desc = "") @Accordion val gemzie = SafariEspMobSettings("Gemzie")
-}
-
-class SafariForestEspSettings : SafariEspGroupSettings("forest") {
-    @JvmField @ConfigOption(name = "Foxtrot", desc = "") @Accordion val foxtrot = SafariEspMobSettings("Foxtrot")
-    @JvmField @ConfigOption(name = "Bluebird", desc = "") @Accordion val bluebird = SafariEspMobSettings("Bluebird")
-    @JvmField @ConfigOption(name = "Honeybug", desc = "") @Accordion val honeybug = SafariEspMobSettings("Honeybug")
-    @JvmField @ConfigOption(name = "Treefrog", desc = "") @Accordion val treefrog = SafariEspMobSettings("Treefrog")
-    @JvmField @ConfigOption(name = "Woodchucker", desc = "") @Accordion val woodchucker = SafariEspMobSettings("Woodchucker")
-    @JvmField @ConfigOption(name = "Fluffling", desc = "") @Accordion val fluffling = SafariEspMobSettings("Fluffling")
-    @JvmField @ConfigOption(name = "Hideonfloor", desc = "") @Accordion val hideonfloor = SafariEspMobSettings("Hideonfloor")
-    @JvmField @ConfigOption(name = "Parakeet", desc = "") @Accordion val parakeet = SafariEspMobSettings("Parakeet")
-    @JvmField @ConfigOption(name = "Macaw", desc = "") @Accordion val macaw = SafariEspMobSettings("Macaw")
-}
-
-class SafariIcyEspSettings : SafariEspGroupSettings("icy") {
-    @JvmField @ConfigOption(name = "Strongarm", desc = "") @Accordion val strongarm = SafariEspMobSettings("Strongarm")
-    @JvmField @ConfigOption(name = "Tepid", desc = "") @Accordion val tepid = SafariEspMobSettings("Tepid")
-    @JvmField @ConfigOption(name = "Polaris", desc = "") @Accordion val polaris = SafariEspMobSettings("Polaris")
-    @JvmField @ConfigOption(name = "Shuddersquid", desc = "") @Accordion val shuddersquid = SafariEspMobSettings("Shuddersquid")
-    @JvmField @ConfigOption(name = "Billygoat", desc = "") @Accordion val billygoat = SafariEspMobSettings("Billygoat")
-    @JvmField @ConfigOption(name = "Mantis Shrimp", desc = "") @Accordion val mantisshrimp = SafariEspMobSettings("Mantis Shrimp")
-    @JvmField @ConfigOption(name = "Nozzlenose", desc = "") @Accordion val nozzlenose = SafariEspMobSettings("Nozzlenose")
-    @JvmField @ConfigOption(name = "Troodon", desc = "") @Accordion val troodon = SafariEspMobSettings("Troodon")
-    @JvmField @ConfigOption(name = "Wumpa", desc = "") @Accordion val wumpa = SafariEspMobSettings("Wumpa")
-}
-
-class SafariHauntedEspSettings : SafariEspGroupSettings("haunted") {
-    @JvmField @ConfigOption(name = "Areita", desc = "") @Accordion val areita = SafariEspMobSettings("Areita")
-    @JvmField @ConfigOption(name = "Bloodbat", desc = "") @Accordion val bloodbat = SafariEspMobSettings("Bloodbat")
-    @JvmField @ConfigOption(name = "Duplico", desc = "") @Accordion val duplico = SafariEspMobSettings("Duplico")
-    @JvmField @ConfigOption(name = "Gazer", desc = "") @Accordion val gazer = SafariEspMobSettings("Gazer")
-    @JvmField @ConfigOption(name = "Litterbug", desc = "") @Accordion val litterbug = SafariEspMobSettings("Litterbug")
-    @JvmField @ConfigOption(name = "Solsnatcher", desc = "") @Accordion val solsnatcher = SafariEspMobSettings("Solsnatcher")
-    @JvmField @ConfigOption(name = "Gimmiegold", desc = "") @Accordion val gimmiegold = SafariEspMobSettings("Gimmiegold")
-    @JvmField @ConfigOption(name = "Hideonwall", desc = "") @Accordion val hideonwall = SafariEspMobSettings("Hideonwall")
-    @JvmField @ConfigOption(name = "Hideyho", desc = "") @Accordion val hideyho = SafariEspMobSettings("Hideyho")
-    @JvmField @ConfigOption(name = "Doomspiral", desc = "") @Accordion val doomspiral = SafariEspMobSettings("Doomspiral")
 }
