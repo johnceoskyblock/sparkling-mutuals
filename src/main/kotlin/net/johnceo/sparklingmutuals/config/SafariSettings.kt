@@ -32,13 +32,18 @@ class SafariSettings : Config() {
     @JvmField @Category(name = "Customization", desc = "") val customization = CustomizationSettings()
 
     class General {
-        @JvmField @ConfigOption(name = "Run mode", desc = "Select capture, ESP, PB and discovery lookup presets.")
+        @JvmField @ConfigOption(name = "Run mode", desc = "Choose unique runs or full clears.")
         @ConfigEditorDropdown(values = ["Unique run", "Full clear"])
         var mode = if (ConfigManager.fullClearMode) 1 else 0
+        @JvmField @ConfigOption(name = "Unique mode", desc = "") @Accordion val unique = Unique()
         @JvmField @ConfigOption(name = "Command help", desc = "Close settings and show commands in chat.")
         @ConfigEditorButton(runnableId = 3, buttonText = "Show help") var help = false
         @JvmField @ConfigOption(name = "Move and resize HUDs", desc = "Drag HUDs to move them; scroll to resize.")
         @ConfigEditorButton(runnableId = 1, buttonText = "Edit all HUDs") var edit = false
+    }
+    class Unique {
+        @JvmField @ConfigOption(name = "Critter ESP for profitable shards", desc = "Keep Hideonfloor, Hideonwall, Chuckwalla, Fluffling and Mantis Shrimp highlighted after their first catch.")
+        @ConfigEditorBoolean var profitable = ConfigManager.profitableShardEsp
     }
     class Party {
         @JvmField @ConfigOption(name = "Respond to party commands", desc = "Reply to party commands. PB requests get a reply from each mod user.")
@@ -196,7 +201,7 @@ class SafariSettings : Config() {
     fun saveTextFields() { saveDelay(); saveSound() }
     fun apply() {
         if (warp.enabled != ConfigManager.warpAlertsEnabled) AlertManager.toggleAlert()
-        val changes = listOf(ConfigManager::partyCommandsEnabled to party.enabled, ConfigManager::hideHauntedPaintings to safari.paintings,
+        val changes = listOf(ConfigManager::profitableShardEsp to general.unique.profitable, ConfigManager::partyCommandsEnabled to party.enabled, ConfigManager::hideHauntedPaintings to safari.paintings,
             ConfigManager::shinyDetection to safari.shiny, ConfigManager::hideyhoQuestClicks to safari.hideyho,
             ConfigManager::progressHud to tracking.progress,
             ConfigManager::missingPanel to tracking.missing,

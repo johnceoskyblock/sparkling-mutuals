@@ -12,6 +12,7 @@ object ConfigManager {
     @Volatile var apiKey = ""
     var partyCommandsEnabled = true
     var fullClearMode = false
+    var profitableShardEsp = true
     var timesaveOnly = true
     var warpAlertsEnabled = false
     var warpDelaySeconds = 25
@@ -41,7 +42,7 @@ object ConfigManager {
     var capsuleHideDistance = 2f
     var showWhere = 1
     val personalBests = SafariPersonalBests()
-    private val flags = mapOf(::partyCommandsEnabled to true, ::fullClearMode to false, ::timesaveOnly to true, ::warpAlertsEnabled to false,
+    private val flags = mapOf(::partyCommandsEnabled to true, ::fullClearMode to false, ::profitableShardEsp to true, ::timesaveOnly to true, ::warpAlertsEnabled to false,
         ::hideyhoQuestClicks to true, ::hideHauntedPaintings to true, ::shinyDetection to true,
         ::progressHud to true, ::countUniqueOnly to false, ::missingPanel to true,
         ::highlightBeeNests to true, ::removeDarkness to true, ::sparklingAlert to true,
