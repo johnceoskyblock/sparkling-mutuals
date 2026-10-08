@@ -34,7 +34,7 @@ object HypixelApi {
             throw ApiFailure(ApiFailureKind.PLAYER_NOT_FOUND, "Minecraft player not found: $username")
         }
         if (response.statusCode() == 429) throw ApiFailure(ApiFailureKind.RATE_LIMIT,
-            "The player lookup request limit was reached. Wait before trying again.")
+            "Player lookup request limit reached. Try again shortly.")
         if (response.statusCode() != 200) throw ApiFailure.unavailable()
         return try { JsonParser.parseString(response.body()).asJsonObject.get("id").asString }
         catch (_: Exception) { throw ApiFailure.unavailable() }
@@ -57,7 +57,7 @@ object HypixelApi {
     private fun get(url: String): JsonObject {
         val key = ConfigManager.apiKey.trim()
         if (key.isEmpty()) throw ApiFailure(ApiFailureKind.MISSING_KEY,
-            "No Hypixel API key is configured. Set one with /apikey or in settings.")
+            "No Hypixel API key. Use /apikey or settings.")
         // Keep credentials out of URLs and diagnostic messages.
         val response = send(HttpRequest.newBuilder().uri(URI.create(url)).header("API-Key", key))
         ApiFailure.fromResponse(response.statusCode(), response.body())?.let { throw it }
