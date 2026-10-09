@@ -39,7 +39,7 @@ class FloorDropState {
             SafariBiome.CAVERN -> if (fullClear) !gemsReady else gems.size < 3 && !partyGemzieComplete && !gemzieCaught
             SafariBiome.FOREST -> configured && !partyBirdsComplete && (fullClear || !forestFoodComplete)
             SafariBiome.HAUNTED -> configured && (!partyGimmiegoldComplete || !incenseReady && incensePickups < 4 && !doomCaught)
-            SafariBiome.ICY -> fullClear && maxOf(pickaxes, inventoryPickaxes) < 2
+            SafariBiome.ICY -> fullClear && maxOf(pickaxes, inventoryPickaxes) < 1
             else -> configured
         }
     }

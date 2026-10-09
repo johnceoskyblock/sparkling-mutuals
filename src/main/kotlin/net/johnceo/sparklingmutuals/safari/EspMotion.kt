@@ -6,10 +6,12 @@ import java.util.UUID
 class EspMotion {
     private data class Sample(val x: Double, val y: Double, val z: Double, val since: Long, val nearby: Boolean, val hidden: Boolean = false)
     private val samples = mutableMapOf<UUID, Sample>()
-    private val moving = setOf("Driftling", "Foxtrot", "Bluebird", "Parakeet", "Macaw", "Solsnatcher",
-        "Litterbug", "Tepid", "Mantis Shrimp", "Nozzlenose", "Gemzie", "Shuddersquid")
+    companion object {
+        val movingSpecies = setOf("Driftling", "Foxtrot", "Bluebird", "Parakeet", "Macaw", "Solsnatcher",
+            "Litterbug", "Tepid", "Mantis Shrimp", "Nozzlenose", "Gemzie", "Shuddersquid")
+    }
     fun observe(id: UUID, species: String, x: Double, y: Double, z: Double, distanceSquared: Double, now: Long) {
-        if (species !in moving) { samples.remove(id); return }
+        if (species !in movingSpecies) { samples.remove(id); return }
         val old = samples[id]
         val nearby = distanceSquared <= 900
         val moved = old == null || (x - old.x) * (x - old.x) + (y - old.y) * (y - old.y) +

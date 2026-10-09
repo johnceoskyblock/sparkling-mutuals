@@ -110,7 +110,7 @@ object SafariEsp {
         val player = client.player ?: return
         val eye = player.eyePosition
         val look = player.lookAngle
-        val candidates = targets.filter { live(it, client) }.map {
+        val candidates = targets.filter { live(it, client, forEsp = true) }.map {
             val offset = bounds(it, 1f).center.subtract(eye)
             val along = offset.dot(look)
             EspCaptureCandidate(it.entity.id, it.species, SafariEspRules.captureModel(it.entity.type.toShortString()),
@@ -174,19 +174,22 @@ object SafariEsp {
                 EspModelLabel(it.uuid, target.species, it.distanceToSqr(target.entity), it.isCustomNameVisible)
             }, now)
         }
-        targets = targets.filter { live(it, client) }
+        targets = targets.filter { live(it, client, forEsp = true) }
         stringDisplays = strings.toList()
         drops = SafariEspRules.floorDrops(strings)
         scanned = true
         rememberAim(client)
     }
     private fun trackedModel(target: Target) = SafariEspRules.requiresModelLabel(target.species, target.entity.type.toShortString())
-    private fun live(target: Target, client: Minecraft): Boolean {
+    private fun live(target: Target, client: Minecraft, forEsp: Boolean = false): Boolean {
         val entity = target.entity
-        return SafariEspRules.targetCurrent(target.species, describe(entity), entity.isRemoved,
-            !captures.hidden(entity.uuid) && client.level?.getEntity(entity.id) === entity, entity.level() === client.level) &&
-            motion.current(entity.uuid, System.currentTimeMillis()) &&
-            (!trackedModel(target) || modelLabels.current(entity.uuid, System.currentTimeMillis()))
+        val current = SafariEspRules.targetCurrent(target.species, describe(entity), entity.isRemoved,
+            !captures.hidden(entity.uuid) && client.level?.getEntity(entity.id) === entity, entity.level() === client.level)
+        val now = System.currentTimeMillis()
+        val moving = motion.current(entity.uuid, now)
+        val labeled = !trackedModel(target) || modelLabels.current(entity.uuid, now)
+        return if (forEsp) SafariEspRules.renderCurrent(target.species, ConfigManager.sparklingMode, current, moving, labeled)
+            else current && moving && labeled
     }
     fun debug(client: Minecraft) {
         val player = client.player ?: return
@@ -207,8 +210,7 @@ object SafariEsp {
     fun observations(): SafariEspObservations {
         val client = Minecraft.getInstance()
         if (!SafariAssist.inSafari || client.level == null || client.level !== level) return SafariEspObservations(emptyList(), emptyList())
-        targets = targets.filter { live(it, client) }
-        val critters = targets.mapNotNull { target ->
+        val critters = targets.filter { live(it, client) }.mapNotNull { target ->
             val e = target.entity
             val biome = SafariEspRules.biomeAt(e.x, e.z) ?: return@mapNotNull null
             if (SafariRoster.named(target.species)?.biome != biome) return@mapNotNull null
@@ -261,7 +263,7 @@ object SafariEsp {
         val delta = client.deltaTracker.getGameTimeDeltaPartialTick(false)
         val now = System.currentTimeMillis()
         val timers = mutableListOf<Pair<LitterbugMarker, AABB>>()
-        targets = targets.filter { live(it, client) }
+        targets = targets.filter { live(it, client, forEsp = true) }
         for (target in targets) {
             val e = target.entity
             val mob = SafariRoster.named(target.species)!!
