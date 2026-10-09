@@ -12,8 +12,8 @@ A Fabric mod for Hypixel SkyBlock Safari, sparkling discoveries, and Miria conte
 
 ## Safari tracking
 
-- **Progress HUD:** shows the run timer and collected species in each biome.
-- **Missing panel:** lists uncaught critters in Unique mode and currently rendered species in Full Clear, with remaining bee nests, Rockmite mounds, and Snooper walls.
+- **Progress HUD:** shows the run timer and collected species, or checked party-needed discoveries in Sparkling mode.
+- **Missing panel:** lists uncaught species in Unique, rendered species in Full Clear, and unchecked party-needed discoveries in Sparkling. Remaining nests, mounds and walls follow the selected mode.
 - **Capture counts:** tracks catches per critter and Rockmite mound results. `/captures` opens the current or last run's counts. First visiting a biome with earlier party catches and none of your own uses minimum counts and remaining rendered critters to verify party progress.
 - **Run mode:** `/fc` selects full clear, Full Clear PBs and all-species lookups. `/unique` selects unique runs, Unique Run PBs and timesaves. Full-clear capture numbers stay white until you visit a biome, then turn green when completion requirements are met. The Modes tab also offers these controls and Sparkling mode.
 - **PB tracking:** saves your fastest Doomspiral, Wumpa, full-clear, and unique-biome times from the start of a run and announces new records locally. Unique clears require one personal catch of every species; only your own catches qualify for either biome PB type.
@@ -23,6 +23,7 @@ A Fabric mod for Hypixel SkyBlock Safari, sparkling discoveries, and Miria conte
 - **Miria contest HUD:** tracks Miria's contest timer, tier, and score, with configurable end warnings.
 - **Warp reminders:** sends title to warp party before afk timeout. Useful for party leeching so that other players can have a chance to get sparkling critters without using a ticket. Use `/alert` and `/alertdelay <seconds>` to control reminders.
 - **Sparkling mode:** `/sparkle` highlights your missing sparkling discoveries when solo, or the party's combined missing discoveries. Updates when players join or leave, with optional profitable-shard ESP. Requires an API key.
+- **Sparkling checks:** ordinary species are checked near the biome center; spawned species require their nest, mound, wall, food, coin or distinct-entity evidence. In party chat, `fd`, `cd`, `id` or `hd` marks that biome checked for mod users in Sparkling mode.
 - **Critter ESP:** modes select highlights in all four biomes. Unique runs hide collected species, with an optional profitable-shard exception; Honeybug, Rockmite and Snoozle checks remain visible while anyone needs their sparkling, or party discovery data is unavailable. Nearby stationary leftover moving-critter models are excluded after two seconds and restored if they move.
 - **Hidden Litterbugs:** shows their ESP at the known mansion floor or their last observed emergence height, returning to the real position when they emerge.
 - **Floor drop ESP:** hides completed or unneeded drops using discoveries, pickups, inventory and captures. Unique Icy keeps drops hidden; Haunted keeps coin drops while anyone needs Gimmiegold.

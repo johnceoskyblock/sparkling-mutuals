@@ -1,3 +1,11 @@
+# Sparkling checklist update
+
+- Sparkling missing panels and progress now track party-needed checks instead of unique captures.
+- Biome-center checks cover ordinary critters. Special critters require nests, mounds, walls, bird feeding, coin spending or distinct UUID sightings, remembered for the run.
+- Party messages `fd`, `cd`, `id` and `hd` mark the matching biome checked in Sparkling mode; no automatic progress messages are sent.
+- Remaining nests, mounds and walls disappear after their Sparkling check is complete. Unique and Full Clear helper rules remain intact.
+- Verified the previously implemented party-cleared biome display: earlier party catches and no personal catches use minimum counts and rendered critters, without relaxing personal PB requirements.
+
 # Sparkling modes and Safari helpers update
 
 - Modes now manage remaining structures and their highlights; removed redundant Remaining, Bee Nest Highlight and Snooper Wall Highlight controls.
