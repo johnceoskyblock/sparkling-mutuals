@@ -45,6 +45,7 @@ object SafariEsp {
     private val captures = EspCaptureMemory()
     private val modelLabels = EspModelLabels()
     private val motion = EspMotion()
+    private val litterbugs = LitterbugProjection()
     private val logger = LoggerFactory.getLogger("sparkling-mutuals/esp")
     private fun renderType(name: String, snippet: RenderPipeline.Snippet) = RenderType.create("sparkling-mutuals:$name",
         RenderSetup.builder(RenderPipelines.register(RenderPipeline.builder(snippet)
@@ -129,7 +130,7 @@ object SafariEsp {
         logger.info("Retired captured {} model {}.", species, id)
         targets = targets.filterNot { it.entity.uuid == id }
     }
-    fun clearCaptured() { captures.reset(); modelLabels.reset(); motion.reset() }
+    fun clearCaptured() { captures.reset(); modelLabels.reset(); motion.reset(); litterbugs.reset() }
     fun tick(client: Minecraft) {
         if (level !== client.level) { reset(); level = client.level }
         SafariFloorDrops.state.visit(SafariAssist.biome)
@@ -159,6 +160,7 @@ object SafariEsp {
         targets.forEach { target ->
             val e = target.entity
             motion.observe(e.uuid, target.species, e.x, e.y, e.z, client.player!!.distanceToSqr(e), now)
+            if (target.species == "Litterbug") litterbugs.observe(e.uuid, e.y)
         }
         targets.filter(::trackedModel).forEach { target ->
             val nearby = labels[target.species].orEmpty().filter { it.distanceToSqr(target.entity) <= 9 }
@@ -262,8 +264,12 @@ object SafariEsp {
                 SafariEspRules.neededForSparkling(mob.name, e is Display.ItemDisplay, SafariSparklingMode.state, ConfigManager.sparklingProfitableShardEsp)
             else SafariEspRules.neededForRun(mob.name, e is Display.ItemDisplay, SafariTracking.ledger.current, ConfigManager.fullClearMode, ConfigManager.profitableShardEsp)
             if (needed &&
-                SafariEspConfig.entityEnabled(mob.name, e is Display.ItemDisplay) && mobBiome == mob.biome && SafariEspRules.visible(true, group.enabled, group.onlyInBiome, playerBiome, mobBiome))
-                frame(bounds(target, delta), SafariEspConfig.rgb(SafariEspConfig.entityColor(mob.name, e is Display.ItemDisplay)))
+                SafariEspConfig.entityEnabled(mob.name, e is Display.ItemDisplay) && mobBiome == mob.biome && SafariEspRules.visible(true, group.enabled, group.onlyInBiome, playerBiome, mobBiome)) {
+                val box = bounds(target, delta)
+                val height = if (mob.name == "Litterbug") litterbugs.hiddenHeight(e.uuid, e.x, e.y, e.z) else null
+                frame(if (height == null) box else box.move(0.0, height - e.getPosition(delta).y, 0.0),
+                    SafariEspConfig.rgb(SafariEspConfig.entityColor(mob.name, e is Display.ItemDisplay)))
+            }
         }
         val floor = SafariEspConfig.groups.getValue("floor")
         val tiles = liveDrops(client).filter {
