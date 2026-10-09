@@ -24,6 +24,7 @@ A Fabric mod for Hypixel SkyBlock Safari, sparkling discoveries, and Miria conte
 - **Warp reminders:** sends title to warp party before afk timeout. Useful for party leeching so that other players can have a chance to get sparkling critters without using a ticket. Use `/alert` and `/alertdelay <seconds>` to control reminders.
 - **Sparkling mode:** `/sparkle` highlights your missing sparkling discoveries when solo, or the party's combined missing discoveries. Updates when players join or leave, with optional profitable-shard ESP. Requires an API key.
 - **Critter ESP:** modes select highlights in all four biomes. Unique runs hide collected species, with an optional profitable-shard exception; mounds and walls remain available for shiny checks. Nearby stationary leftover moving-critter models are excluded after two seconds and restored if they move.
+- **Hidden Litterbugs:** shows their ESP at the known mansion floor or their last observed emergence height, returning to the real position when they emerge.
 - **Floor drop ESP:** hides completed or unneeded drops using discoveries, pickups, inventory and captures. Unique Icy keeps drops hidden; Haunted keeps coin drops while anyone needs Gimmiegold.
 - **Sparkling detection:** highlights nearby sparkling critters and shows their names and distances.
 - **Sparkling alerts:** displays a centered title, critter, location and screen flash, with a customizable sound and volume. Can announce discoveries in party chat.
