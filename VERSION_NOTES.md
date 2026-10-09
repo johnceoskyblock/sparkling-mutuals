@@ -1,3 +1,9 @@
+# Icy floor drops and moving-critter ESP
+
+- One Icebreaker is enough to stop automatic Full Clear Icy floor ESP; consumption and biome changes retain that progress for the run.
+- Unique and Full Clear restore loaded moving-critter ESP when name tags disappear at distance or movement pauses, including Driftling. Capture retirement, entity validity and mode target filters still apply.
+- Sparkling's lifecycle and per-UUID windows, capture observations and PB requirements retain their existing rules. Shyworm path/timer details from issue #18 are awaiting clarification.
+
 # Run mode fixes
 
 - Full Clear missing rows remain until the capture minimum is met and no matching critters are nearby.
@@ -56,7 +62,7 @@
 - Forest floor drops hide when everyone has all three sparkling birds.
 - Cavern floor drops hide when everyone has sparkling Gemzie, when Gemzie has been caught, or when all gems have been found.
 - Haunted floor drops stay visible while anyone still needs sparkling Gimmiegold. Otherwise they hide after four Soothing Incense or a Doomspiral capture, including incense found at the start of the run.
-- Icy floor drops remain hidden in Unique and Sparkling modes and hide after two Icebreakers in Full Clear.
+- Icy floor drops remain hidden in Unique and Sparkling modes and hide after one Icebreaker in Full Clear.
 - Full Clear returns biome PBs and all-species sparkling lookups. Unique returns unique-biome and Doomspiral/Wumpa PBs with timesave lookups. Sparkling returns Doomspiral/Wumpa PBs only, also with timesave lookups.
 - Auto Clicker now requires physically holding Mouse 0 on a Rockmite mound, stopping immediately on release or target changes.
 - Added a Full candle hitbox setting in Safari Helpers, making Haunted candles easier to click while holding Soothing Incense.
