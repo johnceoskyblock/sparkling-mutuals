@@ -52,9 +52,11 @@ object SafariInventoryAlerts {
         val notices = state.poll(SafariAssist.biome, stacks, enabled).toMutableList()
         if (birds?.alert(SafariAssist.biome, ConfigManager.allBirdFoodAlert) == true) notices.add(InventoryAlert.BIRD_FOOD)
         notices.forEach {
-            client.gui.setTimes(5, 60, 15)
-            client.gui.setSubtitle(Component.literal(it.detail))
-            client.gui.setTitle(Component.literal("§a${it.title}"))
+            SmallAlerts.show(when (it) {
+                InventoryAlert.GEMS -> SafariHud.GEMS
+                InventoryAlert.BIRD_FOOD -> SafariHud.BIRD_FOOD
+                InventoryAlert.INCENSE -> SafariHud.INCENSE
+            })
             player.sendSystemMessage(Component.literal("[SM] ${it.detail}${if (it == InventoryAlert.BIRD_FOOD) "." else " ready."}"))
         }
     }
