@@ -31,7 +31,7 @@ class ContestGui(private val parent: Screen? = null) : Screen(Component.literal(
         val run = SafariPanels.previewRun()
         val panels = listOf(SafariPanels.progress(run, ConfigManager.countUniqueOnly, 49000),
             SafariPanels.missing(run, SafariBiome.FOREST, ConfigManager.countUniqueOnly, 3),
-            SafariPanels.captures(run, SafariBiome.FOREST), SafariAssist.nearbyPanel(preview = true)!!)
+            SafariPanels.captures(run, SafariBiome.FOREST), SafariAssist.nearbyPanel(preview = true)!!) + SmallAlerts.titles.keys.map(SmallAlerts::preview)
         SafariHud.entries.zip(panels).forEach { (hud, panel) ->
             previews.add(Preview(hud.label, hud.layout, panel.width(font::width), panel.height) { g, x, y ->
                 panel.draw(g, x, y, hud.layout.scale, AppearanceConfig.panels.getValue(hud.name.lowercase())) })
