@@ -1,3 +1,8 @@
+# Party biome completion fix
+
+- Fixed party `fd`, `cd`, `id` and `hd` messages being filtered out before reaching the Sparkling checklist. They now mark the matching biome checked during an active Sparkling run.
+- Player chat remains excluded from capture, entry and PB tracking. Unique and Full Clear behavior is unchanged.
+
 # Litterbug emergence timer
 
 - Hidden Litterbug ESP boxes now show an estimated 8.0-second countdown that changes from green to yellow to red, followed by white "Moving soon..".
