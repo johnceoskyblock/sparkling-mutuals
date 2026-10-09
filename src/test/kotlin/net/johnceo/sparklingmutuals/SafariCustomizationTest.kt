@@ -44,10 +44,10 @@ class SafariCustomizationTest {
         settings.customization.macaw.setColor.run()
         settings.customization.beeNests.setColor.run()
         settings.customization.captures.transparency = 65
-        settings.safari.remaining.nests = false
-        settings.safari.remaining.mounds = false
-        settings.safari.remaining.walls = false
-        settings.safari.snooperHighlight = false
+        ConfigManager.showBeeNests = false
+        ConfigManager.showMoundCount = false
+        ConfigManager.showSnooperWalls = false
+        ConfigManager.highlightSnooperWalls = false
         settings.apply()
         assertFalse(SafariEspConfig.groups.getValue("forest").enabled)
         assertFalse(SafariEspConfig.mobs.getValue("Macaw").enabled)
@@ -95,15 +95,14 @@ class SafariCustomizationTest {
         SafariRoster.all.filter { it.name != "Rockmite" }.forEach { assertEquals(1, names.count { name -> name == "${it.name} ESP" }) }
         assertTrue(names.containsAll(listOf("Rockmite silverfish ESP", "Rockmite mound ESP")))
     }
-    @Test fun `warning and remaining controls live in their accordions and full clear controls are absent`() {
+    @Test fun `warnings live in their accordion and mode-owned structure controls are absent`() {
         fun names(type: Class<*>) = type.fields.mapNotNull { it.getAnnotation(io.github.notenoughupdates.moulconfig.annotations.ConfigOption::class.java)?.name }
         assertEquals(setOf("Contest HUD and tracking", "Warning"), names(SafariSettings.Miria::class.java).toSet())
         assertEquals(setOf("5 minute warning", "3 minute warning", "1 minute warning", "No contest warnings", "Warning titles", "Sound volume", "Warning sound", "Save sound"), names(SafariSettings.Warning::class.java).toSet())
         assertEquals(setOf("Command help", "Move and resize HUDs"), names(SafariSettings.General::class.java).toSet())
         assertFalse(names(SafariSettings.Party::class.java).contains("Command help"))
         assertFalse(names(SafariSettings.Tracking::class.java).contains("Move and resize HUDs"))
-        assertTrue(names(SafariSettings.Safari::class.java).contains("Remaining"))
-        assertEquals(setOf("Bee Nests", "Rockmite Mounds", "Snooper Walls"), names(SafariSettings.Remaining::class.java).toSet())
+        assertFalse(names(SafariSettings.Safari::class.java).any { it in setOf("Remaining", "Highlight Snooper Walls", "Highlight bee nests") })
         assertFalse(names(SafariSettings.Tracking::class.java).any { it in setOf("Bee Nests", "Rockmite Mounds", "Snooper Walls", "Mound results", "Count Unique Only", "Biome capture counts") })
         ConfigManager.init(dir)
         ContestConfig.init(dir)
@@ -133,9 +132,9 @@ class SafariCustomizationTest {
         assertEquals(0xFF123456.toInt(), SafariEspConfig.rgb(SafariEspConfig.rockmiteMoundColor))
         assertEquals(0xFF656667.toInt(), SafariEspConfig.rgb(SafariEspConfig.mobs.getValue("Rockmite").color))
         assertTrue(SafariEspConfig.rockmiteMoundEnabled)
-        assertFalse(SafariEspConfig.mobs.getValue("Rockmite").enabled)
+        assertTrue(SafariEspConfig.mobs.getValue("Rockmite").enabled)
     }
-    @Test fun `panel footer toggles are independent and unknown walls are never claimed broken`() {
+    @Test fun `mode-owned footers ignore legacy toggles and unknown walls are never claimed broken`() {
         ConfigManager.init(dir)
         val partial = WallSummary(listOf(WallState.INTACT, WallState.BROKEN, WallState.UNKNOWN))
         assertFalse(partial.allBroken)
@@ -146,14 +145,15 @@ class SafariCustomizationTest {
         assertTrue(forest.rows.any { it.label == "Bee nests to punch" })
         ConfigManager.showBeeNests = false
         assertTrue(ConfigManager.highlightBeeNests)
-        assertFalse(SafariPanels.missing(null, SafariBiome.FOREST, true, 3).rows.any { it.label == "Bee nests to punch" })
+        assertTrue(SafariPanels.missing(null, SafariBiome.FOREST, true, 3).rows.any { it.label == "Bee nests to punch" })
         val cavern = SafariPanels.missing(null, SafariBiome.CAVERN, true, 0, 7, partial)
         assertEquals("7", cavern.rows.first { it.label == "Mounds to break" }.value)
         assertEquals("1 (+1?)", cavern.rows.first { it.label == "Snooper walls to break" }.value)
         ConfigManager.showMoundCount = false
         ConfigManager.showSnooperWalls = false
         val hidden = SafariPanels.missing(null, SafariBiome.CAVERN, true, 0, 7, partial)
-        assertFalse(hidden.rows.any { it.label.contains("Mounds") || it.label.contains("Snooper walls") })
+        assertTrue(hidden.rows.any { it.label.contains("Mounds") })
+        assertTrue(hidden.rows.any { it.label.contains("Snooper walls") })
         assertFalse(SafariPanels.missing(null, SafariBiome.CAVERN, true, 0).rows.any { it.label == "Mounds to break" })
     }
 }

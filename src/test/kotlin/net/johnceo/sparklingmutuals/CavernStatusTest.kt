@@ -82,12 +82,13 @@ class CavernStatusTest {
         val settings = CustomizationSettings()
         settings.selectedHex = "#112233"; assertTrue(settings.rockmiteMound.setSelected())
         settings.selectedHex = "#AABBCC"; assertTrue(settings.rockmite.setSelected())
-        settings.apply(); ConfigManager.save(); ConfigManager.init(dir)
+        settings.apply(); assertFalse(SafariEspConfig.mobs.getValue("Rockmite").enabled)
+        ConfigManager.save(); ConfigManager.init(dir)
         assertEquals(0xFF112233.toInt(), SafariEspConfig.rgb(SafariEspConfig.entityColor("Rockmite", true)))
         assertEquals(0xFFAABBCC.toInt(), SafariEspConfig.rgb(SafariEspConfig.entityColor("Rockmite")))
-        assertFalse(SafariEspConfig.mobs.getValue("Rockmite").enabled)
+        assertTrue(SafariEspConfig.mobs.getValue("Rockmite").enabled) // Modes own visibility after reload.
     }
-    @Test fun `unknown walls and disabled footer toggles cannot produce absence messages`() {
+    @Test fun `unknown walls stay unverified while modes own absence messages`() {
         ConfigManager.init(dir)
         val run = SafariRun(0)
         val unknown = WallSummary(List(4) { WallState.BROKEN } + WallState.UNKNOWN)
@@ -96,7 +97,7 @@ class CavernStatusTest {
         }.value)
         repeat(20) { run.recordMound("The mound falls apart, but nothing is inside...") }
         ConfigManager.showMoundCount = false; ConfigManager.showSnooperWalls = false
-        assertFalse(SafariPanels.missing(run, SafariBiome.CAVERN, false, 0, walls = broken).rows.any { it.label.startsWith("No ") })
+        assertTrue(SafariPanels.missing(run, SafariBiome.CAVERN, false, 0, walls = broken).rows.any { it.label == "No snoozles this run" })
         assertFalse(SafariPanels.missing(run, SafariBiome.ICY, false, 0, walls = broken).rows.any { it.label.startsWith("No ") })
     }
 }

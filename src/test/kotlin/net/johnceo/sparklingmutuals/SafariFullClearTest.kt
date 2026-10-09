@@ -26,7 +26,7 @@ class SafariFullClearTest {
         assertFalse(SafariFullClear.toggle())
         assertTrue(ConfigManager.timesaveOnly)
         assertEquals(BiomePbType.UNIQUE, ConfigManager.personalBests.biomeType)
-        assertFalse(SafariEspConfig.mobs.getValue("Rockmite").enabled)
+        assertTrue(SafariEspConfig.mobs.getValue("Rockmite").enabled)
         assertTrue(SafariEspConfig.rockmiteMoundEnabled)
         assertTrue(SafariEspConfig.mobs.getValue("Driftling").enabled)
         assertTrue(SafariEspConfig.mobs.getValue("Foxtrot").enabled)

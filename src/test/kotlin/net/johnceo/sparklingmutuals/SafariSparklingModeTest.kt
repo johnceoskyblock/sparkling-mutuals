@@ -42,7 +42,7 @@ class SafariSparklingModeTest {
         assertTrue(SafariEspRules.neededForSparkling("Chuckwalla", false, state, true))
         assertFalse(SafariEspRules.neededForSparkling("Chuckwalla", false, state, false))
         assertTrue(SafariEspRules.neededForSparkling("Mantis Shrimp", false, state, false))
-        assertTrue(SafariEspRules.neededForSparkling("Rockmite", true, state, false))
+        assertFalse(SafariEspRules.neededForSparkling("Rockmite", true, state, false))
     }
     @Test fun `sparkling selection persists and modes are mutually exclusive without resetting captures`() {
         ConfigManager.init(dir)

@@ -56,6 +56,7 @@ class SafariPanelSeparationTest {
         assertEquals(setOf("Scrappy", "Gemzie", "Troodon", "Gazer"), rows.filter { it.value?.contains('/') == true }.map { it.label }.toSet())
         assertTrue(rows.any { it.label == "Bluebird" })
         run.record(SafariCatch(SafariRoster.named("Foxtrot")!!))
+        run.updateCaptureEvidence(SafariBiome.FOREST, emptySet(), true)
         assertFalse(SafariPanels.missing(run, SafariBiome.FOREST, false, 0).rows.any { it.label == "Foxtrot" })
     }
     @Test fun `zero minimum variable species require clear evidence before turning green`() {
