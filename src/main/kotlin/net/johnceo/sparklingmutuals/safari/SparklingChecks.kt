@@ -53,6 +53,7 @@ class SparklingChecks {
             coinsSpent++; heldCoins = null
         }
         if (manualAllowed) {
+            globalCompletions[text]?.let(completed::add)
             completed.addAll(doneBiome(text)?.critters?.map { it.name } ?: emptyList())
         }
     }
@@ -60,6 +61,10 @@ class SparklingChecks {
         heldCoins = stacks.filter { SafariRules.strip(it.first).trim() == "Shining Coin" }.sumOf { it.second.coerceAtLeast(0) }
     }
     companion object {
+        private val globalCompletions = mapOf(
+            "A rumbling sound can be heard, and the door at the back of the chamber opens..." to "Gemzie",
+            "The darkness in the Haunted Biome fades away..." to "Doomspiral",
+            "The cave is collapsing..." to "Wumpa")
         private val birds = setOf("Bluebird", "Parakeet", "Macaw")
         private val spawned = birds + setOf("Honeybug", "Rockmite", "Snoozle", "Gemzie", "Wumpa", "Gazer", "Gimmiegold", "Doomspiral")
         private val centers = mapOf(SafariBiome.FOREST to (6.0 to 51.0), SafariBiome.CAVERN to (-114.0 to 49.0),

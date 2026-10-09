@@ -13,7 +13,12 @@ object SafariPanels {
         fun bar(label: String, critters: List<SafariCritter>, color: Int): HudRow {
             if (SafariFullClear.mode == SafariMode.SPARKLING && !party.ready) return HudRow(label, "?", color, color)
             val targets = if (SafariFullClear.mode == SafariMode.SPARKLING) critters.filter { party.needs(it.name) } else critters
-            val count = if (SafariFullClear.mode == SafariMode.SPARKLING) targets.count { run?.sparklingChecks?.checked(it.name) == true }
+            val count = if (SafariFullClear.mode == SafariMode.SPARKLING) targets.count { critter ->
+                if (critter.biome == SafariBiome.ICY && party.needs("Wumpa"))
+                    run != null && (run.count("Wumpa") > 0 || run.count(critter.name) > 0 ||
+                        critter.name == "Wumpa" && run.sparklingChecks.checked("Wumpa"))
+                else run?.sparklingChecks?.checked(critter.name) == true
+            }
                 else if (SafariFullClear.mode == SafariMode.FULL_CLEAR) run?.fullClearProgress(targets) ?: 0
                 else run?.progress(targets, true) ?: 0
             return HudRow(label, "$count/${targets.size}", color, color,
