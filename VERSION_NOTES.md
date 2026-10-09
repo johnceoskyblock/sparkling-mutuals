@@ -81,3 +81,5 @@
 - Party help lists actual commands available in your mode. Local command help, settings descriptions and chat feedback are shorter and clearer.
 - Warp reminder settings now describe their purpose: warping party leechers in before entry closes.
 - Updated README. Builds are available from GitHub Actions.
+
+Issue #19 follow-ups: Sparkling Icy progress uses captures of needed species when Wumpa is needed; a Wumpa capture completes the row. Exact global chamber-opening, darkness-fading and cave-collapse messages check Gemzie, Doomspiral and Wumpa respectively. The saved chat toggle is now labeled “Hide useless chats in safari” and also hides the four mound progress lines. Other mode and personal-best rules are unchanged.
