@@ -41,11 +41,14 @@ class SafariPanelSeparationTest {
         surveyed.moundSurvey.scan(emptySet()) { true }
         assertTrue(surveyed.captureComplete("Rockmite"))
     }
-    @Test fun `full clear never precompletes progress or changes its one catch logic`() {
+    @Test fun `full clear progress waits for minimum captures and absence evidence`() {
         ConfigManager.init(dir); SafariFullClear.toggle()
         val run = SafariRun(0)
         assertEquals("0/9", SafariPanels.progress(run, false, 0).rows.first { it.label == "Forest" }.value)
-        run.record(SafariCatch(SafariRoster.named("Foxtrot")!!))
+        run.visitBiome(SafariBiome.FOREST)
+        repeat(6) { run.record(SafariCatch(SafariRoster.named("Foxtrot")!!)) }
+        assertEquals("0/9", SafariPanels.progress(run, false, 0).rows.first { it.label == "Forest" }.value)
+        run.updateCaptureEvidence(SafariBiome.FOREST, emptySet(), false)
         assertEquals("1/9", SafariPanels.progress(run, false, 0).rows.first { it.label == "Forest" }.value)
         assertEquals("0/9", SafariPanels.progress(run, false, 0).rows.first { it.label == "Cavern" }.value)
     }
