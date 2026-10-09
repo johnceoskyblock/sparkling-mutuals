@@ -1,5 +1,11 @@
 # Sparkling modes and Safari helpers update
 
+- Modes now manage remaining structures and their highlights; removed redundant Remaining, Bee Nest Highlight and Snooper Wall Highlight controls.
+- Full Clear missing lists follow currently rendered species, restoring a row if critters reappear. Capture completion and quota labels are unchanged.
+- Unique Honeybug, Rockmite and Snoozle shiny checks remain visible after a unique catch while anyone in the party still needs their sparkling; unavailable party discovery data keeps checks enabled. Sparkling mode hides both Rockmite forms and Snooper walls when everyone has their discoveries.
+- Gem, bird food, incense and warp alerts are smaller independent HUDs. Move and resize them in `/sm gui`, with separate appearance controls.
+- Icy floor drops stay hidden in Sparkling mode.
+
 - Hidden Litterbug ESP now appears at the known mansion floor or ledge height, preferring that entity's last observed emergence height. Unknown or ambiguous spawns stay at their real position until observed. The box follows the real entity again when it emerges; capture and PB tracking are unchanged.
 
 - Party-cleared biome capture displays now use minimum catches and absence of rendered critters after your first visit, including Honeybug, Rockmite, Snoozle and birds. Previously collected Forest nests stop highlighting. Personal PB requirements stay unchanged.
@@ -19,7 +25,7 @@
 - Forest floor drops hide when everyone has all three sparkling birds.
 - Cavern floor drops hide when everyone has sparkling Gemzie, when Gemzie has been caught, or when all gems have been found.
 - Haunted floor drops stay visible while anyone still needs sparkling Gimmiegold. Otherwise they hide after four Soothing Incense or a Doomspiral capture, including incense found at the start of the run.
-- Icy floor drops remain hidden in Unique mode and hide after two Icebreakers in Full Clear and Sparkling modes.
+- Icy floor drops remain hidden in Unique and Sparkling modes and hide after two Icebreakers in Full Clear.
 - Full Clear returns biome PBs and all-species sparkling lookups. Unique returns unique-biome and Doomspiral/Wumpa PBs with timesave lookups. Sparkling returns Doomspiral/Wumpa PBs only, also with timesave lookups.
 - Auto Clicker now requires physically holding Mouse 0 on a Rockmite mound, stopping immediately on release or target changes.
 - Added a Full candle hitbox setting in Safari Helpers, making Haunted candles easier to click while holding Soothing Incense.
