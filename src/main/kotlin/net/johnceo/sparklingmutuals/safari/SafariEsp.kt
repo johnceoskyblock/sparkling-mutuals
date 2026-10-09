@@ -1,5 +1,7 @@
 package net.johnceo.sparklingmutuals.safari
 
+import java.util.UUID
+
 import com.mojang.authlib.GameProfile
 import com.mojang.blaze3d.pipeline.DepthStencilState
 import com.mojang.blaze3d.pipeline.RenderPipeline
@@ -30,7 +32,7 @@ import net.minecraft.world.level.block.ShulkerBoxBlock
 import net.minecraft.world.phys.AABB
 import org.slf4j.LoggerFactory
 
-data class EspCritterObservation(val id: Int, val species: String, val biome: SafariBiome, val x: Double, val y: Double, val z: Double, val mound: Boolean)
+data class EspCritterObservation(val id: Int, val species: String, val biome: SafariBiome, val x: Double, val y: Double, val z: Double, val mound: Boolean, val uuid: UUID)
 data class SafariEspObservations(val critters: List<EspCritterObservation>, val floorDrops: List<EspDrop>, val scanned: Boolean = false)
 
 /** Nebulune SafariESP identification and box offsets, adapted to our Fabric renderer without Athen. */
@@ -207,7 +209,7 @@ object SafariEsp {
             val e = target.entity
             val biome = SafariEspRules.biomeAt(e.x, e.z) ?: return@mapNotNull null
             if (SafariRoster.named(target.species)?.biome != biome) return@mapNotNull null
-            EspCritterObservation(e.id, target.species, biome, e.x, e.y, e.z, target.species == "Rockmite" && e is Display.ItemDisplay)
+            EspCritterObservation(e.id, target.species, biome, e.x, e.y, e.z, target.species == "Rockmite" && e is Display.ItemDisplay, e.uuid)
         }
         return SafariEspObservations(critters, liveDrops(client), scanned)
     }

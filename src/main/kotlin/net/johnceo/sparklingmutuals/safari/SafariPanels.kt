@@ -6,26 +6,32 @@ import net.johnceo.sparklingmutuals.config.ConfigManager
 
 /** One collected total, with the v0.9.0 biome and critter rarity colors. */
 object SafariPanels {
-    fun progress(run: SafariRun?, unique: Boolean, now: Long): HudPanel {
+    fun progress(run: SafariRun?, unique: Boolean, now: Long, party: PartySparklingState = SafariSparklingMode.state): HudPanel {
         val seconds = (run?.elapsed(now) ?: 0) / 1000
         val time = "%d:%02d".format(seconds / 60, seconds % 60)
         val title = when { run == null -> "Critter Safari (ready)"; run.endedAt != null -> "Last Safari  $time"; else -> "Critter Safari  $time" }
         fun bar(label: String, critters: List<SafariCritter>, color: Int): HudRow {
-            val count = run?.progress(critters, true) ?: 0
-            return HudRow(label, "$count/${critters.size}", color, color, count.toFloat() / critters.size)
+            if (SafariFullClear.mode == SafariMode.SPARKLING && !party.ready) return HudRow(label, "?", color, color)
+            val targets = if (SafariFullClear.mode == SafariMode.SPARKLING) critters.filter { party.needs(it.name) } else critters
+            val count = if (SafariFullClear.mode == SafariMode.SPARKLING) targets.count { run?.sparklingChecks?.checked(it.name) == true }
+                else run?.progress(targets, true) ?: 0
+            return HudRow(label, "$count/${targets.size}", color, color,
+                if (targets.isEmpty()) 1f else count.toFloat() / targets.size)
         }
-        return HudPanel(title, rows = listOf(bar("Collected", SafariRoster.all, HudRow.WHITE), HudRow()) +
+        return HudPanel(title, rows = listOf(bar(if (SafariFullClear.mode == SafariMode.SPARKLING) { if (party.ready) "Checked" else "Loading discoveries" } else "Collected", SafariRoster.all, HudRow.WHITE), HudRow()) +
             SafariBiome.entries.map { bar(it.label, it.critters, it.color) })
     }
     fun missing(run: SafariRun?, biome: SafariBiome, unique: Boolean, nests: Int, mounds: Int = 0,
-        walls: WallSummary = WallSummary(emptyList())): HudPanel {
-        val missing = biome.critters.filter { run?.missing(it, ConfigManager.fullClearMode) != false }
+        walls: WallSummary = WallSummary(emptyList()), party: PartySparklingState = SafariSparklingMode.state): HudPanel {
+        val sparkling = SafariFullClear.mode == SafariMode.SPARKLING
+        val missing = biome.critters.filter { if (sparkling) party.needs(it.name) && run?.sparklingChecks?.checked(it.name) != true
+            else run?.missing(it, ConfigManager.fullClearMode) != false }
         val rows = missing.map { critter ->
-            HudRow(critter.name, if (ConfigManager.fullClearMode && critter.quota > 1) "${run?.count(critter.name) ?: 0}/${critter.quota}" else null,
+            HudRow(critter.name, if (!sparkling && ConfigManager.fullClearMode && critter.quota > 1) "${run?.count(critter.name) ?: 0}/${critter.quota}" else null,
                 critter.color, HudRow.GRAY)
-        }.ifEmpty { listOf(HudRow(if (ConfigManager.fullClearMode) "No critters loaded" else "All caught!", color = biome.color)) }
+        }.ifEmpty { listOf(HudRow(if (sparkling) "All checked!" else if (ConfigManager.fullClearMode) "No critters loaded" else "All caught!", color = biome.color)) }
         val footer = buildList {
-            fun needed(species: String) = SafariHelperRules.needed(species, SafariFullClear.mode, run, SafariSparklingMode.state)
+            fun needed(species: String) = SafariHelperRules.needed(species, SafariFullClear.mode, run, party)
             if (biome == SafariBiome.FOREST && needed("Honeybug")) {
                 add(HudRow()); add(HudRow("Bee nests to punch", "$nests", HudRow.GOLD, HudRow.GRAY))
             }

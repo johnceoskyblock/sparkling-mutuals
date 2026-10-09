@@ -5,6 +5,6 @@ object SafariHelperRules {
     fun needed(species: String, mode: SafariMode, run: SafariRun?, party: PartySparklingState) = when (mode) {
         SafariMode.FULL_CLEAR -> true
         SafariMode.UNIQUE -> (run?.count(species) ?: 0) == 0 || party.needs(species)
-        SafariMode.SPARKLING -> party.needs(species)
+        SafariMode.SPARKLING -> party.needs(species) && run?.sparklingChecks?.checked(species) != true
     }
 }

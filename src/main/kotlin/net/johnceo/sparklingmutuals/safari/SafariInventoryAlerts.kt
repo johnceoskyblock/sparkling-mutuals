@@ -49,6 +49,7 @@ object SafariInventoryAlerts {
         SafariFloorDrops.state.inventory(stacks)
         val birds = SafariTracking.ledger.current?.birds
         birds?.inventory(stacks)
+        SafariTracking.ledger.current?.sparklingChecks?.inventory(stacks)
         val notices = state.poll(SafariAssist.biome, stacks, enabled).toMutableList()
         if (birds?.alert(SafariAssist.biome, ConfigManager.allBirdFoodAlert) == true) notices.add(InventoryAlert.BIRD_FOOD)
         notices.forEach {

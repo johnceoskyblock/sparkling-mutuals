@@ -45,6 +45,7 @@ object SafariTracking {
         }
         if (SafariAssist.inSafari) {
             ensureRun(client)
+            ledger.current?.sparklingChecks?.chat(text, manualAllowed = SafariFullClear.mode == SafariMode.SPARKLING)
             if (ledger.current?.birds?.spawn(text) == true) return
         }
         if (text.startsWith("FLOOR DROP!") && SafariAssist.inSafari) {

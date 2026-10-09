@@ -23,6 +23,13 @@ object SafariBiomeClearTracking {
         }.map { if (it.mound) "Rockmite Mound" else it.species }.toSet(),
             SafariStructures.walls.states.size == 5 && SafariStructures.walls.allBroken, BeeNests.allChecked,
             macawsInRange = snapshot.critters.count { it.biome == biome && it.species == "Macaw" })
+        run.sparklingChecks.scan(biome, player.x, player.z,
+            snapshot.critters.filterNot { it.mound }.map { it.species to it.uuid },
+            nestsChecked = BeeNests.allChecked,
+            moundsCleared = run.allMoundsBroken && SafariStructures.nearbyMounds == 0 && snapshot.critters.none { it.mound },
+            wallsCleared = SafariStructures.walls.states.size == 5 && SafariStructures.walls.allBroken,
+            birdsSpawned = run.birds.allSpawned,
+            hauntedDropsRemaining = snapshot.floorDrops.count { SafariEspRules.biomeAt(it.x.toDouble(), it.z.toDouble()) == SafariBiome.HAUNTED })
         if (biome in run.biomeClears) return
         // A completed entity scan is sufficient; unloaded surrounding chunks must not block a PB.
         val evidence = BiomeClearEvidence(snapshot.scanned,

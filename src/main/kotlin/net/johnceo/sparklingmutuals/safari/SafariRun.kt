@@ -67,6 +67,7 @@ class SafariRun(val startedAt: Long) {
     private val sightings = mutableSetOf<String>()
     private val observedCritters = mutableMapOf<String, MutableSet<Int>>()
     val birds = SafariBirdLedger()
+    val sparklingChecks = SparklingChecks()
     private val nearby = mutableMapOf<SafariBiome, Set<String>>()
     private var wallsChecked = false
     private var nestsChecked = false

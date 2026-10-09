@@ -10,6 +10,7 @@ class SafariBirdLedger {
     private var macawPairs = 0
     private var announced = false
     val foodsComplete get() = foods.all { (forest[it] ?: 0) >= 3 }
+    val allSpawned get() = foodsComplete && used >= collected
     val collected get() = picked.values.sum()
     val used get() = minOf(feedings, removed.values.sum())
     fun alert(biome: SafariBiome?, enabled: Boolean): Boolean {
@@ -43,6 +44,6 @@ class SafariBirdLedger {
     fun hasMacaws(caught: Int, remaining: Int) = pairs(caught, remaining) > 0
     fun requiredCaptures(macawsCaught: Int, macawsRemaining: Int) =
         (collected + pairs(macawsCaught, macawsRemaining) - macawsRemaining.coerceAtLeast(0)).coerceAtLeast(0)
-    fun sufficient(catches: Int, macawsCaught: Int, macawsRemaining: Int) = foodsComplete && used >= collected &&
+    fun sufficient(catches: Int, macawsCaught: Int, macawsRemaining: Int) = allSpawned &&
         catches >= requiredCaptures(macawsCaught, macawsRemaining)
 }
