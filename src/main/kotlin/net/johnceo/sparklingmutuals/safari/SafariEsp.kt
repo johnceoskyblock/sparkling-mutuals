@@ -12,6 +12,9 @@ import net.fabricmc.fabric.api.event.player.UseItemCallback
 import net.johnceo.sparklingmutuals.SparklingMutuals
 import net.johnceo.sparklingmutuals.config.SafariEspConfig
 import net.johnceo.sparklingmutuals.config.ConfigManager
+import net.minecraft.client.gui.Font
+import net.minecraft.util.LightCoordsUtil
+import org.joml.Matrix4f
 import net.minecraft.client.Minecraft
 import net.minecraft.client.renderer.RenderPipelines
 import net.minecraft.client.renderer.rendertype.*
@@ -162,7 +165,7 @@ object SafariEsp {
         targets.forEach { target ->
             val e = target.entity
             motion.observe(e.uuid, target.species, e.x, e.y, e.z, client.player!!.distanceToSqr(e), now)
-            if (target.species == "Litterbug") litterbugs.observe(e.uuid, e.y)
+            if (target.species == "Litterbug") litterbugs.observe(e.uuid, e.y, now)
         }
         targets.filter(::trackedModel).forEach { target ->
             val nearby = labels[target.species].orEmpty().filter { it.distanceToSqr(target.entity) <= 9 }
@@ -256,6 +259,8 @@ object SafariEsp {
             }
         }
         val delta = client.deltaTracker.getGameTimeDeltaPartialTick(false)
+        val now = System.currentTimeMillis()
+        val timers = mutableListOf<Pair<LitterbugMarker, AABB>>()
         targets = targets.filter { live(it, client) }
         for (target in targets) {
             val e = target.entity
@@ -270,8 +275,9 @@ object SafariEsp {
                 SafariEspConfig.entityEnabled(mob.name, e is Display.ItemDisplay) && mobBiome == mob.biome && SafariEspRules.visible(true, group.enabled, group.onlyInBiome, playerBiome, mobBiome)) {
                 val box = bounds(target, delta)
                 val height = if (mob.name == "Litterbug") litterbugs.hiddenHeight(e.uuid, e.x, e.y, e.z) else null
-                frame(if (height == null) box else box.move(0.0, height - e.getPosition(delta).y, 0.0),
-                    SafariEspConfig.rgb(SafariEspConfig.entityColor(mob.name, e is Display.ItemDisplay)))
+                val projected = if (height == null) box else box.move(0.0, height - e.getPosition(delta).y, 0.0)
+                frame(projected, SafariEspConfig.rgb(SafariEspConfig.entityColor(mob.name, e is Display.ItemDisplay)))
+                if (height != null) litterbugs.hiddenMarker(e.uuid, e.x, e.y, e.z, now)?.let { timers.add(it to projected) }
             }
         }
         val floor = SafariEspConfig.groups.getValue("floor")
@@ -289,6 +295,13 @@ object SafariEsp {
                 quads.addVertex(pose, x + dx, y, z + dz).setColor(color and 0xFFFFFF or ((color ushr 25) shl 24))
         }
         buffers.endBatch(fill)
+        for ((timer, box) in timers) {
+            poses.pushPose(); poses.translate(box.center.x - camera.x, box.maxY + .2 - camera.y, box.center.z - camera.z)
+            poses.mulPose(client.gameRenderer.mainCamera.rotation()); poses.scale(.025f, -.025f, .025f)
+            client.font.drawInBatch(timer.text, -client.font.width(timer.text) / 2f, 0f, timer.color, false,
+                Matrix4f(poses.last().pose()), buffers, Font.DisplayMode.SEE_THROUGH, 0x40000000, LightCoordsUtil.FULL_BRIGHT)
+            poses.popPose()
+        }
     }
     fun reset() { targets = emptyList(); drops = emptyList(); level = null; ticks = 0; stringDisplays = emptyList(); scanned = false; clearCaptured() }
 }
