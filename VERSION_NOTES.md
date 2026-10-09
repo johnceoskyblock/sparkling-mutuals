@@ -1,8 +1,14 @@
+# Shyworm underground helpers
+
+- Loaded Shyworms retain ESP while underground, projected to their last observed surface height. Captured, removed and unloaded models remain excluded.
+- A red 1×7 ground outline follows each observed clockwise side. Rest messages start a per-worm estimated 8–15 second countdown; brief corner pauses do not start it.
+- Normal mode filters and Sparkling per-UUID expiry gate the box, outline and timer together. Ambiguous messages do not assign a timer to several worms; helper state clears on unloading or run reset.
+
 # Icy floor drops and moving-critter ESP
 
 - One Icebreaker is enough to stop automatic Full Clear Icy floor ESP; consumption and biome changes retain that progress for the run.
 - Unique and Full Clear restore loaded moving-critter ESP when name tags disappear at distance or movement pauses, including Driftling. Capture retirement, entity validity and mode target filters still apply.
-- Sparkling's lifecycle and per-UUID windows, capture observations and PB requirements retain their existing rules. Shyworm path/timer details from issue #18 are awaiting clarification.
+- Other Sparkling lifecycle checks, per-UUID windows, capture observations and PB requirements retain their existing rules. Issue #18 clarified clockwise movement and long-rest chat boundaries.
 
 # Run mode fixes
 
