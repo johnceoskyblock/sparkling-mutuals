@@ -13,6 +13,7 @@ import net.johnceo.sparklingmutuals.config.ContestConfig
 import net.johnceo.sparklingmutuals.contest.ContestHud
 import net.johnceo.sparklingmutuals.contest.ContestTracker
 import net.johnceo.sparklingmutuals.party.PartyManager
+import net.johnceo.sparklingmutuals.hud.SmallAlerts
 import net.johnceo.sparklingmutuals.safari.*
 import net.minecraft.resources.Identifier
 import org.slf4j.LoggerFactory
@@ -79,6 +80,7 @@ object SparklingMutuals : ModInitializer {
 			SafariAssist.render(graphics)
             SafariTracking.render(graphics)
             SparklingEncounters.render(graphics)
+            SmallAlerts.render(graphics)
 		}
 	}
 
