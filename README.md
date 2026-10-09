@@ -25,7 +25,7 @@ A Fabric mod for Hypixel SkyBlock Safari, sparkling discoveries, and Miria conte
 - **Sparkling mode:** `/sparkle` highlights your missing sparkling discoveries when solo, or the party's combined missing discoveries. Updates when players join or leave, with optional profitable-shard ESP. Requires an API key.
 - **Sparkling checks:** ordinary species are checked near the biome center; spawned species require their nest, mound, wall, food, coin or distinct-entity evidence. In party chat, `fd`, `cd`, `id` or `hd` marks that biome checked for mod users in Sparkling mode.
 - **Critter ESP:** modes select highlights in all four biomes. Unique runs hide collected species, with an optional profitable-shard exception; Honeybug, Rockmite and Snoozle checks remain visible while anyone needs their sparkling, or party discovery data is unavailable. Nearby stationary leftover moving-critter models are excluded after two seconds and restored if they move.
-- **Hidden Litterbugs:** shows their ESP at the known mansion floor or their last observed emergence height, returning to the real position when they emerge.
+- **Hidden Litterbugs:** projects ESP to their emergence height and shows an estimated countdown while hidden, returning to the real position when they emerge.
 - **Floor drop ESP:** hides completed or unneeded drops using discoveries, pickups, inventory and captures. Unique Icy keeps drops hidden; Haunted keeps coin drops while anyone needs Gimmiegold.
 - **Sparkling detection:** highlights nearby sparkling critters and shows their names and distances.
 - **Sparkling alerts:** displays a centered title, critter, location and screen flash, with a customizable sound and volume. Can announce discoveries in party chat.

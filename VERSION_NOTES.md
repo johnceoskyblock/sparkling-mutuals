@@ -1,3 +1,8 @@
+# Litterbug emergence timer
+
+- Hidden Litterbug ESP boxes now show an estimated 8.0-second countdown that changes from green to yellow to red, followed by white "Moving soon..".
+- Each entity keeps its own timer. Emergence clears it; the next wall entry starts a new countdown. Timers reset with the Safari run and follow normal ESP visibility.
+
 # Sparkling checklist update
 
 - Sparkling missing panels and progress now track party-needed checks instead of unique captures.
