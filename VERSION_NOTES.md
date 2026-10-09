@@ -83,3 +83,5 @@
 - Updated README. Builds are available from GitHub Actions.
 
 Issue #19 follow-ups: Sparkling Icy progress uses captures of needed species when Wumpa is needed; a Wumpa capture completes the row. Exact global chamber-opening, darkness-fading and cave-collapse messages check Gemzie, Doomspiral and Wumpa respectively. The saved chat toggle is now labeled “Hide useless chats in safari” and also hides the four mound progress lines. Other mode and personal-best rules are unchanged.
+
+Mode switches keep the current run’s captures, completion evidence and Sparkling checks. Party fd/cd/id/hd messages are retained for Sparkling and unvisited Full Clear progress regardless of the selected mode; they do not create catches or personal bests. A new run clears that evidence.
