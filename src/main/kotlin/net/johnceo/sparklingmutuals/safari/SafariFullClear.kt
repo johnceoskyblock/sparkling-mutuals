@@ -11,9 +11,6 @@ data class BiomeClearEvidence(val observed: Boolean = false, val nearbyCritters:
 
 /** Command-owned presets change presentation, never the per-run capture ledger. */
 object SafariFullClear {
-    private val regularEsp = setOf("Driftling", "Chuckwalla", "Foxtrot", "Treefrog", "Woodchucker", "Fluffling", "Hideonfloor",
-        "Tepid", "Shuddersquid", "Billygoat", "Mantis Shrimp", "Nozzlenose", "Wumpa", "Bloodbat", "Duplico",
-        "Litterbug", "Solsnatcher", "Hideonwall", "Hideyho", "Doomspiral")
     private val minimums = mapOf(
         "Foxtrot" to 6, "Bluebird" to 0, "Honeybug" to 3, "Treefrog" to 3, "Woodchucker" to 3,
         "Fluffling" to 1, "Hideonfloor" to 1, "Parakeet" to 0, "Macaw" to 0,
@@ -80,9 +77,8 @@ object SafariFullClear {
         ConfigManager.highlightSnooperWalls = true
     }
     fun applyEspPreset() {
-        val allEsp = mode != SafariMode.UNIQUE
         SafariEspConfig.groups.values.forEach { it.enabled = true }
-        SafariEspConfig.mobs.forEach { (species, setting) -> setting.enabled = allEsp || species in regularEsp || species in SafariHelperRules.species }
+        SafariEspConfig.mobs.values.forEach { it.enabled = true }
         SafariEspConfig.rockmiteMoundEnabled = true
     }
 }

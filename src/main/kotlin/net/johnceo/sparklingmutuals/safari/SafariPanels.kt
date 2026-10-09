@@ -32,7 +32,7 @@ object SafariPanels {
         val rows = missing.map { critter ->
             HudRow(critter.name, if (!sparkling && ConfigManager.fullClearMode && critter.quota > 1) "${run?.count(critter.name) ?: 0}/${critter.quota}" else null,
                 critter.color, HudRow.GRAY)
-        }.ifEmpty { listOf(HudRow(if (sparkling) "All checked!" else if (ConfigManager.fullClearMode) "No critters loaded" else "All caught!", color = biome.color)) }
+        }.ifEmpty { listOf(HudRow(if (sparkling) "All checked!" else if (ConfigManager.fullClearMode) "All caught!" else "All caught!", color = biome.color)) }
         val footer = buildList {
             fun needed(species: String) = SafariHelperRules.needed(species, SafariFullClear.mode, run, party)
             if (biome == SafariBiome.FOREST && needed("Honeybug")) {

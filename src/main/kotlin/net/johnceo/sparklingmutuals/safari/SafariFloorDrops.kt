@@ -5,6 +5,7 @@ import net.johnceo.sparklingmutuals.config.SafariEspConfig
 
 /** Per-run pickups survive item consumption; a manual choice lasts only for this biome visit. */
 class FloorDropState {
+    private var gemsReady = false
     private val gems = mutableSetOf<String>()
     private val gemNames = setOf("Purple Gem", "Lime Gem", "Orange Gem")
     private var pickaxes = 0
@@ -24,7 +25,9 @@ class FloorDropState {
     }
     fun inventory(stacks: List<Pair<String, Int>>) {
         if (stacks.filter { SafariRules.strip(it.first).equals("Soothing Incense", true) }.sumOf { it.second.coerceAtLeast(0) } >= 4) incenseReady = true
-        stacks.filter { it.second > 0 }.forEach { (name, _) -> SafariRules.strip(name).takeIf { it in gemNames }?.let(gems::add) }
+        val heldGems = stacks.filter { it.second > 0 }.map { SafariRules.strip(it.first) }.toSet().intersect(gemNames)
+        gems.addAll(heldGems)
+        if (heldGems.containsAll(gemNames)) gemsReady = true
         inventoryPickaxes = maxOf(inventoryPickaxes, stacks.filter { SafariRules.strip(it.first).equals("Icebreaker", true) }.sumOf { it.second.coerceAtLeast(0) })
     }
     fun force(enabled: Boolean) { if (biome in setOf(SafariBiome.CAVERN, SafariBiome.ICY)) override = enabled }
@@ -33,14 +36,14 @@ class FloorDropState {
         partyGimmiegoldComplete: Boolean = false, gemzieCaught: Boolean = false, doomCaught: Boolean = false): Boolean {
         if (biome == this.biome && override != null) return override!!
         return when (biome) {
-            SafariBiome.CAVERN -> gems.size < 3 && !partyGemzieComplete && !gemzieCaught
+            SafariBiome.CAVERN -> if (fullClear) !gemsReady else gems.size < 3 && !partyGemzieComplete && !gemzieCaught
             SafariBiome.FOREST -> configured && !partyBirdsComplete && (fullClear || !forestFoodComplete)
             SafariBiome.HAUNTED -> configured && (!partyGimmiegoldComplete || !incenseReady && incensePickups < 4 && !doomCaught)
             SafariBiome.ICY -> fullClear && maxOf(pickaxes, inventoryPickaxes) < 2
             else -> configured
         }
     }
-    fun reset() { gems.clear(); pickaxes = 0; inventoryPickaxes = 0; incensePickups = 0; incenseReady = false; biome = null; override = null }
+    fun reset() { gemsReady = false; gems.clear(); pickaxes = 0; inventoryPickaxes = 0; incensePickups = 0; incenseReady = false; biome = null; override = null }
 }
 
 object SafariFloorDrops {
