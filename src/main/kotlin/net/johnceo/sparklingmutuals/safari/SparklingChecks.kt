@@ -9,10 +9,14 @@ class SparklingChecks {
     private val completed = mutableSetOf<String>()
     private val observed = mutableMapOf<String, MutableSet<UUID>>()
     private val centersReached = mutableSetOf<SafariBiome>()
+    private val espSeenAt = mutableMapOf<UUID, Long>()
     private var coinsPicked = 0
     private var coinsSpent = 0
     private var heldCoins: Int? = null
     fun checked(name: String) = name in completed
+    fun keepEsp(uuid: UUID, now: Long) = now - espSeenAt.getOrPut(uuid) { now } < 10000
+    fun wumpaPrerequisite(name: String, party: PartySparklingState) = name != "Wumpa" &&
+        SafariRoster.named(name)?.biome == SafariBiome.ICY && party.needs("Wumpa") && !checked("Wumpa")
     fun scan(biome: SafariBiome, x: Double, z: Double, seen: List<Pair<String, UUID>>,
         nestsChecked: Boolean = false, moundsCleared: Boolean = false, wallsCleared: Boolean = false,
         birdsSpawned: Boolean = false, hauntedDropsRemaining: Int = -1) {

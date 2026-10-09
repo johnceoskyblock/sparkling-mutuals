@@ -268,7 +268,8 @@ object SafariEsp {
             val group = SafariEspConfig.groups.getValue(mob.biome.name.lowercase())
             val mobBiome = SafariEspRules.biomeAt(e.x, e.z)
             val needed = if (ConfigManager.sparklingMode)
-                SafariEspRules.neededForSparkling(mob.name, e is Display.ItemDisplay, SafariSparklingMode.state, ConfigManager.sparklingProfitableShardEsp)
+                SafariEspRules.neededForSparkling(mob.name, mob.name == "Rockmite" && e is Display.ItemDisplay,
+                    SafariSparklingMode.state, ConfigManager.sparklingProfitableShardEsp, SafariTracking.ledger.current, e.uuid, now)
             else SafariEspRules.neededForRun(mob.name, e is Display.ItemDisplay, SafariTracking.ledger.current, ConfigManager.fullClearMode,
                 ConfigManager.profitableShardEsp, SafariSparklingMode.state)
             if (needed &&

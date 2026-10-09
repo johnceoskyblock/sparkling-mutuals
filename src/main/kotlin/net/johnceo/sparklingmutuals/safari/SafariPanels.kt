@@ -24,7 +24,10 @@ object SafariPanels {
     fun missing(run: SafariRun?, biome: SafariBiome, unique: Boolean, nests: Int, mounds: Int = 0,
         walls: WallSummary = WallSummary(emptyList()), party: PartySparklingState = SafariSparklingMode.state): HudPanel {
         val sparkling = SafariFullClear.mode == SafariMode.SPARKLING
-        val missing = biome.critters.filter { if (sparkling) party.needs(it.name) && run?.sparklingChecks?.checked(it.name) != true
+        val missing = biome.critters.filter { if (sparkling) {
+                if (run?.sparklingChecks?.wumpaPrerequisite(it.name, party) == true) run.count(it.name) == 0
+                else party.needs(it.name) && run?.sparklingChecks?.checked(it.name) != true
+            }
             else run?.missing(it, ConfigManager.fullClearMode) != false }
         val rows = missing.map { critter ->
             HudRow(critter.name, if (!sparkling && ConfigManager.fullClearMode && critter.quota > 1) "${run?.count(critter.name) ?: 0}/${critter.quota}" else null,
