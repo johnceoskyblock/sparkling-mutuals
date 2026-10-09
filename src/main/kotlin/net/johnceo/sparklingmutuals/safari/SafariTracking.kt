@@ -17,7 +17,12 @@ object SafariTracking {
     val visible get() = SafariVisibility.visible(ConfigManager.showWhere, SafariAssist.inSafari, SafariAssist.atEntrance)
     fun register() {
         ClientReceiveMessageEvents.GAME.register { message, overlay ->
-            if (!overlay) Minecraft.getInstance().execute { SafariMessages.lines(message.string).forEach(::receive) }
+            if (!overlay) Minecraft.getInstance().execute {
+                val checks = ledger.current?.sparklingChecks?.takeIf {
+                    SafariAssist.inSafari && SafariFullClear.mode == SafariMode.SPARKLING
+                }
+                SafariMessages.lines(message.string, checks).forEach(::receive)
+            }
         }
     }
     private fun syncWorld(client: Minecraft) {

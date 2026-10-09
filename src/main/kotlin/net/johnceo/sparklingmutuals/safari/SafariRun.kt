@@ -164,8 +164,11 @@ object SafariMessages {
     private val separators = Regex("\\r?\\n|\\\\n")
     private val playerChat = Regex("^(?:(?:Party|Guild|Officer|Co-op|Coop)\\s*>|(?:From|To)\\s+|<\\w{1,16}>|(?:\\[[^]]+]\\s*)*\\w{1,16}(?:\\s*\\[[^]]+])*:)", RegexOption.IGNORE_CASE)
     private val entry = Regex("^(?:\\[[^]]+]\\s*)*(\\w{1,16}) entered Critter Safari!$")
-    fun lines(raw: String): List<String> {
-        if (playerChat.containsMatchIn(SafariRules.strip(raw))) return emptyList()
+    fun lines(raw: String, partyChecks: SparklingChecks? = null): List<String> {
+        if (playerChat.containsMatchIn(SafariRules.strip(raw))) {
+            partyChecks?.chat(raw, manualAllowed = true)
+            return emptyList()
+        }
         return raw.split(separators).map(SafariRules::strip).filter(String::isNotEmpty)
     }
     fun enteredBy(line: String, player: String) = entry.matchEntire(line)?.groupValues?.get(1).equals(player, true)
