@@ -128,7 +128,7 @@ class SafariSettings : Config() {
     }
     class Safari {
         @JvmField @ConfigOption(name = "Alert", desc = "") @Accordion val alerts = Alerts()
-        @JvmField @ConfigOption(name = "Hide capture chat", desc = "Hide throws, captures, escapes and loot shares; tracking continues.")
+        @JvmField @ConfigOption(name = "Hide useless chats in safari", desc = "Hide throws, captures, escapes, loot shares and mound chatter; tracking continues.")
         @ConfigEditorBoolean var hideCaptureChat = ConfigManager.hideCaptureChat
         @JvmField @ConfigOption(name = "Hide capsules on ground", desc = "Hide ordinary dropped capsules in Safari.")
         @ConfigEditorBoolean var hideGroundCapsules = ConfigManager.hideGroundCapsules
