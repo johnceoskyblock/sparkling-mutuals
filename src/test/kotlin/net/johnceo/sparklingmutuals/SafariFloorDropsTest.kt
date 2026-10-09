@@ -22,13 +22,13 @@ class SafariFloorDropsTest {
         state.reset()
         assertTrue(state.enabled(SafariBiome.CAVERN, true, true))
     }
-    @Test fun `icy unique runs hide drops immediately and full clears hide them after two pickaxes`() {
+    @Test fun `icy unique runs hide drops immediately and full clears hide them after one pickaxe`() {
         val state = FloorDropState()
         state.visit(SafariBiome.ICY)
         assertFalse(state.enabled(SafariBiome.ICY, false, true))
         assertTrue(state.enabled(SafariBiome.ICY, true, true))
         state.record("FLOOR DROP! Icebreaker", SafariBiome.ICY)
-        assertTrue(state.enabled(SafariBiome.ICY, true, true))
+        assertFalse(state.enabled(SafariBiome.ICY, true, true))
         state.record("FLOOR DROP! Icebreaker", SafariBiome.ICY)
         assertFalse(state.enabled(SafariBiome.ICY, true, true))
         assertFalse(state.enabled(SafariBiome.ICY, false, true))
@@ -73,12 +73,12 @@ class SafariFloorDropsTest {
         state.record("FLOOR DROP! Orange Gem", SafariBiome.CAVERN)
         assertTrue(state.enabled(SafariBiome.CAVERN, true, true))
     }
-    @Test fun `inventory and pickup message cannot double count one Icebreaker`() {
+    @Test fun `one Icebreaker remains sufficient after consumption and biome changes`() {
         val state = FloorDropState()
         state.visit(SafariBiome.ICY)
         state.record("FLOOR DROP! Icebreaker", SafariBiome.ICY)
         state.inventory(listOf("§ficebreaker" to 1, "Diamond Pickaxe" to 2))
-        assertTrue(state.enabled(SafariBiome.ICY, true, true))
+        assertFalse(state.enabled(SafariBiome.ICY, true, true))
         state.inventory(listOf("§fIcebreaker" to 1, "Icebreaker" to 1))
         assertFalse(state.enabled(SafariBiome.ICY, true, true))
         state.inventory(emptyList())
@@ -86,5 +86,13 @@ class SafariFloorDropsTest {
         assertFalse(state.enabled(SafariBiome.ICY, true, true))
         state.reset()
         assertTrue(state.enabled(SafariBiome.ICY, true, true))
+    }
+    @Test fun `one inventory Icebreaker is enough without a pickup message`() {
+        val state = FloorDropState()
+        state.inventory(listOf("Icebreaker" to 0, "Diamond Pickaxe" to 2))
+        assertTrue(state.enabled(SafariBiome.ICY, true, false))
+        state.inventory(listOf("§fIcebreaker" to 1))
+        assertFalse(state.enabled(SafariBiome.ICY, true, true))
+        assertFalse(state.enabled(SafariBiome.ICY, false, true))
     }
 }
