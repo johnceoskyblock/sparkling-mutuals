@@ -1,3 +1,10 @@
+# Sparkling ESP and Wumpa prerequisites
+
+- While the party needs Wumpa checked, Sparkling mode keeps uncaught Icy prerequisites in the missing panel and ESP until each is captured.
+- Needed critter UUIDs get independent ten-second ESP windows, remembered across unloading for the run. Newly found UUIDs get their own window; profitable-shard ESP stays visible when enabled.
+- ESP expiry does not remove entities from capture, checklist or PB evidence. Unchecked Rockmite mounds remain highlighted until checked.
+- Verified the existing hidden Litterbug countdown also covers issue #16.
+
 # Party biome completion fix
 
 - Fixed party `fd`, `cd`, `id` and `hd` messages being filtered out before reaching the Sparkling checklist. They now mark the matching biome checked during an active Sparkling run.
