@@ -18,13 +18,7 @@ object SafariTracking {
     fun register() {
         ClientReceiveMessageEvents.GAME.register { message, overlay ->
             if (!overlay) Minecraft.getInstance().execute {
-                val checks = ledger.current?.sparklingChecks?.takeIf {
-                    SafariAssist.inSafari && SafariFullClear.mode == SafariMode.SPARKLING
-                }
-                val fullClearRun = ledger.current?.takeIf {
-                    SafariAssist.inSafari && SafariFullClear.mode == SafariMode.FULL_CLEAR
-                }
-                SafariMessages.lines(message.string, checks, fullClearRun).forEach(::receive)
+                SafariMessages.forRun(message.string, ledger.current, SafariAssist.inSafari).forEach(::receive)
             }
         }
     }
