@@ -23,7 +23,7 @@ class PanelStyle {
 
 object AppearanceConfig {
     fun color(rgb: Int) = ChromaColour.special(0, 255, rgb)
-    val panels = listOf("miria", "progress", "missing", "captures", "sparklings", "alert").associateWith { PanelStyle() }
+    val panels = listOf("miria", "progress", "missing", "captures", "sparklings", "alert", "gems", "bird_food", "incense", "warp").associateWith { PanelStyle() }
     var selectedHex = "#FFD700"
     var nestColor = color(0x55FF55)
     var snooperColor = color(0xFFAA00)

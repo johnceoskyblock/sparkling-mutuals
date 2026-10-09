@@ -128,9 +128,6 @@ class SafariSettings : Config() {
     }
     class Safari {
         @JvmField @ConfigOption(name = "Alert", desc = "") @Accordion val alerts = Alerts()
-        @JvmField @ConfigOption(name = "Remaining", desc = "Show remaining nests, mounds and walls in the missing HUD.") @Accordion val remaining = Remaining()
-        @JvmField @ConfigOption(name = "Highlight Snooper Walls", desc = "Mark unbroken Cavern walls with name and distance.")
-        @ConfigEditorBoolean var snooperHighlight = ConfigManager.highlightSnooperWalls
         @JvmField @ConfigOption(name = "Hide capture chat", desc = "Hide throws, captures, escapes and loot shares; tracking continues.")
         @ConfigEditorBoolean var hideCaptureChat = ConfigManager.hideCaptureChat
         @JvmField @ConfigOption(name = "Hide capsules on ground", desc = "Hide ordinary dropped capsules in Safari.")
@@ -150,8 +147,6 @@ class SafariSettings : Config() {
         @ConfigEditorBoolean var paintings = ConfigManager.hideHauntedPaintings
         @JvmField @ConfigOption(name = "Nearby shiny detection", desc = "Highlight sparkling critters within 80 blocks in your biome.")
         @ConfigEditorBoolean var shiny = ConfigManager.shinyDetection
-        @JvmField @ConfigOption(name = "Highlight bee nests", desc = "Mark unpunched Forest nests with name and distance.")
-        @ConfigEditorBoolean var nests = ConfigManager.highlightBeeNests
         @JvmField @ConfigOption(name = "Remove darkness", desc = "Remove the darkness effect in Safari.")
         @ConfigEditorBoolean var darkness = ConfigManager.removeDarkness
         @JvmField @ConfigOption(name = "Sparkling alert", desc = "Show an alert for each detected sparkling critter.")
@@ -172,14 +167,6 @@ class SafariSettings : Config() {
         @ConfigEditorBoolean var birdFood = ConfigManager.allBirdFoodAlert
         @JvmField @ConfigOption(name = "All Incense Alert", desc = "Haunted: four Soothing Incense in inventory.")
         @ConfigEditorBoolean var incense = ConfigManager.allIncenseAlert
-    }
-    class Remaining {
-        @JvmField @ConfigOption(name = "Bee Nests", desc = "Show unpunched Forest nests in the missing panel.")
-        @ConfigEditorBoolean var nests = ConfigManager.showBeeNests
-        @JvmField @ConfigOption(name = "Rockmite Mounds", desc = "Show unbroken Cavern mounds in the missing panel.")
-        @ConfigEditorBoolean var mounds = ConfigManager.showMoundCount
-        @JvmField @ConfigOption(name = "Snooper Walls", desc = "Show remaining Cavern walls in the missing panel.")
-        @ConfigEditorBoolean var walls = ConfigManager.showSnooperWalls
     }
     class Tracking {
         @JvmField @ConfigOption(name = "Progress HUD", desc = "Show Safari completion and elapsed time.")
@@ -244,14 +231,11 @@ class SafariSettings : Config() {
             ConfigManager::shinyDetection to safari.shiny, ConfigManager::hideyhoQuestClicks to safari.hideyho,
             ConfigManager::progressHud to tracking.progress,
             ConfigManager::missingPanel to tracking.missing,
-            ConfigManager::highlightBeeNests to safari.nests, ConfigManager::removeDarkness to safari.darkness,
+            ConfigManager::removeDarkness to safari.darkness,
             ConfigManager::sparklingAlert to safari.alert, ConfigManager::sparklingPartyAnnouncer to safari.announce,
             ConfigManager::autoClicker to safari.autoClicker, ConfigManager::candleHitbox to safari.candleHitbox, ConfigManager::hideCaptureChat to safari.hideCaptureChat,
-            ConfigManager::highlightSnooperWalls to safari.snooperHighlight,
             ConfigManager::allGemsAlert to safari.alerts.gems, ConfigManager::allBirdFoodAlert to safari.alerts.birdFood,
             ConfigManager::allIncenseAlert to safari.alerts.incense,
-            ConfigManager::showBeeNests to safari.remaining.nests, ConfigManager::showMoundCount to safari.remaining.mounds,
-            ConfigManager::showSnooperWalls to safari.remaining.walls,
             ConfigManager::hideGroundCapsules to safari.hideGroundCapsules, ConfigManager::hideFlyingCapsules to safari.hideFlyingCapsules)
         val espChanged = esp.apply()
         val customizationChanged = customization.apply()
@@ -279,10 +263,6 @@ class SafariSettings : Config() {
             if (notifyMode) SafariFullClear.modeLines().forEach {
                 Minecraft.getInstance().player?.sendSystemMessage(Component.literal(it))
             }
-            safari.snooperHighlight = ConfigManager.highlightSnooperWalls
-            safari.remaining.nests = ConfigManager.showBeeNests
-            safari.remaining.mounds = ConfigManager.showMoundCount
-            safari.remaining.walls = ConfigManager.showSnooperWalls
         }
         modes.refresh()
     }

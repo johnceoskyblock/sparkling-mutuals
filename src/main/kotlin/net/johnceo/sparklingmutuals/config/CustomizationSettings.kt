@@ -52,6 +52,10 @@ class CustomizationSettings {
     @JvmField @ConfigOption(name = "Biome captures HUD", desc = "Border and background.") @Accordion val captures = panel("captures")
     @JvmField @ConfigOption(name = "Nearby sparklings HUD", desc = "Border and background.") @Accordion val sparklings = panel("sparklings")
     @JvmField @ConfigOption(name = "Sparkling alert HUD", desc = "Border and background.") @Accordion val alert = panel("alert")
+    @JvmField @ConfigOption(name = "All Gems alert HUD", desc = "") @Accordion val gems = panel("gems")
+    @JvmField @ConfigOption(name = "All Bird Food alert HUD", desc = "") @Accordion val birdFood = panel("bird_food")
+    @JvmField @ConfigOption(name = "All Incense alert HUD", desc = "") @Accordion val incense = panel("incense")
+    @JvmField @ConfigOption(name = "Warp reminder HUD", desc = "") @Accordion val warp = panel("warp")
     @JvmField @ConfigOption(name = "Bee nest waypoints", desc = "") @Accordion val beeNests = ColorChoice(
         { AppearanceConfig.nestColor }, { AppearanceConfig.nestColor = it }) { selectedHex }
     @JvmField @ConfigOption(name = "Snooper wall waypoints", desc = "") @Accordion val snooperWalls = ColorChoice(
