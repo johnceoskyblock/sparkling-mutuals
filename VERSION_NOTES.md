@@ -1,3 +1,9 @@
+# Run mode fixes
+
+- Full Clear missing rows remain until the capture minimum is met and no matching critters are nearby.
+- Full Clear Cavern floor drops stay highlighted until all three gem types are held together, regardless of party sparkling discoveries.
+- Unique mode highlights every uncaught species, even when everyone already has its sparkling discovery. Existing profitable-shard and shiny-check exceptions still apply after captures.
+
 # Sparkling ESP and Wumpa prerequisites
 
 - While the party needs Wumpa checked, Sparkling mode keeps uncaught Icy prerequisites in the missing panel and ESP until each is captured.
