@@ -60,3 +60,5 @@ Player lookups require a [Hypixel API key](https://developer.hypixel.net), enter
 ## Credits
 
 Includes work adapted from [CritterMod v0.9.0](https://github.com/MrCloudy2/critterMod/tree/v0.9.0), [ShinyHunter](https://github.com/javabetter/ShinyHunter), [Nebulune](https://github.com/Gaeritag/Nebulune), and [SkyHanni 9.1.0](https://github.com/hannibal002/SkyHanni/tree/9.1.0). Settings use [MoulConfig](https://github.com/NotEnoughUpdates/MoulConfig). See [LICENSE](LICENSE) and [third-party notices](licenses) for licensing and attribution.
+
+Full Clear progress follows the captures panel's completion checks. Party `fd`, `cd`, `id` and `hd` messages complete progress for unvisited biomes only; visiting a biome restores local completion checks.

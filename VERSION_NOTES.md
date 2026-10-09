@@ -1,3 +1,9 @@
+## Full Clear progress follow-up
+
+- Full Clear progress now uses the captures panel's minimum, nearby-entity and structure completion rules.
+- Party `fd`, `cd`, `id` and `hd` messages complete unvisited biome progress. Visiting that biome restores local evidence checks.
+- Manual progress never adds captures, Sparkling checks or personal bests. Unique and Sparkling progress retain their rules.
+
 # Shyworm underground helpers
 
 - Loaded Shyworms retain ESP while underground, projected to their last observed surface height. Captured, removed and unloaded models remain excluded.
