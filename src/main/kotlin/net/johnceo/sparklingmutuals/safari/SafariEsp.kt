@@ -33,6 +33,9 @@ import net.minecraft.world.item.Items
 import net.minecraft.world.level.block.Block
 import net.minecraft.world.level.block.ShulkerBoxBlock
 import net.minecraft.world.phys.AABB
+import net.minecraft.world.phys.Vec3
+import net.minecraft.world.phys.HitResult
+import net.minecraft.world.level.ClipContext
 import org.slf4j.LoggerFactory
 
 data class EspCritterObservation(val id: Int, val species: String, val biome: SafariBiome, val x: Double, val y: Double, val z: Double, val mound: Boolean, val uuid: UUID)
@@ -51,6 +54,7 @@ object SafariEsp {
     private val modelLabels = EspModelLabels()
     private val motion = EspMotion()
     private val litterbugs = LitterbugProjection()
+    private val shyworms = ShywormProjection()
     private val logger = LoggerFactory.getLogger("sparkling-mutuals/esp")
     private fun renderType(name: String, snippet: RenderPipeline.Snippet) = RenderType.create("sparkling-mutuals:$name",
         RenderSetup.builder(RenderPipelines.register(RenderPipeline.builder(snippet)
@@ -124,6 +128,7 @@ object SafariEsp {
         }
     }
     fun threw(species: String) { captures.threw(species, System.currentTimeMillis()) }
+    fun shywormMessage(text: String, now: Long) { shyworms.chat(text, now) }
     fun escaped(species: String) { captures.escaped(species, System.currentTimeMillis())?.let(modelLabels::release) }
     fun caught(species: String) {
         val id = captures.caught(species, System.currentTimeMillis())
@@ -135,7 +140,7 @@ object SafariEsp {
         logger.info("Retired captured {} model {}.", species, id)
         targets = targets.filterNot { it.entity.uuid == id }
     }
-    fun clearCaptured() { captures.reset(); modelLabels.reset(); motion.reset(); litterbugs.reset() }
+    fun clearCaptured() { captures.reset(); modelLabels.reset(); motion.reset(); litterbugs.reset(); shyworms.reset() }
     fun tick(client: Minecraft) {
         if (level !== client.level) { reset(); level = client.level }
         SafariFloorDrops.state.visit(SafariAssist.biome)
@@ -174,6 +179,14 @@ object SafariEsp {
                 EspModelLabel(it.uuid, target.species, it.distanceToSqr(target.entity), it.isCustomNameVisible)
             }, now)
         }
+        val worms = targets.filter { it.species == "Shyworm" }
+        shyworms.retain(worms.map { it.entity.uuid }.toSet())
+        worms.forEach {
+            val e = it.entity
+            shyworms.observe(e.uuid, e.x, e.y, e.z,
+                modelLabels.label(e.uuid) != null && modelLabels.current(e.uuid, now), now)
+        }
+        shyworms.reconcile(now)
         targets = targets.filter { live(it, client, forEsp = true) }
         stringDisplays = strings.toList()
         drops = SafariEspRules.floorDrops(strings)
@@ -262,7 +275,7 @@ object SafariEsp {
         }
         val delta = client.deltaTracker.getGameTimeDeltaPartialTick(false)
         val now = System.currentTimeMillis()
-        val timers = mutableListOf<Pair<LitterbugMarker, AABB>>()
+        val timers = mutableListOf<Triple<String, Int, AABB>>()
         targets = targets.filter { live(it, client, forEsp = true) }
         for (target in targets) {
             val e = target.entity
@@ -277,10 +290,26 @@ object SafariEsp {
             if (needed &&
                 SafariEspConfig.entityEnabled(mob.name, e is Display.ItemDisplay) && mobBiome == mob.biome && SafariEspRules.visible(true, group.enabled, group.onlyInBiome, playerBiome, mobBiome)) {
                 val box = bounds(target, delta)
-                val height = if (mob.name == "Litterbug") litterbugs.hiddenHeight(e.uuid, e.x, e.y, e.z) else null
+                val height = when (mob.name) {
+                    "Litterbug" -> litterbugs.hiddenHeight(e.uuid, e.x, e.y, e.z)
+                    "Shyworm" -> shyworms.hiddenHeight(e.uuid)
+                    else -> null
+                }
                 val projected = if (height == null) box else box.move(0.0, height - e.getPosition(delta).y, 0.0)
                 frame(projected, SafariEspConfig.rgb(SafariEspConfig.entityColor(mob.name, e is Display.ItemDisplay)))
-                if (height != null) litterbugs.hiddenMarker(e.uuid, e.x, e.y, e.z, now)?.let { timers.add(it to projected) }
+                if (mob.name == "Litterbug" && height != null) litterbugs.hiddenMarker(e.uuid, e.x, e.y, e.z, now)?.let {
+                    timers.add(Triple(it.text, it.color, projected))
+                }
+                if (mob.name == "Shyworm") {
+                    shyworms.timer(e.uuid, now)?.let { timers.add(Triple(it.text, it.color, projected)) }
+                    shyworms.path(e.uuid, now)?.let {
+                        val x = (it.minX + it.maxX) / 2; val z = (it.minZ + it.maxZ) / 2
+                        val ground = client.level!!.clip(ClipContext(Vec3(x, it.height + 1, z), Vec3(x, it.height - 4, z),
+                            ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, e))
+                        val y = (if (ground.type == HitResult.Type.BLOCK) ground.location.y else it.height) + .02
+                        frame(AABB(it.minX, y, it.minZ, it.maxX, y, it.maxZ), 0xFFFF0000.toInt())
+                    }
+                }
             }
         }
         val floor = SafariEspConfig.groups.getValue("floor")
@@ -298,10 +327,10 @@ object SafariEsp {
                 quads.addVertex(pose, x + dx, y, z + dz).setColor(color and 0xFFFFFF or ((color ushr 25) shl 24))
         }
         buffers.endBatch(fill)
-        for ((timer, box) in timers) {
+        for ((text, color, box) in timers) {
             poses.pushPose(); poses.translate(box.center.x - camera.x, box.maxY + .2 - camera.y, box.center.z - camera.z)
             poses.mulPose(client.gameRenderer.mainCamera.rotation()); poses.scale(.025f, -.025f, .025f)
-            client.font.drawInBatch(timer.text, -client.font.width(timer.text) / 2f, 0f, timer.color, false,
+            client.font.drawInBatch(text, -client.font.width(text) / 2f, 0f, color, false,
                 Matrix4f(poses.last().pose()), buffers, Font.DisplayMode.SEE_THROUGH, 0x40000000, LightCoordsUtil.FULL_BRIGHT)
             poses.popPose()
         }

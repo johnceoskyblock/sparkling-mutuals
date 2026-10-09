@@ -156,7 +156,7 @@ object SafariEspRules {
         !removed && registered && sameLevel && identify(descriptor)?.name == species
     /** Name-tag distance and idle movement are not reliable reasons to hide legacy moving-critter ESP. */
     fun renderCurrent(species: String, sparkling: Boolean, entityCurrent: Boolean, motionCurrent: Boolean, labelCurrent: Boolean) =
-        entityCurrent && (!sparkling && (species in EspMotion.movingSpecies || species == "Shyworm") || motionCurrent && labelCurrent)
+        entityCurrent && (species == "Shyworm" || !sparkling && species in EspMotion.movingSpecies || motionCurrent && labelCurrent)
     fun textureHash(encoded: String?): String? = try {
         val json = String(Base64.getDecoder().decode(encoded ?: return null), Charsets.UTF_8)
         Regex("textures\\.minecraft\\.net/texture/([a-fA-F0-9]{64})(?![a-fA-F0-9])").find(json)?.groupValues?.get(1)?.lowercase()

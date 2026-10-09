@@ -38,6 +38,7 @@ object SafariTracking {
         if (SafariAssist.inSafari) {
             SafariEspRules.thrownSpecies(text)?.let(SafariEsp::threw)
             SafariEspRules.escapedSpecies(text)?.let(SafariEsp::escaped)
+            SafariEsp.shywormMessage(text, now)
         }
         if (SafariMessages.enteredBy(text, client.player!!.name.string)) {
             val previous = ledger.current
