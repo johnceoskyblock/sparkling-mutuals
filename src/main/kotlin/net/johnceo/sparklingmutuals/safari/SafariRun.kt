@@ -82,6 +82,8 @@ class SafariRun(val startedAt: Long) {
         if (biome == SafariBiome.FOREST) nearbyMacaws = macawsInRange
     }
     fun hasCaptureEvidence(biome: SafariBiome) = biome in nearby
+    fun missing(critter: SafariCritter, fullClear: Boolean) = if (fullClear)
+        nearby[critter.biome]?.contains(critter.name) ?: true else count(critter.name) == 0
     fun birdCount(personalOnly: Boolean = false) = birdSpecies.sumOf { if (personalOnly) personalCount(it) else count(it) }
     private fun birdComplete(species: String, speciesInRange: Set<String>?, personalOnly: Boolean = false, macawsInRange: Int = nearbyMacaws) =
         speciesInRange != null && birds.sufficient(birdCount(personalOnly),

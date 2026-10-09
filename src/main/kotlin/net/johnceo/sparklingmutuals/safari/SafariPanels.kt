@@ -19,17 +19,18 @@ object SafariPanels {
     }
     fun missing(run: SafariRun?, biome: SafariBiome, unique: Boolean, nests: Int, mounds: Int = 0,
         walls: WallSummary = WallSummary(emptyList())): HudPanel {
-        val missing = biome.critters.filter { run?.complete(it, !ConfigManager.fullClearMode) != true }
+        val missing = biome.critters.filter { run?.missing(it, ConfigManager.fullClearMode) != false }
         val rows = missing.map { critter ->
             HudRow(critter.name, if (ConfigManager.fullClearMode && critter.quota > 1) "${run?.count(critter.name) ?: 0}/${critter.quota}" else null,
                 critter.color, HudRow.GRAY)
-        }.ifEmpty { listOf(HudRow("All caught!", color = biome.color)) }
+        }.ifEmpty { listOf(HudRow(if (ConfigManager.fullClearMode) "No critters loaded" else "All caught!", color = biome.color)) }
         val footer = buildList {
-            if (biome == SafariBiome.FOREST && ConfigManager.showBeeNests) {
+            fun needed(species: String) = SafariHelperRules.needed(species, SafariFullClear.mode, run, SafariSparklingMode.state)
+            if (biome == SafariBiome.FOREST && needed("Honeybug")) {
                 add(HudRow()); add(HudRow("Bee nests to punch", "$nests", HudRow.GOLD, HudRow.GRAY))
             }
             if (biome == SafariBiome.CAVERN) {
-                if (ConfigManager.showSnooperWalls && walls.states.isNotEmpty()) {
+                if (needed("Snoozle") && walls.states.isNotEmpty()) {
                     val row = when {
                         !walls.allBroken -> HudRow("Snooper walls to break", walls.remaining, HudRow.GOLD, HudRow.GRAY)
                         run != null && !run.encountered("Snoozle") -> HudRow("No snoozles this run", color = HudRow.GRAY)
@@ -37,9 +38,9 @@ object SafariPanels {
                     }
                     if (row != null) { add(HudRow()); add(row) }
                 }
-                if (ConfigManager.showMoundCount && mounds > 0) {
+                if (needed("Rockmite") && mounds > 0) {
                     add(HudRow()); add(HudRow("Mounds to break", "$mounds", HudRow.GOLD, HudRow.GRAY))
-                } else if (ConfigManager.showMoundCount && run?.allMoundsBroken == true && !run.encountered("Rockmite")) {
+                } else if (needed("Rockmite") && run?.allMoundsBroken == true && !run.encountered("Rockmite")) {
                     add(HudRow()); add(HudRow("No rockmites this run", color = HudRow.GRAY))
                 }
             }

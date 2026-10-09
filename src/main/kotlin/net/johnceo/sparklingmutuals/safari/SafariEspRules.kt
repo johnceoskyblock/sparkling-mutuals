@@ -84,10 +84,13 @@ object SafariEspRules {
     fun thrownSpecies(text: String) = throwMessage.matchEntire(text)?.groupValues?.get(1)?.let(::labelSpecies)
     fun escapedSpecies(text: String) = escapeMessage.matchEntire(text)?.groupValues?.get(1)?.let(::labelSpecies)
     private val profitableSpecies = setOf("Hideonfloor", "Hideonwall", "Chuckwalla", "Fluffling", "Mantis Shrimp")
-    fun neededForRun(species: String, mound: Boolean, run: SafariRun?, fullClear: Boolean, profitable: Boolean = true) =
-        fullClear || species == "Rockmite" && mound || profitable && species in profitableSpecies || (run?.count(species) ?: 0) == 0
+    fun neededForRun(species: String, mound: Boolean, run: SafariRun?, fullClear: Boolean, profitable: Boolean = true,
+        party: PartySparklingState? = null) =
+        if (party != null && species in SafariHelperRules.species)
+            SafariHelperRules.needed(species, if (fullClear) SafariMode.FULL_CLEAR else SafariMode.UNIQUE, run, party)
+        else fullClear || species == "Rockmite" && mound || profitable && species in profitableSpecies || (run?.count(species) ?: 0) == 0
     fun neededForSparkling(species: String, mound: Boolean, party: PartySparklingState, profitable: Boolean) =
-        species == "Rockmite" && mound || profitable && species in profitableSpecies || party.needs(species)
+        profitable && species in profitableSpecies || party.needs(species)
     fun captureModel(type: String) = type.endsWith("display") || type == "armor_stand"
     fun requiresModelLabel(species: String, type: String) = captureModel(type) && !(species == "Rockmite" && type == "item_display")
     fun modelVisible(x: Float, y: Float, z: Float) = listOf(x, y, z).all { it.isFinite() } &&

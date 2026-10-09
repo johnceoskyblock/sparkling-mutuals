@@ -78,9 +78,11 @@ object BeeNests {
         val buffers = context.bufferSource()
         val vertices = buffers.getBuffer(lines)
         val markers = when {
-            SafariAssist.biome == SafariBiome.FOREST && ConfigManager.highlightBeeNests && !handledByParty ->
+            SafariAssist.biome == SafariBiome.FOREST && !handledByParty &&
+                SafariHelperRules.needed("Honeybug", SafariFullClear.mode, SafariTracking.ledger.current, SafariSparklingMode.state) ->
                 known.filter { it !in punched }.map { Triple(it, "Nest", SafariEspConfig.rgb(AppearanceConfig.nestColor)) }
-            SafariAssist.biome == SafariBiome.CAVERN && ConfigManager.highlightSnooperWalls ->
+            SafariAssist.biome == SafariBiome.CAVERN &&
+                SafariHelperRules.needed("Snoozle", SafariFullClear.mode, SafariTracking.ledger.current, SafariSparklingMode.state) ->
                 SafariStructures.intactWalls.map { Triple(it, "Snooper wall", SafariEspConfig.rgb(AppearanceConfig.snooperColor)) }
             else -> emptyList()
         }.filter { level.isLoaded(it.first) && !level.getBlockState(it.first).isAir && it.first.distToCenterSqr(camera) < 40000 }

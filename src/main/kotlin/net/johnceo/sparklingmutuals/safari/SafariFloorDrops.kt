@@ -49,7 +49,7 @@ object SafariFloorDrops {
         state.visit(SafariAssist.biome)
         val run = SafariTracking.ledger.current
         val party = SafariSparklingMode.state
-        return state.enabled(biome, SafariFullClear.mode != SafariMode.UNIQUE, SafariEspConfig.groups.getValue("floor").enabled,
+        return state.enabled(biome, SafariFullClear.mode == SafariMode.FULL_CLEAR, SafariEspConfig.groups.getValue("floor").enabled,
             run?.birdFoodsComplete == true, party.everyoneHas("Bluebird", "Parakeet", "Macaw"),
             party.everyoneHas("Gemzie"), party.everyoneHas("Gimmiegold"),
             (run?.count("Gemzie") ?: 0) > 0, (run?.count("Doomspiral") ?: 0) > 0)

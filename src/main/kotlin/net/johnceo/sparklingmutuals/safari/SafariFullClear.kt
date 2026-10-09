@@ -82,7 +82,7 @@ object SafariFullClear {
     fun applyEspPreset() {
         val allEsp = mode != SafariMode.UNIQUE
         SafariEspConfig.groups.values.forEach { it.enabled = true }
-        SafariEspConfig.mobs.forEach { (species, setting) -> setting.enabled = allEsp || species in regularEsp }
+        SafariEspConfig.mobs.forEach { (species, setting) -> setting.enabled = allEsp || species in regularEsp || species in SafariHelperRules.species }
         SafariEspConfig.rockmiteMoundEnabled = true
     }
 }
