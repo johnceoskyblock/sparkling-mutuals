@@ -7,7 +7,7 @@ import java.util.UUID
 
 class SafariMovingEspTest {
     @Test fun `legacy display applies to all requested moving species while sparkling keeps lifecycle checks`() {
-        for (species in EspMotion.movingSpecies + "Shyworm") {
+        for (species in EspMotion.movingSpecies) {
             assertTrue(SafariEspRules.renderCurrent(species, false, true, false, false), species)
             assertFalse(SafariEspRules.renderCurrent(species, true, true, false, false), species)
             assertTrue(SafariEspRules.renderCurrent(species, true, true, true, true), species)

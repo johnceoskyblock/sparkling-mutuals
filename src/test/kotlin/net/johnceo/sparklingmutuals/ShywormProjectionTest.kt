@@ -1,0 +1,137 @@
+package net.johnceo.sparklingmutuals
+
+import net.johnceo.sparklingmutuals.safari.*
+import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Test
+import java.util.UUID
+
+class ShywormProjectionTest {
+    private val id = UUID.randomUUID()
+    @Test fun `different worms have independent rest deadlines and deadline colors`() {
+        val p = ShywormProjection(); val other = UUID.randomUUID()
+        p.observe(id, -100.0, 50.0, 20.0, true, 0)
+        p.observe(other, -110.0, 50.0, 30.0, true, 0)
+        p.chat("The Shyworm hid back into the ground.", 250)
+        p.observe(id, -100.0, 1.0, 20.0, false, 500); p.reconcile(500)
+        p.observe(other, -110.0, 50.0, 30.0, true, 1500)
+        p.chat("The Shyworm saw a player and fled!", 1750)
+        p.observe(other, -110.0, 1.0, 30.0, false, 2000); p.reconcile(2000)
+        assertNotEquals(p.timer(id, 2250)?.text, p.timer(other, 2250)?.text)
+        assertEquals(0xFF55FF55.toInt(), p.timer(id, 250)?.color)
+        assertEquals(0xFFFFFF55.toInt(), p.timer(id, 5250)?.color)
+        assertEquals(0xFFFF5555.toInt(), p.timer(id, 8250)?.color)
+        assertEquals(-1, p.timer(id, 15250)?.color)
+    }
+    @Test fun `west and north segments also remain one by seven`() {
+        val p = ShywormProjection()
+        for ((at, point) in listOf(-100.0 to 20.0, -99.5 to 20.0, -93.0 to 20.0,
+            -93.0 to 20.5, -93.0 to 27.0, -93.5 to 27.0).withIndex())
+            p.observe(id, point.first, 50.0, point.second, true, at * 250L)
+        val west = p.path(id, 1250)!!
+        assertEquals(-100.0, west.minX, .001); assertEquals(1.0, west.maxZ - west.minZ, .001)
+        p.observe(id, -100.0, 50.0, 27.0, true, 1500)
+        p.observe(id, -100.0, 50.0, 26.5, true, 1750)
+        val north = p.path(id, 1750)!!
+        assertEquals(20.0, north.minZ, .001); assertEquals(1.0, north.maxX - north.minX, .001)
+    }
+    @Test fun `teleports and stale movement remove the inferred path`() {
+        val p = ShywormProjection()
+        p.observe(id, -100.0, 50.0, 20.0, true, 0)
+        p.observe(id, -99.5, 50.0, 20.0, true, 250)
+        assertNull(p.path(id, 4000))
+        p.observe(id, -120.0, 50.0, 40.0, true, 500)
+        assertNull(p.path(id, 500))
+        p.observe(id, Double.NaN, 1.0, 20.0, false, 750)
+        assertNull(p.hiddenHeight(id))
+    }
+    @Test fun `underground Shyworm ESP survives label loss but sparkling eligibility and UUID expiry still win`() {
+        assertTrue(SafariEspRules.renderCurrent("Shyworm", true, true, true, false))
+        assertFalse(SafariEspRules.renderCurrent("Shyworm", true, false, true, false))
+        val party = PartySparklingState().apply {
+            select(setOf("me")); accept(setOf("me"), mapOf("me" to SafariRoster.all.map { it.name }.toSet() - "Shyworm"))
+        }
+        val run = SafariRun(0)
+        assertTrue(SafariEspRules.neededForSparkling("Shyworm", false, party, false, run, id, 0))
+        assertFalse(SafariEspRules.neededForSparkling("Shyworm", false, party, false, run, id, 10000))
+        party.accept(setOf("me"), mapOf("me" to SafariRoster.all.map { it.name }.toSet()))
+        assertFalse(SafariEspRules.neededForSparkling("Shyworm", false, party, false, run, UUID.randomUUID(), 10001))
+    }
+    @Test fun `clockwise turns place a one by seven outline on the active side`() {
+        val p = ShywormProjection()
+        p.observe(id, -100.0, 50.0, 20.0, true, 0)
+        p.observe(id, -99.5, 50.0, 20.0, true, 250)
+        val east = p.path(id, 250)!!
+        assertEquals(7.0, east.maxX - east.minX, .001)
+        assertEquals(1.0, east.maxZ - east.minZ, .001)
+        assertEquals(-100.0, east.minX, .001)
+        p.observe(id, -93.0, 50.0, 20.0, true, 500)
+        p.observe(id, -93.0, 50.0, 20.5, true, 750)
+        val south = p.path(id, 750)!!
+        assertEquals(1.0, south.maxX - south.minX, .001)
+        assertEquals(7.0, south.maxZ - south.minZ, .001)
+        assertEquals(20.0, south.minZ, .001)
+    }
+    @Test fun `short underground corner pauses do not start a rest timer`() {
+        val p = ShywormProjection()
+        p.observe(id, -100.0, 50.0, 20.0, true, 0)
+        p.observe(id, -99.5, 50.0, 20.0, true, 250)
+        p.observe(id, -99.5, 1.0, 20.0, false, 500)
+        assertEquals(50.0, p.hiddenHeight(id))
+        assertNull(p.timer(id, 1000))
+        assertNotNull(p.path(id, 1000))
+    }
+    @Test fun `rest chat associates a single newly hidden worm and preserves its range deadline`() {
+        val p = ShywormProjection()
+        p.observe(id, -100.0, 50.0, 20.0, true, 0)
+        p.chat("The Shyworm hid back into the ground.", 250)
+        p.observe(id, -100.0, 1.0, 20.0, false, 500)
+        p.reconcile(500)
+        assertEquals("~8.0-15.0s", p.timer(id, 250)?.text)
+        assertNull(p.path(id, 500))
+        p.observe(id, -100.0, 1.0, 20.0, false, 1500)
+        p.reconcile(1500)
+        assertEquals("~7.0-14.0s", p.timer(id, 1250)?.text)
+        assertEquals("Any moment (<=7.0s)", p.timer(id, 8250)?.text)
+        assertEquals("Moving soon..", p.timer(id, 15250)?.text)
+        p.observe(id, -100.0, 50.0, 20.0, true, 16000)
+        assertNull(p.timer(id, 16000))
+    }
+    @Test fun `flee messages work but quoted player messages never start timers`() {
+        for (message in listOf("The Shyworm saw a player and fled!", "The Shyworm fled because it was startled!")) {
+            val p = ShywormProjection()
+            p.observe(id, -100.0, 50.0, 20.0, true, 0)
+            p.chat("Party > Friend: $message", 100)
+            p.observe(id, -100.0, 1.0, 20.0, false, 250)
+            p.reconcile(250)
+            assertNull(p.timer(id, 250))
+            p.chat(message, 300)
+            p.reconcile(500)
+            assertNotNull(p.timer(id, 500))
+        }
+    }
+    @Test fun `ambiguous worms and stale messages do not share an invented timer`() {
+        val p = ShywormProjection()
+        val other = UUID.randomUUID()
+        for (worm in listOf(id, other)) p.observe(worm, -100.0, 50.0, 20.0, true, 0)
+        p.chat("The Shyworm hid back into the ground.", 250)
+        for (worm in listOf(id, other)) p.observe(worm, -100.0, 1.0, 20.0, false, 500)
+        p.reconcile(500)
+        assertNull(p.timer(id, 500)); assertNull(p.timer(other, 500))
+        p.reconcile(3000)
+        p.retain(setOf(id))
+        p.reconcile(3250)
+        assertNull(p.timer(id, 3250))
+    }
+    @Test fun `unloading and run reset remove projection and timer state`() {
+        val p = ShywormProjection()
+        p.observe(id, -100.0, 50.0, 20.0, true, 0)
+        p.chat("The Shyworm hid back into the ground.", 250)
+        p.observe(id, -100.0, 1.0, 20.0, false, 500); p.reconcile(500)
+        assertNotNull(p.timer(id, 500))
+        p.retain(emptySet())
+        assertNull(p.hiddenHeight(id)); assertNull(p.timer(id, 750))
+        p.reset()
+        p.observe(id, -100.0, 1.0, 20.0, false, 1000); p.reconcile(1000)
+        assertNull(p.hiddenHeight(id)); assertNull(p.timer(id, 1000)); assertNull(p.path(id, 1000))
+    }
+}
