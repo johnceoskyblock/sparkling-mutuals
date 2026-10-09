@@ -21,7 +21,10 @@ object SafariTracking {
                 val checks = ledger.current?.sparklingChecks?.takeIf {
                     SafariAssist.inSafari && SafariFullClear.mode == SafariMode.SPARKLING
                 }
-                SafariMessages.lines(message.string, checks).forEach(::receive)
+                val fullClearRun = ledger.current?.takeIf {
+                    SafariAssist.inSafari && SafariFullClear.mode == SafariMode.FULL_CLEAR
+                }
+                SafariMessages.lines(message.string, checks, fullClearRun).forEach(::receive)
             }
         }
     }

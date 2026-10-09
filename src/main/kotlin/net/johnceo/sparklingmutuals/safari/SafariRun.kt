@@ -57,6 +57,13 @@ class SafariRun(val startedAt: Long) {
     private val counts = mutableMapOf<String, Int>()
     private val personal = mutableMapOf<String, Int>()
     private val visited = mutableSetOf<SafariBiome>()
+    private val partyFullClears = mutableSetOf<SafariBiome>()
+    fun partyFullClear(raw: String) {
+        SparklingChecks.doneBiome(raw)?.takeIf { it !in visited }?.let(partyFullClears::add)
+    }
+    fun fullClearProgress(critters: List<SafariCritter>) = critters.count {
+        it.biome !in visited && it.biome in partyFullClears || captureComplete(it.name)
+    }
     private val inheritedBiomes = mutableSetOf<SafariBiome>()
     fun visitBiome(biome: SafariBiome) {
         lastBiome = biome
@@ -165,9 +172,10 @@ object SafariMessages {
     private val separators = Regex("\\r?\\n|\\\\n")
     private val playerChat = Regex("^(?:(?:Party|Guild|Officer|Co-op|Coop)\\s*>|(?:From|To)\\s+|<\\w{1,16}>|(?:\\[[^]]+]\\s*)*\\w{1,16}(?:\\s*\\[[^]]+])*:)", RegexOption.IGNORE_CASE)
     private val entry = Regex("^(?:\\[[^]]+]\\s*)*(\\w{1,16}) entered Critter Safari!$")
-    fun lines(raw: String, partyChecks: SparklingChecks? = null): List<String> {
+    fun lines(raw: String, partyChecks: SparklingChecks? = null, fullClearRun: SafariRun? = null): List<String> {
         if (playerChat.containsMatchIn(SafariRules.strip(raw))) {
             partyChecks?.chat(raw, manualAllowed = true)
+            fullClearRun?.partyFullClear(raw)
             return emptyList()
         }
         return raw.split(separators).map(SafariRules::strip).filter(String::isNotEmpty)

@@ -53,8 +53,7 @@ class SparklingChecks {
             coinsSpent++; heldCoins = null
         }
         if (manualAllowed) {
-            val word = PartyChat.parse(text)?.body?.trim()?.removeSuffix(".")?.lowercase(Locale.ROOT)
-            completed.addAll(doneWords[word]?.critters?.map { it.name } ?: emptyList())
+            completed.addAll(doneBiome(text)?.critters?.map { it.name } ?: emptyList())
         }
     }
     fun inventory(stacks: List<Pair<String, Int>>) {
@@ -65,6 +64,10 @@ class SparklingChecks {
         private val spawned = birds + setOf("Honeybug", "Rockmite", "Snoozle", "Gemzie", "Wumpa", "Gazer", "Gimmiegold", "Doomspiral")
         private val centers = mapOf(SafariBiome.FOREST to (6.0 to 51.0), SafariBiome.CAVERN to (-114.0 to 49.0),
             SafariBiome.ICY to (-112.0 to -54.0), SafariBiome.HAUNTED to (-4.0 to -64.0))
+        fun doneBiome(raw: String): SafariBiome? {
+            val word = PartyChat.parse(SafariRules.strip(raw))?.body?.trim()?.removeSuffix(".")?.lowercase(Locale.ROOT)
+            return doneWords[word]
+        }
         private val doneWords = mapOf("fd" to SafariBiome.FOREST, "cd" to SafariBiome.CAVERN,
             "id" to SafariBiome.ICY, "hd" to SafariBiome.HAUNTED)
     }

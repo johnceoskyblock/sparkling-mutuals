@@ -14,6 +14,7 @@ object SafariPanels {
             if (SafariFullClear.mode == SafariMode.SPARKLING && !party.ready) return HudRow(label, "?", color, color)
             val targets = if (SafariFullClear.mode == SafariMode.SPARKLING) critters.filter { party.needs(it.name) } else critters
             val count = if (SafariFullClear.mode == SafariMode.SPARKLING) targets.count { run?.sparklingChecks?.checked(it.name) == true }
+                else if (SafariFullClear.mode == SafariMode.FULL_CLEAR) run?.fullClearProgress(targets) ?: 0
                 else run?.progress(targets, true) ?: 0
             return HudRow(label, "$count/${targets.size}", color, color,
                 if (targets.isEmpty()) 1f else count.toFloat() / targets.size)
