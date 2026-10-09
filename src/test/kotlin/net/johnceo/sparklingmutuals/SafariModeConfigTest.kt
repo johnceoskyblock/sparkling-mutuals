@@ -29,7 +29,7 @@ class SafariModeConfigTest {
         assertEquals(BiomePbType.UNIQUE, ConfigManager.personalBests.biomeType)
         assertTrue(ConfigManager.timesaveOnly)
         assertFalse(ConfigManager.catchCountPanel)
-        assertFalse(SafariEspConfig.mobs.getValue("Macaw").enabled)
+        assertTrue(SafariEspConfig.mobs.getValue("Macaw").enabled)
         assertTrue(SafariEspConfig.mobs.getValue("Driftling").enabled)
         ConfigManager.init(dir)
         assertTrue(SafariSettings().modes.unique.enabled)

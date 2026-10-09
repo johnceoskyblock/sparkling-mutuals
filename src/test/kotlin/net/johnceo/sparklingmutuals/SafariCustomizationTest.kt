@@ -59,7 +59,7 @@ class SafariCustomizationTest {
         assertEquals(0xFF126AFE.toInt(), SafariEspConfig.rgb(AppearanceConfig.nestColor))
         assertFalse(AppearanceConfig.panels.getValue("miria").borderEnabled)
         assertTrue(SafariEspConfig.groups.getValue("forest").enabled)
-        assertFalse(SafariEspConfig.mobs.getValue("Macaw").enabled)
+        assertTrue(SafariEspConfig.mobs.getValue("Macaw").enabled)
         assertFalse(ConfigManager.showBeeNests)
         assertFalse(ConfigManager.showMoundCount)
         assertFalse(ConfigManager.showSnooperWalls)

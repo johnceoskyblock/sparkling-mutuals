@@ -41,12 +41,12 @@ class SafariModeHelpersTest {
         assertFalse(SafariEspRules.neededForSparkling("Rockmite", false, state, true))
         assertTrue(SafariHelperRules.needed("Rockmite", SafariMode.FULL_CLEAR, caught("Rockmite"), state))
     }
-    @Test fun `full clear missing list follows loaded species rather than minimums`() {
+    @Test fun `full clear missing list requires minimum captures and no loaded species`() {
         ConfigManager.init(dir); ConfigManager.fullClearMode = true
         val run = caught("Driftling").apply { repeat(2) { record(SafariCatch(SafariRoster.named("Driftling")!!)) } }
         run.updateCaptureEvidence(SafariBiome.CAVERN, setOf("Driftling"), false)
         assertTrue(SafariPanels.missing(run, SafariBiome.CAVERN, false, 0).rows.any { it.label == "Driftling" })
-        assertFalse(SafariPanels.missing(run, SafariBiome.CAVERN, false, 0).rows.any { it.label == "Scrappy" })
+        assertTrue(SafariPanels.missing(run, SafariBiome.CAVERN, false, 0).rows.any { it.label == "Scrappy" })
         run.updateCaptureEvidence(SafariBiome.CAVERN, emptySet(), false)
         assertFalse(SafariPanels.missing(run, SafariBiome.CAVERN, false, 0).rows.any { it.label == "Driftling" })
         run.updateCaptureEvidence(SafariBiome.CAVERN, setOf("Driftling", "Scrappy"), false)

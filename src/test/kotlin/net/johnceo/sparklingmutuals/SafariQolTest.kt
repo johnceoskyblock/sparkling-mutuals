@@ -13,10 +13,7 @@ class SafariQolTest {
     @Test fun `new installations use the unique mode ESP preset with biome restrictions`() {
         ConfigManager.init(dir)
         assertTrue(SafariEspConfig.groups.values.all { it.enabled && it.onlyInBiome })
-        assertEquals(setOf("Driftling", "Chuckwalla", "Foxtrot", "Treefrog", "Woodchucker", "Fluffling", "Hideonfloor",
-            "Tepid", "Shuddersquid", "Billygoat", "Mantis Shrimp", "Nozzlenose", "Wumpa", "Bloodbat", "Duplico",
-            "Litterbug", "Solsnatcher", "Hideonwall", "Hideyho", "Doomspiral", "Honeybug", "Rockmite", "Snoozle"),
-            SafariEspConfig.mobs.filterValues { it.enabled }.keys)
+        assertEquals(SafariRoster.all.map { it.name }.toSet(), SafariEspConfig.mobs.filterValues { it.enabled }.keys)
     }
     @Test fun `ESP upgrades retain explicit user preferences`() {
         SafariEspConfig.load(Properties().apply {

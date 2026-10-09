@@ -107,8 +107,8 @@ class SafariSparklingModeTest {
         val floor = FloorDropState()
         for (full in listOf(false, true)) {
             assertFalse(floor.enabled(SafariBiome.FOREST, full, true, partyBirdsComplete = true))
-            assertFalse(floor.enabled(SafariBiome.CAVERN, full, true, partyGemzieComplete = true))
-            assertFalse(floor.enabled(SafariBiome.CAVERN, full, true, gemzieCaught = true))
+            assertEquals(full, floor.enabled(SafariBiome.CAVERN, full, true, partyGemzieComplete = true))
+            assertEquals(full, floor.enabled(SafariBiome.CAVERN, full, true, gemzieCaught = true))
             assertTrue(floor.enabled(SafariBiome.HAUNTED, full, true, doomCaught = true))
             assertFalse(floor.enabled(SafariBiome.HAUNTED, full, true, partyGimmiegoldComplete = true, doomCaught = true))
         }

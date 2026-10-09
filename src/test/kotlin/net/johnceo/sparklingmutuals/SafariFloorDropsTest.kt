@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class SafariFloorDropsTest {
-    @Test fun `cavern hides floor drops after all three distinct gems were found in either mode`() {
+    @Test fun `cavern full clear waits for held gems while unique follows pickups`() {
         val state = FloorDropState()
         state.visit(SafariBiome.CAVERN)
         assertTrue(state.enabled(SafariBiome.CAVERN, false, true))
@@ -14,8 +14,9 @@ class SafariFloorDropsTest {
         state.record("FLOOR DROP! Lime Gem", SafariBiome.CAVERN)
         assertTrue(state.enabled(SafariBiome.CAVERN, true, true))
         state.record("FLOOR DROP! Orange Gem", SafariBiome.CAVERN)
-        assertFalse(state.enabled(SafariBiome.CAVERN, true, true))
+        assertTrue(state.enabled(SafariBiome.CAVERN, true, true))
         assertFalse(state.enabled(SafariBiome.CAVERN, false, true))
+        state.inventory(listOf("Purple Gem" to 1, "Lime Gem" to 1, "Orange Gem" to 1))
         state.visit(null); state.visit(SafariBiome.CAVERN)
         assertFalse(state.enabled(SafariBiome.CAVERN, true, true))
         state.reset()

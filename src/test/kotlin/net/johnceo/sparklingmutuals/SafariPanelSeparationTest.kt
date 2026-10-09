@@ -55,7 +55,7 @@ class SafariPanelSeparationTest {
         val rows = SafariBiome.entries.flatMap { SafariPanels.missing(run, it, false, 0).rows }
         assertEquals(setOf("Scrappy", "Gemzie", "Troodon", "Gazer"), rows.filter { it.value?.contains('/') == true }.map { it.label }.toSet())
         assertTrue(rows.any { it.label == "Bluebird" })
-        run.record(SafariCatch(SafariRoster.named("Foxtrot")!!))
+        repeat(6) { run.record(SafariCatch(SafariRoster.named("Foxtrot")!!)) }
         run.updateCaptureEvidence(SafariBiome.FOREST, emptySet(), true)
         assertFalse(SafariPanels.missing(run, SafariBiome.FOREST, false, 0).rows.any { it.label == "Foxtrot" })
     }
