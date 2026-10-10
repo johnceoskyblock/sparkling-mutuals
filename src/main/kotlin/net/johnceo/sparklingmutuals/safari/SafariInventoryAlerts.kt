@@ -39,15 +39,16 @@ object SafariInventoryAlerts {
         if (level !== client.level) { reset(); level = client.level }
         val player = client.player
         if (!SafariAssist.inSafari || player == null) { state.reset(); ticks = 0; return }
+        val inventory = player.inventory
+        val stacks = (0 until inventory.containerSize).map { inventory.getItem(it) }.filterNot { it.isEmpty }
+            .map { it.hoverName.string to it.count }
+        SafariTracking.ledger.current?.inventoryEvidence(stacks)
         if (++ticks < 10) return
         ticks = 0
         val enabled = buildSet {
             if (ConfigManager.allGemsAlert) add(InventoryAlert.GEMS)
             if (ConfigManager.allIncenseAlert) add(InventoryAlert.INCENSE)
         }
-        val inventory = player.inventory
-        val stacks = (0 until inventory.containerSize).map { inventory.getItem(it) }.filterNot { it.isEmpty }
-            .map { it.hoverName.string to it.count }
         SafariFloorDrops.state.inventory(stacks)
         val birds = SafariTracking.ledger.current?.birds
         birds?.inventory(stacks)
