@@ -1,3 +1,11 @@
+# Cavern mode completion zones
+
+- Cavernfish, Flitter, Shyworm, Driftling, Chuckwalla and Gemzie confirm Full Clear absence only inside their specified species zones, while keeping capture minimums.
+- Sparkling checks require each species' zone and distinct UUID spawn minimum; Scrappy requires three distinct UUIDs without a zone.
+- Full Clear Scrappy additionally needs three observed UUIDs and three captures. Rockmite mounds/captures and Snoozle walls/absence retain their requirements.
+- Sparkling keeps Driftling ESP, hides Rockmite silverfish and Shyworm path/timer helpers, and limits other Cavern critter ESP to ten seconds per UUID (including profitable Chuckwalla).
+- Other biome completion rules remain; their zone specifications can be added separately. Live in-game zone and entity-loading validation remains needed.
+
 # Shyworm return-to-start follow-up
 
 - Rest messages retain their eight-second countdown when the model resets to its start, including lingering labels and non-Y1 hiding positions.
