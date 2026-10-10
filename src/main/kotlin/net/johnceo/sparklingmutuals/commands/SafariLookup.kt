@@ -28,8 +28,8 @@ object SafariLookup {
     }
 
     fun run(command: PartyCommand, members: List<String>, localName: String = "You"): String = when (command.kind) {
-        PartyCommandKind.PB_DOOM -> ConfigManager.personalBests.response(localName, "Doomspiral", command.duo)
-        PartyCommandKind.PB_WUMPA -> ConfigManager.personalBests.response(localName, "Wumpa", command.duo)
+        PartyCommandKind.PB_DOOM -> if (command.trackedPlayer) ConfigManager.personalBests.trackedResponse(command.ign, "Doomspiral") else ConfigManager.personalBests.response(localName, "Doomspiral", command.duo)
+        PartyCommandKind.PB_WUMPA -> if (command.trackedPlayer) ConfigManager.personalBests.trackedResponse(command.ign, "Wumpa") else ConfigManager.personalBests.response(localName, "Wumpa", command.duo)
         PartyCommandKind.PB_FOREST -> ConfigManager.personalBests.response(localName, "Forest")
         PartyCommandKind.PB_HAUNTED -> ConfigManager.personalBests.response(localName, "Haunted")
         PartyCommandKind.PB_ICY -> ConfigManager.personalBests.response(localName, "Icy")
