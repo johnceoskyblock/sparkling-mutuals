@@ -1,3 +1,9 @@
+## v3 development — party boss records and capture feedback
+
+- Save party-player history and observed Doomspiral/Wumpa PBs from the mod user’s run start. Query with `!pb doom <IGN>` / `!pb wumpa <IGN>`; name lookups ignore case and persist across restarts.
+- Every personal or loot-share boss capture shows elapsed time and the gap against the previous PB. Personal catches compare solo when eligible, duo otherwise; party catches compare observed records without claiming solo eligibility.
+- Regression coverage covers command targeting, record persistence, slower/faster captures, category selection and invalid/stale capture rejection. Live chat and party roster integration still need in-game testing.
+
 ## v3 development — Unique helper priority
 
 - Unique mode gives uncaught Gemzie, Forest birds and Gimmiegold priority over the party’s sparkling discoveries when choosing floor-drop supplies. Pickup/inventory completion and manual ESP choices remain authoritative.
@@ -15,7 +21,7 @@
 - Solo Wumpa PBs require all eight personal Icy prerequisite captures; solo Doomspiral PBs require four Soothing Incense observed simultaneously in inventory earlier in the run. LOOT SHARE cannot qualify a personal PB.
 - !pb wumpa duo / !pb doom duo retain unrestricted own-boss capture records. Existing unrestricted records migrate to duo; solo and duo save independently.
 - Empty mutuals reply None. :skull:; wholly missing selected discoveries reply All. :skull:.
-- Other-player PB commands/history remain pending the reporter's timing clarification on issue #22. Inventory sampling and party command rendering need live in-game validation.
+- Other-player records now use the mod user’s run start as clarified on issue #22. Inventory sampling and party command rendering need live in-game validation.
 
 # Communal biome and run completion
 

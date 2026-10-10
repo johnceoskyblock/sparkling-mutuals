@@ -20,6 +20,7 @@ Icy zones use 30/40-block Full Clear/Sparkling radii: Tepid, Nozzlenose and Mant
 - **Missing panel:** lists uncaught species in Unique, species below their capture minimum or still rendered in Full Clear, and unchecked party-needed discoveries in Sparkling. Remaining nests, mounds and walls follow the selected mode.
 - **Capture counts:** tracks catches per critter and Rockmite mound results. `/captures` opens the current or last run's counts. First visiting a biome with earlier party catches and none of your own uses minimum counts and remaining rendered critters to verify party progress.
 - **Run mode:** `/fc` selects full clear, Full Clear PBs and all-species lookups. `/unique` selects unique runs, Unique Run PBs and timesaves. Full-clear capture numbers stay white until you visit a biome, then turn green when completion requirements are met. The Modes tab also offers these controls and Sparkling mode.
+- **Party boss history:** `!pb doom <IGN>` / `!pb wumpa <IGN>` query saved observed times for past party members. All Doomspiral/Wumpa captures show elapsed time and PB gap locally. Party captures use your run start; your own catches compare solo when eligible, duo otherwise. Observed records do not establish another player’s solo eligibility.
 - **PB tracking:** saves your fastest Doomspiral, Wumpa, full-clear, and unique-biome times from the start of a run and announces new records locally. Unique clears require one personal catch of every species; only your own catches qualify for either biome PB type.
 
 ## Safari helpers
