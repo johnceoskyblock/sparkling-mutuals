@@ -67,6 +67,12 @@ object PartyManager {
 
     fun onClientTick(client: Minecraft) {
         if (client.player == null || client.connection == null) { reset(); return }
+        if (hasInfo) {
+            val members = getMembers().toSet()
+            val names = client.connection!!.onlinePlayers.filter { it.profile.id.toString() in members }.map { it.profile.name }
+            if (net.johnceo.sparklingmutuals.config.ConfigManager.personalBests.rememberParty(names))
+                net.johnceo.sparklingmutuals.config.ConfigManager.save()
+        }
         if (requestedAt != 0L && System.currentTimeMillis() - requestedAt > 5000) {
             requestedAt = 0
             refreshAgain = false
