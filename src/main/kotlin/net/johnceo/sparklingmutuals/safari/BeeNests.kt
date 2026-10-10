@@ -78,7 +78,7 @@ object BeeNests {
         val buffers = context.bufferSource()
         val vertices = buffers.getBuffer(lines)
         val markers = when {
-            SafariAssist.biome == SafariBiome.FOREST && !handledByParty &&
+            SafariAssist.biome == SafariBiome.FOREST && (SafariFullClear.mode == SafariMode.UNIQUE || !handledByParty) &&
                 SafariHelperRules.needed("Honeybug", SafariFullClear.mode, SafariTracking.ledger.current, SafariSparklingMode.state) ->
                 known.filter { it !in punched }.map { Triple(it, "Nest", SafariEspConfig.rgb(AppearanceConfig.nestColor)) }
             SafariAssist.biome == SafariBiome.CAVERN &&

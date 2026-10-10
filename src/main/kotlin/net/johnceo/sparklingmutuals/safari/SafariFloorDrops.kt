@@ -43,6 +43,14 @@ class FloorDropState {
             else -> configured
         }
     }
+    fun enabledForMode(biome: SafariBiome?, mode: SafariMode, configured: Boolean, run: SafariRun?, party: PartySparklingState): Boolean {
+        fun caught(name: String) = (run?.count(name) ?: 0) > 0
+        fun discoveryComplete(vararg names: String) = party.everyoneHas(*names) &&
+            (mode != SafariMode.UNIQUE || names.all(::caught))
+        return enabled(biome, mode == SafariMode.FULL_CLEAR, configured, run?.birdFoodsComplete == true,
+            discoveryComplete("Bluebird", "Parakeet", "Macaw"), discoveryComplete("Gemzie"), discoveryComplete("Gimmiegold"),
+            caught("Gemzie"), caught("Doomspiral"))
+    }
     fun reset() { gemsReady = false; gems.clear(); pickaxes = 0; inventoryPickaxes = 0; incensePickups = 0; incenseReady = false; biome = null; override = null }
 }
 
@@ -52,9 +60,6 @@ object SafariFloorDrops {
         state.visit(SafariAssist.biome)
         val run = SafariTracking.ledger.current
         val party = SafariSparklingMode.state
-        return state.enabled(biome, SafariFullClear.mode == SafariMode.FULL_CLEAR, SafariEspConfig.groups.getValue("floor").enabled,
-            run?.birdFoodsComplete == true, party.everyoneHas("Bluebird", "Parakeet", "Macaw"),
-            party.everyoneHas("Gemzie"), party.everyoneHas("Gimmiegold"),
-            (run?.count("Gemzie") ?: 0) > 0, (run?.count("Doomspiral") ?: 0) > 0)
+        return state.enabledForMode(biome, SafariFullClear.mode, SafariEspConfig.groups.getValue("floor").enabled, run, party)
     }
 }
