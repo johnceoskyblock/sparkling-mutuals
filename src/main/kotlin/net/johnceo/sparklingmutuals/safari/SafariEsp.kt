@@ -202,7 +202,9 @@ object SafariEsp {
         val now = System.currentTimeMillis()
         val moving = motion.current(entity.uuid, now)
         val labeled = !trackedModel(target) || modelLabels.current(entity.uuid, now)
-        return if (forEsp) SafariEspRules.renderCurrent(target.species, ConfigManager.sparklingMode, current, moving, labeled)
+        return if (forEsp) SafariEspRules.renderCurrent(target.species, ConfigManager.sparklingMode, current, moving, labeled,
+            if (ConfigManager.sparklingMode) ConfigManager.sparklingProfitableShardEsp
+            else !ConfigManager.fullClearMode && ConfigManager.profitableShardEsp)
             else current && moving && labeled
     }
     fun debug(client: Minecraft) {

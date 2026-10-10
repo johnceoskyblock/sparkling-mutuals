@@ -84,6 +84,7 @@ object SafariEspRules {
     fun thrownSpecies(text: String) = throwMessage.matchEntire(text)?.groupValues?.get(1)?.let(::labelSpecies)
     fun escapedSpecies(text: String) = escapeMessage.matchEntire(text)?.groupValues?.get(1)?.let(::labelSpecies)
     private val profitableSpecies = setOf("Hideonfloor", "Hideonwall", "Chuckwalla", "Fluffling", "Mantis Shrimp")
+    fun profitableEsp(species: String, enabled: Boolean) = enabled && species in profitableSpecies
     fun neededForRun(species: String, mound: Boolean, run: SafariRun?, fullClear: Boolean, profitable: Boolean = true,
         party: PartySparklingState? = null) =
         if (party != null && species in SafariHelperRules.species)
@@ -91,13 +92,13 @@ object SafariEspRules {
         else fullClear || species == "Rockmite" && mound || profitable && species in profitableSpecies || (run?.count(species) ?: 0) == 0
     fun neededForSparkling(species: String, mound: Boolean, party: PartySparklingState, profitable: Boolean,
         run: SafariRun? = null, uuid: java.util.UUID? = null, now: Long = System.currentTimeMillis()): Boolean {
+        if (profitableEsp(species, profitable)) return true
         if (species == "Rockmite" && !mound) return false
         if (species == "Doomspiral") return party.needs(species) && (run?.count(species) ?: 0) == 0
         if (run?.sparklingChecks?.wumpaPrerequisite(species, party) == true) return run.count(species) == 0
-        if (SafariRoster.named(species) != null && (party.needs(species) || profitable && species in profitableSpecies) &&
+        if (SafariRoster.named(species) != null && party.needs(species) &&
             species != "Driftling" && !mound &&
             uuid != null && run?.sparklingChecks?.keepEsp(uuid, now) == false) return false
-        if (profitable && species in profitableSpecies) return true
         if (!party.needs(species)) return false
         if (species == "Driftling") return true
         if (mound && species == "Rockmite") return run?.sparklingChecks?.checked(species) != true
@@ -161,8 +162,8 @@ object SafariEspRules {
     fun targetCurrent(species: String, descriptor: EspEntity, removed: Boolean, registered: Boolean, sameLevel: Boolean) =
         !removed && registered && sameLevel && identify(descriptor)?.name == species
     /** Name-tag distance and idle movement are not reliable reasons to hide legacy moving-critter ESP. */
-    fun renderCurrent(species: String, sparkling: Boolean, entityCurrent: Boolean, motionCurrent: Boolean, labelCurrent: Boolean) =
-        entityCurrent && (species == "Shyworm" || !sparkling && species in EspMotion.movingSpecies || motionCurrent && labelCurrent)
+    fun renderCurrent(species: String, sparkling: Boolean, entityCurrent: Boolean, motionCurrent: Boolean, labelCurrent: Boolean, profitable: Boolean = false) =
+        entityCurrent && (profitableEsp(species, profitable) || species == "Shyworm" || !sparkling && species in EspMotion.movingSpecies || motionCurrent && labelCurrent)
     fun textureHash(encoded: String?): String? = try {
         val json = String(Base64.getDecoder().decode(encoded ?: return null), Charsets.UTF_8)
         Regex("textures\\.minecraft\\.net/texture/([a-fA-F0-9]{64})(?![a-fA-F0-9])").find(json)?.groupValues?.get(1)?.lowercase()
