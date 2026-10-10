@@ -23,10 +23,10 @@ class SparklingChecksTest {
         assertFalse(checks.checked("Honeybug")); assertFalse(checks.checked("Bluebird"))
         assertFalse(checks.checked("Driftling"))
     }
-    @Test fun `all supplied biome centers check the correct natural species`() {
+    @Test fun `Haunted center alone does not check natural species`() {
         for ((biome, x, z) in listOf(Triple(SafariBiome.HAUNTED, -4.0, -64.0))) {
             val checks = SparklingChecks(); checks.scan(biome, x, z, emptyList())
-            assertTrue(checks.checked(biome.critters.first().name))
+            assertFalse(checks.checked(biome.critters.first().name))
             assertFalse(checks.checked(when (biome) { SafariBiome.CAVERN -> "Gemzie"; SafariBiome.ICY -> "Wumpa"; else -> "Doomspiral" }))
         }
     }
@@ -64,9 +64,11 @@ class SparklingChecksTest {
         checks.scan(SafariBiome.ICY, -112.0, -54.0, seen("Wumpa", 1))
         assertTrue(checks.checked("Wumpa"))
         checks.scan(SafariBiome.HAUNTED, -4.0, -64.0, gazers.take(3) + seen("Doomspiral", 1))
-        assertTrue(checks.checked("Doomspiral")); assertFalse(checks.checked("Gazer"))
+        assertFalse(checks.checked("Doomspiral")); assertFalse(checks.checked("Gazer"))
+        checks.capture("Doomspiral")
         checks.scan(SafariBiome.HAUNTED, -4.0, -64.0, gazers.takeLast(1))
         assertTrue(checks.checked("Gazer"))
+        assertTrue(checks.checked("Doomspiral"))
     }
     @Test fun `birds need all food spawned but no capture minimums`() {
         val birds = SafariBirdLedger(); val checks = SparklingChecks()
