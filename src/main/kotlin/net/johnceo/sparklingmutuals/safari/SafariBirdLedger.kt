@@ -1,6 +1,6 @@
 package net.johnceo.sparklingmutuals.safari
 
-/** Run-owned food accounting; a feeder announcement confirms each removed food's use. */
+/** Run-owned food accounting; each feeder announcement consumes one food. */
 class SafariBirdLedger {
     private val foods = listOf("Bag of Seeds", "Wriggleworm", "Yogi Berry")
     private val picked = mutableMapOf<String, Int>()
@@ -8,11 +8,12 @@ class SafariBirdLedger {
     private val removed = mutableMapOf<String, Int>()
     private var feedings = 0
     private var macawPairs = 0
+    private val spawned = mutableMapOf<String, Int>()
     private var announced = false
     val foodsComplete get() = foods.all { (forest[it] ?: 0) >= 3 }
     val allSpawned get() = foodsComplete && used >= collected
     val collected get() = picked.values.sum()
-    val used get() = minOf(feedings, removed.values.sum())
+    val used get() = feedings
     fun alert(biome: SafariBiome?, enabled: Boolean): Boolean {
         if (!enabled || biome != SafariBiome.FOREST || !foodsComplete || announced) return false
         announced = true
@@ -28,11 +29,13 @@ class SafariBirdLedger {
     }
     /** Exact announcements documented by CritterMod 0.9.0 BirdfeederWatch (MIT). */
     fun spawn(raw: String): Boolean {
-        when (SafariRules.strip(raw)) {
-            "A Bluebird was attracted to the Birdfeeder!", "A Parakeet was attracted to the Birdfeeder!" -> Unit
-            "Two Macaws were attracted to the Birdfeeder!" -> macawPairs++
+        val species = when (SafariRules.strip(raw)) {
+            "A Bluebird was attracted to the Birdfeeder!" -> "Bluebird"
+            "A Parakeet was attracted to the Birdfeeder!" -> "Parakeet"
+            "Two Macaws were attracted to the Birdfeeder!" -> { macawPairs++; "Macaw" }
             else -> return false
         }
+        spawned.merge(species, if (species == "Macaw") 2 else 1, Int::plus)
         feedings++
         return true
     }
@@ -46,4 +49,8 @@ class SafariBirdLedger {
         (collected + pairs(macawsCaught, macawsRemaining) - macawsRemaining.coerceAtLeast(0)).coerceAtLeast(0)
     fun sufficient(catches: Int, macawsCaught: Int, macawsRemaining: Int) = allSpawned &&
         catches >= requiredCaptures(macawsCaught, macawsRemaining)
+    fun capturesComplete(count: (String) -> Int) = allSpawned &&
+        listOf("Bluebird", "Parakeet", "Macaw").all { species ->
+            count(species) >= if (species == "Macaw") minOf(1, spawned[species] ?: 0) else spawned[species] ?: 0
+        }
 }
