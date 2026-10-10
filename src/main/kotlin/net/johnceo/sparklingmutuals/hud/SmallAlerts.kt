@@ -20,13 +20,15 @@ class TimedHudAlerts {
 /** Independent HUD channels leave server and sparkling titles alone. */
 object SmallAlerts {
     private val notices = TimedHudAlerts()
-    val titles = mapOf(SafariHud.GEMS to "ALL GEMS READY!", SafariHud.BIRD_FOOD to "ALL BIRD FOOD COLLECTED!",
+    val titles get() = mapOf(SafariHud.RUN_COMPLETE to net.johnceo.sparklingmutuals.config.ConfigManager.runCompleteTitle, SafariHud.GEMS to "ALL GEMS READY!", SafariHud.BIRD_FOOD to "ALL BIRD FOOD COLLECTED!",
         SafariHud.INCENSE to "ALL INCENSE READY!", SafariHud.WARP to "WARP REMINDER")
     fun preview(hud: SafariHud) = HudPanel(titles.getValue(hud), color(hud), emptyList())
-    private fun color(hud: SafariHud) = if (hud == SafariHud.WARP) 0xFFFF5555.toInt() else 0xFF55FF55.toInt()
+    private fun color(hud: SafariHud) = if (hud == SafariHud.RUN_COMPLETE)
+        net.johnceo.sparklingmutuals.config.SafariEspConfig.rgb(net.johnceo.sparklingmutuals.config.AppearanceConfig.runCompleteColor)
+        else if (hud == SafariHud.WARP) 0xFFFF5555.toInt() else 0xFF55FF55.toInt()
     fun show(hud: SafariHud) = notices.show(hud, titles.getValue(hud), color(hud), System.currentTimeMillis())
     fun clear(hud: SafariHud) = notices.clear(hud)
-    fun resetInventory() = titles.keys.filter { it != SafariHud.WARP }.forEach(::clear)
+    fun resetInventory() = titles.keys.filter { it != SafariHud.WARP && it != SafariHud.RUN_COMPLETE }.forEach(::clear)
     fun render(graphics: GuiGraphicsExtractor) {
         val active = notices.active(System.currentTimeMillis())
         val client = Minecraft.getInstance()

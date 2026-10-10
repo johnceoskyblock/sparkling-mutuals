@@ -41,6 +41,7 @@ enum class SafariHud(val label: String, val layout: HudLayout) {
     GEMS("All Gems alert", HudLayout(.36f, .10f, 1.5f)),
     BIRD_FOOD("All Bird Food alert", HudLayout(.30f, .18f, 1.5f)),
     INCENSE("All Incense alert", HudLayout(.34f, .26f, 1.5f)),
+    RUN_COMPLETE("Run completion alert", HudLayout(.35f, .42f, 1.5f)),
     WARP("Warp reminder", HudLayout(.37f, .34f, 1.5f));
     companion object {
         fun load(properties: Properties) = entries.forEach { it.layout.load(properties, it.name.lowercase()) }
