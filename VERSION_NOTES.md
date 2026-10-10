@@ -1,3 +1,11 @@
+# Haunted mode completion rules
+
+- Areita, Bloodbat, Solsnatcher, Litterbug, Duplico and Hideonwall use (-3, -63): Full Clear absence within 30 blocks with capture minimums; Sparkling distinct UUID minimums within 40 blocks.
+- Gazer needs four distinct UUIDs; Hideyho and Doomspiral need one, without zones. Full Clear additionally requires their captures. Sparkling Doomspiral also requires capture.
+- Gimmiegold UUID/capture minimums scale with picked-up Shining Coins (at least three). Existing center, cleared floor drops, spent coins and empty coin inventory requirements remain.
+- Haunted Sparkling ESP expires after ten seconds per UUID, including profitable Hideonwall. Doomspiral stays until capture.
+- Forest specifications remain pending. Live in-game zone/entity-loading verification remains needed.
+
 # Icy mode completion zones
 
 - Icy Full Clear confirms absence only within the supplied 30-block species zones, retaining capture minimums. Sparkling needs 40-block zones plus distinct UUID spawn minimums.
