@@ -7,9 +7,13 @@ import org.junit.jupiter.api.Test
 import java.util.Properties
 
 class SafariPersonalBestTest {
+    private fun soloRun(start: Long) = SafariRun(start).apply {
+        inventoryEvidence(listOf("Soothing Incense" to 4))
+        SafariBiome.ICY.critters.filter { it.name != "Wumpa" }.forEach { record(SafariCatch(it)) }
+    }
     @Test fun `new best notice is only produced for your own faster capture`() {
         val bests = SafariPersonalBests()
-        val run = SafariRun(1000)
+        val run = soloRun(1000)
         assertNull(bests.newBest("LOOT SHARE! You received a Doomspiral Shard from Other catching a Doomspiral!", run, 2000))
         assertNull(bests.newBest("Party > Other: CAPTURE! You caught a Wumpa!", run, 2000))
         assertEquals("[SM] New Doomspiral PB: 1:01.000!", bests.newBest("CAPTURE! You caught a Doomspiral!", run, 62000))
@@ -21,7 +25,7 @@ class SafariPersonalBestTest {
     }
     @Test fun `only own exact successful captures set independent personal bests`() {
         val bests = SafariPersonalBests()
-        val run = SafariRun(1000)
+        val run = soloRun(1000)
         assertFalse(bests.record("LOOT SHARE! You received a Wumpa Shard from Test catching a Wumpa!", run, 2000))
         assertFalse(bests.record("Party > Test: CAPTURE! You caught a Doomspiral!", run, 2000))
         assertFalse(bests.record("CAPTURE! You caught a DoomspiralFake!", run, 2000))
@@ -30,12 +34,12 @@ class SafariPersonalBestTest {
         assertEquals(89500L, bests.time("Doomspiral"))
         assertEquals(120000L, bests.time("Wumpa"))
         assertFalse(bests.record("CAPTURE! You caught a Doomspiral!", run, 100000))
-        assertTrue(bests.record("CAPTURE! You caught a Doomspiral!", SafariRun(200000), 260000))
+        assertTrue(bests.record("CAPTURE! You caught a Doomspiral!", soloRun(200000), 260000))
         assertEquals(60000L, bests.time("Doomspiral"))
     }
     @Test fun `personal bests survive configuration reload`() {
         val bests = SafariPersonalBests()
-        bests.record("CAPTURE! You caught a Wumpa!", SafariRun(1000), 63250)
+        bests.record("CAPTURE! You caught a Wumpa!", soloRun(1000), 63250)
         val properties = Properties()
         bests.save(properties)
         val restored = SafariPersonalBests()

@@ -81,8 +81,8 @@ class SafariQolTest {
         }
         assertEquals(1, run.count("Wumpa"))
         assertEquals(2, run.count("Doomspiral"))
-        assertEquals(61000L, bests.time("Wumpa"))
-        assertEquals(61000L, bests.time("Doomspiral"))
+        assertEquals(61000L, bests.time("Wumpa", duo = true))
+        assertEquals(61000L, bests.time("Doomspiral", duo = true))
         assertEquals(2, notices.size)
         notices.forEach { assertFalse(SafariChatFilter.hidden(it, true)) }
     }
