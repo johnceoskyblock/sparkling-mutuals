@@ -18,8 +18,8 @@ class ShywormProjectionTest {
         p.observe(other, -110.0, 1.0, 30.0, false, 2000); p.reconcile(2000)
         assertNotEquals(p.timer(id, 2250)?.text, p.timer(other, 2250)?.text)
         assertEquals(0xFF55FF55.toInt(), p.timer(id, 250)?.color)
-        assertEquals(0xFFFFFF55.toInt(), p.timer(id, 5250)?.color)
-        assertEquals(0xFFFF5555.toInt(), p.timer(id, 8250)?.color)
+        assertEquals(0xFFFFFF55.toInt(), p.timer(id, 4250)?.color)
+        assertEquals(0xFFFF5555.toInt(), p.timer(id, 7250)?.color)
         assertEquals(-1, p.timer(id, 15250)?.color)
     }
     @Test fun `west and north segments also remain one by seven`() {
@@ -80,19 +80,19 @@ class ShywormProjectionTest {
         assertNull(p.timer(id, 1000))
         assertNotNull(p.path(id, 1000))
     }
-    @Test fun `rest chat associates a single newly hidden worm and preserves its range deadline`() {
+    @Test fun `rest chat associates a single newly hidden worm and preserves its eight second deadline`() {
         val p = ShywormProjection()
         p.observe(id, -100.0, 50.0, 20.0, true, 0)
         p.chat("The Shyworm hid back into the ground.", 250)
         p.observe(id, -100.0, 1.0, 20.0, false, 500)
         p.reconcile(500)
-        assertEquals("~8.0-15.0s", p.timer(id, 250)?.text)
+        assertEquals("8.0s", p.timer(id, 250)?.text)
         assertNull(p.path(id, 500))
         p.observe(id, -100.0, 1.0, 20.0, false, 1500)
         p.reconcile(1500)
-        assertEquals("~7.0-14.0s", p.timer(id, 1250)?.text)
-        assertEquals("Any moment (<=7.0s)", p.timer(id, 8250)?.text)
-        assertEquals("Moving soon..", p.timer(id, 15250)?.text)
+        assertEquals("7.0s", p.timer(id, 1250)?.text)
+        assertEquals("moving soon...", p.timer(id, 8250)?.text)
+        assertEquals("moving soon...", p.timer(id, 15250)?.text)
         p.observe(id, -100.0, 50.0, 20.0, true, 16000)
         assertNull(p.timer(id, 16000))
     }
@@ -133,5 +133,27 @@ class ShywormProjectionTest {
         p.reset()
         p.observe(id, -100.0, 1.0, 20.0, false, 1000); p.reconcile(1000)
         assertNull(p.hiddenHeight(id)); assertNull(p.timer(id, 1000)); assertNull(p.path(id, 1000))
+    }
+    @Test fun `next clockwise side is warned before corner emergence`() {
+        val p = ShywormProjection()
+        p.observe(id, -100.0, 50.0, 20.0, true, 0)
+        p.observe(id, -99.5, 50.0, 20.0, true, 250)
+        p.observe(id, -93.0, 1.0, 20.0, false, 500)
+        val next = p.path(id, 500)!!
+        assertEquals(-93.5, next.minX, .001)
+        assertEquals(-92.5, next.maxX, .001)
+        assertEquals(20.0, next.minZ, .001)
+        assertEquals(27.0, next.maxZ, .001)
+        assertNull(p.timer(id, 500))
+    }
+    @Test fun `head bobbing follows live height instead of projecting to old surface`() {
+        val p = ShywormProjection()
+        p.observe(id, -100.0, 50.0, 20.0, true, 0)
+        p.observe(id, -99.5, 49.0, 20.0, true, 250)
+        assertNull(p.hiddenHeight(id))
+        p.observe(id, -99.0, 48.0, 20.0, false, 500)
+        assertNull(p.hiddenHeight(id))
+        p.observe(id, -98.5, 1.0, 20.0, false, 750)
+        assertEquals(49.0, p.hiddenHeight(id))
     }
 }
