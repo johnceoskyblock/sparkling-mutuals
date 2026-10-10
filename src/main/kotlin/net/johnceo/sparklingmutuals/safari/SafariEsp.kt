@@ -34,8 +34,6 @@ import net.minecraft.world.level.block.Block
 import net.minecraft.world.level.block.ShulkerBoxBlock
 import net.minecraft.world.phys.AABB
 import net.minecraft.world.phys.Vec3
-import net.minecraft.world.phys.HitResult
-import net.minecraft.world.level.ClipContext
 import org.slf4j.LoggerFactory
 
 data class EspCritterObservation(val id: Int, val species: String, val biome: SafariBiome, val x: Double, val y: Double, val z: Double, val mound: Boolean, val uuid: UUID)
@@ -306,10 +304,7 @@ object SafariEsp {
                 if (mob.name == "Shyworm") {
                     shyworms.timer(e.uuid, now)?.let { timers.add(Triple(it.text, it.color, projected)) }
                     shyworms.path(e.uuid, now)?.let {
-                        val x = (it.minX + it.maxX) / 2; val z = (it.minZ + it.maxZ) / 2
-                        val ground = client.level!!.clip(ClipContext(Vec3(x, it.height + 1, z), Vec3(x, it.height - 4, z),
-                            ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, e))
-                        val y = (if (ground.type == HitResult.Type.BLOCK) ground.location.y else it.height) + .02
+                        val y = it.height + .02
                         frame(AABB(it.minX, y, it.minZ, it.maxX, y, it.maxZ), 0xFFFF0000.toInt())
                     }
                 }
