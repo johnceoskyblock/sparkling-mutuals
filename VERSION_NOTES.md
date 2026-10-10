@@ -1,3 +1,10 @@
+# Icy mode completion zones
+
+- Icy Full Clear confirms absence only within the supplied 30-block species zones, retaining capture minimums. Sparkling needs 40-block zones plus distinct UUID spawn minimums.
+- Troodon uses three distinct UUIDs without a location zone, plus three captures in Full Clear.
+- Icy Sparkling ESP expires after ten seconds per UUID. If the party still needs Wumpa checked, prerequisite ESP instead stays until one capture, including Mantis Shrimp with profitability enabled.
+- Cavern rules remain. Forest and Haunted zone specifications can follow separately; live in-game entity-loading validation remains needed.
+
 # Cavern mode completion zones
 
 - Cavernfish, Flitter, Shyworm, Driftling, Chuckwalla and Gemzie confirm Full Clear absence only inside their specified species zones, while keeping capture minimums.

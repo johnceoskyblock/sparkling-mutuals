@@ -4,6 +4,8 @@ Cavern completion uses species confirmation zones in Full Clear (capture minimum
 
 A Fabric mod for Hypixel SkyBlock Safari, sparkling discoveries, and Miria contests.
 
+Icy zones use 30/40-block Full Clear/Sparkling radii: Tepid, Nozzlenose and Mantis Shrimp (-73,-46); Strongarm (-107,-56); Polaris and Wumpa (-110,-78); Shuddersquid (-127,-48); Billygoat (-121,-55). Troodon needs three distinct UUIDs without a zone, plus three captures in Full Clear. Sparkling uses distinct spawn minimums and ten-second ESP windows; when Wumpa is still needed, prerequisite ESP stays until one capture, including profitable Mantis Shrimp.
+
 ## Party commands
 
 - **Mutual sparklings:** `!mutual` finds sparkling discoveries shared by your party.
