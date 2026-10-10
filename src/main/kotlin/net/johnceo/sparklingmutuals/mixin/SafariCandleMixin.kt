@@ -26,10 +26,7 @@ abstract class SafariCandleMixin {
     @Inject(method = ["getShape(Lnet/minecraft/world/level/BlockGetter;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/phys/shapes/CollisionContext;)Lnet/minecraft/world/phys/shapes/VoxelShape;"], at = [At("HEAD")], cancellable = true)
     private fun candle(world: BlockGetter, pos: BlockPos, context: CollisionContext, result: CallbackInfoReturnable<VoxelShape>) {
         if (world !is ClientLevel || getBlock() !is CandleBlock) return
-        val state = world.getBlockState(pos)
-        if (!SafariCandleRules.target(state.`is`(Blocks.RED_CANDLE),
-            state.getValue(CandleBlock.CANDLES),
-            world.getBlockState(pos.below()).`is`(Blocks.CHISELED_STONE_BRICKS))) return
+        if (!SafariCandleRules.target(getBlock() === Blocks.RED_CANDLE)) return
         val client = Minecraft.getInstance()
         val player = client.player ?: return
         if (listOf(player.mainHandItem, player.offhandItem).any { SafariCandleRules.enabled(ConfigManager.candleHitbox,
