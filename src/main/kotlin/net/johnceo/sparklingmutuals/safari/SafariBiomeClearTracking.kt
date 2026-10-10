@@ -1,5 +1,7 @@
 package net.johnceo.sparklingmutuals.safari
 
+import net.johnceo.sparklingmutuals.LocalChat
+
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.minecraft.client.Minecraft
 import net.minecraft.network.chat.Component
@@ -39,7 +41,7 @@ object SafariBiomeClearTracking {
             SafariStructures.walls.states.size == 5 && SafariStructures.walls.allBroken, BeeNests.allChecked,
             nearbyMacaws = snapshot.critters.count { it.biome == biome && !it.mound && it.species == "Macaw" })
         SafariFullClear.recordClear(run, biome, evidence, ConfigManager.personalBests, System.currentTimeMillis())?.let {
-            ConfigManager.save(); player.sendSystemMessage(Component.literal(it))
+            ConfigManager.save(); player.sendSystemMessage(LocalChat.component(it))
         }
     }
 }

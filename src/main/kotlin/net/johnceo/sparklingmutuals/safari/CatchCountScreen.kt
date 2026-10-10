@@ -16,7 +16,7 @@ class CatchCountScreen(private val parent: Screen? = null) : Screen(Component.li
         addRenderableWidget(Button.builder(Component.literal("Back")) { onClose() }.bounds(width / 2 - 50, height - 26, 100, 20).build())
     }
     override fun extractRenderState(graphics: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, delta: Float) {
-        graphics.fill(0, 0, width, height, 0xCC000000.toInt())
+        graphics.fill(0, 0, width, height, (0xCC000000.toInt() or net.johnceo.sparklingmutuals.config.SafariTheme.BACKGROUND))
         val panel = SafariPanels.captures(SafariTracking.run, selected)
         val panelWidth = panel.width(font::width)
         val scale = minOf(1f, (width - 12).toFloat() / panelWidth, (height - 100).coerceAtLeast(1).toFloat() / panel.height)

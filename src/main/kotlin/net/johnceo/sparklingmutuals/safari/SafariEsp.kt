@@ -128,7 +128,10 @@ object SafariEsp {
         }
     }
     fun threw(species: String) { captures.threw(species, System.currentTimeMillis()) }
-    fun shywormMessage(text: String, now: Long) { shyworms.chat(text, now) }
+    fun shywormMessage(text: String, now: Long) {
+        val player = Minecraft.getInstance().player ?: return
+        shyworms.chat(text, now, player.x, player.z)
+    }
     fun escaped(species: String) { captures.escaped(species, System.currentTimeMillis())?.let(modelLabels::release) }
     fun caught(species: String) {
         val id = captures.caught(species, System.currentTimeMillis())

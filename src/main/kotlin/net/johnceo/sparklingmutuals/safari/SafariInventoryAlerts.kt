@@ -1,5 +1,7 @@
 package net.johnceo.sparklingmutuals.safari
 
+import net.johnceo.sparklingmutuals.LocalChat
+
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.hud.SmallAlerts
 import net.johnceo.sparklingmutuals.hud.SafariHud
@@ -58,7 +60,7 @@ object SafariInventoryAlerts {
                 InventoryAlert.BIRD_FOOD -> SafariHud.BIRD_FOOD
                 InventoryAlert.INCENSE -> SafariHud.INCENSE
             })
-            player.sendSystemMessage(Component.literal("[SM] ${it.detail}${if (it == InventoryAlert.BIRD_FOOD) "." else " ready."}"))
+            player.sendSystemMessage(LocalChat.component("[SM] ${it.detail}${if (it == InventoryAlert.BIRD_FOOD) "." else " ready."}"))
         }
     }
     fun reset() { state.reset(); ticks = 0; level = null; SmallAlerts.resetInventory() }

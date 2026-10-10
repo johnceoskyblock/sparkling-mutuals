@@ -1,5 +1,7 @@
 package net.johnceo.sparklingmutuals.safari
 
+import net.johnceo.sparklingmutuals.LocalChat
+
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.contest.ContestGui
@@ -63,12 +65,12 @@ object SafariTracking {
         if (catch.personal) {
             SafariEsp.caught(catch.critter.name)
             ConfigManager.personalBests.recordUnique(catch.critter.biome, ledger.current!!, now)?.let { notice ->
-                ConfigManager.save(); client.player?.sendSystemMessage(Component.literal(notice))
+                ConfigManager.save(); client.player?.sendSystemMessage(LocalChat.component(notice))
             }
         }
         ConfigManager.personalBests.newBest(text, ledger.current!!, now)?.let { notice ->
             ConfigManager.save()
-            client.player?.sendSystemMessage(Component.literal(notice))
+            client.player?.sendSystemMessage(LocalChat.component(notice))
         }
     }
     fun onClientTick(client: Minecraft) = ensureRun(client)

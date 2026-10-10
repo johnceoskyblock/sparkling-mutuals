@@ -1,5 +1,7 @@
 package net.johnceo.sparklingmutuals.safari
 
+import net.johnceo.sparklingmutuals.LocalChat
+
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents
 import net.fabricmc.fabric.api.client.screen.v1.ScreenMouseEvents
@@ -47,7 +49,7 @@ object HideyhoQuest {
         offeredAt = now
         connection = Minecraft.getInstance().connection
         level = Minecraft.getInstance().level
-        Minecraft.getInstance().player?.sendSystemMessage(Component.literal("[SM] Click with chat open to accept Hideyho."))
+        Minecraft.getInstance().player?.sendSystemMessage(LocalChat.component("[SM] Click with chat open to accept Hideyho."))
     }
     private fun accept(): Boolean {
         val client = Minecraft.getInstance()
@@ -61,7 +63,7 @@ object HideyhoQuest {
             is ClickEvent.Custom -> active.send(ServerboundCustomClickActionPacket(event.id(), event.payload()))
             else -> return false
         }
-        client.player?.sendSystemMessage(Component.literal("[SM] Hideyho quest accepted."))
+        client.player?.sendSystemMessage(LocalChat.component("[SM] Hideyho quest accepted."))
         return true
     }
     fun onClientTick(client: Minecraft) {

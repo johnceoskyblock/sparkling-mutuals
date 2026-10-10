@@ -1,5 +1,7 @@
 package net.johnceo.sparklingmutuals.safari
 
+import net.johnceo.sparklingmutuals.LocalChat
+
 import net.johnceo.sparklingmutuals.api.ApiFailure
 import net.johnceo.sparklingmutuals.commands.SafariLookup
 import net.johnceo.sparklingmutuals.config.ConfigManager
@@ -46,7 +48,7 @@ object SafariSparklingMode {
     private fun local(client: Minecraft, message: String) {
         if (warning == message) return
         warning = message
-        client.player?.sendSystemMessage(Component.literal("[SM] $message"))
+        client.player?.sendSystemMessage(LocalChat.component("[SM] $message"))
     }
     private fun invalidate() { generation++; task?.cancel(false); task = null; attemptedAt = 0 }
     fun tick(client: Minecraft) {
