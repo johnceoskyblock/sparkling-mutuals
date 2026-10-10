@@ -60,6 +60,7 @@ class SafariPersonalBestTest {
         assertFalse(wumpa.matchesResponse("Other's Wumpa PB: Not recorded yet"))
         assertEquals(PartyCommand(PartyCommandKind.TICKETS, "Test"),
             PartyCommand.fromChat("Party > Requester: !tickets Test")!!.command.forResponder("Player"))
-        assertNull(PartyCommand.fromChat("Party > Test: !pb doom extra"))
+        assertTrue(PartyCommand.fromChat("Party > Test: !pb doom extra")!!.command.trackedPlayer)
+        assertNull(PartyCommand.fromChat("Party > Test: !pb doom invalid-name"))
     }
 }
