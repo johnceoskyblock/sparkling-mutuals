@@ -7,6 +7,42 @@ import java.util.UUID
 
 class ShywormProjectionTest {
     private val id = UUID.randomUUID()
+    @Test fun `return to start keeps timer despite lingering labels and warns first side throughout rest`() {
+        val p = ShywormProjection()
+        p.observe(id, 10.0, 58.65, 20.0, true, 0)
+        p.observe(id, 10.5, 58.65, 20.0, true, 250)
+        p.observe(id, 17.0, 58.65, 20.0, true, 500)
+        p.chat("The Shyworm saw a player and fled!", 750, 10.0, 20.0)
+        p.observe(id, 10.0, 57.0, 20.0, true, 750)
+        p.observe(id, 10.0, 57.0, 20.0, true, 1000)
+        p.reconcile(1000)
+        assertEquals("7.8s", p.timer(id, 1000)?.text)
+        p.observe(id, 10.0, 57.0, 20.0, true, 1500)
+        assertNotNull(p.timer(id, 1500))
+        assertEquals(58.65, p.hiddenHeight(id))
+        val first = p.path(id, 7000)!!
+        assertEquals(10.0, first.minX, .001); assertEquals(17.0, first.maxX, .001)
+        assertEquals(19.5, first.minZ, .001); assertEquals(20.5, first.maxZ, .001)
+        assertEquals(60.0, first.height)
+        p.observe(id, 10.5, 58.65, 20.0, true, 9000)
+        assertNull(p.timer(id, 9000))
+        assertEquals(16.5, p.path(id, 9000)!!.minX, .001)
+    }
+    @Test fun `all rest messages survive return teleport and use known ground levels`() {
+        for ((ground, message) in listOf(40.0 to "The Shyworm hid back into the ground.",
+            43.0 to "The Shyworm saw a player and fled!", 60.0 to "The Shyworm fled because it was startled!")) {
+            val p = ShywormProjection()
+            p.observe(id, 10.0, ground - 1.35, 20.0, true, 0)
+            p.observe(id, 10.0, ground - 1.35, 20.5, true, 250)
+            p.observe(id, 17.0, ground - 1.35, 27.0, false, 500)
+            p.chat(message, 750, 10.0, 20.0)
+            p.observe(id, 10.0, 1.0, 20.0, false, 750)
+            p.reconcile(1000)
+            assertNotNull(p.timer(id, 1000))
+            assertEquals(ground, p.path(id, 8750)!!.height)
+            assertEquals(7.0, p.path(id, 8750)!!.maxZ - p.path(id, 8750)!!.minZ, .001)
+        }
+    }
     @Test fun `different worms have independent rest deadlines and deadline colors`() {
         val p = ShywormProjection(); val other = UUID.randomUUID()
         p.observe(id, -100.0, 50.0, 20.0, true, 0)
