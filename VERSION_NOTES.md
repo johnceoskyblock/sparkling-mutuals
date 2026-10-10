@@ -1,3 +1,10 @@
+# Shyworm return-to-start follow-up
+
+- Rest messages retain their eight-second countdown when the model resets to its start, including lingering labels and non-Y1 hiding positions.
+- The first observed travel side stays warned during the countdown and “moving soon...” phase; movement resumes next-side warnings.
+- Red 1×7 outlines use the nearest known emergence ground level (Y40, Y43 or Y60), with a tiny offset to avoid flickering.
+- Initial travel direction requires observed movement; live in-game reset and alignment testing remains needed.
+
 # Chat polish and Shyworm follow-ups
 
 - All local mod feedback uses one `[SM]` prefix per line, including command help and contest warnings.
