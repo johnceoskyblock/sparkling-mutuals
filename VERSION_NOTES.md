@@ -1,3 +1,10 @@
+# Boss solo/duo PB rules and party replies
+
+- Solo Wumpa PBs require all eight personal Icy prerequisite captures; solo Doomspiral PBs require four Soothing Incense observed simultaneously in inventory earlier in the run. LOOT SHARE cannot qualify a personal PB.
+- !pb wumpa duo / !pb doom duo retain unrestricted own-boss capture records. Existing unrestricted records migrate to duo; solo and duo save independently.
+- Empty mutuals reply None. :skull:; wholly missing selected discoveries reply All. :skull:.
+- Other-player PB commands/history remain pending the reporter's timing clarification on issue #22. Inventory sampling and party command rendering need live in-game validation.
+
 # Communal biome and run completion
 
 - Automatic fd/cd/id/hd party announcements for locally completed Full Clear/Sparkling biomes; incoming claims update progress and local remaining entities/structures correct them. Unique remains capture-based.
