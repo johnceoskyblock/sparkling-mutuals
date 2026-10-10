@@ -169,6 +169,14 @@ class SafariSettings : Config() {
         @ConfigEditorBoolean var birdFood = ConfigManager.allBirdFoodAlert
         @JvmField @ConfigOption(name = "All Incense Alert", desc = "Haunted: four Soothing Incense in inventory.")
         @ConfigEditorBoolean var incense = ConfigManager.allIncenseAlert
+        @JvmField @ConfigOption(name = "Run completion alert", desc = "Show and sound an alert once when all biomes complete in the active mode.")
+        @ConfigEditorBoolean var runComplete = ConfigManager.runCompleteAlert
+        @JvmField @ConfigOption(name = "Run completion title", desc = "Text shown by the completion alert.")
+        @ConfigEditorText var runTitle = ConfigManager.runCompleteTitle
+        @JvmField @ConfigOption(name = "Run completion sound", desc = "Minecraft sound identifier; saved when settings close.")
+        @ConfigEditorText var runSound = ConfigManager.runCompleteSound
+        @JvmField @ConfigOption(name = "Run completion volume", desc = "Set to zero to mute.")
+        @ConfigEditorSlider(minValue = 0f, maxValue = 100f, minStep = 1f) var runVolume = ConfigManager.runCompleteVolume
     }
     class Tracking {
         @JvmField @ConfigOption(name = "Progress HUD", desc = "Show Safari completion and elapsed time.")
@@ -226,7 +234,14 @@ class SafariSettings : Config() {
         if (ConfigManager.sparklingSound != sound) { ConfigManager.sparklingSound = sound; ConfigManager.save() }
         return true
     }
-    fun saveTextFields() { saveDelay(); saveSound(); saveSparklingSound() }
+    fun saveTextFields() {
+        saveDelay(); saveSound(); saveSparklingSound()
+        val sound = Identifier.tryParse(safari.alerts.runSound.trim())
+        if (sound == null) feedback("Enter a valid Minecraft sound identifier for run completion.")
+        else ConfigManager.runCompleteSound = sound.toString()
+        ConfigManager.runCompleteTitle = safari.alerts.runTitle.take(120).ifBlank { "Run Complete" }
+        ConfigManager.save()
+    }
     fun apply(notifyMode: Boolean = false) {
         if (warp.enabled != ConfigManager.warpAlertsEnabled) AlertManager.toggleAlert()
         val changes = listOf(ConfigManager::profitableShardEsp to modes.unique.profitable, ConfigManager::sparklingProfitableShardEsp to modes.sparkling.profitable, ConfigManager::partyCommandsEnabled to party.enabled, ConfigManager::hideHauntedPaintings to safari.paintings,
@@ -237,17 +252,18 @@ class SafariSettings : Config() {
             ConfigManager::sparklingAlert to safari.alert, ConfigManager::sparklingPartyAnnouncer to safari.announce,
             ConfigManager::autoClicker to safari.autoClicker, ConfigManager::candleHitbox to safari.candleHitbox, ConfigManager::hideCaptureChat to safari.hideCaptureChat,
             ConfigManager::allGemsAlert to safari.alerts.gems, ConfigManager::allBirdFoodAlert to safari.alerts.birdFood,
-            ConfigManager::allIncenseAlert to safari.alerts.incense,
+            ConfigManager::allIncenseAlert to safari.alerts.incense, ConfigManager::runCompleteAlert to safari.alerts.runComplete,
             ConfigManager::hideGroundCapsules to safari.hideGroundCapsules, ConfigManager::hideFlyingCapsules to safari.hideFlyingCapsules)
         val espChanged = esp.apply()
         val customizationChanged = customization.apply()
         val distance = ConfigManager.validCapsuleDistance(safari.capsuleHideDistance)
         val generalChanged = espChanged || customizationChanged || changes.any { (property, value) -> property.get() != value } ||
             ConfigManager.showWhere != tracking.where || ConfigManager.capsuleHideDistance != distance ||
-            ConfigManager.sparklingSoundVolume != safari.alerts.volume.coerceIn(0, 100)
+            ConfigManager.runCompleteVolume != safari.alerts.runVolume.coerceIn(0, 100) || ConfigManager.sparklingSoundVolume != safari.alerts.volume.coerceIn(0, 100)
         changes.forEach { (property, value) -> property.set(value) }
         ConfigManager.showWhere = tracking.where.coerceIn(0, 2)
         ConfigManager.capsuleHideDistance = distance
+        ConfigManager.runCompleteVolume = safari.alerts.runVolume.coerceIn(0, 100)
         ConfigManager.sparklingSoundVolume = safari.alerts.volume.coerceIn(0, 100)
         if (generalChanged) ConfigManager.save()
         val warnings = listOfNotNull(5.takeIf { miria.five }, 3.takeIf { miria.three }, 1.takeIf { miria.one })

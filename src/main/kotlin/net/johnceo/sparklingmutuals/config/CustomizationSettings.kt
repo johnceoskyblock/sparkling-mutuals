@@ -57,6 +57,9 @@ class CustomizationSettings {
     @JvmField @ConfigOption(name = "All Gems alert HUD", desc = "") @Accordion val gems = panel("gems")
     @JvmField @ConfigOption(name = "All Bird Food alert HUD", desc = "") @Accordion val birdFood = panel("bird_food")
     @JvmField @ConfigOption(name = "All Incense alert HUD", desc = "") @Accordion val incense = panel("incense")
+    @JvmField @ConfigOption(name = "Run completion alert HUD", desc = "") @Accordion val runComplete = panel("run_complete")
+    @JvmField @ConfigOption(name = "Run completion text color", desc = "") @Accordion val runCompleteText = ColorChoice(
+        { AppearanceConfig.runCompleteColor }, { AppearanceConfig.runCompleteColor = it }) { selectedHex }
     @JvmField @ConfigOption(name = "Warp reminder HUD", desc = "") @Accordion val warp = panel("warp")
     @JvmField @ConfigOption(name = "Bee nest waypoints", desc = "") @Accordion val beeNests = ColorChoice(
         { AppearanceConfig.nestColor }, { AppearanceConfig.nestColor = it }) { selectedHex }

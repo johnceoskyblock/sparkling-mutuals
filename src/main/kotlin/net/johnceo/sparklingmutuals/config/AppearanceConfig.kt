@@ -23,12 +23,15 @@ class PanelStyle {
 
 object AppearanceConfig {
     fun color(rgb: Int) = ChromaColour.special(0, 255, rgb)
-    val panels = listOf("miria", "progress", "missing", "captures", "sparklings", "alert", "gems", "bird_food", "incense", "warp").associateWith { PanelStyle() }
+    val panels = listOf("miria", "progress", "missing", "captures", "sparklings", "alert", "gems", "bird_food", "incense", "warp", "run_complete").associateWith { id -> PanelStyle().apply {
+        if (id == "run_complete") { backgroundColor = color(0xAAFFAA); transparency = 80 }
+    } }
+    var runCompleteColor = color(0x55FF55)
     var selectedHex = "#FFD700"
     var nestColor = color(0x55FF55)
     var snooperColor = color(0xFFAA00)
     var sparklingColor = color(0xFFD700)
-    private val waypointColors = listOf(::nestColor to 0x55FF55, ::snooperColor to 0xFFAA00, ::sparklingColor to 0xFFD700)
+    private val waypointColors = listOf(::nestColor to 0x55FF55, ::snooperColor to 0xFFAA00, ::sparklingColor to 0xFFD700, ::runCompleteColor to 0x55FF55)
     fun withHex(current: String, hex: String): String? {
         val value = hex.trim().removePrefix("#")
         if (!value.matches(Regex("[0-9a-fA-F]{6}"))) return null
@@ -40,8 +43,8 @@ object AppearanceConfig {
         panels.forEach { (id, style) ->
             style.borderEnabled = properties.getProperty("appearance.$id.borderEnabled")?.toBooleanStrictOrNull() ?: false
             style.borderColor = SafariEspConfig.validColor(properties.getProperty("appearance.$id.borderColor"), color(SafariTheme.ACCENT))
-            style.backgroundColor = SafariEspConfig.validColor(properties.getProperty("appearance.$id.backgroundColor"), color(SafariTheme.BACKGROUND))
-            style.transparency = properties.getProperty("appearance.$id.transparency")?.toIntOrNull() ?: 20
+            style.backgroundColor = SafariEspConfig.validColor(properties.getProperty("appearance.$id.backgroundColor"), color(if (id == "run_complete") 0xAAFFAA else SafariTheme.BACKGROUND))
+            style.transparency = properties.getProperty("appearance.$id.transparency")?.toIntOrNull() ?: if (id == "run_complete") 80 else 20
         }
         waypointColors.forEach { (property, default) ->
             property.set(SafariEspConfig.validColor(properties.getProperty("appearance.${property.name}"), color(default)))

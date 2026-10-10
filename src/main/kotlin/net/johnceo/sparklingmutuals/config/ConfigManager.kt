@@ -38,6 +38,10 @@ object ConfigManager {
     var allGemsAlert = true
     var allBirdFoodAlert = true
     var allIncenseAlert = true
+    var runCompleteAlert = true
+    var runCompleteTitle = "Run Complete"
+    var runCompleteSound = "minecraft:block.bell.use"
+    var runCompleteVolume = 100
     var sparklingPartyAnnouncer = true
     var catchCountPanel = false
     var autoClicker = true
@@ -56,7 +60,7 @@ object ConfigManager {
         ::hideCaptureChat to false, ::hideGroundCapsules to true, ::hideFlyingCapsules to true,
         ::highlightSnooperWalls to true, ::showBeeNests to true, ::showMoundCount to true,
         ::showSnooperWalls to true, ::showMoundStats to false,
-        ::allGemsAlert to true, ::allBirdFoodAlert to true, ::allIncenseAlert to true)
+        ::allGemsAlert to true, ::allBirdFoodAlert to true, ::allIncenseAlert to true, ::runCompleteAlert to true)
 
     fun validCapsuleDistance(value: Float?) = value?.takeIf { it.isFinite() }?.coerceIn(.5f, 6f) ?: 2f
     fun validSparklingSound(value: String?) = value?.trim()?.let(Identifier::tryParse)?.toString() ?: "minecraft:block.amethyst_block.chime"
@@ -67,6 +71,9 @@ object ConfigManager {
         if (Files.exists(configPath)) Files.newInputStream(configPath).use(properties::load)
         apiKey = properties.getProperty("apiKey", "")
         sparklingSound = validSparklingSound(properties.getProperty("sparklingSound"))
+        runCompleteTitle = properties.getProperty("runCompleteTitle", "Run Complete").take(120).ifBlank { "Run Complete" }
+        runCompleteSound = properties.getProperty("runCompleteSound")?.trim()?.let(Identifier::tryParse)?.toString() ?: "minecraft:block.bell.use"
+        runCompleteVolume = properties.getProperty("runCompleteVolume")?.toIntOrNull()?.coerceIn(0, 100) ?: 100
         sparklingSoundVolume = properties.getProperty("sparklingSoundVolume")?.toIntOrNull()?.coerceIn(0, 100) ?: 100
         flags.forEach { (property, default) -> property.set(properties.getProperty(property.name)?.toBooleanStrictOrNull() ?: default) }
         warpDelaySeconds = properties.getProperty("warpDelaySeconds", "25").toIntOrNull()?.coerceIn(1, 86400) ?: 25
@@ -84,6 +91,9 @@ object ConfigManager {
         Files.createDirectories(configPath.parent)
         Properties().apply {
             setProperty("apiKey", apiKey)
+            setProperty("runCompleteTitle", runCompleteTitle)
+            setProperty("runCompleteSound", runCompleteSound)
+            setProperty("runCompleteVolume", runCompleteVolume.coerceIn(0, 100).toString())
             setProperty("sparklingSound", validSparklingSound(sparklingSound))
             setProperty("sparklingSoundVolume", sparklingSoundVolume.coerceIn(0, 100).toString())
             flags.forEach { (property, _) -> setProperty(property.name, property.get().toString()) }
