@@ -1,3 +1,11 @@
+# Forest mode completion rules
+
+- Forest zones center on (3, 47). Foxtrot/Fluffling use 30/40-block Full Clear/Sparkling radii; Woodchucker/Treefrog/Hideonfloor use 50/60.
+- Full Clear retains capture minimums and requires no remaining entities inside the zone. Sparkling requires distinct UUID spawn minimums inside the zone.
+- Honeybug Full Clear requires punched nests, at least three observed UUIDs and captures covering all observed UUIDs. Sparkling retains punched nests plus three distinct UUIDs.
+- Existing Birdfeeder food/spawn accounting and Bluebird/Parakeet captures remain; one Macaw capture is sufficient even with extras remaining.
+- Forest Sparkling ESP expires after ten seconds per UUID, including profitable Fluffling/Hideonfloor. Live in-game loading and zone validation remain needed.
+
 # Haunted mode completion rules
 
 - Areita, Bloodbat, Solsnatcher, Litterbug, Duplico and Hideonwall use (-3, -63): Full Clear absence within 30 blocks with capture minimums; Sparkling distinct UUID minimums within 40 blocks.
