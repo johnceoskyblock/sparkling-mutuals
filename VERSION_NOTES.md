@@ -1,3 +1,10 @@
+# Chat polish and Shyworm follow-ups
+
+- All local mod feedback uses one `[SM]` prefix per line, including command help and contest warnings.
+- Light-gold accents across settings, HUD titles and default panel styling; custom colors and semantic colors are preserved.
+- Rest messages queue for the nearest stationary underground Shyworm, including models hidden before the message.
+- Red 1×7 warning always covers the next clockwise side after direction is observed, with ground height independent of head bobbing.
+
 # Shyworm corner warning and countdown
 
 - Warns the next clockwise 1×7 path before corner emergence once movement establishes its direction.
