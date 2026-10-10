@@ -87,3 +87,5 @@ Issue #19 follow-ups: Sparkling Icy progress uses captures of needed species whe
 Mode switches keep the current run’s captures, completion evidence and Sparkling checks. Party fd/cd/id/hd messages are retained for Sparkling and unvisited Full Clear progress regardless of the selected mode; they do not create catches or personal bests. A new run clears that evidence.
 
 Birdfeeder announcements now confirm one food used each, including the two-Macaw announcement. Bird completion waits for all collected food to be fed; Full Clear requires every announced Bluebird and Parakeet plus one Macaw, even if extra Macaws unload. Captures, progress and missing rows use these checks. Unique and Sparkling keep their existing capture/discovery rules; personal PBs still require personal catches.
+
+Full candle hitbox now applies only to single red candles directly above Chiseled Stone Bricks in Haunted while holding Soothing Incense. Decorative candles retain their normal selection shapes; collision and server block state are unchanged.
