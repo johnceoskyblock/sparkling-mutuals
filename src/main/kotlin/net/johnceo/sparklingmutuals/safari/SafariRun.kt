@@ -74,8 +74,8 @@ class SafariRun(val startedAt: Long) {
     private val sightings = mutableSetOf<String>()
     private val observedCritters = mutableMapOf<String, MutableSet<Int>>()
     private val observedUuids = mutableMapOf<String, MutableSet<java.util.UUID>>()
-    private val cavernScanConfirmed = mutableSetOf<String>()
-    private var cavernZonesRequired = false
+    private val zoneScanConfirmed = mutableSetOf<String>()
+    private val zonesRequired = mutableSetOf<SafariBiome>()
     val birds = SafariBirdLedger()
     val sparklingChecks = SparklingChecks()
     private val nearby = mutableMapOf<SafariBiome, Set<String>>()
@@ -92,14 +92,16 @@ class SafariRun(val startedAt: Long) {
         wallsChecked = allWallsChecked
         nestsChecked = allNestsChecked
         if (biome == SafariBiome.FOREST) nearbyMacaws = macawsInRange
-        if (biome == SafariBiome.CAVERN && playerX != null && playerZ != null) {
-            cavernZonesRequired = true
-            CavernCompletionZones.zones.forEach { (name, zone) ->
+        if (SafariCompletionZones.forBiome(biome).isNotEmpty() && playerX != null && playerZ != null) {
+            zonesRequired.add(biome)
+            SafariCompletionZones.forBiome(biome).forEach { (name, zone) ->
                 if (name !in speciesInRange && zone.contains(playerX, playerZ, sparkling = false) &&
-                    count(name) >= SafariFullClear.minimum(name)) cavernScanConfirmed.add(name)
+                    count(name) >= SafariFullClear.minimum(name)) zoneScanConfirmed.add(name)
             }
-            if ("Scrappy" !in speciesInRange && (observedUuids["Scrappy"]?.size ?: 0) >= 3 && count("Scrappy") >= 3)
-                cavernScanConfirmed.add("Scrappy")
+            SafariCompletionZones.uuidMinimums.filterKeys { SafariRoster.named(it)?.biome == biome }.forEach { (name, minimum) ->
+                if (name !in speciesInRange && (observedUuids[name]?.size ?: 0) >= minimum && count(name) >= minimum)
+                    zoneScanConfirmed.add(name)
+            }
         }
     }
     fun hasCaptureEvidence(biome: SafariBiome) = biome in nearby
@@ -119,8 +121,9 @@ class SafariRun(val startedAt: Long) {
         val captured = if (personalOnly) personalCount(species) else count(species)
         if (captured < SafariFullClear.minimum(species)) return false
         if (!personalOnly && SafariRoster.named(species)!!.biome in inheritedBiomes) return species !in remaining
-        if (cavernZonesRequired && (species in CavernCompletionZones.zones || species == "Scrappy") &&
-            species !in cavernScanConfirmed) return false
+        val biome = SafariRoster.named(species)!!.biome
+        if (biome in zonesRequired && (species in SafariCompletionZones.forBiome(biome) || species in SafariCompletionZones.uuidMinimums) &&
+            species !in zoneScanConfirmed) return false
         if (species in birdSpecies) return birdComplete(species, remaining, personalOnly, structures?.nearbyMacaws ?: nearbyMacaws)
         if (species in remaining) return false
         return when (species) {
