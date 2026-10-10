@@ -58,19 +58,45 @@ class SafariRun(val startedAt: Long) {
     private val personal = mutableMapOf<String, Int>()
     private val visited = mutableSetOf<SafariBiome>()
     private val partyFullClears = mutableSetOf<SafariBiome>()
+    private val communalClears = mutableSetOf<SafariBiome>()
     fun partyFullClear(raw: String) {
-        SparklingChecks.doneBiome(raw)?.takeIf { it !in visited }?.let(partyFullClears::add)
+        SparklingChecks.doneBiome(raw)?.let { partyFullClears.add(it); communalClears.add(it) }
     }
     fun fullClearProgress(critters: List<SafariCritter>) = critters.count {
-        it.biome !in visited && it.biome in partyFullClears || captureComplete(it.name)
+        it.biome in partyFullClears || captureComplete(it.name)
     }
     private val inheritedBiomes = mutableSetOf<SafariBiome>()
     fun visitBiome(biome: SafariBiome) {
         lastBiome = biome
-        if (visited.add(biome) && biome.critters.none { personalCount(it.name) > 0 } &&
-            biome.critters.any { count(it.name) > 0 }) inheritedBiomes.add(biome)
+        if (visited.add(biome) && biome in priorLootShare) inheritedBiomes.add(biome)
     }
-    val partyNestsHandled get() = SafariBiome.FOREST in inheritedBiomes && count("Honeybug") > 0
+    private val priorLootShare = mutableSetOf<SafariBiome>()
+    private var remainingMounds = false
+    private var remainingWalls = false
+    fun inherited(biome: SafariBiome) = biome in inheritedBiomes
+    val partyNestsHandled get() = inherited(SafariBiome.FOREST) || SafariBiome.FOREST in communalClears
+    val inheritedMounds get() = inherited(SafariBiome.CAVERN) || SafariBiome.CAVERN in communalClears
+    private val inheritedGold get() = inherited(SafariBiome.HAUNTED) || SafariBiome.HAUNTED in communalClears
+    fun reconcileStructures(biome: SafariBiome, moundsRemain: Boolean, wallsRemain: Boolean) {
+        if (biome == SafariBiome.CAVERN) { remainingMounds = moundsRemain; remainingWalls = wallsRemain }
+        if (biome == SafariBiome.CAVERN && (moundsRemain || wallsRemain)) partyFullClears.remove(biome)
+        sparklingChecks.reconcileStructures(biome, moundsRemain, wallsRemain)
+    }
+    fun sparklingComplete(name: String, party: PartySparklingState, localOnly: Boolean = false): Boolean {
+        val critter = SafariRoster.named(name) ?: return false
+        if (critter.biome == SafariBiome.HAUNTED && name == "Gimmiegold" && inheritedGold) return true
+        if (!localOnly && sparklingChecks.partyChecked(name)) return true
+        if (critter.biome == SafariBiome.ICY && party.needs("Wumpa"))
+            return count("Wumpa") > 0 || count(name) > 0 || name == "Wumpa" && sparklingChecks.locallyChecked(name)
+        return sparklingChecks.locallyChecked(name)
+    }
+    fun completed(mode: SafariMode, critters: List<SafariCritter>, party: PartySparklingState, localOnly: Boolean = false): Int =
+        critters.count { when (mode) {
+            SafariMode.UNIQUE -> count(it.name) > 0
+            SafariMode.FULL_CLEAR -> (!localOnly && it.biome in partyFullClears) || captureComplete(it.name)
+            SafariMode.SPARKLING -> sparklingComplete(it.name, party, localOnly)
+        } }
+    val completion = SafariCompletionEvents()
     private val sightings = mutableSetOf<String>()
     private val observedCritters = mutableMapOf<String, MutableSet<Int>>()
     private val observedUuids = mutableMapOf<String, MutableSet<java.util.UUID>>()
@@ -89,6 +115,7 @@ class SafariRun(val startedAt: Long) {
         macawsInRange: Int = if ("Macaw" in speciesInRange) 1 else 0,
         playerX: Double? = null, playerZ: Double? = null) {
         nearby[biome] = speciesInRange
+        if (speciesInRange.isNotEmpty()) partyFullClears.remove(biome)
         wallsChecked = allWallsChecked
         nestsChecked = allNestsChecked
         if (biome == SafariBiome.FOREST) nearbyMacaws = macawsInRange
@@ -119,8 +146,13 @@ class SafariRun(val startedAt: Long) {
         speciesInRange: Set<String>? = nearby[SafariRoster.named(species)!!.biome], structures: BiomeClearEvidence? = null): Boolean {
         val remaining = speciesInRange ?: return false
         val captured = if (personalOnly) personalCount(species) else count(species)
+        if (!personalOnly && species == "Gimmiegold" && inheritedGold) return true
         if (captured < SafariFullClear.minimum(species)) return false
-        if (!personalOnly && SafariRoster.named(species)!!.biome in inheritedBiomes) return species !in remaining
+        if (!personalOnly && SafariRoster.named(species)!!.biome in inheritedBiomes) return species !in remaining && when (species) {
+            "Rockmite" -> !remainingMounds && "Rockmite Mound" !in remaining
+            "Snoozle" -> !remainingWalls
+            else -> true
+        }
         val biome = SafariRoster.named(species)!!.biome
         if (biome in zonesRequired && species == "Gimmiegold" &&
             (!sparklingChecks.gimmiegoldReady() || captured < sparklingChecks.gimmiegoldMinimum ||
@@ -155,6 +187,7 @@ class SafariRun(val startedAt: Long) {
     }
     fun observedCount(species: String) = observedCritters[species]?.size ?: 0
     fun record(catch: SafariCatch) {
+        if (!catch.personal && catch.critter.biome !in visited) priorLootShare.add(catch.critter.biome)
         sparklingChecks.capture(catch.critter.name)
         counts.merge(catch.critter.name, 1, Int::plus)
         if (catch.personal) personal.merge(catch.critter.name, 1, Int::plus)

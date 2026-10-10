@@ -7,6 +7,14 @@ import java.util.UUID
 /** Run-owned check evidence, independent of captures and personal bests. */
 class SparklingChecks {
     private val completed = mutableSetOf<String>()
+    private val partyCompleted = mutableSetOf<String>()
+    fun locallyChecked(name: String) = name in completed
+    fun partyChecked(name: String) = name in partyCompleted
+    fun reconcileStructures(biome: SafariBiome, moundsRemain: Boolean, wallsRemain: Boolean) {
+        if (biome != SafariBiome.CAVERN) return
+        if (moundsRemain) { completed.remove("Rockmite"); partyCompleted.remove("Rockmite") }
+        if (wallsRemain) { completed.remove("Snoozle"); partyCompleted.remove("Snoozle") }
+    }
     private val observed = mutableMapOf<String, MutableSet<UUID>>()
     private val espSeenAt = mutableMapOf<UUID, Long>()
     private var coinsPicked = 0
@@ -17,7 +25,7 @@ class SparklingChecks {
     val gimmiegoldMinimum get() = maxOf(3, coinsPicked)
     fun gimmiegoldReady() = goldEnvironmentReady && coinsPicked > 0 && coinsSpent >= coinsPicked && heldCoins == 0
     fun capture(name: String) { captured.add(name) }
-    fun checked(name: String) = name in completed
+    fun checked(name: String) = name in completed || name in partyCompleted
     fun keepEsp(uuid: UUID, now: Long) = now - espSeenAt.getOrPut(uuid) { now } < 10000
     fun wumpaPrerequisite(name: String, party: PartySparklingState) = name != "Wumpa" &&
         SafariRoster.named(name)?.biome == SafariBiome.ICY && party.needs("Wumpa") && !checked("Wumpa")
@@ -60,7 +68,7 @@ class SparklingChecks {
         }
         if (manualAllowed) {
             globalCompletions[text]?.let(completed::add)
-            completed.addAll(doneBiome(text)?.critters?.map { it.name } ?: emptyList())
+            partyCompleted.addAll(doneBiome(text)?.critters?.map { it.name } ?: emptyList())
         }
     }
     fun inventory(stacks: List<Pair<String, Int>>) {

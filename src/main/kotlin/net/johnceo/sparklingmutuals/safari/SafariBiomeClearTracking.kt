@@ -33,6 +33,9 @@ object SafariBiomeClearTracking {
             wallsCleared = SafariStructures.walls.states.size == 5 && SafariStructures.walls.allBroken,
             birdsSpawned = run.birds.allSpawned,
             hauntedDropsRemaining = snapshot.floorDrops.count { SafariEspRules.biomeAt(it.x.toDouble(), it.z.toDouble()) == SafariBiome.HAUNTED })
+        run.reconcileStructures(biome, SafariStructures.nearbyMounds > 0 || snapshot.critters.any { it.mound },
+            SafariStructures.walls.states.any { it == WallState.INTACT })
+        SafariCompletion.tick(client, run, biome)
         if (biome in run.biomeClears) return
         // A completed entity scan is sufficient; unloaded surrounding chunks must not block a PB.
         val evidence = BiomeClearEvidence(snapshot.scanned,

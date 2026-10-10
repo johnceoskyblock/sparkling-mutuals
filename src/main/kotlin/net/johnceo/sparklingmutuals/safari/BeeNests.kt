@@ -27,7 +27,7 @@ object BeeNests {
     private val known = mutableSetOf<BlockPos>()
     private val punched = mutableSetOf<BlockPos>()
     private var ticks = 0
-    private val handledByParty get() = ConfigManager.fullClearMode && SafariTracking.ledger.current?.partyNestsHandled == true
+    private val handledByParty get() = SafariTracking.ledger.current?.partyNestsHandled == true
     val unpunchedCount get() = if (handledByParty) 0 else known.count { it !in punched }
     val allChecked get() = (known.isNotEmpty() || punched.isNotEmpty()) && known.all { it in punched }
     private val lines = RenderType.create("sparkling-mutuals:nests", RenderSetup.builder(RenderPipelines.register(

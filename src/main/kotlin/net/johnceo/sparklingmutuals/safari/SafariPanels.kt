@@ -13,14 +13,7 @@ object SafariPanels {
         fun bar(label: String, critters: List<SafariCritter>, color: Int): HudRow {
             if (SafariFullClear.mode == SafariMode.SPARKLING && !party.ready) return HudRow(label, "?", color, color)
             val targets = if (SafariFullClear.mode == SafariMode.SPARKLING) critters.filter { party.needs(it.name) } else critters
-            val count = if (SafariFullClear.mode == SafariMode.SPARKLING) targets.count { critter ->
-                if (critter.biome == SafariBiome.ICY && party.needs("Wumpa"))
-                    run != null && (run.count("Wumpa") > 0 || run.count(critter.name) > 0 ||
-                        critter.name == "Wumpa" && run.sparklingChecks.checked("Wumpa"))
-                else run?.sparklingChecks?.checked(critter.name) == true
-            }
-                else if (SafariFullClear.mode == SafariMode.FULL_CLEAR) run?.fullClearProgress(targets) ?: 0
-                else run?.progress(targets, true) ?: 0
+            val count = run?.completed(SafariFullClear.mode, targets, party) ?: 0
             return HudRow(label, "$count/${targets.size}", color, color,
                 if (targets.isEmpty()) 1f else count.toFloat() / targets.size)
         }
@@ -32,7 +25,7 @@ object SafariPanels {
         val sparkling = SafariFullClear.mode == SafariMode.SPARKLING
         val missing = biome.critters.filter { if (sparkling) {
                 if (run?.sparklingChecks?.wumpaPrerequisite(it.name, party) == true) run.count(it.name) == 0
-                else party.needs(it.name) && run?.sparklingChecks?.checked(it.name) != true
+                else party.needs(it.name) && run?.sparklingComplete(it.name, party) != true
             }
             else run?.missing(it, ConfigManager.fullClearMode) != false }
         val rows = missing.map { critter ->
@@ -53,7 +46,7 @@ object SafariPanels {
                     }
                     if (row != null) { add(HudRow()); add(row) }
                 }
-                if (needed("Rockmite") && mounds > 0) {
+                if (mounds > 0) {
                     add(HudRow()); add(HudRow("Mounds to break", "$mounds", HudRow.GOLD, HudRow.GRAY))
                 } else if (needed("Rockmite") && run?.allMoundsBroken == true && !run.encountered("Rockmite")) {
                     add(HudRow()); add(HudRow("No rockmites this run", color = HudRow.GRAY))
@@ -71,7 +64,7 @@ object SafariPanels {
         if (biome == SafariBiome.CAVERN && ConfigManager.showMoundStats) {
             add(HudRow())
             add(HudRow("Rockmite Mounds", "${run?.brokenMounds ?: 0}", HudRow.GOLD,
-                captureColor(run?.moundsComplete() == true, run?.hasCaptureEvidence(biome) == true)))
+                captureColor(run?.moundsComplete() == true, run?.hasCaptureEvidence(biome) == true && run.inheritedMounds.not())))
             add(HudRow("Mounds with Rockmite", "${run?.rockmiteMounds ?: 0}", HudRow.GOLD))
         }
     })
