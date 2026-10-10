@@ -32,8 +32,8 @@ object CommandHelp {
     private fun available(mode: SafariMode) = party.map { (kind, description) -> PartyCommand(kind, "<IGN>") to description }
         .filter { it.first.allowed(mode) }
     fun localLines(mode: SafariMode = SafariFullClear.mode) = listOf("§6Sparkling Mutuals — Commands", "§eParty chat commands") +
-        available(mode).map { (command, description) -> "§b${command.text} §7— $description" } +
-        listOf("§eLocal commands") + local.map { (command, description) -> "§b$command §7— $description" } +
+        available(mode).map { (command, description) -> "§6${command.text} §7— $description" } +
+        listOf("§eLocal commands") + local.map { (command, description) -> "§6$command §7— $description" } +
         listOf("§7<IGN> = Minecraft username. Party commands use /pc.")
     fun partyReply(mode: SafariMode = SafariFullClear.mode) = "[SM] Commands: Party: " +
         available(mode).joinToString(", ") { it.first.text }

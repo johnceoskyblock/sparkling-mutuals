@@ -1,5 +1,7 @@
 package net.johnceo.sparklingmutuals.commands
 
+import net.johnceo.sparklingmutuals.LocalChat
+
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback
 import net.fabricmc.fabric.api.client.command.v2.ClientCommands
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource
@@ -16,7 +18,7 @@ import net.minecraft.network.chat.Component
 object SparklingCommand {
     private fun mode(source: FabricClientCommandSource, selected: SafariMode): Int {
         SafariFullClear.select(selected)
-        SafariFullClear.modeLines().forEach { source.sendFeedback(Component.literal(it)) }
+        SafariFullClear.modeLines().forEach { source.sendFeedback(LocalChat.component(it)) }
         return 1
     }
     private fun open(screen: () -> Screen): Int {
@@ -34,7 +36,7 @@ object SparklingCommand {
                     .then(ClientCommands.literal("gui").executes { open { ContestGui() } })
                     .then(ClientCommands.literal("debug").executes { context ->
                         SafariEsp.debug(Minecraft.getInstance())
-                        context.source.sendFeedback(Component.literal("[SM] Entity diagnostics saved to latest.log."))
+                        context.source.sendFeedback(LocalChat.component("[SM] Entity diagnostics saved to latest.log."))
                         1
                     })
             )

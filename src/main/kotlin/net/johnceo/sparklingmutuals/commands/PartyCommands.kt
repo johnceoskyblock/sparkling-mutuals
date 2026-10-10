@@ -1,5 +1,7 @@
 package net.johnceo.sparklingmutuals.commands
 
+import net.johnceo.sparklingmutuals.LocalChat
+
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.party.PartyManager
@@ -108,7 +110,7 @@ object PartyCommands {
                                 state.election.lookupReady(System.currentTimeMillis())
                             } else {
                                 pending.remove(token)
-                                client.player?.sendSystemMessage(Component.literal(result.text))
+                                client.player?.sendSystemMessage(LocalChat.component(result.text))
                             }
                         }
                     }

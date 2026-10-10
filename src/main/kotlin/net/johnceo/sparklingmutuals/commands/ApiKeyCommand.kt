@@ -1,5 +1,7 @@
 package net.johnceo.sparklingmutuals.commands
 
+import net.johnceo.sparklingmutuals.LocalChat
+
 import com.mojang.brigadier.arguments.StringArgumentType
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback
 import net.fabricmc.fabric.api.client.command.v2.ClientCommands
@@ -18,7 +20,7 @@ object ApiKeyCommand {
                                 .executes {
                                     ConfigManager.apiKey = StringArgumentType.getString(it, "key")
                                     ConfigManager.save()
-                                    it.source.sendFeedback(Component.literal("[SM] API key updated."))
+                                    it.source.sendFeedback(LocalChat.component("[SM] API key updated."))
                                     1
                                 }
                         )
