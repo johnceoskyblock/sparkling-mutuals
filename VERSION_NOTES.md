@@ -1,3 +1,9 @@
+## v3 development — profitable ESP follow-up
+
+- Restore persistent profitable-shard highlights in Unique and Sparkling when enabled, including captured-species completion and Wumpa prerequisites. The option bypasses Sparkling UUID timers and label/motion gaps for current loaded entities.
+- Disabling the option restores ordinary mode rules. Captured/removed entity exclusion and per-species/biome ESP controls still apply.
+- Regression coverage includes all five profitable species, toggle behavior, Wumpa prerequisites and entity lifecycle guards. Live rendering still needs in-game validation.
+
 # Boss solo/duo PB rules and party replies
 
 - Solo Wumpa PBs require all eight personal Icy prerequisite captures; solo Doomspiral PBs require four Soothing Incense observed simultaneously in inventory earlier in the run. LOOT SHARE cannot qualify a personal PB.
