@@ -64,7 +64,7 @@ object ContestHud {
             Component.literal("Safari Contest"),
             6,
             5,
-            0xFFFFFFFF.toInt(),
+            (0xFF000000.toInt() or net.johnceo.sparklingmutuals.config.SafariTheme.ACCENT),
             true
         )
 

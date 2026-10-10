@@ -46,7 +46,7 @@ class ContestGui(private val parent: Screen? = null) : Screen(Component.literal(
     private fun bounds(preview: Preview) = preview.layout.bounds(width, height, preview.width, preview.height)
     private fun hovered(x: Double, y: Double) = previews.asReversed().firstOrNull { bounds(it).contains(x, y) }
     override fun extractRenderState(graphics: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, delta: Float) {
-        graphics.fill(0, 0, width, height, 0x88000000.toInt())
+        graphics.fill(0, 0, width, height, (0x88000000.toInt() or net.johnceo.sparklingmutuals.config.SafariTheme.BACKGROUND))
         val hover = hovered(mouseX.toDouble(), mouseY.toDouble())
         previews.forEach { preview ->
             val box = bounds(preview)

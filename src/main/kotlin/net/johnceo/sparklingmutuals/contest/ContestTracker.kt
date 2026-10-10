@@ -1,5 +1,7 @@
 package net.johnceo.sparklingmutuals.contest
 
+import net.johnceo.sparklingmutuals.LocalChat
+
 import net.johnceo.sparklingmutuals.config.ContestConfig
 import net.johnceo.sparklingmutuals.hud.SkyblockSidebar
 import net.minecraft.client.Minecraft
@@ -126,7 +128,7 @@ object ContestTracker {
         warnedMinutes.addAll(due)
         // Joining late produces one warning instead of all elapsed warnings at once.
         client.player?.sendSystemMessage(
-                    Component.literal(
+                    LocalChat.component(
                         "§b[Sparkling Mutuals] §c§lContest not complete§r — " +
                                 "${formatRemaining(remaining)} left."
                     )
