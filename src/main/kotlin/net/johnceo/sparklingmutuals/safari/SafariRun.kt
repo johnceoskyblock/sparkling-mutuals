@@ -130,7 +130,9 @@ class SafariRun(val startedAt: Long) {
         if (species in birdSpecies) return birdComplete(species, remaining, personalOnly, structures?.nearbyMacaws ?: nearbyMacaws)
         if (species in remaining) return false
         return when (species) {
-            "Honeybug" -> structures?.nestsChecked ?: nestsChecked
+            "Honeybug" -> (structures?.nestsChecked ?: nestsChecked) &&
+                (biome !in zonesRequired || (observedUuids[species]?.size ?: 0) >= SafariFullClear.minimum(species) &&
+                    captured >= (observedUuids[species]?.size ?: 0))
             "Snoozle" -> structures?.wallsCleared ?: wallsChecked
             "Rockmite" -> (structures?.moundsCleared ?: moundsComplete(remaining)) &&
                 captured >= rockmiteMounds && "Rockmite Mound" !in remaining

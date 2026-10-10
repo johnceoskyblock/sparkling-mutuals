@@ -8,7 +8,6 @@ import java.util.UUID
 class SparklingChecks {
     private val completed = mutableSetOf<String>()
     private val observed = mutableMapOf<String, MutableSet<UUID>>()
-    private val centersReached = mutableSetOf<SafariBiome>()
     private val espSeenAt = mutableMapOf<UUID, Long>()
     private var coinsPicked = 0
     private var coinsSpent = 0
@@ -28,8 +27,6 @@ class SparklingChecks {
         seen.forEach { (name, uuid) -> observed.getOrPut(name) { mutableSetOf() }.add(uuid) }
         val (cx, cz) = centers.getValue(biome)
         val atCenter = (x - cx) * (x - cx) + (z - cz) * (z - cz) <= 225
-        if (atCenter) centersReached.add(biome)
-        if (SafariCompletionZones.forBiome(biome).isEmpty() && biome in centersReached) completed.addAll(biome.critters.map { it.name }.filterNot { it in spawned })
         fun enough(name: String, amount: Int = 1) = (observed[name]?.size ?: 0) >= amount
         fun check(name: String, ready: Boolean) { if (ready) completed.add(name) }
         SafariCompletionZones.forBiome(biome).forEach { (name, zone) ->
@@ -75,7 +72,6 @@ class SparklingChecks {
             "The darkness in the Haunted Biome fades away..." to "Doomspiral",
             "The cave is collapsing..." to "Wumpa")
         private val birds = setOf("Bluebird", "Parakeet", "Macaw")
-        private val spawned = birds + setOf("Honeybug", "Rockmite", "Snoozle", "Gemzie", "Wumpa", "Gazer", "Gimmiegold", "Doomspiral")
         private val centers = mapOf(SafariBiome.FOREST to (6.0 to 51.0), SafariBiome.CAVERN to (-114.0 to 49.0),
             SafariBiome.ICY to (-112.0 to -54.0), SafariBiome.HAUNTED to (-4.0 to -64.0))
         fun doneBiome(raw: String): SafariBiome? {
