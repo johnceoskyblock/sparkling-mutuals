@@ -13,6 +13,11 @@ class SparklingChecks {
     private var coinsPicked = 0
     private var coinsSpent = 0
     private var heldCoins: Int? = null
+    private var goldEnvironmentReady = false
+    private val captured = mutableSetOf<String>()
+    val gimmiegoldMinimum get() = maxOf(3, coinsPicked)
+    fun gimmiegoldReady() = goldEnvironmentReady && coinsPicked > 0 && coinsSpent >= coinsPicked && heldCoins == 0
+    fun capture(name: String) { captured.add(name) }
     fun checked(name: String) = name in completed
     fun keepEsp(uuid: UUID, now: Long) = now - espSeenAt.getOrPut(uuid) { now } < 10000
     fun wumpaPrerequisite(name: String, party: PartySparklingState) = name != "Wumpa" &&
@@ -31,7 +36,7 @@ class SparklingChecks {
             check(name, zone.contains(x, z, sparkling = true) && enough(name, SafariFullClear.minimum(name)))
         }
         SafariCompletionZones.uuidMinimums.filterKeys { SafariRoster.named(it)?.biome == biome }.forEach { (name, minimum) ->
-            check(name, enough(name, minimum))
+            check(name, enough(name, minimum) && (name != "Doomspiral" || name in captured))
         }
         when (biome) {
             SafariBiome.FOREST -> {
@@ -43,16 +48,15 @@ class SparklingChecks {
             }
             SafariBiome.ICY -> Unit
             SafariBiome.HAUNTED -> {
-                check("Gazer", enough("Gazer", 4)); check("Doomspiral", enough("Doomspiral"))
-                check("Gimmiegold", atCenter && hauntedDropsRemaining == 0 &&
-                    coinsPicked > 0 && coinsSpent >= coinsPicked && heldCoins == 0 && enough("Gimmiegold", 3))
+                goldEnvironmentReady = atCenter && hauntedDropsRemaining == 0
+                check("Gimmiegold", gimmiegoldReady() && enough("Gimmiegold", gimmiegoldMinimum))
             }
         }
     }
     fun chat(raw: String, manualAllowed: Boolean = false) {
         val text = SafariRules.strip(raw)
         if (text.startsWith("FLOOR DROP!") && Regex("\\bShining Coin\\b(?! Shard)").containsMatchIn(text)) {
-            coinsPicked++; heldCoins = null
+            coinsPicked++; heldCoins = null; completed.remove("Gimmiegold")
         }
         if (text == "A Gimmiegold appeared out of nowhere and gobbled up your Shining Coin!") {
             coinsSpent++; heldCoins = null

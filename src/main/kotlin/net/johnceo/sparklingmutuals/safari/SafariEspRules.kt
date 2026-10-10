@@ -92,8 +92,9 @@ object SafariEspRules {
     fun neededForSparkling(species: String, mound: Boolean, party: PartySparklingState, profitable: Boolean,
         run: SafariRun? = null, uuid: java.util.UUID? = null, now: Long = System.currentTimeMillis()): Boolean {
         if (species == "Rockmite" && !mound) return false
+        if (species == "Doomspiral") return party.needs(species) && (run?.count(species) ?: 0) == 0
         if (run?.sparklingChecks?.wumpaPrerequisite(species, party) == true) return run.count(species) == 0
-        if (SafariRoster.named(species)?.biome in setOf(SafariBiome.CAVERN, SafariBiome.ICY) && (party.needs(species) || profitable && species in profitableSpecies) &&
+        if (SafariRoster.named(species)?.biome in setOf(SafariBiome.CAVERN, SafariBiome.ICY, SafariBiome.HAUNTED) && (party.needs(species) || profitable && species in profitableSpecies) &&
             species != "Driftling" && !mound &&
             uuid != null && run?.sparklingChecks?.keepEsp(uuid, now) == false) return false
         if (profitable && species in profitableSpecies) return true

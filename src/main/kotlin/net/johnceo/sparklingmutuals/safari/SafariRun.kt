@@ -122,6 +122,9 @@ class SafariRun(val startedAt: Long) {
         if (captured < SafariFullClear.minimum(species)) return false
         if (!personalOnly && SafariRoster.named(species)!!.biome in inheritedBiomes) return species !in remaining
         val biome = SafariRoster.named(species)!!.biome
+        if (biome in zonesRequired && species == "Gimmiegold" &&
+            (!sparklingChecks.gimmiegoldReady() || captured < sparklingChecks.gimmiegoldMinimum ||
+                (observedUuids[species]?.size ?: 0) < sparklingChecks.gimmiegoldMinimum)) return false
         if (biome in zonesRequired && (species in SafariCompletionZones.forBiome(biome) || species in SafariCompletionZones.uuidMinimums) &&
             species !in zoneScanConfirmed) return false
         if (species in birdSpecies) return birdComplete(species, remaining, personalOnly, structures?.nearbyMacaws ?: nearbyMacaws)
@@ -150,6 +153,7 @@ class SafariRun(val startedAt: Long) {
     }
     fun observedCount(species: String) = observedCritters[species]?.size ?: 0
     fun record(catch: SafariCatch) {
+        sparklingChecks.capture(catch.critter.name)
         counts.merge(catch.critter.name, 1, Int::plus)
         if (catch.personal) personal.merge(catch.critter.name, 1, Int::plus)
     }

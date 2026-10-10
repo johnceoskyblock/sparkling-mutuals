@@ -12,7 +12,8 @@ object SafariCompletionZones {
     fun forBiome(biome: SafariBiome) = when (biome) {
         SafariBiome.CAVERN -> CavernCompletionZones.zones
         SafariBiome.ICY -> IcyCompletionZones.zones
+        SafariBiome.HAUNTED -> HauntedCompletionZones.zones
         else -> emptyMap()
     }
-    val uuidMinimums = mapOf("Scrappy" to 3, "Troodon" to 3)
+    val uuidMinimums = mapOf("Scrappy" to 3, "Troodon" to 3, "Gazer" to 4, "Hideyho" to 1, "Doomspiral" to 1)
 }
