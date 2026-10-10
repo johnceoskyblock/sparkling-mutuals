@@ -6,6 +6,56 @@ enum class BiomePbType(val label: String) { FULL_CLEAR("Full Clear"), UNIQUE("Un
 
 /** Only the player's successful CAPTURE messages can improve a personal best. */
 class SafariPersonalBests {
+    data class CaptureFeedback(val notice: String, val changed: Boolean)
+    private data class PartyBest(val name: String, var doom: Long? = null, var wumpa: Long? = null)
+    private val partyBests = linkedMapOf<String, PartyBest>()
+    private val ign = Regex("^[A-Za-z0-9_]{1,16}$")
+    private val sharedBoss = Regex("^LOOT SHARE! .*\\bfrom\\s+([A-Za-z0-9_]{1,16})\\s+catching a (Doomspiral|Wumpa)(?![A-Za-z]).*$")
+    private fun playerKey(name: String) = name.lowercase(java.util.Locale.ROOT)
+    @Synchronized fun rememberParty(names: Iterable<String>): Boolean {
+        var changed = false
+        names.filter(ign::matches).forEach { name ->
+            if (partyBests.putIfAbsent(playerKey(name), PartyBest(name)) == null) changed = true
+        }
+        return changed
+    }
+    @Synchronized fun trackedResponse(player: String, species: String): String {
+        val record = partyBests[playerKey(player)]
+        val best = if (species == "Doomspiral") record?.doom else record?.wumpa
+        return "${record?.name ?: player}'s $species Observed PB: ${best?.let(::formatTime) ?: "Not recorded yet"}"
+    }
+    private fun soloEligible(species: String, run: SafariRun) = if (species == "Doomspiral") run.hadFourIncense
+        else SafariBiome.ICY.critters.filter { it.name != "Wumpa" }.all { run.personalCount(it.name) > 0 }
+    /** Every boss capture reports elapsed time; comparisons use the record BEFORE this catch. */
+    @Synchronized fun captureFeedback(raw: String, run: SafariRun, now: Long, localName: String): CaptureFeedback? {
+        if (run.endedAt != null || now < run.startedAt) return null
+        val text = SafariRules.strip(raw)
+        val own = capture.matchEntire(text)
+        val shared = if (own == null) sharedBoss.matchEntire(text) else null
+        val species = own?.groupValues?.get(1) ?: shared?.groupValues?.get(2) ?: return null
+        val name = if (own != null) localName else shared!!.groupValues[1]
+        if (!ign.matches(name)) return null
+        val elapsed = now - run.startedAt
+        var changed = rememberParty(listOf(name))
+        val record = partyBests.getValue(playerKey(name))
+        val previousObserved = if (species == "Doomspiral") record.doom else record.wumpa
+        val solo = own != null && soloEligible(species, run)
+        val previous = if (own != null) time(species, duo = !solo) else previousObserved
+        if (previousObserved == null || elapsed < previousObserved) {
+            if (species == "Doomspiral") record.doom = elapsed else record.wumpa = elapsed
+            changed = true
+        }
+        if (own != null && record(text, run, now)) changed = true
+        val category = if (own == null) "Observed" else if (solo) "Solo" else "Duo"
+        val gap = when {
+            previous == null -> "first recorded PB"
+            elapsed < previous -> "new PB, ${seconds(previous - elapsed)}s faster"
+            elapsed == previous -> "matches PB"
+            else -> "${seconds(elapsed - previous)}s slower than PB"
+        }
+        return CaptureFeedback("[SM] ${record.name} caught $species in ${formatTime(elapsed)} — $category: $gap.", changed)
+    }
+    private fun seconds(millis: Long) = java.lang.String.format(java.util.Locale.ROOT, "%.3f", millis / 1000.0)
     @Volatile private var doom: Long? = null
     @Volatile private var wumpa: Long? = null
     @Volatile private var doomDuo: Long? = null
@@ -33,8 +83,7 @@ class SafariPersonalBests {
             if (species == "Doomspiral") doomDuo = elapsed else wumpaDuo = elapsed
             changed = true
         }
-        val soloEligible = if (species == "Doomspiral") run.hadFourIncense
-            else SafariBiome.ICY.critters.filter { it.name != "Wumpa" }.all { run.personalCount(it.name) > 0 }
+        val soloEligible = soloEligible(species, run)
         val best = time(species)
         if (soloEligible && (best == null || elapsed < best)) {
             if (species == "Doomspiral") doom = elapsed else wumpa = elapsed
@@ -65,7 +114,16 @@ class SafariPersonalBests {
         return "[SM] New ${biome.label} ${type.label} PB: ${formatTime(elapsed)}!"
     }
     private fun formatTime(millis: Long) = java.lang.String.format(java.util.Locale.ROOT, "%d:%02d.%03d", millis / 60000, millis / 1000 % 60, millis % 1000)
-    fun load(properties: Properties) {
+    @Synchronized fun load(properties: Properties) {
+        partyBests.clear()
+        properties.stringPropertyNames().filter { it.startsWith("pb.party.") && it.endsWith(".name") }.forEach { key ->
+            val name = properties.getProperty(key)
+            if (ign.matches(name)) {
+                val prefix = "pb.party.${playerKey(name)}."
+                fun readParty(species: String) = properties.getProperty("${prefix}${species}Millis")?.toLongOrNull()?.takeIf { it >= 0 }
+                partyBests[playerKey(name)] = PartyBest(name, readParty("doomspiral"), readParty("wumpa"))
+            }
+        }
         fun read(key: String) = properties.getProperty("pb.${key}Millis")?.toLongOrNull()?.takeIf { it >= 0 }
         doom = read("solo.doomspiral"); wumpa = read("solo.wumpa")
         // Historical boss records had no solo evidence; preserve them only in the unrestricted category.
@@ -78,7 +136,13 @@ class SafariPersonalBests {
             read("unique.${biome.label.lowercase()}")?.let { uniqueBiomes[biome.label] = it }
         }
     }
-    fun save(properties: Properties) {
+    @Synchronized fun save(properties: Properties) {
+        partyBests.forEach { (key, value) ->
+            val prefix = "pb.party.$key."
+            properties.setProperty("${prefix}name", value.name)
+            value.doom?.let { properties.setProperty("${prefix}doomspiralMillis", it.toString()) }
+            value.wumpa?.let { properties.setProperty("${prefix}wumpaMillis", it.toString()) }
+        }
         biomes.forEach { (name, time) -> properties.setProperty("pb.${name.lowercase()}Millis", time.toString()) }
         uniqueBiomes.forEach { (name, time) -> properties.setProperty("pb.unique.${name.lowercase()}Millis", time.toString()) }
         properties.setProperty("pb.biomeType", biomeType.name)

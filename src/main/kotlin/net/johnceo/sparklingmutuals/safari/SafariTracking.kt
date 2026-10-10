@@ -68,9 +68,9 @@ object SafariTracking {
                 ConfigManager.save(); client.player?.sendSystemMessage(LocalChat.component(notice))
             }
         }
-        ConfigManager.personalBests.newBest(text, ledger.current!!, now)?.let { notice ->
-            ConfigManager.save()
-            client.player?.sendSystemMessage(LocalChat.component(notice))
+        ConfigManager.personalBests.captureFeedback(text, ledger.current!!, now, client.player!!.name.string)?.let { feedback ->
+            if (feedback.changed) ConfigManager.save()
+            client.player?.sendSystemMessage(LocalChat.component(feedback.notice))
         }
     }
     fun onClientTick(client: Minecraft) = ensureRun(client)
