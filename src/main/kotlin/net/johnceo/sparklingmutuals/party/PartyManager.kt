@@ -1,5 +1,7 @@
 package net.johnceo.sparklingmutuals.party
 
+import net.johnceo.sparklingmutuals.LocalChat
+
 import net.azureaaron.hmapi.events.HypixelPacketEvents
 import net.azureaaron.hmapi.network.HypixelNetworking
 import net.azureaaron.hmapi.network.packet.s2c.HelloS2CPacket
@@ -69,7 +71,7 @@ object PartyManager {
             requestedAt = 0
             refreshAgain = false
             if (callbacks.isNotEmpty()) client.player?.sendSystemMessage(
-                Component.literal("[SM] Party lookup timed out. Try again."))
+                LocalChat.component("[SM] Party lookup timed out. Try again."))
             callbacks.clear()
         }
     }
