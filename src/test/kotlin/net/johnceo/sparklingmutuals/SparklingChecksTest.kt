@@ -14,11 +14,11 @@ class SparklingChecksTest {
     private fun party(needs: Set<String>) = PartySparklingState().apply {
         select(setOf("one")); accept(setOf("one"), mapOf("one" to SafariRoster.all.map { it.name }.toSet() - needs))
     }
-    @Test fun `center radius checks natural species without checking manually spawned species`() {
+    @Test fun `Forest UUID zone checks do not check manually spawned species`() {
         val checks = SparklingChecks()
         checks.scan(SafariBiome.FOREST, 21.01, 51.0, emptyList())
         assertFalse(checks.checked("Foxtrot"))
-        checks.scan(SafariBiome.FOREST, 21.0, 51.0, emptyList())
+        checks.scan(SafariBiome.FOREST, 21.0, 51.0, seen("Foxtrot", 6) + seen("Treefrog", 3))
         assertTrue(checks.checked("Foxtrot")); assertTrue(checks.checked("Treefrog"))
         assertFalse(checks.checked("Honeybug")); assertFalse(checks.checked("Bluebird"))
         assertFalse(checks.checked("Driftling"))
@@ -141,7 +141,7 @@ class SparklingChecksTest {
         ConfigManager.init(dir); ConfigManager.sparklingMode = true
         val run = SafariRun(0); val state = party(setOf("Foxtrot", "Honeybug", "Gemzie"))
         run.record(SafariCatch(SafariRoster.named("Honeybug")!!))
-        run.sparklingChecks.scan(SafariBiome.FOREST, 6.0, 51.0, emptyList())
+        run.sparklingChecks.scan(SafariBiome.FOREST, 6.0, 51.0, seen("Foxtrot", 6))
         val progress = SafariPanels.progress(run, true, 1000, state)
         assertEquals("1/2", progress.rows.single { it.label == "Forest" }.value)
         assertEquals("0/1", progress.rows.single { it.label == "Cavern" }.value)
