@@ -60,7 +60,7 @@ class CavernCompletionTest {
         assertFalse(SafariEspRules.neededForSparkling("Rockmite",false,party,true,run,id,0))
         assertTrue(SafariEspRules.neededForSparkling("Driftling",false,party,false,run,id,0))
         assertTrue(SafariEspRules.neededForSparkling("Driftling",false,party,false,run,id,10000))
-        assertTrue(SafariEspRules.neededForSparkling("Chuckwalla",false,party,true,run,id,0))
-        assertFalse(SafariEspRules.neededForSparkling("Chuckwalla",false,party,true,run,id,10000))
+        assertTrue(SafariEspRules.neededForSparkling("Chuckwalla",false,party,false,run,id,0))
+        assertFalse(SafariEspRules.neededForSparkling("Chuckwalla",false,party,false,run,id,10000))
     }
 }

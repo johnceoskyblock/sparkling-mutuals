@@ -33,6 +33,26 @@ class SafariProfitableUniqueTest {
         SafariFullClear.setEnabled(true)
         assertEquals("[SM] Full clear mode on.", SafariFullClear.modeMessage())
     }
+    @Test fun `profitable highlights survive label and motion gaps only for current entities`() {
+        for (sparkling in listOf(false, true)) for (name in listOf("Hideonfloor", "Hideonwall", "Chuckwalla", "Fluffling", "Mantis Shrimp")) {
+            assertTrue(SafariEspRules.renderCurrent(name, sparkling, true, false, false, true))
+            assertFalse(SafariEspRules.renderCurrent(name, sparkling, false, true, true, true))
+        }
+        assertFalse(SafariEspRules.renderCurrent("Hideonwall", true, true, false, false, false))
+        assertFalse(SafariEspRules.renderCurrent("Flitter", true, true, false, false, true))
+    }
+    @Test fun `profitable Sparkling toggle preserves all five species after catches and checks`() {
+        val party = PartySparklingState().apply {
+            select(setOf("me")); accept(setOf("me"), mapOf("me" to SafariRoster.all.map { it.name }.toSet()))
+        }
+        for (name in listOf("Hideonfloor", "Hideonwall", "Chuckwalla", "Fluffling", "Mantis Shrimp")) {
+            val run = SafariRun(0); val id = java.util.UUID.randomUUID()
+            run.record(SafariCatch(SafariRoster.named(name)!!))
+            assertTrue(SafariEspRules.neededForSparkling(name, false, party, true, run, id, 0))
+            assertTrue(SafariEspRules.neededForSparkling(name, false, party, true, run, id, 60000))
+            assertFalse(SafariEspRules.neededForSparkling(name, false, party, false, run, id, 60000))
+        }
+    }
     @Test fun `nine Forest pickups hide unique drops for run while starting food alone cannot`() {
         val run = SafariRun(0); val floor = FloorDropState()
         repeat(2) { run.recordBirdFood("FLOOR DROP! Bag of Seeds", null) }

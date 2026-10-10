@@ -60,11 +60,11 @@ class HauntedCompletionTest {
         assertFalse(run.sparklingChecks.checked("Gimmiegold"))
         assertFalse(run.captureComplete("Gimmiegold"))
     }
-    @Test fun `Haunted profitable ESP expires and Doomspiral remains until capture`() {
+    @Test fun `Haunted profitable ESP persists and Doomspiral remains until capture`() {
         fun party(name:String)=PartySparklingState().apply { select(setOf("me"));accept(setOf("me"),mapOf("me" to SafariRoster.all.map { it.name }.toSet()-name)) }
         val run=SafariRun(0);val id=UUID.randomUUID()
         assertTrue(SafariEspRules.neededForSparkling("Hideonwall",false,party("Hideonwall"),true,run,id,0))
-        assertFalse(SafariEspRules.neededForSparkling("Hideonwall",false,party("Hideonwall"),true,run,id,10000))
+        assertTrue(SafariEspRules.neededForSparkling("Hideonwall",false,party("Hideonwall"),true,run,id,10000))
         assertTrue(SafariEspRules.neededForSparkling("Doomspiral",false,party("Doomspiral"),false,run,id,0))
         assertTrue(SafariEspRules.neededForSparkling("Doomspiral",false,party("Doomspiral"),false,run,id,20000))
         run.record(SafariCatch(SafariRoster.named("Doomspiral")!!))

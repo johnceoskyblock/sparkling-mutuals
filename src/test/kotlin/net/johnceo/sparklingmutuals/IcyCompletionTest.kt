@@ -40,7 +40,7 @@ class IcyCompletionTest {
         run.sparklingChecks.scan(SafariBiome.ICY,500.0,500.0,ids.map { "Troodon" to it })
         assertTrue(run.sparklingChecks.checked("Troodon"))
     }
-    @Test fun `Wumpa prerequisite overrides ten second timer and profitability until one capture`() {
+    @Test fun `Wumpa prerequisites persist until capture with a profitable Shrimp exception`() {
         for (name in points.keys - "Wumpa" + "Troodon") {
             val run=SafariRun(0);val uuid=UUID.randomUUID()
             fun party(vararg needs:String)=PartySparklingState().apply { select(setOf("me"));accept(setOf("me"),mapOf("me" to SafariRoster.all.map { it.name }.toSet()-needs.toSet())) }
@@ -48,10 +48,10 @@ class IcyCompletionTest {
             assertTrue(SafariEspRules.neededForSparkling(name,false,state,true,run,uuid,0))
             assertTrue(SafariEspRules.neededForSparkling(name,false,state,true,run,uuid,20000))
             run.record(SafariCatch(SafariRoster.named(name)!!))
-            assertFalse(SafariEspRules.neededForSparkling(name,false,state,true,run,uuid,20001))
+            assertEquals(name == "Mantis Shrimp", SafariEspRules.neededForSparkling(name,false,state,true,run,uuid,20001))
             val normal=SafariRun(0);val own=party(name)
             assertTrue(SafariEspRules.neededForSparkling(name,false,own,true,normal,uuid,0))
-            assertFalse(SafariEspRules.neededForSparkling(name,false,own,true,normal,uuid,10000))
+            assertEquals(name == "Mantis Shrimp", SafariEspRules.neededForSparkling(name,false,own,true,normal,uuid,10000))
         }
     }
 }

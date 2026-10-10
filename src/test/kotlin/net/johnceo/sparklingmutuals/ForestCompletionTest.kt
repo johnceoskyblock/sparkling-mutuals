@@ -39,12 +39,12 @@ class ForestCompletionTest {
         checks.scan(SafariBiome.FOREST,500.0,500.0,ids.take(3).map { "Honeybug" to it },nestsChecked=true)
         assertTrue(checks.checked("Honeybug"))
     }
-    @Test fun `Forest profitable ESP expires after ten seconds per UUID`() {
+    @Test fun `Forest profitable ESP persists while enabled`() {
         for(name in listOf("Hideonfloor","Fluffling")) {
             val party=PartySparklingState().apply { select(setOf("me")); accept(setOf("me"),mapOf("me" to SafariRoster.all.map { it.name }.toSet())) }
             val run=SafariRun(0);val id=UUID.randomUUID()
             assertTrue(SafariEspRules.neededForSparkling(name,false,party,true,run,id,0))
-            assertFalse(SafariEspRules.neededForSparkling(name,false,party,true,run,id,10000))
+            assertTrue(SafariEspRules.neededForSparkling(name,false,party,true,run,id,10000))
             assertTrue(SafariEspRules.neededForSparkling(name,false,party,true,run,UUID.randomUUID(),10000))
         }
     }
