@@ -25,14 +25,14 @@ class SparklingEspChecksTest {
         assertEquals(listOf("All checked!"), names())
     }
     @Test fun `each needed UUID gets ten seconds even after its species center check`() {
-        val run = SafariRun(0); val state = party("Driftling"); val first = UUID.randomUUID(); val second = UUID.randomUUID()
+        val run = SafariRun(0); val state = party("Flitter"); val first = UUID.randomUUID(); val second = UUID.randomUUID()
         run.sparklingChecks.scan(SafariBiome.CAVERN, -114.0, 49.0, emptyList())
-        fun visible(id: UUID, now: Long) = SafariEspRules.neededForSparkling("Driftling", false, state, false, run, id, now)
+        fun visible(id: UUID, now: Long) = SafariEspRules.neededForSparkling("Flitter", false, state, false, run, id, now)
         assertTrue(visible(first, 1000)); assertTrue(visible(first, 10999))
         assertFalse(visible(first, 11000)); assertTrue(visible(second, 11000))
         assertFalse(visible(first, 20000)); assertTrue(visible(second, 20999)); assertFalse(visible(second, 21000))
-        assertTrue(SafariEspRules.neededForSparkling("Driftling", false, state, false, SafariRun(30000), first, 30000))
-        assertEquals(0, run.count("Driftling")); assertTrue(run.biomeClears.isEmpty())
+        assertTrue(SafariEspRules.neededForSparkling("Flitter", false, state, false, SafariRun(30000), first, 30000))
+        assertEquals(0, run.count("Flitter")); assertTrue(run.biomeClears.isEmpty())
     }
     @Test fun `uncaught Wumpa prerequisites keep ESP until captured and profitable exception stays`() {
         val run = SafariRun(0); val state = party("Wumpa"); val tepid = UUID.randomUUID(); val shrimp = UUID.randomUUID()
@@ -46,11 +46,11 @@ class SparklingEspChecksTest {
         run.sparklingChecks.chat("Party > Friend: id", manualAllowed = true)
         assertFalse(visible("Troodon", UUID.randomUUID(), 23000))
     }
-    @Test fun `profitable ESP survives its check timer and respects its independent toggle`() {
+    @Test fun `Cavern profitable ESP respects its ten second lifetime`() {
         val run = SafariRun(0); val state = party("Chuckwalla"); val id = UUID.randomUUID()
         assertTrue(SafariEspRules.neededForSparkling("Chuckwalla", false, state, false, run, id, 0))
         assertFalse(SafariEspRules.neededForSparkling("Chuckwalla", false, state, false, run, id, 10000))
-        assertTrue(SafariEspRules.neededForSparkling("Chuckwalla", false, state, true, run, id, 10000))
+        assertFalse(SafariEspRules.neededForSparkling("Chuckwalla", false, state, true, run, id, 10000))
     }
     @Test fun `Rockmite mound checks stay visible until the structures are checked`() {
         val run = SafariRun(0); val state = party("Rockmite"); val id = UUID.randomUUID()

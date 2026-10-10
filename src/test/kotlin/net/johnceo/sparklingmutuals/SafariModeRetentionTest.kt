@@ -30,7 +30,7 @@ class SafariModeRetentionTest {
         run.visitBiome(SafariBiome.CAVERN)
         repeat(3) { run.record(SafariCatch(SafariRoster.named("Driftling")!!)) }
         run.updateCaptureEvidence(SafariBiome.CAVERN, emptySet(), true)
-        run.sparklingChecks.scan(SafariBiome.CAVERN, -114.0, 49.0, emptyList())
+        run.sparklingChecks.scan(SafariBiome.CAVERN, -114.0, 49.0, List(3) { "Driftling" to java.util.UUID.randomUUID() })
         val original = run.fullClearProgress(SafariBiome.CAVERN.critters)
         repeat(2) { for (mode in SafariMode.entries) {
             SafariFullClear.select(mode)

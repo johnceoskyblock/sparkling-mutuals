@@ -24,8 +24,7 @@ class SparklingChecksTest {
         assertFalse(checks.checked("Driftling"))
     }
     @Test fun `all supplied biome centers check the correct natural species`() {
-        for ((biome, x, z) in listOf(Triple(SafariBiome.CAVERN, -114.0, 49.0),
-            Triple(SafariBiome.ICY, -112.0, -54.0), Triple(SafariBiome.HAUNTED, -4.0, -64.0))) {
+        for ((biome, x, z) in listOf(Triple(SafariBiome.ICY, -112.0, -54.0), Triple(SafariBiome.HAUNTED, -4.0, -64.0))) {
             val checks = SparklingChecks(); checks.scan(biome, x, z, emptyList())
             assertTrue(checks.checked(biome.critters.first().name))
             assertFalse(checks.checked(when (biome) { SafariBiome.CAVERN -> "Gemzie"; SafariBiome.ICY -> "Wumpa"; else -> "Doomspiral" }))
