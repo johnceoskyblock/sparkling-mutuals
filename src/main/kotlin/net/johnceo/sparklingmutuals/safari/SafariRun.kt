@@ -73,6 +73,9 @@ class SafariRun(val startedAt: Long) {
     val partyNestsHandled get() = SafariBiome.FOREST in inheritedBiomes && count("Honeybug") > 0
     private val sightings = mutableSetOf<String>()
     private val observedCritters = mutableMapOf<String, MutableSet<Int>>()
+    private val observedUuids = mutableMapOf<String, MutableSet<java.util.UUID>>()
+    private val cavernScanConfirmed = mutableSetOf<String>()
+    private var cavernZonesRequired = false
     val birds = SafariBirdLedger()
     val sparklingChecks = SparklingChecks()
     private val nearby = mutableMapOf<SafariBiome, Set<String>>()
@@ -83,17 +86,25 @@ class SafariRun(val startedAt: Long) {
     val birdFoodsComplete get() = birds.foodsComplete
     fun recordBirdFood(raw: String, biome: SafariBiome? = SafariBiome.FOREST) = birds.pickup(raw, biome)
     fun updateCaptureEvidence(biome: SafariBiome, speciesInRange: Set<String>, allWallsChecked: Boolean, allNestsChecked: Boolean = false,
-        macawsInRange: Int = if ("Macaw" in speciesInRange) 1 else 0) {
+        macawsInRange: Int = if ("Macaw" in speciesInRange) 1 else 0,
+        playerX: Double? = null, playerZ: Double? = null) {
         nearby[biome] = speciesInRange
         wallsChecked = allWallsChecked
         nestsChecked = allNestsChecked
         if (biome == SafariBiome.FOREST) nearbyMacaws = macawsInRange
+        if (biome == SafariBiome.CAVERN && playerX != null && playerZ != null) {
+            cavernZonesRequired = true
+            CavernCompletionZones.zones.forEach { (name, zone) ->
+                if (name !in speciesInRange && zone.contains(playerX, playerZ, sparkling = false) &&
+                    count(name) >= SafariFullClear.minimum(name)) cavernScanConfirmed.add(name)
+            }
+            if ("Scrappy" !in speciesInRange && (observedUuids["Scrappy"]?.size ?: 0) >= 3 && count("Scrappy") >= 3)
+                cavernScanConfirmed.add("Scrappy")
+        }
     }
     fun hasCaptureEvidence(biome: SafariBiome) = biome in nearby
-    fun missing(critter: SafariCritter, fullClear: Boolean) = if (fullClear && critter.name in birdSpecies)
-        !captureComplete(critter.name) else if (fullClear)
-        count(critter.name) < SafariFullClear.minimum(critter.name) ||
-        (nearby[critter.biome]?.contains(critter.name) ?: true) else count(critter.name) == 0
+    fun missing(critter: SafariCritter, fullClear: Boolean) = if (fullClear)
+        !captureComplete(critter.name) else count(critter.name) == 0
     fun birdCount(personalOnly: Boolean = false) = birdSpecies.sumOf { if (personalOnly) personalCount(it) else count(it) }
     private fun birdComplete(species: String, speciesInRange: Set<String>?, personalOnly: Boolean = false, macawsInRange: Int = nearbyMacaws) =
         speciesInRange != null && birds.capturesComplete { if (personalOnly) personalCount(it) else count(it) } &&
@@ -108,6 +119,8 @@ class SafariRun(val startedAt: Long) {
         val captured = if (personalOnly) personalCount(species) else count(species)
         if (captured < SafariFullClear.minimum(species)) return false
         if (!personalOnly && SafariRoster.named(species)!!.biome in inheritedBiomes) return species !in remaining
+        if (cavernZonesRequired && (species in CavernCompletionZones.zones || species == "Scrappy") &&
+            species !in cavernScanConfirmed) return false
         if (species in birdSpecies) return birdComplete(species, remaining, personalOnly, structures?.nearbyMacaws ?: nearbyMacaws)
         if (species in remaining) return false
         return when (species) {
@@ -128,7 +141,10 @@ class SafariRun(val startedAt: Long) {
     fun observe(entity: EspEntity) {
         if (entity.type == "silverfish" || entity.type == "sniffer") SafariEspRules.identify(entity)?.let { sightings.add(it.name) }
     }
-    fun observeCritter(id: Int, species: String) { observedCritters.getOrPut(species) { mutableSetOf() }.add(id); sightings.add(species) }
+    fun observeCritter(id: Int, species: String, uuid: java.util.UUID? = null) {
+        observedCritters.getOrPut(species) { mutableSetOf() }.add(id); sightings.add(species)
+        if (uuid != null) observedUuids.getOrPut(species) { mutableSetOf() }.add(uuid)
+    }
     fun observedCount(species: String) = observedCritters[species]?.size ?: 0
     fun record(catch: SafariCatch) {
         counts.merge(catch.critter.name, 1, Int::plus)

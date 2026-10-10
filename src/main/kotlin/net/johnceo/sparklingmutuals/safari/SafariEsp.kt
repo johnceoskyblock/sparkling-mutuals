@@ -301,7 +301,7 @@ object SafariEsp {
                 if (mob.name == "Litterbug" && height != null) litterbugs.hiddenMarker(e.uuid, e.x, e.y, e.z, now)?.let {
                     timers.add(Triple(it.text, it.color, projected))
                 }
-                if (mob.name == "Shyworm") {
+                if (mob.name == "Shyworm" && !ConfigManager.sparklingMode) {
                     shyworms.timer(e.uuid, now)?.let { timers.add(Triple(it.text, it.color, projected)) }
                     shyworms.path(e.uuid, now)?.let {
                         val y = it.height + .02

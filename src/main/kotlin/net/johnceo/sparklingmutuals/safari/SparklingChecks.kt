@@ -24,7 +24,7 @@ class SparklingChecks {
         val (cx, cz) = centers.getValue(biome)
         val atCenter = (x - cx) * (x - cx) + (z - cz) * (z - cz) <= 225
         if (atCenter) centersReached.add(biome)
-        if (biome in centersReached) completed.addAll(biome.critters.map { it.name }.filterNot { it in spawned })
+        if (biome != SafariBiome.CAVERN && biome in centersReached) completed.addAll(biome.critters.map { it.name }.filterNot { it in spawned })
         fun enough(name: String, amount: Int = 1) = (observed[name]?.size ?: 0) >= amount
         fun check(name: String, ready: Boolean) { if (ready) completed.add(name) }
         when (biome) {
@@ -34,7 +34,10 @@ class SparklingChecks {
             }
             SafariBiome.CAVERN -> {
                 check("Rockmite", moundsCleared); check("Snoozle", wallsCleared)
-                check("Gemzie", enough("Gemzie", 3))
+                CavernCompletionZones.zones.forEach { (name, zone) ->
+                    check(name, zone.contains(x, z, sparkling = true) && enough(name, SafariFullClear.minimum(name)))
+                }
+                check("Scrappy", enough("Scrappy", 3))
             }
             SafariBiome.ICY -> check("Wumpa", enough("Wumpa"))
             SafariBiome.HAUNTED -> {

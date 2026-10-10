@@ -19,12 +19,13 @@ object SafariBiomeClearTracking {
         if (SafariAssist.location != SafariLocation.INSIDE) return
         val snapshot = SafariEsp.observations()
         if (!snapshot.scanned) return
-        snapshot.critters.filterNot { it.mound }.forEach { run.observeCritter(it.id, it.species) }
+        snapshot.critters.filterNot { it.mound }.forEach { run.observeCritter(it.id, it.species, it.uuid) }
         run.updateCaptureEvidence(biome, snapshot.critters.filter {
             it.biome == biome
         }.map { if (it.mound) "Rockmite Mound" else it.species }.toSet(),
             SafariStructures.walls.states.size == 5 && SafariStructures.walls.allBroken, BeeNests.allChecked,
-            macawsInRange = snapshot.critters.count { it.biome == biome && it.species == "Macaw" })
+            macawsInRange = snapshot.critters.count { it.biome == biome && it.species == "Macaw" },
+            playerX = player.x, playerZ = player.z)
         run.sparklingChecks.scan(biome, player.x, player.z,
             snapshot.critters.filterNot { it.mound }.map { it.species to it.uuid },
             nestsChecked = BeeNests.allChecked,
