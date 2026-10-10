@@ -1,3 +1,9 @@
+## v3 development — Unique helper priority
+
+- Unique mode gives uncaught Gemzie, Forest birds and Gimmiegold priority over the party’s sparkling discoveries when choosing floor-drop supplies. Pickup/inventory completion and manual ESP choices remain authoritative.
+- After the first Honeybug/Rockmite/Snoozle capture, helpers follow remaining party sparkling needs and unchecked structures. Unique can show intact unpunched Forest nests despite inherited-clear claims.
+- Existing Icy floor-drop and Full Clear/Sparkling mode behavior remain. Regression coverage verifies first-capture priority and the handoff to party checks; live supply/structure rendering still needs in-game testing.
+
 ## v3 development — profitable ESP follow-up
 
 - Restore persistent profitable-shard highlights in Unique and Sparkling when enabled, including captured-species completion and Wumpa prerequisites. The option bypasses Sparkling UUID timers and label/motion gaps for current loaded entities.
