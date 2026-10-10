@@ -9,8 +9,8 @@ object CommandHelp {
         PartyCommandKind.MUTUALS to "Shared sparkling discoveries",
         PartyCommandKind.MISSING to "Missing sparkling discoveries",
         PartyCommandKind.TICKETS to "Safari ticket counts",
-        PartyCommandKind.PB_DOOM to "Doomspiral PB",
-        PartyCommandKind.PB_WUMPA to "Wumpa PB",
+        PartyCommandKind.PB_DOOM to "Solo Doomspiral PB (add duo for unrestricted PB)",
+        PartyCommandKind.PB_WUMPA to "Solo Wumpa PB (add duo for unrestricted PB)",
         PartyCommandKind.PB_FOREST to "Forest biome PB",
         PartyCommandKind.PB_CAVERN to "Cavern biome PB",
         PartyCommandKind.PB_ICY to "Icy biome PB",
@@ -36,5 +36,5 @@ object CommandHelp {
         listOf("§eLocal commands") + local.map { (command, description) -> "§6$command §7— $description" } +
         listOf("§7<IGN> = Minecraft username. Party commands use /pc.")
     fun partyReply(mode: SafariMode = SafariFullClear.mode) = "[SM] Commands: Party: " +
-        available(mode).joinToString(", ") { it.first.text }
+        available(mode).joinToString(", ") { it.first.text } + if (mode != SafariMode.FULL_CLEAR) ", !pb doom duo, !pb wumpa duo" else ""
 }

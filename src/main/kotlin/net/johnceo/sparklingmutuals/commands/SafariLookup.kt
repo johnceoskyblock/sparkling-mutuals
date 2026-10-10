@@ -28,8 +28,8 @@ object SafariLookup {
     }
 
     fun run(command: PartyCommand, members: List<String>, localName: String = "You"): String = when (command.kind) {
-        PartyCommandKind.PB_DOOM -> ConfigManager.personalBests.response(localName, "Doomspiral")
-        PartyCommandKind.PB_WUMPA -> ConfigManager.personalBests.response(localName, "Wumpa")
+        PartyCommandKind.PB_DOOM -> ConfigManager.personalBests.response(localName, "Doomspiral", command.duo)
+        PartyCommandKind.PB_WUMPA -> ConfigManager.personalBests.response(localName, "Wumpa", command.duo)
         PartyCommandKind.PB_FOREST -> ConfigManager.personalBests.response(localName, "Forest")
         PartyCommandKind.PB_HAUNTED -> ConfigManager.personalBests.response(localName, "Haunted")
         PartyCommandKind.PB_ICY -> ConfigManager.personalBests.response(localName, "Icy")
@@ -37,13 +37,12 @@ object SafariLookup {
         PartyCommandKind.HELP -> CommandHelp.partyReply()
         PartyCommandKind.MUTUALS -> {
             val discoveries = members.map { discoveries(it) }.reduceOrNull(Set<String>::intersect).orEmpty()
-            "Mutual ${if (ConfigManager.timesaveOnly) "Timesave " else ""}Sparkling Critters: ${formatDiscoveries(discoveries, ConfigManager.timesaveOnly).ifEmpty { listOf("None") }.joinToString(", ")}"
+            "Mutual ${if (ConfigManager.timesaveOnly) "Timesave " else ""}Sparkling Critters: ${mutualResult(discoveries, ConfigManager.timesaveOnly)}"
         }
         PartyCommandKind.MISSING -> {
             val uuid = HypixelApi.getPlayerUuid(command.ign)
             val discovered = HypixelApi.getSparklingCritters(uuid, HypixelApi.getCurrentProfileUuid(uuid))
-            val missing = formatMissing(discovered, ConfigManager.timesaveOnly)
-            "Missing ${if (ConfigManager.timesaveOnly) "Timesave " else ""}Sparklings for ${command.ign}: ${missing.ifEmpty { listOf("None") }.joinToString(", ")}"
+                        "Missing ${if (ConfigManager.timesaveOnly) "Timesave " else ""}Sparklings for ${command.ign}: ${missingResult(discovered, ConfigManager.timesaveOnly)}"
         }
         PartyCommandKind.TICKETS -> {
             val uuid = HypixelApi.getPlayerUuid(command.ign)
@@ -53,6 +52,16 @@ object SafariLookup {
         }
     }
 
+    fun mutualResult(discoveries: Set<String>, timesaveOnly: Boolean) =
+        formatDiscoveries(discoveries, timesaveOnly).takeIf { it.isNotEmpty() }?.joinToString(", ") ?: "None. :skull:"
+    fun missingResult(discoveries: Set<String>, timesaveOnly: Boolean): String {
+        val missing = formatMissing(discoveries, timesaveOnly)
+        return when {
+            missing.isEmpty() -> "None"
+            missing == formatMissing(emptySet(), timesaveOnly) -> "All. :skull:"
+            else -> missing.joinToString(", ")
+        }
+    }
     private fun discoveryKey(name: String) = name.uppercase(java.util.Locale.ROOT).replace(' ', '_')
     fun formatDiscoveries(discoveries: Set<String>, timesaveOnly: Boolean): List<String> =
         if (timesaveOnly) formatTimesaves(discoveries) else SafariRoster.all.filter { discoveryKey(it.name) in discoveries }.map { it.name }
