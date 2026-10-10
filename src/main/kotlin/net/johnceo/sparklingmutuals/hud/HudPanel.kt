@@ -11,7 +11,7 @@ data class HudRow(val label: String = "", val value: String? = null, val color: 
     companion object {
         const val WHITE = -1
         val GRAY = 0xFFAAAAAA.toInt()
-        val GOLD = 0xFFFFAA00.toInt()
+        val GOLD = 0xFF000000.toInt() or net.johnceo.sparklingmutuals.config.SafariTheme.ACCENT
     }
 }
 class HudPanel(val title: String, val titleColor: Int = HudRow.GOLD, val rows: List<HudRow>) {
