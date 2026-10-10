@@ -28,11 +28,11 @@ class ShywormProjectionTest {
             -93.0 to 20.5, -93.0 to 27.0, -93.5 to 27.0).withIndex())
             p.observe(id, point.first, 50.0, point.second, true, at * 250L)
         val west = p.path(id, 1250)!!
-        assertEquals(-100.0, west.minX, .001); assertEquals(1.0, west.maxZ - west.minZ, .001)
+        assertEquals(-100.5, west.minX, .001); assertEquals(1.0, west.maxX - west.minX, .001)
         p.observe(id, -100.0, 50.0, 27.0, true, 1500)
         p.observe(id, -100.0, 50.0, 26.5, true, 1750)
         val north = p.path(id, 1750)!!
-        assertEquals(20.0, north.minZ, .001); assertEquals(1.0, north.maxX - north.minX, .001)
+        assertEquals(19.5, north.minZ, .001); assertEquals(1.0, north.maxZ - north.minZ, .001)
     }
     @Test fun `teleports and stale movement remove the inferred path`() {
         val p = ShywormProjection()
@@ -56,20 +56,20 @@ class ShywormProjectionTest {
         party.accept(setOf("me"), mapOf("me" to SafariRoster.all.map { it.name }.toSet()))
         assertFalse(SafariEspRules.neededForSparkling("Shyworm", false, party, false, run, UUID.randomUUID(), 10001))
     }
-    @Test fun `clockwise turns place a one by seven outline on the active side`() {
+    @Test fun `clockwise turns warn the next side instead of the active side`() {
         val p = ShywormProjection()
         p.observe(id, -100.0, 50.0, 20.0, true, 0)
         p.observe(id, -99.5, 50.0, 20.0, true, 250)
         val east = p.path(id, 250)!!
-        assertEquals(7.0, east.maxX - east.minX, .001)
-        assertEquals(1.0, east.maxZ - east.minZ, .001)
-        assertEquals(-100.0, east.minX, .001)
+        assertEquals(1.0, east.maxX - east.minX, .001)
+        assertEquals(7.0, east.maxZ - east.minZ, .001)
+        assertEquals(-93.5, east.minX, .001)
         p.observe(id, -93.0, 50.0, 20.0, true, 500)
         p.observe(id, -93.0, 50.0, 20.5, true, 750)
         val south = p.path(id, 750)!!
-        assertEquals(1.0, south.maxX - south.minX, .001)
-        assertEquals(7.0, south.maxZ - south.minZ, .001)
-        assertEquals(20.0, south.minZ, .001)
+        assertEquals(7.0, south.maxX - south.minX, .001)
+        assertEquals(1.0, south.maxZ - south.minZ, .001)
+        assertEquals(26.5, south.minZ, .001)
     }
     @Test fun `short underground corner pauses do not start a rest timer`() {
         val p = ShywormProjection()
@@ -155,5 +155,31 @@ class ShywormProjectionTest {
         assertNull(p.hiddenHeight(id))
         p.observe(id, -98.5, 1.0, 20.0, false, 750)
         assertEquals(49.0, p.hiddenHeight(id))
+    }
+    @Test fun `queued rest selects nearest stationary underground worm without fresh label requirement`() {
+        val p = ShywormProjection(); val farther = UUID.randomUUID(); val moving = UUID.randomUUID()
+        p.observe(id, 10.0, 50.0, 0.0, true, 0)
+        p.observe(farther, 20.0, 50.0, 0.0, true, 0)
+        p.observe(moving, 1.0, 50.0, 0.0, true, 0)
+        p.observe(id, 10.0, 1.0, 0.0, false, 500)
+        p.observe(farther, 20.0, 1.0, 0.0, false, 500)
+        p.observe(moving, 2.0, 1.0, 0.0, false, 5000)
+        p.chat("The Shyworm hid back into the ground.", 5000, 0.0, 0.0)
+        p.reconcile(5000)
+        assertEquals("8.0s", p.timer(id, 5000)?.text)
+        assertNull(p.timer(farther, 5000)); assertNull(p.timer(moving, 5000))
+        p.chat("The Shyworm saw a player and fled!", 5100, 19.0, 0.0)
+        p.reconcile(5100)
+        assertEquals("8.0s", p.timer(farther, 5100)?.text)
+    }
+    @Test fun `warning always shows future clockwise side and keeps ground height while head bobs`() {
+        val p = ShywormProjection()
+        p.observe(id, -100.0, 50.0, 20.0, true, 0)
+        p.observe(id, -99.5, 49.0, 20.0, true, 250)
+        val next = p.path(id, 250)!!
+        assertEquals(-93.5, next.minX, .001); assertEquals(20.0, next.minZ, .001)
+        assertEquals(1.0, next.maxX - next.minX, .001); assertEquals(7.0, next.maxZ - next.minZ, .001)
+        p.observe(id, -99.0, 48.0, 20.0, true, 500)
+        assertEquals(next.height, p.path(id, 500)!!.height)
     }
 }

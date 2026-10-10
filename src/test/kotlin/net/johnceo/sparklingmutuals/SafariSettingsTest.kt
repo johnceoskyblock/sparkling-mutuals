@@ -36,7 +36,7 @@ class SafariSettingsTest {
         val libraryGrey = 0xFF202026.toInt()
         assertEquals(libraryGrey, SafariTheme.color(libraryGrey))
         SafariTheme.begin()
-        try { assertEquals(0xFF203329.toInt(), SafariTheme.color(libraryGrey)) } finally { SafariTheme.end() }
+        try { assertEquals(0xFF352D21.toInt(), SafariTheme.color(libraryGrey)) } finally { SafariTheme.end() }
         assertEquals(libraryGrey, SafariTheme.color(libraryGrey))
     }
     @Test fun `bundled 0_9 area table identifies Haunted and rejects outside coordinates`() {

@@ -29,7 +29,7 @@ class SafariCustomizationTest {
         AppearanceConfig.panels.values.forEach {
             assertFalse(it.borderEnabled)
             assertEquals(20, it.transparency)
-            assertEquals(0xCC000000.toInt(), it.backgroundArgb)
+            assertEquals(0xCC241F18.toInt(), it.backgroundArgb)
         }
     }
     @Test fun `one selected hex color applies to multiple targets without enabling borders or ESP`() {
@@ -84,7 +84,7 @@ class SafariCustomizationTest {
         })
         assertEquals(100, AppearanceConfig.panels.getValue("miria").transparency)
         assertEquals(0, AppearanceConfig.panels.getValue("missing").transparency)
-        assertEquals(0xCC000000.toInt(), AppearanceConfig.panels.getValue("captures").backgroundArgb)
+        assertEquals(0xCC241F18.toInt(), AppearanceConfig.panels.getValue("captures").backgroundArgb)
     }
     @Test fun `customization offers every existing critter color exactly once`() {
         ConfigManager.init(dir)
