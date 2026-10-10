@@ -1,3 +1,9 @@
+# Shyworm corner warning and countdown
+
+- Warns the next clockwise 1×7 path before corner emergence once movement establishes its direction.
+- Rest messages start an eight-second green/yellow/red countdown, then white “moving soon...”.
+- Moving ESP follows head height; only models at the hidden sentinel height use the saved surface projection. Mode and capture eligibility still apply.
+
 ## Full Clear progress follow-up
 
 - Full Clear progress now uses the captures panel's minimum, nearby-entity and structure completion rules.
@@ -7,7 +13,7 @@
 # Shyworm underground helpers
 
 - Loaded Shyworms retain ESP while underground, projected to their last observed surface height. Captured, removed and unloaded models remain excluded.
-- A red 1×7 ground outline follows each observed clockwise side. Rest messages start a per-worm estimated 8–15 second countdown; brief corner pauses do not start it.
+- A red 1×7 ground outline anticipates the next clockwise side at corners. Rest messages start a per-worm eight-second colored countdown; brief corner pauses do not start it.
 - Normal mode filters and Sparkling per-UUID expiry gate the box, outline and timer together. Ambiguous messages do not assign a timer to several worms; helper state clears on unloading or run reset.
 
 # Icy floor drops and moving-critter ESP
