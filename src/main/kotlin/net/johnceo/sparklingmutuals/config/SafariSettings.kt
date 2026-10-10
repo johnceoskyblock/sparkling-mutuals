@@ -1,5 +1,7 @@
 package net.johnceo.sparklingmutuals.config
 
+import net.johnceo.sparklingmutuals.LocalChat
+
 import io.github.notenoughupdates.moulconfig.Config
 import io.github.notenoughupdates.moulconfig.annotations.*
 import io.github.notenoughupdates.moulconfig.common.text.StructuredText
@@ -185,11 +187,11 @@ class SafariSettings : Config() {
         @ConfigEditorButton(runnableId = 4, buttonText = "Edit API key") var edit = false
     }
 
-    override fun getTitle(): StructuredText = StructuredText.of("Sparkling Mutuals · Safari").withColour(0xE3BB67)
+    override fun getTitle(): StructuredText = StructuredText.of("Sparkling Mutuals · Safari").withColour(SafariTheme.ACCENT)
     override fun formatCategoryName(category: ProcessedCategory, selected: Boolean): StructuredText =
-        category.displayName.copyShallow().withColour(if (selected) 0xE3BB67 else 0xB5C4A1)
+        category.displayName.copyShallow().withColour(if (selected) SafariTheme.ACCENT else 0xC5B99E)
 
-    private fun feedback(text: String) { Minecraft.getInstance().player?.sendSystemMessage(Component.literal("[SM] $text")) }
+    private fun feedback(text: String) { Minecraft.getInstance().player?.sendSystemMessage(LocalChat.component("[SM] $text")) }
     override fun executeRunnable(id: Int) {
         val client = Minecraft.getInstance()
         when (id) {
@@ -197,7 +199,7 @@ class SafariSettings : Config() {
             2 -> { miria.five = false; miria.three = false; miria.one = false; apply() }
             3 -> client.execute {
                 client.setScreen(ChatScreen("", false))
-                client.player?.sendSystemMessage(Component.literal(CommandHelp.localLines().joinToString("\n")))
+                client.player?.sendSystemMessage(LocalChat.component(CommandHelp.localLines().joinToString("\n")))
             }
             4 -> client.execute { client.setScreen(ApiKeyScreen(client.screen)) }
             5 -> { warp.delay = "25"; saveDelay() }
@@ -261,7 +263,7 @@ class SafariSettings : Config() {
         if (selection != SafariFullClear.mode) {
             SafariFullClear.select(selection)
             if (notifyMode) SafariFullClear.modeLines().forEach {
-                Minecraft.getInstance().player?.sendSystemMessage(Component.literal(it))
+                Minecraft.getInstance().player?.sendSystemMessage(LocalChat.component(it))
             }
         }
         modes.refresh()

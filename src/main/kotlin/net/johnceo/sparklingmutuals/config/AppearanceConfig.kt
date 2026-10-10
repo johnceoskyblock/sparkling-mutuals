@@ -7,8 +7,8 @@ import kotlin.math.roundToInt
 
 class PanelStyle {
     var borderEnabled = false
-    var borderColor = AppearanceConfig.color(0xFFFFFF)
-    var backgroundColor = AppearanceConfig.color(0)
+    var borderColor = AppearanceConfig.color(SafariTheme.ACCENT)
+    var backgroundColor = AppearanceConfig.color(SafariTheme.BACKGROUND)
     var transparency = 20
         set(value) { field = value.coerceIn(0, 100) }
     val backgroundArgb get() = (((100 - transparency) * 2.55).roundToInt() shl 24) or (SafariEspConfig.rgb(backgroundColor) and 0xFFFFFF)
@@ -39,8 +39,8 @@ object AppearanceConfig {
         selectedHex = properties.getProperty("appearance.selectedHex")?.takeIf { withHex(color(0), it) != null } ?: "#FFD700"
         panels.forEach { (id, style) ->
             style.borderEnabled = properties.getProperty("appearance.$id.borderEnabled")?.toBooleanStrictOrNull() ?: false
-            style.borderColor = SafariEspConfig.validColor(properties.getProperty("appearance.$id.borderColor"), color(0xFFFFFF))
-            style.backgroundColor = SafariEspConfig.validColor(properties.getProperty("appearance.$id.backgroundColor"), color(0))
+            style.borderColor = SafariEspConfig.validColor(properties.getProperty("appearance.$id.borderColor"), color(SafariTheme.ACCENT))
+            style.backgroundColor = SafariEspConfig.validColor(properties.getProperty("appearance.$id.backgroundColor"), color(SafariTheme.BACKGROUND))
             style.transparency = properties.getProperty("appearance.$id.transparency")?.toIntOrNull() ?: 20
         }
         waypointColors.forEach { (property, default) ->

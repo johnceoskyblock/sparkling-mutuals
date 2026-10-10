@@ -38,9 +38,9 @@ class ApiKeyScreen(private val parent: Screen?) : Screen(Component.literal("Hypi
         control(2, "Back") { onClose() }
     }
     override fun extractRenderState(graphics: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, delta: Float) {
-        graphics.fill(0, 0, width, height, 0xF016211A.toInt())
-        graphics.centeredText(font, title, width / 2, height / 2 - 66, 0xFFE3BB67.toInt())
-        graphics.centeredText(font, Component.literal(status), width / 2, height / 2 + 31, 0xFFF0E1BE.toInt())
+        graphics.fill(0, 0, width, height, (0xF0000000.toInt() or SafariTheme.BACKGROUND))
+        graphics.centeredText(font, title, width / 2, height / 2 - 66, (0xFF000000.toInt() or SafariTheme.ACCENT))
+        graphics.centeredText(font, Component.literal(status), width / 2, height / 2 + 31, 0xFFF5ECD7.toInt())
         super.extractRenderState(graphics, mouseX, mouseY, delta)
     }
     override fun onClose() { minecraft.setScreen(parent) }

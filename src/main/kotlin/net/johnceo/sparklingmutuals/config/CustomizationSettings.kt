@@ -1,5 +1,7 @@
 package net.johnceo.sparklingmutuals.config
 
+import net.johnceo.sparklingmutuals.LocalChat
+
 import io.github.notenoughupdates.moulconfig.annotations.*
 import net.minecraft.client.Minecraft
 import net.minecraft.network.chat.Component
@@ -10,7 +12,7 @@ class ColorChoice(private val read: () -> String, private val write: (String) ->
     @JvmField @ConfigOption(name = "Apply selected color", desc = "Use the hex color at the top of this tab.")
     @ConfigEditorButton(buttonText = "Set Color") val setColor = Runnable {
         if (setSelected()) ConfigManager.save()
-        else Minecraft.getInstance().player?.sendSystemMessage(Component.literal("[SM] Enter a hex color such as #55FF55."))
+        else Minecraft.getInstance().player?.sendSystemMessage(LocalChat.component("[SM] Enter a hex color such as #55FF55."))
     }
     fun setSelected(): Boolean {
         val value = AppearanceConfig.withHex(SafariEspConfig.validColor(color, read()), selection()) ?: return false

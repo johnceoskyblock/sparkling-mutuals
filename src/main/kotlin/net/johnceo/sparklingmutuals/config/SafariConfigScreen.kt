@@ -15,7 +15,7 @@ class SafariConfigScreen(private val settings: SafariSettings = SafariSettings()
     override fun removed() { settings.apply(notifyMode = true); settings.saveTextFields(); super.removed() }
     override fun isPauseScreen() = false
     override fun extractRenderState(graphics: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, delta: Float) {
-        graphics.fill(0, 0, width, height, 0xDA16211A.toInt())
+        graphics.fill(0, 0, width, height, (0xDA000000.toInt() or SafariTheme.BACKGROUND))
         SafariTheme.begin()
         try { super.extractRenderState(graphics, mouseX, mouseY, delta) } finally { SafariTheme.end() }
     }
