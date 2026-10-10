@@ -17,7 +17,7 @@ class ShywormProjection {
     fun observe(id: UUID, x: Double, y: Double, z: Double, visible: Boolean, now: Long) {
         if (!listOf(x, y, z).all(Double::isFinite)) return
         val w = worms.getOrPut(id) { Worm(x, y, z, null) }
-        val surfaced = visible && y > 2 && (w.height == null || y >= w.height!! - .5)
+        val surfaced = visible && y > 2
         if (surfaced) {
             w.height = y; w.visibleAt = now; w.hiddenAt = null
             if (w.restAt != null) { w.dx = 0; w.dz = 0; w.cornerX = x; w.cornerZ = z }
@@ -58,33 +58,38 @@ class ShywormProjection {
             candidates.singleOrNull()?.let { it.restAt = at; rests.remove(at) }
         }
     }
-    fun hiddenHeight(id: UUID): Double? = worms[id]?.takeIf { !it.visible }?.height
+    fun hiddenHeight(id: UUID): Double? = worms[id]?.takeIf { abs(it.y - 1.0) <= .01 }?.height
     fun timer(id: UUID, now: Long): ShywormTimer? {
         val at = worms[id]?.takeIf { !it.visible }?.restAt ?: return null
-        val elapsed = (now - at).coerceAtLeast(0)
-        fun seconds(ms: Long): String { val tenths = (ms.coerceAtLeast(0) + 99) / 100; return "${tenths / 10}.${tenths % 10}" }
-        val text = when {
-            elapsed >= 15000 -> "Moving soon.."
-            elapsed >= 8000 -> "Any moment (<=${seconds(15000 - elapsed)}s)"
-            else -> "~${seconds(8000 - elapsed)}-${seconds(15000 - elapsed)}s"
-        }
-        return ShywormTimer(text, when {
-            elapsed >= 15000 -> -1
-            elapsed < 5000 -> 0xFF55FF55.toInt()
-            elapsed < 8000 -> 0xFFFFFF55.toInt()
+        val remaining = (8000 - (now - at).coerceAtLeast(0)).coerceAtLeast(0)
+        val tenths = (remaining + 99) / 100
+        return ShywormTimer(if (remaining == 0L) "moving soon..." else "${tenths / 10}.${tenths % 10}s", when {
+            remaining == 0L -> -1
+            remaining > 5000 -> 0xFF55FF55.toInt()
+            remaining > 2000 -> 0xFFFFFF55.toInt()
             else -> 0xFFFF5555.toInt()
         })
     }
+
     fun path(id: UUID, now: Long): ShywormPath? {
         val w = worms[id] ?: return null
         val height = w.height ?: return null
         if (w.restAt != null || w.dx == 0 && w.dz == 0 || now - w.movedAt !in 0..3000) return null
-        val endX = w.cornerX + w.dx * 7; val endZ = w.cornerZ + w.dz * 7
-        return ShywormPath(minOf(w.cornerX, endX) - if (w.dx == 0) .5 else 0.0,
-            minOf(w.cornerZ, endZ) - if (w.dz == 0) .5 else 0.0,
-            maxOf(w.cornerX, endX) + if (w.dx == 0) .5 else 0.0,
-            maxOf(w.cornerZ, endZ) + if (w.dz == 0) .5 else 0.0, height + 1.35)
+        var startX = w.cornerX; var startZ = w.cornerZ
+        var dx = w.dx; var dz = w.dz
+        // Warn the next clockwise side as the head reaches the corner, before it resurfaces.
+        val travelled = (w.x - startX) * dx + (w.z - startZ) * dz
+        if (travelled >= 6.5) {
+            startX += dx * 7; startZ += dz * 7
+            val oldDx = dx; dx = -dz; dz = oldDx
+        }
+        val endX = startX + dx * 7; val endZ = startZ + dz * 7
+        return ShywormPath(minOf(startX, endX) - if (dx == 0) .5 else 0.0,
+            minOf(startZ, endZ) - if (dz == 0) .5 else 0.0,
+            maxOf(startX, endX) + if (dx == 0) .5 else 0.0,
+            maxOf(startZ, endZ) + if (dz == 0) .5 else 0.0, height + 1.35)
     }
+
     fun retain(ids: Set<UUID>) { worms.keys.retainAll(ids) }
     fun reset() { worms.clear(); rests.clear() }
 }
