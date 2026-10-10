@@ -126,7 +126,8 @@ class SafariPanelSeparationTest {
         assertFalse(run.recordBirdFood("FLOOR DROP! Something else"))
         repeat(3) { assertTrue(run.recordBirdFood("§aFLOOR DROP! Bag of Seeds")); run.recordBirdFood("FLOOR DROP! Wriggleworm") }
         repeat(8) { run.record(SafariCatch(SafariRoster.named("Bluebird")!!)) }
-        repeat(9) { run.birds.spawn("A Bluebird was attracted to the Birdfeeder!") }
+        repeat(8) { run.birds.spawn("A Bluebird was attracted to the Birdfeeder!") }
+        run.birds.spawn("A Parakeet was attracted to the Birdfeeder!")
         run.updateCaptureEvidence(SafariBiome.FOREST, emptySet(), false)
         assertFalse(green())
         repeat(3) { run.recordBirdFood("FLOOR DROP! Yogi Berry") }

@@ -79,7 +79,8 @@ class SafariBiomeClearTest {
             repeat(amount) { record(SafariCatch(SafariRoster.named(name)!!, personal)) }
         }
         repeat(3) { for (food in listOf("Bag of Seeds", "Wriggleworm", "Yogi Berry")) recordBirdFood("FLOOR DROP! $food") }
-        repeat(9 - pairs) { birds.spawn("A Bluebird was attracted to the Birdfeeder!") }
+        repeat(8 - pairs) { birds.spawn("A Bluebird was attracted to the Birdfeeder!") }
+        birds.spawn("A Parakeet was attracted to the Birdfeeder!")
         repeat(pairs) { birds.spawn("Two Macaws were attracted to the Birdfeeder!") }
         birds.inventory(emptyList())
     }

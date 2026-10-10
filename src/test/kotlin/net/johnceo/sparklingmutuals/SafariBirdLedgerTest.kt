@@ -56,7 +56,7 @@ class SafariBirdLedgerTest {
         assertTrue(birds.sufficient(9, 0, 0))
         assertFalse(birds.sufficient(8, 0, 0))
     }
-    @Test fun `missing inventory removal or feeder announcement cannot imply food was used`() {
+    @Test fun `feeder announcements confirm usage even before inventory removal`() {
         val birds = SafariBirdLedger(); foods(birds)
         birds.inventory(emptyList())
         assertEquals(0, birds.used)
@@ -66,8 +66,8 @@ class SafariBirdLedgerTest {
         val stillHeld = SafariBirdLedger(); foods(stillHeld)
         repeat(9) { stillHeld.spawn("A Bluebird was attracted to the Birdfeeder!") }
         stillHeld.inventory(listOf("Yogi Berry" to 3, "Wriggleworm" to 3, "Bag of Seeds" to 3))
-        assertEquals(0, stillHeld.used)
-        assertFalse(stillHeld.sufficient(9, 0, 0))
+        assertEquals(9, stillHeld.used)
+        assertTrue(stillHeld.sufficient(9, 0, 0))
     }
     @Test fun `packet order does not double count food use and held extra food does not erase usage`() {
         val birds = SafariBirdLedger(); foods(birds)

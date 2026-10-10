@@ -49,7 +49,7 @@ class SafariCapturePresenceTest {
         uncaughtMacaw.birds.inventory(emptyList())
         uncaughtMacaw.updateCaptureEvidence(SafariBiome.FOREST, setOf("Macaw"), false, macawsInRange = 2)
         assertFalse(uncaughtMacaw.captureComplete("Macaw"))
-        assertTrue(uncaughtMacaw.captureComplete("Bluebird"))
+        assertFalse(uncaughtMacaw.captureComplete("Bluebird")) // All announced bird captures are still required.
         assertFalse(uncaughtMacaw.birdsComplete(setOf("Macaw"), personalOnly = true))
     }
 }
