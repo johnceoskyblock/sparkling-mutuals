@@ -1,3 +1,10 @@
+# Communal biome and run completion
+
+- Automatic fd/cd/id/hd party announcements for locally completed Full Clear/Sparkling biomes; incoming claims update progress and local remaining entities/structures correct them. Unique remains capture-based.
+- Prior LOOT SHARE before first entry identifies inherited clears. Nest highlights are suppressed and inherited mound statistics stay neutral in every mode; remaining mounds remain listed. Haunted skips unavailable Gimmiegold evidence, without fabricating catches or personal PBs.
+- Configurable Run Complete alert defaults on: green title, light-green background, 80% transparency, minecraft:block.bell.use. Customize title, sound/volume, colors, position and scale.
+- Automated regression coverage and build validation; party chat pacing, loaded entity/structure detection and alert appearance still need a live in-game check.
+
 # Forest mode completion rules
 
 - Forest zones center on (3, 47). Foxtrot/Fluffling use 30/40-block Full Clear/Sparkling radii; Woodchucker/Treefrog/Hideonfloor use 50/60.
