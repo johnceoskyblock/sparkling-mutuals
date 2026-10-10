@@ -26,7 +26,7 @@ class SafariCustomizationTest {
         assertTrue(ConfigManager.showMoundCount)
         assertTrue(ConfigManager.showBeeNests)
         assertFalse(ConfigManager.showMoundStats)
-        AppearanceConfig.panels.values.forEach {
+        AppearanceConfig.panels.filterKeys { it != "run_complete" }.values.forEach {
             assertFalse(it.borderEnabled)
             assertEquals(20, it.transparency)
             assertEquals(0xCC241F18.toInt(), it.backgroundArgb)

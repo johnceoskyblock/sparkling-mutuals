@@ -43,13 +43,15 @@ class SafariFullClearProgressTest {
             assertTrue(biome.critters.none { run.captureComplete(it.name) })
         }
     }
-    @Test fun `visited biome requires evidence even after an earlier party done word`() {
+    @Test fun `visited biome retains party completion until contradictory local evidence`() {
         ConfigManager.init(dir); SafariFullClear.select(SafariMode.FULL_CLEAR)
         val run = SafariRun(0)
         SafariMessages.lines("Party > Player: cd", fullClearRun = run)
         assertEquals("9/9", row(run, SafariBiome.CAVERN))
         run.visitBiome(SafariBiome.CAVERN)
         SafariMessages.lines("Party > Player: cd", fullClearRun = run)
+        assertEquals("9/9", row(run, SafariBiome.CAVERN))
+        run.updateCaptureEvidence(SafariBiome.CAVERN, setOf("Driftling"), false)
         assertEquals("0/9", row(run, SafariBiome.CAVERN))
     }
     @Test fun `non party and multiline quotations cannot clear Full Clear progress`() {

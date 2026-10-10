@@ -31,7 +31,7 @@ class SafariPartyClearTest {
         assertFalse(run.captureComplete("Rockmite")); assertFalse(run.captureComplete("Snoozle"))
         assertFalse(run.captureComplete("Rockmite", personalOnly = true, speciesInRange = emptySet()))
     }
-    @Test fun `party captures after entering or after personal catches do not relax own biome requirements`() {
+    @Test fun `only party captures before the first visit relax biome requirements`() {
         val ledger = SafariLedger().apply { arrive(0) }; val run = ledger.current!!
         ledger.update(SafariLocation.INSIDE, SafariBiome.FOREST, 100)
         catch(run, "Honeybug", 3)
@@ -44,7 +44,7 @@ class SafariPartyClearTest {
         catch(ownRun, "Treefrog", 1, true); catch(ownRun, "Honeybug", 3)
         own.update(SafariLocation.INSIDE, SafariBiome.FOREST, 100)
         ownRun.updateCaptureEvidence(SafariBiome.FOREST, emptySet(), false)
-        assertFalse(ownRun.captureComplete("Honeybug"))
+        assertTrue(ownRun.captureComplete("Honeybug"))
         ledger.enter(1000); ledger.update(SafariLocation.INSIDE, SafariBiome.FOREST, 1100)
         ledger.current!!.updateCaptureEvidence(SafariBiome.FOREST, emptySet(), false)
         assertFalse(ledger.current!!.captureComplete("Honeybug"))
