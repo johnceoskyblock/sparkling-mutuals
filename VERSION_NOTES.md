@@ -88,4 +88,4 @@ Mode switches keep the current run’s captures, completion evidence and Sparkli
 
 Birdfeeder announcements now confirm one food used each, including the two-Macaw announcement. Bird completion waits for all collected food to be fed; Full Clear requires every announced Bluebird and Parakeet plus one Macaw, even if extra Macaws unload. Captures, progress and missing rows use these checks. Unique and Sparkling keep their existing capture/discovery rules; personal PBs still require personal catches.
 
-Full candle hitbox now applies only to single red candles directly above Chiseled Stone Bricks in Haunted while holding Soothing Incense. Decorative candles retain their normal selection shapes; collision and server block state are unchanged.
+Full candle hitbox now applies to red candles in Haunted while holding Soothing Incense, without pedestal or candle-count restrictions. White and other decorative candles retain their normal selection shapes; collision and server block state are unchanged.

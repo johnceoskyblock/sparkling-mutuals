@@ -37,7 +37,7 @@ A Fabric mod for Hypixel SkyBlock Safari, sparkling discoveries, and Miria conte
 - **Bee nests and Snooper walls:** highlights structures that still need checking. Honeybug completion requires punched nests in your own biome; nests stop highlighting when you enter a party-cleared Forest with earlier Honeybug catches.
 - **Hideyho quest clicks:** lets you accept the current Hideyho quest prompt by clicking with chat open.
 - **Auto Clicker:** repeats attacks at 12 CPS while holding Mouse 0 on Rockmite mounds.
-- **Full candle hitbox:** enlarges single red candles on Chiseled Stone Bricks in Haunted while holding Soothing Incense.
+- **Full candle hitbox:** enlarges red candles in Haunted while holding Soothing Incense; white decorative candles keep their normal shape.
 - **Painting hider:** hides paintings in the Haunted biome.
 - **Darkness removal:** clears the darkness effect in Safari.
 - **Capture chat filter:** hides capture-related spam while tracking continues.
