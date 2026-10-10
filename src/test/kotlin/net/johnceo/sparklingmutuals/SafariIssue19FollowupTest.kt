@@ -16,7 +16,7 @@ class SafariIssue19FollowupTest {
     @Test fun `needed Wumpa switches icy progress from sightings to captures`() {
         ConfigManager.init(dir); ConfigManager.sparklingMode = true
         val run = SafariRun(0)
-        run.sparklingChecks.scan(SafariBiome.ICY, -112.0, -54.0, emptyList())
+        run.sparklingChecks.scan(SafariBiome.ICY, -112.0, -54.0, List(3) { "Troodon" to java.util.UUID.randomUUID() })
         assertEquals("0/2", row(run, setOf("Wumpa", "Troodon")))
         run.record(SafariCatch(SafariRoster.named("Troodon")!!, personal = false))
         assertEquals("1/2", row(run, setOf("Wumpa", "Troodon")))

@@ -34,7 +34,7 @@ class SparklingEspChecksTest {
         assertTrue(SafariEspRules.neededForSparkling("Flitter", false, state, false, SafariRun(30000), first, 30000))
         assertEquals(0, run.count("Flitter")); assertTrue(run.biomeClears.isEmpty())
     }
-    @Test fun `uncaught Wumpa prerequisites keep ESP until captured and profitable exception stays`() {
+    @Test fun `uncaught Wumpa prerequisites keep ESP until captured even with profitability enabled`() {
         val run = SafariRun(0); val state = party("Wumpa"); val tepid = UUID.randomUUID(); val shrimp = UUID.randomUUID()
         fun visible(name: String, id: UUID, now: Long, profitable: Boolean = false) =
             SafariEspRules.neededForSparkling(name, false, state, profitable, run, id, now)
@@ -42,7 +42,7 @@ class SparklingEspChecksTest {
         run.record(SafariCatch(SafariRoster.named("Tepid")!!))
         assertFalse(visible("Tepid", tepid, 21001))
         run.record(SafariCatch(SafariRoster.named("Mantis Shrimp")!!))
-        assertFalse(visible("Mantis Shrimp", shrimp, 22000)); assertTrue(visible("Mantis Shrimp", shrimp, 22000, true))
+        assertFalse(visible("Mantis Shrimp", shrimp, 22000)); assertFalse(visible("Mantis Shrimp", shrimp, 22000, true))
         run.sparklingChecks.chat("Party > Friend: id", manualAllowed = true)
         assertFalse(visible("Troodon", UUID.randomUUID(), 23000))
     }
