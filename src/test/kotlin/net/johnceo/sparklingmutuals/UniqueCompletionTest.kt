@@ -23,6 +23,7 @@ class UniqueCompletionTest {
         run.reconcileStructures(SafariBiome.CAVERN, true, true)
         assertFalse(complete(run, "Rockmite", state)); assertFalse(complete(run, "Snoozle", state))
         run.sparklingChecks.scan(SafariBiome.CAVERN, 0.0, 0.0, emptyList(), moundsCleared = true, wallsCleared = true)
+        run.reconcileStructures(SafariBiome.CAVERN, false, false)
         assertTrue(complete(run, "Rockmite", state)); assertTrue(complete(run, "Snoozle", state))
         assertTrue(complete(run, "Rockmite", party()))
     }
@@ -57,9 +58,13 @@ class UniqueCompletionTest {
         assertEquals("cd", run.completion.announcement(run, SafariBiome.CAVERN, SafariMode.UNIQUE, state))
         assertNull(run.completion.announcement(run, SafariBiome.CAVERN, SafariMode.UNIQUE, state))
     }
-    @Test fun `Icy and Haunted Unique need only one capture regardless of discovery needs`() {
+    @Test fun `Icy and Haunted Unique need one capture with a four UUID Gazer exception`() {
         val run = SafariRun(0); val state = party(*SafariRoster.all.map { it.name }.toTypedArray())
-        (SafariBiome.ICY.critters + SafariBiome.HAUNTED.critters).forEach { caught(run, it.name); assertTrue(complete(run, it.name, state)) }
+        (SafariBiome.ICY.critters + SafariBiome.HAUNTED.critters).forEach {
+            caught(run, it.name)
+            if (it.name == "Gazer") repeat(4) { index -> run.observeCritter(index, "Gazer", UUID.randomUUID()) }
+            assertTrue(complete(run, it.name, state))
+        }
     }
     @Test fun `Unique missing panel tracks captures while progress waits and party claims add no personal captures`() {
         net.johnceo.sparklingmutuals.config.ConfigManager.fullClearMode = false
@@ -72,7 +77,7 @@ class UniqueCompletionTest {
         assertEquals(0, run.personalCount("Honeybug"))
         assertTrue(complete(run, "Macaw", state))
     }
-    @Test fun `inherited Unique Forest stays complete after visiting but starting Forest keeps local checks`() {
+    @Test fun `party fd overrides inherited and starting Forest while local evidence remains separate`() {
         val state = party("Honeybug", "Bluebird")
         val run = SafariRun(0)
         run.visitBiome(SafariBiome.CAVERN)
@@ -87,8 +92,9 @@ class UniqueCompletionTest {
         starting.visitBiome(SafariBiome.FOREST)
         caught(starting, "Honeybug", "Bluebird")
         starting.partyFullClear("Party > Friend: fd")
-        assertFalse(complete(starting, "Honeybug", state))
-        assertFalse(complete(starting, "Bluebird", state))
+        assertTrue(complete(starting, "Honeybug", state))
+        assertTrue(complete(starting, "Bluebird", state))
+        assertFalse(starting.uniqueComplete("Honeybug", state, localOnly = true))
     }
     @Test fun `inherited Cavern trusts done until remaining structures contradict it`() {
         val run = SafariRun(0); val state = party("Rockmite", "Snoozle")
@@ -105,13 +111,13 @@ class UniqueCompletionTest {
         assertFalse(rows.any { it.label == "Rockmite" || it.label == "Snoozle" })
         assertTrue(rows.any { it.label == "Mounds to break" })
     }
-    @Test fun `Unique Icy and Haunted never announce done`() {
+    @Test fun `Unique Icy and Haunted announce done when local conditions are met`() {
         for (biome in listOf(SafariBiome.ICY, SafariBiome.HAUNTED)) {
             val run = SafariRun(0)
             run.visitBiome(biome)
             biome.critters.forEach { caught(run, it.name) }
             run.updateCaptureEvidence(biome, emptySet(), true)
-            assertNull(run.completion.announcement(run, biome, SafariMode.UNIQUE, party()))
+            assertEquals(if (biome == SafariBiome.ICY) "id" else "hd", run.completion.announcement(run, biome, SafariMode.UNIQUE, party()))
         }
     }
 }

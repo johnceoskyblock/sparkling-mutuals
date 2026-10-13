@@ -157,12 +157,12 @@ class SparklingChecksTest {
         assertEquals("Loading discoveries", progress.rows.first().label)
         assertEquals("?", progress.rows.single { it.label == "Forest" }.value)
     }
-    @Test fun `checked Sparkling helpers hide without changing Unique or Full Clear rules`() {
+    @Test fun `party done hides Sparkling and Unique helpers but keeps Full Clear requirements`() {
         val run = SafariRun(0); val state = party(setOf("Rockmite", "Snoozle"))
         run.sparklingChecks.chat("Party > Player: cd", manualAllowed = true)
         assertFalse(SafariHelperRules.needed("Rockmite", SafariMode.SPARKLING, run, state))
         assertFalse(SafariHelperRules.needed("Snoozle", SafariMode.SPARKLING, run, state))
-        assertTrue(SafariHelperRules.needed("Rockmite", SafariMode.UNIQUE, run, state))
+        assertFalse(SafariHelperRules.needed("Rockmite", SafariMode.UNIQUE, run, state))
         assertTrue(SafariHelperRules.needed("Rockmite", SafariMode.FULL_CLEAR, run, state))
     }
 }

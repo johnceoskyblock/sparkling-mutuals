@@ -68,7 +68,12 @@ class SafariRun(val startedAt: Long) {
     private val partyFullClears = mutableSetOf<SafariBiome>()
     private val communalClears = mutableSetOf<SafariBiome>()
     fun partyFullClear(raw: String) {
-        SparklingChecks.doneBiome(raw)?.let { partyFullClears.add(it); communalClears.add(it) }
+        SparklingChecks.doneBiome(raw)?.let {
+            partyFullClears.add(it); communalClears.add(it)
+            if (it == SafariBiome.CAVERN && lastBiome != SafariBiome.CAVERN) {
+                remainingMounds = false; remainingWalls = false
+            }
+        }
     }
     fun fullClearProgress(critters: List<SafariCritter>) = critters.count {
         it.biome in partyFullClears || captureComplete(it.name)
@@ -91,10 +96,20 @@ class SafariRun(val startedAt: Long) {
         if (biome == SafariBiome.CAVERN && (moundsRemain || wallsRemain)) partyFullClears.remove(biome)
         sparklingChecks.reconcileStructures(biome, moundsRemain, wallsRemain)
     }
+    /** Party done overrides progress, never captures; only needed Cavern structures can contradict it. */
+    private fun partyCompletion(name: String, party: PartySparklingState): Boolean? {
+        val critter = SafariRoster.named(name) ?: return null
+        if (critter.biome !in communalClears && !sparklingChecks.partyChecked(name)) return null
+        return when (name) {
+            "Rockmite" -> !party.needs(name) || !remainingMounds
+            "Snoozle" -> !party.needs(name) || !remainingWalls
+            else -> true
+        }
+    }
     fun sparklingComplete(name: String, party: PartySparklingState, localOnly: Boolean = false): Boolean {
         val critter = SafariRoster.named(name) ?: return false
+        if (!localOnly) partyCompletion(name, party)?.let { return it }
         if (critter.biome == SafariBiome.HAUNTED && name == "Gimmiegold" && inheritedGold) return true
-        if (!localOnly && sparklingChecks.partyChecked(name)) return true
         if (critter.biome == SafariBiome.ICY && party.needs("Wumpa"))
             return count("Wumpa") > 0 || count(name) > 0 || name == "Wumpa" && sparklingChecks.locallyChecked(name)
         return sparklingChecks.locallyChecked(name)
@@ -108,29 +123,28 @@ class SafariRun(val startedAt: Long) {
     val completion = SafariCompletionEvents()
     /** Unique progress retains sparkle checks; missing rows and PBs use their own capture evidence. */
     fun uniqueComplete(name: String, party: PartySparklingState, localOnly: Boolean = false): Boolean {
-        if (!localOnly && name == "Macaw" && SafariBiome.FOREST in communalClears) return true
+        if (!localOnly) partyCompletion(name, party)?.let { return it }
         if (uniqueUnavailable(name)) return true
         if (count(name) == 0) return false
         val critter = SafariRoster.named(name) ?: return false
+        if (name == "Gazer" && party.needs(name)) return (observedUuids[name]?.size ?: 0) >= 4
         if (name !in uniqueChecks) return true
-        if (!localOnly && critter.biome != startingBiome && critter.biome in communalClears) {
-            return when (name) {
-                "Rockmite" -> !remainingMounds
-                "Snoozle" -> !remainingWalls
-                else -> true
-            }
-        }
         if (critter.biome !in visited) return !localOnly &&
             (critter.biome in communalClears || sparklingChecks.partyChecked(name))
         return when (name) {
             "Honeybug" -> !party.needs(name) || nestsChecked && punchedNests >= 3 && sparklingChecks.locallyChecked(name)
             "Rockmite", "Snoozle" -> !party.needs(name) || sparklingChecks.locallyChecked(name)
-            else -> !birdSpecies.any { party.needs(it) } || birds.used >= maxOf(birds.sparklingTarget, birds.collected)
+            else -> !birdSpecies.any { party.needs(it) } || birds.used >= birds.feedingTarget
         }
     }
     private val uniqueChecks = setOf("Honeybug", "Rockmite", "Snoozle", "Bluebird", "Parakeet", "Macaw")
     /** A completed local survey can prove a variable critter never spawned; a sighting revokes it. */
     fun uniqueUnavailable(name: String): Boolean {
+        if (name == "Macaw") {
+            val remaining = nearby[SafariBiome.FOREST] ?: return false
+            return !encountered(name) && name !in remaining && !birds.hasMacaws(count(name), nearbyMacaws) &&
+                birds.used >= birds.feedingTarget
+        }
         val remaining = nearby[SafariBiome.CAVERN] ?: return false
         if (encountered(name) || name in remaining) return false
         return when (name) {

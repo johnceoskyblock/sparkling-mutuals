@@ -54,7 +54,7 @@ internal object EspBoxLines {
     }
 }
 
-/** Critter boxes are drawn a little larger than the hitbox, and never thinner than [MIN_SIZE], so small critters stay easy to spot and the outline sits clear of the model. */
+/** Rendered bounds; these do not change entity interaction or capsule capture hitboxes. */
 internal object EspBoxSize {
     const val PADDING = .2
     const val MIN_SIZE = .9
@@ -63,7 +63,9 @@ internal object EspBoxSize {
         val grow = maxOf(0.0, MIN_SIZE - (max - min + 2 * PADDING)) / 2
         return (min - PADDING - grow) to (max + PADDING + grow)
     }
-    fun padded(box: AABB): AABB {
+    /** Only Haunted shulkers need an outline that extends around wall corners. */
+    fun padded(box: AABB, species: String): AABB {
+        if (species != "Hideonwall") return box
         val (minX, maxX) = axis(box.minX, box.maxX)
         val (minY, maxY) = axis(box.minY, box.maxY)
         val (minZ, maxZ) = axis(box.minZ, box.maxZ)

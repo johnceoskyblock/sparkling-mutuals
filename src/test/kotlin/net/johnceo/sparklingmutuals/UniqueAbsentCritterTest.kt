@@ -44,12 +44,12 @@ class UniqueAbsentCritterTest {
         assertEquals(0, run.count("Macaw")); assertEquals(0, run.personalCount("Macaw"))
         assertFalse(run.uniqueComplete("Macaw", state, localOnly = true))
     }
-    @Test fun `caught Unique entities hide despite party sparkle needs while structure helpers stay`() {
+    @Test fun `caught Unique entities hide with profitable highlighting disabled while structure helpers stay`() {
         val run = SafariRun(0); val state = party()
         for (critter in SafariRoster.all) {
-            assertTrue(SafariEspRules.neededForRun(critter.name, false, run, false, true, state))
+            assertTrue(SafariEspRules.neededForRun(critter.name, false, run, false, false, state))
             run.record(SafariCatch(critter))
-            assertFalse(SafariEspRules.neededForRun(critter.name, false, run, false, true, state))
+            assertFalse(SafariEspRules.neededForRun(critter.name, false, run, false, false, state))
         }
         assertTrue(SafariEspRules.neededForRun("Rockmite", true, run, false, true, state))
         assertTrue(SafariHelperRules.needed("Snoozle", SafariMode.UNIQUE, run, state))

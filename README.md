@@ -7,7 +7,7 @@ A Fabric mod for Hypixel SkyBlock Safari, sparkling discoveries, and Miria conte
 - **Full Clear mode (`/fc`):** track all required captures and highlight remaining critters.
 - **Unique mode (`/unique`):** track one capture per species and highlight missing uniques.
 - **Sparkling mode (`/sparkle`):** target sparkling discoveries missing for you or your party.
-- **Profitable shard ESP:** keep profitable critters highlighted in Sparkling mode.
+- **Profitable shard ESP:** optionally keep profitable critters highlighted in Unique and Sparkling modes.
 - **Progress HUD:** show elapsed time and overall/per-biome completion.
 - **Missing panel:** list remaining species, nests, mounds, and Snooper walls.
 - **Biome captures HUD:** show species counts and Rockmite mound statistics.
@@ -20,7 +20,7 @@ A Fabric mod for Hypixel SkyBlock Safari, sparkling discoveries, and Miria conte
 
 ## Highlights and helpers
 
-- **Critter ESP:** draw colored, slightly enlarged boxes around critters across all four biomes.
+- **Critter ESP:** draw colored outlines around critters; retain enlarged outlines for Hideonwalls.
 - **Floor drop ESP:** highlight needed Safari supplies until their requirements are met.
 - **Bee nest waypoints:** locate nests that still need punching.
 - **Rockmite highlights:** distinguish mounds from spawned silverfish.

@@ -12,6 +12,7 @@ class SafariBirdLedger {
     private var announced = false
     private val startingFoods = mutableMapOf<String, Int>()
     val sparklingTarget get() = 9 + startingFoods.values.sum()
+    val feedingTarget get() = maxOf(9, collected) + startingFoods.values.sum()
     val sparklingSpawned get() = used >= sparklingTarget
     /** Sample every tick during Head Start; subtract already reported Forest floor pickups. */
     fun startingInventory(stacks: List<Pair<String, Int>>, elapsed: Long) {

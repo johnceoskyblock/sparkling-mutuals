@@ -88,7 +88,8 @@ object SafariEspRules {
         if (fullClear) true
         else if (species == "Rockmite" && mound && party != null)
             SafariHelperRules.needed(species, if (fullClear) SafariMode.FULL_CLEAR else SafariMode.UNIQUE, run, party)
-        else species == "Rockmite" && mound || (run?.count(species) ?: 0) == 0 && run?.uniqueUnavailable(species) != true
+        else profitableEsp(species, profitable) || species == "Rockmite" && mound ||
+            (run?.count(species) ?: 0) == 0 && run?.uniqueUnavailable(species) != true
     fun neededForSparkling(species: String, mound: Boolean, party: PartySparklingState, profitable: Boolean,
         run: SafariRun? = null, uuid: java.util.UUID? = null, now: Long = System.currentTimeMillis()): Boolean {
         if (profitableEsp(species, profitable)) return true
@@ -100,7 +101,7 @@ object SafariEspRules {
             uuid != null && run?.sparklingChecks?.keepEsp(uuid, now) == false) return false
         if (!party.needs(species)) return false
         if (species == "Driftling") return true
-        if (mound && species == "Rockmite") return run?.sparklingChecks?.checked(species) != true
+        if (mound && species == "Rockmite") return run?.sparklingComplete(species, party) != true
         return uuid == null || run?.sparklingChecks?.keepEsp(uuid, now) != false
     }
     fun captureModel(type: String) = type.endsWith("display") || type == "armor_stand"

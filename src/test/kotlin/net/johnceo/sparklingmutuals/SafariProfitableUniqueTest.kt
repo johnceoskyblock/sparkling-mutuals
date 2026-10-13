@@ -9,12 +9,14 @@ import java.nio.file.Path
 
 class SafariProfitableUniqueTest {
     @TempDir lateinit var dir: Path
-    @Test fun `every Unique critter hides after first capture even with legacy profitable preference`() {
+    @Test fun `Unique profitable toggle keeps only the five profitable species after first capture`() {
+        val profitable = setOf("Hideonfloor", "Hideonwall", "Chuckwalla", "Fluffling", "Mantis Shrimp")
         for (critter in SafariRoster.all) {
             val run = SafariRun(0)
             assertTrue(SafariEspRules.neededForRun(critter.name, false, run, false, false))
             run.record(SafariCatch(critter, false))
-            assertFalse(SafariEspRules.neededForRun(critter.name, false, run, false, true))
+            assertEquals(critter.name in profitable,
+                SafariEspRules.neededForRun(critter.name, false, run, false, true), critter.name)
             assertFalse(SafariEspRules.neededForRun(critter.name, false, run, false, false))
             assertTrue(SafariEspRules.neededForRun(critter.name, false, run, true, false))
         }

@@ -27,7 +27,7 @@ object SafariPanels {
                 if (run?.sparklingChecks?.wumpaPrerequisite(it.name, party) == true) run.count(it.name) == 0
                 else party.needs(it.name) && run?.sparklingComplete(it.name, party) != true
             }
-            else if (SafariFullClear.mode == SafariMode.UNIQUE) (run?.count(it.name) ?: 0) == 0 && run?.uniqueUnavailable(it.name) != true
+            else if (SafariFullClear.mode == SafariMode.UNIQUE) (run?.count(it.name) ?: 0) == 0 && run?.uniqueComplete(it.name, party) != true
             else run?.missing(it, ConfigManager.fullClearMode) != false }
     }
     fun missing(run: SafariRun?, biome: SafariBiome, unique: Boolean, nests: Int, mounds: Int = 0,
@@ -40,11 +40,17 @@ object SafariPanels {
         }.ifEmpty { listOf(HudRow(if (sparkling) "All checked!" else if (ConfigManager.fullClearMode) "All caught!" else "All caught!", color = biome.color)) }
         val footer = buildList {
             fun needed(species: String) = SafariHelperRules.needed(species, SafariFullClear.mode, run, party)
+            fun unavailable(species: String) = SafariFullClear.mode == SafariMode.UNIQUE && run?.uniqueUnavailable(species) == true
+            if (biome == SafariBiome.FOREST && unavailable("Macaw")) {
+                add(HudRow()); add(HudRow("No macaws this run", color = HudRow.GRAY))
+            }
             if (biome == SafariBiome.FOREST && needed("Honeybug")) {
                 add(HudRow()); add(HudRow("Bee nests to punch", "$nests", HudRow.GOLD, HudRow.GRAY))
             }
             if (biome == SafariBiome.CAVERN) {
-                if (needed("Snoozle") && walls.states.isNotEmpty()) {
+                if (unavailable("Snoozle")) {
+                    add(HudRow()); add(HudRow("No snoozles this run", color = HudRow.GRAY))
+                } else if (needed("Snoozle") && walls.states.isNotEmpty()) {
                     val row = when {
                         !walls.allBroken -> HudRow("Snooper walls to break", walls.remaining, HudRow.GOLD, HudRow.GRAY)
                         run != null && !run.encountered("Snoozle") -> HudRow("No snoozles this run", color = HudRow.GRAY)
@@ -52,9 +58,9 @@ object SafariPanels {
                     }
                     if (row != null) { add(HudRow()); add(row) }
                 }
-                if (mounds > 0) {
+                if (mounds > 0 && needed("Rockmite")) {
                     add(HudRow()); add(HudRow("Mounds to break", "$mounds", HudRow.GOLD, HudRow.GRAY))
-                } else if (needed("Rockmite") && run?.allMoundsBroken == true && !run.encountered("Rockmite")) {
+                } else if (unavailable("Rockmite") || needed("Rockmite") && run?.allMoundsBroken == true && !run.encountered("Rockmite")) {
                     add(HudRow()); add(HudRow("No rockmites this run", color = HudRow.GRAY))
                 }
             }

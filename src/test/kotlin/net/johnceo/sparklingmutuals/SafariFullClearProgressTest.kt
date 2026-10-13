@@ -62,13 +62,14 @@ class SafariFullClearProgressTest {
             assertEquals("0/9", row(run, SafariBiome.CAVERN))
         }
     }
-    @Test fun `manual completion is run owned and Unique progress retains one catch rules`() {
+    @Test fun `manual completion is run owned and remains valid when switching to Unique`() {
         ConfigManager.init(dir); SafariFullClear.select(SafariMode.FULL_CLEAR)
         val run = SafariRun(0); SafariMessages.lines("Party > Player: cd", fullClearRun = run)
         assertEquals("0/9", row(SafariRun(1), SafariBiome.CAVERN))
         SafariFullClear.select(SafariMode.UNIQUE)
-        assertEquals("0/9", row(run, SafariBiome.CAVERN))
+        assertEquals("9/9", row(run, SafariBiome.CAVERN))
         run.record(SafariCatch(SafariRoster.named("Driftling")!!))
-        assertEquals("1/9", row(run, SafariBiome.CAVERN))
+        assertEquals("9/9", row(run, SafariBiome.CAVERN))
+        assertEquals(0, run.personalCount("Rockmite"))
     }
 }

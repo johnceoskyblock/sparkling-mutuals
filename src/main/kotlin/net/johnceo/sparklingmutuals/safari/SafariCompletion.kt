@@ -10,15 +10,21 @@ import net.minecraft.resources.Identifier
 
 /** Run-owned notification memory never changes capture or PB evidence. */
 class SafariCompletionEvents {
-    private val announced = mutableSetOf<Pair<SafariMode, SafariBiome>>()
+    private val announced = mutableSetOf<SafariBiome>()
+    private val pending = mutableSetOf<SafariBiome>()
     private var alerted = false
     fun announcement(run: SafariRun, biome: SafariBiome, mode: SafariMode, party: PartySparklingState): String? {
-        if (mode == SafariMode.UNIQUE && biome in setOf(SafariBiome.ICY, SafariBiome.HAUNTED)) return null
-        if (!run.hasCaptureEvidence(biome) || mode == SafariMode.SPARKLING && !party.ready) return null
         val targets = biome.critters.filter { mode != SafariMode.SPARKLING || party.needs(it.name) }
-        if (targets.isEmpty() || run.completed(mode, targets, party, localOnly = true) != targets.size ||
-            !announced.add(mode to biome)) return null
+        if (!run.hasCaptureEvidence(biome) || mode == SafariMode.SPARKLING && !party.ready ||
+            run.completed(mode, targets, party, localOnly = true) != targets.size) {
+            pending.remove(biome)
+            return null
+        }
+        if (biome in announced || !pending.add(biome)) return null
         return when (biome) { SafariBiome.FOREST -> "fd"; SafariBiome.CAVERN -> "cd"; SafariBiome.ICY -> "id"; SafariBiome.HAUNTED -> "hd" }
+    }
+    fun sent(biome: SafariBiome) {
+        if (pending.remove(biome)) announced.add(biome)
     }
     fun alert(run: SafariRun, mode: SafariMode, party: PartySparklingState, enabled: Boolean): Boolean {
         if (!enabled || alerted || mode == SafariMode.SPARKLING && !party.ready) return false
@@ -37,14 +43,18 @@ object SafariCompletion {
         if (owner !== run) { owner = run; queue.clear(); sentAt = 0 }
         val mode = SafariFullClear.mode
         val party = SafariSparklingMode.state
-        run.completion.announcement(run, biome, mode, party)?.let { queue.addLast(biome to it) }
+        SafariBiome.entries.forEach { area ->
+            run.completion.announcement(run, area, mode, party)?.let { queue.addLast(area to it) }
+        }
         // Revalidate queued completions after contradictory local evidence or a mode change.
-        queue.removeAll { (area, _) -> mode == SafariMode.UNIQUE && area in setOf(SafariBiome.ICY, SafariBiome.HAUNTED) || run.completed(mode,
+        queue.removeAll { (area, _) -> mode == SafariMode.SPARKLING && !party.ready || run.completed(mode,
             area.critters.filter { mode != SafariMode.SPARKLING || party.needs(it.name) }, party, localOnly = true) !=
             area.critters.count { mode != SafariMode.SPARKLING || party.needs(it.name) } }
         val now = System.currentTimeMillis()
         if (client.connection != null && queue.isNotEmpty() && now - sentAt >= 3000) {
-            client.connection!!.sendCommand("pc ${queue.removeFirst().second}"); sentAt = now
+            val (area, word) = queue.removeFirst()
+            client.connection!!.sendCommand("pc $word")
+            run.completion.sent(area); sentAt = now
         }
         if (run.completion.alert(run, mode, party, ConfigManager.runCompleteAlert)) {
             SmallAlerts.show(SafariHud.RUN_COMPLETE)
