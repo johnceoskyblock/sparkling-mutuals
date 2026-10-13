@@ -14,12 +14,13 @@
 - Added JavaBetter's contributed Shiny Hunter icon and enlarged Hideonwall ESP outlines.
 - Added `!m` missing-run replies, Safari Manager kick holds and `!dt` downtime requests.
 - Added optional Shiny Hunter cloud lookups and `/sparkling` player cards/comparisons.
-- Added party Unique biome PBs and personal honeyhive beacons/refill countdowns.
+- Added party Unique biome PBs and personal honeyhive beacons.
 - Added run/sparkling history, log import, achievements and Safari statistics.
 - Added Bazaar-based shard/feather profit estimates, a Profit tab and coin achievements.
 - Fixed history import dates/deduplication, price refreshes, API-provider changes, hive state and delayed party replies.
 - Updated mod metadata, authors and repository links for version 3.0.0.
 - Restored optional profitable Unique highlights and biome done messages in every mode.
+- Fixed honeyhive loot/refill tracking, Queen Bee refills and server-state checks; removed the invalid hive and redundant countdown/settings.
 - Improved party done overrides, independent needed Cavern structure checks, four-UUID Gazer checks and zero-spawn Macaw/Rockmite/Snoozle status.
 
 Minecraft 26.1.2 / Java 25 / Fabric. Requires Fabric API and Fabric Language Kotlin. Player lookups support a personal Hypixel API key or the optional Shiny Hunter shared API.

@@ -114,11 +114,9 @@ class HoneyHiveRulesTest {
     @Test fun `the bundled survey parses with ids and unmatched hives`() {
         val text = javaClass.getResourceAsStream("/assets/sparkling-mutuals/honeyhives.txt")!!.bufferedReader().readText()
         val hives = HoneyHiveRules.parse(text)
-        assertEquals(20, hives.size)
-        assertTrue(hives.any { it.key == "-730,132,184" }, "the hive above the Safari entrance")
+        assertEquals(19, hives.size)
+        assertFalse(hives.any { it.key == "-730,132,184" }, "the non-existent hive must not return")
         assertTrue(hives.any { it.id == null })
         assertEquals("hive_5", hives.first { it.key == "-729,129,187" }.id)
-        assertEquals("Refills in 42m", HoneyHiveRules.countdown(42 * 60_000L + 500))
-        assertEquals("Refills in 30s", HoneyHiveRules.countdown(30_999))
     }
 }

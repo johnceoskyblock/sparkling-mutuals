@@ -53,8 +53,6 @@ object ConfigManager {
     var holdManagerOnKick = true
     var downtimeCommand = true
     var honeyHives = true
-    var honeyHivesOnlyIncomplete = true
-    var honeyHiveRefillLabels = true
     var runHistory = true
     var achievements = true
     var achievementSound = true
@@ -73,7 +71,7 @@ object ConfigManager {
         ::hideyhoQuestClicks to true, ::hideyhoInsideOutside to true, ::hideHauntedPaintings to true, ::shinyDetection to true,
         ::progressHud to true, ::countUniqueOnly to false, ::missingPanel to true,
         ::highlightBeeNests to true, ::removeDarkness to true, ::sparklingAlert to true,
-        ::sparklingPartyAnnouncer to true, ::catchCountPanel to false, ::autoClicker to true, ::candleHitbox to true, ::holdManagerOnKick to true, ::downtimeCommand to true, ::honeyHives to true, ::honeyHivesOnlyIncomplete to true, ::honeyHiveRefillLabels to true, ::runHistory to true, ::achievements to true, ::achievementSound to true, ::achievementsToParty to false, ::autoImportLogs to true, ::runCoinsInstaSell to false,
+        ::sparklingPartyAnnouncer to true, ::catchCountPanel to false, ::autoClicker to true, ::candleHitbox to true, ::holdManagerOnKick to true, ::downtimeCommand to true, ::honeyHives to true, ::runHistory to true, ::achievements to true, ::achievementSound to true, ::achievementsToParty to false, ::autoImportLogs to true, ::runCoinsInstaSell to false,
         ::hideCaptureChat to false, ::hideGroundCapsules to true, ::hideFlyingCapsules to true,
         ::highlightSnooperWalls to true, ::showBeeNests to true, ::showMoundCount to true,
         ::showSnooperWalls to true, ::showMoundStats to false,

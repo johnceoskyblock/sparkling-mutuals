@@ -53,7 +53,7 @@ A Fabric mod for Hypixel SkyBlock Safari, sparkling discoveries, and Miria conte
 - **Warp reminders (`/alert`, `/alertdelay <seconds>`):** remind you to warp party members before entry closes.
 - **Miria contest HUD:** track contest time, score, and tier.
 - **Miria warnings:** warn below Uncommon at the selected 5-, 3-, and 1-minute marks.
-- **Honeyhive beacons:** mark available Torrhus Canyon hives with personal refill countdowns.
+- **Honeyhive beacons:** mark full Torrhus Canyon hives during an incomplete Miria contest.
 
 ## History and achievements
 

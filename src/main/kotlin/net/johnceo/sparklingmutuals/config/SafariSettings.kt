@@ -23,7 +23,6 @@ class SafariSettings : Config() {
     @JvmField @Category(name = "Modes", desc = "") val modes = Modes()
     @JvmField @Category(name = "Party commands", desc = "") val party = Party()
     @JvmField @Category(name = "Miria contest", desc = "") val miria = Miria()
-    @JvmField @Category(name = "Honeyhives", desc = "") val honey = Honey()
     @JvmField @Category(name = "History", desc = "") val history = History()
     @JvmField @Category(name = "Warp reminders", desc = "") val warp = Warp()
     @JvmField @Category(name = "Safari helpers", desc = "") val safari = Safari()
@@ -70,8 +69,8 @@ class SafariSettings : Config() {
     class Unique {
         @JvmField @ConfigOption(name = "Unique mode", desc = "Highlight missing uniques and track unique-run PBs.")
         @ConfigEditorBoolean var enabled = SafariFullClear.mode == SafariMode.UNIQUE
-        // Retain the saved preference for compatibility; Unique entities now always hide after a catch.
-        var profitable = ConfigManager.profitableShardEsp
+        @JvmField @ConfigOption(name = "Critter ESP for profitable shards", desc = "Keep profitable critters highlighted throughout the run.")
+        @ConfigEditorBoolean var profitable = ConfigManager.profitableShardEsp
     }
     class Party {
         @JvmField @ConfigOption(name = "Respond to party commands", desc = "Reply to party commands; each mod user shares their PB.")
@@ -83,6 +82,8 @@ class SafariSettings : Config() {
     class Miria {
         @JvmField @ConfigOption(name = "Contest HUD and tracking", desc = "Track Miria contests.")
         @ConfigEditorBoolean var enabled = ContestConfig.trackContest
+        @JvmField @ConfigOption(name = "Honeyhive beacons", desc = "Show full Torrhus Canyon hives during an incomplete contest.")
+        @ConfigEditorBoolean var honeyHives = ConfigManager.honeyHives
         @JvmField @ConfigOption(name = "Warning", desc = "Contest warnings and sound.") @Accordion val warning = Warning()
         var five
             get() = warning.five
@@ -121,14 +122,6 @@ class SafariSettings : Config() {
         @ConfigEditorText var sound = ContestConfig.contestSound
         @JvmField @ConfigOption(name = "Save sound", desc = "Apply the warning sound.")
         @ConfigEditorButton(runnableId = 7, buttonText = "Save sound") var saveSound = false
-    }
-    class Honey {
-        @JvmField @ConfigOption(name = "Honeyhive beacons", desc = "Beacons over full Torrhus Canyon honeyhives.")
-        @ConfigEditorBoolean var enabled = ConfigManager.honeyHives
-        @JvmField @ConfigOption(name = "Only while contest incomplete", desc = "Hide the beacons once Miria's contest is done.")
-        @ConfigEditorBoolean var onlyIncomplete = ConfigManager.honeyHivesOnlyIncomplete
-        @JvmField @ConfigOption(name = "Refill countdown", desc = "Over a hive you looted, show how long until it refills. Remembered across restarts.")
-        @ConfigEditorBoolean var refillLabels = ConfigManager.honeyHiveRefillLabels
     }
     class History {
         @JvmField @ConfigOption(name = "Save runs", desc = "Record every Safari run for /sm history: captures, shards, sparklings, splits.")
@@ -289,7 +282,7 @@ class SafariSettings : Config() {
             ConfigManager::missingPanel to tracking.missing,
             ConfigManager::removeDarkness to safari.darkness,
             ConfigManager::sparklingAlert to safari.alert, ConfigManager::sparklingPartyAnnouncer to safari.announce,
-            ConfigManager::autoClicker to safari.autoClicker, ConfigManager::candleHitbox to safari.candleHitbox, ConfigManager::holdManagerOnKick to safari.holdManagerOnKick, ConfigManager::honeyHives to honey.enabled, ConfigManager::honeyHivesOnlyIncomplete to honey.onlyIncomplete, ConfigManager::honeyHiveRefillLabels to honey.refillLabels, ConfigManager::hideCaptureChat to safari.hideCaptureChat, ConfigManager::runHistory to history.runs, ConfigManager::autoImportLogs to history.autoImport, ConfigManager::achievements to history.achievements, ConfigManager::achievementSound to history.sound, ConfigManager::achievementsToParty to history.toParty, ConfigManager::runCoinsInstaSell to history.instaSell,
+            ConfigManager::autoClicker to safari.autoClicker, ConfigManager::candleHitbox to safari.candleHitbox, ConfigManager::holdManagerOnKick to safari.holdManagerOnKick, ConfigManager::honeyHives to miria.honeyHives, ConfigManager::hideCaptureChat to safari.hideCaptureChat, ConfigManager::runHistory to history.runs, ConfigManager::autoImportLogs to history.autoImport, ConfigManager::achievements to history.achievements, ConfigManager::achievementSound to history.sound, ConfigManager::achievementsToParty to history.toParty, ConfigManager::runCoinsInstaSell to history.instaSell,
             ConfigManager::allGemsAlert to safari.alerts.gems, ConfigManager::allBirdFoodAlert to safari.alerts.birdFood,
             ConfigManager::allIncenseAlert to safari.alerts.incense, ConfigManager::runCompleteAlert to safari.alerts.runComplete,
             ConfigManager::hideGroundCapsules to safari.hideGroundCapsules, ConfigManager::hideFlyingCapsules to safari.hideFlyingCapsules)

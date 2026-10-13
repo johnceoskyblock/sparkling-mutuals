@@ -9,6 +9,28 @@ data class Hive(val x: Int, val y: Int, val z: Int, var id: String? = null) {
 
 /** The decisions behind the honeyhive beacons, free of the client so they can be tested. */
 object HoneyHiveRules {
+    const val REMOVED_HIVE = "-730,132,184"
+    /** Discard pre-fix timers once; later launches retain each valid hive's personal deadline. */
+    fun savedRefills(saved: java.util.Properties, now: Long): Map<String, Map<String, Long>> {
+        if (saved.getProperty("tracking.version") != "2") return emptyMap()
+        val result = mutableMapOf<String, MutableMap<String, Long>>()
+        saved.stringPropertyNames().forEach { name ->
+            parseLoot(name, saved.getProperty(name), "refill")
+                ?.takeIf { (owner, key, at) -> !owner.endsWith(".unknown") && key != REMOVED_HIVE && now < at }
+                ?.let { (owner, key, at) -> result.getOrPut(owner) { mutableMapOf() }[key] = at }
+        }
+        return result
+    }
+    fun savedQueenFull(saved: java.util.Properties): Map<String, Set<String>> {
+        if (saved.getProperty("tracking.version") != "2") return emptyMap()
+        val result = mutableMapOf<String, MutableSet<String>>()
+        saved.stringPropertyNames().forEach { name ->
+            parseLoot(name, saved.getProperty(name), "full")
+                ?.takeIf { (owner, key, value) -> !owner.endsWith(".unknown") && key != REMOVED_HIVE && value == 1L }
+                ?.let { (owner, key, _) -> result.getOrPut(owner) { mutableSetOf() }.add(key) }
+        }
+        return result
+    }
     /** Measured against the API: a looted hive refills an hour later, to the second. */
     const val REFILL_MILLIS = 3_600_000L
     /** How close a refill time has to be to loot + an hour to count as that loot. */
@@ -18,8 +40,7 @@ object HoneyHiveRules {
 
     /**
      * Every hive is tracked on its own by one number, when it refills: empty until then, full after. Nothing else
-     * brings a hive back early, the block's look included, since hives are looted per player and the block goes on
-     * looking full to you after you've emptied it. A hive never looted is full.
+     * changes this timer unless a Queen Bee proc or loaded server state confirms an update. A hive never looted is full.
      */
     fun state(now: Long, refillAt: Long?): HiveState = if (refillAt != null && now < refillAt) HiveState.EMPTY else HiveState.FULL
 
@@ -68,11 +89,7 @@ object HoneyHiveRules {
         val parts = line.substringBefore('#').trim().split(Regex("\\s+"))
         if (parts.size < 3) return@mapNotNull null
         val (x, y, z) = parts.take(3).map { it.toIntOrNull() ?: return@mapNotNull null }
-        Hive(x, y, z, parts.getOrNull(3)?.takeIf { it != "-" })
+        Hive(x, y, z, parts.getOrNull(3)?.takeIf { it != "-" }).takeIf { it.key != REMOVED_HIVE }
     }
 
-    fun countdown(left: Long): String {
-        val seconds = maxOf(0L, left / 1000)
-        return "Refills in " + if (seconds >= 60) "${seconds / 60}m" else "${seconds}s"
-    }
 }

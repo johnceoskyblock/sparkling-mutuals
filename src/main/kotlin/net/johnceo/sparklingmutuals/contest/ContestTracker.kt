@@ -3,6 +3,7 @@ package net.johnceo.sparklingmutuals.contest
 import net.johnceo.sparklingmutuals.LocalChat
 
 import net.johnceo.sparklingmutuals.config.ContestConfig
+import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.hud.SkyblockSidebar
 import net.minecraft.client.Minecraft
 import net.minecraft.client.resources.sounds.SimpleSoundInstance
@@ -55,7 +56,7 @@ object ContestTracker {
     }
 
     fun onClientTick(client: Minecraft) {
-        if (!ContestConfig.trackContest) return
+        if (!ContestConfig.trackContest && !ConfigManager.honeyHives) return
         if (client.player == null || client.level == null) return
 
         if (++tickCounter < 10) return
@@ -63,7 +64,7 @@ object ContestTracker {
 
         rollWindow()
         readSidebar(client)
-        maybeWarn(client)
+        if (ContestConfig.trackContest) maybeWarn(client)
     }
 
     /** The contest window a time of day falls in. */
