@@ -72,19 +72,17 @@ class SafariEspClickerTest {
             ClickConditions(enabled = false), ClickConditions(inSafari = false),
             ClickConditions(mouseHeld = false), ClickConditions(inGame = false),
             ClickConditions(usingItem = true), ClickConditions(breakingBlock = true),
-            ClickConditions(targetBlock = true))) assertFalse(conditions.allowed())
-        assertTrue(ClickConditions().allowed())
+            ClickConditions(targetBlock = true))) assertFalse(conditions.copy(rockmiteMound = true).allowed())
+        assertTrue(ClickConditions(rockmiteMound = true).allowed())
     }
     @Test fun `ESP and auto clicker settings survive saving and existing configuration upgrades`() {
         ConfigManager.init(dir)
         assertTrue(ConfigManager.autoClicker)
         val settings = SafariSettings()
         settings.safari.autoClicker = false
-        settings.cavernEsp.enabled = true
-        settings.cavernEsp.onlyInBiome = true
-        settings.cavernEsp.rockmite.enabled = true
+        settings.modes.fullClear.enabled = true
+        settings.esp.cavern = true
         settings.customization.rockmite.color = "0:255:255:0:0"
-        settings.floorEsp.enabled = true
         settings.apply()
         ConfigManager.init(dir)
         assertFalse(ConfigManager.autoClicker)

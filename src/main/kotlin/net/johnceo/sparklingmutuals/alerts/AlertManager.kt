@@ -2,9 +2,9 @@ package net.johnceo.sparklingmutuals.alerts
 
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents
 import net.johnceo.sparklingmutuals.config.ConfigManager
-import net.minecraft.ChatFormatting
+import net.johnceo.sparklingmutuals.hud.SmallAlerts
+import net.johnceo.sparklingmutuals.hud.SafariHud
 import net.minecraft.client.Minecraft
-import net.minecraft.network.chat.Component
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
@@ -58,15 +58,14 @@ object AlertManager {
         val minecraft = Minecraft.getInstance()
         if (minecraft.player == null || !isEnabled()) return
 
-        val message = Component.literal("WARP REMINDER").withStyle(ChatFormatting.RED)
-        minecraft.gui.setTitle(message)
-        minecraft.gui.setOverlayMessage(message, false)
+        SmallAlerts.show(SafariHud.WARP)
     }
 
     fun cancelPendingAlert() {
         generation++
         pendingAlert?.cancel(false)
         pendingAlert = null
+        SmallAlerts.clear(SafariHud.WARP)
     }
 
     fun isEnabled(): Boolean = ConfigManager.warpAlertsEnabled

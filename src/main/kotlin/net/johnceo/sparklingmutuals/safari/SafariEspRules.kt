@@ -1,13 +1,116 @@
 package net.johnceo.sparklingmutuals.safari
 
-import java.util.Base64
-
 /** Identification, palette and quadrant limits adapted from Nebulune a573283 (BSD-3-Clause). */
 data class EspEntity(val type: String, val texture: String? = null, val shulker: String? = null,
     val fish: String? = null, val variant: String? = null, val invisible: Boolean = false, val passengers: Boolean = false)
 data class EspMob(val name: String, val biome: SafariBiome, val color: Int, val identifiers: List<EspEntity>)
 data class EspDrop(val id: Int, val x: Int, val y: Int, val z: Int)
+data class EspCaptureCandidate(val id: Int, val species: String, val display: Boolean, val mound: Boolean,
+    val rangeSquared: Double, val aimSquared: Double)
+data class EspModelLabel(val id: java.util.UUID, val species: String, val distanceSquared: Double, val visible: Boolean = true)
+class EspModelLabels {
+    private data class Binding(val species: String, val label: java.util.UUID, var visible: Boolean, var seenAt: Long)
+    private val bindings = mutableMapOf<java.util.UUID, Binding>()
+    /** Once paired, retain label identity instead of adopting another nearby critter's name tag. */
+    fun observe(id: java.util.UUID, species: String, labels: List<EspModelLabel>, now: Long) {
+        val nearby = labels.filter { it.species == species && it.distanceSquared in 0.0..9.0 }
+        if (bindings[id]?.species != species) bindings.remove(id)
+        val binding = bindings[id] ?: nearby.minByOrNull { it.distanceSquared }?.let {
+            Binding(species, it.id, it.visible, now).also { bound -> bindings[id] = bound }
+        } ?: return
+        nearby.firstOrNull { it.id == binding.label && (!binding.visible || it.visible) }?.let {
+            binding.visible = binding.visible || it.visible
+            binding.seenAt = now
+        }
+    }
+    // Unknown models remain conservative; a known label gets four scan intervals of packet grace.
+    fun current(id: java.util.UUID, now: Long) = bindings[id]?.let { now - it.seenAt in 0..1000 } ?: true
+    fun label(id: java.util.UUID) = bindings[id]?.label
+    fun release(id: java.util.UUID) { bindings.remove(id) }
+    fun reset() { bindings.clear() }
+}
+class EspCaptureMemory {
+    private data class Attempt(val id: java.util.UUID, val species: String, val at: Long)
+    private val pending = mutableListOf<Attempt>()
+    private val captured = mutableSetOf<java.util.UUID>()
+    private val recent = mutableMapOf<String, Attempt>()
+    private data class Throw(val at: Long, val aim: Map<String, Attempt>)
+    private val input = mutableListOf<Throw>()
+    fun sighted(id: java.util.UUID, species: String, now: Long) {
+        if (!hidden(id)) recent[species] = Attempt(id, species, now)
+    }
+    /** Freeze aim at item use, before a capsule impact or camera turn changes the scan. */
+    fun throwing(now: Long) {
+        input.removeAll { now - it.at !in 0..3000 }
+        val aim = recent.filterValues { now - it.at in 0..250 && !hidden(it.id) }
+        if (aim.isNotEmpty()) input.add(Throw(now, aim))
+    }
+    fun threw(species: String, now: Long) {
+        input.removeAll { now - it.at !in 0..3000 }
+        val index = input.indexOfFirst { it.aim[species]?.let { aim -> !hidden(aim.id) } == true }
+        val attempt = if (index >= 0) input.removeAt(index).aim.getValue(species)
+            else recent[species]?.takeIf { now - it.at in 0..1000 } ?: return
+        aimed(attempt.id, species, now)
+    }
+    private fun expire(now: Long) { pending.removeAll { now - it.at !in 0..60000 } }
+    fun aimed(id: java.util.UUID, species: String, now: Long) {
+        expire(now)
+        if (hidden(id)) return
+        val index = pending.indexOfFirst { it.id == id }
+        if (index < 0) pending.add(Attempt(id, species, now)) else pending[index] = Attempt(id, species, now)
+    }
+    fun escaped(species: String, now: Long): java.util.UUID? {
+        expire(now)
+        val attempt = pending.firstOrNull { it.species == species } ?: return null
+        pending.remove(attempt)
+        return attempt.id
+    }
+    fun caught(species: String, now: Long): java.util.UUID? {
+        expire(now)
+        val attempt = pending.firstOrNull { it.species == species } ?: return null
+        pending.remove(attempt); captured.add(attempt.id)
+        recent.entries.removeAll { it.value.id == attempt.id }
+        return attempt.id
+    }
+    fun hidden(id: java.util.UUID) = id in captured
+    fun reset() { pending.clear(); captured.clear(); recent.clear(); input.clear() }
+}
 object SafariEspRules {
+    private val throwMessage = Regex("^You threw a (?:Masterful )?Critter Capsule at the (.+)!$")
+    private val escapeMessage = Regex("^The (.+?) (?:escaped your (?:Masterful )?Critter Capsule|dodged your critter capsule)[!.]?$")
+    fun labelSpecies(raw: String) = SafariRules.strip(raw).let { SafariRules.sparklingSpecies(it) ?: SafariRoster.named(it)?.name }
+    fun thrownSpecies(text: String) = throwMessage.matchEntire(text)?.groupValues?.get(1)?.let(::labelSpecies)
+    fun escapedSpecies(text: String) = escapeMessage.matchEntire(text)?.groupValues?.get(1)?.let(::labelSpecies)
+    private val profitableSpecies = setOf("Hideonfloor", "Hideonwall", "Chuckwalla", "Fluffling", "Mantis Shrimp")
+    fun profitableEsp(species: String, enabled: Boolean) = enabled && species in profitableSpecies
+    fun neededForRun(species: String, mound: Boolean, run: SafariRun?, fullClear: Boolean, profitable: Boolean = true,
+        party: PartySparklingState? = null) =
+        if (fullClear) true
+        else if (species == "Rockmite" && mound && party != null)
+            SafariHelperRules.needed(species, if (fullClear) SafariMode.FULL_CLEAR else SafariMode.UNIQUE, run, party)
+        else profitableEsp(species, profitable) || species == "Rockmite" && mound ||
+            (run?.count(species) ?: 0) == 0 && run?.uniqueUnavailable(species) != true
+    fun neededForSparkling(species: String, mound: Boolean, party: PartySparklingState, profitable: Boolean,
+        run: SafariRun? = null, uuid: java.util.UUID? = null, now: Long = System.currentTimeMillis()): Boolean {
+        if (profitableEsp(species, profitable)) return true
+        if (species == "Rockmite" && !mound) return false
+        if (species == "Doomspiral") return party.needs(species) && (run?.count(species) ?: 0) == 0
+        if (run?.sparklingChecks?.wumpaPrerequisite(species, party) == true) return run.count(species) == 0
+        if (SafariRoster.named(species) != null && party.needs(species) &&
+            species != "Driftling" && !mound &&
+            uuid != null && run?.sparklingChecks?.keepEsp(uuid, now) == false) return false
+        if (!party.needs(species)) return false
+        if (species == "Driftling") return true
+        if (mound && species == "Rockmite") return run?.sparklingComplete(species, party) != true
+        return uuid == null || run?.sparklingChecks?.keepEsp(uuid, now) != false
+    }
+    fun captureModel(type: String) = type.endsWith("display") || type == "armor_stand"
+    fun requiresModelLabel(species: String, type: String) = captureModel(type) && !(species == "Rockmite" && type == "item_display")
+    fun modelVisible(x: Float, y: Float, z: Float) = listOf(x, y, z).all { it.isFinite() } &&
+        maxOf(kotlin.math.abs(x), kotlin.math.abs(y), kotlin.math.abs(z)) > .001f
+    fun capturedDisplay(species: String, candidates: List<EspCaptureCandidate>) = candidates.filter {
+        it.species == species && it.display && !it.mound && it.rangeSquared <= 80.0 * 80
+    }.minByOrNull { it.aimSquared + it.rangeSquared * .001 }?.id
     val mobs = listOf(
         EspMob("Cavernfish", SafariBiome.CAVERN, 0xFFB4641E.toInt(), listOf(EspEntity("tropical_fish", fish = "CLAYFISH/GRAY/BROWN"))),
         EspMob("Flitter", SafariBiome.CAVERN, 0xFF285A6E.toInt(), listOf(EspEntity("item_display", texture = "a89a76deedd42b410344100df2fa79b6eeac7e6f287745d656179368340ffade"))),
@@ -49,16 +152,20 @@ object SafariEspRules {
     )
     private val byType = mobs.flatMap { mob -> mob.identifiers.map { it.type to (mob to it) } }.groupBy({ it.first }, { it.second })
     fun identify(entity: EspEntity): EspMob? {
+        if (entity.type.endsWith("display") && entity.invisible) return null
         if (entity.type == "silverfish" && (entity.invisible || entity.passengers)) return null
         return byType[entity.type]?.firstOrNull { (_, rule) ->
             (rule.texture == null || rule.texture == entity.texture) && (rule.shulker == null || rule.shulker == entity.shulker) &&
             (rule.fish == null || rule.fish == entity.fish) && (rule.variant == null || rule.variant == entity.variant)
         }?.first
     }
-    fun textureHash(encoded: String?): String? = try {
-        val json = String(Base64.getDecoder().decode(encoded ?: return null), Charsets.UTF_8)
-        Regex("textures\\.minecraft\\.net/texture/([a-fA-F0-9]{64})(?![a-fA-F0-9])").find(json)?.groupValues?.get(1)?.lowercase()
-    } catch (_: IllegalArgumentException) { null }
+    fun targetCurrent(species: String, descriptor: EspEntity, removed: Boolean, registered: Boolean, sameLevel: Boolean) =
+        !removed && registered && sameLevel && identify(descriptor)?.name == species
+    /** Name-tag distance and idle movement are not reliable reasons to hide legacy moving-critter ESP. */
+    fun renderCurrent(species: String, sparkling: Boolean, entityCurrent: Boolean, motionCurrent: Boolean, labelCurrent: Boolean, profitable: Boolean = false) =
+        entityCurrent && (profitableEsp(species, profitable) || species == "Shyworm" || !sparkling && species in EspMotion.movingSpecies || motionCurrent && labelCurrent)
+    private val textures = EspTextureCache()
+    fun textureHash(encoded: String?) = textures.hash(encoded)
     fun biomeAt(x: Double, z: Double): SafariBiome? = when {
         x !in -200.0..100.0 || z !in -150.0..150.0 -> null
         x >= -50 && z >= 0 -> SafariBiome.FOREST
@@ -68,6 +175,19 @@ object SafariEspRules {
     }
     fun visible(inSafari: Boolean, enabled: Boolean, onlyInBiome: Boolean, player: SafariBiome?, mob: SafariBiome?) =
         inSafari && enabled && mob != null && (!onlyInBiome || player != null && player == mob)
-    fun floorDrops(displays: List<EspDrop>) = displays.groupBy { Triple(it.x, it.y, it.z) }.values
-        .filter { it.size >= 3 }.map { group -> group.minBy { it.id } }
+    private class DropGroup(var minimum: EspDrop, var count: Int = 1)
+    fun floorDrops(displays: List<EspDrop>): List<EspDrop> {
+        if (displays.size < 3) return emptyList()
+        val groups = LinkedHashMap<Triple<Int, Int, Int>, DropGroup>()
+        for (drop in displays) {
+            val key = Triple(drop.x, drop.y, drop.z)
+            val group = groups[key]
+            if (group == null) groups[key] = DropGroup(drop)
+            else {
+                group.count++
+                if (drop.id < group.minimum.id) group.minimum = drop
+            }
+        }
+        return groups.values.mapNotNull { if (it.count >= 3) it.minimum else null }
+    }
 }

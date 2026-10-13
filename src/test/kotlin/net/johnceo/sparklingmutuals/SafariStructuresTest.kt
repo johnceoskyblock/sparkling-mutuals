@@ -43,10 +43,10 @@ class SafariStructuresTest {
         assertFalse(ConfigManager.showMoundStats)
         val run = ledger.current!!
         SafariMessages.lines("The mound fell apart, revealing a Rockmite hidden inside!").forEach(run::recordMound)
-        assertFalse(SafariPanels.captures(run, SafariBiome.CAVERN).rows.any { it.label == "Mounds broken" })
+        assertFalse(SafariPanels.captures(run, SafariBiome.CAVERN).rows.any { it.label == "Rockmite Mounds" })
         ConfigManager.showMoundStats = true
-        assertEquals("1", SafariPanels.captures(run, SafariBiome.CAVERN).rows.first { it.label == "Mounds broken" }.value)
-        assertFalse(SafariPanels.captures(run, SafariBiome.FOREST).rows.any { it.label == "Mounds broken" })
+        assertEquals("1", SafariPanels.captures(run, SafariBiome.CAVERN).rows.first { it.label == "Rockmite Mounds" }.value)
+        assertFalse(SafariPanels.captures(run, SafariBiome.FOREST).rows.any { it.label == "Rockmite Mounds" })
         ledger.update(SafariLocation.INSIDE, null, 2000)
         ledger.leave(3000)
         assertEquals(1, ledger.displayed!!.brokenMounds)

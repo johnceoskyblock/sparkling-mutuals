@@ -101,7 +101,7 @@ class SafariSessionTest {
             }
             assertEquals(1000L, ledger.current!!.startedAt)
             assertEquals(1, ledger.current!!.count("Wumpa"))
-            assertEquals(62000L, bests.time("Wumpa"))
+            assertEquals(62000L, bests.time("Wumpa", duo = true))
             assertFalse(SafariMessages.enteredBy("Party > Test: Player entered Critter Safari!", "Player"))
         }
     }

@@ -10,12 +10,10 @@ import java.util.Properties
 
 class SafariQolTest {
     @TempDir lateinit var dir: Path
-    @Test fun `new installations enable biome restricted ESP with precisely the requested species`() {
+    @Test fun `new installations use the unique mode ESP preset with biome restrictions`() {
         ConfigManager.init(dir)
         assertTrue(SafariEspConfig.groups.values.all { it.enabled && it.onlyInBiome })
-        assertEquals(setOf("Rockmite", "Treefrog", "Woodchucker", "Hideonfloor", "Shuddersquid",
-            "Billygoat", "Nozzlenose", "Duplico", "Hideonwall", "Hideyho", "Doomspiral"),
-            SafariEspConfig.mobs.filterValues { it.enabled }.keys)
+        assertEquals(SafariRoster.all.map { it.name }.toSet(), SafariEspConfig.mobs.filterValues { it.enabled }.keys)
     }
     @Test fun `ESP upgrades retain explicit user preferences`() {
         SafariEspConfig.load(Properties().apply {
@@ -83,8 +81,8 @@ class SafariQolTest {
         }
         assertEquals(1, run.count("Wumpa"))
         assertEquals(2, run.count("Doomspiral"))
-        assertEquals(61000L, bests.time("Wumpa"))
-        assertEquals(61000L, bests.time("Doomspiral"))
+        assertEquals(61000L, bests.time("Wumpa", duo = true))
+        assertEquals(61000L, bests.time("Doomspiral", duo = true))
         assertEquals(2, notices.size)
         notices.forEach { assertFalse(SafariChatFilter.hidden(it, true)) }
     }

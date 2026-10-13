@@ -20,13 +20,13 @@ class ConfigTest {
         ConfigManager.catchCountPanel = true
         ConfigManager.save()
         ConfigManager.init(dir)
-        assertEquals(61000L, ConfigManager.personalBests.time("Doomspiral"))
-        assertNull(ConfigManager.personalBests.time("Wumpa"))
+        assertEquals(61000L, ConfigManager.personalBests.time("Doomspiral", duo = true))
+        assertNull(ConfigManager.personalBests.time("Wumpa", duo = true))
         assertEquals(.4f, SafariHud.CAPTURES.layout.x)
         assertEquals(1.3f, SafariHud.CAPTURES.layout.scale)
         assertTrue(ConfigManager.catchCountPanel)
         val saved = Files.readString(dir.resolve("sparkling-mutuals.properties"))
-        assertTrue(saved.contains("pb.doomspiralMillis=61000"))
+        assertTrue(saved.contains("pb.duo.doomspiralMillis=61000"))
         assertTrue(saved.contains("hud.captures.scale=1.3"))
     }
 

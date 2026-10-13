@@ -27,7 +27,10 @@ object BeeNests {
     private val known = mutableSetOf<BlockPos>()
     private val punched = mutableSetOf<BlockPos>()
     private var ticks = 0
-    val unpunchedCount get() = known.count { it !in punched }
+    private val handledByParty get() = SafariTracking.ledger.current?.partyNestsHandled == true
+    val unpunchedCount get() = if (handledByParty && SafariFullClear.mode == SafariMode.SPARKLING) 0 else known.count { it !in punched }
+    val punchedCount get() = punched.size
+    val allChecked get() = (known.isNotEmpty() || punched.isNotEmpty()) && known.all { it in punched }
     private val lines = RenderType.create("sparkling-mutuals:nests", RenderSetup.builder(RenderPipelines.register(
         RenderPipeline.builder(RenderPipelines.LINES_SNIPPET).withLocation(SparklingMutuals.id("pipeline/nests"))
             .withDepthStencilState(DepthStencilState(CompareOp.ALWAYS_PASS, false)).build()))
@@ -37,7 +40,10 @@ object BeeNests {
 
     fun register() {
         AttackBlockCallback.EVENT.register { _, level, _, pos, _ ->
-            if (level.isClientSide && SafariAssist.inSafari && level.getBlockState(pos).`is`(Blocks.BEE_NEST)) punched.add(pos.immutable())
+            if (level.isClientSide && SafariAssist.inSafari && level.getBlockState(pos).`is`(Blocks.BEE_NEST)) {
+                val nest = pos.immutable()
+                known.add(nest); punched.add(nest)
+            }
             InteractionResult.PASS
         }
         LevelRenderEvents.AFTER_TRANSLUCENT_FEATURES.register(::render)
@@ -47,7 +53,7 @@ object BeeNests {
         ticks = 0
         val level = client.level ?: return
         val centre = client.player?.blockPosition() ?: return
-        if (!(ConfigManager.highlightBeeNests || ConfigManager.missingPanel && ConfigManager.showBeeNests) || SafariAssist.biome != SafariBiome.FOREST) return
+        if (SafariAssist.biome != SafariBiome.FOREST) return
         for (x in ((centre.x - 24) shr 4)..((centre.x + 24) shr 4)) for (z in ((centre.z - 24) shr 4)..((centre.z + 24) shr 4)) {
             val chunk = level.getChunk(x, z, ChunkStatus.FULL, false) as? LevelChunk ?: continue
             chunk.sections.forEachIndexed { index, section ->
@@ -73,9 +79,11 @@ object BeeNests {
         val buffers = context.bufferSource()
         val vertices = buffers.getBuffer(lines)
         val markers = when {
-            SafariAssist.biome == SafariBiome.FOREST && ConfigManager.highlightBeeNests ->
+            SafariAssist.biome == SafariBiome.FOREST &&
+                SafariHelperRules.showNests(SafariFullClear.mode, SafariTracking.ledger.current, SafariSparklingMode.state) ->
                 known.filter { it !in punched }.map { Triple(it, "Nest", SafariEspConfig.rgb(AppearanceConfig.nestColor)) }
-            SafariAssist.biome == SafariBiome.CAVERN && ConfigManager.highlightSnooperWalls ->
+            SafariAssist.biome == SafariBiome.CAVERN &&
+                SafariHelperRules.needed("Snoozle", SafariFullClear.mode, SafariTracking.ledger.current, SafariSparklingMode.state) ->
                 SafariStructures.intactWalls.map { Triple(it, "Snooper wall", SafariEspConfig.rgb(AppearanceConfig.snooperColor)) }
             else -> emptyList()
         }.filter { level.isLoaded(it.first) && !level.getBlockState(it.first).isAir && it.first.distToCenterSqr(camera) < 40000 }

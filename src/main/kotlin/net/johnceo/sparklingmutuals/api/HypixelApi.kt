@@ -12,11 +12,15 @@ import java.time.Duration
 object HypixelApi {
     private val client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build()
 
+    /** Lookups go through Shiny Hunter's shared API when no key of your own is set. */
+    val provider get() = ApiProvider.capture()
+    val usingCloud get() = provider.cloud
+
+    private fun profiles(uuid: String): JsonObject =
+        if (usingCloud) CloudApi.profiles(uuid) else get("https://api.hypixel.net/v2/skyblock/profiles?uuid=$uuid")
+
     fun getCurrentProfileUuid(uuid: String): String = data {
-        val profiles = get("https://api.hypixel.net/v2/skyblock/profiles?uuid=$uuid")
-            .getAsJsonArray("profiles") ?: throw ApiFailure.dataUnavailable()
-        profiles.firstOrNull { it.asJsonObject.get("selected")?.asBoolean == true }
-            ?.asJsonObject?.get("profile_id")?.asString ?: throw ApiFailure.dataUnavailable()
+        CloudProfiles.selectedProfileId(profiles(uuid)) ?: throw ApiFailure.dataUnavailable()
     }
 
     fun getSparklingCritters(playerUuid: String, profileUuid: String): Set<String> = data {
@@ -34,7 +38,7 @@ object HypixelApi {
             throw ApiFailure(ApiFailureKind.PLAYER_NOT_FOUND, "Minecraft player not found: $username")
         }
         if (response.statusCode() == 429) throw ApiFailure(ApiFailureKind.RATE_LIMIT,
-            "The player lookup request limit was reached. Wait before trying again.")
+            "Player lookup request limit reached. Try again shortly.")
         if (response.statusCode() != 200) throw ApiFailure.unavailable()
         return try { JsonParser.parseString(response.body()).asJsonObject.get("id").asString }
         catch (_: Exception) { throw ApiFailure.unavailable() }
@@ -48,16 +52,29 @@ object HypixelApi {
         }
     }
 
+    fun getSafariProfile(playerUuid: String): SafariProfile = data {
+        SafariProfile.from(getMember(playerUuid, getCurrentProfileUuid(playerUuid)))
+    }
+
+    /** Hive id -> when it refills, for hives looted in the last hour on any session. */
+    fun getHoneyRefills(playerUuid: String): HoneyRefills = data {
+        val profile = getCurrentProfileUuid(playerUuid)
+        HoneyRefills(profile, HoneyRefills.read(getMember(playerUuid, profile)))
+    }
+
     private fun getMember(playerUuid: String, profileUuid: String): JsonObject = data {
-        get("https://api.hypixel.net/v2/skyblock/profile?profile=$profileUuid")
+        val member = playerUuid.replace("-", "")
+        // The shared API serves only the profiles list (cached), so the member is read from there.
+        if (usingCloud) CloudProfiles.member(profiles(playerUuid), playerUuid, profileUuid) ?: throw ApiFailure.dataUnavailable()
+        else get("https://api.hypixel.net/v2/skyblock/profile?profile=$profileUuid")
             .getAsJsonObject("profile")?.getAsJsonObject("members")
-            ?.getAsJsonObject(playerUuid.replace("-", "")) ?: throw ApiFailure.dataUnavailable()
+            ?.getAsJsonObject(member) ?: throw ApiFailure.dataUnavailable()
     }
 
     private fun get(url: String): JsonObject {
         val key = ConfigManager.apiKey.trim()
         if (key.isEmpty()) throw ApiFailure(ApiFailureKind.MISSING_KEY,
-            "No Hypixel API key is configured. Set one with /apikey or in settings.")
+            "No Hypixel API key. Use /apikey or settings.")
         // Keep credentials out of URLs and diagnostic messages.
         val response = send(HttpRequest.newBuilder().uri(URI.create(url)).header("API-Key", key))
         ApiFailure.fromResponse(response.statusCode(), response.body())?.let { throw it }

@@ -7,13 +7,13 @@ enum class ApiFailureKind { MISSING_KEY, INVALID_KEY, RATE_LIMIT, DATA_UNAVAILAB
 class ApiFailure(val kind: ApiFailureKind, message: String) : RuntimeException(message) {
     companion object {
         fun dataUnavailable() = ApiFailure(ApiFailureKind.DATA_UNAVAILABLE,
-            "SkyBlock profile or Safari data is unavailable. Check the selected profile and API availability.")
+            "SkyBlock profile or Safari data unavailable.")
         fun unavailable() = ApiFailure(ApiFailureKind.UNAVAILABLE,
-            "The API is unavailable or the connection timed out. Try again shortly.")
+            "API unavailable. Try again shortly.")
         private fun invalidKey() = ApiFailure(ApiFailureKind.INVALID_KEY,
-            "The Hypixel API key is invalid or access was denied. Update it with /apikey or in settings.")
+            "Invalid Hypixel API key. Update it in settings.")
         private fun rateLimit() = ApiFailure(ApiFailureKind.RATE_LIMIT,
-            "The API request limit was reached. Wait before trying again.")
+            "API request limit reached. Try again shortly.")
 
         fun fromResponse(status: Int, body: String): ApiFailure? {
             if (status == 429) return rateLimit()

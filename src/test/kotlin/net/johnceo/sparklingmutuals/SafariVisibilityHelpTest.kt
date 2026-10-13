@@ -6,13 +6,22 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class SafariVisibilityHelpTest {
-    @Test fun `party help fits the server command length and lists both command groups`() {
-        val reply = CommandHelp.partyReply()
-        assertTrue(reply.length + "pc ".length <= 256, "Help reply has ${reply.length} characters")
+    @Test fun `party help fits the server command length and excludes local commands`() {
+        val reply = CommandHelp.partyReply(SafariMode.UNIQUE)
+        assertTrue(reply.length + "/pc ".length <= 256, "Help reply has ${reply.length} characters")
         assertTrue(reply.contains("Party:"))
-        assertTrue(reply.contains("Local:"))
-        assertTrue(reply.contains("/sparkling catches"))
+        assertFalse(reply.contains("Local:"))
+        assertFalse(reply.contains("/"))
         assertTrue(reply.contains("!pb doom"))
+        assertTrue(reply.contains("!pb haunted"))
+        assertFalse(reply.contains("/sparkling fc"))
+        assertFalse(reply.contains("/pb toggle"))
+        for (mode in SafariMode.entries) {
+            val commands = CommandHelp.partyReply(mode)
+            assertTrue(commands.contains("!commands"))
+            assertTrue(commands.length + "/pc ".length <= 256)
+            assertFalse(commands.contains("/"), "Party help leaked local commands in $mode")
+        }
     }
     @Test fun `entrance visibility is limited to the actual named subarea`() {
         assertFalse(SafariRules.isEntrance(listOf("Area: Torrhus Canyon")))
@@ -36,11 +45,11 @@ class SafariVisibilityHelpTest {
         }
     }
     @Test fun `local help has separate sections and readable descriptions for every command`() {
-        val lines = CommandHelp.localLines().map(SafariRules::strip)
+        val lines = CommandHelp.localLines(SafariMode.UNIQUE).map(SafariRules::strip)
         assertTrue(lines.any { it == "Party chat commands" })
         assertTrue(lines.any { it == "Local commands" })
         for (command in listOf("!mutual", "!missing", "!ticket", "!pb doom", "!pb wumpa", "!commands",
-            "/sparkling", "/sparkling gui", "/sparkling catches", "/alert", "/alertdelay", "/apikey")) {
+            "/sm", "/sm gui", "/captures", "/fc", "/unique", "/alert", "/alertdelay", "/apikey")) {
             assertTrue(lines.any { it.startsWith(command) && it.contains(" — ") }, command)
         }
     }

@@ -31,7 +31,7 @@ class ContestGui(private val parent: Screen? = null) : Screen(Component.literal(
         val run = SafariPanels.previewRun()
         val panels = listOf(SafariPanels.progress(run, ConfigManager.countUniqueOnly, 49000),
             SafariPanels.missing(run, SafariBiome.FOREST, ConfigManager.countUniqueOnly, 3),
-            SafariPanels.captures(run, SafariBiome.FOREST), SafariAssist.nearbyPanel(preview = true)!!)
+            SafariPanels.captures(run, SafariBiome.FOREST), SafariAssist.nearbyPanel(preview = true)!!) + SmallAlerts.titles.keys.map(SmallAlerts::preview)
         SafariHud.entries.zip(panels).forEach { (hud, panel) ->
             previews.add(Preview(hud.label, hud.layout, panel.width(font::width), panel.height) { g, x, y ->
                 panel.draw(g, x, y, hud.layout.scale, AppearanceConfig.panels.getValue(hud.name.lowercase())) })
@@ -46,7 +46,7 @@ class ContestGui(private val parent: Screen? = null) : Screen(Component.literal(
     private fun bounds(preview: Preview) = preview.layout.bounds(width, height, preview.width, preview.height)
     private fun hovered(x: Double, y: Double) = previews.asReversed().firstOrNull { bounds(it).contains(x, y) }
     override fun extractRenderState(graphics: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, delta: Float) {
-        graphics.fill(0, 0, width, height, 0x88000000.toInt())
+        graphics.fill(0, 0, width, height, (0x88000000.toInt() or net.johnceo.sparklingmutuals.config.SafariTheme.BACKGROUND))
         val hover = hovered(mouseX.toDouble(), mouseY.toDouble())
         previews.forEach { preview ->
             val box = bounds(preview)

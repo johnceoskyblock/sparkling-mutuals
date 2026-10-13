@@ -1,6 +1,9 @@
 package net.johnceo.sparklingmutuals.contest
 
+import net.johnceo.sparklingmutuals.LocalChat
+
 import net.johnceo.sparklingmutuals.config.ContestConfig
+import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.hud.SkyblockSidebar
 import net.minecraft.client.Minecraft
 import net.minecraft.client.resources.sounds.SimpleSoundInstance
@@ -37,13 +40,23 @@ object ContestTracker {
     private var windowKey = -1L
     private var secondsIntoWindow = 0
     private var complete = false
+    private var completedWindow = -1L
     private var points = -1
     private var tier = ""
+    private var scope: String? = null
 
     private val warnedMinutes = linkedSetOf<Int>()
 
+    /** Completion and sidebar evidence belong to one player/profile, including while tracking is disabled. */
+    fun selectScope(owner: String?) {
+        if (scope == owner) return
+        scope = owner
+        complete = false; completedWindow = -1L; windowKey = -1L
+        points = -1; tier = ""; tickCounter = 0; warnedMinutes.clear()
+    }
+
     fun onClientTick(client: Minecraft) {
-        if (!ContestConfig.trackContest) return
+        if (!ContestConfig.trackContest && !ConfigManager.honeyHives) return
         if (client.player == null || client.level == null) return
 
         if (++tickCounter < 10) return
@@ -51,16 +64,21 @@ object ContestTracker {
 
         rollWindow()
         readSidebar(client)
-        maybeWarn(client)
+        if (ContestConfig.trackContest) maybeWarn(client)
     }
 
+    /** The contest window a time of day falls in. */
+    fun windowAt(time: LocalTime): Long =
+        (Math.floorMod(time.toSecondOfDay() - FIRST_START_MINUTE * 60, 86400) / WINDOW_SECONDS).toLong()
+
     private fun rollWindow() {
-        val now = LocalTime.now()
+        val time = java.time.LocalDateTime.now()
+        val now = time.toLocalTime()
         val shifted = Math.floorMod(
             now.toSecondOfDay() - FIRST_START_MINUTE * 60,
             86400
         )
-        val key = (shifted / WINDOW_SECONDS).toLong()
+        val key = absoluteWindow(time)
 
         secondsIntoWindow = shifted % WINDOW_SECONDS
 
@@ -106,6 +124,7 @@ object ContestTracker {
             tier.uppercase() in completeTiers
         ) {
             complete = true
+            completedWindow = absoluteWindow(java.time.LocalDateTime.now())
             println("Sparkling Mutuals: Contest complete — $tier with $points")
         }
     }
@@ -126,7 +145,7 @@ object ContestTracker {
         warnedMinutes.addAll(due)
         // Joining late produces one warning instead of all elapsed warnings at once.
         client.player?.sendSystemMessage(
-                    Component.literal(
+                    LocalChat.component(
                         "§b[Sparkling Mutuals] §c§lContest not complete§r — " +
                                 "${formatRemaining(remaining)} left."
                     )
@@ -173,7 +192,17 @@ object ContestTracker {
         )
     }
 
-    fun isComplete(): Boolean = complete
+    /**
+     * Completion only counts for the window it was seen in. With contest tracking off the window stops rolling, so a
+     * completion from an earlier contest must not carry over into later ones.
+     */
+    fun isComplete(): Boolean = completeFor(complete, completedWindow, absoluteWindow(java.time.LocalDateTime.now()))
+    fun completeFor(complete: Boolean, seenWindow: Long, currentWindow: Long) = complete && seenWindow == currentWindow
+
+    /** The contest a completion belongs to, read together with it: unique across days, null while incomplete. */
+    fun completedWindow(): Long? = if (isComplete()) completedWindow else null
+    fun absoluteWindow(time: java.time.LocalDateTime): Long =
+        Math.floorDiv(time.toEpochSecond(java.time.ZoneOffset.UTC) - FIRST_START_MINUTE * 60, WINDOW_SECONDS.toLong())
 
     fun currentTier(): String = tier
 

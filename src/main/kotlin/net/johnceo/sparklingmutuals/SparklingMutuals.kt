@@ -13,6 +13,7 @@ import net.johnceo.sparklingmutuals.config.ContestConfig
 import net.johnceo.sparklingmutuals.contest.ContestHud
 import net.johnceo.sparklingmutuals.contest.ContestTracker
 import net.johnceo.sparklingmutuals.party.PartyManager
+import net.johnceo.sparklingmutuals.hud.SmallAlerts
 import net.johnceo.sparklingmutuals.safari.*
 import net.minecraft.resources.Identifier
 import org.slf4j.LoggerFactory
@@ -34,37 +35,67 @@ object SparklingMutuals : ModInitializer {
         PartyCommands.register()
 		ApiKeyCommand.register()
 		SparklingCommand.register()
+		SparklingLookup.register()
 		AlertCommand.register()
 
 		PartyManager.init()
 		AlertManager.onInitialize()
         HideyhoQuest.register()
+        HideyhoSpotter.register()
         SafariTracking.register()
+        net.johnceo.sparklingmutuals.history.RunHistory.register()
+        net.johnceo.sparklingmutuals.history.SparklingLog.register()
+        net.johnceo.sparklingmutuals.history.TicketCounter.register()
+        net.johnceo.sparklingmutuals.history.Achievements.register()
+        net.johnceo.sparklingmutuals.history.PlaytimeReader.register()
         BeeNests.register()
+        net.johnceo.sparklingmutuals.contest.HoneyHives.register()
         SafariEsp.register()
+        TeammateEsp.register()
+        SafariIsland.register()
+        SafariManagerGuard.register()
+        SafariDowntime.register()
         ClientTickEvents.START_CLIENT_TICK.register(AutoClicker::tick)
 
         ClientTickEvents.END_CLIENT_TICK.register { client ->
             PartyManager.onClientTick(client)
             PartyCommands.onClientTick(client)
             ContestTracker.onClientTick(client)
+            net.johnceo.sparklingmutuals.contest.HoneyHives.tick(client)
             SafariAssist.onClientTick(client)
             SafariTracking.onClientTick(client)
+            net.johnceo.sparklingmutuals.history.RunHistory.tick(client)
+            net.johnceo.sparklingmutuals.history.Achievements.tick(client)
+            net.johnceo.sparklingmutuals.history.OwnStats.tick(client)
+            net.johnceo.sparklingmutuals.history.PlaytimeReader.tick(client)
+            net.johnceo.sparklingmutuals.history.LogImporter.tick(client)
+            SafariSparklingMode.tick(client)
             BeeNests.tick(client)
             SafariStructures.tick(client)
             SafariEsp.tick(client)
+            SafariBiomeClearTracking.tick(client)
+            SafariInventoryAlerts.tick(client)
             HideyhoQuest.onClientTick(client)
+            HideyhoSpotter.onClientTick(client)
+            SafariDowntime.onClientTick(client)
+            SafariManagerGuard.onClientTick(client)
         }
 
         ClientPlayConnectionEvents.DISCONNECT.register { _, _ ->
             PartyCommands.reset()
             PartyManager.reset()
+            SafariSparklingMode.reset()
             AlertManager.cancelPendingAlert()
             SafariAssist.reset()
             HideyhoQuest.reset()
+            HideyhoSpotter.reset()
+            net.johnceo.sparklingmutuals.history.OwnStats.reset()
             SafariTracking.finish()
             SafariEsp.reset()
             AutoClicker.reset()
+            SafariManagerGuard.reset()
+            SafariDowntime.reset()
+            SafariIsland.reset()
         }
 
 		HudElementRegistry.attachElementBefore(
@@ -75,6 +106,7 @@ object SparklingMutuals : ModInitializer {
 			SafariAssist.render(graphics)
             SafariTracking.render(graphics)
             SparklingEncounters.render(graphics)
+            SmallAlerts.render(graphics)
 		}
 	}
 
