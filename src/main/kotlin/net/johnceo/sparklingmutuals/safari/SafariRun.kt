@@ -133,7 +133,7 @@ class SafariRun(val startedAt: Long) {
         if (critter.biome !in visited) return !localOnly &&
             (critter.biome in communalClears || sparklingChecks.partyChecked(name))
         return when (name) {
-            "Honeybug" -> !party.needs(name) || nestsChecked && punchedNests >= 3 && sparklingChecks.locallyChecked(name)
+            "Honeybug" -> !party.needs(name) || nestsChecked && punchedNests >= 3
             "Rockmite", "Snoozle" -> !party.needs(name) || sparklingChecks.locallyChecked(name)
             else -> birds.used >= birds.feedingTarget
         }
@@ -222,8 +222,8 @@ class SafariRun(val startedAt: Long) {
         if (species in remaining) return false
         return when (species) {
             "Honeybug" -> (structures?.nestsChecked ?: nestsChecked) &&
-                (biome !in zonesRequired || (observedUuids[species]?.size ?: 0) >= SafariFullClear.minimum(species) &&
-                    captured >= (observedUuids[species]?.size ?: 0))
+                captured >= (observedUuids[species]?.size ?: 0) &&
+                (biome !in zonesRequired || (observedUuids[species]?.size ?: 0) >= SafariFullClear.minimum(species))
             "Snoozle" -> structures?.wallsCleared ?: wallsChecked
             "Rockmite" -> (structures?.moundsCleared ?: moundsComplete(remaining)) &&
                 captured >= rockmiteMounds && "Rockmite Mound" !in remaining

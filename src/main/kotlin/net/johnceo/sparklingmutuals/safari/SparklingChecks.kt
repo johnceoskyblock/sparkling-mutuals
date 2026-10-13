@@ -45,7 +45,7 @@ class SparklingChecks {
         }
         when (biome) {
             SafariBiome.FOREST -> {
-                check("Honeybug", nestsChecked && enough("Honeybug", 3))
+                if (nestsChecked) completed.add("Honeybug") else completed.remove("Honeybug")
                 if (birdsSpawned) completed.addAll(birds)
             }
             SafariBiome.CAVERN -> {

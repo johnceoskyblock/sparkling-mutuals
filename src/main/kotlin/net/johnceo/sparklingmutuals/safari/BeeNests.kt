@@ -6,6 +6,7 @@ import com.mojang.blaze3d.platform.CompareOp
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents
 import net.fabricmc.fabric.api.event.player.AttackBlockCallback
+import net.fabricmc.fabric.api.event.player.UseBlockCallback
 import net.johnceo.sparklingmutuals.SparklingMutuals
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.config.AppearanceConfig
@@ -18,19 +19,18 @@ import net.minecraft.core.BlockPos
 import net.minecraft.util.LightCoordsUtil
 import net.minecraft.world.InteractionResult
 import net.minecraft.world.level.block.Blocks
-import net.minecraft.world.level.chunk.LevelChunk
-import net.minecraft.world.level.chunk.status.ChunkStatus
+import net.minecraft.world.level.Level
 import org.joml.Matrix4f
 
-/** v0.9.0 NestTracker/WaypointRenderer, skipping loaded chunk sections whose palettes have no nests. */
+/** Forest's fixed nest survey and waypoints; observe loaded blocks without requesting chunks. */
 object BeeNests {
-    private val known = mutableSetOf<BlockPos>()
-    private val punched = mutableSetOf<BlockPos>()
+    private val survey = BeeNestSurvey()
+    private val positions = BeeNestSurvey.positions.associateWith { (x, y, z) -> BlockPos(x, y, z) }
     private var ticks = 0
     private val handledByParty get() = SafariTracking.ledger.current?.partyNestsHandled == true
-    val unpunchedCount get() = if (handledByParty && SafariFullClear.mode == SafariMode.SPARKLING) 0 else known.count { it !in punched }
-    val punchedCount get() = punched.size
-    val allChecked get() = (known.isNotEmpty() || punched.isNotEmpty()) && known.all { it in punched }
+    val unpunchedCount get() = if (handledByParty && SafariFullClear.mode == SafariMode.SPARKLING) 0 else survey.remaining.size
+    val punchedCount get() = survey.punchedCount
+    val allChecked get() = survey.allChecked
     private val lines = RenderType.create("sparkling-mutuals:nests", RenderSetup.builder(RenderPipelines.register(
         RenderPipeline.builder(RenderPipelines.LINES_SNIPPET).withLocation(SparklingMutuals.id("pipeline/nests"))
             .withDepthStencilState(DepthStencilState(CompareOp.ALWAYS_PASS, false)).build()))
@@ -40,35 +40,36 @@ object BeeNests {
 
     fun register() {
         AttackBlockCallback.EVENT.register { _, level, _, pos, _ ->
-            if (level.isClientSide && SafariAssist.inSafari && level.getBlockState(pos).`is`(Blocks.BEE_NEST)) {
-                val nest = pos.immutable()
-                known.add(nest); punched.add(nest)
-            }
+            clicked(level, pos)
+            InteractionResult.PASS
+        }
+        UseBlockCallback.EVENT.register { _, level, _, hit ->
+            clicked(level, hit.blockPos)
             InteractionResult.PASS
         }
         LevelRenderEvents.AFTER_TRANSLUCENT_FEATURES.register(::render)
+    }
+    private fun clicked(level: Level, pos: BlockPos) {
+        if (!level.isClientSide || !SafariAssist.inSafari || SafariAssist.biome != SafariBiome.FOREST ||
+            !level.isLoaded(pos) || !level.getBlockState(pos).`is`(Blocks.BEE_NEST)) return
+        val site = Triple(pos.x, pos.y, pos.z)
+        survey.observe(site, NestBlock.NEST)
+        survey.punch(site)
     }
     fun tick(client: Minecraft) {
         if (++ticks < 40) return
         ticks = 0
         val level = client.level ?: return
-        val centre = client.player?.blockPosition() ?: return
-        if (SafariAssist.biome != SafariBiome.FOREST) return
-        for (x in ((centre.x - 24) shr 4)..((centre.x + 24) shr 4)) for (z in ((centre.z - 24) shr 4)..((centre.z + 24) shr 4)) {
-            val chunk = level.getChunk(x, z, ChunkStatus.FULL, false) as? LevelChunk ?: continue
-            chunk.sections.forEachIndexed { index, section ->
-                val bottom = chunk.getSectionYFromSectionIndex(index) shl 4
-                val lowY = maxOf(bottom, centre.y - 12)
-                val highY = minOf(bottom + 15, centre.y + 12)
-                if (lowY <= highY && section.maybeHas { it.`is`(Blocks.BEE_NEST) }) {
-                    for (bx in maxOf(x shl 4, centre.x - 24)..minOf((x shl 4) + 15, centre.x + 24))
-                        for (bz in maxOf(z shl 4, centre.z - 24)..minOf((z shl 4) + 15, centre.z + 24))
-                            for (by in lowY..highY) if (section.getBlockState(bx and 15, by and 15, bz and 15).`is`(Blocks.BEE_NEST))
-                                known.add(BlockPos(bx, by, bz))
-                }
-            }
+        if (!SafariAssist.inSafari || SafariAssist.biome != SafariBiome.FOREST) return
+        positions.forEach { (site, pos) ->
+            if (!level.isLoaded(pos)) return@forEach
+            val block = level.getBlockState(pos)
+            survey.observe(site, when {
+                block.`is`(Blocks.BEE_NEST) -> NestBlock.NEST
+                block.`is`(Blocks.BEEHIVE) -> NestBlock.HIVE
+                else -> NestBlock.UNKNOWN
+            })
         }
-        known.removeAll { level.isLoaded(it) && !level.getBlockState(it).`is`(Blocks.BEE_NEST) }
     }
     private fun render(context: LevelRenderContext) {
         val client = Minecraft.getInstance()
@@ -81,7 +82,7 @@ object BeeNests {
         val markers = when {
             SafariAssist.biome == SafariBiome.FOREST &&
                 SafariHelperRules.showNests(SafariFullClear.mode, SafariTracking.ledger.current, SafariSparklingMode.state) ->
-                known.filter { it !in punched }.map { Triple(it, "Nest", SafariEspConfig.rgb(AppearanceConfig.nestColor)) }
+                survey.remaining.map { Triple(positions.getValue(it), "Nest", SafariEspConfig.rgb(AppearanceConfig.nestColor)) }
             SafariAssist.biome == SafariBiome.CAVERN &&
                 SafariHelperRules.needed("Snoozle", SafariFullClear.mode, SafariTracking.ledger.current, SafariSparklingMode.state) ->
                 SafariStructures.intactWalls.map { Triple(it, "Snooper wall", SafariEspConfig.rgb(AppearanceConfig.snooperColor)) }
@@ -113,5 +114,5 @@ object BeeNests {
             poses.popPose()
         }
     }
-    fun reset() { known.clear(); punched.clear(); ticks = 0 }
+    fun reset() { survey.reset(); ticks = 0 }
 }

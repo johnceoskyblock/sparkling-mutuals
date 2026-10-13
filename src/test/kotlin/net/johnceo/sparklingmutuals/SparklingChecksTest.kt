@@ -40,7 +40,7 @@ class SparklingChecksTest {
         assertTrue(checks.checked("Gemzie"))
         assertFalse(SparklingChecks().checked("Gemzie"))
     }
-    @Test fun `Honeybug requires punched nests and three distinct rendered bugs`() {
+    @Test fun `Honeybug requires complete nest evidence instead of a rendered bee minimum`() {
         val checks = SparklingChecks(); val bugs = seen("Honeybug", 3)
         checks.scan(SafariBiome.FOREST, 6.0, 51.0, bugs)
         assertFalse(checks.checked("Honeybug"))
@@ -48,7 +48,7 @@ class SparklingChecksTest {
         assertTrue(checks.checked("Honeybug"))
         val partial = SparklingChecks()
         partial.scan(SafariBiome.FOREST, 6.0, 51.0, bugs.take(2), nestsChecked = true)
-        assertFalse(partial.checked("Honeybug"))
+        assertTrue(partial.checked("Honeybug"))
     }
     @Test fun `mounds and walls need their complete survey evidence`() {
         val checks = SparklingChecks()

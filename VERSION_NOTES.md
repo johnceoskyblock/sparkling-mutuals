@@ -1,3 +1,12 @@
+## In development: v4
+
+- Survey all 13 Forest hive/nest locations; waypoint and count only actual bee nests.
+- Remove a nest waypoint and decrement its counter once on either left- or right-click.
+- Complete Sparkling Honeybug checks after every nest is punched; Unique requires one capture plus those nest checks when the party needs its sparkling.
+- Keep ordinary Honeybug ESP off after the first Unique capture, and require every observed bee captured in Full Clear.
+
+Development build: 4.0.0-dev. Validation: 518 automated regression tests and the clean build passed. Live in-game interaction/rendering remains untested.
+
 ## What's changed in v3.0.0
 
 - Added Full Clear, Unique and party-aware Sparkling modes, with separate progress, missing-species and capture panels.

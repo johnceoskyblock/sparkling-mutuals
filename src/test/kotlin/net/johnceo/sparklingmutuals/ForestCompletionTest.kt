@@ -35,7 +35,7 @@ class ForestCompletionTest {
         assertFalse(run.captureComplete("Honeybug"))
         val checks=SparklingChecks()
         repeat(4) { checks.scan(SafariBiome.FOREST,500.0,500.0,List(3) { "Honeybug" to ids[0] },nestsChecked=true) }
-        assertFalse(checks.checked("Honeybug"))
+        assertTrue(checks.checked("Honeybug"))
         checks.scan(SafariBiome.FOREST,500.0,500.0,ids.take(3).map { "Honeybug" to it },nestsChecked=true)
         assertTrue(checks.checked("Honeybug"))
     }
