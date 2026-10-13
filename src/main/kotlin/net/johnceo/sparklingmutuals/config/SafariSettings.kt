@@ -166,7 +166,7 @@ class SafariSettings : Config() {
         var capsuleHideDistance = ConfigManager.capsuleHideDistance
         @JvmField @ConfigOption(name = "Full candle hitbox", desc = "Easier candle clicks in Haunted while holding Soothing Incense.")
         @ConfigEditorBoolean var candleHitbox = ConfigManager.candleHitbox
-        @JvmField @ConfigOption(name = "Hold Safari Manager on kick", desc = "After a kick is called in party chat, block the Safari Manager and tickets on the Safari island for 30s. Sneak to go anyway.")
+        @JvmField @ConfigOption(name = "Guard Safari entry", desc = "Block Manager, tickets and entry GUI for 30s after a kick or while party members are missing. Shift-click to override.")
         @ConfigEditorBoolean var holdManagerOnKick = ConfigManager.holdManagerOnKick
         @JvmField @ConfigOption(name = "Auto Clicker", desc = "Hold Mouse 0 on Rockmite mounds for 12 CPS.")
         @ConfigEditorBoolean var autoClicker = ConfigManager.autoClicker

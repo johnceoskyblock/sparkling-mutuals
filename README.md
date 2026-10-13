@@ -70,7 +70,7 @@ A Fabric mod for Hypixel SkyBlock Safari, sparkling discoveries, and Miria conte
 - **`!tickets <IGN>`:** show a player's Safari ticket counts.
 - **`!m [biome]`:** report what remains in the current Safari run.
 - **`!dt [reason]` / `r`:** request downtime after the run and release your hold when ready.
-- **Safari Manager kick hold:** pause manager interaction and ticket use after a kick request; sneak to override.
+- **Safari entry guard:** block Manager, ticket and entry GUI clicks after kick requests or while party members are absent; Shift-click to override.
 - **`/sparkling [IGN|party|IGNs]`:** show Safari player cards or compare sparkling collections.
 - **`!pb <biome>`:** share Forest, Cavern, Icy, or Haunted PBs for the active mode.
 - **`!pb doom` / `!pb wumpa`:** share solo boss PBs; add `duo` or an IGN for other records.

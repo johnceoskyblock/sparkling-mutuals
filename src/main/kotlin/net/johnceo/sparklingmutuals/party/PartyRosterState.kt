@@ -16,6 +16,8 @@ class PartyRosterState {
 object PartyRosterSignals {
     private val name = "(?:\\[[^]\\r\\n]+]\\s*)*[A-Za-z0-9_]{1,16}"
     private val messages = listOf(
+        Regex("^$name was removed from your party because they disconnected[.!]?$"),
+        Regex("^Kicked $name because they were offline[.!]?$"),
         Regex("^$name (?:joined the party[.!]|has left the party[.!]|has been removed from the party[.!]|has disbanded the party[.!])$"),
         Regex("^You have joined $name's party!$"),
         Regex("^You (?:left the party[.!]|have been kicked from the party(?: by $name[.!]?)?)$"),

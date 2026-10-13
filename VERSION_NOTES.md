@@ -22,6 +22,7 @@
 - Restored optional profitable Unique highlights and biome done messages in every mode.
 - Fixed honeyhive loot/refill tracking, Queen Bee refills and server-state checks; removed the invalid hive and redundant countdown/settings.
 - Improved party done overrides, independent needed Cavern structure checks, four-UUID Gazer checks and zero-spawn Macaw/Rockmite/Snoozle status.
+- Added continuous party-presence checks before Safari runs, arrival grace and entry GUI protection with a Shift-click override.
 
 Minecraft 26.1.2 / Java 25 / Fabric. Requires Fabric API and Fabric Language Kotlin. Player lookups support a personal Hypixel API key or the optional Shiny Hunter shared API.
 

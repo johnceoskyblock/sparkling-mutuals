@@ -78,6 +78,7 @@ object SparklingMutuals : ModInitializer {
             HideyhoQuest.onClientTick(client)
             HideyhoSpotter.onClientTick(client)
             SafariDowntime.onClientTick(client)
+            SafariManagerGuard.onClientTick(client)
         }
 
         ClientPlayConnectionEvents.DISCONNECT.register { _, _ ->

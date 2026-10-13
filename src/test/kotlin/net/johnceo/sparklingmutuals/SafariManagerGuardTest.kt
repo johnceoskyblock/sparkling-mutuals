@@ -6,6 +6,13 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class SafariManagerGuardTest {
+    @Test fun `only server entry nametags in the Safari entry menu are guarded`() {
+        assertTrue(SafariManagerGuard.entryItem("Critter Safari Entry", true, false))
+        assertTrue(SafariManagerGuard.entryItem("§aCritter Safari Entry", true, false))
+        assertFalse(SafariManagerGuard.entryItem("Critter Safari Entry", true, true))
+        assertFalse(SafariManagerGuard.entryItem("Critter Safari Entry", false, false))
+        assertFalse(SafariManagerGuard.entryItem("Storage", true, false))
+    }
     @Test fun `a kick called in party chat holds the manager for thirty seconds`() {
         SafariManagerGuard.reset()
         SafariManagerGuard.chat("Party > [MVP+] Farmer: kick him he's afk", 1_000)

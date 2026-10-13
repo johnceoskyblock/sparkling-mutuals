@@ -7,6 +7,13 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class SafariPartyRefreshTest {
+    @Test fun `offline removals invalidate the known roster rather than retaining a missing member`() {
+        for (line in listOf("[MVP+] Alice was removed from your party because they disconnected!",
+            "Kicked [VIP] Bob because they were offline!")) {
+            assertTrue(PartyRosterSignals.changed(line), line)
+            assertFalse(PartyRosterSignals.changed("Party > Friend: $line"))
+        }
+    }
     private val members = listOf("00000000-0000-0000-0000-000000000001",
         "00000000-0000-0000-0000-000000000002", "00000000-0000-0000-0000-000000000003",
         "00000000-0000-0000-0000-000000000004")
