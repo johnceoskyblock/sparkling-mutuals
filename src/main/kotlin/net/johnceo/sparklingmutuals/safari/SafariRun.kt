@@ -100,6 +100,7 @@ class SafariRun(val startedAt: Long) {
     private fun partyCompletion(name: String, party: PartySparklingState): Boolean? {
         val critter = SafariRoster.named(name) ?: return null
         if (critter.biome !in communalClears && !sparklingChecks.partyChecked(name)) return null
+        if (critter.biome == SafariBiome.CAVERN && lastBiome != SafariBiome.CAVERN) return true
         return when (name) {
             "Rockmite" -> !party.needs(name) || !remainingMounds
             "Snoozle" -> !party.needs(name) || !remainingWalls
@@ -134,7 +135,7 @@ class SafariRun(val startedAt: Long) {
         return when (name) {
             "Honeybug" -> !party.needs(name) || nestsChecked && punchedNests >= 3 && sparklingChecks.locallyChecked(name)
             "Rockmite", "Snoozle" -> !party.needs(name) || sparklingChecks.locallyChecked(name)
-            else -> !birdSpecies.any { party.needs(it) } || birds.used >= birds.feedingTarget
+            else -> birds.used >= birds.feedingTarget
         }
     }
     private val uniqueChecks = setOf("Honeybug", "Rockmite", "Snoozle", "Bluebird", "Parakeet", "Macaw")
@@ -167,7 +168,8 @@ class SafariRun(val startedAt: Long) {
     private val birdSpecies = setOf("Bluebird", "Parakeet", "Macaw")
     private var nearbyMacaws = 0
     val birdFoodsComplete get() = birds.foodsComplete
-    fun recordBirdFood(raw: String, biome: SafariBiome? = SafariBiome.FOREST) = birds.pickup(raw, biome)
+    fun recordBirdFood(raw: String, biome: SafariBiome? = SafariBiome.FOREST, now: Long = System.currentTimeMillis()) =
+        birds.pickup(raw, biome, now - startedAt)
     fun updateCaptureEvidence(biome: SafariBiome, speciesInRange: Set<String>, allWallsChecked: Boolean, allNestsChecked: Boolean = false,
         macawsInRange: Int = if ("Macaw" in speciesInRange) 1 else 0,
         playerX: Double? = null, playerZ: Double? = null, nestsPunched: Int = 0) {

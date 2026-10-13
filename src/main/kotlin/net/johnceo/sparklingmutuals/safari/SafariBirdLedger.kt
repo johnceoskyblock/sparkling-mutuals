@@ -11,8 +11,14 @@ class SafariBirdLedger {
     private val spawned = mutableMapOf<String, Int>()
     private var announced = false
     private val startingFoods = mutableMapOf<String, Int>()
-    val sparklingTarget get() = 9 + startingFoods.values.sum()
-    val feedingTarget get() = maxOf(9, collected) + startingFoods.values.sum()
+    private val startingPickups = mutableMapOf<String, Int>()
+    // Starting messages and inventory snapshots describe overlapping items. Later pickups add new demand.
+    private val extraFoods get() = foods.sumOf { food ->
+        val early = startingPickups[food] ?: 0
+        maxOf(startingFoods[food] ?: 0, early) + (picked[food] ?: 0) - (forest[food] ?: 0) - early
+    }
+    val sparklingTarget get() = 9 + extraFoods
+    val feedingTarget get() = maxOf(9, forest.values.sum()) + extraFoods
     val sparklingSpawned get() = used >= sparklingTarget
     /** Sample every tick during Head Start; subtract already reported Forest floor pickups. */
     fun startingInventory(stacks: List<Pair<String, Int>>, elapsed: Long) {
@@ -24,7 +30,7 @@ class SafariBirdLedger {
         }
     }
     val foodsComplete get() = foods.all { (forest[it] ?: 0) >= 3 }
-    val allSpawned get() = foodsComplete && used >= collected
+    val allSpawned get() = foodsComplete && used >= feedingTarget
     val collected get() = picked.values.sum()
     val used get() = feedings
     fun alert(biome: SafariBiome?, enabled: Boolean): Boolean {
@@ -32,12 +38,13 @@ class SafariBirdLedger {
         announced = true
         return true
     }
-    fun pickup(raw: String, biome: SafariBiome?): Boolean {
+    fun pickup(raw: String, biome: SafariBiome?, elapsed: Long? = null): Boolean {
         val text = SafariRules.strip(raw)
         if (!text.startsWith("FLOOR DROP!")) return false
         val food = foods.firstOrNull { Regex("\\b${Regex.escape(it)}\\b(?! Shard)").containsMatchIn(text) } ?: return false
         picked.merge(food, 1, Int::plus)
         if (biome == SafariBiome.FOREST) forest.merge(food, 1, Int::plus)
+        else if (elapsed == null || elapsed in 0L..3000L) startingPickups.merge(food, 1, Int::plus)
         return true
     }
     /** Exact announcements documented by CritterMod 0.9.0 BirdfeederWatch (MIT). */
@@ -59,7 +66,7 @@ class SafariBirdLedger {
     private fun pairs(caught: Int, remaining: Int) = maxOf(macawPairs, (caught + remaining.coerceAtLeast(0) + 1) / 2)
     fun hasMacaws(caught: Int, remaining: Int) = pairs(caught, remaining) > 0
     fun requiredCaptures(macawsCaught: Int, macawsRemaining: Int) =
-        (collected + pairs(macawsCaught, macawsRemaining) - macawsRemaining.coerceAtLeast(0)).coerceAtLeast(0)
+        (feedingTarget + pairs(macawsCaught, macawsRemaining) - macawsRemaining.coerceAtLeast(0)).coerceAtLeast(0)
     fun sufficient(catches: Int, macawsCaught: Int, macawsRemaining: Int) = allSpawned &&
         catches >= requiredCaptures(macawsCaught, macawsRemaining)
     fun capturesComplete(count: (String) -> Int) = allSpawned &&

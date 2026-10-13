@@ -23,9 +23,11 @@
 - Fixed honeyhive loot/refill tracking, Queen Bee refills and server-state checks; removed the invalid hive and redundant countdown/settings.
 - Improved party done overrides, independent needed Cavern structure checks, four-UUID Gazer checks and zero-spawn Macaw/Rockmite/Snoozle status.
 - Added continuous party-presence checks before Safari runs, arrival grace and entry GUI protection with a Shift-click override.
+- Fixed Unique party completion bars outside Cavern and delayed local Forest completion until all feeding, including starting food, is confirmed.
+- Fixed Full Clear feeding/capture totals, deduplicated starting food evidence and included later extra food pickups.
 
 Minecraft 26.1.2 / Java 25 / Fabric. Requires Fabric API and Fabric Language Kotlin. Player lookups support a personal Hypixel API key or the optional Shiny Hunter shared API.
 
-Validation: automated regression tests and build. Live in-game rendering and server integration have not been tested for this release.
+Validation: 510 automated regression tests and the clean build passed. Live in-game rendering and server integration have not been tested for this release.
 
 [Full changelog](https://github.com/johnceoskyblock/sparkling-mutuals/compare/v2.0.0...v3.0.0)
