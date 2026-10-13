@@ -41,6 +41,7 @@ object SparklingMutuals : ModInitializer {
 		PartyManager.init()
 		AlertManager.onInitialize()
         HideyhoQuest.register()
+        HideyhoSpotter.register()
         SafariTracking.register()
         net.johnceo.sparklingmutuals.history.RunHistory.register()
         net.johnceo.sparklingmutuals.history.SparklingLog.register()
@@ -75,6 +76,7 @@ object SparklingMutuals : ModInitializer {
             SafariBiomeClearTracking.tick(client)
             SafariInventoryAlerts.tick(client)
             HideyhoQuest.onClientTick(client)
+            HideyhoSpotter.onClientTick(client)
             SafariDowntime.onClientTick(client)
         }
 
@@ -85,6 +87,7 @@ object SparklingMutuals : ModInitializer {
             AlertManager.cancelPendingAlert()
             SafariAssist.reset()
             HideyhoQuest.reset()
+            HideyhoSpotter.reset()
             net.johnceo.sparklingmutuals.history.OwnStats.reset()
             SafariTracking.finish()
             SafariEsp.reset()
