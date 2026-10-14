@@ -171,6 +171,19 @@ class SafariRun(val startedAt: Long) {
     val nestSurveyComplete get() = nestsChecked
     val honeybugCaptureTarget get() = maxOf(SafariFullClear.minimum("Honeybug"), foundNests, punchedNests,
         observedUuids["Honeybug"]?.size ?: 0)
+    /** The missing-panel nest counter tracks handling/spawning, never the capture quota. */
+    fun nestCounterNeeded(mode: SafariMode, party: PartySparklingState): Boolean {
+        val nests = maxOf(foundNests, punchedNests)
+        val handledAndSpawned = nestsChecked && nests >= 3 && punchedNests >= nests &&
+            (observedUuids["Honeybug"]?.size ?: 0) == nests
+        if (handledAndSpawned) return false
+        return when (mode) {
+            SafariMode.FULL_CLEAR -> true
+            SafariMode.UNIQUE -> partyCompletion("Honeybug", party) != true &&
+                (count("Honeybug") == 0 || party.needs("Honeybug"))
+            SafariMode.SPARKLING -> !partyNestsHandled && !sparklingChecks.partyChecked("Honeybug") && party.needs("Honeybug")
+        }
+    }
     /** Block evidence updates immediately, including when the entity scanner has no fresh snapshot. */
     fun updateNestEvidence(checked: Boolean, punched: Int, found: Int = punched, unknown: Int? = null) {
         nestsChecked = checked

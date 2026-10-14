@@ -1,6 +1,8 @@
 package net.johnceo.sparklingmutuals.safari
 
 object SafariHelperRules {
+    fun showNestCounter(mode: SafariMode, run: SafariRun?, party: PartySparklingState) =
+        run?.nestCounterNeeded(mode, party) ?: (mode != SafariMode.SPARKLING || party.needs("Honeybug"))
     fun showNests(mode: SafariMode, run: SafariRun?, party: PartySparklingState) =
         (mode != SafariMode.SPARKLING || run?.partyNestsHandled != true) && needed("Honeybug", mode, run, party)
     val species = setOf("Honeybug", "Rockmite", "Snoozle")

@@ -52,13 +52,12 @@ class SafariPanelSeparationTest {
         assertEquals("1/9", SafariPanels.progress(run, false, 0).rows.first { it.label == "Forest" }.value)
         assertEquals("0/9", SafariPanels.progress(run, false, 0).rows.first { it.label == "Cavern" }.value)
     }
-    @Test fun `missing panel distinguishes species quotas from the Honeybug survey capture target`() {
+    @Test fun `nest helper does not add extra species capture quotas to the missing panel`() {
         ConfigManager.init(dir); SafariFullClear.toggle()
         val run = SafariRun(0)
         val rows = SafariBiome.entries.flatMap { SafariPanels.missing(run, it, false, 0).rows }
-        assertEquals(setOf("Scrappy", "Gemzie", "Troodon", "Gazer", "Honeybugs captured"),
+        assertEquals(setOf("Scrappy", "Gemzie", "Troodon", "Gazer"),
             rows.filter { it.value?.contains('/') == true }.map { it.label }.toSet())
-        assertEquals("0/3", rows.first { it.label == "Honeybugs captured" }.value)
         assertTrue(rows.any { it.label == "Bluebird" })
         repeat(6) { run.record(SafariCatch(SafariRoster.named("Foxtrot")!!)) }
         run.updateCaptureEvidence(SafariBiome.FOREST, emptySet(), true)
