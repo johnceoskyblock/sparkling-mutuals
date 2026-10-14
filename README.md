@@ -23,6 +23,7 @@ A Fabric mod for Hypixel SkyBlock Safari, sparkling discoveries, and Miria conte
 - **Critter ESP:** draw colored outlines around critters; retain enlarged outlines for Hideonwalls.
 - **Floor drop ESP:** highlight needed Safari supplies until their requirements are met.
 - **Bee nest waypoints:** check 13 Forest locations, ignore beehives, and remove each nest after a left- or right-click.
+- **Nest survey guidance:** distinguish known nests from unverified sites; grey markers guide loading, and Full Clear uses the actual bee total.
 - **Rockmite highlights:** distinguish mounds from spawned silverfish.
 - **Snooper wall waypoints:** locate walls to break for Snoozles.
 - **Hidden Litterbugs:** show projected positions and countdowns while they are underground.
@@ -81,7 +82,7 @@ A Fabric mod for Hypixel SkyBlock Safari, sparkling discoveries, and Miria conte
 - **ESP visibility:** independently restrict each biome and floor drops to your current biome.
 - **Alert customization:** choose sounds, volumes, and run completion text.
 - **Player lookups:** use your Hypixel key (`/apikey <key>`) or the optional Shiny Hunter shared API.
-- **Diagnostics (`/sm debug`):** save local entity tracking details to `latest.log`.
+- **Diagnostics (`/sm debug`):** save entity tracking, nest block data, survey coverage and rendering gates to `latest.log`.
 
 ## Installation
 

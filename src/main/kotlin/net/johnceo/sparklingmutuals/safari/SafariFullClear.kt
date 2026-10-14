@@ -7,7 +7,7 @@ enum class SafariMode { UNIQUE, FULL_CLEAR, SPARKLING }
 
 data class BiomeClearEvidence(val observed: Boolean = false, val nearbyCritters: Int = 0,
     val moundsCleared: Boolean = false, val wallsCleared: Boolean = false,
-    val nestsChecked: Boolean = false, val nearbyMacaws: Int = 0)
+    val nestsChecked: Boolean = false, val nearbyMacaws: Int = 0, val nestsFound: Int = 0)
 
 /** Command-owned presets change presentation, never the per-run capture ledger. */
 object SafariFullClear {

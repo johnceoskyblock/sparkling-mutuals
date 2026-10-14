@@ -25,7 +25,7 @@ object SafariBiomeClearTracking {
         }.map { if (it.mound) "Rockmite Mound" else it.species }.toSet(),
             SafariStructures.walls.states.size == 5 && SafariStructures.walls.allBroken, BeeNests.allChecked,
             macawsInRange = snapshot.critters.count { it.biome == biome && it.species == "Macaw" },
-            playerX = player.x, playerZ = player.z, nestsPunched = BeeNests.punchedCount)
+            playerX = player.x, playerZ = player.z, nestsPunched = BeeNests.punchedCount, nestsFound = BeeNests.nestCount)
         run.sparklingChecks.scan(biome, player.x, player.z,
             snapshot.critters.filterNot { it.mound }.map { it.species to it.uuid },
             nestsChecked = BeeNests.allChecked,
@@ -45,7 +45,8 @@ object SafariBiomeClearTracking {
             run.moundsComplete() &&
                 SafariStructures.nearbyMounds == 0 && snapshot.critters.none { it.mound },
             SafariStructures.walls.states.size == 5 && SafariStructures.walls.allBroken, BeeNests.allChecked,
-            nearbyMacaws = snapshot.critters.count { it.biome == biome && !it.mound && it.species == "Macaw" })
+            nearbyMacaws = snapshot.critters.count { it.biome == biome && !it.mound && it.species == "Macaw" },
+            nestsFound = BeeNests.nestCount)
         SafariFullClear.recordClear(run, biome, evidence, ConfigManager.personalBests, System.currentTimeMillis())?.let {
             ConfigManager.save(); player.sendSystemMessage(LocalChat.component(it))
         }

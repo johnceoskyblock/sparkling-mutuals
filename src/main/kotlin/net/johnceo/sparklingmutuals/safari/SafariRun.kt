@@ -165,6 +165,21 @@ class SafariRun(val startedAt: Long) {
     private var wallsChecked = false
     private var nestsChecked = false
     private var punchedNests = 0
+    private var foundNests = 0
+    var nestSitesUnknown: Int? = null
+        private set
+    val nestSurveyComplete get() = nestsChecked
+    val honeybugCaptureTarget get() = maxOf(SafariFullClear.minimum("Honeybug"), foundNests, punchedNests,
+        observedUuids["Honeybug"]?.size ?: 0)
+    /** Block evidence updates immediately, including when the entity scanner has no fresh snapshot. */
+    fun updateNestEvidence(checked: Boolean, punched: Int, found: Int = punched, unknown: Int? = null) {
+        nestsChecked = checked
+        punchedNests = punched.coerceAtLeast(0)
+        foundNests = found.coerceAtLeast(0)
+        if (unknown != null) nestSitesUnknown = unknown.coerceAtLeast(0)
+        sparklingChecks.nestEvidence(checked)
+        if (!checked || personalCount("Honeybug") < honeybugCaptureTarget) biomeClears.remove(SafariBiome.FOREST)
+    }
     private val birdSpecies = setOf("Bluebird", "Parakeet", "Macaw")
     private var nearbyMacaws = 0
     val birdFoodsComplete get() = birds.foodsComplete
@@ -172,11 +187,11 @@ class SafariRun(val startedAt: Long) {
         birds.pickup(raw, biome, now - startedAt)
     fun updateCaptureEvidence(biome: SafariBiome, speciesInRange: Set<String>, allWallsChecked: Boolean, allNestsChecked: Boolean = false,
         macawsInRange: Int = if ("Macaw" in speciesInRange) 1 else 0,
-        playerX: Double? = null, playerZ: Double? = null, nestsPunched: Int = 0) {
+        playerX: Double? = null, playerZ: Double? = null, nestsPunched: Int = 0, nestsFound: Int = nestsPunched) {
         nearby[biome] = speciesInRange
         if (speciesInRange.isNotEmpty()) partyFullClears.remove(biome)
         if (biome == SafariBiome.CAVERN) wallsChecked = allWallsChecked
-        if (biome == SafariBiome.FOREST) { nestsChecked = allNestsChecked; punchedNests = nestsPunched }
+        if (biome == SafariBiome.FOREST) updateNestEvidence(allNestsChecked, nestsPunched, nestsFound)
         if (biome == SafariBiome.FOREST) nearbyMacaws = macawsInRange
         if (SafariCompletionZones.forBiome(biome).isNotEmpty() && playerX != null && playerZ != null) {
             zonesRequired.add(biome)
@@ -222,8 +237,8 @@ class SafariRun(val startedAt: Long) {
         if (species in remaining) return false
         return when (species) {
             "Honeybug" -> (structures?.nestsChecked ?: nestsChecked) &&
-                captured >= (observedUuids[species]?.size ?: 0) &&
-                (biome !in zonesRequired || (observedUuids[species]?.size ?: 0) >= SafariFullClear.minimum(species))
+                (nestSitesUnknown == null || nestsChecked) &&
+                captured >= maxOf(honeybugCaptureTarget, structures?.nestsFound ?: 0)
             "Snoozle" -> structures?.wallsCleared ?: wallsChecked
             "Rockmite" -> (structures?.moundsCleared ?: moundsComplete(remaining)) &&
                 captured >= rockmiteMounds && "Rockmite Mound" !in remaining

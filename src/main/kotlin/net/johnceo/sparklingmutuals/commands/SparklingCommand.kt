@@ -47,7 +47,8 @@ object SparklingCommand {
                         open { net.johnceo.sparklingmutuals.history.HistoryScreen(null, net.johnceo.sparklingmutuals.history.HistoryScreen.Tab.STATS) } })
                     .then(ClientCommands.literal("debug").executes { context ->
                         SafariEsp.debug(Minecraft.getInstance())
-                        context.source.sendFeedback(LocalChat.component("[SM] Entity diagnostics saved to latest.log."))
+                        net.johnceo.sparklingmutuals.safari.BeeNests.debug(Minecraft.getInstance())
+                        context.source.sendFeedback(LocalChat.component("[SM] Entity and nest survey diagnostics saved to latest.log."))
                         1
                     })
             )

@@ -10,6 +10,9 @@ class SparklingChecks {
     private val partyCompleted = mutableSetOf<String>()
     fun locallyChecked(name: String) = name in completed
     fun partyChecked(name: String) = name in partyCompleted
+    fun nestEvidence(checked: Boolean) {
+        if (checked) completed.add("Honeybug") else completed.remove("Honeybug")
+    }
     fun reconcileStructures(biome: SafariBiome, moundsRemain: Boolean, wallsRemain: Boolean) {
         if (biome != SafariBiome.CAVERN) return
         if (moundsRemain) { completed.remove("Rockmite"); partyCompleted.remove("Rockmite") }
@@ -45,7 +48,7 @@ class SparklingChecks {
         }
         when (biome) {
             SafariBiome.FOREST -> {
-                if (nestsChecked) completed.add("Honeybug") else completed.remove("Honeybug")
+                nestEvidence(nestsChecked)
                 if (birdsSpawned) completed.addAll(birds)
             }
             SafariBiome.CAVERN -> {

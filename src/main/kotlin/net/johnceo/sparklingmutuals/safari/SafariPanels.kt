@@ -46,6 +46,15 @@ object SafariPanels {
             }
             if (biome == SafariBiome.FOREST && needed("Honeybug")) {
                 add(HudRow()); add(HudRow("Bee nests to punch", "$nests", HudRow.GOLD, HudRow.GRAY))
+                if (run?.nestSurveyComplete != true) {
+                    add(HudRow("Nest survey", "Incomplete", HudRow.GOLD, HudRow.GRAY))
+                    run?.nestSitesUnknown?.let { unknown ->
+                        add(HudRow("Unverified nest sites", "$unknown", HudRow.GOLD, HudRow.GRAY))
+                        add(HudRow(if (unknown > 0) "Load grey survey markers" else "Check nest data: /sm debug", color = HudRow.GRAY))
+                    }
+                }
+                if (SafariFullClear.mode == SafariMode.FULL_CLEAR && run != null)
+                    add(HudRow("Honeybugs captured", "${run.count("Honeybug")}/${run.honeybugCaptureTarget}", HudRow.GOLD, HudRow.GRAY))
             }
             if (biome == SafariBiome.CAVERN) {
                 if (unavailable("Snoozle")) {

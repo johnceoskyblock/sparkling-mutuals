@@ -4,8 +4,12 @@
 - Remove a nest waypoint and decrement its counter once on either left- or right-click.
 - Complete Sparkling Honeybug checks after every nest is punched; Unique requires one capture plus those nest checks when the party needs its sparkling.
 - Keep ordinary Honeybug ESP off after the first Unique capture, and require every observed bee captured in Full Clear.
+- Show grey guidance for unverified Forest nest sites and separate survey coverage from nests remaining in the missing panel.
+- Inspect available Forest block data on arrival across all elevations, retaining survey markers and evidence through chunk unloading.
+- Use the verified run's actual Honeybug total for Full Clear captures and personal bests, including released bees outside tracking range; invalidate local completion immediately when survey evidence changes.
+- Add nest block, helper and render diagnostics to `/sm debug` for in-game verification.
 
-Development build: 4.0.0-dev. Validation: 518 automated regression tests and the clean build passed. Live in-game interaction/rendering remains untested.
+Development build: 4.0.0-dev. Validation: 530 automated regression tests and the clean build passed. Live in-game interaction/rendering remains untested.
 
 ## What's changed in v3.0.0
 

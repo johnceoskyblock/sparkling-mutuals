@@ -1,15 +1,25 @@
 package net.johnceo.sparklingmutuals.safari
 
 enum class NestBlock { UNKNOWN, NEST, HIVE }
+data class NestWaypoint(val position: Triple<Int, Int, Int>, val nest: Boolean)
 
 /** A run's 13 possible sites must be classified before any nest completion is trusted. */
 class BeeNestSurvey {
     private val states = positions.associateWith { NestBlock.UNKNOWN }.toMutableMap()
     private val punched = mutableSetOf<Triple<Int, Int, Int>>()
     val remaining get() = states.filterValues { it == NestBlock.NEST }.keys - punched
+    val unverified get() = states.filterValues { it == NestBlock.UNKNOWN }.keys.toSet()
+    val nestCount get() = states.values.count { it == NestBlock.NEST }
+    fun classification(pos: Triple<Int, Int, Int>) = states[pos] ?: NestBlock.UNKNOWN
     val punchedCount get() = punched.size
     val allChecked get() = states.values.none { it == NestBlock.UNKNOWN } &&
         states.values.count { it == NestBlock.NEST } >= 3 && remaining.isEmpty()
+    /** null means no client block data. Only an inspected nest or hive establishes coverage. */
+    fun scan(blockAt: (Triple<Int, Int, Int>) -> NestBlock?) {
+        positions.forEach { site -> blockAt(site)?.let { observe(site, it) } }
+    }
+    fun waypoints(needed: Boolean): List<NestWaypoint> = if (!needed) emptyList() else
+        remaining.map { NestWaypoint(it, true) } + unverified.map { NestWaypoint(it, false) }
     fun observe(pos: Triple<Int, Int, Int>, block: NestBlock) {
         // A punched nest can disappear on the server; that cannot undo the interaction.
         if (pos in states && !(pos in punched && block == NestBlock.UNKNOWN)) states[pos] = block
