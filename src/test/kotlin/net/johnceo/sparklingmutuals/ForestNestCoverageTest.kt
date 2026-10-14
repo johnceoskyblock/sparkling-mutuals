@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class ForestNestCoverageTest {
-    private val nests = setOf(Triple(-17, 69, 41), Triple(-13, 104, 21), Triple(16, 115, 87))
+    private val nests = setOf(Triple(-17, 68, 41), Triple(-13, 103, 21), Triple(16, 114, 87))
     private fun blocks() = BeeNestSurvey.positions.associateWith { if (it in nests) NestBlock.NEST else NestBlock.HIVE }
     @Test fun `loaded blocks at every elevation are read without a player proximity condition`() {
         val survey = BeeNestSurvey()
@@ -27,9 +27,9 @@ class ForestNestCoverageTest {
         assertTrue(survey.waypoints(true).none { it.nest })
         assertFalse(survey.allChecked)
         val data = blocks()
-        val upper = Triple(16, 115, 87)
+        val upper = Triple(16, 114, 87)
         survey.scan { if (it == upper) null else data[it] }
-        survey.punch(Triple(-17, 69, 41)); survey.punch(Triple(-13, 104, 21))
+        survey.punch(Triple(-17, 68, 41)); survey.punch(Triple(-13, 103, 21))
         assertEquals(setOf(upper), survey.unverified)
         assertEquals(listOf(NestWaypoint(upper, false)), survey.waypoints(true))
         survey.scan { data[it] }
@@ -59,8 +59,8 @@ class ForestNestCoverageTest {
         survey.scan { blocks()[it] }
         nests.forEach { survey.punch(it) }
         assertTrue(survey.allChecked)
-        survey.scan { if (it == Triple(20, 89, 33)) NestBlock.UNKNOWN else null }
-        assertEquals(setOf(Triple(20, 89, 33)), survey.unverified)
+        survey.scan { if (it == Triple(20, 88, 33)) NestBlock.UNKNOWN else null }
+        assertEquals(setOf(Triple(20, 88, 33)), survey.unverified)
         assertFalse(survey.allChecked)
     }
 }

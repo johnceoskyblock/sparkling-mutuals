@@ -8,8 +8,9 @@
 - Inspect available Forest block data on arrival across all elevations, retaining survey markers and evidence through chunk unloading.
 - Use the verified run's actual Honeybug total for Full Clear captures and personal bests, including released bees outside tracking range; invalidate local completion immediately when survey evidence changes.
 - Add nest block, helper and render diagnostics to `/sm debug` for in-game verification.
+- Correct all 13 Forest nest site heights by one block using live diagnostics; the old positions sampled oak fences above the nests/hives.
 
-Development build: 4.0.0-dev. Validation: 530 automated regression tests and the clean build passed. Live in-game interaction/rendering remains untested.
+Development build: 4.0.0-dev. Validation: 531 automated regression tests and the build passed. Live diagnostics identified the nest-height error; the corrected build's rendering still needs in-game confirmation.
 
 ## What's changed in v3.0.0
 

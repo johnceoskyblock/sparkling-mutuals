@@ -5,9 +5,9 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class BeeNestSurveyTest {
-    private val low = Triple(-17, 69, 41)
-    private val other = Triple(-22, 69, 39)
-    private val high = Triple(16, 115, 87)
+    private val low = Triple(-17, 68, 41)
+    private val other = Triple(-22, 68, 39)
+    private val high = Triple(16, 114, 87)
     private fun observe(survey: BeeNestSurvey, nests: Set<Triple<Int, Int, Int>>) =
         BeeNestSurvey.positions.forEach { survey.observe(it, if (it in nests) NestBlock.NEST else NestBlock.HIVE) }
 
@@ -24,10 +24,10 @@ class BeeNestSurveyTest {
     }
     @Test fun `six actual nests remain required while beehives are ignored`() {
         val survey = BeeNestSurvey()
-        val nests = setOf(low, other, high, Triple(25, 71, 41), Triple(-1, 82, 60), Triple(-1, 85, 9))
+        val nests = setOf(low, other, high, Triple(25, 70, 41), Triple(-1, 81, 60), Triple(-1, 84, 9))
         observe(survey, nests)
         assertEquals(6, survey.remaining.size)
-        assertFalse(survey.punch(Triple(20, 89, 33)))
+        assertFalse(survey.punch(Triple(20, 88, 33)))
         nests.toList().take(5).forEach { survey.punch(it) }
         assertFalse(survey.allChecked)
         survey.punch(nests.toList().last())
@@ -66,7 +66,7 @@ class BeeNestSurveyTest {
         assertFalse(survey.allChecked)
         observe(survey, setOf(low, other, high))
         survey.punch(low); survey.punch(other); survey.punch(high)
-        survey.observe(Triple(20, 89, 33), NestBlock.UNKNOWN)
+        survey.observe(Triple(20, 88, 33), NestBlock.UNKNOWN)
         assertFalse(survey.allChecked)
     }
 }

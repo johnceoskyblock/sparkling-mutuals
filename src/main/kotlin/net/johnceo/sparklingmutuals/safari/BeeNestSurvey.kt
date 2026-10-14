@@ -27,9 +27,10 @@ class BeeNestSurvey {
     fun punch(pos: Triple<Int, Int, Int>) = states[pos] == NestBlock.NEST && punched.add(pos)
     fun reset() { states.keys.forEach { states[it] = NestBlock.UNKNOWN }; punched.clear() }
     companion object {
-        val positions = listOf(Triple(-17, 69, 41), Triple(-22, 69, 39), Triple(25, 71, 41),
-            Triple(23, 71, 46), Triple(-1, 82, 60), Triple(-9, 82, 58), Triple(-13, 104, 21),
-            Triple(-11, 104, 13), Triple(-1, 85, 9), Triple(20, 89, 33), Triple(15, 89, 31),
-            Triple(18, 115, 79), Triple(16, 115, 87))
+        // Live block diagnostics confirmed the original Y values pointed at fences above these blocks.
+        val positions = listOf(Triple(-17, 68, 41), Triple(-22, 68, 39), Triple(25, 70, 41),
+            Triple(23, 70, 46), Triple(-1, 81, 60), Triple(-9, 81, 58), Triple(-13, 103, 21),
+            Triple(-11, 103, 13), Triple(-1, 84, 9), Triple(20, 88, 33), Triple(15, 88, 31),
+            Triple(18, 114, 79), Triple(16, 114, 87))
     }
 }
