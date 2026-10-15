@@ -33,7 +33,7 @@ The supplied live-run log has `starting=0 picked=3 spent=3 held=0 required=3`, o
 - In Sparkling mode, show Shining Coin floor-drop ESP only if someone in the party needs Sparkling Gimmiegold. If everyone owns it, hide coin ESP even with zero coins picked up. This filter does not change capture/source completion requirements.
 
 - Missing coin-use chat must not permanently block completion: with a fresh empty coin inventory, a qualifying source scan showing no remaining coin/unknown markers, and at least the full required population from retained qualified UUID checks plus safely reconciled shared captures, that population can establish the missing spawn evidence. Empty inventory alone remains insufficient. Full Clear uses confirmed captures for its entire required population; live entities cannot become captures.
-- Retain a validated Gimmiegold check and verified coin-source absence during ordinary movement. New coin pickups, newly held coins, additional starting coin demand, positive/unknown coin markers when authoritative baseline collection/use is unavailable, and Haunted reentry reopen or revalidate the applicable work. A coin acquired after earlier completion requires another Gimmiegold; do not reuse the old three.
+- After a qualifying source check, retain its proof across Haunted reentry and unknown/unloaded marker scans. Positive remaining coin sources, held/new coins and outstanding resource notices still reopen work; unknown sources cannot establish proof initially.
 - Remaining-drop evidence uses active, visible STRING item displays, not merely surviving numeric display IDs. Invisible/empty/decorative survivors are not unopened rewards. Associate validated triple members by their group IDs, even when their block positions straddle a boundary; complete incense triples must not masquerade as remaining coins.
 - `/sm debug` logs Gimmiegold starting/picked/spent/held coin counts, required and accounted population, completion/source state and remaining marker count. Use this to diagnose any remaining live-server mismatch; the sewer is within the existing Haunted center radius and that radius has not been enlarged for this fix.
 - Coin-source scans are independent of incense: a complete currently loaded typed Soothing Incense display group does not count as a remaining Shining Coin marker. Predicted coin groups and unknown/partial/generic markers remain blockers on the marker-scan recovery path, even when hidden by ESP; they do not override fully confirmed baseline coin collection/use. This item-specific presence filter does not fabricate a pickup or coin-use event; the spawn-order typing still needs in-game validation.
@@ -52,6 +52,10 @@ The supplied live-run log has `starting=0 picked=3 spent=3 held=0 required=3`, o
 - With the same empty-world evidence but fewer than the minimum catches, remain pending: the earlier clearer may still hold Shining Coins. Their inventory is inferred, not observed; a partial catch total alone does not complete this case.
 - Zero coins held alone proves neither that all coins were collected nor that all spawned critters were captured. Exact spawn: `A Gimmiegold appeared out of nowhere and gobbled up your Shining Coin!`.
 
+A locally resolved source check survives biome reentry and unloading for this run. Unknown scans do not revoke it; new food/coins, visible unresolved sources or uncaught Sparklings still block completion. See [retained checks](TRACKING.md).
+
 ## Last updated
 
 2026-10-15 - Added the Sparkling coin ESP party-discovery gate; retained confirmed baseline coin-source recovery.
+
+2026-10-15 - Retained resolved source proof across movement and reentry (#54).

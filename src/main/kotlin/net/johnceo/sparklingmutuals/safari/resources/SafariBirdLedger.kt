@@ -14,14 +14,13 @@ class SafariBirdLedger {
     private var populationProof: Int? = null
     private var recoveredDemand = 0
     private var heldFoods: Int? = null
-    fun reenter() { populationProof = null }
     /** A current, central scan can recover feeder evidence missed before Forest entry. */
     fun scan(x: Double, z: Double, population: Int, dropsRemaining: Int) {
-        if (dropsRemaining != 0 || heldFoods != 0) populationProof = null
+        if (dropsRemaining > 0 || heldFoods != 0) populationProof = null
         if (!ForestCompletionZones.inBirdScanRadius(x, z)) return
         if (dropsRemaining == 0 && heldFoods == 0) populationProof = maxOf(populationProof ?: 0, population)
         // Keep a previously validated source proof through ordinary unloading. New food,
-        // live drops, held food and reentry still invalidate it through their own paths.
+        // live drops and held food still invalidate it through their own paths.
         if ((populationProof ?: -1) >= feedingTarget) recoveredDemand = maxOf(recoveredDemand, feedingTarget)
     }
     private fun populationResolves(target: Int) = heldFoods == 0 && (populationProof ?: -1) >= target

@@ -70,7 +70,7 @@ class GimmiegoldCompletionRecoveryTest {
         scan(run, live)
         assertTrue(run.sparklingComplete("Gimmiegold", party()))
     }
-    @Test fun `new coin and Haunted reentry require a fresh full population check`() {
+    @Test fun `new coin needs new population but resolved Haunted proof survives reentry`() {
         val run = run(); run.visitBiome(SafariBiome.HAUNTED)
         val firstThree = List(3) { "Gimmiegold" to UUID.randomUUID() }
         scan(run, firstThree)
@@ -82,9 +82,9 @@ class GimmiegoldCompletionRecoveryTest {
         scan(run, listOf("Gimmiegold" to UUID.randomUUID()))
         assertTrue(run.sparklingComplete("Gimmiegold", party()))
         run.visitBiome(SafariBiome.CAVERN); run.visitBiome(SafariBiome.HAUNTED)
-        assertFalse(run.sparklingComplete("Gimmiegold", party()))
+        assertTrue(run.sparklingComplete("Gimmiegold", party()))
         scan(run, emptyList())
-        assertTrue(run.sparklingComplete("Gimmiegold", party()), "Revalidate source conditions while retaining the checked UUIDs")
+        assertTrue(run.sparklingComplete("Gimmiegold", party()), "Retain resolved source and UUID evidence")
     }
     @Test fun `complete incense triple across block boundaries never masquerades as uncollected coins`() {
         val group = PredictedFloorDrop(100, -4.01, 65.0, -64.01, SafariBiome.HAUNTED, FloorDropType.INCENSE)

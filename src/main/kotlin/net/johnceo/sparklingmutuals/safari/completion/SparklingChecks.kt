@@ -68,10 +68,10 @@ class SparklingChecks {
     fun birdPopulation() = checkCount("Bluebird") + checkCount("Parakeet") + checkCount("Macaw") / 2
     fun localScan(biome: SafariBiome) { partyCompleted.removeAll(biome.critters.map { it.name }.toSet()) }
     fun reenter(biome: SafariBiome) {
-        if (biome == SafariBiome.HAUNTED) { goldEnvironmentReady = false; confirmedCoinSource = false }
         val names = biome.critters.map { it.name }.toSet()
-        // Revalidate spawn sources, but never erase qualified UUID checks on biome entry.
-        completed.removeAll(names.intersect(sourceChecks)); partyCompleted.removeAll(names)
+        // Party reports require local revalidation. Earned local/source checks belong
+        // to the run; movement alone supplies no contradictory evidence.
+        partyCompleted.removeAll(names)
         names.forEach { currentCounts.remove(it) }
     }
     // Captures/current loaded population can establish spawns missed by the coin-use chat listener.
@@ -133,7 +133,8 @@ class SparklingChecks {
             SafariBiome.ICY -> Unit
             SafariBiome.HAUNTED -> {
                 confirmedCoinSource = confirmedFloorCoinsResolved()
-                val sourceResolved = hauntedCoinDropsRemaining == 0 || confirmedCoinSource
+                val sourceResolved = confirmedCoinSource || hauntedCoinDropsRemaining == 0 ||
+                    hauntedCoinDropsRemaining < 0 && goldEnvironmentReady
                 goldEnvironmentReady = sourceResolved && (atCenter || goldEnvironmentReady)
                 val alreadyChecked = locallyChecked("Gimmiegold")
                 if (atCenter) currentCounts["Gimmiegold"] = if (alreadyChecked)
@@ -174,7 +175,6 @@ class SparklingChecks {
         private val globalCompletions = mapOf(
             "The darkness in the Haunted Biome fades away..." to "Doomspiral",
             "The cave opens up again..." to "Wumpa")
-        private val sourceChecks = setOf("Honeybug", "Rockmite", "Snoozle", "Bluebird", "Parakeet", "Macaw", "Gimmiegold")
         private val birds = setOf("Bluebird", "Parakeet", "Macaw")
         private val centers = mapOf(SafariBiome.FOREST to (6.0 to 51.0), SafariBiome.CAVERN to (-114.0 to 49.0),
             SafariBiome.ICY to (-112.0 to -54.0), SafariBiome.HAUNTED to (-4.0 to -64.0))

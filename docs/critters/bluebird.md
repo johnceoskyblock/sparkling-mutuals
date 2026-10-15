@@ -32,6 +32,10 @@
 - Use shared catches + currently scanned uncaptured Bluebird UUIDs to account for this species, without counting its spawn message or escape replacement again. Correlate all bird species with the known food demand.
 - Capture-GUI color: keep this row red while known food remains unused/queued. Once food use is resolved, turn it green if no live Bluebird remains in a qualifying scan; other bird species need not be complete. Reevaluate on new food/spawns. See [shared feeder rules](TRACKING.md#forest-birds-shared-feeder-independent-completion).
 
+A locally resolved source check survives biome reentry and unloading for this run. Unknown scans do not revoke it; new food/coins, visible unresolved sources or uncaught Sparklings still block completion. See [retained checks](TRACKING.md).
+
 ## Last updated
 
 2026-10-15 - Added mid-run Forest feeding recovery; retained independent species completion and the one-catch Macaw exception.
+
+2026-10-15 - Retained resolved source proof across movement and reentry (#54).

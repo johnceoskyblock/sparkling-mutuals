@@ -133,6 +133,10 @@ Use the existing IntelliJ Minecraft Client/DevAuth configuration. These are manu
 - Edit a rule and its Last updated section: the command must list that document, including when edited twice on the same date. A new document should appear as New; a removed one as Removed.
 - Read [SOURCE_SYNC.md](SOURCE_SYNC.md) before recording a new baseline. Record only after the corresponding source has been reviewed, implemented and tested.
 
+Issue #54: earn source/radius checks, exit radius, unload, revisit and switch modes; retain local proof. Contrast a party-only report with locally earned proof. New sources and uncaught Sparklings must reopen checks; Full Clear still requires catches. Repeat on all three configured targets.
+
 ## Last updated
 
 2026-10-15 - Added ticket-earned release/announcement and automatic warp timer checks, retaining detector and incense regressions.
+
+2026-10-15 - Clarified run-retained Sparkling/source evidence and independent party revalidation (#54).

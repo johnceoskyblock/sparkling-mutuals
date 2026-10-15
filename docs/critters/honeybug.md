@@ -32,6 +32,10 @@
 - A bee released outside this client's entity range remains outstanding until catch or current bee evidence accounts for it. A spawn/punch is never a catch.
 - The nest counter waits for distinct spawned bees to match the actual punched nest total, even after the last click. Keep this counter separate from nest highlight gating and capture quotas. Mid-run population evidence can also resolve it when all sites are known.
 
+Retain the number of nest opportunities already reconciled by a complete survey plus shared catches/current live bees. Bee unloading does not erase this proof; newly identified additional nests reopen the source check until accounted for.
+
 ## Last updated
 
 2026-10-15 - Preserved distinct spawned-bee requirements for the nest counter alongside mid-run population recovery and separate nest highlight gating.
+
+2026-10-15 - Retained validated nest population through unloading (#54).

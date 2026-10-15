@@ -31,7 +31,12 @@ class SafariRun(val startedAt: Long) {
         sparklingCaptures.capture(species, match.groupValues[1], broadcast = true, at = now)
     }
     private var liveBees = 0
-    private val beePopulationAccountsForNests get() = foundNests > 0 && nestSitesUnknown == 0 && count("Honeybug") + liveBees >= foundNests
+    private var resolvedNestOpportunities = 0
+    private val beePopulationAccountsForNests: Boolean get() {
+        if (foundNests > 0 && nestSitesUnknown == 0 && count("Honeybug") + liveBees >= foundNests)
+            resolvedNestOpportunities = maxOf(resolvedNestOpportunities, foundNests)
+        return foundNests > 0 && resolvedNestOpportunities >= foundNests
+    }
     val nestsResolved get() = nestsChecked || beePopulationAccountsForNests
     fun liveHoneybugs(amount: Int) { liveBees = amount; sparklingChecks.nestEvidence(nestsResolved) }
     var hadFourIncense = false
@@ -83,7 +88,6 @@ class SafariRun(val startedAt: Long) {
         if (lastBiome != biome) {
             partyFullClears.remove(biome); communalClears.remove(biome)
             sparklingChecks.reenter(biome)
-            if (biome == SafariBiome.FOREST) birds.reenter()
             zoneScanConfirmed.removeAll(biome.critters.map { it.name }.toSet())
         }
         lastBiome = biome

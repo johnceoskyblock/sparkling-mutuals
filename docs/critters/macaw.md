@@ -34,6 +34,10 @@
 - No-Macaw evidence needs every feeding opportunity resolved with no Macaw spawn/sighting. It marks unavailable, not a Macaw catch for Unique biome completion; party `fd` cannot advance Unique progress. A bonus Rainbow Feather message is a reward, not another Macaw capture.
 - Reported in Sparkling testing: a Macaw escaped a capsule, reappeared and regained ESP. A replacement UUID may explain this; it is not another feeder spawn, successful catch or automatically new discovery opportunity. See [escape identity](TRACKING.md#capsule-escape-and-replacement-identity).
 
+A locally resolved source check survives biome reentry and unloading for this run. Unknown scans do not revoke it; new food/coins, visible unresolved sources or uncaught Sparklings still block completion. See [retained checks](TRACKING.md).
+
 ## Last updated
 
 2026-10-15 - Added mid-run Forest feeding recovery; retained independent species completion and the one-catch Macaw exception.
+
+2026-10-15 - Retained resolved source proof across movement and reentry (#54).

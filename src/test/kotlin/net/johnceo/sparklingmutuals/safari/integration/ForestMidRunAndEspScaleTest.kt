@@ -96,7 +96,7 @@ class ForestMidRunAndEspScaleTest {
         scan(run, extra)
         assertTrue(run.birds.feedingResolved)
     }
-    @Test fun `new pickups cannot reuse old population and Forest reentry requires another qualifying scan`() {
+    @Test fun `new pickups need new population but resolved Forest proof survives reentry`() {
         val run = cleared(); run.visitBiome(SafariBiome.FOREST); scan(run)
         assertTrue(run.birds.feedingResolved)
         run.recordBirdFood("FLOOR DROP! Yogi Berry", SafariBiome.FOREST, 10000)
@@ -105,7 +105,7 @@ class ForestMidRunAndEspScaleTest {
         scan(run, listOf("Bluebird" to UUID.randomUUID()))
         assertTrue(run.birds.feedingResolved)
         run.visitBiome(SafariBiome.CAVERN); run.visitBiome(SafariBiome.FOREST)
-        assertFalse(run.birds.feedingResolved)
+        assertTrue(run.birds.feedingResolved)
     }
     @Test fun `party extra food notice requires new population and then normal catch completion`() {
         val run = cleared(); scan(run)

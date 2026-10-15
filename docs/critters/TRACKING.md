@@ -89,7 +89,7 @@ Keep resource grants, floor pickups, resource uses, spawns, sightings and catche
 - Require at least **nine feeding opportunities**, plus known starting/extra food demand. Bluebirds and Parakeets count individually; two Macaws account for one feeding. Do not add personal catches again on top of shared catches, accumulated historical UUIDs or spawn messages on top of their entities. An incomplete Macaw pair cannot establish another full feeding opportunity.
 - Use raw floor markers independently of ESP selection. Any remaining Forest marker whose reward cannot be confirmed as irrelevant conservatively blocks this absence fallback, even when hidden by ESP settings. A predicted generic reward alone cannot prove there is no bird food. Unknown/unperformed scans and out-of-radius entry cannot establish this evidence.
 - This resolves the feeding source only. Full Clear still needs the applicable catches and absence of remaining Bluebirds/Parakeets; one shared Macaw catch remains sufficient even with live extra Macaws. Sparkling may complete using current live birds; Unique still requires its shared catch and any needed Sparkling check. Personal PBs still require personal catches.
-- Do not manufacture food pickups, food-use announcements, captures or personal food-completion alerts. Known unused starting/party resources remain blockers. A new pickup after this recovery requires additional bird population; the old nine cannot resolve it again. Revalidate on Forest reentry and reopen on new food or feeder announcements.
+- Do not manufacture food pickups, food-use announcements, captures or personal food-completion alerts. Known unused starting/party resources remain blockers. A new pickup after this recovery requires additional bird population; the old nine cannot resolve it again. Retain resolved proof on Forest reentry; reopen on new food or feeder announcements.
 
 ### Forest birds: shared feeder, independent completion
 
@@ -152,7 +152,7 @@ Keep resource grants, floor pickups, resource uses, spawns, sightings and catche
 - For **every species** being checked in Unique or Sparkling mode, record each distinct UUID seen in its qualifying scan area once and retain it for the remainder of that run. Preserve partial totals and completed X/X checks when entities unload, render distance changes, the player changes mode, or a biome is revisited. A new run resets the history.
 - Scrappy, Gemzie, Troodon and Gazer show these retained totals in their fixed X/X checked counters. Other species retain the same internal check evidence without adding new fixed counter suffixes.
 - Repeated scans of one UUID add nothing. Record the shared catch count at each UUID's first live sighting. For each such baseline, the baseline catches plus distinct UUIDs first seen at or after that baseline are a valid checked-population lower bound. Take the largest bound or confirmed capture count. This combines earlier loot shares with later sightings without counting a seen critter again when its catch arrives.
-- Outside a species' defined scan area, sightings do not establish a new qualified check. Previously qualified checks remain valid. Source gates remain separate: food, coins, nests, walls, mounds, new resources and unresolved party-resource notices can still block combined completion without deleting the UUID history. Reentry revalidates these sources.
+- Outside a species' defined scan area, sightings do not establish a new qualified check. Previously qualified checks remain valid. Source gates remain separate: food, coins, nests, walls, mounds, new resources and unresolved party-resource notices can still block combined completion without deleting the UUID history. Reentry preserves proven sources; positive new source work reopens them.
 - Full Clear remains based on actual shared/personal capture requirements and live remainder/source checks. Retained UUID checking never manufactures captures, food use, coin spending or personal PBs.
 
 ## Missing/check panel by mode
@@ -255,6 +255,10 @@ For the observed three-floor-coin baseline, confirmed pickup/use history outrank
 - Confirm numeric species minima and total coin opportunities from Hypixel. The supplied bird example establishes nine Forest food pickups plus applicable starting food; party contributions can add more feeding demand. Other existing baselines remain in the critter index, not promoted to new server facts.
 - Preserve formatting, multiline entry banners and optional Chat Heads segments when testing the [supplied message variants](MESSAGES.md). The supplied coin message confirms the spelling **Gimmiegold**.
 
+Retain locally resolved source checks together with qualified radius/UUID evidence for the run. Reentry, out-of-radius scans and unknown unloaded markers do not contradict existing proof. Positive remaining sources, extra resources and uncaught Sparklings still reopen their checks. Party reports remain provisional: entering and scanning can legitimately reveal that no local check was ever earned, without erasing checks that were earned.
+
 ## Last updated
 
 2026-10-15 - Corrected incense limits to 4/3/2 for 0/1/2 starting incense; retained unified positive detection and ordinary scan circles.
+
+2026-10-15 - Clarified run-retained Sparkling/source evidence and independent party revalidation (#54).

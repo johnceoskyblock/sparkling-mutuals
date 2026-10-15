@@ -1,6 +1,9 @@
 package net.johnceo.sparklingmutuals.safari.completion
 
 import java.util.UUID
+import net.johnceo.sparklingmutuals.safari.PartySparklingState
+import net.johnceo.sparklingmutuals.safari.SafariMessages
+import net.johnceo.sparklingmutuals.safari.SafariMode
 import net.johnceo.sparklingmutuals.safari.SafariBiome
 import net.johnceo.sparklingmutuals.safari.SafariCatch
 import net.johnceo.sparklingmutuals.safari.SafariRoster
@@ -96,6 +99,90 @@ class RetainedSparklingChecksTest {
         run.recordBirdFood("FLOOR DROP! Yogi Berry", SafariBiome.FOREST, 10000)
         run.scanBirdSources(6.0, 51.0, emptyList(), 0)
         assertFalse(run.birds.sparklingSpawned)
+    }
+
+    @Test fun `earned source checks survive biome reentry before any fresh source scan`() {
+        for (name in listOf("Honeybug", "Rockmite", "Snoozle", "Bluebird", "Parakeet", "Macaw", "Gimmiegold")) {
+            val run = SafariRun(0)
+            val biome = SafariRoster.named(name)!!.biome
+            run.visitBiome(biome)
+            run.inventoryEvidence(emptyList(), 10000)
+            scan(run.sparklingChecks, name, List(3) { UUID.randomUUID() })
+            assertTrue(run.sparklingChecks.locallyChecked(name), name)
+            run.visitBiome(if (biome == SafariBiome.ICY) SafariBiome.CAVERN else SafariBiome.ICY)
+            run.visitBiome(biome)
+            assertTrue(run.sparklingChecks.locallyChecked(name), "$name lost proven source on entry")
+        }
+    }
+    @Test fun `central Forest source recovery survives reentry and unknown unloaded markers`() {
+        val run = SafariRun(0)
+        run.visitBiome(SafariBiome.FOREST)
+        run.inventoryEvidence(emptyList(), 10000)
+        run.scanBirdSources(6.0, 51.0, List(9) { "Bluebird" to UUID.randomUUID() }, 0)
+        assertTrue(run.birds.sparklingSpawned)
+        run.visitBiome(SafariBiome.ICY)
+        run.visitBiome(SafariBiome.FOREST)
+        run.scanBirdSources(1000.0, 1000.0, emptyList(), -1)
+        assertTrue(run.birds.sparklingSpawned, "unknown unloading is not new food")
+        run.scanBirdSources(6.0, 51.0, emptyList(), 1)
+        assertFalse(run.birds.sparklingSpawned, "a positive remaining source must still reopen")
+    }
+    @Test fun `Haunted source recovery survives reentry and unknown out of radius scan`() {
+        val checks = SparklingChecks()
+        checks.inventory(emptyList())
+        scan(checks, "Gimmiegold", List(3) { UUID.randomUUID() })
+        assertTrue(checks.locallyChecked("Gimmiegold"))
+        checks.reenter(SafariBiome.HAUNTED)
+        checks.scan(SafariBiome.HAUNTED, 1000.0, 1000.0, emptyList(), hauntedCoinDropsRemaining = -1)
+        assertTrue(checks.locallyChecked("Gimmiegold"))
+        checks.scan(SafariBiome.HAUNTED, -4.0, -64.0, emptyList(), hauntedCoinDropsRemaining = 1)
+        assertFalse(checks.locallyChecked("Gimmiegold"))
+    }
+
+    @Test fun `party report revalidation keeps earned checks but never fabricates Unique catches`() {
+        val party = PartySparklingState().apply {
+            select(setOf("me")); accept(setOf("me"), mapOf("me" to (SafariRoster.all.map { it.name }.toSet() - "Gemzie")))
+        }
+        val run = SafariRun(0)
+        SafariMessages.forRun("Party > Friend: cd", run, true)
+        assertTrue(run.sparklingComplete("Gemzie", party))
+        assertFalse(run.uniqueComplete("Gemzie", party))
+        run.visitBiome(SafariBiome.CAVERN)
+        assertFalse(run.sparklingComplete("Gemzie", party), "party report has no local check")
+        scan(run.sparklingChecks, "Gemzie", List(3) { UUID.randomUUID() })
+        run.updateCaptureEvidence(SafariBiome.CAVERN, setOf("Gemzie"), false)
+        assertTrue(run.sparklingComplete("Gemzie", party))
+        run.record(SafariCatch(SafariRoster.named("Gemzie")!!))
+        for (mode in listOf(SafariMode.UNIQUE, SafariMode.SPARKLING, SafariMode.FULL_CLEAR, SafariMode.UNIQUE)) {
+            run.visitBiome(SafariBiome.ICY); run.visitBiome(SafariBiome.CAVERN)
+            run.updateCaptureEvidence(SafariBiome.CAVERN, emptySet(), false, playerX = 1000.0, playerZ = 1000.0)
+            run.sparklingChecks.scan(SafariBiome.CAVERN, 1000.0, 1000.0, emptyList())
+            assertEquals(if (mode == SafariMode.FULL_CLEAR) 0 else 1,
+                run.completed(mode, listOf(SafariRoster.named("Gemzie")!!), party))
+        }
+        run.observeSparkling(UUID.randomUUID(), "Gemzie")
+        assertFalse(run.sparklingComplete("Gemzie", party))
+        assertFalse(run.uniqueComplete("Gemzie", party))
+        assertEquals(3, run.sparklingChecks.checkCount("Gemzie"))
+        assertEquals(0, SafariRun(1).sparklingChecks.checkCount("Gemzie"))
+    }
+
+    @Test fun `recovered nest opportunity proof survives unloaded bees but not an extra nest`() {
+        val run = SafariRun(0)
+        run.record(SafariCatch(SafariRoster.named("Honeybug")!!))
+        run.updateNestEvidence(false, 0, 3, 0)
+        run.liveHoneybugs(2)
+        assertTrue(run.nestsResolved)
+        assertTrue(run.sparklingChecks.locallyChecked("Honeybug"))
+        run.liveHoneybugs(0)
+        assertTrue(run.nestsResolved, "unloading cannot erase reconciled nest opportunities")
+        assertTrue(run.sparklingChecks.locallyChecked("Honeybug"))
+        run.updateNestEvidence(false, 0, 4, 0)
+        assertFalse(run.nestsResolved, "a newly identified fourth nest must reopen")
+        assertFalse(run.sparklingChecks.locallyChecked("Honeybug"))
+        run.liveHoneybugs(3)
+        assertTrue(run.nestsResolved)
+        assertFalse(SafariRun(1).nestsResolved)
     }
 
 }

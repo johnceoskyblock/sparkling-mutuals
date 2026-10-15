@@ -62,6 +62,10 @@ Documentation revisions and source synchronization: [SOURCE_SYNC.md](docs/SOURCE
 
 A detected Sparkling of any species blocks its biome completion in **every mode**, regardless of party discoveries. Retain the obligation after unloading/reentry, require a confirmed Sparkling catch, and reopen completion if a new Sparkling appears. Party biome reports and ordinary catches cannot bypass it. See [Sparkling capture obligations](docs/critters/TRACKING.md#sparkling-captures-block-biome-completion-in-every-mode).
 
+Earned Sparkling radius/UUID checks and resolved source evidence last for the run, including biome reentry and unloading. Unknown/unperformed observations do not revoke prior proof; positive new source work or uncaught Sparklings still block completion. Party reports are revalidated separately and never create local evidence.
+
 ## Last updated
 
 2026-10-15 - Added mandatory capture of any observed Sparkling before biome completion in every mode; retained boss capture exceptions.
+
+2026-10-15 - Clarified run-retained Sparkling/source evidence and independent party revalidation (#54).
