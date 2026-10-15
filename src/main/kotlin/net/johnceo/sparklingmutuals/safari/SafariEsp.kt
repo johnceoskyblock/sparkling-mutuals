@@ -88,9 +88,9 @@ object SafariEsp {
             InteractionResult.PASS
         }
     }
-    private fun texture(profile: GameProfile?) = SafariEspRules.textureHash(profile?.properties()?.get("textures")?.firstOrNull()?.value())
+    internal fun texture(profile: GameProfile?) = SafariEspRules.textureHash(profile?.properties()?.get("textures")?.firstOrNull()?.value())
     private fun texture(stack: ItemStack) = texture(stack.get(DataComponents.PROFILE)?.partialProfile())
-    private fun describe(entity: Entity): EspEntity {
+    internal fun describe(entity: Entity): EspEntity {
         val item = (entity as? Display.ItemDisplay)?.itemStack
         val shulker = when (entity) {
             is Shulker -> entity.color
@@ -214,6 +214,7 @@ object SafariEsp {
     fun debug(client: Minecraft) {
         val player = client.player ?: return
         val entities = client.level?.entitiesForRendering()?.filter { !it.isRemoved && player.distanceToSqr(it) <= 6400 }?.toList() ?: return
+        SafariAssist.diagnostics().forEach { logger.info("{}", it) }
         logger.info("Safari ESP diagnostics: biome={}, fullClear={}, collected={}", SafariAssist.biome,
             ConfigManager.fullClearMode, SafariRoster.all.associate { it.name to (SafariTracking.run?.count(it.name) ?: 0) })
         SafariTracking.run?.let { logger.info("Gimmiegold completion: {} coinDropMarkers={}", it.sparklingChecks.gimmiegoldDebug(), observations().hauntedCoinDropsRemaining) }

@@ -25,7 +25,7 @@ In Sparkling mode, hide all Shining Coin floor-drop ESP when nobody in the party
 
 ## Incense waypoint selection in every mode
 
-For **incense only**, rank known Haunted incense floor-drop locations by full 3D distance from **(4, 47, -27)**. With no starting incense, only the closest **four** locations are eligible for ESP. If initial inventory or a starting grant establishes **one or two starting incense**, only the closest **two** locations are eligible. Both cases apply in **Unique, Full Clear and Sparkling**; do not calculate three slots for one starting incense.
+For **incense only**, rank known Haunted incense floor-drop locations by full 3D distance from **(4, 47, -27)**. With no starting incense, only the closest **four** locations are eligible for ESP. If initial inventory or a starting grant establishes **one starting incense**, the closest **three** locations are eligible; with **two starting incense**, the closest **two** are eligible. The limit is **four minus the starting incense count**, in **Unique, Full Clear and Sparkling**.
 
 Retain the starting amount after consumption and biome reentry. Later floor pickups do not become starting items or change this slot limit. Rank all known predicted incense locations, including collected/unloaded ones, so a farther fifth/third location does not replace a picked or unloaded selected location. Newly discovered closer locations can refine the ranking. Equal distances use numeric group ID for a stable tie break. A new run resets this evidence.
 
@@ -105,9 +105,9 @@ Current implementation: `FloorDropPredictor.kt` retains numeric-ID group history
 - Cavern: only the two Lime/Purple/Orange sets. Acquiring one gem of a color hides the other predicted marker of that color, including after the gem is placed.
 - Icy: all **five** predicted Icebreaker slots, in Full Clear while one is still needed. Acquiring one hides all remaining Icebreaker highlights. This matches the inspected JAR's five-slot prefix.
 - Haunted coin-source completion ignores complete currently loaded typed Incense groups, while raw unknown/partial/generic and coin markers continue to block it. Marker selection and the four-incense cutoff never remove a coin-source blocker; resource pickups/use and captures remain separately confirmed.
-- Haunted (**implemented; Minecraft verification pending**): in Sparkling mode, coin ESP requires someone missing Gimmiegold; incense ESP requires someone missing Doomspiral and stops after four confirmed floor pickups or four incense held simultaneously at any point in the run, including starting incense. Both cutoffs and the waypoint-based four/two-location selection apply in every mode.
+- Haunted (**implemented; Minecraft verification pending**): in Sparkling mode, coin ESP requires someone missing Gimmiegold; incense ESP requires someone missing Doomspiral and stops after four confirmed floor pickups or four incense held simultaneously at any point in the run, including starting incense. Both cutoffs and the waypoint-based four/three/two-location selection apply in every mode.
 - Generic/unknown predictions receive no quest-item ESP. Hidden markers remain independent raw presence evidence and cannot complete a critter/source check.
 
 ## Last updated
 
-2026-10-15 - Restricted incense in every mode to the four closest known spawns to (4,47,-27), or two with starting incense; extended the four-held cutoff to every mode.
+2026-10-15 - Corrected all-mode incense selection to four minus starting incense: 0/1/2 starting items show 4/3/2 nearest locations.

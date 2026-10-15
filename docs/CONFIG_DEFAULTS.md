@@ -25,10 +25,14 @@ All types initially inherit the old saved floor-drop color (green on a fresh con
 
 **Miria contest → Auto !dt contest** defaults **on**, consistent with the independent-feature default policy, and explicit saved off choices persist. It sends the literal `!dt contest` to party chat once when a new contest window starts while online in SkyBlock with a known party. It works independently of the contest HUD/tracking toggle. Joining/loading settings, switching profiles, repeated scans and enabling it mid-contest must not send a duplicate or stale request. See [contest downtime](CONTEST_DOWNTIME.md).
 
+## Warp alert action
+
+The existing enabled **Warp reminder** / `/alert` setting now shows the timer alert **and sends `/p warp`** at expiry in the current Safari run. Its saved enabled choice, default 25-second delay and 1–86400-second range remain unchanged. Disabling the feature or changing the delay cancels a pending timer. See [warp alerts](WARP_ALERTS.md).
+
 ## History actions
 
 The History tab begins with the **History** button, followed immediately by **Import History from Logs**. Import is an explicit action that backfills both histories from existing logs. There is no **Import logs on launch** toggle or automatic startup scan: normal sessions already record history live. Older saved auto-import settings are ignored. See [history import](HISTORY_IMPORT.md) for supported files, estimates and merge rules.
 
 ## Last updated
 
-2026-10-15 - Added independent floor-drop colors and the saved Auto !dt contest switch, alongside History actions and ESP text scale.
+2026-10-15 - Documented automatic /p warp under the existing alert toggle; retained contest request, color and History settings.

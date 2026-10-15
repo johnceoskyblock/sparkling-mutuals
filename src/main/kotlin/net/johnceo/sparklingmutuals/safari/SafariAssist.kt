@@ -13,9 +13,9 @@ import net.minecraft.world.entity.player.Player
 import net.minecraft.world.effect.MobEffects
 import kotlin.math.sqrt
 
-/** Loaded-name scan and label/body pairing adapted from CritterMod's v0.9.0 CritterEntities. */
+/** Positive name/skin scan of loaded entities; alerts and progress share the same run-owned evidence. */
 object SafariAssist {
-    private data class Shiny(val label: Entity, val body: Entity, val name: String)
+    private data class Shiny(val label: Entity, val body: Entity, val name: String, val biome: SafariBiome)
     private var shinies = emptyList<Shiny>()
     private var ticks = 0
     private var lastLevel: Any? = null
@@ -53,39 +53,53 @@ object SafariAssist {
             shinies = emptyList(); SparklingEncounters.leave(); return
         }
         val entities = client.level!!.entitiesForRendering().filterNot { it.isRemoved }.toList()
-        val bodies = entities.filter { it is LivingEntity && it !is ArmorStand && it !is Player }
-        val matchedBodies = mutableSetOf<Int>()
-        shinies = entities.mapNotNull { label ->
-            val name = label.customName?.string?.let(SafariRules::sparklingSpecies) ?: return@mapNotNull null
-            SafariTracking.ledger.current?.observeSparkling(label.uuid, name)
-            val body = bodies.minByOrNull { it.position().distanceToSqr(label.position()) }
-                ?.takeIf { it.position().distanceToSqr(label.position()) < 9 } ?: label
-            if (!SafariRules.withinRange(player.distanceToSqr(body)) ||
-                biome == null || SafariAreaMap.biomeAt(body.x, body.y, body.z) != mappedBiome || !matchedBodies.add(body.id)) null
-            else Shiny(label, body, name)
+        val realPlayers = client.connection?.listedOnlinePlayers?.map { it.profile.id }?.toSet().orEmpty() + player.uuid
+        val partyMembers = net.johnceo.sparklingmutuals.party.PartyManager.getMembers().toSet()
+        val snapshots = entities.map { entity ->
+            val realPlayer = entity is Player && (entity.uuid in realPlayers || entity.uuid.toString() in partyMembers)
+            val carrier = entity is Player || entity is ArmorStand || entity is net.minecraft.world.entity.Display.ItemDisplay
+            SparklingEntity(entity.id, entity.uuid, entity.x, entity.y, entity.z, entity.customName?.string,
+                if (entity is Player && !realPlayer)
+                    SafariEsp.texture(client.connection?.getPlayerInfo(entity.uuid)?.profile ?: entity.gameProfile)
+                else if (carrier && !realPlayer) SafariEsp.describe(entity).texture else null, realPlayer, carrier,
+                entity is LivingEntity && entity !is ArmorStand && !realPlayer)
+        }
+        val byId = entities.associateBy { it.id }
+        shinies = SparklingDetector.detect(snapshots).mapNotNull { match ->
+            val body = byId[match.body] ?: return@mapNotNull null
+            val label = byId[match.label] ?: return@mapNotNull null
+            val biome = SafariRoster.named(match.species)?.biome ?: return@mapNotNull null
+            val identity = SafariTracking.ledger.current?.observeSparkling(body.uuid, match.species, match.aliases) ?: body.uuid
+            SparklingEncounters.observe(identity, match.species, biome, body.blockPosition())
+            Shiny(label, body, match.species, biome)
         }.sortedBy { player.distanceToSqr(it.body) }
-        shinies.forEach { SparklingEncounters.observe(it.label.uuid, it.name, biome!!, it.body.blockPosition()) }
         SparklingEncounters.tick(client)
     }
 
+    fun diagnostics(): List<String> {
+        val player = Minecraft.getInstance().player ?: return emptyList()
+        return shinies.map { "Sparkling detection: species=${it.name} biome=${it.biome} " +
+            "source=${if (it.label.customName?.string?.let(SafariRules::sparklingSpecies) != null) "name" else "skin"} " +
+            "body=${it.body.uuid} label=${it.label.uuid} distance=${sqrt(player.distanceToSqr(it.body)).toInt()}m" }
+    }
     @JvmStatic fun hidePaintings() = ConfigManager.hideHauntedPaintings && inHaunted
     @JvmStatic fun isHighlighted(id: Int): Boolean {
         val client = Minecraft.getInstance()
         val player = client.player ?: return false
         return ConfigManager.shinyDetection && inSafari && shinies.any {
-            !it.body.isRemoved && (it.body.id == id || it.label.id == id) && SafariRules.withinRange(player.distanceToSqr(it.body))
+            !it.body.isRemoved && (it.body.id == id || it.label.id == id)
         }
     }
 
     fun nearbyPanel(preview: Boolean = false): HudPanel? {
         val client = Minecraft.getInstance()
-        if (preview) return HudPanel("Nearby sparklings (80m)", rows = listOf(HudRow("Doomspiral", "32m", SafariRoster.color("Doomspiral"))))
+        if (preview) return HudPanel("Detected sparklings", rows = listOf(HudRow("Doomspiral", "32m", SafariRoster.color("Doomspiral"))))
         val player = client.player ?: return null
-        val nearby = shinies.filter { !it.body.isRemoved && SafariRules.withinRange(player.distanceToSqr(it.body)) }
+        val nearby = shinies.filter { !it.body.isRemoved }
         if (nearby.isEmpty()) return null
-        val rows = nearby.take(6).map { HudRow(it.name, "${sqrt(player.distanceToSqr(it.body)).toInt()}m", SafariRoster.color(it.name), HudRow.WHITE) }.toMutableList()
+        val rows = nearby.take(6).map { HudRow(it.name, "${it.biome.label} ${sqrt(player.distanceToSqr(it.body)).toInt()}m", SafariRoster.color(it.name), HudRow.WHITE) }.toMutableList()
         if (nearby.size > 6) rows.add(HudRow("+${nearby.size - 6} more nearby", color = HudRow.GRAY))
-        return HudPanel("Nearby sparklings (80m)", rows = rows)
+        return HudPanel("Detected sparklings", rows = rows)
     }
     fun render(graphics: GuiGraphicsExtractor) {
         if (!ConfigManager.shinyDetection || !inSafari || Minecraft.getInstance().screen is ContestGui) return

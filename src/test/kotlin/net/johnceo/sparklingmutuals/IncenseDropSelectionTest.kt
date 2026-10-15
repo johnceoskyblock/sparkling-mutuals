@@ -18,16 +18,16 @@ class IncenseDropSelectionTest {
         assertEquals(setOf(6, 3, 9, 15), state.incenseDropIds(known))
         assertFalse(12 in state.incenseDropIds(known))
     }
-    @Test fun `one or two starting incense select two in every mode and consumption never expands selection`() {
+    @Test fun `starting incense reduces nearest slots one for one in every mode and consumption never expands selection`() {
         val known = (1..5).map { drop(it * 3, 4.0 + it) }
-        for (starting in 1..2) for (mode in SafariMode.entries) {
+        for (starting in 0..2) for (mode in SafariMode.entries) {
             val state = FloorDropState()
-            state.startingGrant(FloorDropType.INCENSE)
+            if (starting > 0) state.startingGrant(FloorDropType.INCENSE)
             state.inventory(listOf("Soothing Incense" to starting), initial = true)
-            assertEquals(setOf(3, 6), state.incenseDropIds(known))
+            assertEquals(when (starting) { 0 -> setOf(3, 6, 9, 12); 1 -> setOf(3, 6, 9); else -> setOf(3, 6) }, state.incenseDropIds(known))
             state.inventory(emptyList(), initial = false)
             state.visit(SafariBiome.FOREST); state.visit(SafariBiome.HAUNTED)
-            assertEquals(setOf(3, 6), state.incenseDropIds(known))
+            assertEquals(when (starting) { 0 -> setOf(3, 6, 9, 12); 1 -> setOf(3, 6, 9); else -> setOf(3, 6) }, state.incenseDropIds(known))
             assertTrue(state.needed(FloorDropType.INCENSE, mode, party()))
             state.inventory(listOf("Soothing Incense" to 4), initial = false)
             state.inventory(emptyList(), initial = false)

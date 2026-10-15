@@ -21,7 +21,7 @@ class FloorDropState {
     }
     /** Rank all known incense locations, including unloaded/collected ones, without replacing picked spawns. */
     fun incenseDropIds(known: List<PredictedFloorDrop>): Set<Int> {
-        val limit = if ((heldMaximum[FloorDropType.INCENSE] ?: 0) > 0) 2 else 4
+        val limit = (4 - (heldMaximum[FloorDropType.INCENSE] ?: 0)).coerceIn(0, 4)
         return known.filter { it.biome == SafariBiome.HAUNTED && it.type == FloorDropType.INCENSE }
             .sortedWith(compareBy<PredictedFloorDrop> {
                 (it.x - 4) * (it.x - 4) + (it.y - 47) * (it.y - 47) + (it.z + 27) * (it.z + 27)

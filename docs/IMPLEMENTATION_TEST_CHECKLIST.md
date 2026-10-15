@@ -84,11 +84,20 @@ Use the existing IntelliJ Minecraft Client/DevAuth configuration. These are manu
 - Finish every required catch and check in Unique or Full Clear: the empty missing panel says **All caught and checked!**. Sparkling retains **All checked!**.
 - In Unique, a first catch must not complete a species while its party-needed Sparkling check remains unfinished. In Sparkling, unneeded discoveries are excluded except necessary spawn prerequisites. In Full Clear, resolve all possible captures and spawn sources, with only one Macaw catch required after food is resolved.
 
+## Ticket earned and automatic warp
+
+- Follow [ticket-earned checks](CONTEST_DOWNTIME.md#minecraft-checks): one party announcement at Uncommon, own contest hold cleared immediately, remote sender-specific release and other downtime holds retained. Repeat with contest HUD/auto-request disabled and at a new contest window.
+- Follow [warp timer checks](WARP_ALERTS.md#minecraft-checks): enabled expiry shows the alert and sends one `/p warp`; disabled/replaced timers, player-chat quotes, departures and changed instances cannot fire stale warps. Verify settings and command controls persist.
+
 ## Floor-drop colors and automatic contest request
 
 - In **ESP → Floor-drop colors**, set the nine quest types to different colors. Verify outline, fill and name labels match each type; close/reopen settings and restart to confirm persistence. Test two gem colors and coin/incense together. Existing filtering must still hide unneeded drops.
 - Check an older config with only the shared floor color: all types inherit it. Use **Customization → All floor-drop colors** to recolor every type, then change an individual color again and save without modifying the shared control: the individual choice must survive.
 - Follow [automatic contest downtime checks](CONTEST_DOWNTIME.md#minecraft-checks): enabled sends one party request at a new contest start, disabled stays silent, the toggle persists, and joining/enabling mid-contest does not send a stale request.
+
+## Shared Sparkling detector and skin range
+
+- Follow [detector checks](SPARKLING_DETECTION.md#minecraft-checks): delayed post-start skins, skin-before-name aliasing, unchanged ordinary scan circles, real-player exclusion, cross-biome loaded detections and the observed Duplico unload point. The sheet covers 36 skins; Tepid keeps the name fallback.
 
 ## Any detected Sparkling blocks completion
 
@@ -99,8 +108,8 @@ Use the existing IntelliJ Minecraft Client/DevAuth configuration. These are manu
 
 ## Incense distance selection in every mode
 
-- In Unique, Full Clear and Sparkling, compare incense highlights against 3D distance to **(4,47,-27)**. Without starting incense only the four closest known locations can show. With one starting incense, show two; repeat with two starting incense and expect two again.
-- Collect or unload one of those locations: a farther excluded location must not replace it. Spend starting incense, leave/reenter and switch modes: keep the two-slot limit. Newly loaded closer spawns may refine the known ranking. A new run resets it.
+- In Unique, Full Clear and Sparkling, compare incense highlights against 3D distance to **(4,47,-27)**. Without starting incense only the four closest known locations can show. With one starting incense, show three; repeat with two starting incense and expect two.
+- Collect or unload one of those locations: a farther excluded location must not replace it. Spend starting incense, leave/reenter and switch modes: keep the three-slot or two-slot limit for one or two starting incense respectively. Newly loaded closer spawns may refine the known ranking. A new run resets it.
 - Later Haunted pickups must not count as starting items. Confirm all existing mode/discovery gates, four-held/four-picked cutoffs, colors and coin visibility still work independently.
 
 ## Sparkling Haunted floor-drop filters
@@ -126,4 +135,4 @@ Use the existing IntelliJ Minecraft Client/DevAuth configuration. These are manu
 
 ## Last updated
 
-2026-10-15 - Added all-mode incense distance/starting-item selection and cutoff checks; retained colors, contest requests and Sparkling capture checks.
+2026-10-15 - Added ticket-earned release/announcement and automatic warp timer checks, retaining detector and incense regressions.

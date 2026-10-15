@@ -1,3 +1,33 @@
+## What's changed in v3.3.0
+
+This minor release adds skin-based Sparkling detection, a loaded-entity HUD across Safari biomes, automatic party warp and contest ticket-earned announcements. It also fixes incense selection and guards warp timers against acting in a later run.
+
+### New features and improvements
+
+- **Name and skin Sparkling detection:** use one positive-identification path for alerts, glow, the detected-critters HUD and mandatory Sparkling capture tracking. A bundled registry covers 36 known Sparkling skins; Tepid retains name-tag detection because no reference skin was supplied. The registry requires no runtime sheet download or player-name lookup.
+- **Detect across loaded Safari biomes:** remove the old 80-block/current-biome presentation filter. The Detected sparklings HUD shows biome and distance for currently loaded positives. This does not guarantee whole-Safari coverage: detection requires entity and metadata packets actually received by the client.
+- **Delayed skin updates and shared identity:** reread current profile/head metadata so an initially ordinary or missing skin can become a positive later. Pair a model and nearby name tag as aliases of one critter to avoid duplicate alerts or capture requirements, including either packet arrival order. Exclude the local player, listed real players and known party players from skin detection.
+- **Shared detection and progress evidence:** every detected Sparkling adds a capture obligation in every mode, even when the party owns the discovery, with alerts/ESP disabled or after unloading. Ordinary survey circles, boss catches, source gates and qualified UUID checks remain separate. `/sm debug` now logs name/skin evidence, body/label identities, biome and distance.
+- **Automatic party warp:** when `/alert` is enabled, a trusted Hunting Hotspot starts the configured delay and sends `/p warp` once alongside the alert at expiry. The default remains 25 seconds, adjustable with `/alertdelay <seconds>` or settings. Command feedback, settings and help now describe both actions.
+- **Contest ticket earned:** detecting Uncommon or higher on the current Miria scoreboard releases the local player's contest downtime request. In a known party, announce Ticket earned! once per player and contest window. Detection continues independently of the contest HUD, beacons and automatic downtime-request toggle.
+- **Sender-specific contest release:** receiving a party member's Ticket earned! removes only their contest request, including banked requests waiting for a run to end. Other members' contest requests, unrelated downtime and separate entry protections remain in effect.
+
+### Fixes and safeguards
+
+- Bind warp expiry to the exact active run, connection and world. A later run in the same world cannot inherit an old timer. Disabling alerts, changing the delay, disconnecting or a newer Hotspot invalidates the prior timer; quoted player chat and overlay messages cannot start it.
+- Select the closest `4 - starting incense` predicted incense locations, clamped from zero to four. One starting incense now leaves three selected locations; two leave two. Retain the pickup/inventory cutoffs and mode-specific supply gates.
+- Reconcile skin/body/name aliases across scans without creating multiple capture obligations for the same Sparkling, while keeping unresolved captures through unloading.
+
+### Upgrade and validation
+
+**Behavior change:** an enabled `/alert` now sends `/p warp` automatically rather than only displaying a reminder. Its existing enabled setting is retained. Disable `/alert` if you do not want automatic warping. The server still applies normal party-command permissions.
+
+Minecraft **26.1.2**, Java **25**, Fabric Loader **0.19.5+**. Requires **Fabric API** and **Fabric Language Kotlin**. Replace the older mod JAR with **sparkling-mutuals-3.3.0.jar**. Existing configuration/history is retained.
+
+Validation: **652 automated tests passed**, with a clean release build, packaged mod-version/skin-registry verification and documentation checks. Latest live skin/range detection, party warp and ticket-earned behavior still need the [Sparkling checks](docs/SPARKLING_DETECTION.md), [warp checks](docs/WARP_ALERTS.md) and [contest checks](docs/CONTEST_DOWNTIME.md); automated checks do not establish live server coverage.
+
+[Full changelog](https://github.com/johnceoskyblock/sparkling-mutuals/compare/v3.2.0...v3.3.0)
+
 ## What's changed in v3.2.0
 
 This release adds individual floor-drop colors, automatic Miria contest downtime requests and a combined manual history importer. It also strengthens Sparkling capture requirements and Haunted supply selection. These additions and fixes preserve existing saved history and use a minor version increment from v3.1.0.
@@ -108,4 +138,4 @@ Validation: 510 automated regression tests and the clean build passed. Live in-g
 
 ## Last updated
 
-2026-10-15 - Prepared v3.2.0 notes for floor colors, contest downtime, combined history import and Sparkling capture fixes.
+2026-10-15 - Prepared v3.3.0 notes for shared Sparkling skin/name detection, automatic warp, ticket-earned downtime release and incense selection.

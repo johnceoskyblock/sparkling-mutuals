@@ -9,7 +9,7 @@ import net.minecraft.client.Minecraft
 /**
  * `!dt [reason]` in party chat: someone wants a break after this run. The request waits until the run ends, then the
  * requester's own client posts "X has requested downtime" (one client, not every member's) and every client holds the
- * Safari Manager shut until the requester says `r`, or someone sneak-clicks past it once. Asked outside the Safari,
+ * Safari Manager shut until the requester says `r`, earns their contest ticket, or someone sneak-clicks past it once. Asked outside the Safari,
  * it takes effect straight away. Requests leave with their requester: someone leaving or being removed from the party
  * drops theirs, and this client leaving, joining another party or the party disbanding drops them all. Turning the
  * setting off drops everything too.
@@ -56,6 +56,10 @@ object SafariDowntime {
             tell("[SM] ${chat.sender} wants downtime after this run" + if (reason.isEmpty()) "." else ": $reason")
             return if (!inSafari) leftSafari(self) else null
         }
+        if (chat.body.equals("Ticket earned!", ignoreCase = true)) {
+            ticketEarned(chat.sender)
+            return null
+        }
         if (resume.matches(chat.body)) {
             val key = requests.keys.firstOrNull { it.equals(chat.sender, true) } ?: return null
             requests.remove(key)
@@ -65,6 +69,16 @@ object SafariDowntime {
                 else if (active) "; still waiting on ${holders()}." else ". Safari Manager released.")
         }
         return null
+    }
+
+    /** A ticket releases only this player's contest request, pending or already blocking entry. */
+    fun ticketEarned(player: String): Boolean {
+        val key = requests.entries.firstOrNull { it.key.equals(player, true) && it.value.equals("contest", true) }?.key
+            ?: return false
+        requests.remove(key)
+        if (requests.isEmpty()) active = false
+        tell("[SM] $key earned a ticket. " + if (active) "Still waiting on ${holders()}." else "Contest downtime cleared.")
+        return true
     }
 
     /** Party membership notices. Returns whether the line was one, so it isn't read as chat. */

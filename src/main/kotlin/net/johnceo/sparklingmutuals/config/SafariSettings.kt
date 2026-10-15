@@ -142,9 +142,9 @@ class SafariSettings : Config() {
         @ConfigEditorBoolean var toParty = ConfigManager.achievementsToParty
     }
     class Warp {
-        @JvmField @ConfigOption(name = "Warp reminder", desc = "Remind you to warp party leechers in before entry closes.")
+        @JvmField @ConfigOption(name = "Warp reminder", desc = "Show the alert and run /p warp after the delay, before entry closes.")
         @ConfigEditorBoolean var enabled = ConfigManager.warpAlertsEnabled
-        @JvmField @ConfigOption(name = "Delay in seconds", desc = "Reminder delay, from 1 to 86400 seconds.")
+        @JvmField @ConfigOption(name = "Delay in seconds", desc = "Delay before the alert and automatic party warp, from 1 to 86400 seconds.")
         @ConfigEditorText var delay = ConfigManager.warpDelaySeconds.toString()
         @JvmField @ConfigOption(name = "Save delay", desc = "Apply the reminder delay.")
         @ConfigEditorButton(runnableId = 6, buttonText = "Save delay") var saveDelay = false

@@ -22,7 +22,7 @@ object AlertCommand {
                     .executes {
                         val enabled = AlertManager.toggleAlert()
                         it.source.sendFeedback(
-                            LocalChat.component("[SM] Warp reminders ${if (enabled) "on" else "off"}.")
+                            LocalChat.component("[SM] Warp alerts and automatic /p warp ${if (enabled) "on" else "off"}.")
                         )
                         1
                     }

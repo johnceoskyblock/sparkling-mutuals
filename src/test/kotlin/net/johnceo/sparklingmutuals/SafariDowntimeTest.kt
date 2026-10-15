@@ -11,6 +11,32 @@ class SafariDowntimeTest {
     @BeforeEach fun clear() { ConfigManager.downtimeCommand = true; SafariDowntime.reset() }
     @AfterEach fun restore() { ConfigManager.downtimeCommand = true; SafariDowntime.reset() }
 
+    @Test fun `ticket earned releases only the senders active contest hold`() {
+        SafariDowntime.chat("Party > Farmer: !dt contest", false, "Me")
+        SafariDowntime.chat("Party > Steve: !dt contest", false, "Me")
+        SafariDowntime.chat("Party > Alex: !dt food", false, "Me")
+        SafariDowntime.chat("Party > Farmer: Ticket earned!", false, "Me")
+        assertTrue(SafariDowntime.holding)
+        assertEquals("Steve, Alex", SafariDowntime.holders())
+        assertTrue(SafariDowntime.ticketEarned("sTeVe"))
+        assertEquals("Alex", SafariDowntime.holders())
+        SafariDowntime.chat("Party > Alex: Ticket earned!", false, "Me")
+        assertTrue(SafariDowntime.holding)
+        SafariDowntime.chat("Party > Alex: r", false, "Me")
+        assertFalse(SafariDowntime.holding)
+    }
+    @Test fun `local ticket cancels a banked contest request before run end and party messages release the last hold`() {
+        SafariDowntime.chat("Party > Me: !dt CoNtEsT", true, "Me")
+        assertTrue(SafariDowntime.ticketEarned("me"))
+        assertNull(SafariDowntime.leftSafari("Me"))
+        assertFalse(SafariDowntime.holding)
+        SafariDowntime.chat("Party > Friend: !dt contest", false, "Me")
+        SafariDowntime.chat("Guild > Friend: Ticket earned!", false, "Me")
+        assertTrue(SafariDowntime.holding)
+        SafariDowntime.chat("Party > Friend: Ticket earned!", false, "Me")
+        assertFalse(SafariDowntime.holding)
+        assertEquals("", SafariDowntime.holders())
+    }
     @Test fun `a request in the Safari waits for the run to end and only the requester announces it`() {
         assertNull(SafariDowntime.chat("Party > [MVP+] Farmer: !dt food", inSafari = true, self = "Other"))
         assertFalse(SafariDowntime.holding)

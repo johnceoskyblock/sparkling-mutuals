@@ -52,8 +52,9 @@ class SafariRun(val startedAt: Long) {
     val entry = SafariEntryEvidence()
     val resources = SafariResources()
     val sparklingCaptures = SparklingCaptureState()
-    fun observeSparkling(id: java.util.UUID, name: String) {
-        if (sparklingCaptures.observe(id, name)) SafariRoster.named(name)?.biome?.let(completion::reopen)
+    fun observeSparkling(id: java.util.UUID, name: String, aliases: Set<java.util.UUID> = emptySet()): java.util.UUID {
+        if (sparklingCaptures.observe(id, name, aliases)) SafariRoster.named(name)?.biome?.let(completion::reopen)
+        return sparklingCaptures.identity(id)
     }
     fun sparklePending(name: String) = sparklingCaptures.pending(name)
     fun sparklingBroadcast(raw: String, now: Long = System.currentTimeMillis()) {
