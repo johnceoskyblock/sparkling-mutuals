@@ -1,5 +1,7 @@
 package net.johnceo.sparklingmutuals.safari
 
+import net.johnceo.sparklingmutuals.safari.resources.FloorDropType
+
 enum class SafariTicketType(val label: String) {
     BASIC("Basic"), ECONOMY("Economy"), PREMIUM("Premium"), FIRST_CLASS("First Class");
     companion object {

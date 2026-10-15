@@ -1,6 +1,9 @@
 package net.johnceo.sparklingmutuals.commands
 
 import com.mojang.brigadier.arguments.StringArgumentType
+import java.util.Collections
+import java.util.WeakHashMap
+import java.util.concurrent.Executors
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback
 import net.fabricmc.fabric.api.client.command.v2.ClientCommands
 import net.johnceo.sparklingmutuals.LocalChat
@@ -15,9 +18,6 @@ import net.minecraft.client.Minecraft
 import net.minecraft.network.chat.Component
 import net.minecraft.network.chat.HoverEvent
 import net.minecraft.network.chat.MutableComponent
-import java.util.Collections
-import java.util.WeakHashMap
-import java.util.concurrent.Executors
 
 /**
  * `/sparkling` — a player's Safari card: hunting level, sparkling discoveries, tickets and essence, with every line

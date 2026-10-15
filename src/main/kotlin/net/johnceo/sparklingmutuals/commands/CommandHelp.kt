@@ -1,7 +1,7 @@
 package net.johnceo.sparklingmutuals.commands
 
 import net.johnceo.sparklingmutuals.safari.SafariMode
-import net.johnceo.sparklingmutuals.safari.SafariFullClear
+import net.johnceo.sparklingmutuals.safari.completion.SafariFullClear
 
 /** Help lists actual commands available in the selected mode. */
 object CommandHelp {

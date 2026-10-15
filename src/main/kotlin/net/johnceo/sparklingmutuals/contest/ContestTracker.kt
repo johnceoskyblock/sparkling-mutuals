@@ -1,20 +1,20 @@
 package net.johnceo.sparklingmutuals.contest
 
-import net.johnceo.sparklingmutuals.LocalChat
-
-import net.johnceo.sparklingmutuals.config.ContestConfig
-import net.johnceo.sparklingmutuals.config.ConfigManager
-import net.johnceo.sparklingmutuals.hud.SkyblockSidebar
-import net.minecraft.client.Minecraft
-import net.minecraft.client.resources.sounds.SimpleSoundInstance
-import net.minecraft.core.registries.BuiltInRegistries
-import net.minecraft.network.chat.Component
-import net.minecraft.resources.Identifier
 import java.time.LocalTime
 import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.round
+import net.johnceo.sparklingmutuals.LocalChat
+import net.johnceo.sparklingmutuals.config.ContestConfig
+import net.johnceo.sparklingmutuals.hud.SkyblockSidebar
+import net.johnceo.sparklingmutuals.party.PartyManager
+import net.johnceo.sparklingmutuals.safari.automation.SafariDowntime
+import net.minecraft.client.Minecraft
+import net.minecraft.client.resources.sounds.SimpleSoundInstance
+import net.minecraft.core.registries.BuiltInRegistries
+import net.minecraft.network.chat.Component
+import net.minecraft.resources.Identifier
 
 object ContestTracker {
 
@@ -57,8 +57,8 @@ object ContestTracker {
 
         rollWindow()
         if (downtime.poll(windowKey, secondsIntoWindow, ContestConfig.autoContestDowntime,
-                SkyblockSidebar.inSkyblock(client), net.johnceo.sparklingmutuals.party.PartyManager.hasInfo &&
-                    net.johnceo.sparklingmutuals.party.PartyManager.getMembers().size > 1))
+                SkyblockSidebar.inSkyblock(client), PartyManager.hasInfo &&
+                    PartyManager.getMembers().size > 1))
             client.connection?.sendCommand("pc !dt contest")
         if (SkyblockSidebar.inSkyblock(client)) readSidebar(client)
         if (ContestConfig.trackContest) maybeWarn(client)
@@ -119,10 +119,10 @@ object ContestTracker {
             complete = true
             completedWindow = windowKey
             val player = client.player ?: return
-            net.johnceo.sparklingmutuals.safari.SafariDowntime.ticketEarned(player.name.string)
+            SafariDowntime.ticketEarned(player.name.string)
             if (ticketNotices.claim(player.uuid.toString(), windowKey, tier, secondsIntoWindow) &&
-                net.johnceo.sparklingmutuals.party.PartyManager.hasInfo &&
-                net.johnceo.sparklingmutuals.party.PartyManager.getMembers().size > 1)
+                PartyManager.hasInfo &&
+                PartyManager.getMembers().size > 1)
                 client.connection?.sendCommand("pc Ticket earned!")
             println("Sparkling Mutuals: Contest complete — $tier with $points")
         }

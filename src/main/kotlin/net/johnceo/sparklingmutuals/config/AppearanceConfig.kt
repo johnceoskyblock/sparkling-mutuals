@@ -1,9 +1,9 @@
 package net.johnceo.sparklingmutuals.config
 
 import io.github.notenoughupdates.moulconfig.ChromaColour
-import net.minecraft.client.gui.GuiGraphicsExtractor
 import java.util.Properties
 import kotlin.math.roundToInt
+import net.minecraft.client.gui.GuiGraphicsExtractor
 
 class PanelStyle {
     var borderEnabled = true

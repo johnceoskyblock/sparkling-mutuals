@@ -1,7 +1,9 @@
 package net.johnceo.sparklingmutuals.mixin
 
 import net.johnceo.sparklingmutuals.config.ConfigManager
-import net.johnceo.sparklingmutuals.safari.*
+import net.johnceo.sparklingmutuals.safari.SafariAssist
+import net.johnceo.sparklingmutuals.safari.SafariBiome
+import net.johnceo.sparklingmutuals.safari.automation.SafariCandleRules
 import net.minecraft.client.Minecraft
 import net.minecraft.client.multiplayer.ClientLevel
 import net.minecraft.core.BlockPos

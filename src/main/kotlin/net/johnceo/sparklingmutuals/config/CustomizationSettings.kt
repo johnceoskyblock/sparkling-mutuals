@@ -1,10 +1,8 @@
 package net.johnceo.sparklingmutuals.config
 
-import net.johnceo.sparklingmutuals.LocalChat
-
 import io.github.notenoughupdates.moulconfig.annotations.*
+import net.johnceo.sparklingmutuals.LocalChat
 import net.minecraft.client.Minecraft
-import net.minecraft.network.chat.Component
 
 /** One shared hex selection; color actions never change feature toggles. */
 class ColorChoice(private val read: () -> String, private val write: (String) -> Unit, private val selection: () -> String) {

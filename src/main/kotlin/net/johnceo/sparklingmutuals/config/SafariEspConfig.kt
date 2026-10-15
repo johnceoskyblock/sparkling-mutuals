@@ -1,9 +1,9 @@
 package net.johnceo.sparklingmutuals.config
 
 import io.github.notenoughupdates.moulconfig.ChromaColour
-import net.johnceo.sparklingmutuals.safari.SafariEspRules
 import java.util.Properties
-import net.johnceo.sparklingmutuals.safari.FloorDropType
+import net.johnceo.sparklingmutuals.safari.esp.SafariEspRules
+import net.johnceo.sparklingmutuals.safari.resources.FloorDropType
 
 object SafariEspConfig {
     data class Group(var enabled: Boolean = true, var onlyInBiome: Boolean = true)

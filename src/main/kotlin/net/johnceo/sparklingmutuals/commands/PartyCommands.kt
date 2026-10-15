@@ -1,22 +1,20 @@
 package net.johnceo.sparklingmutuals.commands
 
-import net.johnceo.sparklingmutuals.LocalChat
-import net.johnceo.sparklingmutuals.api.ApiRetryWindow
-import net.johnceo.sparklingmutuals.api.ApiProvider
-import net.johnceo.sparklingmutuals.api.HypixelApi
-
-import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents
-import net.johnceo.sparklingmutuals.config.ConfigManager
-import net.johnceo.sparklingmutuals.party.PartyManager
-import net.johnceo.sparklingmutuals.safari.SafariMode
-import net.johnceo.sparklingmutuals.safari.SafariFullClear
-import net.johnceo.sparklingmutuals.safari.SafariAssist
-import net.johnceo.sparklingmutuals.safari.SafariRun
-import net.johnceo.sparklingmutuals.safari.SafariTracking
-import net.minecraft.client.Minecraft
-import net.minecraft.network.chat.Component
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
+import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents
+import net.johnceo.sparklingmutuals.LocalChat
+import net.johnceo.sparklingmutuals.api.ApiProvider
+import net.johnceo.sparklingmutuals.api.ApiRetryWindow
+import net.johnceo.sparklingmutuals.api.HypixelApi
+import net.johnceo.sparklingmutuals.config.ConfigManager
+import net.johnceo.sparklingmutuals.party.PartyManager
+import net.johnceo.sparklingmutuals.safari.SafariAssist
+import net.johnceo.sparklingmutuals.safari.SafariMode
+import net.johnceo.sparklingmutuals.safari.SafariRun
+import net.johnceo.sparklingmutuals.safari.SafariTracking
+import net.johnceo.sparklingmutuals.safari.completion.SafariFullClear
+import net.minecraft.client.Minecraft
 
 object PartyCommands {
     private data class Pending(val request: PartyRequest, val roster: List<String>, val election: ResponderElection, val chatCursor: Long,

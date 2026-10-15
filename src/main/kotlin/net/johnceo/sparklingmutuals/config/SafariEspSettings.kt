@@ -1,6 +1,7 @@
 package net.johnceo.sparklingmutuals.config
 
 import io.github.notenoughupdates.moulconfig.annotations.*
+import net.johnceo.sparklingmutuals.safari.resources.FloorDropType
 
 /** Modes own targets; these switches only control where their highlights appear. */
 class SafariEspSettings {
@@ -35,39 +36,39 @@ class SafariEspSettings {
 class FloorDropColorSettings {
     fun reload() {
         javaClass.fields.filter { it.type == String::class.java }.forEach { field ->
-            val type = net.johnceo.sparklingmutuals.safari.FloorDropType.valueOf(field.name.uppercase())
+            val type = FloorDropType.valueOf(field.name.uppercase())
             field.set(this, SafariEspConfig.dropColor(type))
         }
     }
     @JvmField @ConfigOption(name = "Lime Gem", desc = "Highlight, fill and label color.")
-    @ConfigEditorColour var lime = SafariEspConfig.dropColor(net.johnceo.sparklingmutuals.safari.FloorDropType.LIME)
+    @ConfigEditorColour var lime = SafariEspConfig.dropColor(FloorDropType.LIME)
     @JvmField @ConfigOption(name = "Purple Gem", desc = "Highlight, fill and label color.")
-    @ConfigEditorColour var purple = SafariEspConfig.dropColor(net.johnceo.sparklingmutuals.safari.FloorDropType.PURPLE)
+    @ConfigEditorColour var purple = SafariEspConfig.dropColor(FloorDropType.PURPLE)
     @JvmField @ConfigOption(name = "Orange Gem", desc = "Highlight, fill and label color.")
-    @ConfigEditorColour var orange = SafariEspConfig.dropColor(net.johnceo.sparklingmutuals.safari.FloorDropType.ORANGE)
+    @ConfigEditorColour var orange = SafariEspConfig.dropColor(FloorDropType.ORANGE)
     @JvmField @ConfigOption(name = "Wriggleworm", desc = "Highlight, fill and label color.")
-    @ConfigEditorColour var worm = SafariEspConfig.dropColor(net.johnceo.sparklingmutuals.safari.FloorDropType.WORM)
+    @ConfigEditorColour var worm = SafariEspConfig.dropColor(FloorDropType.WORM)
     @JvmField @ConfigOption(name = "Yogi Berry", desc = "Highlight, fill and label color.")
-    @ConfigEditorColour var berry = SafariEspConfig.dropColor(net.johnceo.sparklingmutuals.safari.FloorDropType.BERRY)
+    @ConfigEditorColour var berry = SafariEspConfig.dropColor(FloorDropType.BERRY)
     @JvmField @ConfigOption(name = "Bag of Seeds", desc = "Highlight, fill and label color.")
-    @ConfigEditorColour var seeds = SafariEspConfig.dropColor(net.johnceo.sparklingmutuals.safari.FloorDropType.SEEDS)
+    @ConfigEditorColour var seeds = SafariEspConfig.dropColor(FloorDropType.SEEDS)
     @JvmField @ConfigOption(name = "Soothing Incense", desc = "Highlight, fill and label color.")
-    @ConfigEditorColour var incense = SafariEspConfig.dropColor(net.johnceo.sparklingmutuals.safari.FloorDropType.INCENSE)
+    @ConfigEditorColour var incense = SafariEspConfig.dropColor(FloorDropType.INCENSE)
     @JvmField @ConfigOption(name = "Shining Coin", desc = "Highlight, fill and label color.")
-    @ConfigEditorColour var coin = SafariEspConfig.dropColor(net.johnceo.sparklingmutuals.safari.FloorDropType.COIN)
+    @ConfigEditorColour var coin = SafariEspConfig.dropColor(FloorDropType.COIN)
     @JvmField @ConfigOption(name = "Icebreaker", desc = "Highlight, fill and label color.")
-    @ConfigEditorColour var icebreaker = SafariEspConfig.dropColor(net.johnceo.sparklingmutuals.safari.FloorDropType.ICEBREAKER)
+    @ConfigEditorColour var icebreaker = SafariEspConfig.dropColor(FloorDropType.ICEBREAKER)
     fun apply(): Boolean {
         val values = mapOf(
-            net.johnceo.sparklingmutuals.safari.FloorDropType.LIME to lime,
-            net.johnceo.sparklingmutuals.safari.FloorDropType.PURPLE to purple,
-            net.johnceo.sparklingmutuals.safari.FloorDropType.ORANGE to orange,
-            net.johnceo.sparklingmutuals.safari.FloorDropType.WORM to worm,
-            net.johnceo.sparklingmutuals.safari.FloorDropType.BERRY to berry,
-            net.johnceo.sparklingmutuals.safari.FloorDropType.SEEDS to seeds,
-            net.johnceo.sparklingmutuals.safari.FloorDropType.INCENSE to incense,
-            net.johnceo.sparklingmutuals.safari.FloorDropType.COIN to coin,
-            net.johnceo.sparklingmutuals.safari.FloorDropType.ICEBREAKER to icebreaker
+            FloorDropType.LIME to lime,
+            FloorDropType.PURPLE to purple,
+            FloorDropType.ORANGE to orange,
+            FloorDropType.WORM to worm,
+            FloorDropType.BERRY to berry,
+            FloorDropType.SEEDS to seeds,
+            FloorDropType.INCENSE to incense,
+            FloorDropType.COIN to coin,
+            FloorDropType.ICEBREAKER to icebreaker
         )
         var changed = false
         values.forEach { (type, color) ->

@@ -3,9 +3,9 @@ package net.johnceo.sparklingmutuals.commands
 import java.security.MessageDigest
 import net.johnceo.sparklingmutuals.safari.SafariAssist
 import net.johnceo.sparklingmutuals.safari.SafariBiome
-import net.johnceo.sparklingmutuals.safari.SafariRoster
 import net.johnceo.sparklingmutuals.safari.SafariMode
-import net.johnceo.sparklingmutuals.safari.SafariFullClear
+import net.johnceo.sparklingmutuals.safari.SafariRoster
+import net.johnceo.sparklingmutuals.safari.completion.SafariFullClear
 
 data class PartyChat(val sender: String, val body: String) {
     companion object {

@@ -1,15 +1,15 @@
 package net.johnceo.sparklingmutuals.history
 
 import com.google.gson.JsonParser
-import net.johnceo.sparklingmutuals.config.ConfigManager
-import net.minecraft.client.Minecraft
-import org.slf4j.LoggerFactory
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.time.Duration
 import java.util.Locale
+import net.johnceo.sparklingmutuals.config.ConfigManager
+import net.minecraft.client.Minecraft
+import org.slf4j.LoggerFactory
 
 /**
  * Bazaar prices for critter shards and Rainbow Feathers, for run profit. Read from Hypixel's public bazaar endpoint,

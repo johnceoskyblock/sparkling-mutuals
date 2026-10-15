@@ -2,12 +2,13 @@ package net.johnceo.sparklingmutuals.api
 
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
-import net.johnceo.sparklingmutuals.config.ConfigManager
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.time.Duration
+import net.johnceo.sparklingmutuals.config.ConfigManager
+import net.johnceo.sparklingmutuals.honeyhives.Hive
 
 object HypixelApi {
     private val client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build()

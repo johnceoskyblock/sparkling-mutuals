@@ -1,18 +1,21 @@
 package net.johnceo.sparklingmutuals.alerts
 
-import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents
-import net.johnceo.sparklingmutuals.config.ConfigManager
-import net.johnceo.sparklingmutuals.hud.SmallAlerts
-import net.johnceo.sparklingmutuals.hud.SafariHud
-import net.minecraft.client.Minecraft
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
+import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents
+import net.johnceo.sparklingmutuals.config.ConfigManager
+import net.johnceo.sparklingmutuals.hud.SafariHud
+import net.johnceo.sparklingmutuals.hud.SmallAlerts
+import net.johnceo.sparklingmutuals.safari.SafariAssist
+import net.johnceo.sparklingmutuals.safari.SafariMessages
+import net.johnceo.sparklingmutuals.safari.SafariTracking
+import net.minecraft.client.Minecraft
 
 object AlertManager {
 
-    internal fun isTrigger(raw: String) = net.johnceo.sparklingmutuals.safari.SafariMessages.lines(raw).any {
+    internal fun isTrigger(raw: String) = SafariMessages.lines(raw).any {
         Regex("^HOTSPOT! Your Hunting Hotspot is the (?:Forest|Cavern|Icy|Haunted) Biome!$").matches(it)
     }
 
@@ -47,15 +50,15 @@ object AlertManager {
         val client = Minecraft.getInstance()
         val connection = client.connection ?: return
         val level = client.level ?: return
-        net.johnceo.sparklingmutuals.safari.SafariTracking.ensureRun(client)
-        val run = net.johnceo.sparklingmutuals.safari.SafariTracking.ledger.current ?: return
+        SafariTracking.ensureRun(client)
+        val run = SafariTracking.ledger.current ?: return
         val scheduledGeneration = expiry.arm(run)
         pendingAlert = scheduler.schedule({
             client.execute {
                 val ready = client.connection === connection && client.level === level && client.player != null &&
-                    isEnabled() && net.johnceo.sparklingmutuals.safari.SafariAssist.inSafari &&
-                    net.johnceo.sparklingmutuals.safari.SafariTracking.ledger.current?.let { it.endedAt == null } == true
-                if (expiry.consume(scheduledGeneration, ready, net.johnceo.sparklingmutuals.safari.SafariTracking.ledger.current)) {
+                    isEnabled() && SafariAssist.inSafari &&
+                    SafariTracking.ledger.current?.let { it.endedAt == null } == true
+                if (expiry.consume(scheduledGeneration, ready, SafariTracking.ledger.current)) {
                     pendingAlert = null
                     triggerAlert()
                 }

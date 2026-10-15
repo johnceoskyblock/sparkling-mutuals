@@ -4,7 +4,7 @@ A Fabric mod for Hypixel SkyBlock Safari, sparkling discoveries, and Miria conte
 
 ## Safari tracking
 
-The [Safari logic notes](SAFARI_LOGIC.md) summarize Hypixel evidence and the deductions used for tracking.
+The [Safari logic notes](SAFARI_LOGIC.md) summarize Hypixel evidence and the deductions used for tracking. The [repository guide](docs/README.md) maps the code, tests and documentation for development.
 
 Use the [37 individual critter notes](docs/critters/README.md) for species rules and the [shared evidence notes](docs/critters/TRACKING.md) for tickets, starting resources, messages, UUIDs, and late biome entry.
 
@@ -118,4 +118,4 @@ Per-drop colors are configurable in **ESP → Floor-drop colors**. **Miria conte
 
 ## Last updated
 
-2026-10-15 - Prepared v3.3.0 with shared skin/name detection, cross-biome detected HUD, ticket-earned hold release and automatic party warp.
+2026-10-15 - Linked the repository guide; release notes remain in GitHub Releases and feature documentation describes current behavior.

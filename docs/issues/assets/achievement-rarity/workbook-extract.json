@@ -1,0 +1,635 @@
+{
+  "source_sha256": "f111ebfb4e88d4f488728b4ea6c6ca4c22d2b7cded357f6f790fb0a7e2863e36",
+  "note": "Read-only XML extraction; cached values are not Excel recalculation. Independently evaluated formulas use fractional mean spawns as fixed effective exposure, as in workbook.",
+  "species": [
+    {
+      "species": "Cavernfish",
+      "spawns_per_run": 6.0,
+      "spawn_source_formula": "'Critters Per Run'!C3",
+      "cached_no_sparkling_probability": 0.9970738865
+    },
+    {
+      "species": "Flitter",
+      "spawns_per_run": 7.0,
+      "spawn_source_formula": "'Critters Per Run'!C4",
+      "cached_no_sparkling_probability": 0.996587034
+    },
+    {
+      "species": "Shyworm",
+      "spawns_per_run": 6.0,
+      "spawn_source_formula": "'Critters Per Run'!C5",
+      "cached_no_sparkling_probability": 0.9970738865
+    },
+    {
+      "species": "Driftling",
+      "spawns_per_run": 4.0,
+      "spawn_source_formula": "'Critters Per Run'!C6",
+      "cached_no_sparkling_probability": 0.998048305
+    },
+    {
+      "species": "Chuckwalla",
+      "spawns_per_run": 3.0,
+      "spawn_source_formula": "'Critters Per Run'!C7",
+      "cached_no_sparkling_probability": 0.9985358714
+    },
+    {
+      "species": "Rockmite",
+      "spawns_per_run": 4.125,
+      "spawn_source_formula": "'Critters Per Run'!C8",
+      "cached_no_sparkling_probability": 0.997987376
+    },
+    {
+      "species": "Scrappy",
+      "spawns_per_run": 2.5,
+      "spawn_source_formula": "'Critters Per Run'!C9",
+      "cached_no_sparkling_probability": 0.9987797439
+    },
+    {
+      "species": "Snoozle",
+      "spawns_per_run": 2.5,
+      "spawn_source_formula": "'Critters Per Run'!C10",
+      "cached_no_sparkling_probability": 0.9987797439
+    },
+    {
+      "species": "Gemzie",
+      "spawns_per_run": 3.0,
+      "spawn_source_formula": "'Critters Per Run'!C11",
+      "cached_no_sparkling_probability": 0.9985358714
+    },
+    {
+      "species": "Foxtrot",
+      "spawns_per_run": 7.0,
+      "spawn_source_formula": "'Critters Per Run'!C13",
+      "cached_no_sparkling_probability": 0.996587034
+    },
+    {
+      "species": "Bluebird",
+      "spawns_per_run": 6.199671201,
+      "spawn_source_formula": "'Critters Per Run'!C14",
+      "cached_no_sparkling_probability": 0.996976657
+    },
+    {
+      "species": "Honeybug",
+      "spawns_per_run": 4.5,
+      "spawn_source_formula": "'Critters Per Run'!C15",
+      "cached_no_sparkling_probability": 0.9978046112
+    },
+    {
+      "species": "Treefrog",
+      "spawns_per_run": 4.5,
+      "spawn_source_formula": "'Critters Per Run'!C16",
+      "cached_no_sparkling_probability": 0.9978046112
+    },
+    {
+      "species": "Woodchucker",
+      "spawns_per_run": 4.5,
+      "spawn_source_formula": "'Critters Per Run'!C17",
+      "cached_no_sparkling_probability": 0.9978046112
+    },
+    {
+      "species": "Fluffling",
+      "spawns_per_run": 2.0,
+      "spawn_source_formula": "'Critters Per Run'!C18",
+      "cached_no_sparkling_probability": 0.9990236759
+    },
+    {
+      "species": "Hideonfloor",
+      "spawns_per_run": 2.0,
+      "spawn_source_formula": "'Critters Per Run'!C19",
+      "cached_no_sparkling_probability": 0.9990236759
+    },
+    {
+      "species": "Parakeet",
+      "spawns_per_run": 3.153415248,
+      "spawn_source_formula": "'Critters Per Run'!C20",
+      "cached_no_sparkling_probability": 0.9984610558
+    },
+    {
+      "species": "Macaw",
+      "spawns_per_run": 1.293827103,
+      "spawn_source_formula": "'Critters Per Run'!C21",
+      "cached_no_sparkling_probability": 0.9993682938
+    },
+    {
+      "species": "Areita",
+      "spawns_per_run": 4.5,
+      "spawn_source_formula": "'Critters Per Run'!C23",
+      "cached_no_sparkling_probability": 0.9978046112
+    },
+    {
+      "species": "Bloodbat",
+      "spawns_per_run": 4.5,
+      "spawn_source_formula": "'Critters Per Run'!C24",
+      "cached_no_sparkling_probability": 0.9978046112
+    },
+    {
+      "species": "Duplico",
+      "spawns_per_run": 3.0,
+      "spawn_source_formula": "'Critters Per Run'!C25",
+      "cached_no_sparkling_probability": 0.9985358714
+    },
+    {
+      "species": "Gazer",
+      "spawns_per_run": 4.0,
+      "spawn_source_formula": "'Critters Per Run'!C26",
+      "cached_no_sparkling_probability": 0.998048305
+    },
+    {
+      "species": "Litterbug",
+      "spawns_per_run": 5.0,
+      "spawn_source_formula": "'Critters Per Run'!C27",
+      "cached_no_sparkling_probability": 0.9975609768
+    },
+    {
+      "species": "Solsnatcher",
+      "spawns_per_run": 6.0,
+      "spawn_source_formula": "'Critters Per Run'!C28",
+      "cached_no_sparkling_probability": 0.9970738865
+    },
+    {
+      "species": "Gimmiegold",
+      "spawns_per_run": 4.722222222,
+      "spawn_source_formula": "'Critters Per Run'!C29",
+      "cached_no_sparkling_probability": 0.9976963219
+    },
+    {
+      "species": "Hideonwall",
+      "spawns_per_run": 3.0,
+      "spawn_source_formula": "'Critters Per Run'!C30",
+      "cached_no_sparkling_probability": 0.9985358714
+    },
+    {
+      "species": "Hideyho",
+      "spawns_per_run": 1.0,
+      "spawn_source_formula": "'Critters Per Run'!C31",
+      "cached_no_sparkling_probability": 0.9995117188
+    },
+    {
+      "species": "Doomspiral",
+      "spawns_per_run": 1.0,
+      "spawn_source_formula": "'Critters Per Run'!C32",
+      "cached_no_sparkling_probability": 0.9995117188
+    },
+    {
+      "species": "Strongarm",
+      "spawns_per_run": 6.0,
+      "spawn_source_formula": "'Critters Per Run'!C34",
+      "cached_no_sparkling_probability": 0.9970738865
+    },
+    {
+      "species": "Tepid",
+      "spawns_per_run": 7.0,
+      "spawn_source_formula": "'Critters Per Run'!B35",
+      "cached_no_sparkling_probability": 0.996587034
+    },
+    {
+      "species": "Polaris",
+      "spawns_per_run": 3.0,
+      "spawn_source_formula": "'Critters Per Run'!B36",
+      "cached_no_sparkling_probability": 0.9985358714
+    },
+    {
+      "species": "Shuddersquid",
+      "spawns_per_run": 4.5,
+      "spawn_source_formula": "'Critters Per Run'!B37",
+      "cached_no_sparkling_probability": 0.9978046112
+    },
+    {
+      "species": "Billygoat",
+      "spawns_per_run": 3.0,
+      "spawn_source_formula": "'Critters Per Run'!B38",
+      "cached_no_sparkling_probability": 0.9985358714
+    },
+    {
+      "species": "Mantis Shrimp",
+      "spawns_per_run": 4.5,
+      "spawn_source_formula": "'Critters Per Run'!B39",
+      "cached_no_sparkling_probability": 0.9978046112
+    },
+    {
+      "species": "Nozzlenose",
+      "spawns_per_run": 3.0,
+      "spawn_source_formula": "'Critters Per Run'!B40",
+      "cached_no_sparkling_probability": 0.9985358714
+    },
+    {
+      "species": "Troodon",
+      "spawns_per_run": 3.0,
+      "spawn_source_formula": "'Critters Per Run'!B41",
+      "cached_no_sparkling_probability": 0.9985358714
+    },
+    {
+      "species": "Wumpa",
+      "spawns_per_run": 1.0,
+      "spawn_source_formula": "'Critters Per Run'!B42",
+      "cached_no_sparkling_probability": 0.9995117188
+    }
+  ],
+  "graph_cached": {
+    "H2": {
+      "cached": "Expected Unique Sparkling Critters",
+      "formula": null,
+      "formula_attributes": {}
+    },
+    "I2": {
+      "cached": "Safari Runs",
+      "formula": null,
+      "formula_attributes": {}
+    },
+    "K2": {
+      "cached": "37/37 Probability",
+      "formula": null,
+      "formula_attributes": {}
+    },
+    "L2": {
+      "cached": "Required Runs",
+      "formula": null,
+      "formula_attributes": {}
+    },
+    "H3": {
+      "cached": 20.0,
+      "formula": null,
+      "formula_attributes": {}
+    },
+    "I3": {
+      "cached": 441.0,
+      "formula": "INDEX('Run Model'!A$2:A$20002,MATCH(TRUE,'Run Model'!B$2:B$20002>=H3,0))",
+      "formula_attributes": {
+        "t": "array",
+        "ref": "I3"
+      }
+    },
+    "K3": {
+      "cached": 0.5,
+      "formula": null,
+      "formula_attributes": {}
+    },
+    "L3": {
+      "cached": 3839.0,
+      "formula": "INDEX('Run Model'!A2:A20002,MATCH(TRUE,'Run Model'!C2:C20002>=50%,0))",
+      "formula_attributes": {
+        "t": "array",
+        "ref": "L3"
+      }
+    },
+    "H4": {
+      "cached": 21.0,
+      "formula": null,
+      "formula_attributes": {}
+    },
+    "I4": {
+      "cached": 478.0,
+      "formula": "INDEX('Run Model'!A$2:A$20002,MATCH(TRUE,'Run Model'!B$2:B$20002>=H4,0))",
+      "formula_attributes": {
+        "t": "array",
+        "ref": "I4"
+      }
+    },
+    "K4": {
+      "cached": 0.75,
+      "formula": null,
+      "formula_attributes": {}
+    },
+    "L4": {
+      "cached": 5304.0,
+      "formula": "INDEX('Run Model'!A3:A20003,MATCH(TRUE,'Run Model'!C3:C20003>=75%,0))",
+      "formula_attributes": {
+        "t": "array",
+        "ref": "L4"
+      }
+    },
+    "H5": {
+      "cached": 22.0,
+      "formula": null,
+      "formula_attributes": {}
+    },
+    "I5": {
+      "cached": 519.0,
+      "formula": "INDEX('Run Model'!A$2:A$20002,MATCH(TRUE,'Run Model'!B$2:B$20002>=H5,0))",
+      "formula_attributes": {
+        "t": "array",
+        "ref": "I5"
+      }
+    },
+    "K5": {
+      "cached": 0.9,
+      "formula": null,
+      "formula_attributes": {}
+    },
+    "L5": {
+      "cached": 7164.0,
+      "formula": "INDEX('Run Model'!A4:A20004,MATCH(TRUE,'Run Model'!C4:C20004>=90%,0))",
+      "formula_attributes": {
+        "t": "array",
+        "ref": "L5"
+      }
+    },
+    "H6": {
+      "cached": 23.0,
+      "formula": null,
+      "formula_attributes": {}
+    },
+    "I6": {
+      "cached": 563.0,
+      "formula": "INDEX('Run Model'!A$2:A$20002,MATCH(TRUE,'Run Model'!B$2:B$20002>=H6,0))",
+      "formula_attributes": {
+        "t": "array",
+        "ref": "I6"
+      }
+    },
+    "K6": {
+      "cached": 0.95,
+      "formula": null,
+      "formula_attributes": {}
+    },
+    "L6": {
+      "cached": 8559.0,
+      "formula": "INDEX('Run Model'!A5:A20005,MATCH(TRUE,'Run Model'!C5:C20005>=95%,0))",
+      "formula_attributes": {
+        "t": "array",
+        "ref": "L6"
+      }
+    },
+    "H7": {
+      "cached": 24.0,
+      "formula": null,
+      "formula_attributes": {}
+    },
+    "I7": {
+      "cached": 612.0,
+      "formula": "INDEX('Run Model'!A$2:A$20002,MATCH(TRUE,'Run Model'!B$2:B$20002>=H7,0))",
+      "formula_attributes": {
+        "t": "array",
+        "ref": "I7"
+      }
+    },
+    "K7": {
+      "cached": 0.99,
+      "formula": null,
+      "formula_attributes": {}
+    },
+    "L7": {
+      "cached": 11798.0,
+      "formula": "INDEX('Run Model'!A6:A20006,MATCH(TRUE,'Run Model'!C6:C20006>=99%,0))",
+      "formula_attributes": {
+        "t": "array",
+        "ref": "L7"
+      }
+    },
+    "H8": {
+      "cached": 25.0,
+      "formula": null,
+      "formula_attributes": {}
+    },
+    "I8": {
+      "cached": 665.0,
+      "formula": "INDEX('Run Model'!A$2:A$20002,MATCH(TRUE,'Run Model'!B$2:B$20002>=H8,0))",
+      "formula_attributes": {
+        "t": "array",
+        "ref": "I8"
+      }
+    },
+    "K8": {
+      "cached": 0.999,
+      "formula": null,
+      "formula_attributes": {}
+    },
+    "L8": {
+      "cached": 16457.0,
+      "formula": "INDEX('Run Model'!A7:A20007,MATCH(TRUE,'Run Model'!C7:C20007>=99.9%,0))",
+      "formula_attributes": {
+        "t": "array",
+        "ref": "L8"
+      }
+    },
+    "H9": {
+      "cached": 26.0,
+      "formula": null,
+      "formula_attributes": {}
+    },
+    "I9": {
+      "cached": 724.0,
+      "formula": "INDEX('Run Model'!A$2:A$20002,MATCH(TRUE,'Run Model'!B$2:B$20002>=H9,0))",
+      "formula_attributes": {
+        "t": "array",
+        "ref": "I9"
+      }
+    },
+    "H10": {
+      "cached": 27.0,
+      "formula": null,
+      "formula_attributes": {}
+    },
+    "I10": {
+      "cached": 791.0,
+      "formula": "INDEX('Run Model'!A$2:A$20002,MATCH(TRUE,'Run Model'!B$2:B$20002>=H10,0))",
+      "formula_attributes": {
+        "t": "array",
+        "ref": "I10"
+      }
+    },
+    "H11": {
+      "cached": 28.0,
+      "formula": null,
+      "formula_attributes": {}
+    },
+    "I11": {
+      "cached": 866.0,
+      "formula": "INDEX('Run Model'!A$2:A$20002,MATCH(TRUE,'Run Model'!B$2:B$20002>=H11,0))",
+      "formula_attributes": {
+        "t": "array",
+        "ref": "I11"
+      }
+    },
+    "H12": {
+      "cached": 29.0,
+      "formula": null,
+      "formula_attributes": {}
+    },
+    "I12": {
+      "cached": 953.0,
+      "formula": "INDEX('Run Model'!A$2:A$20002,MATCH(TRUE,'Run Model'!B$2:B$20002>=H12,0))",
+      "formula_attributes": {
+        "t": "array",
+        "ref": "I12"
+      }
+    },
+    "H13": {
+      "cached": 30.0,
+      "formula": null,
+      "formula_attributes": {}
+    },
+    "I13": {
+      "cached": 1056.0,
+      "formula": "INDEX('Run Model'!A$2:A$20002,MATCH(TRUE,'Run Model'!B$2:B$20002>=H13,0))",
+      "formula_attributes": {
+        "t": "array",
+        "ref": "I13"
+      }
+    },
+    "H14": {
+      "cached": 31.0,
+      "formula": null,
+      "formula_attributes": {}
+    },
+    "I14": {
+      "cached": 1179.0,
+      "formula": "INDEX('Run Model'!A$2:A$20002,MATCH(TRUE,'Run Model'!B$2:B$20002>=H14,0))",
+      "formula_attributes": {
+        "t": "array",
+        "ref": "I14"
+      }
+    },
+    "H15": {
+      "cached": 32.0,
+      "formula": null,
+      "formula_attributes": {}
+    },
+    "I15": {
+      "cached": 1333.0,
+      "formula": "INDEX('Run Model'!A$2:A$20002,MATCH(TRUE,'Run Model'!B$2:B$20002>=H15,0))",
+      "formula_attributes": {
+        "t": "array",
+        "ref": "I15"
+      }
+    },
+    "H16": {
+      "cached": 33.0,
+      "formula": null,
+      "formula_attributes": {}
+    },
+    "I16": {
+      "cached": 1534.0,
+      "formula": "INDEX('Run Model'!A$2:A$20002,MATCH(TRUE,'Run Model'!B$2:B$20002>=H16,0))",
+      "formula_attributes": {
+        "t": "array",
+        "ref": "I16"
+      }
+    },
+    "H17": {
+      "cached": 34.0,
+      "formula": null,
+      "formula_attributes": {}
+    },
+    "I17": {
+      "cached": 1816.0,
+      "formula": "INDEX('Run Model'!A$2:A$20002,MATCH(TRUE,'Run Model'!B$2:B$20002>=H17,0))",
+      "formula_attributes": {
+        "t": "array",
+        "ref": "I17"
+      }
+    },
+    "H18": {
+      "cached": 35.0,
+      "formula": null,
+      "formula_attributes": {}
+    },
+    "I18": {
+      "cached": 2263.0,
+      "formula": "INDEX('Run Model'!A$2:A$20002,MATCH(TRUE,'Run Model'!B$2:B$20002>=H18,0))",
+      "formula_attributes": {
+        "t": "array",
+        "ref": "I18"
+      }
+    },
+    "H19": {
+      "cached": 36.0,
+      "formula": null,
+      "formula_attributes": {}
+    },
+    "I19": {
+      "cached": 3175.0,
+      "formula": "INDEX('Run Model'!A$2:A$20002,MATCH(TRUE,'Run Model'!B$2:B$20002>=H19,0))",
+      "formula_attributes": {
+        "t": "array",
+        "ref": "I19"
+      }
+    },
+    "H20": {
+      "cached": 37.0,
+      "formula": null,
+      "formula_attributes": {}
+    },
+    "I20": {
+      "cached": 4365.831527,
+      "formula": "SUM(1-'Run Model'!C$2:C$20002)",
+      "formula_attributes": {
+        "t": "array",
+        "ref": "I20"
+      }
+    },
+    "H21": {
+      "cached": "Standard Deviation",
+      "formula": null,
+      "formula_attributes": {}
+    },
+    "I21": {
+      "cached": 2152.067617,
+      "formula": "SQRT(\n  SUM((2*'Run Model'!A$2:A$20002+1)*\n    (1-'Run Model'!C$2:C$20002))\n  -\n  SUM(1-'Run Model'!C$2:C$20002)^2\n)",
+      "formula_attributes": {
+        "t": "array",
+        "ref": "I21"
+      }
+    }
+  },
+  "source_totals": {
+    "B44": {
+      "cached": 149.435288,
+      "formula": "SUM(B3:B11,B13:B21,B23:B32,B34:B42)",
+      "formula_attributes": {
+        "t": "shared",
+        "ref": "B44:C44",
+        "si": "1"
+      }
+    },
+    "C44": {
+      "cached": 144.9941358,
+      "formula": null,
+      "formula_attributes": {
+        "t": "shared",
+        "si": "1"
+      }
+    }
+  },
+  "source_runs_per_sparkling": {
+    "cached": 14.12470918,
+    "formula": "2048/A2",
+    "formula_attributes": {}
+  },
+  "recomputed": {
+    "total_effective_spawns": 144.994135774,
+    "runs_per_expected_sparkling": 14.124709175770972,
+    "probability_any_sparkling_per_run": 0.06836596538730473,
+    "mean_wait_for_run_with_any_sparkling": 14.627161253919713,
+    "completion_quantiles": {
+      "0.5": 3839,
+      "0.75": 5304,
+      "0.9": 7164,
+      "0.95": 8559,
+      "0.99": 11798,
+      "0.999": 16457
+    },
+    "completion_mean_truncated_20000": 4365.831526956011,
+    "expected_unique_crossings": {
+      "20": 441,
+      "21": 478,
+      "22": 519,
+      "23": 563,
+      "24": 612,
+      "25": 665,
+      "26": 724,
+      "27": 791,
+      "28": 866,
+      "29": 953,
+      "30": 1056,
+      "31": 1179,
+      "32": 1333,
+      "33": 1534,
+      "34": 1816,
+      "35": 2263,
+      "36": 3175
+    },
+    "dry_probability_10": 0.49255355589460287,
+    "dry_probability_250_last_single_spawn_species": 0.8850597478773355
+  }
+}

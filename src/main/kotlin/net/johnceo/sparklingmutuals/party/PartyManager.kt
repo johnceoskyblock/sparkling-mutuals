@@ -1,15 +1,14 @@
 package net.johnceo.sparklingmutuals.party
 
-import net.johnceo.sparklingmutuals.LocalChat
-
 import net.azureaaron.hmapi.events.HypixelPacketEvents
 import net.azureaaron.hmapi.network.HypixelNetworking
 import net.azureaaron.hmapi.network.packet.s2c.HelloS2CPacket
 import net.azureaaron.hmapi.network.packet.s2c.HypixelS2CPacket
 import net.azureaaron.hmapi.network.packet.v2.s2c.PartyInfoS2CPacket
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents
+import net.johnceo.sparklingmutuals.LocalChat
+import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.minecraft.client.Minecraft
-import net.minecraft.network.chat.Component
 
 object PartyManager {
     private val roster = PartyRosterState()
@@ -70,8 +69,8 @@ object PartyManager {
         if (hasInfo) {
             val members = getMembers().toSet()
             val names = client.connection!!.onlinePlayers.filter { it.profile.id.toString() in members }.map { it.profile.name }
-            if (net.johnceo.sparklingmutuals.config.ConfigManager.personalBests.rememberParty(names))
-                net.johnceo.sparklingmutuals.config.ConfigManager.save()
+            if (ConfigManager.personalBests.rememberParty(names))
+                ConfigManager.save()
         }
         if (requestedAt != 0L && System.currentTimeMillis() - requestedAt > 5000) {
             requestedAt = 0

@@ -1,10 +1,16 @@
 package net.johnceo.sparklingmutuals.contest
 
+import net.johnceo.sparklingmutuals.config.AppearanceConfig
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.config.ContestConfig
-import net.johnceo.sparklingmutuals.config.AppearanceConfig
-import net.johnceo.sparklingmutuals.hud.*
-import net.johnceo.sparklingmutuals.safari.*
+import net.johnceo.sparklingmutuals.config.SafariTheme
+import net.johnceo.sparklingmutuals.hud.HudLayout
+import net.johnceo.sparklingmutuals.hud.HudRow
+import net.johnceo.sparklingmutuals.hud.SafariHud
+import net.johnceo.sparklingmutuals.hud.SmallAlerts
+import net.johnceo.sparklingmutuals.safari.SafariAssist
+import net.johnceo.sparklingmutuals.safari.SafariBiome
+import net.johnceo.sparklingmutuals.safari.ui.SafariPanels
 import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.gui.components.Button
 import net.minecraft.client.gui.screens.Screen
@@ -49,7 +55,7 @@ class ContestGui(private val parent: Screen? = null) : Screen(Component.literal(
     private fun bounds(preview: Preview) = preview.layout.bounds(width, height, preview.width, preview.height)
     private fun hovered(x: Double, y: Double) = previews.asReversed().firstOrNull { bounds(it).contains(x, y) }
     override fun extractRenderState(graphics: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, delta: Float) {
-        graphics.fill(0, 0, width, height, (0x88000000.toInt() or net.johnceo.sparklingmutuals.config.SafariTheme.BACKGROUND))
+        graphics.fill(0, 0, width, height, (0x88000000.toInt() or SafariTheme.BACKGROUND))
         val hover = hovered(mouseX.toDouble(), mouseY.toDouble())
         previews.forEach { preview ->
             val box = bounds(preview)
