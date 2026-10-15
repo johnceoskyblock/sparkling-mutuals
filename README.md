@@ -25,7 +25,7 @@ Use the [37 individual critter notes](docs/critters/README.md) for species rules
 ## Highlights and helpers
 
 - **Critter ESP:** draw colored outlines around critters; retain enlarged outlines for Hideonwalls.
-- **Floor drop ESP:** highlight needed Safari supplies until their requirements are met.
+- **Floor drop ESP:** label predicted Safari supplies by type and highlight needed drops until their requirements are met.
 - **Bee nest waypoints:** check 13 Forest locations, ignore beehives, and remove each nest after a left- or right-click.
 - **Nest survey guidance:** grey markers guide loading; coverage stays internal and Full Clear uses the actual bee total.
 - **Rockmite highlights:** distinguish mounds from spawned silverfish.
@@ -33,7 +33,7 @@ Use the [37 individual critter notes](docs/critters/README.md) for species rules
 - **Hidden Litterbugs:** show projected positions and countdowns while they are underground.
 - **Shyworm helpers:** show projected positions, movement paths, and rest countdowns.
 - **Bird food tracking:** track Forest food collection and feeding progress.
-- **Wumpa prerequisites:** retain needed prerequisite critter highlights in Sparkling mode.
+- **Wumpa prerequisites:** retain uncaught Icy prerequisite critter highlights in every mode while the party needs Sparkling Wumpa.
 - **Nearby sparklings HUD:** list detected sparklings and their distances.
 - **Sparkling detection:** highlight nearby sparkling critters in your current biome.
 - **Teammate outlines:** highlight loaded party members throughout SkyBlock.
@@ -55,6 +55,7 @@ Use the [37 individual critter notes](docs/critters/README.md) for species rules
 - **All Bird Food alert:** notify after collecting three of each Forest bird food.
 - **All Incense alert:** notify when four Soothing Incense are in your inventory.
 - **Run completion alert:** notify when all biomes are complete in the active mode.
+- **Unused starting supplies:** automatic titles and party reminders identify starting bird food or Shining Coins still needed by the party.
 - **Warp reminders (`/alert`, `/alertdelay <seconds>`):** remind you to warp party members before entry closes.
 - **Miria contest HUD:** track contest time, score, and tier.
 - **Miria warnings:** warn below Uncommon at the selected 5-, 3-, and 1-minute marks.
@@ -84,6 +85,7 @@ Use the [37 individual critter notes](docs/critters/README.md) for species rules
 - **HUD editor (`/sm gui`):** drag HUDs and alerts to move them; scroll to resize.
 - **Appearance:** customize critter/waypoint colors, panel borders, backgrounds, and transparency.
 - **ESP visibility:** independently restrict each biome and floor drops to your current biome.
+- **ESP text scale:** resize floor-drop names, timers, nest labels and teammate names from 0.5× to 4×; default 2×.
 - **Alert customization:** choose sounds, volumes, and run completion text.
 - **Player lookups:** use your Hypixel key (`/apikey <key>`) or the optional Shiny Hunter shared API.
 - **Diagnostics (`/sm debug`):** save entity tracking, nest block data, survey coverage and rendering gates to `latest.log`.
@@ -95,6 +97,7 @@ Use the [37 individual critter notes](docs/critters/README.md) for species rules
 - Development builds: download the Artifacts ZIP from a successful [Actions run](https://github.com/johnceoskyblock/sparkling-mutuals/actions) and extract the JAR without `-sources` in its name.
 - Profile lookups use a [Hypixel API key](https://developer.hypixel.net) or the optional Shiny Hunter shared API.
 - Release notes are in the [release descriptions](https://github.com/johnceoskyblock/sparkling-mutuals/releases).
+- Current release: **v3.1.0**, with the installable file `sparkling-mutuals-3.1.0.jar`. Remove the older Sparkling Mutuals JAR before installing the update.
 
 ## Credits
 
@@ -109,4 +112,4 @@ Honeyhive state rules, data sources and debugging: [Torrhus Canyon Honeyhives](d
 
 ## Last updated
 
-2026-10-15 - Linked the Honeyhive evidence/implementation document; corrected alert preview identity and live hive hologram tracking.
+2026-10-15 - Documented v3.1.0 installation, predicted floor labels, starting-resource reminders, Icy prerequisite highlights and ESP text scaling.
