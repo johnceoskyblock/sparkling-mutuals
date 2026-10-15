@@ -109,9 +109,10 @@ object Achievements {
         var uniqueSinceLastRun: Boolean = false, var runsSinceMacaw: Int = 0, var longestRunsWithoutMacaw: Int = 0,
         var lastRunHadOwnSparkling: Boolean = false, var ticketsSinceOwnSparkling: Int = 0,
         var contestsCompleted: Int = 0, var lastContestWindow: Long = -1,
-        var activity: ActivityEvidence? = ActivityEvidence())
+        var activity: ActivityEvidence? = ActivityEvidence(), var state: AchievementStateV2? = null)
     private var data = Data()
-    val activity: ActivityEvidence get() = data.activity ?: ActivityEvidence().also { data.activity = it }
+    val state: AchievementStateV2 get() = data.state ?: AchievementMigration.migrate(data)
+    val activity: ActivityEvidence get() = data.state?.activity ?: data.activity ?: ActivityEvidence().also { data.activity = it }
     private var activityScopeKey: String? = null
     private var ticks = 0
 
@@ -137,11 +138,9 @@ object Achievements {
     private val emeraldDrop = Regex("^(?:[A-Z!' ]*DROP!|WOW!|RNG METER|NICE!)", RegexOption.IGNORE_CASE)
 
     fun register() {
-        data = HistoryStore.load("achievements", Data::class.java, ::Data)
+        data = AchievementPersistence.load().getOrElse { Data() }
         // Offline gaps cannot prove an uninterrupted personal ticket interval.
         invalidateActivityIntervals()
-        // Achievements that were removed (emblems, the 10-run Macaw drought) no longer count.
-        data.unlocked.keys.retainAll(definitions.map { it.id }.toSet())
         ClientReceiveMessageEvents.GAME.register { message, overlay ->
             if (!overlay) Minecraft.getInstance().execute { SafariMessages.lines(message.string).forEach(::chat) }
         }
@@ -257,14 +256,14 @@ object Achievements {
         Measure.CONTESTS -> data.contestsCompleted.toLong()
     }
 
-    fun isUnlocked(achievement: Achievement) = achievement.id in data.unlocked
-    fun unlockedAt(achievement: Achievement) = data.unlocked[achievement.id] ?: 0L
+    fun isUnlocked(achievement: Achievement) = achievement.id in state.currentUnlocks
+    fun unlockedAt(achievement: Achievement) = state.currentUnlocks[achievement.id] ?: 0L
 
     /** With achievements off, progress still counts but nothing unlocks or is announced; it catches up when turned on. */
     private fun unlock(id: String, announce: Boolean) {
-        if (!ConfigManager.achievements || id in data.unlocked) return
+        if (!ConfigManager.achievements || id in state.currentUnlocks || id in LegacyAchievementMetadata.replacedIds) return
         val achievement = definitions.firstOrNull { it.id == id } ?: return
-        data.unlocked[id] = System.currentTimeMillis()
+        state.currentUnlocks[id] = System.currentTimeMillis()
         save()
         if (announce) announce(achievement)
     }
@@ -295,9 +294,9 @@ object Achievements {
     /** First run: unlock what the history already earns, quietly, and say how many in one line. */
     private fun initialise(client: Minecraft) {
         data.initialised = true
-        val before = data.unlocked.size
+        val before = state.currentUnlocks.size
         afterImport()
-        val earned = data.unlocked.size - before
+        val earned = state.currentUnlocks.size - before
         if (earned > 0) client.player?.sendSystemMessage(LocalChat.component(
             "[SM] Achievements are here! Your history already earns §e$earned§r of them. See /sm achievements."))
     }
@@ -308,7 +307,7 @@ object Achievements {
      */
     fun afterImport(): Int {
         if (!data.initialised) return 0
-        val before = data.unlocked.size
+        val before = state.currentUnlocks.size
         var noMacaw = 0; var noSparkle = 0; var lastOwn = false
         for (run in RunHistory.runs.sortedBy { it.start }) {
             noMacaw = if (run.macaws > 0) 0 else noMacaw + 1
@@ -326,7 +325,7 @@ object Achievements {
         }
         checkAll(false)
         save()
-        return data.unlocked.size - before
+        return state.currentUnlocks.size - before
     }
 
     // ------------------------------------------------------------------ reading
@@ -341,14 +340,14 @@ object Achievements {
     /** Your profile was read from the API: whatever its runs, catches and dex earn is unlocked quietly. Returns how many. */
     fun afterApiStats(): Int {
         if (!data.initialised || !ConfigManager.achievements) return 0
-        val before = data.unlocked.size
+        val before = state.currentUnlocks.size
         checkAll(false)
         save()
-        return data.unlocked.size - before
+        return state.currentUnlocks.size - before
     }
     val longestDrySparkling get() = maxOf(data.longestRunsWithoutSparkling, data.runsSinceOwnSparkling)
     val longestMacawDrought get() = maxOf(data.longestRunsWithoutMacaw, data.runsSinceMacaw)
     val runsSinceMacaw get() = data.runsSinceMacaw
     val contestsCompleted get() = data.contestsCompleted
-    fun save() = HistoryStore.save("achievements", data)
+    fun save() = AchievementPersistence.save(data)
 }
