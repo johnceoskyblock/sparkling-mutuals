@@ -36,7 +36,7 @@ class HauntedCompletionTest {
             assertTrue(run.captureComplete(name))
             val fresh=SafariRun(0)
             fresh.sparklingChecks.scan(SafariBiome.HAUNTED,500.0,500.0,ids.map { name to it })
-            assertTrue(fresh.sparklingChecks.checked(name))
+            assertEquals(name != "Doomspiral", fresh.sparklingChecks.checked(name))
             repeat(amount) { fresh.record(SafariCatch(SafariRoster.named(name)!!)) }
             fresh.sparklingChecks.scan(SafariBiome.HAUNTED,500.0,500.0,emptyList())
             assertTrue(fresh.sparklingChecks.checked(name))

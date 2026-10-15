@@ -96,7 +96,7 @@ class HistoryTest {
             "[13:00:30] [Render thread/INFO]: [CHAT] CAPTURE! You caught a Cavernfish and gained a Cavernfish Shard!").joinToString("\n"))
         val result = LogImporter.read(folder, "Me", includeLatest = true, newerThan = -1).join()
         assertEquals(1, result.runs.size)
-        assertEquals(30_000L, result.runs.single().length)
+        assertEquals(0L, result.runs.single().length, "No explicit summary or departure means duration is unknown")
     }
     @Test fun `a run's chat gives shards, feathers, macaws and sparklings`() {
         val tally = RunTally()
@@ -146,7 +146,7 @@ class HistoryTest {
         val added = HistoryMerge.merge(runs, listOf(RunRecord(start = 1_000_000, caught = 3, imported = true),
             RunRecord(start = 1_100_000, caught = 4, imported = true)))
         assertEquals(0, added)
-        assertEquals(listOf(4, 3), runs.map { it.caught })
+        assertEquals(listOf(0, 0), runs.map { it.caught }, "Existing imported records are preserved")
         assertEquals(listOf(2, 1), runs.map { it.number })
     }
     @Test fun `a run still open at the end of latest log is left for live recording`() {
@@ -173,7 +173,7 @@ class HistoryTest {
         assertEquals(1, b - a)
         assertEquals(72, tomorrow - a)
     }
-    @Test fun `imports skip runs already saved, refresh earlier imports and renumber oldest first`() {
+    @Test fun `imports preserve saved native and imported runs and renumber oldest first`() {
         val live = RunRecord(start = 1_000_000, caught = 5)
         val oldImport = RunRecord(start = 5_000_000, caught = 1, imported = true)
         val runs = mutableListOf(oldImport, live)
@@ -181,7 +181,7 @@ class HistoryTest {
             RunRecord(start = 5_030_000, caught = 9, imported = true), RunRecord(start = 100_000, imported = true)))
         assertEquals(1, added)
         assertSame(live, runs.first { it.start == 1_000_000L })
-        assertEquals(9, runs.first { it.start == 5_030_000L }.caught)
+        assertEquals(1, runs.first { it.start == 5_000_000L }.caught)
         assertEquals(listOf(3, 2, 1), runs.map { it.number })
     }
     @Test fun `achievement definitions are unique and teammates' broadcasts aren't your Emerald Dye`() {

@@ -13,6 +13,7 @@ object ContestConfig {
     var hudScale = 1.0f
 
     var trackContest = true
+    var autoContestDowntime = true
     var contestWarnEnabled = true
     var contestWarnMinutes = "5, 3, 1"
     var contestWarnTitle = true
@@ -40,6 +41,7 @@ object ContestConfig {
                 ?: 1.0f
 
             trackContest = getProperty("trackContest", "true").toBoolean()
+            autoContestDowntime = getProperty("autoContestDowntime", "true").toBooleanStrictOrNull() ?: true
             contestWarnEnabled = getProperty("contestWarnEnabled", "true").toBoolean()
             contestWarnMinutes = getProperty("contestWarnMinutes", "5, 3, 1")
             contestWarnTitle = getProperty("contestWarnTitle", "true").toBoolean()
@@ -69,6 +71,7 @@ object ContestConfig {
             setProperty("hudY", hudY.toString())
             setProperty("hudScale", hudScale.toString())
             setProperty("trackContest", trackContest.toString())
+            setProperty("autoContestDowntime", autoContestDowntime.toString())
             setProperty("contestWarnEnabled", contestWarnEnabled.toString())
             setProperty("contestWarnMinutes", contestWarnMinutes)
             setProperty("contestWarnTitle", contestWarnTitle.toString())

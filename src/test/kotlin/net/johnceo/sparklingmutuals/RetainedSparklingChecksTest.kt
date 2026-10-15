@@ -42,6 +42,10 @@ class RetainedSparklingChecksTest {
             checks.inventory(emptyList())
             val required = maxOf(1, SafariFullClear.minimum(critter.name))
             repeat(required) { scan(checks, critter.name, listOf(UUID.randomUUID())) }
+            if (critter.name in setOf("Wumpa", "Doomspiral")) {
+                assertFalse(checks.locallyChecked(critter.name), critter.name)
+                checks.capture(critter.name)
+            }
             assertTrue(checks.locallyChecked(critter.name), critter.name)
             scan(checks, critter.name, emptyList())
             assertEquals(required, checks.checkCount(critter.name), critter.name)

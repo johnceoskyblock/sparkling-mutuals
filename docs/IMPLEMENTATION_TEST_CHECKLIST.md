@@ -84,6 +84,40 @@ Use the existing IntelliJ Minecraft Client/DevAuth configuration. These are manu
 - Finish every required catch and check in Unique or Full Clear: the empty missing panel says **All caught and checked!**. Sparkling retains **All checked!**.
 - In Unique, a first catch must not complete a species while its party-needed Sparkling check remains unfinished. In Sparkling, unneeded discoveries are excluded except necessary spawn prerequisites. In Full Clear, resolve all possible captures and spawn sources, with only one Macaw catch required after food is resolved.
 
+## Floor-drop colors and automatic contest request
+
+- In **ESP → Floor-drop colors**, set the nine quest types to different colors. Verify outline, fill and name labels match each type; close/reopen settings and restart to confirm persistence. Test two gem colors and coin/incense together. Existing filtering must still hide unneeded drops.
+- Check an older config with only the shared floor color: all types inherit it. Use **Customization → All floor-drop colors** to recolor every type, then change an individual color again and save without modifying the shared control: the individual choice must survive.
+- Follow [automatic contest downtime checks](CONTEST_DOWNTIME.md#minecraft-checks): enabled sends one party request at a new contest start, disabled stays silent, the toggle persists, and joining/enabling mid-contest does not send a stale request.
+
+## Any detected Sparkling blocks completion
+
+- In each mode and biome, detect a Sparkling whose discovery everyone owns. It must appear in the missing panel and prevent biome/run completion, even if its ordinary species requirement was already met. Include a Sparkling Macaw after one ordinary Macaw catch.
+- Unload it, leave/reenter and switch modes. The obligation remains. A normal same-species catch, UUID checking and received biome report cannot clear it. Repeat with alert/ESP switches disabled and a loaded Sparkling across a biome boundary.
+- Confirm a personal Sparkling capture, party loot share or global Sparkling capture announcement: resolve one obligation. Two Sparklings of the same species need two catches; the announcement and reward for one catch must not count twice. A lingering label already seen as caught must not reopen completion. Other mode requirements still apply afterward.
+- Detect a new Sparkling after a biome report has already been sent: reopen the affected biome and suppress queued reports/run alerts until the new capture is resolved. Start a new run and verify old obligations are gone.
+
+## Incense distance selection in every mode
+
+- In Unique, Full Clear and Sparkling, compare incense highlights against 3D distance to **(4,47,-27)**. Without starting incense only the four closest known locations can show. With one starting incense, show two; repeat with two starting incense and expect two again.
+- Collect or unload one of those locations: a farther excluded location must not replace it. Spend starting incense, leave/reenter and switch modes: keep the two-slot limit. Newly loaded closer spawns may refine the known ranking. A new run resets it.
+- Later Haunted pickups must not count as starting items. Confirm all existing mode/discovery gates, four-held/four-picked cutoffs, colors and coin visibility still work independently.
+
+## Sparkling Haunted floor-drop filters
+
+- With nobody missing Sparkling Gimmiegold, coin ESP stays hidden before any coin pickup. Mark Gimmiegold needed and verify coin ESP returns independently of Doomspiral/incense needs.
+- Start with two incense, collect two more and hold four simultaneously: incense ESP stops in every mode, even with fewer than four floor pickups. Spend the incense and leave/reenter Haunted: it stays hidden. A new run resets this state. Verify the existing four-floor-pickup cutoff still works too.
+
+## Sparkling boss capture exceptions
+
+- With Wumpa or Doomspiral missing from party discoveries, load the boss in Sparkling mode and wait beyond its ordinary scan interval: it must remain in the missing panel and must not increase Checked progress. Repeat after unloading/reentry, spawn/slain messages and received `id`/`hd` reports.
+- Catch it personally, then repeat in a new run with a party loot share instead. Either confirmation completes its check immediately and retains completion after reentry. Other species still complete by their documented checking rules; Full Clear retains its capture/source/absence requirements.
+
+## Combined history import
+
+- Open the History tab: **History** is first and **Import History from Logs** is immediately below. The old launch-import toggle is absent. Both the button and `/sm history import` import runs and Sparkling finds together, with progress and a completion count.
+- Follow the [history import Minecraft checks](HISTORY_IMPORT.md#minecraft-checks), including an older-log folder, a repeated import, existing native records, estimates, a corrupt archive, persistence and an ongoing run.
+
 ## Documentation revisions
 
 - Run `./scripts/DocumentationSync.ps1`: a synchronized source baseline should report no changed documents.
@@ -92,4 +126,4 @@ Use the existing IntelliJ Minecraft Client/DevAuth configuration. These are manu
 
 ## Last updated
 
-2026-10-15 - Aligned completed missing-panel wording and mode definitions: Unique/Full Clear show All caught and checked!; Sparkling retains All checked!.
+2026-10-15 - Added all-mode incense distance/starting-item selection and cutoff checks; retained colors, contest requests and Sparkling capture checks.

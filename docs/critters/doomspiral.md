@@ -16,11 +16,11 @@
 | --- | --- |
 | Unique | One shared catch; if anyone still needs this sparkling variant, also satisfy the species' Sparkling evidence. The missing-species row may disappear after the catch. |
 | Full Clear | At least 1 confirmed catches, all verified additional spawns captured, no known live remainder, and all relevant opportunities resolved. |
-| Sparkling | Record distinct UUIDs seen inside this species' qualifying scan area and retain their checked progress for the run, including after unloading and biome reentry. Reconcile shared captures without counting a later catch of a seen UUID twice; source requirements remain separate. |
+| Sparkling | Require one confirmed shared catch (personal capture or party loot share). Sightings, retained UUIDs, spawn/slain messages and party biome reports cannot mark it checked. Retain the catch for the run. |
 
 ## Specific deductions
 
-- **Sparkling-mode Incense ESP:** show it only if at least one party member needs Sparkling Doomspiral. Keep it enabled until **four Soothing Incense floor pickups** are confirmed; observing a predicted marker, holding starting incense or hearing a spawn announcement is not a floor pickup. If everyone has the discovery, hide Incense ESP. This condition is independent of Shining Coin ESP. In every mode, four confirmed incense floor pickups hide all remaining incense ESP, regardless of Gimmiegold discovery needs; starting inventory alone does not advance this pickup counter.
+- **Sparkling-mode Incense ESP:** show only if someone needs Sparkling Doomspiral. Stop for the rest of the run after either four confirmed incense floor pickups or inventory holding four Soothing Incense simultaneously at any point. Starting incense counts toward the inventory cutoff, including two starting items; spending incense or reentering Haunted does not restore ESP. Floor-pickup counts still exclude starting grants. Coin visibility is independent. Every mode applies both the four-floor-pickup and four-held cutoffs, plus the [incense waypoint filter](FLOOR_DROPS.md#incense-waypoint-selection-in-every-mode): closest four locations to (4,47,-27), or closest two with one/two starting incense. Collecting or unloading a selected location does not select a farther replacement.
 - Haunted highlights may select predicted Soothing Incense/Shining Coin drops via the [floor-drop predictor](FLOOR_DROPS.md). Prediction does not prove incense acquired/used or a ritual completed.
 - Partial-clear entry: minimum shared captures + qualifying UUID-check radius + no remaining critters/spawns establishes Full Clear without seeing captured UUIDs again. Apply species-specific source checks and [shared radius rules](TRACKING.md#partially-cleared-biome).
 - Starting grants and Haunted pickups can provide Soothing Incense. Track grants, pickups and actual use separately.
@@ -29,4 +29,4 @@
 
 ## Last updated
 
-2026-10-15 - Retained qualified distinct UUID checks for every critter throughout Unique/Sparkling runs, with capture reconciliation and independent source gates. Full Clear remains capture-based.
+2026-10-15 - Applied incense waypoint selection and collection/inventory cutoffs in every mode; retained capture-required Sparkling completion.

@@ -34,7 +34,7 @@ object SafariRoster {
     fun inBiome(biome: SafariBiome) = byBiome.getValue(biome)
     fun findIn(text: String) = patterns.firstOrNull { it.second.containsMatchIn(text) }?.first
 }
-data class SafariCatch(val critter: SafariCritter, val personal: Boolean = true, val catcherName: String? = null) {
+data class SafariCatch(val critter: SafariCritter, val personal: Boolean = true, val catcherName: String? = null, val sparkling: Boolean = false) {
     companion object {
         private val catcher = Regex("\\bfrom\\s+(?:\\[[^]]+head]\\s*)?(\\w{1,16})\\s+(?:catching|finding)\\b")
         fun parse(raw: String): SafariCatch? {
@@ -44,13 +44,23 @@ data class SafariCatch(val critter: SafariCritter, val personal: Boolean = true,
             val species = SafariRoster.findIn(text) ?: return null
             val personal = own && Regex("^CAPTURE! You (?:caught|found)\\b").containsMatchIn(text)
             val from = catcher.find(text)?.groupValues?.get(1)
-            return if (personal || !own && from != null) SafariCatch(species, personal, from) else null
+            return if (personal || !own && from != null) SafariCatch(species, personal, from, Regex("\\bSPARKLING\\s+${Regex.escape(species.name)}\\b", RegexOption.IGNORE_CASE).containsMatchIn(text)) else null
         }
     }
 }
 class SafariRun(val startedAt: Long) {
     val entry = SafariEntryEvidence()
     val resources = SafariResources()
+    val sparklingCaptures = SparklingCaptureState()
+    fun observeSparkling(id: java.util.UUID, name: String) {
+        if (sparklingCaptures.observe(id, name)) SafariRoster.named(name)?.biome?.let(completion::reopen)
+    }
+    fun sparklePending(name: String) = sparklingCaptures.pending(name)
+    fun sparklingBroadcast(raw: String, now: Long = System.currentTimeMillis()) {
+        val match = net.johnceo.sparklingmutuals.history.RunTally.sparkling.matchEntire(raw) ?: return
+        val species = SafariRoster.named(match.groupValues[2].trim())?.name ?: return
+        sparklingCaptures.capture(species, match.groupValues[1], broadcast = true, at = now)
+    }
     private var liveBees = 0
     private val beePopulationAccountsForNests get() = foundNests > 0 && nestSitesUnknown == 0 && count("Honeybug") + liveBees >= foundNests
     val nestsResolved get() = nestsChecked || beePopulationAccountsForNests
@@ -96,7 +106,7 @@ class SafariRun(val startedAt: Long) {
         }
     }
     fun fullClearProgress(critters: List<SafariCritter>) = critters.count {
-        it.biome in partyFullClears || captureComplete(it.name)
+        !sparklePending(it.name) && (it.biome in partyFullClears || captureComplete(it.name))
     }
     private val inheritedBiomes = mutableSetOf<SafariBiome>()
     fun visitBiome(biome: SafariBiome) {
@@ -135,6 +145,8 @@ class SafariRun(val startedAt: Long) {
     }
     fun sparklingComplete(name: String, party: PartySparklingState, localOnly: Boolean = false): Boolean {
         val critter = SafariRoster.named(name) ?: return false
+        if (sparklePending(name)) return false
+        if (SparklingChecks.requiresCapture(name)) return count(name) > 0
         if (sourcePending(name)) return false
         if (name in birdSpecies && !birds.sparklingSpawned) return false
         if (name == "Gimmiegold" && sparklingChecks.checkCount(name) < resources.requiredPopulation(SafariBiome.HAUNTED)) return false
@@ -143,7 +155,7 @@ class SafariRun(val startedAt: Long) {
         return sparklingChecks.locallyChecked(name)
     }
     fun completed(mode: SafariMode, critters: List<SafariCritter>, party: PartySparklingState, localOnly: Boolean = false): Int =
-        critters.count { when (mode) {
+        critters.count { !sparklePending(it.name) && when (mode) {
             SafariMode.UNIQUE -> uniqueComplete(it.name, party, localOnly)
             SafariMode.FULL_CLEAR -> (!localOnly && it.biome in partyFullClears && !sourcePending(it.name)) || captureComplete(it.name)
             SafariMode.SPARKLING -> sparklingComplete(it.name, party, localOnly)
@@ -151,7 +163,7 @@ class SafariRun(val startedAt: Long) {
     val completion = SafariCompletionEvents()
     /** Unique progress retains sparkle checks; missing rows and PBs use their own capture evidence. */
     fun uniqueComplete(name: String, party: PartySparklingState, localOnly: Boolean = false): Boolean {
-        if (count(name) == 0) return false
+        if (count(name) == 0 || sparklePending(name)) return false
         return !party.needs(name) || sparklingComplete(name, party, localOnly = true)
     }
     /** A completed local survey can prove a variable critter never spawned; a sighting revokes it. */
@@ -261,7 +273,7 @@ class SafariRun(val startedAt: Long) {
     }
     fun captureComplete(species: String, personalOnly: Boolean = false,
         speciesInRange: Set<String>? = nearby[SafariRoster.named(species)!!.biome], structures: BiomeClearEvidence? = null): Boolean {
-        if (sourcePending(species)) return false
+        if (sourcePending(species) || sparklePending(species)) return false
         val remaining = speciesInRange ?: return false
         val captured = if (personalOnly) personalCount(species) else count(species)
         if (captured < maxOf(SafariFullClear.minimum(species), if (species == "Macaw") 0 else knownPopulation[species] ?: 0)) return false
@@ -298,7 +310,8 @@ class SafariRun(val startedAt: Long) {
         if (uuid != null) observedUuids.getOrPut(species) { mutableSetOf() }.add(uuid)
     }
     fun observedCount(species: String) = observedCritters[species]?.size ?: 0
-    fun record(catch: SafariCatch) {
+    fun record(catch: SafariCatch, now: Long = System.currentTimeMillis(), self: String? = null) {
+        if (catch.sparkling) sparklingCaptures.capture(catch.critter.name, if (catch.personal) self else catch.catcherName, broadcast = false, at = now)
         catchEvents.add(catch)
         resources.capture(catch.critter.name)
         if (!catch.personal && catch.critter.biome !in visited) priorLootShare.add(catch.critter.biome)

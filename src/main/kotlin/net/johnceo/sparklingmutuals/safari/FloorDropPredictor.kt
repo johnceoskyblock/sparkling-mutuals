@@ -21,6 +21,7 @@ data class PredictedFloorDrop(val id: Int, val x: Double, val y: Double, val z: 
  * Labels are predictions only; this class never supplies resource or completion evidence. */
 class FloorDropPredictor {
     private val groups = sortedMapOf<Int, PredictedFloorDrop>()
+    val knownDrops: List<PredictedFloorDrop> get() = groups.values.toList()
     fun reset() = groups.clear()
     fun scan(displays: List<FloorDisplay>, now: Long = System.currentTimeMillis()): List<PredictedFloorDrop> {
         groups.values.forEach { it.live = false }

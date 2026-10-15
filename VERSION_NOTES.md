@@ -1,3 +1,38 @@
+## What's changed in v3.2.0
+
+This release adds individual floor-drop colors, automatic Miria contest downtime requests and a combined manual history importer. It also strengthens Sparkling capture requirements and Haunted supply selection. These additions and fixes preserve existing saved history and use a minor version increment from v3.1.0.
+
+### New features and improvements
+
+- **Individual floor-drop colors:** configure the highlight, fill and label colors of all nine named supply types under ESP → Floor-drop colors. Existing shared floor colors migrate to the individual defaults. The Customization tab's All floor-drop colors control still sets every type together, and individual choices persist across restarts.
+- **Automatic contest downtime requests:** the new Miria contest → Auto !dt contest toggle sends `/pc !dt contest` once at an observed contest start while online in SkyBlock with known party membership. It defaults on, works independently of the HUD, preserves saved off values and avoids duplicate or late catch-up requests.
+- **One manual import for both histories:** `/sm history import` now rebuilds run history and Sparkling history together. The History settings tab starts with History and Import History from Logs buttons. A quoted folder path supports old logs from another Minecraft instance.
+- **Broader historical inputs:** import plain `.log`, compressed `.log.gz` and supported chat `.json` files, including modern/older chat prefixes, formatting codes and optional Chat Heads text. Text-log dates account for midnight rollover. Parsing runs in the background, with progress above the hotbar and per-file failure reporting.
+- **Reconstructed run details:** associate ticket confirmations with Hunting Hotspot starts, prefer reward summaries for end times, and recover observed captures, loot shares, rewards, feathers, Macaw bonuses, Sparkling finds and completion splits. Missing durations display as `-`; incomplete current-instance live runs remain with the live recorder.
+- **Explicit historical estimates:** imported mode, profit and first-seen status are labeled as estimates. Profit uses similar existing positive-coin runs when available; estimated coin values show `~`. Ticket intervals use recognized confirmations from the available logs.
+- **Import preservation and recovery:** deduplicate overlapping log copies and repeat imports while preserving existing saved records and the live tickets-since-Sparkling counter. Match nearby entries one-to-one, keep legitimate separate finds, back up both history files before import and use atomic file replacement where supported. Corrupt files do not contribute partially parsed events; other valid files can still import.
+- **Contributor guide:** added Java 25/Fabric setup, build/test commands, tracking rules and focused pull-request guidance, linked from the README.
+
+### Tracking and supply fixes
+
+- **Capture observed Sparklings:** a seen Sparkling remains outstanding across unloading and biome reentry in every mode, even when everyone owns its discovery. Ordinary catches cannot clear it. Pair global announcements with personal/loot-share confirmations so a single Sparkling catch is not counted twice. Pending Sparklings block completion announcements, run-complete alerts and applicable personal-best recording; a new sighting reopens a previously announced biome.
+- **Boss catch requirements:** Wumpa and Doomspiral require an actual personal or shared catch for their Sparkling check. UUID sightings, party done messages and boss-completion dialogue alone no longer satisfy that catch.
+- **Haunted incense selection:** highlight the four closest known predicted incense locations to the waypoint at (4, 47, -27), or two when starting with incense. Retain the ranking through unloading/pickups, and stop incense highlights after four confirmed pickups or a four-item inventory peak in every mode.
+- **Sparkling coin visibility:** show coin ESP only while the party needs Gimmiegold in Sparkling mode. Visual selection remains separate from actual resource/source completion evidence.
+- Preserve per-item colors when unrelated customization controls are applied, and keep seen-Sparkling tracking active independently of display/alert switches.
+
+### Upgrade notes
+
+- **Import logs on launch has been removed.** Normal sessions continue recording live; use the command or Import History from Logs button for backfill. Existing saved histories are retained.
+- Auto !dt contest defaults on. Disable it in Miria contest settings if you do not want automatic party downtime requests.
+- Imported estimates depend on the available logs and reference runs. Existing records retain their original values; missing messages cannot be reconstructed.
+
+Minecraft **26.1.2**, Java **25**, Fabric Loader **0.19.5+**. Requires **Fabric API** and **Fabric Language Kotlin**. Replace the older mod JAR with **sparkling-mutuals-3.2.0.jar**.
+
+Validation: **637 automated tests passed**, with a clean release build and verification of the packaged mod version. Latest rendering, server messages and live import/contest behavior still need the relevant [Minecraft checks](docs/IMPLEMENTATION_TEST_CHECKLIST.md), [history import checks](docs/HISTORY_IMPORT.md) and [contest checks](docs/CONTEST_DOWNTIME.md).
+
+[Full changelog](https://github.com/johnceoskyblock/sparkling-mutuals/compare/v3.1.0...v3.2.0)
+
 ## What's changed in v3.1.0
 
 This update adds supply labels, persistent Sparkling checks and resource reminders, and fixes Safari completion, Forest nest tracking, Honeyhives and the history screen. It supersedes v3.0.0. The development branch previously named v4 is released as v3.1.0; this is not a 4.0.0 release.
@@ -73,4 +108,4 @@ Validation: 510 automated regression tests and the clean build passed. Live in-g
 
 ## Last updated
 
-2026-10-15 - Prepared the complete v3.1.0 feature, fix, compatibility and validation notes against v3.0.0.
+2026-10-15 - Prepared v3.2.0 notes for floor colors, contest downtime, combined history import and Sparkling capture fixes.

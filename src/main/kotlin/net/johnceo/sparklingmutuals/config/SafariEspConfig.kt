@@ -3,6 +3,7 @@ package net.johnceo.sparklingmutuals.config
 import io.github.notenoughupdates.moulconfig.ChromaColour
 import net.johnceo.sparklingmutuals.safari.SafariEspRules
 import java.util.Properties
+import net.johnceo.sparklingmutuals.safari.FloorDropType
 
 object SafariEspConfig {
     data class Group(var enabled: Boolean = true, var onlyInBiome: Boolean = true)
@@ -53,7 +54,18 @@ object SafariEspConfig {
     var textScale = DEFAULT_TEXT_SCALE
         set(value) { field = validTextScale(value) }
     val labelWorldScale get() = .025f * textScale
+    val floorColors = FloorDropType.entries.filter { it != FloorDropType.GENERIC }
+        .associateWith { defaultColor(0xFF00FF00.toInt()) }.toMutableMap()
+    fun dropColor(type: FloorDropType) = floorColors[type] ?: floorColor
     var floorColor = defaultColor(0xFF00FF00.toInt())
+        set(value) {
+            if (field != value) floorColors.keys.forEach { floorColors[it] = value }
+            field = value
+        }
+    fun setAllDropColors(value: String) {
+        floorColor = value
+        floorColors.keys.forEach { floorColors[it] = value }
+    }
     var rockmiteMoundEnabled = true
     var rockmiteMoundColor = defaultColor(0xFFFFFFFF.toInt())
     fun entityEnabled(name: String, mound: Boolean = false) =
@@ -78,6 +90,7 @@ object SafariEspConfig {
             mob.color = validColor(properties.getProperty("esp.${key(name)}.color"), defaultColor(palette.getValue(name)))
         }
         floorColor = validColor(properties.getProperty("esp.floor.color"), defaultColor(0xFF00FF00.toInt()))
+        floorColors.keys.forEach { type -> floorColors[type] = validColor(properties.getProperty("esp.floor.${type.name.lowercase()}.color"), floorColor) }
         rockmiteMoundEnabled = properties.getProperty("esp.rockmite.moundEnabled")?.toBooleanStrictOrNull()
             ?: properties.getProperty("esp.rockmite.enabled")?.toBooleanStrictOrNull() ?: true
         rockmiteMoundColor = validColor(properties.getProperty("esp.rockmite.moundColor"),
@@ -94,6 +107,7 @@ object SafariEspConfig {
             properties.setProperty("esp.${key(name)}.color", mob.color)
         }
         properties.setProperty("esp.floor.color", floorColor)
+        floorColors.forEach { (type, color) -> properties.setProperty("esp.floor.${type.name.lowercase()}.color", color) }
         properties.setProperty("esp.rockmite.moundEnabled", rockmiteMoundEnabled.toString())
         properties.setProperty("esp.rockmite.moundColor", rockmiteMoundColor)
     }

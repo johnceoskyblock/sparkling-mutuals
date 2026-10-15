@@ -61,16 +61,48 @@ class SparklingChecksTest {
         checks.scan(SafariBiome.CAVERN, -114.0, 49.0, emptyList(), wallsCleared = true)
         assertTrue(checks.checked("Snoozle"))
     }
-    @Test fun `Wumpa Doomspiral and four distinct Gazers confirm their checks`() {
+    @Test fun `boss checks require captures while four distinct Gazers suffice`() {
         val checks = SparklingChecks(); val gazers = seen("Gazer", 4)
         checks.scan(SafariBiome.ICY, -112.0, -54.0, seen("Wumpa", 1))
+        assertFalse(checks.checked("Wumpa"))
+        checks.capture("Wumpa")
         assertTrue(checks.checked("Wumpa"))
         checks.scan(SafariBiome.HAUNTED, -4.0, -64.0, gazers.take(3) + seen("Doomspiral", 1))
-        assertTrue(checks.checked("Doomspiral")); assertFalse(checks.checked("Gazer"))
+        assertFalse(checks.checked("Doomspiral")); assertFalse(checks.checked("Gazer"))
         checks.capture("Doomspiral")
         checks.scan(SafariBiome.HAUNTED, -4.0, -64.0, gazers)
         assertTrue(checks.checked("Gazer"))
         assertTrue(checks.checked("Doomspiral"))
+    }
+    @Test fun `boss sightings and completion messages cannot replace personal or shared capture`() {
+        ConfigManager.init(dir); ConfigManager.sparklingMode = true
+        data class Boss(val name: String, val biome: SafariBiome, val x: Double, val z: Double, val slain: String, val done: String)
+        for ((species, area, x, z, slain, done) in listOf(
+            Boss("Wumpa", SafariBiome.ICY, -112.0, -54.0, "The cave opens up again...", "id"),
+            Boss("Doomspiral", SafariBiome.HAUNTED, -4.0, -64.0, "The darkness in the Haunted Biome fades away...", "hd")
+        )) {
+            val state = party(setOf(species))
+            for (personal in listOf(true, false)) {
+                val run = SafariRun(0)
+                run.sparklingChecks.scan(area, x, z, seen(species, 1))
+                run.sparklingChecks.chat(slain, manualAllowed = true)
+                run.sparklingChecks.chat("Party > Friend: $done", manualAllowed = true)
+                run.partyFullClear("Party > Friend: $done")
+                assertFalse(run.sparklingChecks.checked(species))
+                assertFalse(run.sparklingComplete(species, state))
+                assertEquals(0, run.completed(SafariMode.SPARKLING, listOf(SafariRoster.named(species)!!), state))
+                assertTrue(SafariPanels.missingCritters(run, area, state).any { it.name == species })
+                val capture = if (personal) "CAPTURE! You caught a $species!"
+                    else "LOOT SHARE! You received a $species Shard from Friend catching a $species!"
+                run.record(SafariCatch.parse(capture)!!)
+                assertTrue(run.sparklingChecks.checked(species))
+                assertTrue(run.sparklingComplete(species, state, localOnly = true))
+                assertFalse(SafariPanels.missingCritters(run, area, state).any { it.name == species })
+                run.sparklingChecks.reenter(area)
+                run.sparklingChecks.scan(area, x, z, emptyList())
+                assertTrue(run.sparklingComplete(species, state))
+            }
+        }
     }
     @Test fun `birds need all food spawned but no capture minimums`() {
         val birds = SafariBirdLedger(); val checks = SparklingChecks()
@@ -130,7 +162,7 @@ class SparklingChecksTest {
             "id" to SafariBiome.ICY, "hd" to SafariBiome.HAUNTED)) {
             val run = SafariRun(0)
             run.sparklingChecks.chat("§9Party > §a[MVP+] Player: $word", manualAllowed = true)
-            assertTrue(biome.critters.all { run.sparklingChecks.checked(it.name) })
+            assertTrue(biome.critters.all { run.sparklingChecks.checked(it.name) == (it.name !in setOf("Wumpa", "Doomspiral")) })
             assertEquals(0, run.progress(SafariRoster.all, true))
             assertTrue(run.biomeClears.isEmpty()); assertTrue(run.uniqueBiomeClears.isEmpty())
         }

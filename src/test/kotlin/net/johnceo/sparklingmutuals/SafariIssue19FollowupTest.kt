@@ -33,7 +33,7 @@ class SafariIssue19FollowupTest {
         assertTrue(run.biomeClears.isEmpty()); assertTrue(run.uniqueBiomeClears.isEmpty())
         assertEquals("0/2", row(SafariRun(0), setOf("Wumpa", "Troodon")))
     }
-    @Test fun `exact global completion messages check only their species in Sparkling mode`() {
+    @Test fun `global slain messages cannot replace confirmed boss captures in Sparkling mode`() {
         val messages = mapOf(
             "The darkness in the Haunted Biome fades away..." to "Doomspiral", "The cave opens up again..." to "Wumpa")
         for ((message, species) in messages) {
@@ -43,8 +43,8 @@ class SafariIssue19FollowupTest {
             run.sparklingChecks.chat(message)
             assertFalse(run.sparklingChecks.checked(species))
             run.sparklingChecks.chat("§a$message", manualAllowed = true)
-            assertTrue(run.sparklingChecks.checked(species))
-            assertEquals(1, SafariRoster.all.count { run.sparklingChecks.checked(it.name) })
+            assertFalse(run.sparklingChecks.checked(species))
+            assertEquals(0, SafariRoster.all.count { run.sparklingChecks.checked(it.name) })
             assertEquals(0, run.count(species)); assertTrue(run.biomeClears.isEmpty())
         }
     }

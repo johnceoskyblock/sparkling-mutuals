@@ -58,6 +58,10 @@ Every critter checked in Unique/Sparkling retains distinct qualified run UUIDs. 
 
 Documentation revisions and source synchronization: [SOURCE_SYNC.md](docs/SOURCE_SYNC.md).
 
+**Wumpa and Doomspiral are capture-required exceptions in Sparkling mode.** A needed boss remains unchecked until this run receives a personal capture or party loot-share confirmation. Seeing or retaining its UUID, a spawn/awoken/slain message, and a party biome-completion report cannot substitute for that capture. The confirmed catch completes its check immediately and remains valid across unloading, biome reentry and mode changes. Other species keep their existing checking rules.
+
+A detected Sparkling of any species blocks its biome completion in **every mode**, regardless of party discoveries. Retain the obligation after unloading/reentry, require a confirmed Sparkling catch, and reopen completion if a new Sparkling appears. Party biome reports and ordinary catches cannot bypass it. See [Sparkling capture obligations](docs/critters/TRACKING.md#sparkling-captures-block-biome-completion-in-every-mode).
+
 ## Last updated
 
-2026-10-15 - Aligned completed missing-panel wording and mode definitions: Unique/Full Clear show All caught and checked!; Sparkling retains All checked!.
+2026-10-15 - Added mandatory capture of any observed Sparkling before biome completion in every mode; retained boss capture exceptions.

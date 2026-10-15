@@ -54,7 +54,7 @@ class UniqueCompletionTest {
         val run = SafariRun(0); val state = party(*SafariRoster.all.map { it.name }.toTypedArray())
         (SafariBiome.ICY.critters + SafariBiome.HAUNTED.critters).forEach {
             caught(run, it.name)
-            assertFalse(complete(run, it.name, state), "A catch alone does not supply a qualifying scan")
+            assertEquals(it.name in setOf("Wumpa", "Doomspiral"), complete(run, it.name, state), "Only the two bosses complete their sparkling check from the catch alone")
             assertTrue(complete(run, it.name, party()), "Owned discovery needs only the catch")
         }
     }

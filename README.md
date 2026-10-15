@@ -65,7 +65,7 @@ Use the [37 individual critter notes](docs/critters/README.md) for species rules
 
 - **Run history (`/sm history`):** browse saved captures, loot shares, splits, bests and run statistics.
 - **Sparkling history:** record personal and party finds with ticket counts and dry streaks.
-- **Log import (`/sm history import`):** rebuild past runs from Minecraft logs.
+- **Log import (`/sm history import`):** rebuild both run and Sparkling history from Minecraft logs. Also available as **Import History from Logs** beneath the History button in settings. [Import details and estimates](docs/HISTORY_IMPORT.md).
 - **Achievements (`/sm achievements`):** track Safari milestones, collection progress and playtime.
 - **Profit history:** estimate shard and feather values from Bazaar prices, with a Profit tab and coin milestones.
 
@@ -97,7 +97,7 @@ Use the [37 individual critter notes](docs/critters/README.md) for species rules
 - Development builds: download the Artifacts ZIP from a successful [Actions run](https://github.com/johnceoskyblock/sparkling-mutuals/actions) and extract the JAR without `-sources` in its name.
 - Profile lookups use a [Hypixel API key](https://developer.hypixel.net) or the optional Shiny Hunter shared API.
 - Release notes are in the [release descriptions](https://github.com/johnceoskyblock/sparkling-mutuals/releases).
-- Current release: **v3.1.0**, with the installable file `sparkling-mutuals-3.1.0.jar`. Remove the older Sparkling Mutuals JAR before installing the update.
+- Current release: **v3.2.0**, with the installable file `sparkling-mutuals-3.2.0.jar`. Remove the older Sparkling Mutuals JAR before installing the update.
 
 ## Contributing
 
@@ -114,6 +114,8 @@ Documentation revision workflow: [Source synchronization](docs/SOURCE_SYNC.md). 
 
 Honeyhive state rules, data sources and debugging: [Torrhus Canyon Honeyhives](docs/HONEYHIVES.md).
 
+Per-drop colors are configurable in **ESP → Floor-drop colors**. **Miria contest → Auto !dt contest** controls the automatic party downtime request at new contest starts. See [contest request behavior](docs/CONTEST_DOWNTIME.md).
+
 ## Last updated
 
-2026-10-15 - Added contributor setup and pull-request guidance in CONTRIBUTING.md, linked from the README.
+2026-10-15 - Prepared v3.2.0 installation guidance with per-drop colors, automatic contest requests and the combined history importer.

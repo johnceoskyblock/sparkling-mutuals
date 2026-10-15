@@ -122,8 +122,8 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
             val y = listTop + i * ROW
             val hover = mx in px + 4 until px + pw - 4 && my in y - 1 until y + ROW - 1
             if (index == selectedRun || hover) g.fill(px + 4, y - 1, px + pw - 4, y + ROW - 1, if (index == selectedRun) 0x40FFFFFF else 0x18FFFFFF)
-            val cells = listOf("#${run.number}", WHEN.format(Instant.ofEpochMilli(run.start).atZone(ZoneId.systemDefault())), clock(run.length),
-                "${run.party}/$total", "${run.you}/$total", run.caught.toString(), BazaarPrices.format(run.coins))
+            val cells = listOf("#${run.number}", WHEN.format(Instant.ofEpochMilli(run.start).atZone(ZoneId.systemDefault())), if (run.imported && run.length == 0L) "-" else clock(run.length),
+                "${run.party}/$total", "${run.you}/$total", run.caught.toString(), (if (run.coinsEstimated) "~" else "") + BazaarPrices.format(run.coins))
             if (run.hasSparkling()) {
                 // A sparkling run shimmers in a rainbow, one colour per character across the whole row.
                 rainbow(g, "✦", px + 8, y); rainbow(g, "✦", px + pw - 14, y)
@@ -143,7 +143,7 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
             else centred(g, "§7No sparklings this run", px + pw / 2, detailY, MUTED)
             val splits = SafariBiome.entries.mapNotNull { b -> detail.splits[b.label]?.let { "§f${b.label} §b${pbTime(it)}" } }
             val extra = "§7Macaws §f${detail.macaws}  §7Rainbow Feathers §f${detail.feathers}  §7Loot shares §f${detail.lootShares}  §7Tickets §f${detail.tickets}" +
-                if (detail.imported) "  §8(from old logs)" else "  §7Party §f${detail.partySize}"
+                if (detail.imported) "  §8(from logs${if (detail.modeEstimated || detail.coinsEstimated) "; mode/profit estimated" else ""})" else "  §7Party §f${detail.partySize}"
             centred(g, if (splits.isEmpty()) extra else splits.joinToString(" §8· "), px + pw / 2, detailY + 11, TEXT)
             if (splits.isNotEmpty() && mx in px until px + pw && my in detailY until detailY + 22)
                 g.setComponentTooltipForNextFrame(font, listOf(Component.literal(extra)), mx, my)
@@ -232,7 +232,8 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
             if (mx in px + 4 until px + listW + 4 && my in y - 1 until y + ROW - 1) {
                 g.fill(px + 4, y - 1, px + listW + 4, y + ROW - 1, 0x18FFFFFF)
                 g.setComponentTooltipForNextFrame(font, listOfNotNull(Component.literal("§f" + FULL.format(when_)),
-                    entry.tickets?.let { Component.literal("§7Took §e$it§7 tickets since the last §6§lSPARKLING") }), mx, my)
+                    entry.tickets?.let { Component.literal("§7Took §e$it§7 tickets since the last §6§lSPARKLING") },
+                    if (entry.uniqueEstimated) Component.literal("§8First-seen status estimated from available logs") else null), mx, my)
             }
             g.text(font, "§7" + DAY_SHORT.format(when_), px + 10, y, MUTED)
             g.text(font, "§b" + entry.player, px + 60, y, TEXT)

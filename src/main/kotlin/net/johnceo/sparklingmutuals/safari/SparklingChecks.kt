@@ -8,7 +8,7 @@ import java.util.UUID
 class SparklingChecks {
     private val completed = mutableSetOf<String>()
     private val partyCompleted = mutableSetOf<String>()
-    fun locallyChecked(name: String) = name in completed
+    fun locallyChecked(name: String) = if (requiresCapture(name)) (captured[name] ?: 0) > 0 else name in completed
     fun partyChecked(name: String) = name in partyCompleted
     fun nestEvidence(checked: Boolean) {
         if (checked) completed.add("Honeybug") else completed.remove("Honeybug")
@@ -83,7 +83,7 @@ class SparklingChecks {
         "retainedUuids=${seenAtCaptureCount["Gimmiegold"]?.size ?: 0} liveUuids=${observed["Gimmiegold"]?.size ?: 0} " +
         "captures=${captured["Gimmiegold"] ?: 0} checked=${locallyChecked("Gimmiegold")}"
     fun capture(name: String) { captured.merge(name, 1, Int::plus) }
-    fun checked(name: String) = name in completed || name in partyCompleted
+    fun checked(name: String) = locallyChecked(name) || !requiresCapture(name) && name in partyCompleted
     fun keepEsp(uuid: UUID, now: Long) = now - espSeenAt.getOrPut(uuid) { now } < 10000
     fun wumpaPrerequisite(name: String, party: PartySparklingState) =
         SafariRoster.named(name)?.biome == SafariBiome.ICY && party.needs("Wumpa")
@@ -163,6 +163,8 @@ class SparklingChecks {
         if (heldCoins != 0) completed.remove("Gimmiegold")
     }
     companion object {
+        /** These bosses require an actual shared catch, even when their UUID was already checked. */
+        fun requiresCapture(name: String) = name == "Wumpa" || name == "Doomspiral"
         private const val BASE_COIN_FLOOR_DROPS = 3
         private val globalCompletions = mapOf(
             "The darkness in the Haunted Biome fades away..." to "Doomspiral",

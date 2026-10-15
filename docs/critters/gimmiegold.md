@@ -30,6 +30,8 @@ The supplied live-run log has `starting=0 picked=3 spent=3 held=0 required=3`, o
 
 ## Specific deductions
 
+- In Sparkling mode, show Shining Coin floor-drop ESP only if someone in the party needs Sparkling Gimmiegold. If everyone owns it, hide coin ESP even with zero coins picked up. This filter does not change capture/source completion requirements.
+
 - Missing coin-use chat must not permanently block completion: with a fresh empty coin inventory, a qualifying source scan showing no remaining coin/unknown markers, and at least the full required population from retained qualified UUID checks plus safely reconciled shared captures, that population can establish the missing spawn evidence. Empty inventory alone remains insufficient. Full Clear uses confirmed captures for its entire required population; live entities cannot become captures.
 - Retain a validated Gimmiegold check and verified coin-source absence during ordinary movement. New coin pickups, newly held coins, additional starting coin demand, positive/unknown coin markers when authoritative baseline collection/use is unavailable, and Haunted reentry reopen or revalidate the applicable work. A coin acquired after earlier completion requires another Gimmiegold; do not reuse the old three.
 - Remaining-drop evidence uses active, visible STRING item displays, not merely surviving numeric display IDs. Invisible/empty/decorative survivors are not unopened rewards. Associate validated triple members by their group IDs, even when their block positions straddle a boundary; complete incense triples must not masquerade as remaining coins.
@@ -52,4 +54,4 @@ The supplied live-run log has `starting=0 picked=3 spent=3 held=0 required=3`, o
 
 ## Last updated
 
-2026-10-15 - Reproduced the supplied 3-picked/3-spent/11-predicted-marker run; prioritized confirmed baseline coin evidence and separated current, retained and required population diagnostics.
+2026-10-15 - Added the Sparkling coin ESP party-discovery gate; retained confirmed baseline coin-source recovery.

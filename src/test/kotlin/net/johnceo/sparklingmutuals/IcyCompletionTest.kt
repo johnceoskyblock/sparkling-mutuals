@@ -22,8 +22,8 @@ class IcyCompletionTest {
             assertTrue(run.captureComplete(name))
             val seen=List(SafariFullClear.minimum(name)) { name to UUID.randomUUID() }
             repeat(3) { c.scan(SafariBiome.ICY,x+40.01,z,seen.take(1)) }
-            assertFalse(c.checked(name))
-            c.scan(SafariBiome.ICY,x+40.01,z,seen);assertFalse(c.checked(name))
+            assertEquals(name == "Wumpa", c.checked(name))
+            c.scan(SafariBiome.ICY,x+40.01,z,seen);assertEquals(name == "Wumpa", c.checked(name))
             c.scan(SafariBiome.ICY,x+40,z,emptyList());assertTrue(c.checked(name))
         }
     }

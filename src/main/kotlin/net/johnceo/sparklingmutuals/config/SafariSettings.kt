@@ -30,7 +30,7 @@ class SafariSettings : Config() {
     @JvmField @Category(name = "API key", desc = "") val api = Api()
     @JvmField @Category(name = "ESP", desc = "") val esp = SafariEspSettings()
 
-    @JvmField @Category(name = "Customization", desc = "") val customization = CustomizationSettings()
+    @JvmField @Category(name = "Customization", desc = "") val customization = CustomizationSettings(esp.floorColors)
 
     class General {
         @JvmField @ConfigOption(name = "Command help", desc = "Close settings and show commands in chat.")
@@ -82,6 +82,8 @@ class SafariSettings : Config() {
     class Miria {
         @JvmField @ConfigOption(name = "Contest HUD and tracking", desc = "Track Miria contests.")
         @ConfigEditorBoolean var enabled = ContestConfig.trackContest
+        @JvmField @ConfigOption(name = "Auto !dt contest", desc = "Send !dt contest to party chat once when a new contest starts while online in SkyBlock and in a party.")
+        @ConfigEditorBoolean var autoContestDowntime = ContestConfig.autoContestDowntime
         @JvmField @ConfigOption(name = "Honeyhive beacons", desc = "Show full Torrhus Canyon hives during an incomplete contest.")
         @ConfigEditorBoolean var honeyHives = ConfigManager.honeyHives
         @JvmField @ConfigOption(name = "Warning", desc = "Contest warnings and sound.") @Accordion val warning = Warning()
@@ -124,10 +126,12 @@ class SafariSettings : Config() {
         @ConfigEditorButton(runnableId = 7, buttonText = "Save sound") var saveSound = false
     }
     class History {
+        @JvmField @ConfigOption(name = "History", desc = "Runs, bests, sparklings, achievements and stats.")
+        @ConfigEditorButton(runnableId = 10, buttonText = "History") var open = false
+        @JvmField @ConfigOption(name = "Import History from Logs", desc = "Backfill both run and sparkling history from your logs folder. Existing records are preserved.")
+        @ConfigEditorButton(runnableId = 11, buttonText = "Import History from Logs") var importLogs = false
         @JvmField @ConfigOption(name = "Save runs", desc = "Record every Safari run for /sm history: captures, shards, sparklings, splits.")
         @ConfigEditorBoolean var runs = ConfigManager.runHistory
-        @JvmField @ConfigOption(name = "Import logs on launch", desc = "Save runs from your last session's log when the game starts. Minecraft keeps only 7 logs a day.")
-        @ConfigEditorBoolean var autoImport = ConfigManager.autoImportLogs
         @JvmField @ConfigOption(name = "Coins at insta-sell", desc = "Value shards and feathers at the bazaar's instant-sell price instead of the sell-offer price.")
         @ConfigEditorBoolean var instaSell = ConfigManager.runCoinsInstaSell
         @JvmField @ConfigOption(name = "Achievements", desc = "Unlock achievements as you play (/sm achievements).")
@@ -136,8 +140,6 @@ class SafariSettings : Config() {
         @ConfigEditorBoolean var sound = ConfigManager.achievementSound
         @JvmField @ConfigOption(name = "Achievements to party", desc = "Also say \"Achievement unlocked: X!\" in party chat.")
         @ConfigEditorBoolean var toParty = ConfigManager.achievementsToParty
-        @JvmField @ConfigOption(name = "Open history", desc = "Runs, bests, sparklings, achievements and stats.")
-        @ConfigEditorButton(runnableId = 10, buttonText = "Open") var open = false
     }
     class Warp {
         @JvmField @ConfigOption(name = "Warp reminder", desc = "Remind you to warp party leechers in before entry closes.")
@@ -247,9 +249,13 @@ class SafariSettings : Config() {
             8 -> { apply(); client.execute { client.setScreen(CatchCountScreen(client.screen)) } }
             9 -> { apply(); if (saveSparklingSound()) net.johnceo.sparklingmutuals.safari.SparklingEncounters.playSound(client) }
             10 -> { apply(); client.execute { client.setScreen(net.johnceo.sparklingmutuals.history.HistoryScreen(client.screen)) } }
+            11 -> { apply(); client.execute {
+                client.setScreen(null)
+                net.johnceo.sparklingmutuals.history.LogImporter.runImport(net.johnceo.sparklingmutuals.history.LogImporter.defaultLogs())
+            } }
         }
     }
-    override fun isValidRunnable(id: Int) = id in 1..10
+    override fun isValidRunnable(id: Int) = id in 1..11
     private fun saveDelay() {
         val seconds = warp.delay.trim().toIntOrNull()
         if (seconds == null || seconds !in 1..86400) feedback("Enter a delay from 1 to 86400 seconds.")
@@ -282,7 +288,7 @@ class SafariSettings : Config() {
             ConfigManager::missingPanel to tracking.missing,
             ConfigManager::removeDarkness to safari.darkness,
             ConfigManager::sparklingAlert to safari.alert, ConfigManager::sparklingPartyAnnouncer to safari.announce,
-            ConfigManager::autoClicker to safari.autoClicker, ConfigManager::candleHitbox to safari.candleHitbox, ConfigManager::holdManagerOnKick to safari.holdManagerOnKick, ConfigManager::honeyHives to miria.honeyHives, ConfigManager::hideCaptureChat to safari.hideCaptureChat, ConfigManager::runHistory to history.runs, ConfigManager::autoImportLogs to history.autoImport, ConfigManager::achievements to history.achievements, ConfigManager::achievementSound to history.sound, ConfigManager::achievementsToParty to history.toParty, ConfigManager::runCoinsInstaSell to history.instaSell,
+            ConfigManager::autoClicker to safari.autoClicker, ConfigManager::candleHitbox to safari.candleHitbox, ConfigManager::holdManagerOnKick to safari.holdManagerOnKick, ConfigManager::honeyHives to miria.honeyHives, ConfigManager::hideCaptureChat to safari.hideCaptureChat, ConfigManager::runHistory to history.runs, ConfigManager::achievements to history.achievements, ConfigManager::achievementSound to history.sound, ConfigManager::achievementsToParty to history.toParty, ConfigManager::runCoinsInstaSell to history.instaSell,
             ConfigManager::allGemsAlert to safari.alerts.gems, ConfigManager::allBirdFoodAlert to safari.alerts.birdFood,
             ConfigManager::allIncenseAlert to safari.alerts.incense, ConfigManager::runCompleteAlert to safari.alerts.runComplete,
             ConfigManager::hideGroundCapsules to safari.hideGroundCapsules, ConfigManager::hideFlyingCapsules to safari.hideFlyingCapsules)
@@ -299,9 +305,10 @@ class SafariSettings : Config() {
         ConfigManager.sparklingSoundVolume = safari.alerts.volume.coerceIn(0, 100)
         if (generalChanged) ConfigManager.save()
         val warnings = listOfNotNull(5.takeIf { miria.five }, 3.takeIf { miria.three }, 1.takeIf { miria.one })
-        val contestChanged = ContestConfig.trackContest != miria.enabled || ContestConfig.contestWarnTitle != miria.titles ||
+        val contestChanged = ContestConfig.autoContestDowntime != miria.autoContestDowntime || ContestConfig.trackContest != miria.enabled || ContestConfig.contestWarnTitle != miria.titles ||
             ContestConfig.contestSoundVolume != miria.volume || ContestConfig.warningMinutes() != warnings
         ContestConfig.trackContest = miria.enabled
+        ContestConfig.autoContestDowntime = miria.autoContestDowntime
         ContestConfig.contestWarnTitle = miria.titles
         ContestConfig.contestSoundVolume = miria.volume.coerceIn(0, 100)
         ContestConfig.contestWarnMinutes = warnings.joinToString(", ")

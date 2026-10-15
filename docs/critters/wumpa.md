@@ -16,7 +16,7 @@
 | --- | --- |
 | Unique | One shared catch; if anyone still needs this sparkling variant, also satisfy the species' Sparkling evidence. The missing-species row may disappear after the catch. |
 | Full Clear | At least 1 confirmed catches, all verified additional spawns captured, no known live remainder, and all relevant opportunities resolved. |
-| Sparkling | Record distinct UUIDs seen inside this species' qualifying scan area and retain their checked progress for the run, including after unloading and biome reentry. Reconcile shared captures without counting a later catch of a seen UUID twice; source requirements remain separate. |
+| Sparkling | Require one confirmed shared catch (personal capture or party loot share). Sightings, retained UUIDs, spawn/slain messages and party biome reports cannot mark it checked. Retain the catch for the run. |
 
 ## Specific deductions
 
@@ -29,4 +29,4 @@
 
 ## Last updated
 
-2026-10-15 - Retained qualified distinct UUID checks for every critter throughout Unique/Sparkling runs, with capture reconciliation and independent source gates. Full Clear remains capture-based.
+2026-10-15 - Made this boss a capture-required exception to Sparkling checking; sightings and completion messages cannot bypass a confirmed catch.
