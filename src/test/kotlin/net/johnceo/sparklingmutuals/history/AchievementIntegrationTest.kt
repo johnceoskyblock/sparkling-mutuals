@@ -9,6 +9,172 @@ import java.nio.file.Files
 
 class AchievementIntegrationTest {
     private val scope = AchievementScope("integration-player", "one")
+    private val ack = "[NPC] Safari Manager: Looks good to me. Have fun out there!"
+    private val ackAgain = "[NPC] Safari Manager: I already saw your ticket, so you're free to go."
+
+    @Test fun `entries without any Manager line leave unknown coverage at the next own success`() = isolated {
+        ConfigManager.achievements = false
+        TicketCounter.disconnect()
+        try {
+            Achievements.collectOwnSparkling(scope, 100, false)
+            repeat(7) { n ->
+                TicketCounter.confirmEntry(SafariRun(200L + n), scope, 200L + n)
+                TicketCounter.leave()
+            }
+            Achievements.collectOwnSparkling(scope, 300, false)
+            assertEquals(0, Achievements.activity.admissions(scope))
+            assertFalse("instant_v2" in Achievements.state.eligibleEvents)
+        } finally { TicketCounter.disconnect() }
+    }
+
+    @Test fun `unacknowledged entries and stale variants cannot persist instant eligibility through reload`() = isolated {
+        ConfigManager.achievements = false
+        TicketCounter.disconnect()
+        try {
+            Achievements.collectOwnSparkling(scope, 100, false)
+            repeat(7) { n ->
+                val at = 200L + n * 200000L
+                val run = SafariRun(at)
+                TicketCounter.confirmEntry(run, scope, at)
+                TicketCounter.confirmEntry(run, scope, at + 119999)
+                TicketCounter.acknowledge(ack, at + 120001)
+                TicketCounter.acknowledge(ackAgain, at + 120002)
+                TicketCounter.leave()
+            }
+            assertNull(Achievements.activity.ticketsSinceOwnSparkling(scope))
+            dataField().set(null, AchievementPersistence.load().getOrThrow())
+            Achievements.collectOwnSparkling(scope, 1500000, false)
+            assertFalse("instant_v2" in Achievements.state.eligibleEvents)
+            dataField().set(null, AchievementPersistence.load().getOrThrow())
+            ConfigManager.achievements = true
+            Achievements.afterImport()
+            assertFalse("instant_v2" in Achievements.state.currentUnlocks)
+        } finally { TicketCounter.disconnect() }
+    }
+
+    @Test fun `sixth entry before success cannot earn instant and late ack stays in its original interval`() = isolated {
+        ConfigManager.achievements = false
+        TicketCounter.disconnect()
+        val session = RunHistory::class.java.getDeclaredField("session").apply { isAccessible = true }.get(null) as LiveHistorySession
+        try {
+            Achievements.collectOwnSparkling(scope, 100, false)
+            repeat(5) { n ->
+                val at = 200L + n * 10
+                TicketCounter.acknowledge(ack, at)
+                val run = SafariRun(at)
+                TicketCounter.confirmEntry(run, scope, at)
+                session.sync(run) {}
+                TicketCounter.leave()
+            }
+            assertEquals(5, Achievements.activity.ticketsSinceOwnSparkling(scope))
+            val sixth = SafariRun(300)
+            TicketCounter.confirmEntry(sixth, scope, 300)
+            session.sync(sixth) {}
+            Achievements.collectOwnSparkling(scope, 310, false)
+            assertFalse("instant_v2" in Achievements.state.eligibleEvents)
+            dataField().set(null, AchievementPersistence.load().getOrThrow())
+            TicketCounter.acknowledge(ack, 320)
+            TicketCounter.acknowledge(ackAgain, 321)
+            assertEquals(6, Achievements.activity.admissions(scope))
+            assertEquals(0, Achievements.activity.ticketsSinceOwnSparkling(scope), "Late ack is for the entry before the baseline")
+            dataField().set(null, AchievementPersistence.load().getOrThrow())
+            TicketCounter.leave()
+            TicketCounter.acknowledge(ack, 330)
+            TicketCounter.confirmEntry(sixth, scope, 331)
+            assertEquals(6, Achievements.activity.admissions(scope))
+            assertEquals(0, Achievements.activity.ticketsSinceOwnSparkling(scope))
+            ConfigManager.achievements = true
+            Achievements.afterImport()
+            assertFalse("instant_v2" in Achievements.state.currentUnlocks)
+        } finally { TicketCounter.disconnect(); session.sync(null) {} }
+    }
+
+    @Test fun `ack after entry but before success restores known short interval and fans out once`() = isolated {
+        ConfigManager.achievements = false
+        TicketCounter.disconnect()
+        val session = RunHistory::class.java.getDeclaredField("session").apply { isAccessible = true }.get(null) as LiveHistorySession
+        session.sync(null) {}
+        try {
+            Achievements.collectOwnSparkling(scope, 100, false)
+            val run = SafariRun(200)
+            val before = SparklingLog.ticketsSinceSparkling
+            TicketCounter.confirmEntry(run, scope, 200)
+            session.sync(run) {}
+            assertNull(Achievements.activity.ticketsSinceOwnSparkling(scope))
+            TicketCounter.acknowledge(ack, 210)
+            TicketCounter.acknowledge(ackAgain, 211)
+            assertEquals(1, session.tickets)
+            assertEquals(before + 1, SparklingLog.ticketsSinceSparkling)
+            assertEquals(1, Achievements.activity.ticketsSinceOwnSparkling(scope))
+            Achievements.collectOwnSparkling(scope, 220, false)
+            assertEquals(220L, Achievements.state.eligibleEvents["instant_v2"])
+        } finally { TicketCounter.disconnect(); session.sync(null) {} }
+    }
+
+    @Test fun `disconnect freezes own discovery before actual session finalization and lagged dex reload`() = isolated {
+        ConfigManager.achievements = false
+        val oldHistory = ConfigManager.runHistory
+        ConfigManager.runHistory = false
+        val ledger = SafariTracking.ledger
+        val session = RunHistory::class.java.getDeclaredField("session").apply { isAccessible = true }.get(null) as LiveHistorySession
+        session.sync(null) {}
+        try {
+            val snapshot = DexSnapshot(scope, emptySet(), 100)
+            Achievements.refreshDex(snapshot)
+            ledger.confirmEntry(200)
+            val run = ledger.current!!
+            run.attachAchievementSnapshot(snapshot)
+            val line = "CAPTURE! You caught a SPARKLING Wumpa!"
+            run.record(SafariCatch.parse(line)!!, 210, "Me")
+            session.chat(run, line, "Me") {}
+            OwnStats.reset()
+            ledger.leave(220)
+            session.sync(ledger.current) { RunHistory.completeRun(it, 1, 220) }
+            dataField().set(null, AchievementPersistence.load().getOrThrow())
+            Achievements.refreshDex(DexSnapshot(scope, emptySet(), 300))
+            fun dry(at: Long, vararg species: String) {
+                val next = SafariRun(at)
+                next.attachAchievementSnapshot(DexSnapshot(scope, emptySet(), 300))
+                species.forEach { next.record(SafariCatch.parse("CAPTURE! You caught a $it!")!!, at + 1, "Me") }
+                val record = RunRecord(start = at, achievementEvidence = next.achievementEvidence(next.runId, true))
+                Achievements.onRunEnd(record)
+                Achievements.onRunEnd(record)
+            }
+            val evidence = Achievements.state.droughtByScope.getValue(scope.key)
+            assertEquals(0.0, evidence.bestOrdinaryHazard, "Interrupted run earns no exposure")
+            dry(400, "Wumpa")
+            assertEquals(0.0, evidence.currentUniqueHazard, "Known own discovery survives stale API")
+            dry(500, "Wumpa", "Gazer")
+            assertEquals(.000488400498, evidence.currentUniqueHazard, 1e-12)
+            assertEquals(.000488400498, evidence.bestUniqueHazard, 1e-12)
+        } finally { ledger.leave(600); session.sync(null) {}; ConfigManager.runHistory = oldHistory }
+    }
+
+    @Test fun `scope switch freezes only prior own successes and rejects later foreign captures`() = isolated {
+        ConfigManager.achievements = false
+        val ledger = SafariTracking.ledger
+        try {
+            val snapshot = DexSnapshot(scope, emptySet(), 100)
+            Achievements.refreshDex(snapshot)
+            ledger.confirmEntry(200)
+            val run = ledger.current!!
+            run.attachAchievementSnapshot(snapshot)
+            run.record(SafariCatch.parse("CAPTURE! You caught a SPARKLING Wumpa!")!!, 210, "Me")
+            Achievements.refreshDex(DexSnapshot(scope.copy(profileId = "other"), emptySet(), 220))
+            run.record(SafariCatch.parse("CAPTURE! You caught a SPARKLING Gazer!")!!, 230, "Me")
+            val record = RunRecord(start = 200, achievementEvidence = run.achievementEvidence(run.runId, true))
+            Achievements.onRunEnd(record)
+            ledger.leave(240)
+            Achievements.refreshDex(DexSnapshot(scope, emptySet(), 300))
+            Achievements.onRunEnd(record) // delayed replay after the old scope becomes active again
+            val dry = SafariRun(400)
+            dry.attachAchievementSnapshot(DexSnapshot(scope, emptySet(), 300))
+            for (name in listOf("Wumpa", "Gazer")) dry.record(SafariCatch.parse("CAPTURE! You caught a $name!")!!, 410, "Me")
+            Achievements.onRunEnd(RunRecord(start = 400, achievementEvidence = dry.achievementEvidence(dry.runId, true)))
+            assertEquals(.000488400498, Achievements.state.droughtByScope.getValue(scope.key).currentUniqueHazard, 1e-12,
+                "Only Gazer remains missing in the old profile")
+        } finally { ledger.leave(500) }
+    }
     @Test fun `completed personal evidence persists with notifications disabled and replay cannot inflate`() = isolated {
         val snapshot = DexSnapshot(scope, emptySet(), 100)
         val run = SafariRun(200)

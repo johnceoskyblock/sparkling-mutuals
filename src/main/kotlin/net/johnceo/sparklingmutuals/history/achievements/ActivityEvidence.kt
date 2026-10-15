@@ -4,7 +4,10 @@ package net.johnceo.sparklingmutuals.history.achievements
 class ActivityEvidence {
     data class Admission(val scope: AchievementScope? = null, val at: Long = 0)
     data class Contest(val playerUuid: String = "", val window: Long = 0, val scope: AchievementScope? = null, val at: Long = 0)
-    data class Interval(var startedAt: Long = 0, var tickets: Int = 0)
+    data class Interval(var startedAt: Long = 0, var tickets: Int = 0,
+        val id: String = java.util.UUID.randomUUID().toString(), val unresolved: MutableSet<String> = mutableSetOf())
+    data class Entry(val scope: AchievementScope? = null, val intervalId: String? = null)
+    private val entries = linkedMapOf<String, Entry>()
     private val admissionEvents = linkedMapOf<String, Admission>()
     private val contestEvents = linkedMapOf<String, Contest>()
     private val intervals = linkedMapOf<String, Interval>()
@@ -14,13 +17,30 @@ class ActivityEvidence {
     val historicalCoverageComplete = false
     val unscopedAdmissions: Int get() = admissionEvents.values.count { it.scope == null }
 
+    /** A confirmed entry without an acknowledgement is unknown spending, never zero. */
+    fun recordEntry(scope: AchievementScope?, runId: String, at: Long): Boolean {
+        if (runId.isBlank() || runId in entries || runId in admissionEvents) return false
+        val interval = scope?.let { intervals[it.key] }
+        entries[runId] = Entry(scope, interval?.id)
+        if (scope == null) invalidateIntervals() else interval?.unresolved?.add(runId)
+        observed(at)
+        return true
+    }
+
     fun recordAdmission(scope: AchievementScope, runId: String, at: Long): Boolean = admission(scope, runId, at)
     fun recordUnscopedAdmission(runId: String, at: Long): Boolean = admission(null, runId, at)
     private fun admission(scope: AchievementScope?, runId: String, at: Long): Boolean {
         if (runId.isBlank() || runId in admissionEvents) return false
         admissionEvents[runId] = Admission(scope, at)
         observed(at)
-        if (scope == null) invalidateIntervals() else intervals[scope.key]?.let { it.tickets++ }
+        if (scope == null) invalidateIntervals() else intervals[scope.key]?.let { interval ->
+            val entry = entries[runId]
+            // A late acknowledgement belongs to the interval containing its entry, not the current one.
+            if (entry == null || entry.scope?.key == scope.key && entry.intervalId == interval.id) {
+                interval.unresolved.remove(runId)
+                interval.tickets++
+            }
+        }
         return true
     }
     /** Personal reward identity is player + absolute window, independent of current profile or tier. */
@@ -43,10 +63,10 @@ class ActivityEvidence {
             listOfNotNull(intervals[scope.key]?.startedAt)).minOrNull()
     /** Modeled reward at 1.25 tickets per qualifying contest; never actual spent tickets. */
     fun expectedRewardTickets(scope: AchievementScope): Double = contests(scope) * 1.25
-    fun ticketsSinceOwnSparkling(scope: AchievementScope): Int? = intervals[scope.key]?.tickets
+    fun ticketsSinceOwnSparkling(scope: AchievementScope): Int? = intervals[scope.key]?.takeIf { it.unresolved.isEmpty() }?.tickets
     /** Returns eligibility only; award versioning and notification policy belong to the achievement facade. */
     fun recordOwnSparkling(scope: AchievementScope, at: Long): Boolean {
-        val eligible = intervals[scope.key]?.let { at >= it.startedAt && it.tickets <= 5 } ?: false
+        val eligible = intervals[scope.key]?.let { at >= it.startedAt && it.unresolved.isEmpty() && it.tickets <= 5 } ?: false
         intervals[scope.key] = Interval(at)
         observed(at)
         return eligible

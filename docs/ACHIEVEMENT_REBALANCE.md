@@ -8,15 +8,23 @@ A known API dex snapshot belongs to the player's selected profile and is attache
 
 Own sparkling success resets ordinary drought; a new own unique resets unique drought. Additional API discoveries invalidate the unverified unique continuation. Profile/provider changes, missing identity and disconnects invalidate continuity; the best previously covered interval remains preserved. A full dex has no remaining unique exposure. Displays distinguish modeled full-run equivalents from raw recorded runs and show unknown coverage without a progress bar.
 
+Own discoveries observed while the profile is known are retained before a disconnect or scope change, even if run finalization happens later and the API dex is still stale. Interrupted runs earn no exposure, and captures after the scope becomes invalid are not attributed to the previous profile.
+
 The model uses conditional streak-start dry tails, not lifetime probabilities, guarantees, or measured personal capture rights. The workbook mixes Lazy/Full references and makes perk, bird-pair and effective-exposure assumptions. See [calibration and sensitivity](ACHIEVEMENT_CALIBRATION.md) and the [complete per-ID audit](issues/assets/achievement-rarity/achievement-mapping-v2.csv).
 
 ## Tickets, contests and settings
 
 Both acknowledged Safari Manager variants describe one personal ticket. An acknowledgement must be paired with a confirmed run identity; duplicates, listener ordering, biome revisits and mode changes do not multiply it. Unmatched admissions stay unverified. This is a recorded lower bound, separate from held inventory, tickets earned, raw history and completed runs.
 
+Deduplication covers the same retained run identity and the already consumed pending acknowledgement. The server supplies no admission event ID: a wholly new acknowledgement paired with a wholly new local entry identity is indistinguishable from a legitimate new admission.
+
+An entry awaiting acknowledgement makes its ticket interval unknown before any own success is evaluated. A timely acknowledgement can restore the interval's known count before success; if success arrives first, that uncertain interval cannot earn the short-interval secret. A late acknowledgement remains assigned to its entry's interval, never the new interval after success.
+
 A currently observed Uncommon-or-higher Miria tier records one absolute contest window per account, including tier upgrades and reloads. Expected rewards use the maintainer's assumed 25% Two-for-one bonus: **1.25 expected tickets per claimed qualifying contest**. This does not measure actual rewards, claim status, time played or guarantee a complete dex.
 
 Disabling achievements suppresses unlocks and announcements while collecting evidence and event eligibility. Re-enabling catches eligible event awards up quietly; repeated catchup does not change existing timestamps. Turning off raw run history does not turn off modeled evidence collection. Offline/unknown personal-ticket intervals cannot earn the short-interval secret.
+
+Rarity sorting displays Common through Divine in order, then the distinct SPECIAL novelty category. SPECIAL retains its normal chime and has no prestige title or fanfare.
 
 ## Preservation and imports
 

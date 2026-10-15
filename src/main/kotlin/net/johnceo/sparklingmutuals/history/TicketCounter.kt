@@ -11,7 +11,7 @@ object TicketCounter {
     fun isTicket(text: String) = text.startsWith(MANAGER) && text.removePrefix(MANAGER).trim() in lines
 
     private var current: SafariRun? = null
-    private val evidence = AdmissionEvidence { id, scope, at ->
+    private val evidence = AdmissionEvidence(observeEntry = { id, scope, at -> Achievements.collectEntry(id, scope, at) }) { id, scope, at ->
         if (Achievements.collectAdmission(id, scope, at)) {
             SparklingLog.onTicket()
             current?.let(RunHistory::onTicket)

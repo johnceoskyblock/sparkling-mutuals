@@ -3,7 +3,10 @@ package net.johnceo.sparklingmutuals.history.achievements
 import net.johnceo.sparklingmutuals.history.TicketCounter
 
 /** Client-thread correlator. A Manager line alone is not proof of a spent ticket. */
-class AdmissionEvidence(private val emit: (String, AchievementScope?, Long) -> Unit) {
+class AdmissionEvidence(
+    private val observeEntry: (String, AchievementScope?, Long) -> Unit = { _, _, _ -> },
+    private val emit: (String, AchievementScope?, Long) -> Unit
+) {
     private data class Entry(val id: String, val scope: AchievementScope?, val at: Long, var bound: Boolean = false)
     private var entry: Entry? = null
     private var pendingAt: Long? = null
@@ -27,6 +30,8 @@ class AdmissionEvidence(private val emit: (String, AchievementScope?, Long) -> U
         if (runId.isBlank() || entry?.id == runId) return false
         val current = Entry(runId, scope, at)
         entry = current
+        // Suspend the upper-bound proof before any intervening own-success callback.
+        observeEntry(runId, scope, at)
         val pending = pendingAt
         pendingAt = null
         return if (pending != null && at - pending in 0..120000) bind(current, at) else false

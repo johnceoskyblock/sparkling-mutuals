@@ -19,9 +19,9 @@ import net.minecraft.sounds.SoundEvents
 
 /** Serialized tier names with explicit presentation policy; SPECIAL is a novelty category. */
 enum class AchievementTier(val code: String, val argb: Int, val displayRank: Int, val fanfare: Boolean = false, val title: Boolean = false) {
-    COMMON("§f", 0xFFFFFFFF.toInt(), 0), UNCOMMON("§a", 0xFF55FF55.toInt(), 1), RARE("§9", 0xFF5555FF.toInt(), 2),
-    EPIC("§5", 0xFFAA00AA.toInt(), 3), LEGENDARY("§6", 0xFFFFAA00.toInt(), 4, false, true), MYTHIC("§d", 0xFFFF55FF.toInt(), 5, true, true),
-    DIVINE("§b", 0xFF55FFFF.toInt(), 6, true, true), SPECIAL("§c", 0xFFFF5555.toInt(), 0)
+    COMMON("§f", 0xFFFFFFFF.toInt(), 10), UNCOMMON("§a", 0xFF55FF55.toInt(), 20), RARE("§9", 0xFF5555FF.toInt(), 30),
+    EPIC("§5", 0xFFAA00AA.toInt(), 40), LEGENDARY("§6", 0xFFFFAA00.toInt(), 50, false, true), MYTHIC("§d", 0xFFFF55FF.toInt(), 60, true, true),
+    DIVINE("§b", 0xFF55FFFF.toInt(), 70, true, true), SPECIAL("§c", 0xFFFF5555.toInt(), 80)
 }
 
 /** Units are rendered through typed progress; unknown coverage never receives a bar. */
@@ -63,6 +63,12 @@ object Achievements {
         ContestTracker.selectScope(snapshot?.scope?.key)
         val previous = activityScopeKey
         if (snapshot == null || previous != snapshot.scope.key) {
+            // Freeze known-scope successes before reset/switch invalidates continuity.
+            net.johnceo.sparklingmutuals.safari.SafariTracking.ledger.current?.let { run ->
+                run.achievementEvidence(run.runId, false)?.let { evidence ->
+                    state.droughtByScope[evidence.scope.key]?.retainOwnDiscoveries(evidence.scope, evidence.ownSparklingSpecies)
+                }
+            }
             state.droughtByScope.values.forEach { it.invalidateScope() }
             invalidateActivityIntervals()
         }
@@ -73,6 +79,10 @@ object Achievements {
     }
 
     fun invalidateActivityIntervals() { activity.invalidateIntervals(); activityScopeKey = null; save() }
+
+    fun collectEntry(runId: String, scope: AchievementScope?, at: Long) {
+        if (activity.recordEntry(scope, runId, at)) save()
+    }
 
     fun collectAdmission(runId: String, scope: AchievementScope?, at: Long): Boolean {
         val added = if (scope == null) activity.recordUnscopedAdmission(runId, at)

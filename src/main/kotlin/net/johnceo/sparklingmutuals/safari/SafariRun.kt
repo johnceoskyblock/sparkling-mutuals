@@ -22,6 +22,7 @@ class SafariRun(val startedAt: Long) {
     private var achievementSnapshot: DexSnapshot? = null
     private var achievementUniqueValid = true
     private var achievementScopeValid = true
+    private val scopedOwnDiscoveries = mutableSetOf<String>()
     /** Attach once, at entry. A late API response cannot supply a before-run dex. */
     fun attachAchievementSnapshot(snapshot: DexSnapshot) {
         if (achievementSnapshot != null || snapshot.observedAt > startedAt) return
@@ -39,7 +40,7 @@ class SafariRun(val startedAt: Long) {
         val before = achievementSnapshot ?: return null
         return AchievementRunEvidence(id, before.scope,
             if (achievementUniqueValid) AchievementCalibration.rates.keys - before.discoveries else null,
-            personal.toMap(), catchEvents.filter { it.personal && it.sparkling }.map { it.critter.name }.toSet(),
+            personal.toMap(), scopedOwnDiscoveries.toSet(),
             provenanceComplete && achievementScopeValid)
     }
     val entry = SafariEntryEvidence()
@@ -305,6 +306,8 @@ class SafariRun(val startedAt: Long) {
     }
     fun observedCount(species: String) = observedCritters[species]?.size ?: 0
     fun record(catch: SafariCatch, now: Long = System.currentTimeMillis(), self: String? = null) {
+        if (catch.personal && catch.sparkling && achievementSnapshot != null && achievementScopeValid)
+            scopedOwnDiscoveries.add(catch.critter.name)
         if (catch.sparkling) sparklingCaptures.capture(catch.critter.name, if (catch.personal) self else catch.catcherName, broadcast = false, at = now)
         catchEvents.add(catch)
         resources.capture(catch.critter.name)

@@ -28,6 +28,12 @@ class DroughtEvidence(val scope: AchievementScope) {
     /** Confirmed personal discoveries survive API cache lag and scope pauses. */
     private val confirmedOwnDiscoveries = mutableSetOf<String>()
 
+    /** Called at the trusted observation boundary, before a reset can make run finalization inactive. */
+    fun retainOwnDiscoveries(owner: AchievementScope, species: Set<String>) {
+        if (active && owner.key == scope.key)
+            confirmedOwnDiscoveries.addAll(species.filter { it in AchievementCalibration.rates })
+    }
+
     /** Only complete contemporaneous personal observations support a dry interval. */
     fun recordRun(event: AchievementRunEvidence): Boolean {
         if (!active || event.scope.key != scope.key || event.id.isBlank() || !processed.add(event.id)) return false

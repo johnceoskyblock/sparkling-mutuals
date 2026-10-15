@@ -58,7 +58,9 @@ class AchievementDefinitionsTest {
     @Test fun `novelty has no prestige fanfare and workload families increase explicitly`() {
         assertFalse(AchievementTier.SPECIAL.fanfare)
         assertFalse(AchievementTier.SPECIAL.title)
-        assertTrue(AchievementTier.SPECIAL.displayRank <= AchievementTier.COMMON.displayRank)
+        assertEquals(listOf(AchievementTier.COMMON, AchievementTier.UNCOMMON, AchievementTier.RARE,
+            AchievementTier.EPIC, AchievementTier.LEGENDARY, AchievementTier.MYTHIC, AchievementTier.DIVINE, AchievementTier.SPECIAL),
+            AchievementTier.entries.reversed().sortedBy { it.displayRank })
         assertTrue(AchievementTier.MYTHIC.fanfare)
         assertTrue(AchievementTier.LEGENDARY.title)
         for (prefix in listOf("tickets_v2_", "contests_v2_", "sparkle_", "unique_", "party_caught_")) {
@@ -126,7 +128,7 @@ class AchievementDefinitionsTest {
         assertTrue(AchievementPresentation.visible(AchievementFilter.ALL, false))
         val novelty = Achievements.all().single { it.id == "own_triple" }
         val divine = Achievements.all().single { it.id == "max_sparklings" }
-        assertEquals(listOf(novelty, divine), listOf(divine, novelty).sortedWith(AchievementPresentation.rarityOrder))
+        assertEquals(listOf(divine, novelty), listOf(novelty, divine).sortedWith(AchievementPresentation.rarityOrder))
     }
     @Test fun `conventional rarity tiers have strictly increasing presentation ranks`() {
         val conventional = listOf(AchievementTier.COMMON, AchievementTier.UNCOMMON, AchievementTier.RARE,
