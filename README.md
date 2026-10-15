@@ -99,6 +99,10 @@ Use the [37 individual critter notes](docs/critters/README.md) for species rules
 - Release notes are in the [release descriptions](https://github.com/johnceoskyblock/sparkling-mutuals/releases).
 - Current release: **v3.1.0**, with the installable file `sparkling-mutuals-3.1.0.jar`. Remove the older Sparkling Mutuals JAR before installing the update.
 
+## Contributing
+
+Bug reports, testing, documentation improvements and code contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) for setup, testing and pull-request guidance.
+
 ## Credits
 
 - JavaBetter contributed player cards, cloud lookups, party helpers, honeyhives, history, achievements and profit tracking; GamingLegend123 contributed the Shiny Hunter icon.
@@ -112,4 +116,4 @@ Honeyhive state rules, data sources and debugging: [Torrhus Canyon Honeyhives](d
 
 ## Last updated
 
-2026-10-15 - Documented v3.1.0 installation, predicted floor labels, starting-resource reminders, Icy prerequisite highlights and ESP text scaling.
+2026-10-15 - Added contributor setup and pull-request guidance in CONTRIBUTING.md, linked from the README.
