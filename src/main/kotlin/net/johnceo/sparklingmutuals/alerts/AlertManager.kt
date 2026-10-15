@@ -12,14 +12,16 @@ import java.util.concurrent.TimeUnit
 
 object AlertManager {
 
-    private const val TRIGGER_MESSAGE = "HOTSPOT! Your Hunting Hotspot is"
+    internal fun isTrigger(raw: String) = net.johnceo.sparklingmutuals.safari.SafariMessages.lines(raw).any {
+        Regex("^HOTSPOT! Your Hunting Hotspot is the (?:Forest|Cavern|Icy|Haunted) Biome!$").matches(it)
+    }
 
     private val scheduler: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor {
         Thread(it, "Sparkling Mutuals warp reminder").apply { isDaemon = true }
     }
 
     private var pendingAlert: ScheduledFuture<*>? = null
-    private var generation = 0L
+    private val expiry = WarpAlertTimer()
 
     fun toggleAlert(): Boolean {
         ConfigManager.warpAlertsEnabled = !ConfigManager.warpAlertsEnabled
@@ -35,21 +37,28 @@ object AlertManager {
     }
 
     fun onInitialize() {
-        ClientReceiveMessageEvents.GAME.register { message, _ ->
-            if (isEnabled() && message.string.trim().contains(TRIGGER_MESSAGE)) {
-                scheduleAlert()
-            }
+        ClientReceiveMessageEvents.GAME.register { message, overlay ->
+            if (!overlay && isEnabled() && isTrigger(message.string)) Minecraft.getInstance().execute { scheduleAlert() }
         }
     }
 
     private fun scheduleAlert() {
         cancelPendingAlert()
         val client = Minecraft.getInstance()
-        val connection = client.connection
-        val scheduledGeneration = generation
+        val connection = client.connection ?: return
+        val level = client.level ?: return
+        net.johnceo.sparklingmutuals.safari.SafariTracking.ensureRun(client)
+        val run = net.johnceo.sparklingmutuals.safari.SafariTracking.ledger.current ?: return
+        val scheduledGeneration = expiry.arm(run)
         pendingAlert = scheduler.schedule({
             client.execute {
-                if (scheduledGeneration == generation && client.connection === connection) triggerAlert()
+                val ready = client.connection === connection && client.level === level && client.player != null &&
+                    isEnabled() && net.johnceo.sparklingmutuals.safari.SafariAssist.inSafari &&
+                    net.johnceo.sparklingmutuals.safari.SafariTracking.ledger.current?.let { it.endedAt == null } == true
+                if (expiry.consume(scheduledGeneration, ready, net.johnceo.sparklingmutuals.safari.SafariTracking.ledger.current)) {
+                    pendingAlert = null
+                    triggerAlert()
+                }
             }
         }, getDelay().toLong(), TimeUnit.SECONDS)
     }
@@ -59,10 +68,11 @@ object AlertManager {
         if (minecraft.player == null || !isEnabled()) return
 
         SmallAlerts.show(SafariHud.WARP)
+        minecraft.connection?.sendCommand("p warp")
     }
 
     fun cancelPendingAlert() {
-        generation++
+        expiry.cancel()
         pendingAlert?.cancel(false)
         pendingAlert = null
         SmallAlerts.clear(SafariHud.WARP)

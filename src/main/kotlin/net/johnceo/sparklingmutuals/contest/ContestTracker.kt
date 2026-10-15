@@ -26,15 +26,8 @@ object ContestTracker {
 
     private val TIER_ROW = Regex("""^\s*([A-Za-z]+)\s+with\s+(\S+)""")
 
-    private val completeTiers = setOf(
-        "UNCOMMON",
-        "RARE",
-        "EPIC",
-        "LEGENDARY",
-        "MYTHIC",
-        "DIVINE",
-        "SPECIAL"
-    )
+    private val completeTiers = ContestTicketState.earnedTiers
+    private val ticketNotices = ContestTicketState()
 
     private val downtime = ContestDowntimeState()
     private var tickCounter = 0
@@ -57,7 +50,6 @@ object ContestTracker {
     }
 
     fun onClientTick(client: Minecraft) {
-        if (!ContestConfig.trackContest && !ConfigManager.honeyHives && !ContestConfig.autoContestDowntime) return
         if (client.player == null || client.level == null) return
 
         if (++tickCounter < 10) return
@@ -68,7 +60,7 @@ object ContestTracker {
                 SkyblockSidebar.inSkyblock(client), net.johnceo.sparklingmutuals.party.PartyManager.hasInfo &&
                     net.johnceo.sparklingmutuals.party.PartyManager.getMembers().size > 1))
             client.connection?.sendCommand("pc !dt contest")
-        readSidebar(client)
+        if (SkyblockSidebar.inSkyblock(client)) readSidebar(client)
         if (ContestConfig.trackContest) maybeWarn(client)
     }
 
@@ -111,16 +103,12 @@ object ContestTracker {
         secondsToEnd() == 0
 
     private fun readSidebar(client: Minecraft) {
-        for (line in MiriaContestFilter.miriaLines(SkyblockSidebar.lines(client))) {
-            val match = TIER_ROW.find(line) ?: continue
-            val foundTier = match.groupValues[1]
-
-            if (!isTierName(foundTier)) continue
-
-            tier = foundTier
-            points = parseInt(match.groupValues[2])
-            break
-        }
+        // A ticket requires a currently observed Miria tier, never a retained row from another area.
+        val match = MiriaContestFilter.miriaLines(SkyblockSidebar.lines(client)).firstNotNullOfOrNull { line ->
+            TIER_ROW.find(line)?.takeIf { isTierName(it.groupValues[1]) }
+        } ?: return
+        tier = match.groupValues[1]
+        points = parseInt(match.groupValues[2])
 
         if (
             tier.isNotEmpty() &&
@@ -129,7 +117,13 @@ object ContestTracker {
             tier.uppercase() in completeTiers
         ) {
             complete = true
-            completedWindow = absoluteWindow(java.time.LocalDateTime.now())
+            completedWindow = windowKey
+            val player = client.player ?: return
+            net.johnceo.sparklingmutuals.safari.SafariDowntime.ticketEarned(player.name.string)
+            if (ticketNotices.claim(player.uuid.toString(), windowKey, tier, secondsIntoWindow) &&
+                net.johnceo.sparklingmutuals.party.PartyManager.hasInfo &&
+                net.johnceo.sparklingmutuals.party.PartyManager.getMembers().size > 1)
+                client.connection?.sendCommand("pc Ticket earned!")
             println("Sparkling Mutuals: Contest complete — $tier with $points")
         }
     }
@@ -198,8 +192,7 @@ object ContestTracker {
     }
 
     /**
-     * Completion only counts for the window it was seen in. With contest tracking off the window stops rolling, so a
-     * completion from an earlier contest must not carry over into later ones.
+     * Completion belongs to the observed profile and contest window; ticket detection continues with the HUD off.
      */
     fun isComplete(): Boolean = completeFor(complete, completedWindow, absoluteWindow(java.time.LocalDateTime.now()))
     fun completeFor(complete: Boolean, seenWindow: Long, currentWindow: Long) = complete && seenWindow == currentWindow

@@ -39,10 +39,10 @@ object SparklingMutuals : ModInitializer {
 		AlertCommand.register()
 
 		PartyManager.init()
-		AlertManager.onInitialize()
         HideyhoQuest.register()
         HideyhoSpotter.register()
         SafariTracking.register()
+        AlertManager.onInitialize()
         net.johnceo.sparklingmutuals.history.RunHistory.register()
         net.johnceo.sparklingmutuals.history.SparklingLog.register()
         net.johnceo.sparklingmutuals.history.TicketCounter.register()

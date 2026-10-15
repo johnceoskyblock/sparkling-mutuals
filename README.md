@@ -34,8 +34,8 @@ Use the [37 individual critter notes](docs/critters/README.md) for species rules
 - **Shyworm helpers:** show projected positions, movement paths, and rest countdowns.
 - **Bird food tracking:** track Forest food collection and feeding progress.
 - **Wumpa prerequisites:** retain uncaught Icy prerequisite critter highlights in every mode while the party needs Sparkling Wumpa.
-- **Nearby sparklings HUD:** list detected sparklings and their distances.
-- **Sparkling detection:** highlight nearby sparkling critters in your current biome.
+- **Detected sparklings HUD:** list loaded detected sparklings across Safari biomes, with biome and distance.
+- **Sparkling detection:** identify loaded Sparkling names and 36 known skins across Safari biomes, with shared alert/progress evidence. [Detection and range limits](docs/SPARKLING_DETECTION.md).
 - **Teammate outlines:** highlight loaded party members throughout SkyBlock.
 - **Teammate names:** show party member names through walls.
 - **Hideyho quest clicks:** accept Hideyho's offer by clicking with chat open.
@@ -56,7 +56,7 @@ Use the [37 individual critter notes](docs/critters/README.md) for species rules
 - **All Incense alert:** notify when four Soothing Incense are in your inventory.
 - **Run completion alert:** notify when all biomes are complete in the active mode.
 - **Unused starting supplies:** automatic titles and party reminders identify starting bird food or Shining Coins still needed by the party.
-- **Warp reminders (`/alert`, `/alertdelay <seconds>`):** remind you to warp party members before entry closes.
+- **Warp alerts (`/alert`, `/alertdelay <seconds>`):** show the reminder and automatically run `/p warp` when the delay expires in the current run. [Timer behavior](docs/WARP_ALERTS.md).
 - **Miria contest HUD:** track contest time, score, and tier.
 - **Miria warnings:** warn below Uncommon at the selected 5-, 3-, and 1-minute marks.
 - **Honeyhive beacons:** mark full Torrhus Canyon hives during an incomplete Miria contest.
@@ -75,7 +75,7 @@ Use the [37 individual critter notes](docs/critters/README.md) for species rules
 - **`!missing <IGN>`:** list a player's missing sparkling discoveries that save time.
 - **`!tickets <IGN>`:** show a player's Safari ticket counts.
 - **`!m [biome]`:** report what remains in the current Safari run.
-- **`!dt [reason]` / `r`:** request downtime after the run and release your hold when ready.
+- **`!dt [reason]` / `r`:** request downtime after the run and release your hold when ready. Earning an Uncommon contest ticket announces **Ticket earned!** and clears your contest hold.
 - **Safari entry guard:** block Manager, ticket and entry GUI clicks after kick requests or while party members are absent; Shift-click to override.
 - **`/sparkling [IGN|party|IGNs]`:** show Safari player cards or compare sparkling collections.
 - **`!pb <biome>`:** share Forest, Cavern, Icy, or Haunted PBs for the active mode.
@@ -97,7 +97,7 @@ Use the [37 individual critter notes](docs/critters/README.md) for species rules
 - Development builds: download the Artifacts ZIP from a successful [Actions run](https://github.com/johnceoskyblock/sparkling-mutuals/actions) and extract the JAR without `-sources` in its name.
 - Profile lookups use a [Hypixel API key](https://developer.hypixel.net) or the optional Shiny Hunter shared API.
 - Release notes are in the [release descriptions](https://github.com/johnceoskyblock/sparkling-mutuals/releases).
-- Current release: **v3.2.0**, with the installable file `sparkling-mutuals-3.2.0.jar`. Remove the older Sparkling Mutuals JAR before installing the update.
+- Current release: **v3.3.0**, with the installable file `sparkling-mutuals-3.3.0.jar`. Remove the older Sparkling Mutuals JAR before installing the update.
 
 ## Contributing
 
@@ -118,4 +118,4 @@ Per-drop colors are configurable in **ESP → Floor-drop colors**. **Miria conte
 
 ## Last updated
 
-2026-10-15 - Prepared v3.2.0 installation guidance with per-drop colors, automatic contest requests and the combined history importer.
+2026-10-15 - Prepared v3.3.0 with shared skin/name detection, cross-biome detected HUD, ticket-earned hold release and automatic party warp.

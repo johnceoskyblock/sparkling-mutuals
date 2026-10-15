@@ -4,13 +4,23 @@ import java.util.UUID
 
 /** A seen Sparkling remains a capture obligation even after unloading or owning its discovery. */
 class SparklingCaptureState {
-    private val seen = mutableSetOf<UUID>()
+    private val identities = mutableMapOf<UUID, UUID>()
+    fun identity(id: UUID) = identities[id] ?: id
     private val pending = linkedMapOf<UUID, String>()
     private data class Proof(val species: String, val player: String?, val broadcast: Boolean, val at: Long)
     private val proofs = mutableListOf<Proof>()
-    fun observe(id: UUID, species: String): Boolean {
-        if (SafariRoster.named(species) == null || !seen.add(id)) return false
-        pending[id] = species
+    fun observe(id: UUID, species: String, aliases: Set<UUID> = emptySet()): Boolean {
+        if (SafariRoster.named(species) == null) return false
+        val all = aliases + id
+        val known = all.mapNotNull(identities::get).toSet()
+        val canonical = known.firstOrNull { it !in pending } ?: known.firstOrNull() ?: id
+        if (known.isNotEmpty()) {
+            known.filter { it != canonical }.forEach(pending::remove)
+            identities.entries.filter { it.value in known }.forEach { it.setValue(canonical) }
+        }
+        all.forEach { identities[it] = canonical }
+        if (known.isNotEmpty()) return false
+        pending[canonical] = species
         return true
     }
     fun pending(species: String) = species in pending.values
