@@ -14,7 +14,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable
 @Mixin(EntityRenderDispatcher::class)
 class SafariPaintingMixin {
     @Inject(method = ["shouldRender"], at = [At("HEAD")], cancellable = true)
-    private fun hidePainting(entity: Entity, frustum: Frustum, x: Double, y: Double, z: Double, result: CallbackInfoReturnable<Boolean>) {
+    private fun hidePainting(entity: Entity, frustum: Frustum, x: Double, y: Double, z: Double,
+        //? if >=26.3 {
+        /*partialTick: Float,
+        *///? }
+        result: CallbackInfoReturnable<Boolean>) {
         if (entity is Painting && SafariAssist.hidePaintings()) result.returnValue = false
     }
 }

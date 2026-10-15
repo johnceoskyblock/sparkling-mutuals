@@ -1,5 +1,6 @@
 package net.johnceo.sparklingmutuals.safari
 
+import net.johnceo.sparklingmutuals.compat.*
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents
 import net.johnceo.sparklingmutuals.LocalChat
 import net.johnceo.sparklingmutuals.config.ConfigManager
@@ -129,7 +130,7 @@ object SafariTracking {
     fun finish() { ledger.leave(System.currentTimeMillis()); resetEncounters() }
     fun render(graphics: GuiGraphicsExtractor) {
         val client = Minecraft.getInstance()
-        if (client.player == null || client.screen is ContestGui || !visible) return
+        if (client.player == null || client.smScreen is ContestGui || !visible) return
         val run = run
         val unique = ConfigManager.countUniqueOnly
         if (ConfigManager.progressHud) SafariPanels.progress(run, unique, System.currentTimeMillis()).draw(graphics, SafariHud.PROGRESS)

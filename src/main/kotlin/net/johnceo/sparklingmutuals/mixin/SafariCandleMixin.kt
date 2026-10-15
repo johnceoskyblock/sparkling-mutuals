@@ -1,5 +1,6 @@
 package net.johnceo.sparklingmutuals.mixin
 
+import net.johnceo.sparklingmutuals.compat.redCandle
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.safari.SafariAssist
 import net.johnceo.sparklingmutuals.safari.SafariBiome
@@ -28,7 +29,7 @@ abstract class SafariCandleMixin {
     @Inject(method = ["getShape(Lnet/minecraft/world/level/BlockGetter;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/phys/shapes/CollisionContext;)Lnet/minecraft/world/phys/shapes/VoxelShape;"], at = [At("HEAD")], cancellable = true)
     private fun candle(world: BlockGetter, pos: BlockPos, context: CollisionContext, result: CallbackInfoReturnable<VoxelShape>) {
         if (world !is ClientLevel || getBlock() !is CandleBlock) return
-        if (!SafariCandleRules.target(getBlock() === Blocks.RED_CANDLE)) return
+        if (!SafariCandleRules.target(getBlock() === redCandle)) return
         val client = Minecraft.getInstance()
         val player = client.player ?: return
         if (listOf(player.mainHandItem, player.offhandItem).any { SafariCandleRules.enabled(ConfigManager.candleHitbox,

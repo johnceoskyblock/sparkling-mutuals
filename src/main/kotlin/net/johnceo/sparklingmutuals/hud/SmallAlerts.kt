@@ -1,5 +1,6 @@
 package net.johnceo.sparklingmutuals.hud
 
+import net.johnceo.sparklingmutuals.compat.*
 import net.johnceo.sparklingmutuals.config.AppearanceConfig
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.config.SafariEspConfig
@@ -36,7 +37,7 @@ object SmallAlerts {
     fun render(graphics: GuiGraphicsExtractor) {
         val active = notices.active(System.currentTimeMillis())
         val client = Minecraft.getInstance()
-        if (client.player == null || client.options.hideGui || client.screen is ContestGui) return
+        if (client.player == null || client.options.smHideGui || client.smScreen is ContestGui) return
         active.forEach { (hud, notice) -> HudPanel(notice.text, notice.color, emptyList()).draw(graphics, hud) }
     }
 }

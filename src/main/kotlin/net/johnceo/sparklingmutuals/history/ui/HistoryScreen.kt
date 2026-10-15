@@ -1,5 +1,6 @@
 package net.johnceo.sparklingmutuals.history.ui
 
+import net.johnceo.sparklingmutuals.compat.*
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -50,7 +51,7 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
     private var listTop = 0; private var listBottom = 0; private var listRows = 1; private var listSize = 0
     private var px = 0; private var py = 0; private var pw = 0; private var ph = 0
 
-    override fun onClose() { minecraft.setScreen(parent) }
+    override fun onClose() { minecraft.smSetScreen(parent) }
     override fun isPauseScreen() = false
 
     override fun extractRenderState(g: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, delta: Float) {

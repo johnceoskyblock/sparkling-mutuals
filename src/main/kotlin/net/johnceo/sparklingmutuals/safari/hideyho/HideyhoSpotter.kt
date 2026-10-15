@@ -1,5 +1,6 @@
 package net.johnceo.sparklingmutuals.safari.hideyho
 
+import net.johnceo.sparklingmutuals.compat.*
 import kotlin.math.floor
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents
 import net.johnceo.sparklingmutuals.LocalChat
@@ -145,9 +146,9 @@ object HideyhoSpotter {
         if (!watch.context(ConfigManager.hideyhoInsideOutside, SafariAssist.biome.takeIf { SafariAssist.inSafari }, SafariFullClear.mode)) return
         val inside = HideyhoHiding.inside(spot)
         logger.info("Hideyho settled at {}: {}", spot, if (inside) "inside" else "outside")
-        client.gui.setTimes(5, 50, 15)
-        client.gui.setTitle(LocalChat.hideyho(inside, bold = true))
-        client.gui.setSubtitle(Component.literal(spot.toString()).withStyle { it.withColor(SafariTheme.MUTED) })
+        client.gui.smSetTimes(5, 50, 15)
+        client.gui.smSetTitle(LocalChat.hideyho(inside, bold = true))
+        client.gui.smSetSubtitle(Component.literal(spot.toString()).withStyle { it.withColor(SafariTheme.MUTED) })
         client.player?.sendSystemMessage(LocalChat.component(LocalChat.hideyho(inside)))
     }
 

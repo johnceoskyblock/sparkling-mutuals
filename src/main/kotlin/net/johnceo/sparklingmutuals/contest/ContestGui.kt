@@ -1,5 +1,6 @@
 package net.johnceo.sparklingmutuals.contest
 
+import net.johnceo.sparklingmutuals.compat.*
 import net.johnceo.sparklingmutuals.config.AppearanceConfig
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.config.ContestConfig
@@ -101,6 +102,6 @@ class ContestGui(private val parent: Screen? = null) : Screen(Component.literal(
         ContestConfig.hudX = box.x; ContestConfig.hudY = box.y; ContestConfig.hudScale = miria.scale
         ContestConfig.save(); ConfigManager.save()
     }
-    override fun onClose() { save(); minecraft.setScreen(parent) }
+    override fun onClose() { save(); minecraft.smSetScreen(parent) }
     override fun isPauseScreen() = false
 }

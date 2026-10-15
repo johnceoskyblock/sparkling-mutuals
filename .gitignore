@@ -43,3 +43,7 @@ replay_*.log
 
 # local runtime logs
 logs/
+
+# Stonecutter generated per-target sources and IDE runs
+versions/*/src/
+versions/*/run/

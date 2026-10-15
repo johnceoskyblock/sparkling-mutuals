@@ -12,7 +12,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable
 @Mixin(EntityRenderDispatcher::class)
 class SafariCapsuleMixin {
     @Inject(method = ["shouldRender"], at = [At("HEAD")], cancellable = true)
-    private fun hideCapsule(entity: Entity, frustum: Frustum, x: Double, y: Double, z: Double, result: CallbackInfoReturnable<Boolean>) {
+    private fun hideCapsule(entity: Entity, frustum: Frustum, x: Double, y: Double, z: Double,
+        //? if >=26.3 {
+        /*partialTick: Float,
+        *///? }
+        result: CallbackInfoReturnable<Boolean>) {
         if (CritterCapsuleHider.hidden(entity, x, y, z)) result.returnValue = false
     }
 }
