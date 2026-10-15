@@ -21,7 +21,6 @@ import net.johnceo.sparklingmutuals.history.OwnStats
 import net.johnceo.sparklingmutuals.history.PlaytimeReader
 import net.johnceo.sparklingmutuals.history.RunHistory
 import net.johnceo.sparklingmutuals.history.SparklingLog
-import net.johnceo.sparklingmutuals.history.TicketCounter
 import net.johnceo.sparklingmutuals.history.importing.LogImporter
 import net.johnceo.sparklingmutuals.honeyhives.HoneyHives
 import net.johnceo.sparklingmutuals.hud.SmallAlerts
@@ -77,7 +76,6 @@ object SparklingMutuals : ModInitializer {
         AlertManager.onInitialize()
         RunHistory.register()
         SparklingLog.register()
-        TicketCounter.register()
         Achievements.register()
         PlaytimeReader.register()
         BeeNests.register()

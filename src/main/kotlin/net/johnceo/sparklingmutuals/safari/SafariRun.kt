@@ -18,6 +18,7 @@ import net.johnceo.sparklingmutuals.safari.structures.SafariMounds
 
 /** Capture, source and completion evidence owned by a single Safari run. */
 class SafariRun(val startedAt: Long) {
+    val runId: String = java.util.UUID.randomUUID().toString()
     private var achievementSnapshot: DexSnapshot? = null
     private var achievementUniqueValid = true
     private var achievementScopeValid = true

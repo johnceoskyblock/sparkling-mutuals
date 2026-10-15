@@ -1,23 +1,29 @@
 package net.johnceo.sparklingmutuals.history
 
-import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents
-import net.johnceo.sparklingmutuals.safari.SafariRules
-import net.minecraft.client.Minecraft
+import net.johnceo.sparklingmutuals.history.achievements.AdmissionEvidence
+import net.johnceo.sparklingmutuals.history.achievements.AchievementScope
+import net.johnceo.sparklingmutuals.safari.SafariRun
 
-/**
- * Counts Safari tickets from the Safari Manager waving you through. Only his own line counts: it has to start with
- * "[NPC] Safari Manager:", which party, guild and private messages never do.
- */
+/** One authoritative admission fan-out, driven by the tracker's ordered chat/entry observations. */
 object TicketCounter {
     private const val MANAGER = "[NPC] Safari Manager: "
     private val lines = setOf("Looks good to me. Have fun out there!", "I already saw your ticket, so you're free to go.")
     fun isTicket(text: String) = text.startsWith(MANAGER) && text.removePrefix(MANAGER).trim() in lines
 
-    fun register() {
-        ClientReceiveMessageEvents.GAME.register { message, overlay ->
-            if (!overlay && isTicket(SafariRules.strip(message.string))) Minecraft.getInstance().execute {
-                SparklingLog.onTicket(); RunHistory.onTicket(); Achievements.onTicket()
-            }
+    private var current: SafariRun? = null
+    private val evidence = AdmissionEvidence { id, scope, at ->
+        if (Achievements.collectAdmission(id, scope, at)) {
+            SparklingLog.onTicket()
+            current?.let(RunHistory::onTicket)
+            Achievements.onTicket()
         }
     }
+    fun acknowledge(text: String, at: Long) = evidence.acknowledge(text, at)
+    fun confirmEntry(run: SafariRun, scope: AchievementScope?, at: Long) {
+        current = run
+        if (scope == null) evidence.confirmUnscopedEntry(run.runId, at)
+        else evidence.confirmEntry(run.runId, scope, at)
+    }
+    fun leave() { current = null; evidence.leave() }
+    fun disconnect() { current = null; evidence.disconnect(); Achievements.invalidateActivityIntervals() }
 }

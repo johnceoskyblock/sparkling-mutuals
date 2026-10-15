@@ -1,5 +1,7 @@
 package net.johnceo.sparklingmutuals.history
 
+import net.johnceo.sparklingmutuals.history.achievements.*
+
 import net.johnceo.sparklingmutuals.compat.*
 import java.time.Instant
 import java.time.ZoneId
@@ -106,14 +108,38 @@ object Achievements {
         var longestRunsWithoutSparkling: Int = 0, var runsSinceOwnUnique: Int = 0, var longestRunsWithoutUnique: Int = 0,
         var uniqueSinceLastRun: Boolean = false, var runsSinceMacaw: Int = 0, var longestRunsWithoutMacaw: Int = 0,
         var lastRunHadOwnSparkling: Boolean = false, var ticketsSinceOwnSparkling: Int = 0,
-        var contestsCompleted: Int = 0, var lastContestWindow: Long = -1)
+        var contestsCompleted: Int = 0, var lastContestWindow: Long = -1,
+        var activity: ActivityEvidence? = ActivityEvidence())
     private var data = Data()
+    val activity: ActivityEvidence get() = data.activity ?: ActivityEvidence().also { data.activity = it }
+    private var activityScopeKey: String? = null
     private var ticks = 0
+
+    fun currentActivityScope(playerUuid: String): AchievementScope? = OwnStats.dexSnapshot?.scope
+        ?.takeIf { normalizePlayer(it.playerUuid) == normalizePlayer(playerUuid) }
+
+    fun invalidateActivityIntervals() { activity.invalidateIntervals(); activityScopeKey = null; save() }
+
+    fun collectAdmission(runId: String, scope: AchievementScope?, at: Long): Boolean {
+        val added = if (scope == null) activity.recordUnscopedAdmission(runId, at)
+            else activity.recordAdmission(scope, runId, at)
+        if (added) save()
+        return added
+    }
+    fun collectContest(playerUuid: String, window: Long, scope: AchievementScope?, at: Long): Boolean {
+        if (!activity.recordContest(playerUuid, window, scope, at)) return false
+        data.lastContestWindow = window
+        data.contestsCompleted++
+        save()
+        return true
+    }
 
     private val emeraldDrop = Regex("^(?:[A-Z!' ]*DROP!|WOW!|RNG METER|NICE!)", RegexOption.IGNORE_CASE)
 
     fun register() {
         data = HistoryStore.load("achievements", Data::class.java, ::Data)
+        // Offline gaps cannot prove an uninterrupted personal ticket interval.
+        invalidateActivityIntervals()
         // Achievements that were removed (emblems, the 10-run Macaw drought) no longer count.
         data.unlocked.keys.retainAll(definitions.map { it.id }.toSet())
         ClientReceiveMessageEvents.GAME.register { message, overlay ->
@@ -124,18 +150,25 @@ object Achievements {
     // ------------------------------------------------------------------ events
 
     fun tick(client: Minecraft) {
-        if (client.player == null || !ConfigManager.achievements) return
-        if (!data.initialised) { initialise(client); return }
-        // A contest is counted once per window, however many times the sidebar shows it done. The window comes from
-        // the tracker with its completion, so a completion from just before a boundary can't count for the next one.
-        ContestTracker.completedWindow()?.let { window ->
-            if (window != data.lastContestWindow) { data.lastContestWindow = window; data.contestsCompleted++; save(); checkAll(true) }
+        val player = client.player ?: return
+        val scope = currentActivityScope(player.uuid.toString())
+        if (scope?.key != activityScopeKey) {
+            invalidateActivityIntervals()
+            activityScopeKey = scope?.key
         }
+        val newContest = ContestTracker.completedWindow()?.let {
+            collectContest(player.uuid.toString(), it, scope, System.currentTimeMillis())
+        } ?: false
+        if (!ConfigManager.achievements) return
+        if (!data.initialised) { initialise(client); return }
+        if (newContest) checkAll(true)
         if (++ticks % 200 == 0) checkAll(true)
     }
 
     fun onSparkling(entry: SparklingEntry, own: Boolean) {
         if (own) {
+            val scope = Minecraft.getInstance().player?.uuid?.toString()?.let(::currentActivityScope)
+            if (scope == null) activity.invalidateIntervals() else activity.recordOwnSparkling(scope, entry.at)
             if (data.ticketsSinceOwnSparkling <= 5 && ownEntries().size > 1) unlock("instant", true)
             data.ticketsSinceOwnSparkling = 0; data.runsSinceOwnSparkling = 0
             if (entry.critter in setOf("Macaw", "Wumpa", "Doomspiral")) unlock("legendary_sparkle", true)

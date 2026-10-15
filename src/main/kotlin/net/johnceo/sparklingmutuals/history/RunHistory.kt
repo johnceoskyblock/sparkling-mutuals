@@ -39,7 +39,7 @@ object RunHistory {
         session.chat(SafariTracking.ledger.current, raw, client.player?.name?.string.orEmpty()) { finish(it, client) }
     }
 
-    fun onTicket() = session.onTicket(SafariTracking.ledger.current)
+    fun onTicket(run: SafariRun) = session.onTicket(run)
 
     fun tick(client: Minecraft) {
         session.sync(SafariTracking.ledger.current) { finish(it, client) }
@@ -60,7 +60,7 @@ object RunHistory {
             partySize = client.player?.uuid?.toString()?.let(PartyManager::withLocal)?.size ?: 1,
             tickets = tickets, shards = LinkedHashMap(tally.shards), catches = LinkedHashMap(tally.catches),
             feathers = tally.feathers, sparklings = tally.sparklings.toMutableList(), ownSparklings = tally.ownSparklings,
-            macaws = tally.macaws, splits = LinkedHashMap(splits))
+            macaws = tally.macaws, splits = LinkedHashMap(splits), runId = run.runId)
         // A manual import during this run may have read it from latest.log already; the live record replaces that.
         val imported = HistoryMerge.removeLiveDuplicate(data.runs, record)
         record.number = imported?.number ?: data.nextNumber++

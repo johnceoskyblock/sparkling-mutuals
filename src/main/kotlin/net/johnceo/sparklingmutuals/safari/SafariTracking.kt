@@ -6,6 +6,7 @@ import net.johnceo.sparklingmutuals.LocalChat
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.contest.ContestGui
 import net.johnceo.sparklingmutuals.history.TicketCounter
+import net.johnceo.sparklingmutuals.history.Achievements
 import net.johnceo.sparklingmutuals.hud.SafariHud
 import net.johnceo.sparklingmutuals.safari.completion.SafariFullClear
 import net.johnceo.sparklingmutuals.safari.esp.SafariEsp
@@ -47,7 +48,10 @@ object SafariTracking {
         }
     }
     private fun syncWorld(client: Minecraft) {
-        if (client.level !== level) { ledger.worldChanged(System.currentTimeMillis()); resetEncounters(); level = client.level }
+        if (client.level !== level) {
+            if (client.level == null) TicketCounter.disconnect() else TicketCounter.leave()
+            ledger.worldChanged(System.currentTimeMillis()); resetEncounters(); level = client.level
+        }
     }
     private fun resetEncounters() {
         BeeNests.reset()
@@ -64,7 +68,10 @@ object SafariTracking {
         syncWorld(client)
         val text = SafariRules.strip(raw)
         val now = System.currentTimeMillis()
-        if (TicketCounter.isTicket(text)) pendingAdmission = text to now
+        if (TicketCounter.isTicket(text)) {
+            pendingAdmission = text to now
+            TicketCounter.acknowledge(text, now)
+        }
         if (SafariAssist.inSafari) {
             SafariEspRules.thrownSpecies(text)?.let(SafariEsp::threw)
             SafariEspRules.escapedSpecies(text)?.let(SafariEsp::escaped)
@@ -73,7 +80,11 @@ object SafariTracking {
         if (SafariMessages.enteredBy(text, client.player!!.name.string)) {
             val previous = ledger.current
             ledger.confirmEntry(now); SafariAssist.markEntered()
-            if (previous !== ledger.current) { resetEncounters(); ledger.current?.let { entryEvidence(it, now) } }
+            if (previous !== ledger.current) resetEncounters()
+            ledger.current?.let {
+                entryEvidence(it, now)
+                TicketCounter.confirmEntry(it, Achievements.currentActivityScope(client.player!!.uuid.toString()), now)
+            }
         }
         if (SafariMounds.outcome(text) != null) {
             if (SafariAssist.inSafari) { ensureRun(client); ledger.current?.recordMound(text) }
@@ -124,10 +135,14 @@ object SafariTracking {
         ledger.update(SafariAssist.location, SafariAssist.biome, now)
         if (previous !== ledger.current) {
             resetEncounters()
-            ledger.current?.let { entryEvidence(it, now) }
+            if (ledger.current == null) TicketCounter.leave()
+            ledger.current?.let {
+                entryEvidence(it, now)
+                TicketCounter.confirmEntry(it, client.player?.uuid?.toString()?.let(Achievements::currentActivityScope), now)
+            }
         }
     }
-    fun finish() { ledger.leave(System.currentTimeMillis()); resetEncounters() }
+    fun finish() { TicketCounter.disconnect(); pendingAdmission = null; pendingTicket = null; ledger.leave(System.currentTimeMillis()); resetEncounters() }
     fun render(graphics: GuiGraphicsExtractor) {
         val client = Minecraft.getInstance()
         if (client.player == null || client.smScreen is ContestGui || !visible) return
