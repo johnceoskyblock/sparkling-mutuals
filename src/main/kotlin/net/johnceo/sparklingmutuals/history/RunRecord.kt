@@ -54,7 +54,7 @@ class SparklingEntry(
     var player: String = "",
     var critter: String = "",
     var unique: Boolean = false,
-    /** Tickets the party used since the previous sparkling. */
+    /** Recorded personal tickets since the previous observed sparkling; prior intervals may be unverified. */
     var tickets: Int? = null,
     /** The first occurrence in available logs is an estimate, not a historical API discovery lookup. */
     var uniqueEstimated: Boolean = false,

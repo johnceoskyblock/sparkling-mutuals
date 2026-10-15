@@ -7,6 +7,8 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.history.Achievement
+import net.johnceo.sparklingmutuals.history.AchievementFilter
+import net.johnceo.sparklingmutuals.history.AchievementPresentation
 import net.johnceo.sparklingmutuals.history.Achievements
 import net.johnceo.sparklingmutuals.history.BazaarPrices
 import net.johnceo.sparklingmutuals.history.PlaytimeReader
@@ -34,7 +36,6 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
         ACHIEVEMENTS("Achievements", 0xFFFFAA22.toInt()), STATS("Stats", 0xFF7799FF.toInt()), PROFIT("Profit", 0xFFFFD84A.toInt())
     }
     private enum class RunSort(val label: String) { NEWEST("Newest"), OLDEST("Oldest"), FASTEST("Fastest"), LONGEST("Longest"), CAUGHT("Most caught"), COINS("Most coins"), PARTY("Party dex"), YOU("Your dex") }
-    private enum class Filter(val label: String) { ALL("All"), UNLOCKED("Unlocked"), LOCKED("Locked") }
     private enum class AchievementSort(val label: String) { DEFAULT("Unlocked first"), RARITY_UP("Rarity: low"), RARITY_DOWN("Rarity: high"), CLOSEST("Closest"), RECENT("Recent"), NAME("Name") }
     private class Hit(val x: Int, val y: Int, val w: Int, val h: Int, val action: () -> Unit) {
         fun contains(mx: Double, my: Double) = mx >= x && mx < x + w && my >= y && my < y + h
@@ -46,7 +47,7 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
     private var runSort = RunSort.NEWEST
     private var selectedRun = -1
     private var mineOnly = false
-    private var filter = Filter.ALL
+    private var filter = AchievementFilter.ALL
     private var achievementSort = AchievementSort.DEFAULT
     private var listTop = 0; private var listBottom = 0; private var listRows = 1; private var listSize = 0
     private var px = 0; private var py = 0; private var pw = 0; private var ph = 0
@@ -211,9 +212,9 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
         runs.filter { it.hasSparkling() }.maxByOrNull { it.sparklings.size }.let { record("Sparklings", it?.sparklings?.size?.toString(), it) }
         runs.filter { it.macaws > 0 }.maxByOrNull { it.macaws }.let { record("Macaws", it?.macaws?.toString(), it) }
         ry += 6
-        g.text(font, "Luck", rx, ry, 0xFFDDDDDD.toInt()); ry += 13
-        record("Dry streak", "${Achievements.longestDrySparkling} runs", null)
-        record("Macaw drought", "${Achievements.longestMacawDrought} runs", null)
+        g.text(font, "Observed history", rx, ry, 0xFFDDDDDD.toInt()); ry += 13
+        record("Raw dry streak", "${Achievements.longestDrySparkling} runs", null)
+        record("Observed Macaw absence", "${Achievements.longestMacawDrought} runs", null)
     }
     private fun cell(g: GuiGraphicsExtractor, time: Long?, x: Int, y: Int, colour: Int) =
         centred(g, time?.let(::pbTime) ?: "-", x, y, if (time == null) DIM else colour)
@@ -242,7 +243,7 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
             if (mx in px + 4 until px + listW + 4 && my in y - 1 until y + ROW - 1) {
                 g.fill(px + 4, y - 1, px + listW + 4, y + ROW - 1, 0x18FFFFFF)
                 g.setComponentTooltipForNextFrame(font, listOfNotNull(Component.literal("§f" + FULL.format(when_)),
-                    entry.tickets?.let { Component.literal("§7Took §e$it§7 tickets since the last §6§lSPARKLING") },
+                    entry.tickets?.let { Component.literal("§7Recorded §e$it§7 personal tickets since the previous observed sparkling; legacy interval unverified.") },
                     if (entry.uniqueEstimated) Component.literal("§8First-seen status estimated from available logs") else null), mx, my)
             }
             g.text(font, "§7" + DAY_SHORT.format(when_), px + 10, y, MUTED)
@@ -284,7 +285,7 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
     // ------------------------------------------------------------------ achievements
 
     private fun order(): Comparator<Achievement> {
-        val rarity = compareBy<Achievement> { it.tier.ordinal }
+        val rarity = AchievementPresentation.rarityOrder
         val name = compareBy<Achievement, String>(String.CASE_INSENSITIVE_ORDER) { it.name }
         val base = when (achievementSort) {
             AchievementSort.DEFAULT -> compareBy<Achievement> { !Achievements.isUnlocked(it) }.then(rarity)
@@ -293,7 +294,7 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
             AchievementSort.CLOSEST -> compareBy { when {
                 Achievements.isUnlocked(it) -> 3.0
                 !it.hasProgress -> if (it.secret) 2.5 else 2.0
-                else -> 1 - minOf(1.0, Achievements.progress(it).toDouble() / it.goal)
+                else -> Achievements.progressState(it).let { p -> p.value?.let { v -> 1 - minOf(1.0, v / p.goal) } ?: 2.0 }
             } }
             AchievementSort.RECENT -> compareBy { -Achievements.unlockedAt(it) }
             AchievementSort.NAME -> name
@@ -303,45 +304,58 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
 
     private fun achievements(g: GuiGraphicsExtractor, mx: Int, my: Int) {
         val all = Achievements.all()
-        val unlocked = all.count(Achievements::isUnlocked)
-        val shown = all.filter { filter == Filter.ALL || (filter == Filter.UNLOCKED) == Achievements.isUnlocked(it) }.sortedWith(order())
+        val legacy = Achievements.legacyAwards().sortedByDescending { it.unlockedAt }
+        val totals = AchievementPresentation.totals(all, Achievements.state.currentUnlocks, legacy)
+        val unlocked = totals.currentEarned
+        val shown = all.filter { AchievementPresentation.visible(filter, Achievements.isUnlocked(it)) }.sortedWith(order())
         g.text(font, "Achievements", px + 8, py + 6, GOLD)
-        "$unlocked/${all.size} unlocked (${if (all.isEmpty()) 0 else unlocked * 100 / all.size}%)".let { g.text(font, it, px + pw - 8 - font.width(it), py + 6, TEXT) }
+        "Current $unlocked/${totals.currentTotal} · Legacy ${totals.legacyEarned}".let { g.text(font, it, px + pw - 8 - font.width(it), py + 6, TEXT) }
         bar(g, px + 8, py + 18, pw - 16, 4, if (all.isEmpty()) 0.0 else unlocked.toDouble() / all.size, GOLD)
         val rowH = 23
-        listTop = py + 28; listBottom = py + ph - 26; listRows = maxOf(1, (listBottom - listTop) / rowH); listSize = shown.size
+        listTop = py + 28; listBottom = py + ph - 26; listRows = maxOf(1, (listBottom - listTop) / rowH); listSize = if (filter == AchievementFilter.LEGACY) legacy.size else shown.size
         val offset = clampScroll(Tab.ACHIEVEMENTS)
         for (i in 0 until listRows) {
-            val a = shown.getOrNull(offset + i) ?: break
             val y = listTop + i * rowH
+            if (filter == AchievementFilter.LEGACY) {
+                val award = legacy.getOrNull(offset + i) ?: break
+                val row = AchievementPresentation.legacy(award)
+                val date = DAY.format(Instant.ofEpochMilli(row.unlockedAt!!).atZone(ZoneId.systemDefault()))
+                g.text(font, cut("§7§l", row.name, pw - 120), px + 14, y + 2, TEXT)
+                g.text(font, date, px + pw - 18 - font.width(date), y + 2, MUTED)
+                g.text(font, cut("§7", row.description, pw - 38), px + 14, y + 12, MUTED)
+                if (mx in px + 6 until px + pw - 12 && my in y until y + rowH - 2) g.setComponentTooltipForNextFrame(font,
+                    listOf(Component.literal(row.name), Component.literal(row.description), Component.literal(row.detail), Component.literal(date)), mx, my)
+                continue
+            }
+            val a = shown.getOrNull(offset + i) ?: break
             val has = Achievements.isUnlocked(a)
-            val hidden = a.secret && !has
+            val row = AchievementPresentation.current(a, Achievements.progressState(a), if (has) Achievements.unlockedAt(a) else null)
+            val hidden = row.name == "???"
             g.fill(px + 6, y, px + pw - 12, y + rowH - 2, if (has) a.tier.argb and 0xFFFFFF or 0x22000000 else 0x14FFFFFF)
             g.fill(px + 6, y, px + 9, y + rowH - 2, if (has) a.tier.argb else 0xFF444444.toInt())
             // The right column (date or progress) is reserved; text on the left is cut to fit beside it.
             val right = px + pw - 18
-            val progress = if (!has && a.hasProgress) minOf(Achievements.progress(a), a.goal) else 0
             val side = when {
                 has -> "§a✔ §7" + DAY.format(Instant.ofEpochMilli(Achievements.unlockedAt(a)).atZone(ZoneId.systemDefault()))
-                a.hasProgress -> "§7${compact(progress)}/${compact(a.goal)}"
+                a.hasProgress && !hidden -> "§7${row.progressLabel}"
                 else -> null
             }
             val sideW = if (side == null) 0 else maxOf(font.width(side), if (a.hasProgress && !has) 70 else 0)
             val textW = right - sideW - 10 - (px + 14)
-            val name = cut(if (hidden) "§8§l" else if (has) a.tier.code + "§l" else "§7§l", if (hidden) "???" else a.name, textW)
+            val name = cut(if (hidden) "§8§l" else if (has) a.tier.code + "§l" else "§7§l", row.name, textW)
             g.text(font, name, px + 14, y + 2, TEXT)
             val tierLabel = (if (has || !hidden) a.tier.code else "§8") + a.tier.name
             if (shownWidth(name) + 8 + font.width(tierLabel) <= textW) g.text(font, tierLabel, px + 14 + shownWidth(name) + 8, y + 2, TEXT)
-            val description = if (hidden) "Secret achievement: keep playing to find out." else a.description
+            val description = row.description
             g.text(font, cut(if (hidden) "§8" else "§7", description, textW), px + 14, y + 12, MUTED)
             if (has) g.text(font, side!!, right - font.width(side), y + 7, TEXT)
-            else if (side != null) { g.text(font, side, right - font.width(side), y + 2, MUTED); bar(g, right - sideW, y + 13, sideW, 4, progress.toDouble() / a.goal, a.tier.argb) }
+            else if (side != null) { g.text(font, side, right - font.width(side), y + 2, MUTED); row.fraction?.let { bar(g, right - sideW, y + 13, sideW, 4, it, a.tier.argb) } }
             if (mx in px + 6 until px + pw - 12 && my in y until y + rowH - 2) g.setComponentTooltipForNextFrame(font,
-                listOf(Component.literal(if (hidden) "§8§l???" else a.tier.code + "§l" + a.name), Component.literal(tierLabel), Component.literal("§7$description")), mx, my)
+                listOf(Component.literal(if (hidden) "§8§l???" else a.tier.code + "§l" + a.name), Component.literal(tierLabel), Component.literal("§7$description"), Component.literal("§7${row.detail}")), mx, my)
         }
         scrollbar(g, offset, px + pw - 8)
         val fy = py + ph - 20
-        button(g, mx, my, px + 8, fy, 100, "Show: ${filter.label}") { filter = Filter.entries[(filter.ordinal + 1) % Filter.entries.size]; scroll[Tab.ACHIEVEMENTS] = 0 }
+        button(g, mx, my, px + 8, fy, 100, "Show: ${filter.label}") { filter = AchievementFilter.entries[(filter.ordinal + 1) % AchievementFilter.entries.size]; scroll[Tab.ACHIEVEMENTS] = 0 }
         button(g, mx, my, px + 114, fy, 130, "Sort: ${achievementSort.label}") { achievementSort = AchievementSort.entries[(achievementSort.ordinal + 1) % AchievementSort.entries.size]; scroll[Tab.ACHIEVEMENTS] = 0 }
     }
 
@@ -366,10 +380,10 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
             "Rainbow Feathers" to "${runs.sumOf { it.feathers }}",
             "Shard + feather value" to "§e" + BazaarPrices.format(runs.sumOf { maxOf(0L, it.coins) }) +
                 if (played > 0) " §7· " + BazaarPrices.format(runs.sumOf { maxOf(0L, it.coins) } * 3_600_000L / played) + "/h" else "",
-            "Tickets (in runs)" to "%,d".format(runs.sumOf { it.tickets }),
+            "Personal tickets (raw runs)" to "%,d".format(runs.sumOf { it.tickets }),
             "Sparklings (you / seen)" to "${SparklingLog.entries.count { it.player.equals(self, true) }} / ${SparklingLog.entries.size}",
             "Sparkling dex" to "${Achievements.ownDex().size}/$all",
-            "Tickets since sparkling" to "${SparklingLog.ticketsSinceSparkling}",
+            "Tickets since sparkling (raw)" to "${SparklingLog.ticketsSinceSparkling}",
             "Macaws" to "${runs.sumOf { it.macaws }}" + if (runs.isEmpty()) "" else " §7· ${runs.count { it.macaws > 0 } * 100 / runs.size}% of runs",
             "Runs since a Macaw" to "${Achievements.runsSinceMacaw}",
             "Contests completed" to "${Achievements.contestsCompleted}")

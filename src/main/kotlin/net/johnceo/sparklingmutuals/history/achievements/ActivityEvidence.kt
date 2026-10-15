@@ -36,6 +36,11 @@ class ActivityEvidence {
     private fun observed(at: Long) { coverageStart = minOf(coverageStart ?: at, at) }
     fun admissions(scope: AchievementScope): Int = admissionEvents.values.count { it.scope?.key == scope.key }
     fun contests(scope: AchievementScope): Int = contestEvents.values.count { it.scope?.key == scope.key }
+    /** Coverage belongs to the selected profile; another profile's event cannot establish it. */
+    fun coverageStart(scope: AchievementScope): Long? =
+        (admissionEvents.values.filter { it.scope?.key == scope.key }.map { it.at } +
+            contestEvents.values.filter { it.scope?.key == scope.key }.map { it.at } +
+            listOfNotNull(intervals[scope.key]?.startedAt)).minOrNull()
     /** Modeled reward at 1.25 tickets per qualifying contest; never actual spent tickets. */
     fun expectedRewardTickets(scope: AchievementScope): Double = contests(scope) * 1.25
     fun ticketsSinceOwnSparkling(scope: AchievementScope): Int? = intervals[scope.key]?.tickets

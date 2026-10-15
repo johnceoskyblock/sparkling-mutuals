@@ -17,19 +17,19 @@ import net.minecraft.network.chat.Component
 import net.minecraft.network.chat.HoverEvent
 import net.minecraft.sounds.SoundEvents
 
-/** Rarity, lowest first, with its chat colour and ARGB. */
-enum class AchievementTier(val code: String, val argb: Int) {
-    COMMON("§f", 0xFFFFFFFF.toInt()), UNCOMMON("§a", 0xFF55FF55.toInt()), RARE("§9", 0xFF5555FF.toInt()),
-    EPIC("§5", 0xFFAA00AA.toInt()), LEGENDARY("§6", 0xFFFFAA00.toInt()), MYTHIC("§d", 0xFFFF55FF.toInt()),
-    DIVINE("§b", 0xFF55FFFF.toInt()), SPECIAL("§c", 0xFFFF5555.toInt())
+/** Serialized tier names with explicit presentation policy; SPECIAL is a novelty category. */
+enum class AchievementTier(val code: String, val argb: Int, val displayRank: Int, val fanfare: Boolean = false, val title: Boolean = false) {
+    COMMON("§f", 0xFFFFFFFF.toInt(), 0), UNCOMMON("§a", 0xFF55FF55.toInt(), 0), RARE("§9", 0xFF5555FF.toInt(), 2),
+    EPIC("§5", 0xFFAA00AA.toInt(), 3), LEGENDARY("§6", 0xFFFFAA00.toInt(), 4, false, true), MYTHIC("§d", 0xFFFF55FF.toInt(), 5, true, true),
+    DIVINE("§b", 0xFF55FFFF.toInt(), 6, true, true), SPECIAL("§c", 0xFFFF5555.toInt(), 0)
 }
 
-/** What an achievement is measured against; anything but EVENT gets a progress bar. */
-enum class Measure { EVENT, RUNS, HOURS, CAUGHT, COINS, OWN_SPARKLINGS, UNIQUES, DRY_SPARKLING, DRY_UNIQUE, RUNS_SINCE_MACAW, CONTESTS }
+/** Units are rendered through typed progress; unknown coverage never receives a bar. */
+enum class Measure { EVENT, RUNS, HOURS, CAUGHT, COINS, OWN_SPARKLINGS, UNIQUES, DRY_SPARKLING, DRY_UNIQUE, RUNS_SINCE_MACAW, CONTESTS, MODELED_SPARKLING, MODELED_UNIQUE, VERIFIED_TICKETS, VERIFIED_CONTESTS }
 
 data class Achievement(val id: String, val name: String, val description: String, val tier: AchievementTier,
-    val measure: Measure = Measure.EVENT, val goal: Long = 1, val secret: Boolean = false) {
-    val hasProgress get() = measure != Measure.EVENT && goal > 1
+    val measure: Measure = Measure.EVENT, val goal: Long = 1, val secret: Boolean = false, val modeledHazardGoal: Double? = null) {
+    val hasProgress get() = modeledHazardGoal != null || measure != Measure.EVENT && goal > 1
 }
 
 /**
@@ -39,68 +39,7 @@ data class Achievement(val id: String, val name: String, val description: String
  * the existing history already earns, quietly, in one line.
  */
 object Achievements {
-    private val tiers = AchievementTier.entries
-    val definitions: List<Achievement> = listOf(
-        Achievement("first_sparkle", "First Sparkle", "Catch your first sparkling critter.", AchievementTier.COMMON),
-        Achievement("party_double", "Shared Shine", "Your party catches 2 sparklings in one run.", AchievementTier.LEGENDARY),
-        Achievement("party_triple", "Sparkle Storm", "Your party catches 3 sparklings in one run.", AchievementTier.DIVINE),
-        Achievement("own_triple", "Hat Trick", "Catch 3 sparklings yourself in one run.", AchievementTier.SPECIAL),
-        Achievement("sparkle_10", "Glimmer", "Catch 10 sparklings.", AchievementTier.UNCOMMON, Measure.OWN_SPARKLINGS, 10),
-        Achievement("sparkle_25", "Gleam", "Catch 25 sparklings.", AchievementTier.RARE, Measure.OWN_SPARKLINGS, 25),
-        Achievement("sparkle_50", "Radiance", "Catch 50 sparklings.", AchievementTier.EPIC, Measure.OWN_SPARKLINGS, 50),
-        Achievement("sparkle_100", "Supernova", "Catch 100 sparklings.", AchievementTier.LEGENDARY, Measure.OWN_SPARKLINGS, 100),
-        Achievement("unique_10", "Collector", "Have 10 different sparklings.", AchievementTier.UNCOMMON, Measure.UNIQUES, 10),
-        Achievement("unique_20", "Curator", "Have 20 different sparklings.", AchievementTier.RARE, Measure.UNIQUES, 20),
-        Achievement("unique_30", "Archivist", "Have 30 different sparklings.", AchievementTier.EPIC, Measure.UNIQUES, 30),
-        Achievement("max_sparklings", "Max Sparklings", "Have every sparkling critter.", AchievementTier.DIVINE, Measure.UNIQUES, 37),
-        Achievement("legendary_sparkle", "Legend in Lights", "Catch a sparkling Macaw, Wumpa or Doomspiral.", AchievementTier.LEGENDARY),
-        Achievement("gemzie_sparkle", "Gem of a Gemzie", "Catch a sparkling Gemzie.", AchievementTier.EPIC),
-        Achievement("set_forest", "Forest Glitter", "Have every Forest sparkling.", AchievementTier.EPIC),
-        Achievement("set_cavern", "Cavern Glitter", "Have every Cavern sparkling.", AchievementTier.EPIC),
-        Achievement("set_icy", "Icy Glitter", "Have every Icy sparkling.", AchievementTier.EPIC),
-        Achievement("set_haunted", "Haunted Glitter", "Have every Haunted sparkling.", AchievementTier.EPIC),
-        Achievement("dry_runs_10", "Unlucky", "10 runs in a row without catching a sparkling.", AchievementTier.UNCOMMON, Measure.DRY_SPARKLING, 10),
-        Achievement("dry_runs_20", "Very Unlucky", "20 runs in a row without catching a sparkling.", AchievementTier.RARE, Measure.DRY_SPARKLING, 20),
-        Achievement("dry_runs_30", "Cursed", "30 runs in a row without catching a sparkling.", AchievementTier.EPIC, Measure.DRY_SPARKLING, 30),
-        Achievement("dry_runs_40", "Forsaken", "40 runs in a row without catching a sparkling.", AchievementTier.LEGENDARY, Measure.DRY_SPARKLING, 40),
-        Achievement("dry_runs_50", "Doomed", "50 runs in a row without catching a sparkling.", AchievementTier.MYTHIC, Measure.DRY_SPARKLING, 50),
-        Achievement("no_unique_runs_5", "Same Old Sparkle", "5 runs in a row without a new unique sparkling.", AchievementTier.RARE, Measure.DRY_UNIQUE, 5),
-        Achievement("no_unique_runs_10", "Deja Vu", "10 runs in a row without a new unique sparkling.", AchievementTier.EPIC, Measure.DRY_UNIQUE, 10),
-        Achievement("no_unique_runs_25", "Groundhog Day", "25 runs in a row without a new unique sparkling.", AchievementTier.LEGENDARY, Measure.DRY_UNIQUE, 25),
-        Achievement("no_unique_runs_50", "Broken Record", "50 runs in a row without a new unique sparkling.", AchievementTier.MYTHIC, Measure.DRY_UNIQUE, 50),
-        Achievement("no_unique_runs_250", "Eternal Rerun", "250 runs in a row without a new unique sparkling.", AchievementTier.DIVINE, Measure.DRY_UNIQUE, 250),
-        Achievement("macaw_3", "Bird Watcher", "Your party secures 3 Macaws in one run.", AchievementTier.RARE),
-        Achievement("macaw_4", "Flock Together", "Your party secures 4 Macaws in one run.", AchievementTier.EPIC),
-        Achievement("macaw_8", "Macaw Mania", "Your party secures 8 Macaws in one run.", AchievementTier.LEGENDARY),
-        Achievement("no_macaw_3", "Where's the Macaw?", "3 runs in a row without a Macaw.", AchievementTier.UNCOMMON, Measure.RUNS_SINCE_MACAW, 3),
-        Achievement("no_macaw_5", "Macaw Drought", "5 runs in a row without a Macaw.", AchievementTier.RARE, Measure.RUNS_SINCE_MACAW, 5),
-        Achievement("no_macaw_8", "Extinct", "8 runs in a row without a Macaw.", AchievementTier.EPIC, Measure.RUNS_SINCE_MACAW, 8),
-        Achievement("emerald_dye", "Emerald Dye", "Find an Emerald Dye.", AchievementTier.DIVINE),
-        Achievement("run_10", "Safari Rookie", "Finish 10 Safari runs.", AchievementTier.COMMON, Measure.RUNS, 10),
-        Achievement("run_50", "Regular", "Finish 50 Safari runs.", AchievementTier.UNCOMMON, Measure.RUNS, 50),
-        Achievement("run_100", "Ranger", "Finish 100 Safari runs.", AchievementTier.RARE, Measure.RUNS, 100),
-        Achievement("run_500", "Warden of the Wilds", "Finish 500 Safari runs.", AchievementTier.EPIC, Measure.RUNS, 500),
-        Achievement("hours_10", "Time Flies", "Spend 10 hours on Safari runs.", AchievementTier.UNCOMMON, Measure.HOURS, 10),
-        Achievement("hours_50", "No Life", "Spend 50 hours on Safari runs.", AchievementTier.EPIC, Measure.HOURS, 50),
-        Achievement("party_caught_1000", "Catcher", "Your party catches 1,000 critters with you.", AchievementTier.UNCOMMON, Measure.CAUGHT, 1000),
-        Achievement("party_caught_5000", "Trapper", "Your party catches 5,000 critters with you.", AchievementTier.RARE, Measure.CAUGHT, 5000),
-        Achievement("party_caught_10000", "Exterminator", "Your party catches 10,000 critters with you.", AchievementTier.EPIC, Measure.CAUGHT, 10000),
-        Achievement("party_caught_25000", "Critter Apocalypse", "Your party catches 25,000 critters with you.", AchievementTier.LEGENDARY, Measure.CAUGHT, 25000),
-        Achievement("party_caught_50000", "Extinction Event", "Your party catches 50,000 critters with you.", AchievementTier.MYTHIC, Measure.CAUGHT, 50000),
-        Achievement("coins_100m", "Shard Shark", "Earn 100M coins of shards and feathers from runs.", AchievementTier.RARE, Measure.COINS, 100_000_000L),
-        Achievement("coins_1b", "Shard Tycoon", "Earn 1B coins of shards and feathers from runs.", AchievementTier.LEGENDARY, Measure.COINS, 1_000_000_000L),
-        Achievement("full_house", "Full House", "Your party secures all 37 critters in a run.", AchievementTier.UNCOMMON),
-        Achievement("speed_3", "Speedrunner", "Secure all 37 critters in a run under 3:00.", AchievementTier.EPIC),
-        Achievement("speed_230", "Any%", "Secure all 37 critters in a run under 2:30.", AchievementTier.LEGENDARY),
-        Achievement("ten_of_37", "Pulling Your Weight", "Catch 10 different critters yourself in a run.", AchievementTier.RARE),
-        Achievement("contests_10", "Contestant", "Complete 10 of Miria's contests.", AchievementTier.UNCOMMON, Measure.CONTESTS, 10),
-        Achievement("contests_50", "Honey Hoarder", "Complete 50 of Miria's contests.", AchievementTier.RARE, Measure.CONTESTS, 50),
-        Achievement("contests_100", "Miria's Favourite", "Complete 100 of Miria's contests.", AchievementTier.EPIC, Measure.CONTESTS, 100),
-        Achievement("night_owl", "Night Owl", "Finish a run between 3 and 5 in the morning.", AchievementTier.UNCOMMON, secret = true),
-        Achievement("dedication", "Dedication", "Finish 50 runs in one day.", AchievementTier.RARE, secret = true),
-        Achievement("back_to_back", "Back to Back", "Catch a sparkling in two runs in a row.", AchievementTier.LEGENDARY, secret = true),
-        Achievement("instant", "Instant Gratification", "Catch a sparkling within 5 tickets of your last one.", AchievementTier.EPIC, secret = true),
-    )
+    val definitions: List<Achievement> = AchievementDefinitions.all
     fun all(): List<Achievement> = definitions
 
     class Data(var initialised: Boolean = false, var unlocked: MutableMap<String, Long> = linkedMapOf(),
@@ -164,11 +103,16 @@ object Achievements {
         if (++ticks % 200 == 0) checkAll(true)
     }
 
+    fun collectOwnSparkling(scope: AchievementScope?, at: Long, announce: Boolean) {
+        if (scope == null) activity.invalidateIntervals()
+        else if (activity.recordOwnSparkling(scope, at)) unlock("instant_v2", announce)
+        save()
+    }
+
     fun onSparkling(entry: SparklingEntry, own: Boolean) {
         if (own) {
             val scope = Minecraft.getInstance().player?.uuid?.toString()?.let(::currentActivityScope)
-            if (scope == null) activity.invalidateIntervals() else activity.recordOwnSparkling(scope, entry.at)
-            if (data.ticketsSinceOwnSparkling <= 5 && ownEntries().size > 1) unlock("instant", true)
+            collectOwnSparkling(scope, entry.at, true)
             data.ticketsSinceOwnSparkling = 0; data.runsSinceOwnSparkling = 0
             if (entry.critter in setOf("Macaw", "Wumpa", "Doomspiral")) unlock("legendary_sparkle", true)
             if (entry.critter == "Gemzie") unlock("gemzie_sparkle", true)
@@ -216,7 +160,7 @@ object Achievements {
     private fun checkAll(announce: Boolean) {
         if (!data.initialised) return
         for (achievement in definitions)
-            if (achievement.measure != Measure.EVENT && !isUnlocked(achievement) && progress(achievement) >= achievement.goal) unlock(achievement.id, announce)
+            if (achievement.measure != Measure.EVENT && !isUnlocked(achievement) && progressState(achievement).reached) unlock(achievement.id, announce)
         val dex = ownDex()
         if (dex.isNotEmpty()) unlock("first_sparkle", announce)
         for (biome in SafariBiome.entries) if (dex.containsAll(biome.critters.map { it.name }))
@@ -241,6 +185,44 @@ object Achievements {
         if (RunHistory.runs.count { Instant.ofEpochMilli(it.start).atZone(zone).toLocalDate() == day } >= 50) unlock("dedication", announce)
     }
 
+    fun legacyAwards(): List<LegacyAward> = state.legacyAwards.values.toList()
+
+    fun progressState(achievement: Achievement): AchievementProgress {
+        val scope = OwnStats.dexSnapshot?.scope
+        val goal = achievement.modeledHazardGoal ?: achievement.goal.toDouble()
+        return when (achievement.measure) {
+            Measure.MODELED_SPARKLING, Measure.MODELED_UNIQUE -> {
+                val evidence = scope?.let { state.droughtByScope[it.key] }
+                val start = evidence?.coverageStart
+                val value = if (start == null) null else if (achievement.measure == Measure.MODELED_UNIQUE)
+                    evidence.bestUniqueHazard else evidence.bestOrdinaryHazard
+                AchievementProgress(value, goal, "modeled hazard", if (start == null) "Unknown coverage" else "Recorded since ${coverageDate(start)}; personal observations only", true)
+            }
+            Measure.VERIFIED_TICKETS, Measure.VERIFIED_CONTESTS -> {
+                val start = scope?.let(activity::coverageStart)
+                val value = if (scope == null || start == null) null else if (achievement.measure == Measure.VERIFIED_TICKETS)
+                    activity.admissions(scope).toDouble() else activity.contests(scope).toDouble()
+                val unit = if (achievement.measure == Measure.VERIFIED_TICKETS) "personal tickets" else "qualifying contests"
+                AchievementProgress(value, goal, unit, if (value == null) "Unknown coverage" else "Recorded lower bound since ${coverageDate(start!!)}", false)
+            }
+            else -> {
+                val unit = when (achievement.measure) {
+                    Measure.RUNS, Measure.RUNS_SINCE_MACAW, Measure.DRY_SPARKLING, Measure.DRY_UNIQUE -> "recorded runs"
+                    Measure.HOURS -> "hours"
+                    Measure.CAUGHT -> "captures"
+                    Measure.COINS -> "estimated coins"
+                    Measure.OWN_SPARKLINGS -> "own sparklings"
+                    Measure.UNIQUES -> "species"
+                    else -> "events"
+                }
+                val coverage = if (achievement.measure == Measure.CAUGHT) "Mixed lower bound: max(shared logs, own API); never summed" else "Available history"
+                AchievementProgress(progress(achievement).toDouble(), goal, unit, coverage, false)
+            }
+        }
+    }
+    private fun coverageDate(at: Long) = Instant.ofEpochMilli(at).atZone(ZoneId.systemDefault()).toLocalDate().toString()
+
+    /** Historical integer measures only; coverage-aware/model consumers must use progressState. */
     fun progress(achievement: Achievement): Long = when (achievement.measure) {
         Measure.EVENT -> if (isUnlocked(achievement)) 1 else 0
         // Hypixel's bestiary also counts runs and catches from before the mod was installed.
@@ -254,6 +236,7 @@ object Achievements {
         Measure.DRY_UNIQUE -> maxOf(data.longestRunsWithoutUnique, data.runsSinceOwnUnique).toLong()
         Measure.RUNS_SINCE_MACAW -> maxOf(data.longestRunsWithoutMacaw, data.runsSinceMacaw).toLong()
         Measure.CONTESTS -> data.contestsCompleted.toLong()
+        else -> error("Use typed progress for modeled or coverage-aware achievements")
     }
 
     fun isUnlocked(achievement: Achievement) = achievement.id in state.currentUnlocks
@@ -280,10 +263,10 @@ object Achievements {
         player.sendSystemMessage(LocalChat.component("[SM]   §7${achievement.description} §8(${tier.code}${tier.name}§8)"))
         if (ConfigManager.achievementSound) {
             // Mythic and Divine get the challenge-advancement fanfare; the rest a lighter chime.
-            if (tier.ordinal >= AchievementTier.MYTHIC.ordinal) player.playSound(SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 1f, 1f)
+            if (tier.fanfare) player.playSound(SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 1f, 1f)
             else player.playSound(SoundEvents.PLAYER_LEVELUP, .6f, 1.6f)
         }
-        if (tier.ordinal >= AchievementTier.LEGENDARY.ordinal) {
+        if (tier.title) {
             client.gui.smSetTimes(5, 50, 15)
             client.gui.smSetSubtitle(Component.literal("${tier.code}${achievement.name}"))
             client.gui.smSetTitle(Component.literal("§6§lACHIEVEMENT"))

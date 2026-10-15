@@ -11,14 +11,14 @@ import net.minecraft.client.Minecraft
 
 /**
  * Every sparkling caught while this client was watching (yours and party members' announced in chat), with the
- * tickets the party used since the previous one. Saved to `sparkling-mutuals-sparklings.json`.
+ * recorded personal tickets since the previous observed sparkling (legacy intervals unverified). Saved to `sparkling-mutuals-sparklings.json`.
  */
 object SparklingLog {
     class Data(var entries: MutableList<SparklingEntry> = mutableListOf(), var ticketsSinceSparkling: Int = 0)
     private var data = Data()
     private val executor = Executors.newSingleThreadExecutor { Thread(it, "Sparkling Mutuals sparkling log").apply { isDaemon = true } }
     val entries: List<SparklingEntry> get() = data.entries
-    /** Tickets the party has used since anyone's last sparkling. */
+    /** Recorded personal tickets since anyone's last observed sparkling; legacy intervals are unverified. */
     val ticketsSinceSparkling get() = data.ticketsSinceSparkling
 
     fun register() {

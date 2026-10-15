@@ -42,7 +42,7 @@ def reproduce(exposures):
                 survival20000=survival(20000), quantiles=quantiles)
 
 rows = list(csv.DictReader((ASSETS / "achievement-mapping-v2.csv").open(encoding="utf-8", newline="")))
-source = (ROOT / "src/main/kotlin/net/johnceo/sparklingmutuals/history/Achievements.kt").read_text(encoding="utf-8")
+source = (ASSETS / "achievement-definitions-v1.kt.txt").read_text(encoding="utf-8")
 definitions = re.findall(r'Achievement\("([^"]+)", "[^"]*", "[^"]*", AchievementTier\.(\w+)([^\n]*)', source)
 existing = {identifier: (tier, re.search(r'Measure\.\w+, ([\d_L]+)', rest)) for identifier, tier, rest in definitions}
 old = [row for row in rows if row["id"] != "NEW"]
@@ -58,5 +58,24 @@ for row in rows:
         tier, goal = existing[row["id"]]
         assert row["old_tier"] == tier, row["id"]
         assert int(row["old_goal"]) == (int(goal[1].replace("_", "").replace("L", "")) if goal else 1), row["id"]
+# Validate the actual shipped literal definitions, independently from the historical baseline.
+current_source = (ROOT / "src/main/kotlin/net/johnceo/sparklingmutuals/history/achievements/AchievementDefinitions.kt").read_text(encoding="utf-8")
+current_defs = re.findall(r'Achievement\("([^\"]+)", "[^\"]*", "[^\"]*", AchievementTier\.(\w+)([^\n]*)', current_source)
+current = {identifier: (tier, rest) for identifier, tier, rest in current_defs}
+expected = {row["new_id"]: row for row in rows if not row["new_id"].startswith("legacy:")}
+assert len(current_defs) == len(current) == len(expected) == 64
+assert set(current) == set(expected)
+for identifier, (tier, rest) in current.items():
+    row = expected[identifier]
+    assert tier == row["new_tier"], identifier
+    goal = re.search(r'Measure\.\w+, ([\d_L]+)', rest)
+    hazard = re.search(r'modeledHazardGoal = ([\d.]+)', rest)
+    if row["new_goal"].startswith("hazard >= "):
+        assert hazard and float(hazard[1]) == float(row["new_goal"].split()[-1]), identifier
+    elif row["new_goal"].isdigit():
+        assert not hazard, identifier
+        assert int(row["new_goal"]) == (int(goal[1].replace("_", "").replace("L", "")) if goal else 1), identifier
+    else:
+        assert identifier == "instant_v2" and "secret = true" in rest, identifier
 print(json.dumps(dict(source_sha256=SHA, baseline=reproduce(rates), full=reproduce(full), lazy=reproduce(lazy),
-                     mapping=dict(existing=59, additions=19, rows=78, unique_destinations=78)), indent=2))
+                     mapping=dict(existing=59, additions=19, rows=78, unique_destinations=78, current_definitions=64, archived_criteria=14)), indent=2))
