@@ -22,10 +22,10 @@ object SafariFullClear {
         "Solsnatcher" to 4, "Gimmiegold" to 3, "Hideonwall" to 2, "Hideyho" to 1, "Doomspiral" to 1)
     fun minimum(species: String) = minimums.getValue(species)
     fun eligible(run: SafariRun, biome: SafariBiome, evidence: BiomeClearEvidence): Boolean {
-        val macawException = biome == SafariBiome.FOREST && evidence.nearbyMacaws > 0 &&
+        val onlyMacawsRemain = biome == SafariBiome.FOREST && evidence.nearbyMacaws > 0 &&
             evidence.nearbyCritters == evidence.nearbyMacaws
-        if (run.endedAt != null || !evidence.observed || evidence.nearbyCritters != 0 && !macawException) return false
-        val remaining = if (macawException) setOf("Macaw") else emptySet()
+        if (run.endedAt != null || !evidence.observed || evidence.nearbyCritters != 0 && !onlyMacawsRemain) return false
+        val remaining = if (onlyMacawsRemain) setOf("Macaw") else emptySet()
         return biome.critters.all { run.captureComplete(it.name, personalOnly = true, remaining, evidence) }
     }
     fun recordClear(run: SafariRun, biome: SafariBiome, evidence: BiomeClearEvidence,

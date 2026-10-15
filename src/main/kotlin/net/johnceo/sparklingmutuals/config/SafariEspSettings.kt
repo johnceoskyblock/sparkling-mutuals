@@ -4,6 +4,9 @@ import io.github.notenoughupdates.moulconfig.annotations.*
 
 /** Modes own targets; these switches only control where their highlights appear. */
 class SafariEspSettings {
+    @JvmField @ConfigOption(name = "ESP text scale", desc = "Size of floor-drop names, timers, nest labels and teammate names. 1 = original size; default 2.")
+    @ConfigEditorSlider(minValue = .5f, maxValue = 4f, minStep = .25f)
+    var textScale = SafariEspConfig.textScale
     @JvmField @ConfigOption(name = "Floor drops: only in current biome", desc = "Limit floor highlights to your current biome.")
     @ConfigEditorBoolean var floor = SafariEspConfig.groups.getValue("floor").onlyInBiome
     @JvmField @ConfigOption(name = "Forest: only in current biome", desc = "Limit Forest critter highlights to Forest.")
@@ -15,7 +18,9 @@ class SafariEspSettings {
     @JvmField @ConfigOption(name = "Haunted: only in current biome", desc = "Limit Haunted critter highlights to Haunted.")
     @ConfigEditorBoolean var haunted = SafariEspConfig.groups.getValue("haunted").onlyInBiome
     fun apply(): Boolean {
-        var changed = false
+        val scale = SafariEspConfig.validTextScale(textScale)
+        var changed = SafariEspConfig.textScale != scale
+        SafariEspConfig.textScale = scale
         mapOf("floor" to floor, "forest" to forest, "cavern" to cavern, "icy" to icy, "haunted" to haunted).forEach { (key, value) ->
             val group = SafariEspConfig.groups.getValue(key)
             if (group.onlyInBiome != value) changed = true

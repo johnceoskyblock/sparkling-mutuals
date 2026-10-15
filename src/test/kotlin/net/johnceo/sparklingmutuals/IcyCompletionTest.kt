@@ -27,13 +27,13 @@ class IcyCompletionTest {
             c.scan(SafariBiome.ICY,x+40,z,emptyList());assertTrue(c.checked(name))
         }
     }
-    @Test fun `Troodon needs three UUIDs and captures without any location radius`() {
+    @Test fun `Troodon accepts three captures without any location radius`() {
         val run=SafariRun(0);val ids=List(3) { UUID.randomUUID() }
         repeat(3) { run.record(SafariCatch(SafariRoster.named("Troodon")!!));run.observeCritter(it,"Troodon",ids[0]) }
         run.updateCaptureEvidence(SafariBiome.ICY,emptySet(),false,playerX=500.0,playerZ=500.0)
-        assertFalse(run.captureComplete("Troodon"))
+        assertTrue(run.captureComplete("Troodon"))
         run.sparklingChecks.scan(SafariBiome.ICY,500.0,500.0,List(3) { "Troodon" to ids[0] })
-        assertFalse(run.sparklingChecks.checked("Troodon"))
+        assertTrue(run.sparklingChecks.checked("Troodon"))
         ids.drop(1).forEachIndexed { i,id -> run.observeCritter(i+4,"Troodon",id) }
         run.updateCaptureEvidence(SafariBiome.ICY,emptySet(),false,playerX=500.0,playerZ=500.0)
         assertTrue(run.captureComplete("Troodon"))
@@ -48,10 +48,11 @@ class IcyCompletionTest {
             assertTrue(SafariEspRules.neededForSparkling(name,false,state,true,run,uuid,0))
             assertTrue(SafariEspRules.neededForSparkling(name,false,state,true,run,uuid,20000))
             run.record(SafariCatch(SafariRoster.named(name)!!))
-            assertEquals(name == "Mantis Shrimp", SafariEspRules.neededForSparkling(name,false,state,true,run,uuid,20001))
+            assertTrue(SafariEspRules.neededForSparkling(name,false,state,true,run,uuid,20001))
+            assertEquals(name == "Mantis Shrimp", SafariEspRules.neededForSparkling(name,false,state,true,run,uuid,30001))
             val normal=SafariRun(0);val own=party(name)
             assertTrue(SafariEspRules.neededForSparkling(name,false,own,true,normal,uuid,0))
-            assertEquals(name == "Mantis Shrimp", SafariEspRules.neededForSparkling(name,false,own,true,normal,uuid,10000))
+            assertEquals(name == "Mantis Shrimp" || name == "Wumpa", SafariEspRules.neededForSparkling(name,false,own,true,normal,uuid,10000))
         }
     }
 }

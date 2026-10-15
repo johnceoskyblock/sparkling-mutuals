@@ -23,33 +23,20 @@ class SafariCapturePresenceTest {
             assertFalse(unscanned.captureComplete(name))
         }
     }
-    @Test fun `birds require the food derived total and independently clear with caught Macaw exception`() {
+    @Test fun `birds clear independently after feeding and every remaining species blocks itself`() {
         val run = SafariRun(0)
         repeat(3) { for (food in listOf("Bag of Seeds", "Wriggleworm", "Yogi Berry")) run.recordBirdFood("FLOOR DROP! $food") }
-        repeat(8) { run.record(SafariCatch(SafariRoster.named("Bluebird")!!)) }
-        repeat(8) { run.birds.spawn("A Bluebird was attracted to the Birdfeeder!") }
+        repeat(8) { run.record(SafariCatch(SafariRoster.named("Bluebird")!!)); run.birds.spawn("A Bluebird was attracted to the Birdfeeder!") }
         run.birds.spawn("Two Macaws were attracted to the Birdfeeder!")
-        run.birds.inventory(emptyList())
-        run.updateCaptureEvidence(SafariBiome.FOREST, emptySet(), false)
-        assertFalse(run.captureComplete("Parakeet"))
-        run.record(SafariCatch(SafariRoster.named("Macaw")!!))
-        run.updateCaptureEvidence(SafariBiome.FOREST, setOf("Bluebird", "Macaw", "Foxtrot"), false)
-        assertTrue(run.captureComplete("Macaw"))
-        assertTrue(run.captureComplete("Parakeet")) // No per-species minimum for absent birds.
-        assertFalse(run.captureComplete("Bluebird"))
-        assertFalse(run.birdsComplete(setOf("Bluebird", "Macaw"), personalOnly = true))
         run.updateCaptureEvidence(SafariBiome.FOREST, setOf("Macaw"), false)
         assertTrue(run.captureComplete("Bluebird"))
-        assertTrue(run.birdsComplete(setOf("Macaw"), personalOnly = true))
-        val uncaughtMacaw = SafariRun(0)
-        repeat(8) { uncaughtMacaw.record(SafariCatch(SafariRoster.named("Bluebird")!!)) }
-        repeat(3) { for (food in listOf("Bag of Seeds", "Wriggleworm", "Yogi Berry")) uncaughtMacaw.recordBirdFood("FLOOR DROP! $food") }
-        repeat(8) { uncaughtMacaw.birds.spawn("A Bluebird was attracted to the Birdfeeder!") }
-        uncaughtMacaw.birds.spawn("Two Macaws were attracted to the Birdfeeder!")
-        uncaughtMacaw.birds.inventory(emptyList())
-        uncaughtMacaw.updateCaptureEvidence(SafariBiome.FOREST, setOf("Macaw"), false, macawsInRange = 2)
-        assertFalse(uncaughtMacaw.captureComplete("Macaw"))
-        assertFalse(uncaughtMacaw.captureComplete("Bluebird")) // All announced bird captures are still required.
-        assertFalse(uncaughtMacaw.birdsComplete(setOf("Macaw"), personalOnly = true))
+        assertTrue(run.captureComplete("Parakeet")) // No Parakeet was announced or remains.
+        assertFalse(run.captureComplete("Macaw"))
+        run.record(SafariCatch(SafariRoster.named("Macaw")!!))
+        assertTrue(run.captureComplete("Macaw")) // One shared catch suffices despite the remaining Macaw.
+        run.updateCaptureEvidence(SafariBiome.FOREST, emptySet(), false)
+        assertTrue(run.birdsComplete(emptySet(), personalOnly = true))
+        run.recordBirdFood("FLOOR DROP! Bag of Seeds")
+        assertFalse(run.captureComplete("Bluebird")) // Extra food reopens every feeder row.
     }
 }

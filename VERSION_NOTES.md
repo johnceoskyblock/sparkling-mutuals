@@ -46,3 +46,7 @@ Minecraft 26.1.2 / Java 25 / Fabric. Requires Fabric API and Fabric Language Kot
 Validation: 510 automated regression tests and the clean build passed. Live in-game rendering and server integration have not been tested for this release.
 
 [Full changelog](https://github.com/johnceoskyblock/sparkling-mutuals/compare/v2.0.0...v3.0.0)
+
+## Last updated
+
+2026-10-15 - Added document revision tracking.

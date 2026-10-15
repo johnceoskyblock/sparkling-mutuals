@@ -1,7 +1,9 @@
 package net.johnceo.sparklingmutuals.contest
 
 /** Client-independent personal timers and ordered click/chat correlation. */
-class HoneyHiveTracker(private var refillAt: MutableMap<String, Long>, private var queenFull: MutableSet<String> = mutableSetOf()) {
+class HoneyHiveTracker(private var refillAt: MutableMap<String, Long>, private var queenFull: MutableSet<String> = mutableSetOf(),
+    private var provisional: Boolean = false) {
+    private val confirmedKeys = mutableSetOf<String>()
     private data class Click(val key: String, val at: Long, var eligible: Boolean = true)
     private val clicks = ArrayDeque<Click>()
     private var lastLoot: Click? = null
@@ -40,28 +42,31 @@ class HoneyHiveTracker(private var refillAt: MutableMap<String, Long>, private v
             }
             else -> return false
         }
+        confirmedKeys.add(key)
         changedAt[key] = now
         return true
     }
 
-    /** Server holograms take priority over the block, with a short grace for packets after a loot. */
-    fun observe(key: String, label: String?, honeyLevel: Int, now: Long): Boolean {
-        // A Queen Bee remains full until another confirmed loot, even if old packets still say empty.
+    /** Personal holograms and confirmed chat drive readiness; decorative honey levels are ignored. */
+    @Suppress("UNUSED_PARAMETER")
+    fun observe(key: String, label: String?, honeyLevel: Int? = null, now: Long): Boolean {
+        // A confirmed Queen Bee refill wins over delayed empty holograms until the next confirmed loot.
         if (key in queenFull) return false
         if (changedAt[key]?.let { now - it in 0..SERVER_GRACE } == true) return false
         val previous = refillAt[key]
         val countdown = label?.let(::countdownMillis)
+        val wasQueenFull = key in queenFull
         when {
-            label == "Click to loot!" -> { refillAt.remove(key); emptyObserved.remove(key); allowClicks(key) }
-            countdown != null -> { refillAt[key] = now + countdown; emptyObserved.add(key) }
-            honeyLevel == 5 -> { refillAt.remove(key); emptyObserved.remove(key); allowClicks(key) }
-            honeyLevel == 0 -> {
-                // A repeated empty block does not keep postponing the personal one-hour deadline.
-                if (emptyObserved.add(key) && HoneyHiveRules.state(now, previous) == HiveState.FULL)
-                    refillAt[key] = now + HoneyHiveRules.REFILL_MILLIS
+            label?.trim()?.equals("Click to loot!", ignoreCase = true) == true -> {
+                refillAt.remove(key); emptyObserved.remove(key); allowClicks(key)
             }
+            countdown != null -> {
+                queenFull.remove(key)
+                refillAt[key] = now + countdown; emptyObserved.add(key)
+            }
+            // The build's honey level is not a per-player readiness signal.
         }
-        return previous != refillAt[key]
+        return previous != refillAt[key] || wasQueenFull != (key in queenFull)
     }
 
     fun resetSession() { clicks.clear(); lastLoot = null; changedAt.clear(); emptyObserved.clear() }
@@ -69,9 +74,11 @@ class HoneyHiveTracker(private var refillAt: MutableMap<String, Long>, private v
     /** The profile join line can arrive between a click, loot and Queen Bee messages. */
     fun promote(times: MutableMap<String, Long>, full: MutableSet<String>) {
         // Confirmed loots while the profile was unknown are newer than its saved Queen Bee state.
-        full.removeAll(refillAt.keys)
-        if (times !== refillAt) times.putAll(refillAt)
-        full.addAll(queenFull)
+        val transferable = if (provisional) refillAt.filterKeys { it in confirmedKeys } else refillAt
+        full.removeAll(transferable.keys)
+        if (times !== refillAt) times.putAll(transferable)
+        full.addAll(if (provisional) queenFull.filter { it in confirmedKeys } else queenFull)
+        provisional = false
         full.forEach(times::remove)
         refillAt = times; queenFull = full
     }
@@ -85,9 +92,9 @@ class HoneyHiveTracker(private var refillAt: MutableMap<String, Long>, private v
     companion object {
         private const val CLICK_WINDOW = 5_000L
         private const val SERVER_GRACE = 2_000L
-        private val countdown = Regex("^Refill in: (?:(\\d+)m(?:\\s+)?)?(?:(\\d+)s)?$")
+        private val countdown = Regex("(?i)^Refill in: (?:(\\d+)m(?:\\s+)?)?(?:(\\d+)s)?$")
         fun countdownMillis(text: String): Long? {
-            val match = countdown.matchEntire(text.trim()) ?: return null
+            val match = countdown.matchEntire(net.johnceo.sparklingmutuals.safari.SafariRules.strip(text).replace('\u00a0', ' ').trim()) ?: return null
             if (match.groupValues.drop(1).all { it.isEmpty() }) return null
             val minutes = match.groupValues[1].toLongOrNull() ?: 0
             val seconds = match.groupValues[2].toLongOrNull() ?: 0

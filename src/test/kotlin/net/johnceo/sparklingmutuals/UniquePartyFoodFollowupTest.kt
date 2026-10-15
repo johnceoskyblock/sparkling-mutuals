@@ -36,26 +36,24 @@ class UniquePartyFoodFollowupTest {
         SafariBiome.FOREST.critters.forEach { record(SafariCatch(it)) }
         updateCaptureEvidence(SafariBiome.FOREST, emptySet(), false)
     }
-    @Test fun `Unique party cd is complete outside Cavern despite an earlier unfinished local survey`() {
+    @Test fun `Unique party cd has no effect before or after visiting Cavern`() {
         val run = SafariRun(0); val state = party("Rockmite", "Snoozle")
         run.visitBiome(SafariBiome.CAVERN)
         run.reconcileStructures(SafariBiome.CAVERN, true, true)
         SafariMessages.forRun("Party > Friend: cd", run, true)
-        assertEquals(7, run.completed(SafariMode.UNIQUE, SafariBiome.CAVERN.critters, state))
+        assertEquals(0, run.completed(SafariMode.UNIQUE, SafariBiome.CAVERN.critters, state))
         run.visitBiome(SafariBiome.ICY)
-        assertEquals(9, run.completed(SafariMode.UNIQUE, SafariBiome.CAVERN.critters, state))
+        assertEquals(0, run.completed(SafariMode.UNIQUE, SafariBiome.CAVERN.critters, state))
         run.visitBiome(SafariBiome.CAVERN)
-        assertEquals(7, run.completed(SafariMode.UNIQUE, SafariBiome.CAVERN.critters, state))
+        assertEquals(0, run.completed(SafariMode.UNIQUE, SafariBiome.CAVERN.critters, state))
     }
-    @Test fun `local Unique Forest waits for feeding even when nobody needs sparkling birds`() {
+    @Test fun `owned bird discoveries waive extra Unique feeding work`() {
         val run = forest(); val state = party()
-        assertTrue(run.completed(SafariMode.UNIQUE, SafariBiome.FOREST.critters, state) < 9)
-        assertNull(run.completion.announcement(run, SafariBiome.FOREST, SafariMode.UNIQUE, state))
-        repeat(9) { run.birds.spawn("A Bluebird was attracted to the Birdfeeder!") }
+        assertEquals(9, run.completed(SafariMode.UNIQUE, SafariBiome.FOREST.critters, state))
         assertEquals("fd", run.completion.announcement(run, SafariBiome.FOREST, SafariMode.UNIQUE, state))
     }
     @Test fun `random starting food adds feedings and Macaw pairs consume one food each`() {
-        val run = forest(); val state = party()
+        val run = forest(); val state = party("Bluebird")
         run.inventoryEvidence(listOf("Bag of Seeds" to 2), 0)
         repeat(8) { run.birds.spawn("A Bluebird was attracted to the Birdfeeder!") }
         run.birds.spawn("Two Macaws were attracted to the Birdfeeder!")
@@ -64,14 +62,15 @@ class UniquePartyFoodFollowupTest {
         run.birds.spawn("A Parakeet was attracted to the Birdfeeder!")
         assertNull(run.completion.announcement(run, SafariBiome.FOREST, SafariMode.UNIQUE, state))
         run.birds.spawn("Two Macaws were attracted to the Birdfeeder!")
+        run.sparklingChecks.scan(SafariBiome.FOREST, 3.0, 47.0, emptyList(), birdsSpawned = run.birds.sparklingSpawned)
         assertEquals("fd", run.completion.announcement(run, SafariBiome.FOREST, SafariMode.UNIQUE, state))
     }
-    @Test fun `incoming party fd still completes the Unique bar without local feeding evidence`() {
+    @Test fun `incoming party fd cannot replace local feeding evidence`() {
         ConfigManager.fullClearMode = false; ConfigManager.sparklingMode = false
         val run = forest(); val state = party("Bluebird", "Parakeet", "Macaw")
         SafariMessages.forRun("Party > Friend: fd", run, true)
-        assertEquals(9, run.completed(SafariMode.UNIQUE, SafariBiome.FOREST.critters, state))
-        assertEquals("9/9", SafariPanels.progress(run, true, 0, state).rows.single { it.label == "Forest" }.value)
+        assertEquals(6, run.completed(SafariMode.UNIQUE, SafariBiome.FOREST.critters, state))
+        assertEquals("6/9", SafariPanels.progress(run, true, 0, state).rows.single { it.label == "Forest" }.value)
         assertNull(run.completion.announcement(run, SafariBiome.FOREST, SafariMode.UNIQUE, state))
     }
     @Test fun `Full Clear feeding and capture demand include extra starting inventory`() {

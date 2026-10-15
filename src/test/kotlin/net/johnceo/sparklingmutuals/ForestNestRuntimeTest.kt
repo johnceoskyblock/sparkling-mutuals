@@ -63,7 +63,7 @@ class ForestNestRuntimeTest {
         assertTrue(run.captureComplete("Honeybug"))
         assertFalse(run.captureComplete("Honeybug", personalOnly = true))
     }
-    @Test fun `zero known nests with incomplete survey keeps the counter and internal coverage`() {
+    @Test fun `incomplete nest survey keeps Honeybug listed without helper prose`() {
         net.johnceo.sparklingmutuals.config.ConfigManager.sparklingMode = false
         net.johnceo.sparklingmutuals.config.ConfigManager.fullClearMode = true
         val run = forestRun()
@@ -71,10 +71,9 @@ class ForestNestRuntimeTest {
         run.updateCaptureEvidence(SafariBiome.FOREST, emptySet(), false, false, nestsPunched = 3)
         run.updateNestEvidence(false, 3, 3, 1)
         val rows = SafariPanels.missing(run, SafariBiome.FOREST, false, 0, party = party()).rows
-        assertTrue(rows.any { it.label == "Bee nests to punch" && it.value == "0" })
+        assertTrue(rows.any { it.label == "Honeybug" })
         assertFalse(rows.any { it.label == "Nest survey" })
-        assertEquals(1, run.nestSitesUnknown)
-        assertFalse(run.captureComplete("Honeybug"))
+        assertFalse(run.nestSurveyComplete)
     }
     @Test fun `fresh block evidence revokes local completion before another entity scan`() {
         val run = forestRun()

@@ -4,6 +4,10 @@ A Fabric mod for Hypixel SkyBlock Safari, sparkling discoveries, and Miria conte
 
 ## Safari tracking
 
+The [Safari logic notes](SAFARI_LOGIC.md) summarize Hypixel evidence and the deductions used for tracking.
+
+Use the [37 individual critter notes](docs/critters/README.md) for species rules and the [shared evidence notes](docs/critters/TRACKING.md) for tickets, starting resources, messages, UUIDs, and late biome entry.
+
 - **Full Clear mode (`/fc`):** track all required captures and highlight remaining critters.
 - **Unique mode (`/unique`):** track one capture per species and highlight missing uniques.
 - **Sparkling mode (`/sparkle`):** target sparkling discoveries missing for you or your party.
@@ -98,3 +102,11 @@ A Fabric mod for Hypixel SkyBlock Safari, sparkling discoveries, and Miria conte
 - Adapted work: [CritterMod v0.9.0](https://github.com/MrCloudy2/critterMod/tree/v0.9.0), [ShinyHunter](https://github.com/javabetter/ShinyHunter), [Nebulune](https://github.com/Gaeritag/Nebulune), and [SkyHanni 9.1.0](https://github.com/hannibal002/SkyHanni/tree/9.1.0).
 - Settings: [MoulConfig](https://github.com/NotEnoughUpdates/MoulConfig).
 - Licensing and attribution: [LICENSE](LICENSE) and [third-party notices](licenses).
+
+Documentation revision workflow: [Source synchronization](docs/SOURCE_SYNC.md). Run `./scripts/DocumentationSync.ps1` to find documents changed since the last SRC update.
+
+Honeyhive state rules, data sources and debugging: [Torrhus Canyon Honeyhives](docs/HONEYHIVES.md).
+
+## Last updated
+
+2026-10-15 - Linked the Honeyhive evidence/implementation document; corrected alert preview identity and live hive hologram tracking.

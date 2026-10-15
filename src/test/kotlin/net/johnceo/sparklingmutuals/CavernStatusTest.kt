@@ -12,27 +12,28 @@ import java.util.Properties
 class CavernStatusTest {
     @TempDir lateinit var dir: Path
     private val broken = WallSummary(List(5) { WallState.BROKEN })
-    @Test fun `cleared walls show a gray absence message until a Snoozle is caught`() {
+    @Test fun `missing panel shows Snoozle in species color without absence prose`() {
         ConfigManager.init(dir)
         val run = SafariRun(0)
         val rows = SafariPanels.missing(run, SafariBiome.CAVERN, false, 0, walls = broken).rows
-        assertEquals(HudRow.GRAY, rows.first { it.label == "No snoozles this run" }.color)
+        assertEquals(SafariRoster.named("Snoozle")!!.color, rows.first { it.label == "Snoozle" }.color)
         assertFalse(rows.any { it.label.startsWith("Snooper walls") })
         run.record(SafariCatch(SafariRoster.named("Snoozle")!!))
         assertFalse(SafariPanels.missing(run, SafariBiome.CAVERN, false, 0, walls = broken).rows.any {
             it.label.contains("snoozles", true) || it.label.startsWith("Snooper walls")
         })
     }
-    @Test fun `surveyed empty mounds show absence but a revealed Rockmite suppresses it`() {
+    @Test fun `surveyed empty mounds retain plain Rockmite and never add absence prose`() {
         ConfigManager.init(dir)
         val run = SafariRun(0)
         repeat(9) { run.recordMound("The mound falls apart, but nothing is inside...") }
         assertFalse(SafariPanels.missing(run, SafariBiome.CAVERN, false, 0).rows.any { it.label == "No rockmites this run" })
         run.recordMound("The mound falls apart, but nothing is inside...")
         run.moundSurvey.scan(emptySet()) { true }
-        assertEquals(HudRow.GRAY, SafariPanels.missing(run, SafariBiome.CAVERN, false, 0).rows.first {
-            it.label == "No rockmites this run"
+        assertEquals(SafariRoster.named("Rockmite")!!.color, SafariPanels.missing(run, SafariBiome.CAVERN, false, 0).rows.first {
+            it.label == "Rockmite"
         }.color)
+        assertTrue(run.allMoundsBroken)
         run.recordMound("The mound fell apart, revealing a Rockmite hidden inside!")
         assertFalse(SafariPanels.missing(run, SafariBiome.CAVERN, false, 0).rows.any { it.label == "No rockmites this run" })
     }
@@ -61,7 +62,7 @@ class CavernStatusTest {
         next.observe(EspEntity("silverfish", invisible = true))
         next.observe(EspEntity("silverfish", passengers = true))
         assertFalse(next.encountered("Rockmite")); assertFalse(next.encountered("Snoozle"))
-        assertTrue(SafariPanels.missing(next, SafariBiome.CAVERN, false, 0, walls = broken).rows.any { it.label == "No snoozles this run" })
+        assertTrue(SafariPanels.missing(next, SafariBiome.CAVERN, false, 0, walls = broken).rows.any { it.label == "Snoozle" })
     }
     @Test fun `empty completed scan permits mid-run arrival but unloaded known sites block completion`() {
         val survey = MoundSurvey()
@@ -88,16 +89,16 @@ class CavernStatusTest {
         assertEquals(0xFFAABBCC.toInt(), SafariEspConfig.rgb(SafariEspConfig.entityColor("Rockmite")))
         assertTrue(SafariEspConfig.mobs.getValue("Rockmite").enabled) // Modes own visibility after reload.
     }
-    @Test fun `unknown walls stay unverified while modes own absence messages`() {
+    @Test fun `unknown walls stay unverified while missing panel shows species only`() {
         ConfigManager.init(dir)
         val run = SafariRun(0)
         val unknown = WallSummary(List(4) { WallState.BROKEN } + WallState.UNKNOWN)
-        assertEquals("0 (+1?)", SafariPanels.missing(run, SafariBiome.CAVERN, false, 0, walls = unknown).rows.first {
-            it.label == "Snooper walls to break"
-        }.value)
+        assertEquals("0 (+1?)", unknown.remaining)
+        assertFalse(unknown.allBroken)
+        assertEquals("0 (+1?)", SafariPanels.missing(run, SafariBiome.CAVERN, false, 0, walls = unknown).rows.single { it.label == "Snooper walls to break" }.value)
         repeat(20) { run.recordMound("The mound falls apart, but nothing is inside...") }
         ConfigManager.showMoundCount = false; ConfigManager.showSnooperWalls = false
-        assertTrue(SafariPanels.missing(run, SafariBiome.CAVERN, false, 0, walls = broken).rows.any { it.label == "No snoozles this run" })
+        assertTrue(SafariPanels.missing(run, SafariBiome.CAVERN, false, 0, walls = broken).rows.any { it.label == "Snoozle" })
         assertFalse(SafariPanels.missing(run, SafariBiome.ICY, false, 0, walls = broken).rows.any { it.label.startsWith("No ") })
     }
 }

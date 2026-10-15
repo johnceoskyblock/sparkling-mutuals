@@ -37,13 +37,24 @@ import net.minecraft.world.phys.Vec3
 import org.slf4j.LoggerFactory
 
 data class EspCritterObservation(val id: Int, val species: String, val biome: SafariBiome, val x: Double, val y: Double, val z: Double, val mound: Boolean, val uuid: UUID)
-data class SafariEspObservations(val critters: List<EspCritterObservation>, val floorDrops: List<EspDrop>, val scanned: Boolean = false)
+data class SafariEspObservations(val critters: List<EspCritterObservation>, val floorDrops: List<EspDrop>,
+    val scanned: Boolean = false, val hauntedCoinDropsRemaining: Int = -1)
 
 /** Nebulune SafariESP identification and box offsets, adapted to our Fabric renderer without Athen. */
 object SafariEsp {
     private data class Target(val entity: Entity, val species: String, val shulker: Boolean)
     private var targets = emptyList<Target>()
     private var drops = emptyList<EspDrop>()
+    private val dropPredictor = FloorDropPredictor()
+    private var predictedDrops = emptyList<PredictedFloorDrop>()
+    fun resetDrops() { dropPredictor.reset(); predictedDrops = emptyList() }
+    fun floorPickup(text: String) {
+        val reward = FloorPickup.parse(text) ?: return
+        val player = Minecraft.getInstance().player ?: return
+        val group = dropPredictor.pickup(reward, player.x, player.y, player.z, System.currentTimeMillis()) ?: return
+        logger.info("Floor pickup correlation (nearest-group heuristic): group={} predicted={} actual={} quantity={} match={}",
+            group.id, group.type?.label, reward.type.label, reward.quantity, group.type == reward.type)
+    }
     private var level: Any? = null
     private var ticks = 0
     private var scanned = false
@@ -109,21 +120,10 @@ object SafariEsp {
     }
     /** Keep per-species aim; server chat names the target after the original model can disappear. */
     private fun rememberAim(client: Minecraft) {
-        val player = client.player ?: return
-        val eye = player.eyePosition
-        val look = player.lookAngle
-        val candidates = targets.filter { live(it, client, forEsp = true) }.map {
-            val offset = bounds(it, 1f).center.subtract(eye)
-            val along = offset.dot(look)
-            EspCaptureCandidate(it.entity.id, it.species, SafariEspRules.captureModel(it.entity.type.toShortString()),
-                it.species == "Rockmite" && it.entity is Display.ItemDisplay,
-                player.distanceToSqr(it.entity), if (along < 0) Double.POSITIVE_INFINITY else (offset.lengthSqr() - along * along).coerceAtLeast(0.0))
-        }
-        val now = System.currentTimeMillis()
-        candidates.filter { it.aimSquared <= 16 }.groupBy { it.species }.forEach { (species, aimed) ->
-            val id = SafariEspRules.capturedDisplay(species, aimed)
-            targets.firstOrNull { it.entity.id == id }?.let { captures.sighted(it.entity.uuid, species, now) }
-        }
+        val hit = (client.hitResult as? net.minecraft.world.phys.EntityHitResult)?.entity ?: return
+        val target = targets.singleOrNull { it.entity === hit && live(it, client) } ?: return
+        if (target.species == "Rockmite" && target.entity is Display.ItemDisplay) return
+        captures.sighted(target.entity.uuid, target.species, System.currentTimeMillis())
     }
     fun threw(species: String) { captures.threw(species, System.currentTimeMillis()) }
     fun shywormMessage(text: String, now: Long) {
@@ -153,6 +153,10 @@ object SafariEsp {
         ticks = 0
         val strings = mutableListOf<EspDrop>()
         val entities = client.level!!.entitiesForRendering().filter { !it.isRemoved && client.level!!.getEntity(it.id) === it }.toList()
+        predictedDrops = dropPredictor.scan(entities.filterIsInstance<Display.ItemDisplay>().map {
+            FloorDisplay(it.id, it.x, it.y, it.z,
+                net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(it.itemStack.item).toString() + ":" + SafariRules.strip(it.itemStack.hoverName.string))
+        })
         val labels = entities.mapNotNull { entity ->
             entity.customName?.string?.let(SafariEspRules::labelSpecies)?.let { name -> entity to name }
         }.groupBy({ it.second }, { it.first })
@@ -188,7 +192,7 @@ object SafariEsp {
                 modelLabels.label(e.uuid) != null && modelLabels.current(e.uuid, now), now)
         }
         shyworms.reconcile(now)
-        targets = targets.filter { live(it, client, forEsp = true) }
+        targets = targets.filter { live(it, client) }
         stringDisplays = strings.toList()
         drops = SafariEspRules.floorDrops(strings)
         scanned = true
@@ -205,13 +209,16 @@ object SafariEsp {
         return if (forEsp) SafariEspRules.renderCurrent(target.species, ConfigManager.sparklingMode, current, moving, labeled,
             if (ConfigManager.sparklingMode) ConfigManager.sparklingProfitableShardEsp
             else !ConfigManager.fullClearMode && ConfigManager.profitableShardEsp)
-            else current && moving && labeled
+            else current && labeled
     }
     fun debug(client: Minecraft) {
         val player = client.player ?: return
         val entities = client.level?.entitiesForRendering()?.filter { !it.isRemoved && player.distanceToSqr(it) <= 6400 }?.toList() ?: return
         logger.info("Safari ESP diagnostics: biome={}, fullClear={}, collected={}", SafariAssist.biome,
             ConfigManager.fullClearMode, SafariRoster.all.associate { it.name to (SafariTracking.run?.count(it.name) ?: 0) })
+        SafariTracking.run?.let { logger.info("Gimmiegold completion: {} coinDropMarkers={}", it.sparklingChecks.gimmiegoldDebug(), observations().hauntedCoinDropsRemaining) }
+        predictedDrops.forEach { logger.info("Floor prediction: id={} biome={} pos={},{},{} predicted={} actual={} selected={}",
+            it.id, it.biome, it.x, it.y, it.z, it.type?.label, it.actual, SafariFloorDrops.selected(it)) }
         entities.mapNotNull { entity -> SafariEspRules.identify(describe(entity))?.let { entity to it.name } }.forEach { (entity, species) ->
             val tag = modelLabels.label(entity.uuid)
             val label = entities.firstOrNull { it.uuid == tag }
@@ -232,8 +239,15 @@ object SafariEsp {
             if (SafariRoster.named(target.species)?.biome != biome) return@mapNotNull null
             EspCritterObservation(e.id, target.species, biome, e.x, e.y, e.z, target.species == "Rockmite" && e is Display.ItemDisplay, e.uuid)
         }
-        return SafariEspObservations(critters, liveDrops(client), scanned)
+        val rawDrops = liveDrops(client)
+        val completeGroups = predictedDrops.filter { drop ->
+            (0..2).all { activeFloorDisplay(client.level?.getEntity(drop.id + it)) }
+        }
+        return SafariEspObservations(critters, rawDrops, scanned,
+            HauntedCoinDrops.remaining(rawDrops, completeGroups))
     }
+    private fun activeFloorDisplay(entity: Entity?) = entity is Display.ItemDisplay && !entity.isRemoved &&
+        !entity.isInvisible && entity.itemStack.`is`(Items.STRING)
     private fun liveDrops(client: Minecraft): List<EspDrop> {
         val strings = stringDisplays.filter { drop ->
             val entity = client.level?.getEntity(drop.id) as? Display.ItemDisplay ?: return@filter false
@@ -241,7 +255,12 @@ object SafariEsp {
             !entity.isRemoved && !entity.isInvisible && entity.itemStack.`is`(Items.STRING) &&
                 p.x == drop.x && p.y == drop.y && p.z == drop.z
         }
-        return SafariEspRules.floorDrops(strings)
+        // Keep unselected, generic and partial markers as positive resource presence evidence.
+        // A type filter or an incomplete triple must never manufacture Haunted absence.
+        return (strings + predictedDrops.filter { drop ->
+            // A surviving decorative/empty/invisible display is not a remaining floor reward.
+            (0..2).any { activeFloorDisplay(client.level?.getEntity(drop.id + it)) }
+        }.map { it.marker() }).distinctBy { Triple(it.x, it.y, it.z) }
     }
     private fun bounds(target: Target, delta: Float): AABB {
         val e = target.entity
@@ -276,13 +295,16 @@ object SafariEsp {
         val delta = client.deltaTracker.getGameTimeDeltaPartialTick(false)
         val now = System.currentTimeMillis()
         val timers = mutableListOf<Triple<String, Int, AABB>>()
-        targets = targets.filter { live(it, client, forEsp = true) }
+        targets = targets.filter { live(it, client) }
         for (target in targets) {
             val e = target.entity
             val mob = SafariRoster.named(target.species)!!
             val group = SafariEspConfig.groups.getValue(mob.biome.name.lowercase())
             val mobBiome = SafariEspRules.biomeAt(e.x, e.z)
-            val needed = if (ConfigManager.sparklingMode)
+            val forceIcy = mob.biome == SafariBiome.ICY && SafariSparklingMode.state.needs("Wumpa") &&
+                (SafariTracking.ledger.current?.count(mob.name) ?: 0) == 0
+            if (!forceIcy && !live(target, client, forEsp = true)) continue
+            val needed = if (forceIcy) true else if (ConfigManager.sparklingMode)
                 SafariEspRules.neededForSparkling(mob.name, mob.name == "Rockmite" && e is Display.ItemDisplay,
                     SafariSparklingMode.state, ConfigManager.sparklingProfitableShardEsp, SafariTracking.ledger.current, e.uuid, now)
             else SafariEspRules.neededForRun(mob.name, e is Display.ItemDisplay, SafariTracking.ledger.current, ConfigManager.fullClearMode,
@@ -310,10 +332,13 @@ object SafariEsp {
             }
         }
         val floor = SafariEspConfig.groups.getValue("floor")
-        val tiles = liveDrops(client).filter {
-            val biome = SafariEspRules.biomeAt(it.x.toDouble(), it.z.toDouble())
-            SafariEspRules.visible(true, SafariFloorDrops.enabled(biome), floor.onlyInBiome, playerBiome, biome)
+        val selectedDrops = predictedDrops.filter { drop ->
+            drop.actual == null && (0..2).all { client.level?.getEntity(drop.id + it)?.isRemoved == false } &&
+                SafariEspRules.visible(true, SafariFloorDrops.selected(drop), floor.onlyInBiome, playerBiome, drop.biome)
         }
+        val tiles = selectedDrops.map { it.marker() }
+        selectedDrops.forEach { timers.add(Triple(it.type!!.label, SafariEspConfig.rgb(SafariEspConfig.floorColor),
+            AABB(it.x - .5, it.y, it.z - .5, it.x + .5, it.y + 1, it.z + .5))) }
         val color = SafariEspConfig.rgb(SafariEspConfig.floorColor)
         tiles.forEach { frame(AABB(it.x.toDouble(), it.y + 1.0, it.z.toDouble(), it.x + 1.0, it.y + 1.0, it.z + 1.0), color) }
         buffers.endBatch(lines)
@@ -326,11 +351,12 @@ object SafariEsp {
         buffers.endBatch(fill)
         for ((text, color, box) in timers) {
             poses.pushPose(); poses.translate(box.center.x - camera.x, box.maxY + .2 - camera.y, box.center.z - camera.z)
-            poses.mulPose(client.gameRenderer.mainCamera.rotation()); poses.scale(.025f, -.025f, .025f)
+            val scale = SafariEspConfig.labelWorldScale
+            poses.mulPose(client.gameRenderer.mainCamera.rotation()); poses.scale(scale, -scale, scale)
             client.font.drawInBatch(text, -client.font.width(text) / 2f, 0f, color, false,
                 Matrix4f(poses.last().pose()), buffers, Font.DisplayMode.SEE_THROUGH, 0x40000000, LightCoordsUtil.FULL_BRIGHT)
             poses.popPose()
         }
     }
-    fun reset() { targets = emptyList(); drops = emptyList(); level = null; ticks = 0; stringDisplays = emptyList(); scanned = false; clearCaptured() }
+    fun reset() { resetDrops(); targets = emptyList(); drops = emptyList(); level = null; ticks = 0; stringDisplays = emptyList(); scanned = false; clearCaptured() }
 }

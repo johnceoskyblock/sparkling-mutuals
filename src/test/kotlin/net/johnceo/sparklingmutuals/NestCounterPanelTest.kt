@@ -7,6 +7,19 @@ import org.junit.jupiter.api.Test
 import java.util.UUID
 
 class NestCounterPanelTest {
+    @Test fun `mid-run bee population resolves the counter only while site coverage is known`() {
+        val run = SafariRun(0).apply {
+            visitBiome(SafariBiome.FOREST)
+            updateNestEvidence(false, 0, 3, 0)
+            record(SafariCatch(SafariRoster.named("Honeybug")!!))
+            liveHoneybugs(2)
+        }
+        for (mode in SafariMode.entries)
+            assertFalse(rows(mode, run, 3).any { it.label == "Bee nests to punch" })
+        run.updateNestEvidence(false, 0, 4, 1)
+        for (mode in SafariMode.entries)
+            assertTrue(rows(mode, run, 4).any { it.label == "Bee nests to punch" })
+    }
     private fun party(needs: Boolean = true) = PartySparklingState().apply {
         select(setOf("me")); accept(setOf("me"), mapOf("me" to (SafariRoster.all.map { it.name }.toSet() -
             if (needs) setOf("Honeybug") else emptySet())))

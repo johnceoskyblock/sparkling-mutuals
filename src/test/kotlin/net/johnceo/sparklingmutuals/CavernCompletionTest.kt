@@ -33,12 +33,12 @@ class CavernCompletionTest {
             val c = SparklingChecks(); val seen = List(SafariFullClear.minimum(species)) { species to UUID.randomUUID() }
             c.scan(SafariBiome.CAVERN, cx, cz, seen.take(1)); assertFalse(c.checked(species))
             c.scan(SafariBiome.CAVERN, cx+r+.01, cz, seen); assertFalse(c.checked(species))
-            c.scan(SafariBiome.CAVERN, cx+r, cz, emptyList()); assertTrue(c.checked(species))
+            c.scan(SafariBiome.CAVERN, cx+r, cz, seen); assertTrue(c.checked(species))
         }
         val c=SparklingChecks();c.scan(SafariBiome.CAVERN,-114.0,49.0,emptyList())
         assertFalse(c.checked("Scrappy"));assertFalse(c.checked("Cavernfish"))
     }
-    @Test fun `full clear cannot confirm absence outside species zone and Scrappy needs three UUIDs`() {
+    @Test fun `full clear cannot confirm absence outside species zone and Scrappy accepts three confirmed catches`() {
         val run=SafariRun(0)
         repeat(4) { run.record(SafariCatch(SafariRoster.named("Cavernfish")!!)) }
         run.updateCaptureEvidence(SafariBiome.CAVERN,emptySet(),false,playerX=0.0,playerZ=0.0)
@@ -49,7 +49,7 @@ class CavernCompletionTest {
         val same=UUID.randomUUID()
         repeat(3) { run.observeCritter(it,"Scrappy",same) }
         run.updateCaptureEvidence(SafariBiome.CAVERN,emptySet(),false,playerX=-85.0,playerZ=81.0)
-        assertFalse(run.captureComplete("Scrappy"))
+        assertTrue(run.captureComplete("Scrappy"))
         repeat(2) { run.observeCritter(it+4,"Scrappy",UUID.randomUUID()) }
         run.updateCaptureEvidence(SafariBiome.CAVERN,emptySet(),false,playerX=-85.0,playerZ=81.0)
         assertTrue(run.captureComplete("Scrappy"))

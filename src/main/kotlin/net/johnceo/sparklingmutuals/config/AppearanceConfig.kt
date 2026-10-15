@@ -6,7 +6,7 @@ import java.util.Properties
 import kotlin.math.roundToInt
 
 class PanelStyle {
-    var borderEnabled = false
+    var borderEnabled = true
     var borderColor = AppearanceConfig.color(SafariTheme.ACCENT)
     var backgroundColor = AppearanceConfig.color(SafariTheme.BACKGROUND)
     var transparency = 20
@@ -41,7 +41,7 @@ object AppearanceConfig {
     fun load(properties: Properties) {
         selectedHex = properties.getProperty("appearance.selectedHex")?.takeIf { withHex(color(0), it) != null } ?: "#FFD700"
         panels.forEach { (id, style) ->
-            style.borderEnabled = properties.getProperty("appearance.$id.borderEnabled")?.toBooleanStrictOrNull() ?: false
+            style.borderEnabled = properties.getProperty("appearance.$id.borderEnabled")?.toBooleanStrictOrNull() ?: true
             style.borderColor = SafariEspConfig.validColor(properties.getProperty("appearance.$id.borderColor"), color(SafariTheme.ACCENT))
             style.backgroundColor = SafariEspConfig.validColor(properties.getProperty("appearance.$id.backgroundColor"), color(if (id == "run_complete") 0xAAFFAA else SafariTheme.BACKGROUND))
             style.transparency = properties.getProperty("appearance.$id.transparency")?.toIntOrNull() ?: if (id == "run_complete") 80 else 20

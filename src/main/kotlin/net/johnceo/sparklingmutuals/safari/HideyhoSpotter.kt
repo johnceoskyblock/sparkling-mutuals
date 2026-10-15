@@ -68,15 +68,47 @@ object HideyhoHiding {
  * verdict waits until it is within a few blocks of a known spot. With no quest running, a Hideyho already sitting on
  * a spot is called out once, which covers walking into the Safari with it already hidden.
  */
+class HideyhoLocationWatch {
+    private var active = false
+    private var armedAt: Long? = null
+    private var spotBefore: HideyhoHiding.Spot? = null
+    private var announced: HideyhoHiding.Spot? = null
+    val armed get() = armedAt != null
+    fun context(enabled: Boolean, biome: SafariBiome?, mode: SafariMode = SafariMode.UNIQUE): Boolean {
+        if (enabled && biome == SafariBiome.HAUNTED && mode != SafariMode.SPARKLING) { active = true; return true }
+        reset()
+        return false
+    }
+    fun chat(text: String, now: Long, spot: HideyhoHiding.Spot?) {
+        if (!active) return
+        when {
+            HideyhoHiding.accepted(text) -> {
+                if (!armed) spotBefore = spot
+                armedAt = now
+            }
+            HideyhoHiding.found(text) -> armedAt = null
+        }
+    }
+    fun settled(spot: HideyhoHiding.Spot?, now: Long): HideyhoHiding.Spot? {
+        if (!active) return null
+        if (armedAt?.let { now - it > 90_000L } == true) { armedAt = null; return null }
+        if (spot == null) return null
+        if (armed) {
+            if (spot == spotBefore) return null
+            armedAt = null
+        } else if (spot == announced) return null
+        announced = spot
+        return spot
+    }
+    fun reset() { active = false; armedAt = null; spotBefore = null; announced = null }
+}
+
 object HideyhoSpotter {
     private val logger = LoggerFactory.getLogger("sparkling-mutuals/hideyho")
-    private const val WATCH_MILLIS = 90_000L
     private const val SCAN_TICKS = 5
     private const val IDLE_TICKS = 20
 
-    private var armedAt = 0L
-    private var spotBefore: HideyhoHiding.Spot? = null
-    private var announced: HideyhoHiding.Spot? = null
+    private val watch = HideyhoLocationWatch()
     private var ticks = 0
     private var level: Any? = null
 
@@ -87,37 +119,24 @@ object HideyhoSpotter {
     }
 
     private fun chat(text: String) {
-        if (!ConfigManager.hideyhoInsideOutside) return
-        when {
-            HideyhoHiding.accepted(text) -> {
-                if (armedAt == 0L) spotBefore = position()?.let { (x, y, z) -> HideyhoHiding.nearestSpot(x, y, z) }
-                armedAt = System.currentTimeMillis()
-            }
-            HideyhoHiding.found(text) -> armedAt = 0L
-        }
+        if (!watch.context(ConfigManager.hideyhoInsideOutside, SafariAssist.biome.takeIf { SafariAssist.inSafari }, SafariFullClear.mode)) return
+        watch.chat(text, System.currentTimeMillis(), position()?.let { (x, y, z) -> HideyhoHiding.nearestSpot(x, y, z) })
     }
 
     fun onClientTick(client: Minecraft) {
         if (client.level !== level) { reset(); level = client.level }
-        if (!ConfigManager.hideyhoInsideOutside || client.player == null || !SafariAssist.inSafari) { armedAt = 0L; return }
-        if (++ticks < if (armedAt == 0L) IDLE_TICKS else SCAN_TICKS) return
+        if (!watch.context(ConfigManager.hideyhoInsideOutside && client.player != null, SafariAssist.biome.takeIf { SafariAssist.inSafari }, SafariFullClear.mode)) { ticks = 0; return }
+        if (++ticks < if (watch.armed) SCAN_TICKS else IDLE_TICKS) return
         ticks = 0
-        if (armedAt != 0L && System.currentTimeMillis() - armedAt > WATCH_MILLIS) { armedAt = 0L; return }
-        val (x, y, z) = position() ?: return // between vanishing and being re-sent
-        val spot = HideyhoHiding.nearestSpot(x, y, z) ?: return // surfacing, or somewhere not on the list
-        if (armedAt != 0L) {
-            // Still on the spot it was at when the quest was accepted: wait for it to move.
-            if (spot == spotBefore) return
-            armedAt = 0L
-        } else if (spot == announced) return
-        announce(client, spot)
+        val spot = position()?.let { (x, y, z) -> HideyhoHiding.nearestSpot(x, y, z) }
+        watch.settled(spot, System.currentTimeMillis())?.let { announce(client, it) }
     }
 
     private fun position(): Triple<Double, Double, Double>? =
         SafariEsp.observations().critters.firstOrNull { it.species == "Hideyho" }?.let { Triple(it.x, it.y, it.z) }
 
     private fun announce(client: Minecraft, spot: HideyhoHiding.Spot) {
-        announced = spot
+        if (!watch.context(ConfigManager.hideyhoInsideOutside, SafariAssist.biome.takeIf { SafariAssist.inSafari }, SafariFullClear.mode)) return
         val inside = HideyhoHiding.inside(spot)
         logger.info("Hideyho settled at {}: {}", spot, if (inside) "inside" else "outside")
         client.gui.setTimes(5, 50, 15)
@@ -126,5 +145,5 @@ object HideyhoSpotter {
         client.player?.sendSystemMessage(LocalChat.component(LocalChat.hideyho(inside)))
     }
 
-    fun reset() { armedAt = 0L; spotBefore = null; announced = null; ticks = 0 }
+    fun reset() { watch.reset(); ticks = 0 }
 }

@@ -33,7 +33,7 @@ object BeeNests {
     private var lastRenderedMarkers = 0
     private val logger = LoggerFactory.getLogger("sparkling-mutuals/nests")
     private val handledByParty get() = SafariTracking.ledger.current?.partyNestsHandled == true
-    val unpunchedCount get() = if (handledByParty && SafariFullClear.mode == SafariMode.SPARKLING) 0 else survey.remaining.size
+    val unpunchedCount get() = if (handledByParty) 0 else survey.remaining.size
     val punchedCount get() = survey.punchedCount
     val nestCount get() = survey.nestCount
     val allChecked get() = survey.allChecked
@@ -136,7 +136,8 @@ object BeeNests {
         for ((pos, label, color) in markers) {
             val text = "$label · ${kotlin.math.sqrt(pos.distToCenterSqr(camera)).toInt()}m"
             poses.pushPose(); poses.translate(pos.x + .5 - camera.x, pos.y + 1.4 - camera.y, pos.z + .5 - camera.z)
-            poses.mulPose(client.gameRenderer.mainCamera.rotation()); poses.scale(.025f, -.025f, .025f)
+            val scale = SafariEspConfig.labelWorldScale
+            poses.mulPose(client.gameRenderer.mainCamera.rotation()); poses.scale(scale, -scale, scale)
             client.font.drawInBatch(text, -client.font.width(text) / 2f, 0f, color, false,
                 Matrix4f(poses.last().pose()), buffers, Font.DisplayMode.SEE_THROUGH, 0x40000000, LightCoordsUtil.FULL_BRIGHT)
             poses.popPose()

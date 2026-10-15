@@ -19,7 +19,7 @@ class ForestCompletionTest {
             val seen=List(SafariFullClear.minimum(name)) { name to UUID.randomUUID() }
             run.sparklingChecks.scan(SafariBiome.FOREST,3+radius+10+.01,47.0,seen)
             assertFalse(run.sparklingChecks.checked(name))
-            run.sparklingChecks.scan(SafariBiome.FOREST,3+radius+10,47.0,emptyList())
+            run.sparklingChecks.scan(SafariBiome.FOREST,3+ForestCompletionZones.zones.getValue(name).sparklingRadius,47.0,emptyList())
             assertTrue(run.sparklingChecks.checked(name))
         }
     }

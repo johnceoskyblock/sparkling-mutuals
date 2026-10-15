@@ -9,7 +9,7 @@ class UniqueAbsentCritterTest {
     private fun party() = PartySparklingState().apply {
         select(setOf("me")); accept(setOf("me"), mapOf("me" to emptySet()))
     }
-    @Test fun `checked zero-spawn Cavern species complete without captures and reopen on sightings`() {
+    @Test fun `checked zero-spawn Cavern species still require Unique catches`() {
         ConfigManager.fullClearMode = false; ConfigManager.sparklingMode = false
         val run = SafariRun(0); val state = party()
         run.visitBiome(SafariBiome.CAVERN)
@@ -18,15 +18,15 @@ class UniqueAbsentCritterTest {
         run.moundSurvey.scan(emptySet()) { true }
         run.updateCaptureEvidence(SafariBiome.CAVERN, emptySet(), true)
         run.reconcileStructures(SafariBiome.CAVERN, false, false)
-        assertTrue(run.uniqueComplete("Rockmite", state)); assertTrue(run.uniqueComplete("Snoozle", state))
-        assertEquals(SafariBiome.CAVERN.critters.size, run.completed(SafariMode.UNIQUE, SafariBiome.CAVERN.critters, state))
-        assertEquals("cd", run.completion.announcement(run, SafariBiome.CAVERN, SafariMode.UNIQUE, state))
-        assertFalse(SafariPanels.missing(run, SafariBiome.CAVERN, true, 0, party = state).rows.any { it.label in setOf("Rockmite", "Snoozle") })
+        assertFalse(run.uniqueComplete("Rockmite", state)); assertFalse(run.uniqueComplete("Snoozle", state))
+        assertEquals(0, run.completed(SafariMode.UNIQUE, SafariBiome.CAVERN.critters, state))
+        assertNull(run.completion.announcement(run, SafariBiome.CAVERN, SafariMode.UNIQUE, state))
+        assertTrue(SafariPanels.missing(run, SafariBiome.CAVERN, true, 0, party = state).rows.any { it.label in setOf("Rockmite", "Snoozle") })
         run.reconcileStructures(SafariBiome.CAVERN, true, true)
         assertFalse(run.uniqueComplete("Rockmite", state)); assertFalse(run.uniqueComplete("Snoozle", state))
         run.reconcileStructures(SafariBiome.CAVERN, false, false)
         run.updateCaptureEvidence(SafariBiome.FOREST, emptySet(), false)
-        assertTrue(run.uniqueComplete("Snoozle", state))
+        assertFalse(run.uniqueComplete("Snoozle", state))
         run.observeCritter(12, "Rockmite"); run.observeCritter(13, "Snoozle")
         assertFalse(run.uniqueComplete("Rockmite", state)); assertFalse(run.uniqueComplete("Snoozle", state))
         assertEquals(0, run.personalCount("Rockmite")); assertEquals(0, run.personalCount("Snoozle"))
@@ -34,13 +34,13 @@ class UniqueAbsentCritterTest {
         unknown.reconcileStructures(SafariBiome.CAVERN, false, false)
         assertFalse(unknown.uniqueComplete("Rockmite", state)); assertFalse(unknown.uniqueComplete("Snoozle", state))
     }
-    @Test fun `party fd completes Forest without Macaw but never fabricates capture or local completion`() {
+    @Test fun `party fd cannot complete Unique Forest without catches`() {
         val run = SafariRun(0); val state = party()
         run.visitBiome(SafariBiome.CAVERN)
         SafariBiome.FOREST.critters.filter { it.name != "Macaw" }.forEach { run.record(SafariCatch(it)) }
         run.partyFullClear("Party > Friend: fd")
         run.visitBiome(SafariBiome.FOREST)
-        assertEquals(SafariBiome.FOREST.critters.size, run.completed(SafariMode.UNIQUE, SafariBiome.FOREST.critters, state))
+        assertEquals(0, run.completed(SafariMode.UNIQUE, SafariBiome.FOREST.critters, state))
         assertEquals(0, run.count("Macaw")); assertEquals(0, run.personalCount("Macaw"))
         assertFalse(run.uniqueComplete("Macaw", state, localOnly = true))
     }

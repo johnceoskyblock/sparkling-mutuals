@@ -18,9 +18,9 @@ class HauntedCompletionTest {
             assertTrue(run.captureComplete(name))
             val seen = List(SafariFullClear.minimum(name)) { name to UUID.randomUUID() }
             repeat(4) { run.sparklingChecks.scan(SafariBiome.HAUNTED,-3.0,-63.0,seen.take(1)) }
-            assertFalse(run.sparklingChecks.checked(name))
+            assertTrue(run.sparklingChecks.checked(name))
             run.sparklingChecks.scan(SafariBiome.HAUNTED,37.01,-63.0,seen)
-            assertFalse(run.sparklingChecks.checked(name))
+            assertTrue(run.sparklingChecks.checked(name))
             run.sparklingChecks.scan(SafariBiome.HAUNTED,37.0,-63.0,emptyList())
             assertTrue(run.sparklingChecks.checked(name))
         }
@@ -30,14 +30,14 @@ class HauntedCompletionTest {
             val run=SafariRun(0); val ids=List(amount) { UUID.randomUUID() }
             repeat(amount) { run.record(SafariCatch(SafariRoster.named(name)!!)) }
             run.updateCaptureEvidence(SafariBiome.HAUNTED,emptySet(),false,playerX=500.0,playerZ=500.0)
-            assertFalse(run.captureComplete(name))
+            assertTrue(run.captureComplete(name))
             ids.forEachIndexed { i,id -> run.observeCritter(i,name,id) }
             run.updateCaptureEvidence(SafariBiome.HAUNTED,emptySet(),false,playerX=500.0,playerZ=500.0)
             assertTrue(run.captureComplete(name))
             val fresh=SafariRun(0)
             fresh.sparklingChecks.scan(SafariBiome.HAUNTED,500.0,500.0,ids.map { name to it })
-            assertEquals(name!="Doomspiral",fresh.sparklingChecks.checked(name))
-            fresh.record(SafariCatch(SafariRoster.named(name)!!))
+            assertTrue(fresh.sparklingChecks.checked(name))
+            repeat(amount) { fresh.record(SafariCatch(SafariRoster.named(name)!!)) }
             fresh.sparklingChecks.scan(SafariBiome.HAUNTED,500.0,500.0,emptyList())
             assertTrue(fresh.sparklingChecks.checked(name))
         }

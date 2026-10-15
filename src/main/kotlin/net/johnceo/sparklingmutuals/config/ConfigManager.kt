@@ -20,7 +20,7 @@ object ConfigManager {
     var sparklingProfitableShardEsp = true
     var profitableShardEsp = true
     var timesaveOnly = true
-    var warpAlertsEnabled = false
+    var warpAlertsEnabled = true
     var warpDelaySeconds = 25
     var hideyhoQuestClicks = true
     var hideyhoInsideOutside = true
@@ -61,18 +61,18 @@ object ConfigManager {
     var runCoinsInstaSell = false
     /** Modification time of the newest archived log already imported. */
     var logsImportedUpTo = 0L
-    var hideCaptureChat = false
+    var hideCaptureChat = true
     var hideGroundCapsules = true
     var hideFlyingCapsules = true
     var capsuleHideDistance = 2f
     var showWhere = 1
     val personalBests = SafariPersonalBests()
-    private val flags = mapOf(::highlightTeammates to true, ::showTeammateNames to true, ::partyCommandsEnabled to true, ::useCloudApi to true, ::fullClearMode to false, ::sparklingMode to false, ::sparklingProfitableShardEsp to true, ::profitableShardEsp to true, ::timesaveOnly to true, ::warpAlertsEnabled to false,
+    private val flags = mapOf(::highlightTeammates to true, ::showTeammateNames to true, ::partyCommandsEnabled to true, ::useCloudApi to true, ::fullClearMode to false, ::sparklingMode to false, ::sparklingProfitableShardEsp to true, ::profitableShardEsp to true, ::timesaveOnly to true, ::warpAlertsEnabled to true,
         ::hideyhoQuestClicks to true, ::hideyhoInsideOutside to true, ::hideHauntedPaintings to true, ::shinyDetection to true,
         ::progressHud to true, ::countUniqueOnly to false, ::missingPanel to true,
         ::highlightBeeNests to true, ::removeDarkness to true, ::sparklingAlert to true,
         ::sparklingPartyAnnouncer to true, ::catchCountPanel to false, ::autoClicker to true, ::candleHitbox to true, ::holdManagerOnKick to true, ::downtimeCommand to true, ::honeyHives to true, ::runHistory to true, ::achievements to true, ::achievementSound to true, ::achievementsToParty to false, ::autoImportLogs to true, ::runCoinsInstaSell to false,
-        ::hideCaptureChat to false, ::hideGroundCapsules to true, ::hideFlyingCapsules to true,
+        ::hideCaptureChat to true, ::hideGroundCapsules to true, ::hideFlyingCapsules to true,
         ::highlightSnooperWalls to true, ::showBeeNests to true, ::showMoundCount to true,
         ::showSnooperWalls to true, ::showMoundStats to false,
         ::allGemsAlert to true, ::allBirdFoodAlert to true, ::allIncenseAlert to true, ::runCompleteAlert to true)

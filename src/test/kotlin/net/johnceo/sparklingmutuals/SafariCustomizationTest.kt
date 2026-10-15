@@ -27,7 +27,7 @@ class SafariCustomizationTest {
         assertTrue(ConfigManager.showBeeNests)
         assertFalse(ConfigManager.showMoundStats)
         AppearanceConfig.panels.filterKeys { it != "run_complete" }.values.forEach {
-            assertFalse(it.borderEnabled)
+            assertTrue(it.borderEnabled)
             assertEquals(20, it.transparency)
             assertEquals(0xCC241F18.toInt(), it.backgroundArgb)
         }
@@ -35,6 +35,7 @@ class SafariCustomizationTest {
     @Test fun `one selected hex color applies to multiple targets without enabling borders or ESP`() {
         ConfigManager.init(dir)
         ContestConfig.init(dir)
+        AppearanceConfig.panels.getValue("miria").borderEnabled = false
         SafariEspConfig.groups.getValue("forest").enabled = false
         SafariEspConfig.mobs.getValue("Macaw").enabled = false
         val settings = SafariSettings()
@@ -135,7 +136,7 @@ class SafariCustomizationTest {
         assertTrue(SafariEspConfig.rockmiteMoundEnabled)
         assertTrue(SafariEspConfig.mobs.getValue("Rockmite").enabled)
     }
-    @Test fun `mode-owned footers ignore legacy toggles and unknown walls are never claimed broken`() {
+    @Test fun `missing panel stays species only despite legacy toggles and unknown walls`() {
         ConfigManager.init(dir)
         val partial = WallSummary(listOf(WallState.INTACT, WallState.BROKEN, WallState.UNKNOWN))
         assertFalse(partial.allBroken)
@@ -143,18 +144,19 @@ class SafariCustomizationTest {
         assertFalse(WallSummary(emptyList()).allBroken)
         assertTrue(WallSummary(List(5) { WallState.BROKEN }).allBroken)
         val forest = SafariPanels.missing(null, SafariBiome.FOREST, true, 3)
-        assertTrue(forest.rows.any { it.label == "Bee nests to punch" })
+        assertTrue(forest.rows.any { it.label == "Honeybug" })
         ConfigManager.showBeeNests = false
         assertTrue(ConfigManager.highlightBeeNests)
-        assertTrue(SafariPanels.missing(null, SafariBiome.FOREST, true, 3).rows.any { it.label == "Bee nests to punch" })
+        assertTrue(SafariPanels.missing(null, SafariBiome.FOREST, true, 3).rows.any { it.label == "Honeybug" })
         val cavern = SafariPanels.missing(null, SafariBiome.CAVERN, true, 0, 7, partial)
-        assertEquals("7", cavern.rows.first { it.label == "Mounds to break" }.value)
-        assertEquals("1 (+1?)", cavern.rows.first { it.label == "Snooper walls to break" }.value)
+        assertTrue(cavern.rows.any { it.label == "Rockmite" })
+        assertTrue(cavern.rows.any { it.label == "Snoozle" })
+        assertEquals("7", cavern.rows.single { it.label == "Mounds to break" }.value)
+        assertEquals("1 (+1?)", cavern.rows.single { it.label == "Snooper walls to break" }.value)
         ConfigManager.showMoundCount = false
         ConfigManager.showSnooperWalls = false
         val hidden = SafariPanels.missing(null, SafariBiome.CAVERN, true, 0, 7, partial)
-        assertTrue(hidden.rows.any { it.label.contains("Mounds") })
-        assertTrue(hidden.rows.any { it.label.contains("Snooper walls") })
+        assertEquals(cavern.rows, hidden.rows)
         assertFalse(SafariPanels.missing(null, SafariBiome.CAVERN, true, 0).rows.any { it.label == "Mounds to break" })
     }
 }

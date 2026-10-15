@@ -14,6 +14,7 @@ class SafariCompletionEvents {
     private val pending = mutableSetOf<SafariBiome>()
     private var alerted = false
     fun announcement(run: SafariRun, biome: SafariBiome, mode: SafariMode, party: PartySparklingState): String? {
+        if (run.lastBiome != biome) { pending.remove(biome); return null }
         val targets = biome.critters.filter { mode != SafariMode.SPARKLING || party.needs(it.name) }
         if (!run.hasCaptureEvidence(biome) || mode == SafariMode.SPARKLING && !party.ready ||
             run.completed(mode, targets, party, localOnly = true) != targets.size) {
@@ -38,23 +39,45 @@ class SafariCompletionEvents {
 object SafariCompletion {
     private var owner: SafariRun? = null
     private val queue = ArrayDeque<Pair<SafariBiome, String>>()
+    private val resourceQueue = ArrayDeque<String>()
     private var sentAt = 0L
     fun tick(client: Minecraft, run: SafariRun, biome: SafariBiome) {
-        if (owner !== run) { owner = run; queue.clear(); sentAt = 0 }
+        if (owner !== run) { owner = run; queue.clear(); resourceQueue.clear(); sentAt = 0 }
         val mode = SafariFullClear.mode
         val party = SafariSparklingMode.state
         SafariBiome.entries.forEach { area ->
             run.completion.announcement(run, area, mode, party)?.let { queue.addLast(area to it) }
         }
         // Revalidate queued completions after contradictory local evidence or a mode change.
-        queue.removeAll { (area, _) -> mode == SafariMode.SPARKLING && !party.ready || run.completed(mode,
+        queue.removeAll { (area, _) -> area != biome || mode == SafariMode.SPARKLING && !party.ready || run.completed(mode,
             area.critters.filter { mode != SafariMode.SPARKLING || party.needs(it.name) }, party, localOnly = true) !=
             area.critters.count { mode != SafariMode.SPARKLING || party.needs(it.name) } }
         val now = System.currentTimeMillis()
+        // Sample the actual inventory at completion, rather than a prior HUD poll.
+        client.player?.inventory?.let { inventory ->
+            run.inventoryEvidence((0 until inventory.containerSize).map { inventory.getItem(it) }
+                .filterNot { it.isEmpty }.map { it.hoverName.string to it.count }, now)
+        }
+        resourceQueue.removeAll { !run.resources.noticeStillRelevant(it, biome, party) }
+        if (client.connection != null && resourceQueue.isNotEmpty() && now - sentAt >= 3000) {
+            val notice = resourceQueue.removeFirst()
+            StartingResourceReminder.parse(notice, party)?.let { reminder ->
+                client.gui.setTimes(5, 50, 15)
+                client.gui.setTitle(net.minecraft.network.chat.Component.literal(reminder.title)
+                    .withStyle { it.withColor(net.johnceo.sparklingmutuals.config.SafariTheme.ACCENT).withBold(true) })
+                client.gui.setSubtitle(net.minecraft.network.chat.Component.literal(reminder.detail))
+                client.player?.sendSystemMessage(net.johnceo.sparklingmutuals.LocalChat.component(notice))
+                client.connection!!.sendCommand("pc $notice")
+                sentAt = now
+            }
+        }
         if (client.connection != null && queue.isNotEmpty() && now - sentAt >= 3000) {
             val (area, word) = queue.removeFirst()
             client.connection!!.sendCommand("pc $word")
             run.completion.sent(area); sentAt = now
+            run.resources.notices(client.player?.name?.string ?: "Player", biome, party).forEach { notice ->
+                resourceQueue.addLast(notice)
+            }
         }
         if (run.completion.alert(run, mode, party, ConfigManager.runCompleteAlert)) {
             SmallAlerts.show(SafariHud.RUN_COMPLETE)

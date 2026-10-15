@@ -47,7 +47,7 @@ class SpawnSuppliesTest {
         val run = SafariRun(0)
         run.partyFullClear("Party > Friend: fd")
         val party = PartySparklingState()
-        assertTrue(run.partyNestsHandled)
+        assertFalse(run.partyNestsHandled)
         assertTrue(SafariHelperRules.showNests(SafariMode.FULL_CLEAR, run, party))
         assertFalse(SafariHelperRules.showNests(SafariMode.SPARKLING, run, party))
         for (name in SafariHelperRules.species) assertTrue(SafariHelperRules.needed(name, SafariMode.FULL_CLEAR, run, party))

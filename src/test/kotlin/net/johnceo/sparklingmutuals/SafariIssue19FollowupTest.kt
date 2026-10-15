@@ -13,28 +13,29 @@ class SafariIssue19FollowupTest {
         select(setOf("one")); accept(setOf("one"), mapOf("one" to SafariRoster.all.map { it.name }.toSet() - needs))
     }
     private fun row(run: SafariRun, needs: Set<String>) = SafariPanels.progress(run, true, 1000, party(needs)).rows.single { it.label == "Icy" }.value
-    @Test fun `needed Wumpa switches icy progress from sightings to captures`() {
+    @Test fun `needed Wumpa does not change other species count checks`() {
         ConfigManager.init(dir); ConfigManager.sparklingMode = true
         val run = SafariRun(0)
         run.sparklingChecks.scan(SafariBiome.ICY, -112.0, -54.0, List(3) { "Troodon" to java.util.UUID.randomUUID() })
-        assertEquals("0/2", row(run, setOf("Wumpa", "Troodon")))
+        assertEquals("1/2", row(run, setOf("Wumpa", "Troodon")))
         run.record(SafariCatch(SafariRoster.named("Troodon")!!, personal = false))
         assertEquals("1/2", row(run, setOf("Wumpa", "Troodon")))
         assertEquals("1/1", row(run, setOf("Troodon")))
         assertEquals(0, run.personalCount("Troodon"))
     }
-    @Test fun `Wumpa capture completes needed icy progress but not other biomes or PBs`() {
+    @Test fun `Wumpa capture only completes its own check after scanning`() {
         ConfigManager.init(dir); ConfigManager.sparklingMode = true
         val run = SafariRun(0)
         run.record(SafariCatch(SafariRoster.named("Wumpa")!!, personal = false))
-        assertEquals("3/3", row(run, setOf("Wumpa", "Troodon", "Polaris")))
+        run.sparklingChecks.scan(SafariBiome.ICY, -110.0, -78.0, emptyList())
+        assertEquals("1/3", row(run, setOf("Wumpa", "Troodon", "Polaris")))
         assertFalse(run.sparklingChecks.checked("Gemzie"))
         assertTrue(run.biomeClears.isEmpty()); assertTrue(run.uniqueBiomeClears.isEmpty())
         assertEquals("0/2", row(SafariRun(0), setOf("Wumpa", "Troodon")))
     }
     @Test fun `exact global completion messages check only their species in Sparkling mode`() {
-        val messages = mapOf("A rumbling sound can be heard, and the door at the back of the chamber opens..." to "Gemzie",
-            "The darkness in the Haunted Biome fades away..." to "Doomspiral", "The cave is collapsing..." to "Wumpa")
+        val messages = mapOf(
+            "The darkness in the Haunted Biome fades away..." to "Doomspiral", "The cave opens up again..." to "Wumpa")
         for ((message, species) in messages) {
             val run = SafariRun(0)
             SafariMessages.lines("Party > Player: $message", run.sparklingChecks)

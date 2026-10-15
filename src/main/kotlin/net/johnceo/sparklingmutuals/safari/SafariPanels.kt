@@ -6,6 +6,13 @@ import net.johnceo.sparklingmutuals.config.ConfigManager
 
 /** One collected total, with the v0.9.0 biome and critter rarity colors. */
 object SafariPanels {
+    private val fixedChecks = mapOf("Scrappy" to 3, "Gemzie" to 3, "Troodon" to 3, "Gazer" to 4)
+    fun fixedCounter(name: String, run: SafariRun?, mode: SafariMode, party: PartySparklingState): String? {
+        val total = fixedChecks[name] ?: return null
+        if (mode != SafariMode.FULL_CLEAR && !party.needs(name)) return null
+        val count = if (mode == SafariMode.FULL_CLEAR) run?.count(name) ?: 0 else run?.sparklingChecks?.checkCount(name) ?: 0
+        return "${count.coerceIn(0, total)}/$total " + if (mode == SafariMode.FULL_CLEAR) "captured" else "checked"
+    }
     fun progress(run: SafariRun?, unique: Boolean, now: Long, party: PartySparklingState = SafariSparklingMode.state): HudPanel {
         val seconds = (run?.elapsed(now) ?: 0) / 1000
         val time = "%d:%02d".format(seconds / 60, seconds % 60)
@@ -24,8 +31,8 @@ object SafariPanels {
     fun missingCritters(run: SafariRun?, biome: SafariBiome, party: PartySparklingState = SafariSparklingMode.state): List<SafariCritter> {
         val sparkling = SafariFullClear.mode == SafariMode.SPARKLING
         return biome.critters.filter { if (sparkling) {
-                if (run?.sparklingChecks?.wumpaPrerequisite(it.name, party) == true) run.count(it.name) == 0
-                else party.needs(it.name) && run?.sparklingComplete(it.name, party) != true
+                party.needs(it.name) && run?.sparklingComplete(it.name, party) != true ||
+                    run?.sparklingChecks?.wumpaPrerequisite(it.name, party) == true && run.count(it.name) == 0
             }
             else if (SafariFullClear.mode == SafariMode.UNIQUE) (run?.count(it.name) ?: 0) == 0 && run?.uniqueComplete(it.name, party) != true
             else run?.missing(it, ConfigManager.fullClearMode) != false }
@@ -34,38 +41,27 @@ object SafariPanels {
         walls: WallSummary = WallSummary(emptyList()), party: PartySparklingState = SafariSparklingMode.state): HudPanel {
         val sparkling = SafariFullClear.mode == SafariMode.SPARKLING
         val missing = missingCritters(run, biome, party)
-        val rows = missing.map { critter ->
-            HudRow(critter.name, if (!sparkling && ConfigManager.fullClearMode && critter.quota > 1) "${run?.count(critter.name) ?: 0}/${critter.quota}" else null,
-                critter.color, HudRow.GRAY)
-        }.ifEmpty { listOf(HudRow(if (sparkling) "All checked!" else if (ConfigManager.fullClearMode) "All caught!" else "All caught!", color = biome.color)) }
-        val footer = buildList {
-            fun needed(species: String) = SafariHelperRules.needed(species, SafariFullClear.mode, run, party)
-            fun unavailable(species: String) = SafariFullClear.mode == SafariMode.UNIQUE && run?.uniqueUnavailable(species) == true
-            if (biome == SafariBiome.FOREST && unavailable("Macaw")) {
-                add(HudRow()); add(HudRow("No macaws this run", color = HudRow.GRAY))
-            }
-            if (biome == SafariBiome.FOREST && SafariHelperRules.showNestCounter(SafariFullClear.mode, run, party)) {
-                add(HudRow()); add(HudRow("Bee nests to punch", "$nests", HudRow.GOLD, HudRow.GRAY))
-            }
+        // Needed checking stays visible after a Unique catch, using the same plain species row.
+        val listed = biome.critters.filter { critter ->
+            critter in missing || SafariFullClear.mode == SafariMode.UNIQUE && run != null &&
+                run.count(critter.name) > 0 && party.needs(critter.name) && !run.uniqueComplete(critter.name, party)
+        }
+        val rows = listed.map { critter ->
+            HudRow(critter.name, fixedCounter(critter.name, run, SafariFullClear.mode, party), critter.color, HudRow.GRAY)
+        }.ifEmpty { listOf(HudRow(if (sparkling) "All checked!" else "All caught and checked!", color = biome.color)) }
+        val helpers = buildList {
+            val mode = SafariFullClear.mode
+            if (biome == SafariBiome.FOREST && SafariHelperRules.showNestCounter(mode, run, party))
+                add(HudRow("Bee nests to punch", "$nests", HudRow.GOLD, HudRow.GRAY))
             if (biome == SafariBiome.CAVERN) {
-                if (unavailable("Snoozle")) {
-                    add(HudRow()); add(HudRow("No snoozles this run", color = HudRow.GRAY))
-                } else if (needed("Snoozle") && walls.states.isNotEmpty()) {
-                    val row = when {
-                        !walls.allBroken -> HudRow("Snooper walls to break", walls.remaining, HudRow.GOLD, HudRow.GRAY)
-                        run != null && !run.encountered("Snoozle") -> HudRow("No snoozles this run", color = HudRow.GRAY)
-                        else -> null
-                    }
-                    if (row != null) { add(HudRow()); add(row) }
-                }
-                if (mounds > 0 && needed("Rockmite")) {
-                    add(HudRow()); add(HudRow("Mounds to break", "$mounds", HudRow.GOLD, HudRow.GRAY))
-                } else if (unavailable("Rockmite") || needed("Rockmite") && run?.allMoundsBroken == true && !run.encountered("Rockmite")) {
-                    add(HudRow()); add(HudRow("No rockmites this run", color = HudRow.GRAY))
-                }
+                if (SafariHelperRules.needed("Snoozle", mode, run, party) && walls.states.isNotEmpty() && !walls.allBroken)
+                    add(HudRow("Snooper walls to break", walls.remaining, HudRow.GOLD, HudRow.GRAY))
+                if (SafariHelperRules.needed("Rockmite", mode, run, party) && mounds > 0)
+                    add(HudRow("Mounds to break", "$mounds", HudRow.GOLD, HudRow.GRAY))
             }
         }
-        return HudPanel("${biome.label} Biome — ${missing.size} left", biome.color, rows + footer)
+        return HudPanel("${biome.label} Biome — ${listed.size} left", biome.color,
+            rows + if (helpers.isEmpty()) emptyList() else listOf(HudRow()) + helpers)
     }
     private fun captureColor(complete: Boolean, verified: Boolean) = if (!ConfigManager.fullClearMode || !verified) HudRow.WHITE
         else if (complete) 0xFF55FF55.toInt() else 0xFFFF5555.toInt()

@@ -48,8 +48,8 @@ class EspCaptureMemory {
     fun threw(species: String, now: Long) {
         input.removeAll { now - it.at !in 0..3000 }
         val index = input.indexOfFirst { it.aim[species]?.let { aim -> !hidden(aim.id) } == true }
-        val attempt = if (index >= 0) input.removeAt(index).aim.getValue(species)
-            else recent[species]?.takeIf { now - it.at in 0..1000 } ?: return
+        // A server species name alone cannot identify a nearby UUID after the camera has moved.
+        val attempt = if (index >= 0) input.removeAt(index).aim.getValue(species) else return
         aimed(attempt.id, species, now)
     }
     private fun expire(now: Long) { pending.removeAll { now - it.at !in 0..60000 } }
@@ -93,9 +93,9 @@ object SafariEspRules {
     fun neededForSparkling(species: String, mound: Boolean, party: PartySparklingState, profitable: Boolean,
         run: SafariRun? = null, uuid: java.util.UUID? = null, now: Long = System.currentTimeMillis()): Boolean {
         if (profitableEsp(species, profitable)) return true
-        if (species == "Rockmite" && !mound) return false
+        if (species == "Honeybug" || species == "Rockmite" && !mound) return false
         if (species == "Doomspiral") return party.needs(species) && (run?.count(species) ?: 0) == 0
-        if (run?.sparklingChecks?.wumpaPrerequisite(species, party) == true) return run.count(species) == 0
+        if (run?.sparklingChecks?.wumpaPrerequisite(species, party) == true && run.count(species) == 0) return true
         if (SafariRoster.named(species) != null && party.needs(species) &&
             species != "Driftling" && !mound &&
             uuid != null && run?.sparklingChecks?.keepEsp(uuid, now) == false) return false
