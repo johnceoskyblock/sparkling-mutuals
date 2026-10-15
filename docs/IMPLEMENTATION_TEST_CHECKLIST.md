@@ -133,6 +133,10 @@ Use the existing IntelliJ Minecraft Client/DevAuth configuration. These are manu
 - Edit a rule and its Last updated section: the command must list that document, including when edited twice on the same date. A new document should appear as New; a removed one as Removed.
 - Read [SOURCE_SYNC.md](SOURCE_SYNC.md) before recording a new baseline. Record only after the corresponding source has been reviewed, implemented and tested.
 
+Issue #55: one clearing completion must deliver coin plus food, two foods and two-item stacks without another completion event. Recheck destinations, discovery needs and consumed quantities before each paced title/chat. Suppress only the irrelevant item and retry unsent items if eligibility returns. Delay world loading beyond three seconds and verify initial inventory/HEAD START/floor pickups remain distinct. Confirm separate new-spawn obligations and clean state on new run.
+
 ## Last updated
 
 2026-10-15 - Added ticket-earned release/announcement and automatic warp timer checks, retaining detector and incense regressions.
+
+2026-10-15 - Fixed complete, independently gated starting-resource reminder delivery (#55).

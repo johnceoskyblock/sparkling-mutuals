@@ -266,6 +266,7 @@ class DocumentedSafariRulesTest {
         assertTrue(r.notices("Local", SafariBiome.HAUNTED, party("Gimmiegold")).isEmpty())
         val notice = r.notices("Local", SafariBiome.FOREST, party("Gimmiegold")).single()
         assertTrue(r.noticeStillRelevant(notice, SafariBiome.FOREST, party("Gimmiegold")))
+        r.noticeSent("Local", notice)
         assertTrue(r.notices("Local", SafariBiome.FOREST, party("Gimmiegold")).isEmpty())
         r.inventory(emptyList(), false)
         assertFalse(r.noticeStillRelevant(notice, SafariBiome.FOREST, party("Gimmiegold")))

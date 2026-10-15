@@ -51,7 +51,7 @@ class SafariBirdLedger {
         val held = stacks.groupBy { SafariRules.strip(it.first).trim() }
             .mapValues { (_, items) -> items.sumOf { it.second.coerceAtLeast(0) } }
         foods.forEach { food ->
-            val amount = maxOf(startingFoods[food] ?: 0, (held[food] ?: 0) - (forest[food] ?: 0))
+            val amount = maxOf(startingFoods[food] ?: 0, (held[food] ?: 0) - ((picked[food] ?: 0) - (startingPickups[food] ?: 0)))
             if (amount > (startingFoods[food] ?: 0)) populationProof = null
             startingFoods[food] = amount
         }

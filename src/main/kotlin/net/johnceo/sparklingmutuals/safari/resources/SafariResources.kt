@@ -31,7 +31,7 @@ class SafariResources {
     private val starting = mutableMapOf<FloorDropType, Int>()
     private val pickups = mutableMapOf<FloorDropType, Int>()
     private val held = mutableMapOf<FloorDropType, Int>()
-    private val notified = mutableSetOf<FloorDropType>()
+    private val notified = mutableMapOf<FloorDropType, Int>()
     private data class Outstanding(val amount: Int, val population: Int, val events: Int, val credits: Int)
     private val outstanding = linkedMapOf<Pair<String, FloorDropType>, Outstanding>()
     private val resolved = mutableSetOf<Pair<String, FloorDropType>>()
@@ -79,11 +79,16 @@ class SafariResources {
         val needed = if (destination == SafariBiome.HAUNTED) party.needs("Gimmiegold")
             else listOf("Bluebird", "Parakeet", "Macaw").any(party::needs)
         val remaining = minOf(amount, held[type] ?: 0)
-        if (!needed || destination == biome || remaining <= 0 || !notified.add(type)) return@mapNotNull null
-        notice(player, type, remaining)
+        if (!needed || destination == biome || remaining <= (notified[type] ?: 0)) return@mapNotNull null
         val discoveries = if (destination == SafariBiome.HAUNTED) listOf("Gimmiegold")
             else listOf("Bluebird", "Parakeet", "Macaw").filter(party::needs)
         "[SM] Unused starting item: ${remaining}x ${type.label} -> ${destination.label} ($player; party needs Sparkling ${discoveries.joinToString(", ")})"
+    }
+    /** Called only after local feedback and party chat were actually dispatched. */
+    fun noticeSent(player: String, text: String) {
+        val reminder = StartingResourceReminder.parse(text, PartySparklingState()) ?: return
+        notified[reminder.type] = maxOf(notified[reminder.type] ?: 0, reminder.quantity)
+        notice(player, reminder.type, reminder.quantity)
     }
     fun partyNotice(raw: String): Boolean {
         val chat = PartyChat.parse(SafariRules.strip(raw)) ?: return false
@@ -95,8 +100,15 @@ class SafariResources {
         val biome = destination(type) ?: return
         val key = player.lowercase() to type
         if (key in resolved || key in outstanding) return
-        outstanding[key] = Outstanding(amount, populations[biome] ?: 0, events[biome] ?: 0, credits[biome] ?: 0)
-        required[biome] = maxOf(required[biome] ?: 0, populations[biome] ?: 0) + amount
+        // Reserve partially observed evidence belonging to earlier notices, even
+        // before their full quantities resolve. Later allocation cannot subtract it twice.
+        val creditBaseline = maxOf(credits[biome] ?: 0, outstanding.filterKeys { destination(it.second) == biome }
+            .values.maxOfOrNull { previous -> previous.credits + maxOf(0,
+                (populations[biome] ?: 0) - previous.population, (events[biome] ?: 0) - previous.events) } ?: 0)
+        // A first visit must not use the biome's ordinary baseline as the extra spawn.
+        val populationBaseline = maxOf(populations[biome] ?: 0, if (biome == SafariBiome.FOREST) 9 else 3)
+        outstanding[key] = Outstanding(amount, populationBaseline, events[biome] ?: 0, creditBaseline)
+        required[biome] = maxOf(required[biome] ?: 0, populationBaseline) + amount
     }
     fun pending(biome: SafariBiome) = outstanding.keys.any { destination(it.second) == biome }
     fun spawn(biome: SafariBiome) { events.merge(biome, 1, Int::plus); reconcile(biome) }
@@ -107,7 +119,7 @@ class SafariResources {
             val (key, value) = iterator.next()
             if (destination(key.second) != biome) continue
             // Food population is measured in feeding equivalents (a Macaw pair is one).
-            val added = maxOf((populations[biome] ?: 0) - value.population, (events[biome] ?: 0) - value.events) - ((credits[biome] ?: 0) - value.credits)
+            val added = maxOf((populations[biome] ?: 0) - value.population, (events[biome] ?: 0) - value.events) - ((credits[biome] ?: 0) - value.credits).coerceAtLeast(0)
             if (added >= value.amount) { credits.merge(biome, value.amount, Int::plus); resolved.add(key); iterator.remove() }
         }
     }
