@@ -75,7 +75,7 @@ Reruns can reconcile same-tag draft assets idempotently. A published release wit
 ## Remaining decisions and limitations
 
 - The user approved this design and the exact 26.1.2 patch policy on 2026-10-15.
-- Dependency resolution, per-version compilation and client/mixin checks have not yet run. Availability checks do not establish a passing build.
+- Dependency resolution, per-version compilation and the 652 existing tests per target have run successfully. All three clients started and rendered settings/history/capture screens; live Hypixel world/HUD/ESP and server behavior remain unverified.
 - No gameplay-rule changes are planned, so the documented Gemzie/Honeybug wording inconsistencies remain recorded for the relevant future issue rather than being silently changed here.
 - No shared documentation -Record operation while unrelated pending briefs remain unresolved. The reading record is separate from implementation certification.
 
@@ -92,4 +92,4 @@ Reruns can reconcile same-tag draft assets idempotently. A published release wit
 
 ## Last updated
 
-2026-10-15 - Proposed verified target/dependency matrix, shared-source design and fail-closed three-artifact release process; design and exact patch policy approved; implementation plan review is next.
+2026-10-15 - Recorded the approved exact-target design and subsequent local compilation, test and client-screen validation; live server checks remain explicit limitations.

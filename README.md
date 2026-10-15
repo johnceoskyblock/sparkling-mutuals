@@ -92,12 +92,12 @@ Use the [37 individual critter notes](docs/critters/README.md) for species rules
 
 ## Installation
 
-- Requires Minecraft **26.1.2**, Java **25**, Fabric Loader **0.19.5+**, Fabric API, and Fabric Language Kotlin.
+- Development builds support Minecraft **26.1.2**, **26.2** and **26.3**. Use Java **25**, Fabric Loader **0.19.5+**, matching Fabric API, and Fabric Language Kotlin.
 - Download the JAR from [Releases](https://github.com/johnceoskyblock/sparkling-mutuals/releases) and place it in your `mods` folder.
-- Development builds: download the Artifacts ZIP from a successful [Actions run](https://github.com/johnceoskyblock/sparkling-mutuals/actions) and extract the JAR without `-sources` in its name.
+- Development builds: download `jar-mc<version>` from a successful [Actions run](https://github.com/johnceoskyblock/sparkling-mutuals/actions). Install **only one matching JAR**; the 26.1 line supports **26.1.2 only**. See the [version and dependency table](docs/MULTI_VERSION_BUILDS.md).
 - Profile lookups use a [Hypixel API key](https://developer.hypixel.net) or the optional Shiny Hunter shared API.
 - Release notes are in the [release descriptions](https://github.com/johnceoskyblock/sparkling-mutuals/releases).
-- Current release: **v3.3.0**, with the installable file `sparkling-mutuals-3.3.0.jar`. Remove the older Sparkling Mutuals JAR before installing the update.
+- Current published release: **v3.3.0**, with the existing 26.1.2 file `sparkling-mutuals-3.3.0.jar`. The three-target workflow applies to future releases. Remove the older Sparkling Mutuals JAR before installing an update.
 
 ## Contributing
 
@@ -118,4 +118,4 @@ Per-drop colors are configurable in **ESP → Floor-drop colors**. **Miria conte
 
 ## Last updated
 
-2026-10-15 - Linked the repository guide; release notes remain in GitHub Releases and feature documentation describes current behavior.
+2026-10-15 - Added exact three-target development installation guidance; distinguished future multi-version releases from the existing published release.

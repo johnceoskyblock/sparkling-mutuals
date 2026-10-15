@@ -12,6 +12,7 @@ Kotlin source lives under `src/main/kotlin/net/johnceo/sparklingmutuals/`. Packa
 | `alerts` | Warp reminders and alert timing |
 | `api` | Profile lookups, API providers, failures and retries |
 | `commands` | Local commands, party command parsing, replies and responder election |
+| `compat` | Version-specific screen, input, camera and world-rendering API adapters |
 | `config` | Saved settings, defaults, config screens and appearance |
 | `contest` | Miria contest tracking, tickets, HUD and settings screen |
 | `history` | Saved records, live history, achievements, profit and playtime |
@@ -37,7 +38,7 @@ Keep shared run evidence in `SafariRun`; Minecraft event handling belongs in the
 
 Tests under `src/test/kotlin/net/johnceo/sparklingmutuals/` follow the same feature packages. `safari/integration` contains tests spanning multiple Safari features. Name suites after the behavior they protect, rather than an issue number or release. Keep regression tests after implementing a feature.
 
-Run all tests with `./gradlew.bat test` and build with `./gradlew.bat build` on Windows; use `./gradlew` on other platforms. A focused suite can be selected with `./gradlew.bat test --tests '*BeeNestSurveyTest'`. Reports are in `build/reports/tests/test/`.
+Run `./gradlew.bat clean buildAllTargets` on Windows; use `./gradlew` on other platforms. A focused suite can be selected with `./gradlew.bat :26.1.2:test --tests '*BeeNestSurveyTest'`. Reports are in `versions/<target>/build/reports/tests/test/`. The shared `src/test` suites run for each target; `buildSrc/src/test` protects packaging and release staging.
 
 Runtime assets, mod metadata and mixin registration remain under `src/main/resources/`. Recorded API responses used by tests belong in `src/test/resources/`. Keep resource names stable when reorganizing code.
 
@@ -55,6 +56,7 @@ Runtime assets, mod metadata and mixin registration remain under `src/main/resou
 | [Contest downtime](CONTEST_DOWNTIME.md) | Ticket events and downtime coordination |
 | [Manual checklist](IMPLEMENTATION_TEST_CHECKLIST.md) | In-game checks that unit tests cannot establish |
 | [Documentation sync](SOURCE_SYNC.md) | Reviewing document revisions against the source baseline |
+| [Multi-version builds](MULTI_VERSION_BUILDS.md) | Exact targets, dependencies, installation, Stonecutter commands and draft release publication |
 | [GitHub Releases](https://github.com/johnceoskyblock/sparkling-mutuals/releases) | Release notes, upgrade guidance and validation for each published version |
 
 `docs/issues/` holds pending implementation briefs and their reference assets. Remove completed briefs after their lasting rules and evidence are represented in maintained docs and regression tests. Older briefs may name source paths from before this organization; use the package table above to locate moved files.
@@ -65,4 +67,4 @@ Gradle's `.gradle/`, `.kotlin/` and `build/`, IDE settings, the development clie
 
 ## Last updated
 
-2026-10-15 - Documented feature packages, matching test organization and GitHub Releases as the release-note source of truth.
+2026-10-15 - Added compatibility/build-helper owners, per-target test locations and the multi-version build guide.

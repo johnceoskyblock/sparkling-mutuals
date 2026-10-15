@@ -1,5 +1,6 @@
 package net.johnceo.sparklingmutuals.config
 
+import net.johnceo.sparklingmutuals.compat.*
 import io.github.notenoughupdates.moulconfig.Config
 import io.github.notenoughupdates.moulconfig.annotations.*
 import io.github.notenoughupdates.moulconfig.common.text.StructuredText
@@ -237,21 +238,21 @@ class SafariSettings : Config() {
     override fun executeRunnable(id: Int) {
         val client = Minecraft.getInstance()
         when (id) {
-            1 -> { apply(); client.execute { client.setScreen(ContestGui(client.screen)) } }
+            1 -> { apply(); client.execute { client.smSetScreen(ContestGui(client.smScreen)) } }
             2 -> { miria.five = false; miria.three = false; miria.one = false; apply() }
             3 -> client.execute {
-                client.setScreen(ChatScreen("", false))
+                client.smSetScreen(ChatScreen("", false))
                 client.player?.sendSystemMessage(LocalChat.component(CommandHelp.localLines().joinToString("\n")))
             }
-            4 -> client.execute { client.setScreen(ApiKeyScreen(client.screen)) }
+            4 -> client.execute { client.smSetScreen(ApiKeyScreen(client.smScreen)) }
             5 -> { warp.delay = "25"; saveDelay() }
             6 -> saveDelay()
             7 -> saveSound()
-            8 -> { apply(); client.execute { client.setScreen(CatchCountScreen(client.screen)) } }
+            8 -> { apply(); client.execute { client.smSetScreen(CatchCountScreen(client.smScreen)) } }
             9 -> { apply(); if (saveSparklingSound()) SparklingEncounters.playSound(client) }
-            10 -> { apply(); client.execute { client.setScreen(HistoryScreen(client.screen)) } }
+            10 -> { apply(); client.execute { client.smSetScreen(HistoryScreen(client.smScreen)) } }
             11 -> { apply(); client.execute {
-                client.setScreen(null)
+                client.smSetScreen(null)
                 LogImporter.runImport(LogImporter.defaultLogs())
             } }
         }

@@ -1,5 +1,11 @@
 # Support Minecraft 26.1, 26.2, and 26.3 with Stonecutter and three JARs per release
 
+## Implementation status
+
+Implemented on `feature/multi-version-support` for exact targets **26.1.2**, **26.2** and **26.3**, as approved by the maintainer. The [maintained build guide](../MULTI_VERSION_BUILDS.md) contains commands, dependencies, packaging/release rules and validation limits. The original request below is retained for review; its pre-migration file paths and example `mc26.1` label are historical.
+
+Local checks retain all 652 feature tests and 115 suites per target, validate three distinct JARs, and start each client with required mixins and settings/history/capture screen rendering. Packaging and publication-helper tests cover wrong/missing targets, staged collection and interrupted draft uploads. Live Hypixel world HUD/ESP, commands and Safari behavior remain untested in this migration. No tag or release was created; final uploaded-commit Actions verification is recorded in the issue confirmation.
+
 ## Goal
 
 Let users run Sparkling Mutuals on Minecraft 26.1, 26.2, or 26.3 instead of relying on a single supported version. Maintain one shared codebase using Stonecutter and publish one installable Fabric mod JAR for each supported version in every GitHub release.
@@ -65,3 +71,7 @@ If a required target or dependency is unavailable, report the exact blocker and 
 ## Delivery
 
 Implement the migration and compatibility fixes. Summarize changed files, exact supported versions and dependencies, commands and validation results, artifact locations, and any remaining blockers or unverified runtime behavior. Keep the work focused on multi-version support and release packaging.
+
+## Last updated
+
+2026-10-15 - Linked the implemented three-target design and maintained rules; distinguished startup/screen evidence from unperformed live server checks.

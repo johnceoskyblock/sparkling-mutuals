@@ -1,5 +1,6 @@
 package net.johnceo.sparklingmutuals.history
 
+import net.johnceo.sparklingmutuals.compat.*
 import net.johnceo.sparklingmutuals.LocalChat
 import net.johnceo.sparklingmutuals.safari.SafariRules
 import net.minecraft.client.Minecraft
@@ -20,7 +21,7 @@ object PlaytimeReader {
     fun register() { data = HistoryStore.load("playtime", Data::class.java, ::Data) }
 
     fun tick(client: Minecraft) {
-        val screen = client.screen as? AbstractContainerScreen<*> ?: return
+        val screen = client.smScreen as? AbstractContainerScreen<*> ?: return
         if (++ticks % 10 != 0) return
         for (slot in screen.menu.slots) {
             if (slot.container is Inventory) continue

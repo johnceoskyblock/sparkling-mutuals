@@ -1,5 +1,6 @@
 package net.johnceo.sparklingmutuals.safari.completion
 
+import net.johnceo.sparklingmutuals.compat.*
 import net.johnceo.sparklingmutuals.LocalChat
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.config.SafariTheme
@@ -41,10 +42,10 @@ object SafariCompletion {
         if (client.connection != null && resourceQueue.isNotEmpty() && now - sentAt >= 3000) {
             val notice = resourceQueue.removeFirst()
             StartingResourceReminder.parse(notice, party)?.let { reminder ->
-                client.gui.setTimes(5, 50, 15)
-                client.gui.setTitle(net.minecraft.network.chat.Component.literal(reminder.title)
+                client.gui.smSetTimes(5, 50, 15)
+                client.gui.smSetTitle(net.minecraft.network.chat.Component.literal(reminder.title)
                     .withStyle { it.withColor(SafariTheme.ACCENT).withBold(true) })
-                client.gui.setSubtitle(net.minecraft.network.chat.Component.literal(reminder.detail))
+                client.gui.smSetSubtitle(net.minecraft.network.chat.Component.literal(reminder.detail))
                 client.player?.sendSystemMessage(LocalChat.component(notice))
                 client.connection!!.sendCommand("pc $notice")
                 sentAt = now

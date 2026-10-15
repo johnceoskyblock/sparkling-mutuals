@@ -1,5 +1,11 @@
 package net.johnceo.sparklingmutuals.safari.structures
 
+//? if >=26.2 {
+/*import net.minecraft.world.entity.EntityTypes as EntityType
+*///? } else {
+import net.minecraft.world.entity.EntityType
+//? }
+
 import net.johnceo.sparklingmutuals.safari.SafariAssist
 import net.johnceo.sparklingmutuals.safari.SafariBiome
 import net.johnceo.sparklingmutuals.safari.SafariTracking
@@ -8,7 +14,6 @@ import net.johnceo.sparklingmutuals.safari.esp.SafariEspRules
 import net.minecraft.client.Minecraft
 import net.minecraft.core.BlockPos
 import net.minecraft.world.entity.Entity
-import net.minecraft.world.entity.EntityType
 
 /** Loaded-world observations adapted from CritterMod 0.9.0; never request chunks. */
 object SafariStructures {
