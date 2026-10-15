@@ -1,18 +1,18 @@
 package net.johnceo.sparklingmutuals.mixin
 
-import net.johnceo.sparklingmutuals.safari.SafariManagerGuard
+import net.johnceo.sparklingmutuals.safari.automation.SafariManagerGuard
 import net.minecraft.client.multiplayer.MultiPlayerGameMode
 import net.minecraft.world.InteractionHand
 import net.minecraft.world.InteractionResult
 import net.minecraft.world.entity.Entity
 import net.minecraft.world.entity.player.Player
+import net.minecraft.world.inventory.ContainerInput
 import net.minecraft.world.phys.EntityHitResult
 import org.spongepowered.asm.mixin.Mixin
 import org.spongepowered.asm.mixin.injection.At
 import org.spongepowered.asm.mixin.injection.Inject
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo
-import net.minecraft.world.inventory.ContainerInput
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable
 
 /** Right-clicking an entity has no client-side Fabric event; returning FAIL here means no interact packet is sent. */
 @Mixin(MultiPlayerGameMode::class)

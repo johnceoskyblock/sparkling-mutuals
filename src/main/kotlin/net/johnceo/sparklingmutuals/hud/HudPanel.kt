@@ -1,7 +1,8 @@
 package net.johnceo.sparklingmutuals.hud
+
 import net.johnceo.sparklingmutuals.config.AppearanceConfig
 import net.johnceo.sparklingmutuals.config.PanelStyle
-
+import net.johnceo.sparklingmutuals.config.SafariTheme
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphicsExtractor
 
@@ -11,7 +12,7 @@ data class HudRow(val label: String = "", val value: String? = null, val color: 
     companion object {
         const val WHITE = -1
         val GRAY = 0xFFAAAAAA.toInt()
-        val GOLD = 0xFF000000.toInt() or net.johnceo.sparklingmutuals.config.SafariTheme.ACCENT
+        val GOLD = 0xFF000000.toInt() or SafariTheme.ACCENT
     }
 }
 class HudPanel(val title: String, val titleColor: Int = HudRow.GOLD, val rows: List<HudRow>) {

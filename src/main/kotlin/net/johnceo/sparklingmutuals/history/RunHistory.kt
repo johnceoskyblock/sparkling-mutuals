@@ -4,11 +4,11 @@ import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.party.PartyManager
 import net.johnceo.sparklingmutuals.safari.SafariBiome
-import net.johnceo.sparklingmutuals.safari.SafariFullClear
 import net.johnceo.sparklingmutuals.safari.SafariMessages
 import net.johnceo.sparklingmutuals.safari.SafariRun
 import net.johnceo.sparklingmutuals.safari.SafariSparklingMode
 import net.johnceo.sparklingmutuals.safari.SafariTracking
+import net.johnceo.sparklingmutuals.safari.completion.SafariFullClear
 import net.minecraft.client.Minecraft
 
 /**

@@ -1,9 +1,9 @@
 package net.johnceo.sparklingmutuals.commands
 
-import net.johnceo.sparklingmutuals.api.HypixelApi
-import net.johnceo.sparklingmutuals.api.ApiProvider
 import net.johnceo.sparklingmutuals.api.ApiFailure
 import net.johnceo.sparklingmutuals.api.ApiFailureKind
+import net.johnceo.sparklingmutuals.api.ApiProvider
+import net.johnceo.sparklingmutuals.api.HypixelApi
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.safari.SafariRoster
 

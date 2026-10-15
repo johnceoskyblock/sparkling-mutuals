@@ -1,11 +1,11 @@
 package net.johnceo.sparklingmutuals.history
 
+import java.util.concurrent.Executors
 import net.johnceo.sparklingmutuals.LocalChat
 import net.johnceo.sparklingmutuals.api.HypixelApi
 import net.johnceo.sparklingmutuals.hud.SkyblockSidebar
 import net.minecraft.client.Minecraft
 import org.slf4j.LoggerFactory
-import java.util.concurrent.Executors
 
 /**
  * Your own Safari numbers from Hypixel's API (your key, or the shared cloud API), so achievements and the dex count

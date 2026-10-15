@@ -4,8 +4,8 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.util.Properties
 import net.johnceo.sparklingmutuals.hud.SafariHud
-import net.johnceo.sparklingmutuals.safari.SafariPersonalBests
-import net.johnceo.sparklingmutuals.safari.SafariFullClear
+import net.johnceo.sparklingmutuals.safari.completion.SafariFullClear
+import net.johnceo.sparklingmutuals.safari.completion.SafariPersonalBests
 import net.minecraft.resources.Identifier
 
 object ConfigManager {

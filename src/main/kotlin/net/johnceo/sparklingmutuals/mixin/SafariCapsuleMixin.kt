@@ -1,6 +1,6 @@
 package net.johnceo.sparklingmutuals.mixin
 
-import net.johnceo.sparklingmutuals.safari.CritterCapsuleHider
+import net.johnceo.sparklingmutuals.safari.esp.CritterCapsuleHider
 import net.minecraft.client.renderer.culling.Frustum
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher
 import net.minecraft.world.entity.Entity

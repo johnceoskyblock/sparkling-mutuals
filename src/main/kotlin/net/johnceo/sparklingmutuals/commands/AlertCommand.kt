@@ -1,12 +1,10 @@
 package net.johnceo.sparklingmutuals.commands
 
-import net.johnceo.sparklingmutuals.LocalChat
-
 import com.mojang.brigadier.arguments.IntegerArgumentType
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback
 import net.fabricmc.fabric.api.client.command.v2.ClientCommands
+import net.johnceo.sparklingmutuals.LocalChat
 import net.johnceo.sparklingmutuals.alerts.AlertManager
-import net.minecraft.network.chat.Component
 
 object AlertCommand {
 

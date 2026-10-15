@@ -1,19 +1,21 @@
 package net.johnceo.sparklingmutuals.commands
 
-import net.johnceo.sparklingmutuals.LocalChat
-
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback
 import net.fabricmc.fabric.api.client.command.v2.ClientCommands
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource
-import net.johnceo.sparklingmutuals.contest.ContestGui
+import net.johnceo.sparklingmutuals.LocalChat
 import net.johnceo.sparklingmutuals.config.SafariConfigScreen
+import net.johnceo.sparklingmutuals.contest.ContestGui
+import net.johnceo.sparklingmutuals.history.importing.LogImporter
+import net.johnceo.sparklingmutuals.history.ui.HistoryScreen
+import net.johnceo.sparklingmutuals.honeyhives.HoneyHives
+import net.johnceo.sparklingmutuals.safari.SafariMode
+import net.johnceo.sparklingmutuals.safari.completion.SafariFullClear
+import net.johnceo.sparklingmutuals.safari.esp.SafariEsp
+import net.johnceo.sparklingmutuals.safari.structures.BeeNests
+import net.johnceo.sparklingmutuals.safari.ui.CatchCountScreen
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.screens.Screen
-import net.johnceo.sparklingmutuals.safari.CatchCountScreen
-import net.johnceo.sparklingmutuals.safari.SafariFullClear
-import net.johnceo.sparklingmutuals.safari.SafariMode
-import net.johnceo.sparklingmutuals.safari.SafariEsp
-import net.minecraft.network.chat.Component
 
 object SparklingCommand {
     private fun mode(source: FabricClientCommandSource, selected: SafariMode): Int {
@@ -37,18 +39,18 @@ object SparklingCommand {
                     .then(ClientCommands.literal("history")
                         .then(ClientCommands.literal("import")
                             .then(ClientCommands.argument("folder", com.mojang.brigadier.arguments.StringArgumentType.greedyString()).executes {
-                                net.johnceo.sparklingmutuals.history.LogImporter.runImport(java.nio.file.Path.of(
+                                LogImporter.runImport(java.nio.file.Path.of(
                                     com.mojang.brigadier.arguments.StringArgumentType.getString(it, "folder").replace("\"", ""))); 1 })
-                            .executes { net.johnceo.sparklingmutuals.history.LogImporter.runImport(net.johnceo.sparklingmutuals.history.LogImporter.defaultLogs()); 1 })
-                        .executes { open { net.johnceo.sparklingmutuals.history.HistoryScreen(null) } })
+                            .executes { LogImporter.runImport(LogImporter.defaultLogs()); 1 })
+                        .executes { open { HistoryScreen(null) } })
                     .then(ClientCommands.literal("achievements").executes {
-                        open { net.johnceo.sparklingmutuals.history.HistoryScreen(null, net.johnceo.sparklingmutuals.history.HistoryScreen.Tab.ACHIEVEMENTS) } })
+                        open { HistoryScreen(null, HistoryScreen.Tab.ACHIEVEMENTS) } })
                     .then(ClientCommands.literal("stats").executes {
-                        open { net.johnceo.sparklingmutuals.history.HistoryScreen(null, net.johnceo.sparklingmutuals.history.HistoryScreen.Tab.STATS) } })
+                        open { HistoryScreen(null, HistoryScreen.Tab.STATS) } })
                     .then(ClientCommands.literal("debug").executes { context ->
                         SafariEsp.debug(Minecraft.getInstance())
-                        net.johnceo.sparklingmutuals.safari.BeeNests.debug(Minecraft.getInstance())
-                        net.johnceo.sparklingmutuals.contest.HoneyHives.debug(Minecraft.getInstance())
+                        BeeNests.debug(Minecraft.getInstance())
+                        HoneyHives.debug(Minecraft.getInstance())
                         context.source.sendFeedback(LocalChat.component("[SM] Entity, nest and honeyhive diagnostics saved to latest.log."))
                         1
                     })

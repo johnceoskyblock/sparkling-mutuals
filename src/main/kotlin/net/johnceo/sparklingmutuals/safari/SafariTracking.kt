@@ -1,14 +1,25 @@
 package net.johnceo.sparklingmutuals.safari
 
-import net.johnceo.sparklingmutuals.LocalChat
-
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents
+import net.johnceo.sparklingmutuals.LocalChat
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.contest.ContestGui
+import net.johnceo.sparklingmutuals.history.TicketCounter
 import net.johnceo.sparklingmutuals.hud.SafariHud
+import net.johnceo.sparklingmutuals.safari.completion.SafariFullClear
+import net.johnceo.sparklingmutuals.safari.esp.SafariEsp
+import net.johnceo.sparklingmutuals.safari.esp.SafariEspRules
+import net.johnceo.sparklingmutuals.safari.resources.FloorDropType
+import net.johnceo.sparklingmutuals.safari.resources.SafariFloorDrops
+import net.johnceo.sparklingmutuals.safari.resources.SafariInventoryAlerts
+import net.johnceo.sparklingmutuals.safari.sparkling.SparklingEncounters
+import net.johnceo.sparklingmutuals.safari.structures.BeeNests
+import net.johnceo.sparklingmutuals.safari.structures.SafariMounds
+import net.johnceo.sparklingmutuals.safari.structures.SafariStructures
+import net.johnceo.sparklingmutuals.safari.ui.SafariPanels
+import net.johnceo.sparklingmutuals.safari.ui.SafariVisibility
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphicsExtractor
-import net.minecraft.network.chat.Component
 
 /** Tracking is independent of display toggles. Last-run data lives until the next arrival. */
 object SafariTracking {
@@ -37,14 +48,22 @@ object SafariTracking {
     private fun syncWorld(client: Minecraft) {
         if (client.level !== level) { ledger.worldChanged(System.currentTimeMillis()); resetEncounters(); level = client.level }
     }
-    private fun resetEncounters() { BeeNests.reset(); SparklingEncounters.reset(); SafariStructures.reset(); SafariEsp.clearCaptured(); SafariEsp.resetDrops(); SafariInventoryAlerts.reset(); SafariFloorDrops.state.reset() }
+    private fun resetEncounters() {
+        BeeNests.reset()
+        SparklingEncounters.reset()
+        SafariStructures.reset()
+        SafariEsp.clearCaptured()
+        SafariEsp.resetDrops()
+        SafariInventoryAlerts.reset()
+        SafariFloorDrops.state.reset()
+    }
     private fun receive(raw: String) {
         val client = Minecraft.getInstance()
         if (client.level == null || client.player == null) return
         syncWorld(client)
         val text = SafariRules.strip(raw)
         val now = System.currentTimeMillis()
-        if (net.johnceo.sparklingmutuals.history.TicketCounter.isTicket(text)) pendingAdmission = text to now
+        if (TicketCounter.isTicket(text)) pendingAdmission = text to now
         if (SafariAssist.inSafari) {
             SafariEspRules.thrownSpecies(text)?.let(SafariEsp::threw)
             SafariEspRules.escapedSpecies(text)?.let(SafariEsp::escaped)

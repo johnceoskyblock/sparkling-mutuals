@@ -1,5 +1,8 @@
 package net.johnceo.sparklingmutuals.hud
 
+import net.johnceo.sparklingmutuals.config.AppearanceConfig
+import net.johnceo.sparklingmutuals.config.ConfigManager
+import net.johnceo.sparklingmutuals.config.SafariEspConfig
 import net.johnceo.sparklingmutuals.contest.ContestGui
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphicsExtractor
@@ -20,12 +23,12 @@ class TimedHudAlerts {
 /** Independent HUD channels leave server and sparkling titles alone. */
 object SmallAlerts {
     private val notices = TimedHudAlerts()
-    val titles get() = mapOf(SafariHud.RUN_COMPLETE to net.johnceo.sparklingmutuals.config.ConfigManager.runCompleteTitle, SafariHud.GEMS to "ALL GEMS READY!", SafariHud.BIRD_FOOD to "ALL BIRD FOOD COLLECTED!",
+    val titles get() = mapOf(SafariHud.RUN_COMPLETE to ConfigManager.runCompleteTitle, SafariHud.GEMS to "ALL GEMS READY!", SafariHud.BIRD_FOOD to "ALL BIRD FOOD COLLECTED!",
         SafariHud.INCENSE to "ALL INCENSE READY!", SafariHud.WARP to "WARP REMINDER")
     fun previews() = titles.keys.associateWith(::preview)
     fun preview(hud: SafariHud) = HudPanel(titles.getValue(hud), color(hud), emptyList())
     private fun color(hud: SafariHud) = if (hud == SafariHud.RUN_COMPLETE)
-        net.johnceo.sparklingmutuals.config.SafariEspConfig.rgb(net.johnceo.sparklingmutuals.config.AppearanceConfig.runCompleteColor)
+        SafariEspConfig.rgb(AppearanceConfig.runCompleteColor)
         else if (hud == SafariHud.WARP) 0xFFFF5555.toInt() else 0xFF55FF55.toInt()
     fun show(hud: SafariHud) = notices.show(hud, titles.getValue(hud), color(hud), System.currentTimeMillis())
     fun clear(hud: SafariHud) = notices.clear(hud)

@@ -1,12 +1,12 @@
 package net.johnceo.sparklingmutuals.commands
 
 import net.johnceo.sparklingmutuals.safari.SafariBiome
-import net.johnceo.sparklingmutuals.safari.SafariFullClear
 import net.johnceo.sparklingmutuals.safari.SafariMode
-import net.johnceo.sparklingmutuals.safari.SafariSparklingMode
-import net.johnceo.sparklingmutuals.safari.SafariPanels
 import net.johnceo.sparklingmutuals.safari.SafariRun
+import net.johnceo.sparklingmutuals.safari.SafariSparklingMode
 import net.johnceo.sparklingmutuals.safari.SafariTracking
+import net.johnceo.sparklingmutuals.safari.completion.SafariFullClear
+import net.johnceo.sparklingmutuals.safari.ui.SafariPanels
 
 /** `!m` and `!m <biome>`: what the current mode still needs this run, from the missing panel's own list. */
 object SafariMissingReply {

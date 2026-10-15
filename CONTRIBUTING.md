@@ -44,6 +44,8 @@ Build output is under `build/libs/`. Use the mod JAR without `-sources` in its n
 
 ## Find the relevant code
 
+The [repository guide](docs/README.md) maps each source and test package to its responsibility and indexes the maintained documentation.
+
 | Location | What belongs here |
 | --- | --- |
 | `src/main/kotlin/net/johnceo/sparklingmutuals/` | Mod logic, configuration, HUDs and features |
@@ -53,6 +55,8 @@ Build output is under `build/libs/`. Use the mod JAR without `-sources` in its n
 | `SAFARI_LOGIC.md` and `docs/` | Gameplay evidence, feature rules and manual test guidance |
 
 Follow the style of nearby code. Keep a pull request focused on its purpose; avoid unrelated formatting, dependency updates or version bumps. Prefer small, readable functions and keep game-independent decisions separate from Minecraft rendering and event handlers when practical.
+
+Match Kotlin packages to their directories. Put tests alongside their feature's package under `src/test/kotlin/`, using `safari/integration` for suites that cover several features. Name tests after behavior rather than an issue number or release; retain them to catch regressions after implementation.
 
 AI-assisted contributions are welcome. Read, understand and verify what you submit, including any claimed test results or APIs. You remain responsible for the change and for addressing review feedback.
 
@@ -96,6 +100,12 @@ There is no required title prefix, commit-message format, PR-description templat
 
 Respond to review feedback and keep the discussion constructive. Do not commit generated build output, local IDE files, authentication data or personal logs. Preserve applicable license notices and credit adapted work; see [LICENSE](LICENSE) and [third-party notices](licenses).
 
+## Release notes
+
+Keep release notes in the matching [GitHub Release](https://github.com/johnceoskyblock/sparkling-mutuals/releases), rather than a cumulative version-notes file in the repository. Prepare the upcoming version's notes in its draft release, then publish them with that version. Include the changes since the previous release, upgrade guidance, validation performed and any remaining in-game checks.
+
+Each published release retains its own notes. Update the README's current release and installation details, and update affected feature docs to describe current behavior. Do not append old release summaries to those documents.
+
 ## Last updated
 
-2026-10-15 - Added the contributor workflow, Java 25/Fabric setup, build commands, documentation guidance and focused testing expectations, with a relaxed SkyHanni-inspired structure.
+2026-10-15 - Added the repository guide, feature-based source/test organization, regression-test naming guidance and the GitHub Releases note convention.

@@ -1,17 +1,24 @@
 package net.johnceo.sparklingmutuals.safari
 
+import kotlin.math.sqrt
 import net.johnceo.sparklingmutuals.config.ConfigManager
-import net.johnceo.sparklingmutuals.hud.SkyblockSidebar
-import net.johnceo.sparklingmutuals.hud.*
 import net.johnceo.sparklingmutuals.contest.ContestGui
+import net.johnceo.sparklingmutuals.hud.HudPanel
+import net.johnceo.sparklingmutuals.hud.HudRow
+import net.johnceo.sparklingmutuals.hud.SafariHud
+import net.johnceo.sparklingmutuals.hud.SkyblockSidebar
+import net.johnceo.sparklingmutuals.party.PartyManager
+import net.johnceo.sparklingmutuals.safari.esp.SafariEsp
+import net.johnceo.sparklingmutuals.safari.sparkling.SparklingDetector
+import net.johnceo.sparklingmutuals.safari.sparkling.SparklingEncounters
+import net.johnceo.sparklingmutuals.safari.sparkling.SparklingEntity
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphicsExtractor
+import net.minecraft.world.effect.MobEffects
 import net.minecraft.world.entity.Entity
 import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.entity.decoration.ArmorStand
 import net.minecraft.world.entity.player.Player
-import net.minecraft.world.effect.MobEffects
-import kotlin.math.sqrt
 
 /** Positive name/skin scan of loaded entities; alerts and progress share the same run-owned evidence. */
 object SafariAssist {
@@ -54,7 +61,7 @@ object SafariAssist {
         }
         val entities = client.level!!.entitiesForRendering().filterNot { it.isRemoved }.toList()
         val realPlayers = client.connection?.listedOnlinePlayers?.map { it.profile.id }?.toSet().orEmpty() + player.uuid
-        val partyMembers = net.johnceo.sparklingmutuals.party.PartyManager.getMembers().toSet()
+        val partyMembers = PartyManager.getMembers().toSet()
         val snapshots = entities.map { entity ->
             val realPlayer = entity is Player && (entity.uuid in realPlayers || entity.uuid.toString() in partyMembers)
             val carrier = entity is Player || entity is ArmorStand || entity is net.minecraft.world.entity.Display.ItemDisplay

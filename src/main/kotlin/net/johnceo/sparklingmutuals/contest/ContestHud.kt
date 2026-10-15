@@ -1,7 +1,8 @@
 package net.johnceo.sparklingmutuals.contest
 
-import net.johnceo.sparklingmutuals.config.ContestConfig
 import net.johnceo.sparklingmutuals.config.AppearanceConfig
+import net.johnceo.sparklingmutuals.config.ContestConfig
+import net.johnceo.sparklingmutuals.config.SafariTheme
 import net.johnceo.sparklingmutuals.hud.SkyblockSidebar
 import net.minecraft.client.DeltaTracker
 import net.minecraft.client.Minecraft
@@ -64,7 +65,7 @@ object ContestHud {
             Component.literal("Safari Contest"),
             6,
             5,
-            (0xFF000000.toInt() or net.johnceo.sparklingmutuals.config.SafariTheme.ACCENT),
+            (0xFF000000.toInt() or SafariTheme.ACCENT),
             true
         )
 

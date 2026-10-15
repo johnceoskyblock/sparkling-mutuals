@@ -1,6 +1,7 @@
 package net.johnceo.sparklingmutuals.hud
 
 import net.johnceo.sparklingmutuals.contest.MiriaContestFilter
+import net.johnceo.sparklingmutuals.safari.SafariRules
 import net.minecraft.client.Minecraft
 import net.minecraft.network.chat.Component
 import net.minecraft.world.scores.DisplaySlot
@@ -22,11 +23,11 @@ object SkyblockSidebar {
         rawLines(client).forEach { row ->
             val match = areaPattern.matchEntire(row) ?: return@forEach
             if (match.groupValues[1] !in listOf("♲", "☀")) {
-                return net.johnceo.sparklingmutuals.safari.SafariRules.strip(match.groupValues[2])
+                return SafariRules.strip(match.groupValues[2])
             }
         }
         return client.connection?.onlinePlayers?.mapNotNull { it.tabListDisplayName?.string }
-            ?.map(net.johnceo.sparklingmutuals.safari.SafariRules::strip)
+            ?.map(SafariRules::strip)
             ?.firstOrNull { it.startsWith("Area: ") }?.substringAfter("Area: ")
     }
 

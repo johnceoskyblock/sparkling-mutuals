@@ -1,21 +1,22 @@
 package net.johnceo.sparklingmutuals.config
 
-import net.johnceo.sparklingmutuals.LocalChat
-
 import io.github.notenoughupdates.moulconfig.Config
 import io.github.notenoughupdates.moulconfig.annotations.*
 import io.github.notenoughupdates.moulconfig.common.text.StructuredText
 import io.github.notenoughupdates.moulconfig.processor.ProcessedCategory
+import net.johnceo.sparklingmutuals.LocalChat
 import net.johnceo.sparklingmutuals.alerts.AlertManager
-import net.johnceo.sparklingmutuals.commands.*
+import net.johnceo.sparklingmutuals.commands.CommandHelp
 import net.johnceo.sparklingmutuals.contest.ContestGui
-import net.johnceo.sparklingmutuals.safari.CatchCountScreen
-import net.johnceo.sparklingmutuals.safari.SafariFullClear
+import net.johnceo.sparklingmutuals.history.importing.LogImporter
+import net.johnceo.sparklingmutuals.history.ui.HistoryScreen
 import net.johnceo.sparklingmutuals.safari.SafariMode
+import net.johnceo.sparklingmutuals.safari.completion.SafariFullClear
+import net.johnceo.sparklingmutuals.safari.sparkling.SparklingEncounters
+import net.johnceo.sparklingmutuals.safari.ui.CatchCountScreen
 import net.minecraft.client.Minecraft
-import net.minecraft.network.chat.Component
-import net.minecraft.resources.Identifier
 import net.minecraft.client.gui.screens.ChatScreen
+import net.minecraft.resources.Identifier
 
 /** MoulConfig view model; the existing properties files remain the saved configuration. */
 class SafariSettings : Config() {
@@ -247,11 +248,11 @@ class SafariSettings : Config() {
             6 -> saveDelay()
             7 -> saveSound()
             8 -> { apply(); client.execute { client.setScreen(CatchCountScreen(client.screen)) } }
-            9 -> { apply(); if (saveSparklingSound()) net.johnceo.sparklingmutuals.safari.SparklingEncounters.playSound(client) }
-            10 -> { apply(); client.execute { client.setScreen(net.johnceo.sparklingmutuals.history.HistoryScreen(client.screen)) } }
+            9 -> { apply(); if (saveSparklingSound()) SparklingEncounters.playSound(client) }
+            10 -> { apply(); client.execute { client.setScreen(HistoryScreen(client.screen)) } }
             11 -> { apply(); client.execute {
                 client.setScreen(null)
-                net.johnceo.sparklingmutuals.history.LogImporter.runImport(net.johnceo.sparklingmutuals.history.LogImporter.defaultLogs())
+                LogImporter.runImport(LogImporter.defaultLogs())
             } }
         }
     }

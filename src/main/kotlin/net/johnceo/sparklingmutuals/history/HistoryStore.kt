@@ -1,10 +1,10 @@
 package net.johnceo.sparklingmutuals.history
 
 import com.google.gson.GsonBuilder
-import net.fabricmc.loader.api.FabricLoader
-import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.Path
+import net.fabricmc.loader.api.FabricLoader
+import org.slf4j.LoggerFactory
 
 /** JSON files in the config folder for the history features, each read once and rewritten whole. */
 object HistoryStore {
