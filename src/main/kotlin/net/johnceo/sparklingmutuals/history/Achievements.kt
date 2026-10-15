@@ -19,7 +19,7 @@ import net.minecraft.sounds.SoundEvents
 
 /** Serialized tier names with explicit presentation policy; SPECIAL is a novelty category. */
 enum class AchievementTier(val code: String, val argb: Int, val displayRank: Int, val fanfare: Boolean = false, val title: Boolean = false) {
-    COMMON("§f", 0xFFFFFFFF.toInt(), 0), UNCOMMON("§a", 0xFF55FF55.toInt(), 0), RARE("§9", 0xFF5555FF.toInt(), 2),
+    COMMON("§f", 0xFFFFFFFF.toInt(), 0), UNCOMMON("§a", 0xFF55FF55.toInt(), 1), RARE("§9", 0xFF5555FF.toInt(), 2),
     EPIC("§5", 0xFFAA00AA.toInt(), 3), LEGENDARY("§6", 0xFFFFAA00.toInt(), 4, false, true), MYTHIC("§d", 0xFFFF55FF.toInt(), 5, true, true),
     DIVINE("§b", 0xFF55FFFF.toInt(), 6, true, true), SPECIAL("§c", 0xFFFF5555.toInt(), 0)
 }

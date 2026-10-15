@@ -128,6 +128,29 @@ class AchievementDefinitionsTest {
         val divine = Achievements.all().single { it.id == "max_sparklings" }
         assertEquals(listOf(novelty, divine), listOf(divine, novelty).sortedWith(AchievementPresentation.rarityOrder))
     }
+    @Test fun `conventional rarity tiers have strictly increasing presentation ranks`() {
+        val conventional = listOf(AchievementTier.COMMON, AchievementTier.UNCOMMON, AchievementTier.RARE,
+            AchievementTier.EPIC, AchievementTier.LEGENDARY, AchievementTier.MYTHIC, AchievementTier.DIVINE)
+        for ((lower, higher) in conventional.zipWithNext()) {
+            assertTrue(lower.displayRank < higher.displayRank, "$lower must sort strictly below $higher")
+        }
+    }
+    @Test fun `rarity sorting keeps common before uncommon regardless of names progress and unlock state`() {
+        val common = Achievements.all().single { it.id == "run_10" }.copy(name = "Zulu Common")
+        val uncommon = Achievements.all().single { it.id == "run_100" }.copy(name = "Alpha Uncommon")
+        val order = AchievementPresentation.rarityOrder.thenBy { it.name }
+        for (commonAt in listOf(null, 100L)) {
+            for (uncommonAt in listOf(null, 200L)) {
+                val rows = mapOf(
+                    common to AchievementPresentation.current(common, AchievementProgress(1.0, 10.0, "runs", "recorded", false), commonAt),
+                    uncommon to AchievementPresentation.current(uncommon, AchievementProgress(99.0, 100.0, "runs", "recorded", false), uncommonAt))
+                assertEquals(listOf(common, uncommon), rows.keys.sortedWith(order))
+                assertEquals(listOf(uncommon, common), rows.keys.sortedWith(order.reversed()))
+                assertEquals(commonAt, rows.getValue(common).unlockedAt)
+                assertEquals(uncommonAt, rows.getValue(uncommon).unlockedAt)
+            }
+        }
+    }
     private fun isolated(body: () -> Unit) {
         val field = Achievements::class.java.getDeclaredField("data").apply { isAccessible = true }
         val previous = field.get(Achievements)
