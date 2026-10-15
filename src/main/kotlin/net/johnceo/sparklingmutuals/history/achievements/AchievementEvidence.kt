@@ -32,6 +32,8 @@ class DroughtEvidence(val scope: AchievementScope) {
     fun recordRun(event: AchievementRunEvidence): Boolean {
         if (!active || event.scope.key != scope.key || event.id.isBlank() || !processed.add(event.id)) return false
         if (!event.provenanceComplete) {
+            // An interrupted interval cannot prove exposure, but its observed own catches remain discoveries.
+            confirmedOwnDiscoveries.addAll(event.ownSparklingSpecies.filter { it in AchievementCalibration.rates })
             currentOrdinaryHazard = 0.0
             currentUniqueHazard = 0.0
             return true

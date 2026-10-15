@@ -110,6 +110,23 @@ class AchievementEvidenceTest {
         state.refreshDex(DexSnapshot(scope, setOf("Wumpa"), 2))
         assertEquals(.001953601992, state.currentUniqueHazard, 1e-12)
     }
+    @Test fun `incomplete run retains confirmed own discovery without earning exposure`() {
+        val state = DroughtEvidence(scope)
+        state.refreshDex(DexSnapshot(scope, emptySet(), 1))
+        state.recordRun(event("interrupted", counts = mapOf("Wumpa" to 1, "Gazer" to 4),
+            own = setOf("Wumpa"), complete = false))
+        assertEquals(0.0, state.currentOrdinaryHazard)
+        assertEquals(0.0, state.currentUniqueHazard)
+        assertEquals(0.0, state.bestOrdinaryHazard)
+        assertEquals(0.0, state.bestUniqueHazard)
+        state.recordRun(event("lagged"))
+        assertEquals(0.0, state.currentUniqueHazard)
+        state.recordRun(event("lagged-other", missing = setOf("Wumpa", "Gazer"),
+            counts = mapOf("Wumpa" to 1, "Gazer" to 4)))
+        assertEquals(.001953601992, state.currentUniqueHazard, 1e-12)
+        state.refreshDex(DexSnapshot(scope, setOf("Wumpa"), 2))
+        assertEquals(.001953601992, state.currentUniqueHazard, 1e-12)
+    }
     @Test fun `response owner provider and generation guard rejects stale callbacks`() {
         val guard = ProfileResponseGuard()
         val token = guard.begin("ab-cd", "cloud")
