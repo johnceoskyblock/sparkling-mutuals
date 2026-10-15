@@ -2,6 +2,10 @@
 
 A Fabric mod for Hypixel SkyBlock Safari, sparkling discoveries, and Miria contests.
 
+## Achievements
+
+`/sm achievements` shows current awards and a separate Legacy view. Modeled drought progress uses observed personal captures and a known own-profile dex; unknown coverage stays unknown. Confirmed personal admissions and qualifying Miria windows are counted once, including while achievement notifications are disabled. [Evidence, migration and calibration](docs/ACHIEVEMENT_REBALANCE.md).
+
 ## Safari tracking
 
 The [Safari logic notes](SAFARI_LOGIC.md) summarize Hypixel evidence and the deductions used for tracking. The [repository guide](docs/README.md) maps the code, tests and documentation for development.

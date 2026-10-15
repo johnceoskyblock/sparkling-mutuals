@@ -99,6 +99,25 @@ class AdmissionEvidenceTest {
             session.sync(run) { }
             TicketCounter.acknowledge(again, 1002)
             TicketCounter.confirmEntry(run, scope, 1003)
+            val originalFull = net.johnceo.sparklingmutuals.config.ConfigManager.fullClearMode
+            val originalSparkling = net.johnceo.sparklingmutuals.config.ConfigManager.sparklingMode
+            try {
+                for (mode in SafariMode.entries) {
+                    net.johnceo.sparklingmutuals.config.ConfigManager.fullClearMode = mode == SafariMode.FULL_CLEAR
+                    net.johnceo.sparklingmutuals.config.ConfigManager.sparklingMode = mode == SafariMode.SPARKLING
+                    assertEquals(mode, net.johnceo.sparklingmutuals.safari.completion.SafariFullClear.mode)
+                    for (biome in listOf(SafariBiome.FOREST, SafariBiome.ICY, SafariBiome.FOREST, SafariBiome.CAVERN, SafariBiome.FOREST)) {
+                        run.visitBiome(biome)
+                        TicketCounter.confirmEntry(run, scope, 1003)
+                        session.sync(run) { fail("Mode or biome revisit must not end the run") }
+                        assertEquals(1, session.tickets)
+                        assertEquals(before + 1, SparklingLog.ticketsSinceSparkling)
+                    }
+                }
+            } finally {
+                net.johnceo.sparklingmutuals.config.ConfigManager.fullClearMode = originalFull
+                net.johnceo.sparklingmutuals.config.ConfigManager.sparklingMode = originalSparkling
+            }
             assertEquals(1, session.tickets)
             assertEquals(before + 1, SparklingLog.ticketsSinceSparkling)
             val saved = HistoryStore.load("achievements", Achievements.Data::class.java) { Achievements.Data() }

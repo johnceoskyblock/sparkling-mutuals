@@ -106,13 +106,13 @@ object SparklingMutuals : ModInitializer {
     private fun onClientTick(client: Minecraft) {
         PartyManager.onClientTick(client)
         PartyCommands.onClientTick(client)
+        OwnStats.tick(client) // Invalidate changed owner/provider before collecting scoped activity.
         ContestTracker.onClientTick(client)
         HoneyHives.tick(client)
         SafariAssist.onClientTick(client)
         SafariTracking.onClientTick(client)
         RunHistory.tick(client)
         Achievements.tick(client)
-        OwnStats.tick(client)
         PlaytimeReader.tick(client)
         LogImporter.tick(client)
         SafariSparklingMode.tick(client)

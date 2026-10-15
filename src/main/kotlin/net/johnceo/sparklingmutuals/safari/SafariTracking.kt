@@ -31,6 +31,7 @@ object SafariTracking {
         SafariTicketType.fromItem(name)?.let { pendingTicket = it to System.currentTimeMillis() }
     }
     private fun entryEvidence(run: SafariRun, now: Long) {
+        net.johnceo.sparklingmutuals.history.OwnStats.dexSnapshot?.let(run::attachAchievementSnapshot)
         pendingTicket?.takeIf { now - it.second in 0..120000 }?.let { run.entry.ticket = it.first }
         pendingAdmission?.takeIf { now - it.second in 0..120000 }?.let { run.entry.admission = it.first }
         pendingTicket = null; pendingAdmission = null

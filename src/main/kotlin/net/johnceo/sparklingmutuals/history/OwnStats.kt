@@ -61,6 +61,7 @@ object OwnStats {
                     if (scope?.key != dexSnapshot?.scope?.key) { runs = 0; caught = 0 }
                     dex = profile.caught.toSet()
                     dexSnapshot = scope?.let { DexSnapshot(it, dex.toSet(), System.currentTimeMillis()) }
+                    Achievements.refreshDex(dexSnapshot)
                     profile.runs?.let { runs = it }
                     profile.catches?.let { caught = it }
                     val earned = Achievements.afterApiStats()
@@ -73,6 +74,7 @@ object OwnStats {
 
     fun reset() {
         responses.invalidate()
+        Achievements.refreshDex(null)
         fetching = false; fetchedAt = 0; dex = emptySet(); dexSnapshot = null; runs = 0; caught = 0
         selectedOwner = null; selectedProvider = null
     }

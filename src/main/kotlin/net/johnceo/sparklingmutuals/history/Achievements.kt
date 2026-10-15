@@ -58,6 +58,20 @@ object Achievements {
     fun currentActivityScope(playerUuid: String): AchievementScope? = OwnStats.dexSnapshot?.scope
         ?.takeIf { normalizePlayer(it.playerUuid) == normalizePlayer(playerUuid) }
 
+    /** Scope changes and offline gaps end prospective streak continuity. */
+    fun refreshDex(snapshot: DexSnapshot?) {
+        ContestTracker.selectScope(snapshot?.scope?.key)
+        val previous = activityScopeKey
+        if (snapshot == null || previous != snapshot.scope.key) {
+            state.droughtByScope.values.forEach { it.invalidateScope() }
+            invalidateActivityIntervals()
+        }
+        activityScopeKey = snapshot?.scope?.key
+        snapshot?.let { state.droughtByScope.getOrPut(it.scope.key) { DroughtEvidence(it.scope) }.refreshDex(it) }
+        net.johnceo.sparklingmutuals.safari.SafariTracking.ledger.current?.refreshAchievementDex(snapshot)
+        save()
+    }
+
     fun invalidateActivityIntervals() { activity.invalidateIntervals(); activityScopeKey = null; save() }
 
     fun collectAdmission(runId: String, scope: AchievementScope?, at: Long): Boolean {
@@ -105,7 +119,10 @@ object Achievements {
 
     fun collectOwnSparkling(scope: AchievementScope?, at: Long, announce: Boolean) {
         if (scope == null) activity.invalidateIntervals()
-        else if (activity.recordOwnSparkling(scope, at)) unlock("instant_v2", announce)
+        else if (activity.recordOwnSparkling(scope, at)) {
+            state.eligibleEvents.putIfAbsent("instant_v2", at)
+            unlock("instant_v2", announce)
+        }
         save()
     }
 
@@ -127,6 +144,10 @@ object Achievements {
     fun onTicket() { data.ticketsSinceOwnSparkling++; save() }
 
     fun onRunEnd(run: RunRecord) {
+        run.achievementEvidence?.let { evidence ->
+            state.droughtByScope.getOrPut(evidence.scope.key) { DroughtEvidence(evidence.scope) }
+                .recordRun(evidence)
+        }
         data.runsSinceMacaw = if (run.macaws > 0) 0 else data.runsSinceMacaw + 1
         data.longestRunsWithoutMacaw = maxOf(data.longestRunsWithoutMacaw, data.runsSinceMacaw)
         val own = run.ownSparklings > 0
@@ -143,7 +164,6 @@ object Achievements {
     }
 
     private fun chat(text: String) {
-        if (!ConfigManager.achievements) return
         if ("Emerald Dye" in text && ownDrop(text)) unlock("emerald_dye", true)
     }
     /** Your drop, not a broadcast of someone else's ("WOW! Name found Emerald Dye"). */
@@ -159,6 +179,7 @@ object Achievements {
 
     private fun checkAll(announce: Boolean) {
         if (!data.initialised) return
+        state.eligibleEvents.keys.toList().forEach { unlock(it, false) }
         for (achievement in definitions)
             if (achievement.measure != Measure.EVENT && !isUnlocked(achievement) && progressState(achievement).reached) unlock(achievement.id, announce)
         val dex = ownDex()
@@ -244,7 +265,12 @@ object Achievements {
 
     /** With achievements off, progress still counts but nothing unlocks or is announced; it catches up when turned on. */
     private fun unlock(id: String, announce: Boolean) {
-        if (!ConfigManager.achievements || id in state.currentUnlocks || id in LegacyAchievementMetadata.replacedIds) return
+        if (id in state.currentUnlocks || id in LegacyAchievementMetadata.replacedIds) return
+        if (!ConfigManager.achievements) {
+            if (definitions.any { it.id == id }) state.eligibleEvents.putIfAbsent(id, System.currentTimeMillis())
+            save()
+            return
+        }
         val achievement = definitions.firstOrNull { it.id == id } ?: return
         state.currentUnlocks[id] = System.currentTimeMillis()
         save()

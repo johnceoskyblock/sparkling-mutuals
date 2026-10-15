@@ -8,7 +8,8 @@ data class AchievementStateV2(val schemaVersion: Int = 2,
     val currentUnlocks: MutableMap<String, Long> = linkedMapOf(),
     val legacyAwards: MutableMap<String, LegacyAward> = linkedMapOf(),
     val droughtByScope: MutableMap<String, DroughtEvidence> = linkedMapOf(),
-    val activity: ActivityEvidence = ActivityEvidence(), val originalPayload: JsonObject = JsonObject())
+    val activity: ActivityEvidence = ActivityEvidence(),
+    val eligibleEvents: MutableMap<String, Long> = linkedMapOf(), val originalPayload: JsonObject = JsonObject())
 object AchievementMigration {
     private val gson = Gson()
     fun migrate(old: Achievements.Data): AchievementStateV2 = migrate(old, gson.toJsonTree(old).asJsonObject)

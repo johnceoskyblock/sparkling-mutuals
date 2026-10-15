@@ -52,21 +52,27 @@ object RunHistory {
             splits[biome.label] = now - current.startedAt
     }
 
-    private fun finish(run: SafariRun, client: Minecraft) {
-        if (!ConfigManager.runHistory || tally.party.isEmpty()) return
-        val record = RunRecord(start = run.startedAt, length = run.elapsed(System.currentTimeMillis()),
+    private fun finish(run: SafariRun, client: Minecraft) = completeRun(run,
+        client.player?.uuid?.toString()?.let(PartyManager::withLocal)?.size ?: 1, System.currentTimeMillis())
+
+    internal fun completeRun(run: SafariRun, partySize: Int, now: Long) {
+        if (tally.party.isEmpty()) return
+        val record = RunRecord(start = run.startedAt, length = run.elapsed(now),
             mode = SafariFullClear.mode.name, party = tally.party.size, you = tally.catches.size,
             caught = tally.caught, lootShares = tally.lootShares,
-            partySize = client.player?.uuid?.toString()?.let(PartyManager::withLocal)?.size ?: 1,
+            partySize = partySize,
             tickets = tickets, shards = LinkedHashMap(tally.shards), catches = LinkedHashMap(tally.catches),
             feathers = tally.feathers, sparklings = tally.sparklings.toMutableList(), ownSparklings = tally.ownSparklings,
-            macaws = tally.macaws, splits = LinkedHashMap(splits), runId = run.runId)
-        // A manual import during this run may have read it from latest.log already; the live record replaces that.
-        val imported = HistoryMerge.removeLiveDuplicate(data.runs, record)
-        record.number = imported?.number ?: data.nextNumber++
-        record.coins = BazaarPrices.value(record.shards, record.feathers)
-        data.runs.add(0, record)
-        save()
+            macaws = tally.macaws, splits = LinkedHashMap(splits), runId = run.runId,
+            achievementEvidence = run.achievementEvidence(run.runId, true))
+        if (ConfigManager.runHistory) {
+            // A manual import during this run may have read it from latest.log already; the live record replaces that.
+            val imported = HistoryMerge.removeLiveDuplicate(data.runs, record)
+            record.number = imported?.number ?: data.nextNumber++
+            record.coins = BazaarPrices.value(record.shards, record.feathers)
+            data.runs.add(0, record)
+            save()
+        }
         Achievements.onRunEnd(record)
         OwnStats.refreshSoon() // the bestiary now has this run too
     }

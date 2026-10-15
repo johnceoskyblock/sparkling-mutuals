@@ -97,3 +97,8 @@ Workload anchors IDs57–61 are 10k/25k/50k/100k/150k lifetime Diana kills, Rare
 The maintainer's ticket/contest clarification is comment6195351477 by johnceoskyblock. Both leader/member Manager acknowledgement variants represent one personal admission. Uncommon-or-higher contest rewards have the same base; Two-for-one's assumed 25% bonus gives expected 1.25 tickets per claimed qualifying contest. This is an assumption rather than measured rewards. Mapping ticket goals 10/100/500/1500/4366/8559 correspond to contest goals `ceil(ticketGoal/1.25)` =8/80/400/1200/3493/6848. Spending tickets does not prove complete modeled work or a full dex. The journey-scale goal rounds the finite mean to 4366; 8559 is the baseline 95% quantile, not a second mean.
 
 The CSV retains all existing IDs when the criterion stays the same and marks changed/retired criteria with explicit legacy destinations; added model droughts have new versioned IDs. This numerical component does not migrate history or modify unlock timestamps. The CSV's rationale and scope columns carry the uncertainty; they must remain visible to later implementation and review. The standalone audit validates old-goal/tier correspondence and destination uniqueness without changing the CSV.
+
+
+## Runtime evidence and preservation
+
+The shipped integration uses the audited definitions, prospective profile snapshots and capped personal observations. Historical source definitions are frozen in `achievement-definitions-v1.kt.txt`; the audit independently validates current Kotlin destinations against the CSV. See [migration, activity coverage and settings](ACHIEVEMENT_REBALANCE.md). Source workbook bytes remain unchanged.

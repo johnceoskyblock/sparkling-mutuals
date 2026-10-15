@@ -44,7 +44,7 @@ object ContestTracker {
 
     /** Completion and sidebar evidence belong to one player/profile, including while tracking is disabled. */
     fun selectScope(owner: String?) {
-        if (scope == owner) return
+        if (scope == owner && owner != null) return
         scope = owner
         complete = false; completedWindow = -1L; windowKey = -1L
         points = -1; tier = ""; tickCounter = 0; warnedMinutes.clear()
@@ -103,30 +103,27 @@ object ContestTracker {
     fun betweenContests(): Boolean =
         secondsToEnd() == 0
 
-    private fun readSidebar(client: Minecraft) {
-        // A ticket requires a currently observed Miria tier, never a retained row from another area.
-        val match = MiriaContestFilter.miriaLines(SkyblockSidebar.lines(client)).firstNotNullOfOrNull { line ->
+    /** Applies the actual sidebar parser without coupling completion evidence to notifications. */
+    internal fun observeSidebar(lines: List<String>): Boolean {
+        val match = MiriaContestFilter.miriaLines(lines).firstNotNullOfOrNull { line ->
             TIER_ROW.find(line)?.takeIf { isTierName(it.groupValues[1]) }
-        } ?: return
+        } ?: return false
         tier = match.groupValues[1]
         points = parseInt(match.groupValues[2])
+        if (complete || secondsIntoWindow < STALE_GUARD_SECONDS || tier.uppercase() !in completeTiers) return false
+        complete = true
+        completedWindow = windowKey
+        return true
+    }
 
-        if (
-            tier.isNotEmpty() &&
-            !complete &&
-            secondsIntoWindow >= STALE_GUARD_SECONDS &&
-            tier.uppercase() in completeTiers
-        ) {
-            complete = true
-            completedWindow = windowKey
-            val player = client.player ?: return
-            SafariDowntime.ticketEarned(player.name.string)
-            if (ticketNotices.claim(player.uuid.toString(), windowKey, tier, secondsIntoWindow) &&
-                PartyManager.hasInfo &&
-                PartyManager.getMembers().size > 1)
-                client.connection?.sendCommand("pc Ticket earned!")
-            println("Sparkling Mutuals: Contest complete — $tier with $points")
-        }
+    private fun readSidebar(client: Minecraft) {
+        if (!observeSidebar(SkyblockSidebar.lines(client))) return
+        val player = client.player ?: return
+        SafariDowntime.ticketEarned(player.name.string)
+        if (ticketNotices.claim(player.uuid.toString(), windowKey, tier, secondsIntoWindow) &&
+            PartyManager.hasInfo && PartyManager.getMembers().size > 1)
+            client.connection?.sendCommand("pc Ticket earned!")
+        println("Sparkling Mutuals: Contest complete — $tier with $points")
     }
 
     private fun maybeWarn(client: Minecraft) {
