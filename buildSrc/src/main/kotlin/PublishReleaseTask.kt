@@ -42,13 +42,14 @@ abstract class PublishReleaseTask : DefaultTask() {
     }
 }
 
-/** Fixed official hosts, bounded responses, no credential-bearing redirects or response-body logging. */
-internal class GitHubReleaseApi(private val token: String, private val commit: String) : ReleaseApi {
-    private val repository = "johnceoskyblock/sparkling-mutuals"
-    private val client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(30)).followRedirects(HttpClient.Redirect.NEVER).build()
-    private val root = "https://api.github.com/repos/$repository"
+internal fun interface ReleaseTransport {
+    fun request(method: String, url: String, body: HttpRequest.BodyPublisher, contentType: String, allowMissing: Boolean): Any?
+}
 
-    private fun request(method: String, url: String, body: HttpRequest.BodyPublisher = HttpRequest.BodyPublishers.noBody(), contentType: String = "application/json", allowMissing: Boolean = false): Any? {
+/** Fixed official hosts, bounded responses, no credential-bearing redirects or response-body logging. */
+private class GitHubReleaseTransport(private val token: String) : ReleaseTransport {
+    private val client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(30)).followRedirects(HttpClient.Redirect.NEVER).build()
+    override fun request(method: String, url: String, body: HttpRequest.BodyPublisher, contentType: String, allowMissing: Boolean): Any? {
         val uri = URI(url)
         require(uri.scheme == "https" && uri.host in setOf("api.github.com", "uploads.github.com") && uri.userInfo == null)
         val response = client.send(HttpRequest.newBuilder(uri).timeout(Duration.ofMinutes(5))
@@ -62,6 +63,15 @@ internal class GitHubReleaseApi(private val token: String, private val commit: S
             return if (bytes.isEmpty()) null else JsonSlurper().parseText(bytes.toString(StandardCharsets.UTF_8))
         }
     }
+}
+
+internal class GitHubReleaseApi(private val commit: String, private val transport: ReleaseTransport) : ReleaseApi {
+    constructor(token: String, commit: String) : this(commit, GitHubReleaseTransport(token))
+    private val repository = "johnceoskyblock/sparkling-mutuals"
+    private val root = "https://api.github.com/repos/$repository"
+    private val knownReleases = mutableMapOf<String, Long>()
+    private fun request(method: String, url: String, body: HttpRequest.BodyPublisher = HttpRequest.BodyPublishers.noBody(), contentType: String = "application/json", allowMissing: Boolean = false) =
+        transport.request(method, url, body, contentType, allowMissing)
     private fun jsonBody(value: Any) = HttpRequest.BodyPublishers.ofString(JsonOutput.toJson(value))
     private fun obj(value: Any?) = value as? Map<*, *> ?: throw IllegalArgumentException("Invalid GitHub response")
     private fun id(value: Any?) = (value as? Number)?.toLong() ?: throw IllegalArgumentException("Missing GitHub identifier")
@@ -81,7 +91,14 @@ internal class GitHubReleaseApi(private val token: String, private val commit: S
         throw IllegalArgumentException("Too many annotated tag indirections")
     }
     override fun find(tag: String): RemoteRelease? {
-        val release = request("GET", "$root/releases/tags/$tag", allowMissing = true)?.let(::obj) ?: return null
+        val knownId = knownReleases[tag]
+        val release = if (knownId != null) {
+            // The tag endpoint discovers published releases, not drafts. Re-read known drafts by ID.
+            request("GET", "$root/releases/$knownId", allowMissing = true)?.let(::obj) ?: return null
+        } else {
+            request("GET", "$root/releases/tags/$tag", allowMissing = true)?.let(::obj)
+                ?: findUnpublished(tag) ?: return null
+        }
         val releaseId = id(release["id"])
         val assets = mutableListOf<ReleaseAsset>()
         var page = 1
@@ -93,14 +110,34 @@ internal class GitHubReleaseApi(private val token: String, private val commit: S
             page++
         }
         require(release["tag_name"] == tag) { "Release tag mismatch" }
+        knownReleases[tag] = releaseId
         return RemoteRelease(releaseId, ExistingRelease(release["draft"] == true, release["body"] as? String, assets))
+    }
+    private fun findUnpublished(tag: String): Map<*, *>? {
+        var match: Map<*, *>? = null
+        var page = 1
+        while (true) {
+            require(page <= 100) { "Too many release pages" }
+            val releases = request("GET", "$root/releases?per_page=100&page=$page") as? List<*>
+                ?: throw IllegalArgumentException("Missing release list")
+            for (candidate in releases.map(::obj).filter { it["tag_name"] == tag }) {
+                require(match == null) { "Multiple releases use this tag; review them manually" }
+                match = candidate
+            }
+            if (releases.size < 100) break
+            page++
+        }
+        val releaseId = match?.let { id(it["id"]) } ?: return null
+        return obj(request("GET", "$root/releases/$releaseId"))
     }
     override fun createDraft(tag: String, body: String): RemoteRelease {
         verifyTag(tag)
         val created = obj(request("POST", "$root/releases", jsonBody(mapOf("tag_name" to tag, "target_commitish" to commit,
             "name" to tag, "body" to body, "draft" to true, "prerelease" to false))))
         require(created["draft"] == true && created["tag_name"] == tag) { "Expected same-tag draft" }
-        return RemoteRelease(id(created["id"]), ExistingRelease(true, created["body"] as? String, emptyList()))
+        val createdId = id(created["id"])
+        knownReleases[tag] = createdId
+        return RemoteRelease(createdId, ExistingRelease(true, created["body"] as? String, emptyList()))
     }
     override fun generatedNotes(tag: String): String = obj(request("POST", "$root/releases/generate-notes", jsonBody(mapOf("tag_name" to tag, "target_commitish" to commit))))["body"] as String
     override fun updateBody(id: Long, body: String) { request("PATCH", "$root/releases/$id", jsonBody(mapOf("body" to body))) }
