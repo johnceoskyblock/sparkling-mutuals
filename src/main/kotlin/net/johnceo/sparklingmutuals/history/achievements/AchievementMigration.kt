@@ -19,9 +19,11 @@ object AchievementMigration {
             if (id in LegacyAchievementMetadata.criteria && id !in LegacyAchievementMetadata.replacedIds) state.currentUnlocks[id] = at
             else state.legacyAwards[id] = legacy(id, at)
         }
-        for ((id, at) in old.emblems) {
-            // A separate key preserves both timestamps if an old emblem collides with an achievement ID.
-            val key = if (id in state.legacyAwards) "emblem:$id" else id
+        for ((id, at) in old.emblems.toSortedMap()) {
+            // Prefix until unused: historical IDs can already contain any number of prefixes.
+            // Sorted input makes allocated keys stable regardless of source map iteration order.
+            var key = id
+            while (key in state.legacyAwards) key = "emblem:$key"
             state.legacyAwards[key] = LegacyAward(id, at, "Unknown original criterion", "UNKNOWN", "Removed emblem")
         }
         old.state = state

@@ -109,6 +109,28 @@ class AchievementMigrationTest {
             } finally { field.set(Achievements, prior) }
         }
     }
+    // Catches overwriting a real prefixed ID with a generated collision key, in either emblem order.
+    @Test fun `prefixed emblem collisions preserve every individual award through reload and remigration`() {
+        var keys: Map<String, LegacyAward>? = null
+        for (emblems in listOf(linkedMapOf("x" to 3L, "emblem:x" to 4L), linkedMapOf("emblem:x" to 4L, "x" to 3L))) {
+            withStore {
+                val source = Achievements.Data(unlocked = linkedMapOf("x" to 1L, "emblem:x" to 2L, "emblem:emblem:x" to 5L), emblems = emblems)
+                Files.writeString(file(), gson.toJson(source))
+                val loaded = AchievementPersistence.load().getOrThrow()
+                val state = loaded.state!!
+                assertEquals(5, state.legacyAwards.size)
+                assertEquals(setOf("x" to 1L, "emblem:x" to 2L, "x" to 3L, "emblem:x" to 4L, "emblem:emblem:x" to 5L),
+                    state.legacyAwards.values.map { it.id to it.unlockedAt }.toSet())
+                if (keys == null) keys = state.legacyAwards.toMap() else assertEquals(keys, state.legacyAwards)
+                AchievementPersistence.save(loaded).getOrThrow()
+                val saved = Files.readString(file())
+                val restored = AchievementPersistence.load().getOrThrow()
+                assertEquals(state.legacyAwards, AchievementMigration.migrate(restored).legacyAwards)
+                AchievementPersistence.save(restored).getOrThrow()
+                assertEquals(saved, Files.readString(file()))
+            }
+        }
+    }
     @Test fun `all tier names remain lossless in preserved award records`() {
         for (tier in AchievementTier.entries) {
             val award = LegacyAward("x", 123, "old goal", tier.name, "old")
