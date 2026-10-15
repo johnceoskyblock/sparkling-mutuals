@@ -1,5 +1,6 @@
 package net.johnceo.sparklingmutuals.safari
 
+import net.johnceo.sparklingmutuals.history.achievements.*
 import net.johnceo.sparklingmutuals.history.RunTally
 import net.johnceo.sparklingmutuals.safari.completion.BiomeClearEvidence
 import net.johnceo.sparklingmutuals.safari.completion.SafariCompletionEvents
@@ -17,6 +18,29 @@ import net.johnceo.sparklingmutuals.safari.structures.SafariMounds
 
 /** Capture, source and completion evidence owned by a single Safari run. */
 class SafariRun(val startedAt: Long) {
+    private var achievementSnapshot: DexSnapshot? = null
+    private var achievementUniqueValid = true
+    private var achievementScopeValid = true
+    /** Attach once, at entry. A late API response cannot supply a before-run dex. */
+    fun attachAchievementSnapshot(snapshot: DexSnapshot) {
+        if (achievementSnapshot != null || snapshot.observedAt > startedAt) return
+        achievementSnapshot = snapshot.copy(discoveries = snapshot.discoveries.toSet())
+    }
+    /** Null/scope change invalidates all provenance; changed discoveries invalidate unique input. */
+    fun refreshAchievementDex(snapshot: DexSnapshot?) {
+        val before = achievementSnapshot ?: return
+        if (snapshot == null || snapshot.scope.key != before.scope.key) {
+            achievementScopeValid = false
+            achievementUniqueValid = false
+        } else if (snapshot.discoveries != before.discoveries) achievementUniqueValid = false
+    }
+    fun achievementEvidence(id: String, provenanceComplete: Boolean): AchievementRunEvidence? {
+        val before = achievementSnapshot ?: return null
+        return AchievementRunEvidence(id, before.scope,
+            if (achievementUniqueValid) AchievementCalibration.rates.keys - before.discoveries else null,
+            personal.toMap(), catchEvents.filter { it.personal && it.sparkling }.map { it.critter.name }.toSet(),
+            provenanceComplete && achievementScopeValid)
+    }
     val entry = SafariEntryEvidence()
     val resources = SafariResources()
     val sparklingCaptures = SparklingCaptureState()

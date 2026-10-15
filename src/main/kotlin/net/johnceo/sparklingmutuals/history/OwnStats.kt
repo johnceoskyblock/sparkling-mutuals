@@ -3,6 +3,10 @@ package net.johnceo.sparklingmutuals.history
 import java.util.concurrent.Executors
 import net.johnceo.sparklingmutuals.LocalChat
 import net.johnceo.sparklingmutuals.api.HypixelApi
+import net.johnceo.sparklingmutuals.api.ApiProvider
+import net.johnceo.sparklingmutuals.history.achievements.AchievementScope
+import net.johnceo.sparklingmutuals.history.achievements.DexSnapshot
+import net.johnceo.sparklingmutuals.history.achievements.ProfileResponseGuard
 import net.johnceo.sparklingmutuals.hud.SkyblockSidebar
 import net.minecraft.client.Minecraft
 import org.slf4j.LoggerFactory
@@ -23,6 +27,12 @@ object OwnStats {
         private set
     @Volatile var caught = 0L
         private set
+    /** Null means unknown; an explicitly empty API dex is still a known snapshot. */
+    @Volatile var dexSnapshot: DexSnapshot? = null
+        private set
+    private val responses = ProfileResponseGuard()
+    private var selectedOwner: String? = null
+    private var selectedProvider: ApiProvider? = null
     private var fetchedAt = 0L
     private var fetching = false
 
@@ -31,15 +41,26 @@ object OwnStats {
 
     fun tick(client: Minecraft) {
         val now = System.currentTimeMillis()
-        if (fetching || now - fetchedAt < REFRESH_MILLIS || !HypixelApi.provider.enabled || !SkyblockSidebar.inSkyblock(client)) return
-        val uuid = client.player?.uuid?.toString() ?: return
+        val provider = HypixelApi.provider
+        val uuid = client.player?.uuid?.toString()
+        if (uuid != selectedOwner || provider != selectedProvider) {
+            reset()
+            selectedOwner = uuid
+            selectedProvider = provider
+        }
+        if (fetching || now - fetchedAt < REFRESH_MILLIS || !provider.enabled || !SkyblockSidebar.inSkyblock(client) || uuid == null) return
+        val token = responses.begin(uuid, provider)
         fetching = true; fetchedAt = now
         executor.submit {
             val result = runCatching { HypixelApi.getSafariProfile(uuid) }
             client.execute {
+                if (!responses.accepts(token, client.player?.uuid?.toString(), HypixelApi.provider)) return@execute
                 fetching = false
                 result.onFailure { logger.info("Own Safari stats lookup failed: {}", it.message) }.onSuccess { profile ->
+                    val scope = profile.profileId?.takeIf { it.isNotBlank() }?.let { AchievementScope(uuid, it) }
+                    if (scope?.key != dexSnapshot?.scope?.key) { runs = 0; caught = 0 }
                     dex = profile.caught.toSet()
+                    dexSnapshot = scope?.let { DexSnapshot(it, dex.toSet(), System.currentTimeMillis()) }
                     profile.runs?.let { runs = it }
                     profile.catches?.let { caught = it }
                     val earned = Achievements.afterApiStats()
@@ -50,5 +71,9 @@ object OwnStats {
         }
     }
 
-    fun reset() { fetchedAt = 0; dex = emptySet(); runs = 0; caught = 0 }
+    fun reset() {
+        responses.invalidate()
+        fetching = false; fetchedAt = 0; dex = emptySet(); dexSnapshot = null; runs = 0; caught = 0
+        selectedOwner = null; selectedProvider = null
+    }
 }

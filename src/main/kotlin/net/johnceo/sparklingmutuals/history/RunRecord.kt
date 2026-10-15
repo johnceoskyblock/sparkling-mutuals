@@ -41,6 +41,8 @@ class RunRecord(
     var ticketAt: Long = 0,
     var coinsEstimated: Boolean = false,
     var modeEstimated: Boolean = false,
+    /** Null for legacy/imported history without contemporaneous provenance. */
+    var achievementEvidence: net.johnceo.sparklingmutuals.history.achievements.AchievementRunEvidence? = null,
 ) {
     fun hasSparkling() = sparklings.isNotEmpty()
 }

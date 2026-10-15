@@ -54,7 +54,8 @@ object HypixelApi {
     }
 
     fun getSafariProfile(playerUuid: String): SafariProfile = data {
-        SafariProfile.from(getMember(playerUuid, getCurrentProfileUuid(playerUuid)))
+        val profileId = getCurrentProfileUuid(playerUuid)
+        SafariProfile.from(getMember(playerUuid, profileId)).copy(profileId = profileId)
     }
 
     /** Hive id -> when it refills, for hives looted in the last hour on any session. */

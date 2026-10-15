@@ -6,7 +6,8 @@ import net.johnceo.sparklingmutuals.safari.SafariRoster
 
 /** One player's Safari stats from their selected SkyBlock profile, for `/sparkling`. */
 data class SafariProfile(val discoveries: Set<String>, val tickets: Map<String, Long>, val huntingXp: Double?,
-    val essence: Long?, val totalCaptured: Long?, val runs: Long? = null, val catches: Long? = null) {
+    val essence: Long?, val totalCaptured: Long?, val runs: Long? = null, val catches: Long? = null,
+    val profileId: String? = null) {
     /** Roster names of the discovered sparklings, in roster order. */
     val caught get() = SafariRoster.all.filter { key(it.name) in discoveries }.map { it.name }
     val missing get() = SafariRoster.all.filter { key(it.name) !in discoveries }.map { it.name }
