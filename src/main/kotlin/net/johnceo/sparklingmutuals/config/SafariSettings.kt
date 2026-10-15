@@ -172,7 +172,7 @@ class SafariSettings : Config() {
         @ConfigEditorBoolean var autoClicker = ConfigManager.autoClicker
         @JvmField @ConfigOption(name = "Hideyho quest clicks", desc = "Click with chat open to accept Hideyho’s offer.")
         @ConfigEditorBoolean var hideyho = ConfigManager.hideyhoQuestClicks
-        @JvmField @ConfigOption(name = "Hideyho inside/outside", desc = "Title and chat line saying whether Hideyho hid inside or outside the mansion.")
+        @JvmField @ConfigOption(name = "Hideyho inside/outside", desc = "Unique and Full Clear only: title and chat line saying whether Hideyho hid inside or outside the mansion.")
         @ConfigEditorBoolean var hideyhoInsideOutside = ConfigManager.hideyhoInsideOutside
         @JvmField @ConfigOption(name = "Hide Haunted paintings", desc = "Hide paintings in the Haunted biome.")
         @ConfigEditorBoolean var paintings = ConfigManager.hideHauntedPaintings

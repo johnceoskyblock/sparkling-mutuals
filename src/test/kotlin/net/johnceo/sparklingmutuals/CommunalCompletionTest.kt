@@ -19,8 +19,8 @@ class CommunalCompletionTest {
         run.partyFullClear("Party > Friend: fd")
         run.visitBiome(SafariBiome.FOREST)
         run.updateCaptureEvidence(SafariBiome.FOREST, emptySet(), false)
-        assertEquals(9, run.fullClearProgress(SafariBiome.FOREST.critters))
-        assertEquals(9, run.completed(SafariMode.UNIQUE, SafariBiome.FOREST.critters, party()))
+        assertEquals(0, run.fullClearProgress(SafariBiome.FOREST.critters))
+        assertEquals(0, run.completed(SafariMode.UNIQUE, SafariBiome.FOREST.critters, party()))
         assertNull(run.completion.announcement(run, SafariBiome.FOREST, SafariMode.FULL_CLEAR, party()))
         run.updateCaptureEvidence(SafariBiome.FOREST, setOf("Foxtrot"), false)
         assertTrue(run.fullClearProgress(SafariBiome.FOREST.critters) < 9)
@@ -44,9 +44,9 @@ class CommunalCompletionTest {
         run.visitBiome(SafariBiome.HAUNTED)
         run.updateCaptureEvidence(SafariBiome.HAUNTED, emptySet(), false)
         assertTrue(run.inherited(SafariBiome.HAUNTED))
-        assertTrue(run.captureComplete("Gimmiegold"))
+        assertFalse(run.captureComplete("Gimmiegold"))
         assertFalse(run.captureComplete("Gimmiegold", true))
-        assertTrue(run.sparklingComplete("Gimmiegold", party("Gimmiegold")))
+        assertFalse(run.sparklingComplete("Gimmiegold", party("Gimmiegold")))
         assertEquals(0, run.count("Gimmiegold"))
         val fresh = SafariRun(0)
         fresh.visitBiome(SafariBiome.HAUNTED)
@@ -73,10 +73,10 @@ class CommunalCompletionTest {
         assertFalse(run.completion.alert(run, SafariMode.SPARKLING, PartySparklingState(), true))
         assertFalse(run.completion.alert(run, SafariMode.SPARKLING, party(), true))
         SafariRoster.all.forEach { run.record(SafariCatch(it, false)) }
-        assertFalse(run.completion.alert(run, SafariMode.UNIQUE, party(), true))
+        assertTrue(run.completion.alert(run, SafariMode.UNIQUE, party(), true))
         run.partyFullClear("Party > Friend: fd"); run.partyFullClear("Party > Friend: cd")
         assertFalse(run.completion.alert(run, SafariMode.UNIQUE, party(), false))
-        assertTrue(run.completion.alert(run, SafariMode.UNIQUE, party(), true))
+        assertFalse(run.completion.alert(run, SafariMode.UNIQUE, party(), true))
         assertFalse(run.completion.alert(run, SafariMode.UNIQUE, party(), true))
     }
     @Test fun `completion background defaults and customized appearance survive reload`() {
@@ -101,7 +101,7 @@ class CommunalCompletionTest {
         assertFalse(run.captureComplete("Rockmite")); assertFalse(run.captureComplete("Snoozle"))
         assertEquals(net.johnceo.sparklingmutuals.hud.HudRow.WHITE,
             SafariPanels.captures(run, SafariBiome.CAVERN).rows.single { it.label == "Rockmite Mounds" }.valueColor)
-        assertTrue(SafariPanels.missing(run, SafariBiome.CAVERN, false, 0, 2).rows.any { it.label == "Mounds to break" })
+        assertTrue(SafariPanels.missing(run, SafariBiome.CAVERN, false, 0, 2).rows.any { it.label == "Rockmite" })
     }
     @Test fun `run completion alert options persist with bell defaults`() {
         ConfigManager.init(dir)

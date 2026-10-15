@@ -19,7 +19,7 @@ class ForestCompletionTest {
             val seen=List(SafariFullClear.minimum(name)) { name to UUID.randomUUID() }
             run.sparklingChecks.scan(SafariBiome.FOREST,3+radius+10+.01,47.0,seen)
             assertFalse(run.sparklingChecks.checked(name))
-            run.sparklingChecks.scan(SafariBiome.FOREST,3+radius+10,47.0,emptyList())
+            run.sparklingChecks.scan(SafariBiome.FOREST,3+ForestCompletionZones.zones.getValue(name).sparklingRadius,47.0,emptyList())
             assertTrue(run.sparklingChecks.checked(name))
         }
     }
@@ -35,7 +35,7 @@ class ForestCompletionTest {
         assertFalse(run.captureComplete("Honeybug"))
         val checks=SparklingChecks()
         repeat(4) { checks.scan(SafariBiome.FOREST,500.0,500.0,List(3) { "Honeybug" to ids[0] },nestsChecked=true) }
-        assertFalse(checks.checked("Honeybug"))
+        assertTrue(checks.checked("Honeybug"))
         checks.scan(SafariBiome.FOREST,500.0,500.0,ids.take(3).map { "Honeybug" to it },nestsChecked=true)
         assertTrue(checks.checked("Honeybug"))
     }

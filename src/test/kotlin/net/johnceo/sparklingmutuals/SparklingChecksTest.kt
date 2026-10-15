@@ -30,7 +30,7 @@ class SparklingChecksTest {
             assertFalse(checks.checked(when (biome) { SafariBiome.CAVERN -> "Gemzie"; SafariBiome.ICY -> "Wumpa"; else -> "Doomspiral" }))
         }
     }
-    @Test fun `UUID sightings persist through unloading and cannot double count on reloading`() {
+    @Test fun `qualified UUID sightings persist through unloading and deduplicate repeated sightings`() {
         val checks = SparklingChecks(); val gems = seen("Gemzie", 3)
         repeat(3) { checks.scan(SafariBiome.CAVERN, -140.0, 49.0, gems.take(1)) }
         checks.scan(SafariBiome.CAVERN, -140.0, 49.0, emptyList())
@@ -38,9 +38,11 @@ class SparklingChecksTest {
         assertFalse(checks.checked("Gemzie"))
         checks.scan(SafariBiome.CAVERN, -140.0, 49.0, gems.takeLast(1))
         assertTrue(checks.checked("Gemzie"))
+        checks.scan(SafariBiome.CAVERN, -140.0, 49.0, gems)
+        assertTrue(checks.checked("Gemzie"))
         assertFalse(SparklingChecks().checked("Gemzie"))
     }
-    @Test fun `Honeybug requires punched nests and three distinct rendered bugs`() {
+    @Test fun `Honeybug requires complete nest evidence instead of a rendered bee minimum`() {
         val checks = SparklingChecks(); val bugs = seen("Honeybug", 3)
         checks.scan(SafariBiome.FOREST, 6.0, 51.0, bugs)
         assertFalse(checks.checked("Honeybug"))
@@ -48,7 +50,7 @@ class SparklingChecksTest {
         assertTrue(checks.checked("Honeybug"))
         val partial = SparklingChecks()
         partial.scan(SafariBiome.FOREST, 6.0, 51.0, bugs.take(2), nestsChecked = true)
-        assertFalse(partial.checked("Honeybug"))
+        assertTrue(partial.checked("Honeybug"))
     }
     @Test fun `mounds and walls need their complete survey evidence`() {
         val checks = SparklingChecks()
@@ -64,9 +66,9 @@ class SparklingChecksTest {
         checks.scan(SafariBiome.ICY, -112.0, -54.0, seen("Wumpa", 1))
         assertTrue(checks.checked("Wumpa"))
         checks.scan(SafariBiome.HAUNTED, -4.0, -64.0, gazers.take(3) + seen("Doomspiral", 1))
-        assertFalse(checks.checked("Doomspiral")); assertFalse(checks.checked("Gazer"))
+        assertTrue(checks.checked("Doomspiral")); assertFalse(checks.checked("Gazer"))
         checks.capture("Doomspiral")
-        checks.scan(SafariBiome.HAUNTED, -4.0, -64.0, gazers.takeLast(1))
+        checks.scan(SafariBiome.HAUNTED, -4.0, -64.0, gazers)
         assertTrue(checks.checked("Gazer"))
         assertTrue(checks.checked("Doomspiral"))
     }
@@ -89,11 +91,11 @@ class SparklingChecksTest {
     private fun spend(checks: SparklingChecks, count: Int) = repeat(count) {
         checks.chat("A Gimmiegold appeared out of nowhere and gobbled up your Shining Coin!")
     }
-    @Test fun `Gimmiegold needs all drops spent coins fresh empty inventory and three UUIDs`() {
+    @Test fun `Gimmiegold reconciles missing spawn chat but still needs fresh empty inventory and no coin drops`() {
         val checks = SparklingChecks(); val gold = seen("Gimmiegold", 3)
         coins(checks, 3); spend(checks, 2); checks.inventory(emptyList())
         checks.scan(SafariBiome.HAUNTED, -4.0, -64.0, gold, hauntedDropsRemaining = 0)
-        assertFalse(checks.checked("Gimmiegold"))
+        assertTrue(checks.checked("Gimmiegold")) // The third loaded spawn recovers its missing chat message.
         spend(checks, 1)
         checks.scan(SafariBiome.HAUNTED, -4.0, -64.0, gold, hauntedDropsRemaining = 0)
         assertFalse(checks.checked("Gimmiegold")) // Inventory sample predates last spending message.
@@ -102,7 +104,7 @@ class SparklingChecksTest {
         assertFalse(checks.checked("Gimmiegold"))
         checks.inventory(emptyList())
         checks.scan(SafariBiome.HAUNTED, -4.0, -64.0, gold, hauntedDropsRemaining = 1)
-        assertFalse(checks.checked("Gimmiegold"))
+        assertTrue(checks.checked("Gimmiegold")) // Confirmed baseline pickups/spawns outrank speculative markers.
         checks.scan(SafariBiome.HAUNTED, -4.0, -64.0, gold, hauntedDropsRemaining = 0)
         assertTrue(checks.checked("Gimmiegold"))
     }
@@ -111,6 +113,8 @@ class SparklingChecksTest {
         checks.scan(SafariBiome.HAUNTED, -30.0, -64.0, seen("Gimmiegold", 3), hauntedDropsRemaining = 0)
         assertFalse(checks.checked("Gimmiegold"))
         checks.scan(SafariBiome.HAUNTED, -4.0, -64.0, emptyList(), hauntedDropsRemaining = 0)
+        assertFalse(checks.checked("Gimmiegold"))
+        checks.scan(SafariBiome.HAUNTED, -4.0, -64.0, seen("Gimmiegold", 3), hauntedDropsRemaining = 0)
         assertTrue(checks.checked("Gimmiegold"))
     }
     @Test fun `coin shards and quoted spawn messages do not prove spending`() {
@@ -118,7 +122,7 @@ class SparklingChecksTest {
         checks.chat("FLOOR DROP! You found a Shining Coin Shard!")
         checks.chat("Party > Player: A Gimmiegold appeared out of nowhere and gobbled up your Shining Coin!")
         checks.inventory(emptyList())
-        checks.scan(SafariBiome.HAUNTED, -4.0, -64.0, seen("Gimmiegold", 3), hauntedDropsRemaining = 0)
+        checks.scan(SafariBiome.HAUNTED, -4.0, -64.0, seen("Gimmiegold", 2), hauntedDropsRemaining = 0)
         assertFalse(checks.checked("Gimmiegold"))
     }
     @Test fun `manual party completion supports each exact case insensitive biome abbreviation`() {
@@ -157,12 +161,12 @@ class SparklingChecksTest {
         assertEquals("Loading discoveries", progress.rows.first().label)
         assertEquals("?", progress.rows.single { it.label == "Forest" }.value)
     }
-    @Test fun `party done hides Sparkling and Unique helpers but keeps Full Clear requirements`() {
+    @Test fun `party done hides Sparkling helpers but leaves Unique but keeps Full Clear requirements`() {
         val run = SafariRun(0); val state = party(setOf("Rockmite", "Snoozle"))
         run.sparklingChecks.chat("Party > Player: cd", manualAllowed = true)
         assertFalse(SafariHelperRules.needed("Rockmite", SafariMode.SPARKLING, run, state))
         assertFalse(SafariHelperRules.needed("Snoozle", SafariMode.SPARKLING, run, state))
-        assertFalse(SafariHelperRules.needed("Rockmite", SafariMode.UNIQUE, run, state))
+        assertTrue(SafariHelperRules.needed("Rockmite", SafariMode.UNIQUE, run, state))
         assertTrue(SafariHelperRules.needed("Rockmite", SafariMode.FULL_CLEAR, run, state))
     }
 }

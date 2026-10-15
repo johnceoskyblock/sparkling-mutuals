@@ -22,6 +22,7 @@ object SmallAlerts {
     private val notices = TimedHudAlerts()
     val titles get() = mapOf(SafariHud.RUN_COMPLETE to net.johnceo.sparklingmutuals.config.ConfigManager.runCompleteTitle, SafariHud.GEMS to "ALL GEMS READY!", SafariHud.BIRD_FOOD to "ALL BIRD FOOD COLLECTED!",
         SafariHud.INCENSE to "ALL INCENSE READY!", SafariHud.WARP to "WARP REMINDER")
+    fun previews() = titles.keys.associateWith(::preview)
     fun preview(hud: SafariHud) = HudPanel(titles.getValue(hud), color(hud), emptyList())
     private fun color(hud: SafariHud) = if (hud == SafariHud.RUN_COMPLETE)
         net.johnceo.sparklingmutuals.config.SafariEspConfig.rgb(net.johnceo.sparklingmutuals.config.AppearanceConfig.runCompleteColor)

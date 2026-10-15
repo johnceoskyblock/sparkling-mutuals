@@ -42,10 +42,19 @@ class SafariAlertGhostTest {
         val memory = EspCaptureMemory()
         val hit = java.util.UUID(0, 7)
         memory.sighted(hit, "Chuckwalla", 0)
+        memory.throwing(0)
         memory.sighted(java.util.UUID(0, 8), "Flitter", 100)
         memory.threw("Chuckwalla", 500)
         assertEquals(hit, memory.caught("Chuckwalla", 2000))
         assertFalse(memory.hidden(java.util.UUID(0, 8)))
+    }
+    @Test fun `species-only hit and capture messages cannot retire an arbitrary nearby model`() {
+        val memory = EspCaptureMemory()
+        val nearby = java.util.UUID(0, 9)
+        memory.sighted(nearby, "Chuckwalla", 0)
+        memory.threw("Chuckwalla", 500)
+        assertNull(memory.caught("Chuckwalla", 2000))
+        assertFalse(memory.hidden(nearby))
     }
     @Test fun `escaped throw cannot steal a later successful capture`() {
         val memory = EspCaptureMemory()

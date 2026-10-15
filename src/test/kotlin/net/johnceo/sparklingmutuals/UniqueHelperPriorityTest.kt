@@ -25,6 +25,8 @@ class UniqueHelperPriorityTest {
         assertTrue(state.enabledForMode(SafariBiome.HAUNTED, SafariMode.UNIQUE, true, run, all))
         assertFalse(state.enabledForMode(SafariBiome.HAUNTED, SafariMode.UNIQUE, false, run, all))
         run.record(SafariCatch(SafariRoster.named("Gimmiegold")!!))
+        assertTrue(state.enabledForMode(SafariBiome.HAUNTED, SafariMode.UNIQUE, true, run, all))
+        state.record("FLOOR DROP! Shining Coin", SafariBiome.HAUNTED)
         assertFalse(state.enabledForMode(SafariBiome.HAUNTED, SafariMode.UNIQUE, true, run, all))
     }
     @Test fun `structure helpers prioritize first catch then remaining party checks`() {
@@ -35,7 +37,7 @@ class UniqueHelperPriorityTest {
             assertFalse(SafariHelperRules.needed(name, SafariMode.UNIQUE, run, all))
             assertTrue(SafariHelperRules.needed(name, SafariMode.UNIQUE, run, needs))
             run.sparklingChecks.chat("Party > Friend: " + if (name == "Honeybug") "fd" else "cd", manualAllowed = true)
-            assertFalse(SafariHelperRules.needed(name, SafariMode.UNIQUE, run, needs))
+            assertTrue(SafariHelperRules.needed(name, SafariMode.UNIQUE, run, needs))
             assertTrue(SafariHelperRules.needed(name, SafariMode.FULL_CLEAR, run, all))
         }
     }

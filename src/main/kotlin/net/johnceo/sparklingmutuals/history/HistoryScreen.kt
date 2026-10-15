@@ -218,12 +218,12 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
         "${entries.size} catch${if (entries.size == 1) "" else "es"}".let { g.text(font, it, px + listW - font.width(it), py + 6, MUTED) }
         val y0 = py + 22
         g.text(font, "When", px + 10, y0, 0xFFDDDDDD.toInt()); g.text(font, "Player", px + 60, y0, 0xFFDDDDDD.toInt())
-        // The critter column starts after the longest name on screen, so long names never run into it.
-        val critterX = px + 60 + 8 + maxOf(font.width("Player"), entries.drop(scroll[Tab.SPARKLINGS] ?: 0).take(40).maxOfOrNull { font.width(it.player) } ?: 0)
-        g.text(font, "Critter", critterX, y0, 0xFFDDDDDD.toInt())
-        "Tickets".let { g.text(font, it, px + listW - font.width(it), y0, 0xFFDDDDDD.toInt()) }
         listTop = y0 + 12; listBottom = py + ph - 26; listRows = maxOf(1, (listBottom - listTop) / ROW); listSize = entries.size
         val offset = clampScroll(Tab.SPARKLINGS)
+        // Use the validated offset so scrolling above the first entry can never pass a negative value to drop().
+        val critterX = px + 60 + 8 + maxOf(font.width("Player"), entries.drop(offset).take(40).maxOfOrNull { font.width(it.player) } ?: 0)
+        g.text(font, "Critter", critterX, y0, 0xFFDDDDDD.toInt())
+        "Tickets".let { g.text(font, it, px + listW - font.width(it), y0, 0xFFDDDDDD.toInt()) }
         if (entries.isEmpty()) g.text(font, "§7No sparklings recorded yet. Old logs: /sm history import", px + 10, listTop + 6, MUTED)
         for (i in 0 until listRows) {
             val entry = entries.getOrNull(offset + i) ?: break
@@ -481,7 +481,7 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
     }
     override fun mouseScrolled(mouseX: Double, mouseY: Double, scrollX: Double, scrollY: Double): Boolean {
         if (scrollY == 0.0) return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY)
-        scroll[tab] = (scroll[tab] ?: 0) + if (scrollY > 0) -3 else 3
+        scroll[tab] = ((scroll[tab] ?: 0) + if (scrollY > 0) -3 else 3).coerceAtLeast(0)
         return true
     }
 

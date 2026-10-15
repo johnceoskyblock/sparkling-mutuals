@@ -2,6 +2,7 @@ package net.johnceo.sparklingmutuals.safari
 
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents
 import net.johnceo.sparklingmutuals.config.ConfigManager
+import net.johnceo.sparklingmutuals.config.SafariEspConfig
 import net.johnceo.sparklingmutuals.hud.SkyblockSidebar
 import net.johnceo.sparklingmutuals.party.PartyManager
 import net.minecraft.client.Minecraft
@@ -34,7 +35,7 @@ object TeammateEsp {
                 if (!isTeammate(player)) continue
                 val pos = player.getPosition(delta)
                 val distance = pos.distanceTo(camera)
-                val scale = (.025 * TeammateEspRules.nameScale(distance)).toFloat()
+                val scale = (SafariEspConfig.labelWorldScale * TeammateEspRules.nameScale(distance)).toFloat()
                 val text = player.gameProfile.name
                 poses.pushPose()
                 poses.translate(pos.x - camera.x, pos.y + player.bbHeight + .7 + distance * .015 - camera.y, pos.z - camera.z)

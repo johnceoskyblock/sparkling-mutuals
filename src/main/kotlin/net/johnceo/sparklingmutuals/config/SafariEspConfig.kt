@@ -7,8 +7,6 @@ import java.util.Properties
 object SafariEspConfig {
     data class Group(var enabled: Boolean = true, var onlyInBiome: Boolean = true)
     data class Mob(var enabled: Boolean, var color: String)
-    private val defaultMobs = setOf("Rockmite", "Treefrog", "Woodchucker", "Hideonfloor", "Shuddersquid",
-        "Billygoat", "Nozzlenose", "Duplico", "Hideonwall", "Hideyho", "Doomspiral")
     private val palette = mapOf(
         "Foxtrot" to 0xFFF26F14.toInt(),
         "Bluebird" to 0xFF173AE8.toInt(),
@@ -49,7 +47,12 @@ object SafariEspConfig {
         "Doomspiral" to 0xFF00F0EF.toInt()
     )
     val groups = listOf("floor", "cavern", "forest", "icy", "haunted").associateWith { Group() }
-    val mobs = SafariEspRules.mobs.associate { it.name to Mob(it.name in defaultMobs, defaultColor(palette.getValue(it.name))) }
+    val mobs = SafariEspRules.mobs.associate { it.name to Mob(true, defaultColor(palette.getValue(it.name))) }
+    const val DEFAULT_TEXT_SCALE = 2f
+    fun validTextScale(value: Float) = if (value.isFinite()) value.coerceIn(.5f, 4f) else DEFAULT_TEXT_SCALE
+    var textScale = DEFAULT_TEXT_SCALE
+        set(value) { field = validTextScale(value) }
+    val labelWorldScale get() = .025f * textScale
     var floorColor = defaultColor(0xFF00FF00.toInt())
     var rockmiteMoundEnabled = true
     var rockmiteMoundColor = defaultColor(0xFFFFFFFF.toInt())
@@ -65,12 +68,13 @@ object SafariEspConfig {
     fun rgb(color: String) = ChromaColour.specialToChromaRGB(color)
     private fun key(name: String) = name.lowercase().replace(' ', '_')
     fun load(properties: Properties) {
+        textScale = properties.getProperty("esp.textScale")?.toFloatOrNull() ?: DEFAULT_TEXT_SCALE
         groups.forEach { (name, group) ->
             group.enabled = properties.getProperty("esp.$name.enabled")?.toBooleanStrictOrNull() ?: true
             group.onlyInBiome = properties.getProperty("esp.$name.onlyInBiome")?.toBooleanStrictOrNull() ?: true
         }
         mobs.forEach { (name, mob) ->
-            mob.enabled = properties.getProperty("esp.${key(name)}.enabled")?.toBooleanStrictOrNull() ?: (name in defaultMobs)
+            mob.enabled = properties.getProperty("esp.${key(name)}.enabled")?.toBooleanStrictOrNull() ?: true
             mob.color = validColor(properties.getProperty("esp.${key(name)}.color"), defaultColor(palette.getValue(name)))
         }
         floorColor = validColor(properties.getProperty("esp.floor.color"), defaultColor(0xFF00FF00.toInt()))
@@ -80,6 +84,7 @@ object SafariEspConfig {
             properties.getProperty("esp.rockmite.color")?.let { mobs.getValue("Rockmite").color } ?: defaultColor(0xFFFFFFFF.toInt()))
     }
     fun save(properties: Properties) {
+        properties.setProperty("esp.textScale", textScale.toString())
         groups.forEach { (name, group) ->
             properties.setProperty("esp.$name.enabled", group.enabled.toString())
             properties.setProperty("esp.$name.onlyInBiome", group.onlyInBiome.toString())

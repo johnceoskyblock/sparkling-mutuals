@@ -49,7 +49,7 @@ object SafariInventoryAlerts {
             if (ConfigManager.allGemsAlert) add(InventoryAlert.GEMS)
             if (ConfigManager.allIncenseAlert) add(InventoryAlert.INCENSE)
         }
-        SafariFloorDrops.state.inventory(stacks)
+        SafariFloorDrops.state.inventory(stacks, System.currentTimeMillis() - (SafariTracking.ledger.current?.startedAt ?: 0) <= 3000)
         val birds = SafariTracking.ledger.current?.birds
         birds?.inventory(stacks)
         SafariTracking.ledger.current?.sparklingChecks?.inventory(stacks)

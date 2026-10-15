@@ -23,13 +23,12 @@ import net.minecraft.world.InteractionResult
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.level.Level
 import net.minecraft.world.level.block.Blocks
-import net.minecraft.world.level.block.BeehiveBlock
 import net.minecraft.world.entity.Display
 import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.util.Properties
 
-/** Personal honeyhive beacons, verified against loaded server labels and honey levels. */
+/** Personal honeyhive beacons, driven by confirmed loot/refill chat and loaded server holograms. */
 object HoneyHives {
     private val logger = LoggerFactory.getLogger("sparkling-mutuals/honeyhives")
     private const val REMOVED_HIVE = HoneyHiveRules.REMOVED_HIVE
@@ -107,7 +106,7 @@ object HoneyHives {
                 tracker!!.apply { promote(times, full) }.also {
                     refillAt.remove("$player.unknown"); queenFull.remove("$player.unknown")
                 }
-            } else HoneyHiveTracker(times, full)
+            } else HoneyHiveTracker(times, full, provisional = selected == null)
         }
         if (selected != null && selected != lastScope) { lastScope = selected; save() }
     }
@@ -172,18 +171,15 @@ object HoneyHives {
 
     /** Only inspect loaded known hives; no API response can overwrite what the server shows. */
     private fun verifyLoaded(client: Minecraft, now: Long) {
-        // Before profile discovery, retain only confirmed chat loots; provisional block scans must not
-        // replace a known profile's saved deadline when its join line finally arrives.
-        if (profile == null) return
+        // Provisional holograms update rendering immediately; only confirmed loots migrate to a saved profile.
         val world = client.level ?: return
         val current = tracker ?: return
-        val labels = world.entitiesForRendering().mapNotNull { entity ->
+        val labels = world.entitiesForRendering().filter { !it.isRemoved && world.getEntity(it.id) === it }.flatMap { entity ->
             val text = when (entity) {
                 is Display.TextDisplay -> entity.text.string
                 else -> entity.customName?.string
-            }?.let(SafariRules::strip)?.trim() ?: return@mapNotNull null
-            if (text != "Click to loot!" && HoneyHiveTracker.countdownMillis(text) == null) return@mapNotNull null
-            Triple(entity.x, entity.y, entity.z) to text
+            } ?: return@flatMap emptyList()
+            HoneyHiveLabels.statusLines(text).map { HiveLabel(entity.x, entity.y, entity.z, it) }
         }
         var changed = false
         for (hive in hives.values) {
@@ -191,16 +187,30 @@ object HoneyHives {
             if (!world.hasChunkAt(pos)) continue
             val state = world.getBlockState(pos)
             if (!state.`is`(Blocks.BEE_NEST)) continue
-            // Associate each label to its closest known nest, preventing adjacent hives sharing a status.
-            val label = labels.firstOrNull { (at, _) ->
-                val (x, y, z) = at
-                val nearest = HoneyHiveRules.nearest(hives.values, x, y - 1, z)
-                nearest?.key == hive.key && kotlin.math.abs(x - hive.x - .5) <= 1.5 &&
-                    kotlin.math.abs(z - hive.z - .5) <= 1.5 && y in hive.y.toDouble()..(hive.y + 4.0)
-            }?.second
-            if (current.observe(hive.key, label, state.getValue(BeehiveBlock.HONEY_LEVEL), now)) changed = true
+            val label = HoneyHiveLabels.forHive(hive, hives.values, labels)
+            if (current.observe(hive.key, label, now = now)) changed = true
         }
         if (changed) save()
+    }
+
+    /** Log raw label carriers as well as interpreted state to diagnose server data changes. */
+    fun debug(client: Minecraft) {
+        val world = client.level ?: return
+        val player = client.player ?: return
+        logger.info("Hive diagnostics: enabled={} onTorrhus={} profileKnown={} provisional={} visible={}",
+            ConfigManager.honeyHives, onTorrhus, profile != null, profile == null, visible.size)
+        hives.values.filter { player.distanceToSqr(it.x + .5, it.y + .5, it.z + .5) <= 96.0 * 96.0 }.forEach { hive ->
+            val pos = BlockPos(hive.x, hive.y, hive.z)
+            logger.info("Hive pos={} loaded={} block={} refillAt={} queenFull={}", hive.key, world.hasChunkAt(pos),
+                if (world.hasChunkAt(pos)) world.getBlockState(pos) else null,
+                scope?.let { refillAt[it]?.get(hive.key) }, scope?.let { queenFull[it]?.contains(hive.key) })
+        }
+        world.entitiesForRendering().filter { !it.isRemoved && world.getEntity(it.id) === it && player.distanceToSqr(it) <= 96.0 * 96.0 }.forEach { entity ->
+            val raw = if (entity is Display.TextDisplay) entity.text.string else entity.customName?.string
+            if (raw != null && (raw.contains("hive", true) || raw.contains("refill", true) || raw.contains("loot", true)))
+                logger.info("Hive label carrier: id={} type={} pos={},{},{} raw={} status={}",
+                    entity.id, entity.type.toShortString(), entity.x, entity.y, entity.z, raw, HoneyHiveLabels.statusLines(raw))
+        }
     }
 
     // ------------------------------------------------------------------ drawing

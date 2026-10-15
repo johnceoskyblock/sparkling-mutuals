@@ -73,7 +73,12 @@ object SafariManagerGuard {
         UseItemCallback.EVENT.register { player, _, hand ->
             val client = Minecraft.getInstance()
             val name = SafariRules.strip(player.getItemInHand(hand).hoverName.string)
-            if (player === client.player && name.contains(TICKET, true) && blocks(client)) InteractionResult.FAIL else InteractionResult.PASS
+            if (player === client.player && name.contains(TICKET, true)) {
+                if (blocks(client)) InteractionResult.FAIL else {
+                    SafariTracking.ticketSelected(name)
+                    InteractionResult.PASS
+                }
+            } else InteractionResult.PASS
         }
     }
 
@@ -107,7 +112,9 @@ object SafariManagerGuard {
         // GUI Shift-click does not necessarily set the player's sneaking flag.
         val shift = InputConstants.isKeyDown(client.window, GLFW.GLFW_KEY_LEFT_SHIFT) ||
             InputConstants.isKeyDown(client.window, GLFW.GLFW_KEY_RIGHT_SHIFT)
-        return blocks(client, shift)
+        val blocked = blocks(client, shift)
+        if (!blocked) SafariTracking.ticketSelected(slot.item.hoverName.string)
+        return blocked
     }
 
     private fun blocks(client: Minecraft, shiftOverride: Boolean? = null): Boolean {

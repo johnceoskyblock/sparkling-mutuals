@@ -1,7 +1,7 @@
 {
 	"schemaVersion": 1,
 	"id": "sparkling-mutuals",
-	"version": "3.0.0",
+	"version": "${version}",
 	"name": "Sparkling Mutuals",
 	"description": "Hypixel SkyBlock Safari helpers with critter highlights, party sparkling lookups, run tracking, personal bests, history, achievements, profit estimates and Miria contest alerts.",
 	"authors": [

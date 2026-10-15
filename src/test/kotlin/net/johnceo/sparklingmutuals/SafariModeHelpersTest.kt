@@ -52,6 +52,6 @@ class SafariModeHelpersTest {
         run.updateCaptureEvidence(SafariBiome.CAVERN, setOf("Driftling", "Scrappy"), false)
         val panel = SafariPanels.missing(run, SafariBiome.CAVERN, false, 0)
         assertTrue(panel.rows.any { it.label == "Driftling" })
-        assertEquals("0/3", panel.rows.single { it.label == "Scrappy" }.value)
+        assertEquals("0/3 captured", panel.rows.single { it.label == "Scrappy" }.value)
     }
 }

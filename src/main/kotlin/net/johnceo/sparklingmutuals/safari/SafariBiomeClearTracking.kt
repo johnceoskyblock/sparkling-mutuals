@@ -19,20 +19,35 @@ object SafariBiomeClearTracking {
         if (SafariAssist.location != SafariLocation.INSIDE) return
         val snapshot = SafariEsp.observations()
         if (!snapshot.scanned) return
+        val inventory = player.inventory
+        run.inventoryEvidence((0 until inventory.containerSize).map { inventory.getItem(it) }
+            .filterNot { it.isEmpty }.map { it.hoverName.string to it.count })
+        run.observePopulation(snapshot.critters.filterNot { it.mound }.map { it.species to it.uuid })
         snapshot.critters.filterNot { it.mound }.forEach { run.observeCritter(it.id, it.species, it.uuid) }
         run.updateCaptureEvidence(biome, snapshot.critters.filter {
             it.biome == biome
         }.map { if (it.mound) "Rockmite Mound" else it.species }.toSet(),
             SafariStructures.walls.states.size == 5 && SafariStructures.walls.allBroken, BeeNests.allChecked,
             macawsInRange = snapshot.critters.count { it.biome == biome && it.species == "Macaw" },
-            playerX = player.x, playerZ = player.z, nestsPunched = BeeNests.punchedCount)
+            playerX = player.x, playerZ = player.z, nestsPunched = BeeNests.punchedCount, nestsFound = BeeNests.nestCount)
+        run.liveHoneybugs(snapshot.critters.filter { it.species == "Honeybug" && !it.mound }.map { it.uuid }.distinct().size)
+        if (biome == SafariBiome.FOREST || biome == SafariBiome.HAUNTED) {
+            fun population(name: String) = run.count(name) + snapshot.critters.filter { it.species == name && !it.mound }.map { it.uuid }.distinct().size
+            run.resources.scan(biome, if (biome == SafariBiome.HAUNTED) population("Gimmiegold") else
+                population("Bluebird") + population("Parakeet") + population("Macaw") / 2)
+        }
+        if (biome == SafariBiome.FOREST) run.scanBirdSources(player.x, player.z,
+            snapshot.critters.filter { it.biome == biome && !it.mound }.map { it.species to it.uuid },
+            // Include unselected and uncertain markers: predicted type is not absence evidence.
+            snapshot.floorDrops.count { SafariEspRules.biomeAt(it.x.toDouble(), it.z.toDouble()) == biome })
         run.sparklingChecks.scan(biome, player.x, player.z,
             snapshot.critters.filterNot { it.mound }.map { it.species to it.uuid },
-            nestsChecked = BeeNests.allChecked,
+            nestsChecked = run.nestsResolved,
             moundsCleared = run.allMoundsBroken && SafariStructures.nearbyMounds == 0 && snapshot.critters.none { it.mound },
             wallsCleared = SafariStructures.walls.states.size == 5 && SafariStructures.walls.allBroken,
             birdsSpawned = run.birds.sparklingSpawned,
-            hauntedDropsRemaining = snapshot.floorDrops.count { SafariEspRules.biomeAt(it.x.toDouble(), it.z.toDouble()) == SafariBiome.HAUNTED })
+            hauntedDropsRemaining = snapshot.floorDrops.count { SafariEspRules.biomeAt(it.x.toDouble(), it.z.toDouble()) == SafariBiome.HAUNTED },
+            hauntedCoinDropsRemaining = snapshot.hauntedCoinDropsRemaining)
         run.reconcileStructures(biome, SafariStructures.nearbyMounds > 0 || snapshot.critters.any { it.mound },
             SafariStructures.walls.states.any { it == WallState.INTACT })
         SafariCompletion.tick(client, run, biome)
@@ -45,7 +60,8 @@ object SafariBiomeClearTracking {
             run.moundsComplete() &&
                 SafariStructures.nearbyMounds == 0 && snapshot.critters.none { it.mound },
             SafariStructures.walls.states.size == 5 && SafariStructures.walls.allBroken, BeeNests.allChecked,
-            nearbyMacaws = snapshot.critters.count { it.biome == biome && !it.mound && it.species == "Macaw" })
+            nearbyMacaws = snapshot.critters.count { it.biome == biome && !it.mound && it.species == "Macaw" },
+            nestsFound = BeeNests.nestCount)
         SafariFullClear.recordClear(run, biome, evidence, ConfigManager.personalBests, System.currentTimeMillis())?.let {
             ConfigManager.save(); player.sendSystemMessage(LocalChat.component(it))
         }

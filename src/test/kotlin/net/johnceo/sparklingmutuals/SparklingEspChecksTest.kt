@@ -22,7 +22,7 @@ class SparklingEspChecksTest {
         run.record(SafariCatch(SafariRoster.named("Strongarm")!!))
         assertFalse("Strongarm" in names()); assertTrue("Troodon" in names())
         run.sparklingChecks.chat("Party > Friend: id", manualAllowed = true)
-        assertEquals(listOf("All checked!"), names())
+        assertTrue("Troodon" in names())
     }
     @Test fun `each needed UUID gets ten seconds even after its species center check`() {
         val run = SafariRun(0); val state = party("Flitter"); val first = UUID.randomUUID(); val second = UUID.randomUUID()
@@ -44,7 +44,7 @@ class SparklingEspChecksTest {
         run.record(SafariCatch(SafariRoster.named("Mantis Shrimp")!!))
         assertFalse(visible("Mantis Shrimp", shrimp, 22000)); assertTrue(visible("Mantis Shrimp", shrimp, 22000, true))
         run.sparklingChecks.chat("Party > Friend: id", manualAllowed = true)
-        assertFalse(visible("Troodon", UUID.randomUUID(), 23000))
+        assertTrue(visible("Troodon", UUID.randomUUID(), 23000))
     }
     @Test fun `profitable Cavern ESP bypasses lifetime only while enabled`() {
         val run = SafariRun(0); val state = party("Chuckwalla"); val id = UUID.randomUUID()

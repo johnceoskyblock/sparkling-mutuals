@@ -29,10 +29,13 @@ class ContestGui(private val parent: Screen? = null) : Screen(Component.literal(
             ContestConfig.hudScale = miria.scale; ContestHud.renderPreview(g, x, y)
         })
         val run = SafariPanels.previewRun()
-        val panels = listOf(SafariPanels.progress(run, ConfigManager.countUniqueOnly, 49000),
-            SafariPanels.missing(run, SafariBiome.FOREST, ConfigManager.countUniqueOnly, 3),
-            SafariPanels.captures(run, SafariBiome.FOREST), SafariAssist.nearbyPanel(preview = true)!!) + SmallAlerts.titles.keys.map(SmallAlerts::preview)
-        SafariHud.entries.zip(panels).forEach { (hud, panel) ->
+        val panels = mapOf(
+            SafariHud.PROGRESS to SafariPanels.progress(run, ConfigManager.countUniqueOnly, 49000),
+            SafariHud.MISSING to SafariPanels.missing(run, SafariBiome.FOREST, ConfigManager.countUniqueOnly, 3),
+            SafariHud.CAPTURES to SafariPanels.captures(run, SafariBiome.FOREST),
+            SafariHud.SPARKLINGS to SafariAssist.nearbyPanel(preview = true)!!) + SmallAlerts.previews()
+        SafariHud.entries.forEach { hud ->
+            val panel = panels.getValue(hud)
             previews.add(Preview(hud.label, hud.layout, panel.width(font::width), panel.height) { g, x, y ->
                 panel.draw(g, x, y, hud.layout.scale, AppearanceConfig.panels.getValue(hud.name.lowercase())) })
         }

@@ -36,7 +36,7 @@ class ConfigTest {
         ConfigManager.init(dir)
         assertEquals("example-key", ConfigManager.apiKey)
         assertEquals(25, ConfigManager.warpDelaySeconds)
-        assertFalse(ConfigManager.warpAlertsEnabled)
+        assertTrue(ConfigManager.warpAlertsEnabled)
         assertTrue(ConfigManager.partyCommandsEnabled)
     }
 

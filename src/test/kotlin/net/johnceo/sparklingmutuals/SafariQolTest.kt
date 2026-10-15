@@ -30,7 +30,7 @@ class SafariQolTest {
     @Test fun `capsule and chat settings apply and survive a restart with safe distance bounds`() {
         ConfigManager.init(dir)
         ContestConfig.init(dir)
-        assertFalse(ConfigManager.hideCaptureChat)
+        assertTrue(ConfigManager.hideCaptureChat)
         assertTrue(ConfigManager.hideGroundCapsules)
         assertTrue(ConfigManager.hideFlyingCapsules)
         assertEquals(2f, ConfigManager.capsuleHideDistance)

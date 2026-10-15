@@ -9,14 +9,15 @@ import java.nio.file.Path
 
 class SafariPanelSeparationTest {
     @TempDir lateinit var dir: Path
-    @Test fun `normal missing panel needs one capture and never shows quotas`() {
+    @Test fun `Unique missing panel retains plain checking rows after a capture`() {
         ConfigManager.init(dir)
         val run = SafariRun(0)
         for (name in listOf("Scrappy", "Gemzie", "Troodon", "Gazer")) {
             val critter = SafariRoster.named(name)!!
-            assertTrue(SafariPanels.missing(run, critter.biome, true, 0).rows.any { it.label == name && it.value == null })
+            assertTrue(SafariPanels.missing(run, critter.biome, true, 0).rows.any { it.label == name && it.value == "0/${critter.quota} checked" })
             run.record(SafariCatch(critter))
-            assertFalse(SafariPanels.missing(run, critter.biome, true, 0).rows.any { it.label == name })
+            assertTrue(SafariPanels.missing(run, critter.biome, true, 0).rows.any { it.label == name })
+            assertEquals(0, SafariPanels.missingCritters(run, critter.biome).count { it.name == name })
         }
     }
     @Test fun `scanned empty mounds complete Rockmite only after revealed critters are caught`() {
@@ -52,11 +53,13 @@ class SafariPanelSeparationTest {
         assertEquals("1/9", SafariPanels.progress(run, false, 0).rows.first { it.label == "Forest" }.value)
         assertEquals("0/9", SafariPanels.progress(run, false, 0).rows.first { it.label == "Cavern" }.value)
     }
-    @Test fun `missing panel quotas are only the four known multiple critters`() {
+    @Test fun `nest helper does not add extra species capture quotas to the missing panel`() {
         ConfigManager.init(dir); SafariFullClear.toggle()
         val run = SafariRun(0)
         val rows = SafariBiome.entries.flatMap { SafariPanels.missing(run, it, false, 0).rows }
-        assertEquals(setOf("Scrappy", "Gemzie", "Troodon", "Gazer"), rows.filter { it.value?.contains('/') == true }.map { it.label }.toSet())
+        assertEquals(setOf("Scrappy", "Gemzie", "Troodon", "Gazer"),
+            rows.filter { it.value?.contains('/') == true }.map { it.label }.toSet())
+        assertNull(rows.first { it.label == "Honeybug" }.value)
         assertTrue(rows.any { it.label == "Bluebird" })
         repeat(6) { run.record(SafariCatch(SafariRoster.named("Foxtrot")!!)) }
         run.updateCaptureEvidence(SafariBiome.FOREST, emptySet(), true)
@@ -118,7 +121,7 @@ class SafariPanelSeparationTest {
         ConfigManager.fullClearMode = false
         assertEquals(-1, SafariPanels.captures(run, SafariBiome.CAVERN).rows.first { it.label == "Rockmite Mounds" }.valueColor)
     }
-    @Test fun `bird colors require all pickups food used sufficient catches and no same species nearby`() {
+    @Test fun `bird colors become independent once known food demand is consumed`() {
         ConfigManager.init(dir); SafariFullClear.toggle()
         val run = SafariRun(0)
         fun green() = SafariPanels.captures(run, SafariBiome.FOREST).rows.first { it.label == "Bluebird" }.valueColor == 0xFF55FF55.toInt()
@@ -129,10 +132,10 @@ class SafariPanelSeparationTest {
         repeat(8) { run.birds.spawn("A Bluebird was attracted to the Birdfeeder!") }
         run.birds.spawn("A Parakeet was attracted to the Birdfeeder!")
         run.updateCaptureEvidence(SafariBiome.FOREST, emptySet(), false)
-        assertFalse(green())
+        assertTrue(green())
         repeat(3) { run.recordBirdFood("FLOOR DROP! Yogi Berry") }
         run.birds.inventory(emptyList())
-        assertFalse(green())
+        assertTrue(green())
         run.record(SafariCatch(SafariRoster.named("Parakeet")!!))
         assertTrue(green())
         run.updateCaptureEvidence(SafariBiome.FOREST, setOf("Bluebird"), false)
@@ -142,24 +145,43 @@ class SafariPanelSeparationTest {
         assertFalse(SafariRun(0).birdFoodsComplete)
     }
     @Test fun `caught Macaw stays green with remaining critters after food and capture requirements`() {
+
         ConfigManager.init(dir); SafariFullClear.toggle()
+
         val run = SafariRun(0)
+
         run.updateCaptureEvidence(SafariBiome.FOREST, setOf("Macaw"), false)
+
         assertFalse(run.captureComplete("Macaw"))
+
         repeat(8) { run.record(SafariCatch(SafariRoster.named("Bluebird")!!)) }
+
         assertFalse(run.captureComplete("Macaw"))
+
         run.record(SafariCatch(SafariRoster.named("Macaw")!!))
+
         assertFalse(run.captureComplete("Macaw"))
+
         repeat(3) { for (food in listOf("Bag of Seeds", "Wriggleworm", "Yogi Berry")) run.recordBirdFood("FLOOR DROP! $food") }
+
         repeat(8) { run.birds.spawn("A Bluebird was attracted to the Birdfeeder!") }
+
         run.birds.spawn("Two Macaws were attracted to the Birdfeeder!")
+
         run.birds.inventory(emptyList())
+
         val birds = setOf("Bluebird", "Parakeet", "Macaw")
+
         assertTrue(SafariPanels.captures(run, SafariBiome.FOREST).rows.filter { it.label in birds }.all { it.valueColor == 0xFF55FF55.toInt() })
+
         for (other in listOf("Bluebird", "Parakeet", "Foxtrot")) {
+
             run.updateCaptureEvidence(SafariBiome.FOREST, setOf("Macaw", other), false)
+
             assertTrue(run.captureComplete("Macaw"))
+
         }
+
     }
     @Test fun `Cavern colors require checked structures collected rockmites and no nearby entities`() {
         ConfigManager.init(dir); SafariFullClear.toggle()
