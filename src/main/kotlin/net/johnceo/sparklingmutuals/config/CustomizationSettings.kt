@@ -22,7 +22,7 @@ class ColorChoice(private val read: () -> String, private val write: (String) ->
     fun apply(): Boolean {
         val value = SafariEspConfig.validColor(color, read())
         val changed = value != read()
-        write(value)
+        if (changed) write(value)
         return changed
     }
 }
@@ -44,7 +44,7 @@ class PanelAppearanceSettings(private val style: PanelStyle, selection: () -> St
     }
 }
 
-class CustomizationSettings {
+class CustomizationSettings(private val dropSettings: FloorDropColorSettings? = null) {
     @JvmField @ConfigOption(name = "Selected hex color", desc = "Enter #RRGGBB, then press Set Color for each item.")
     @ConfigEditorText var selectedHex = AppearanceConfig.selectedHex
     private fun panel(id: String) = PanelAppearanceSettings(AppearanceConfig.panels.getValue(id)) { selectedHex }
@@ -67,8 +67,8 @@ class CustomizationSettings {
         { AppearanceConfig.snooperColor }, { AppearanceConfig.snooperColor = it }) { selectedHex }
     @JvmField @ConfigOption(name = "Sparkling highlights and alerts", desc = "") @Accordion val sparklingHighlights = ColorChoice(
         { AppearanceConfig.sparklingColor }, { AppearanceConfig.sparklingColor = it }) { selectedHex }
-    @JvmField @ConfigOption(name = "Floor drop ESP", desc = "") @Accordion val floor = ColorChoice(
-        { SafariEspConfig.floorColor }, { SafariEspConfig.floorColor = it }) { selectedHex }
+    @JvmField @ConfigOption(name = "All floor-drop colors", desc = "Changing this color sets every drop type. Individual colors are in the ESP tab.") @Accordion val floor = ColorChoice(
+        { SafariEspConfig.floorColor }, { SafariEspConfig.setAllDropColors(it); dropSettings?.reload() }) { selectedHex }
     @JvmField @ConfigOption(name = "Cavern critter colors", desc = "") @Accordion val cavern = CavernColorSettings { selectedHex }
     val cavernfish get() = cavern.cavernfish
     val flitter get() = cavern.flitter

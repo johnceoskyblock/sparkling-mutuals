@@ -103,7 +103,7 @@ class SafariPersonalBests {
         return "[SM] New $species$label PB: ${formatTime(time(species, duo = !soloImproved)!!)}!"
     }
     fun recordUnique(biome: SafariBiome, run: SafariRun, now: Long): String? {
-        if (run.endedAt != null || now < run.startedAt || biome in run.uniqueBiomeClears ||
+        if (run.sparklingCaptures.pending(biome) || run.endedAt != null || now < run.startedAt || biome in run.uniqueBiomeClears ||
             biome.critters.any { run.personalCount(it.name) == 0 }) return null
         run.uniqueBiomeClears.add(biome)
         return recordBiome(biome, run, now, BiomePbType.UNIQUE)
@@ -116,7 +116,7 @@ class SafariPersonalBests {
      * complete here.
      */
     fun recordPartyUnique(biome: SafariBiome, run: SafariRun, now: Long): String? {
-        if (run.endedAt != null || now < run.startedAt || biome in run.partyUniqueClears ||
+        if (run.sparklingCaptures.pending(biome) || run.endedAt != null || now < run.startedAt || biome in run.partyUniqueClears ||
             biome.critters.any { run.count(it.name) == 0 && !run.uniqueUnavailable(it.name) }) return null
         run.partyUniqueClears.add(biome)
         val elapsed = now - run.startedAt

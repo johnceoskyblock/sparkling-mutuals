@@ -217,8 +217,9 @@ object SafariEsp {
         logger.info("Safari ESP diagnostics: biome={}, fullClear={}, collected={}", SafariAssist.biome,
             ConfigManager.fullClearMode, SafariRoster.all.associate { it.name to (SafariTracking.run?.count(it.name) ?: 0) })
         SafariTracking.run?.let { logger.info("Gimmiegold completion: {} coinDropMarkers={}", it.sparklingChecks.gimmiegoldDebug(), observations().hauntedCoinDropsRemaining) }
+        val incenseIds = SafariFloorDrops.state.incenseDropIds(dropPredictor.knownDrops)
         predictedDrops.forEach { logger.info("Floor prediction: id={} biome={} pos={},{},{} predicted={} actual={} selected={}",
-            it.id, it.biome, it.x, it.y, it.z, it.type?.label, it.actual, SafariFloorDrops.selected(it)) }
+            it.id, it.biome, it.x, it.y, it.z, it.type?.label, it.actual, SafariFloorDrops.selected(it, incenseIds)) }
         entities.mapNotNull { entity -> SafariEspRules.identify(describe(entity))?.let { entity to it.name } }.forEach { (entity, species) ->
             val tag = modelLabels.label(entity.uuid)
             val label = entities.firstOrNull { it.uuid == tag }
@@ -332,18 +333,18 @@ object SafariEsp {
             }
         }
         val floor = SafariEspConfig.groups.getValue("floor")
+        val incenseIds = SafariFloorDrops.state.incenseDropIds(dropPredictor.knownDrops)
         val selectedDrops = predictedDrops.filter { drop ->
             drop.actual == null && (0..2).all { client.level?.getEntity(drop.id + it)?.isRemoved == false } &&
-                SafariEspRules.visible(true, SafariFloorDrops.selected(drop), floor.onlyInBiome, playerBiome, drop.biome)
+                SafariEspRules.visible(true, SafariFloorDrops.selected(drop, incenseIds), floor.onlyInBiome, playerBiome, drop.biome)
         }
-        val tiles = selectedDrops.map { it.marker() }
-        selectedDrops.forEach { timers.add(Triple(it.type!!.label, SafariEspConfig.rgb(SafariEspConfig.floorColor),
+        val tiles = selectedDrops.map { it.marker() to SafariEspConfig.rgb(SafariEspConfig.dropColor(it.type!!)) }
+        selectedDrops.forEach { timers.add(Triple(it.type!!.label, SafariEspConfig.rgb(SafariEspConfig.dropColor(it.type!!)),
             AABB(it.x - .5, it.y, it.z - .5, it.x + .5, it.y + 1, it.z + .5))) }
-        val color = SafariEspConfig.rgb(SafariEspConfig.floorColor)
-        tiles.forEach { frame(AABB(it.x.toDouble(), it.y + 1.0, it.z.toDouble(), it.x + 1.0, it.y + 1.0, it.z + 1.0), color) }
+        tiles.forEach { (tile, color) -> frame(AABB(tile.x.toDouble(), tile.y + 1.0, tile.z.toDouble(), tile.x + 1.0, tile.y + 1.0, tile.z + 1.0), color) }
         buffers.endBatch(lines)
         val quads = buffers.getBuffer(fill)
-        for (tile in tiles) {
+        for ((tile, color) in tiles) {
             val x = (tile.x - camera.x).toFloat(); val y = (tile.y + 1 - camera.y).toFloat(); val z = (tile.z - camera.z).toFloat()
             for ((dx, dz) in listOf(0f to 0f, 0f to 1f, 1f to 1f, 1f to 0f))
                 quads.addVertex(pose, x + dx, y, z + dz).setColor(color and 0xFFFFFF or ((color ushr 25) shl 24))

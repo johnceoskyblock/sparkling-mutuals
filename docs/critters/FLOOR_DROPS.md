@@ -18,8 +18,22 @@ Apply item selection alongside the existing mode/discovery/resource-need rules. 
 ### Haunted item-specific need rules
 
 - **Shining Coins:** if anyone needs Sparkling Gimmiegold, require every Shining Coin floor drop collected and keep its typed highlights while drops remain. The minimum Gimmiegold count does not excuse remaining coins. Coin use/spawn checks remain required afterward, including Unique's added Sparkling work.
-- **Soothing Incense in Sparkling mode:** show typed Incense ESP only while someone needs Sparkling Doomspiral and fewer than **four incense floor pickups** are confirmed. Hide it once four are picked up, or immediately if everyone owns the discovery. Starting items/predictions/spawn signals do not increment this floor-pickup counter.
-- Evaluate coins and incense independently: Gimmiegold need cannot keep incense highlighted when Doomspiral is shared, and four incense pickups cannot hide required coin drops. Uncertain drop typing is not proof that all needed drops were collected. Every mode hides incense after four confirmed incense floor pickups, regardless of Gimmiegold needs. Before that cutoff, retain its existing mode-specific eligibility.
+- **Soothing Incense in Sparkling mode:** show typed Incense ESP only while someone needs Sparkling Doomspiral, fewer than **four incense floor pickups** are confirmed, and the inventory has never held **four Soothing Incense at once** in this run. Either cutoff hides Incense ESP for the rest of the run, including after consumption and biome reentry. Starting items count toward the inventory cutoff (including two starting incense), but not the floor-pickup counter. Hide it immediately if everyone owns the discovery.
+- Evaluate coins and incense independently: Gimmiegold need cannot keep incense highlighted when Doomspiral is shared, and four incense pickups cannot hide required coin drops. Uncertain drop typing is not proof that all needed drops were collected. Every mode hides incense after four confirmed incense floor pickups **or after holding four incense simultaneously at any point in the run**, regardless of Gimmiegold needs. Before that cutoff, retain its existing mode-specific eligibility.
+
+In Sparkling mode, hide all Shining Coin floor-drop ESP when nobody in the party needs Sparkling Gimmiegold, even before collecting any coins. Coin and incense visibility remain independent; these display cutoffs do not establish critter completion.
+
+## Incense waypoint selection in every mode
+
+For **incense only**, rank known Haunted incense floor-drop locations by full 3D distance from **(4, 47, -27)**. With no starting incense, only the closest **four** locations are eligible for ESP. If initial inventory or a starting grant establishes **one or two starting incense**, only the closest **two** locations are eligible. Both cases apply in **Unique, Full Clear and Sparkling**; do not calculate three slots for one starting incense.
+
+Retain the starting amount after consumption and biome reentry. Later floor pickups do not become starting items or change this slot limit. Rank all known predicted incense locations, including collected/unloaded ones, so a farther fifth/third location does not replace a picked or unloaded selected location. Newly discovered closer locations can refine the ranking. Equal distances use numeric group ID for a stable tie break. A new run resets this evidence.
+
+This is an additional visibility filter. Existing mode/discovery needs still apply; hide collected drops, and hide all incense after four confirmed floor pickups or four held together at any point. It does not affect coin selection, prediction typing, source/completion evidence, or other drop types.
+
+## Colors
+
+In **ESP → Floor-drop colors**, independently customize every named quest-drop type: the three gems, three bird foods, Soothing Incense, Shining Coin and Icebreaker. Use that type's chosen color for its outline, fill and name. Older shared floor colors become defaults for each type, and per-item colors persist across restarts. **Customization → All floor-drop colors** applies one color to all types. These choices never bypass drop eligibility; unknown/generic predictions still receive no ESP.
 
 ## What the inspected JAR does
 
@@ -91,9 +105,9 @@ Current implementation: `FloorDropPredictor.kt` retains numeric-ID group history
 - Cavern: only the two Lime/Purple/Orange sets. Acquiring one gem of a color hides the other predicted marker of that color, including after the gem is placed.
 - Icy: all **five** predicted Icebreaker slots, in Full Clear while one is still needed. Acquiring one hides all remaining Icebreaker highlights. This matches the inspected JAR's five-slot prefix.
 - Haunted coin-source completion ignores complete currently loaded typed Incense groups, while raw unknown/partial/generic and coin markers continue to block it. Marker selection and the four-incense cutoff never remove a coin-source blocker; resource pickups/use and captures remain separately confirmed.
-- Haunted (**implemented; Minecraft verification pending**): missing Gimmiegold requires collecting all coin drops; it does not control Incense ESP. In Sparkling mode, incense is shown only for missing Doomspiral until four incense floor pickups are confirmed, excluding starting inventory from that pickup counter. The same four-floor-pickup cutoff now applies in every mode. This replaces the earlier coupling of incense to Gimmiegold and its starting-inventory cutoff for Sparkling mode.
+- Haunted (**implemented; Minecraft verification pending**): in Sparkling mode, coin ESP requires someone missing Gimmiegold; incense ESP requires someone missing Doomspiral and stops after four confirmed floor pickups or four incense held simultaneously at any point in the run, including starting incense. Both cutoffs and the waypoint-based four/two-location selection apply in every mode.
 - Generic/unknown predictions receive no quest-item ESP. Hidden markers remain independent raw presence evidence and cannot complete a critter/source check.
 
 ## Last updated
 
-2026-10-15 - Clarified that unbounded Haunted coin predictions cannot veto fully confirmed baseline coin collection and use.
+2026-10-15 - Restricted incense in every mode to the four closest known spawns to (4,47,-27), or two with starting incense; extended the four-held cutoff to every mode.

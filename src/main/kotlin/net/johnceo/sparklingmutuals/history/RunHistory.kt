@@ -72,20 +72,19 @@ object RunHistory {
     }
 
     /**
-     * Adds runs rebuilt from old logs. A run already saved (starting within two minutes) is kept as it is, unless it
-     * came from an earlier import, which this reading replaces. Everything is then numbered oldest first.
+     * Adds runs rebuilt from old logs, preserving matched native and imported records.
+     * Starts or original ticket times match within ninety seconds; display numbering is rebuilt oldest first.
      */
     fun importRuns(found: List<RunRecord>): Int {
-        found.forEach { it.coins = BazaarPrices.value(it.shards, it.feathers) }
         val added = HistoryMerge.merge(data.runs, found)
         data.nextNumber = data.runs.size + 1
-        save()
+        save().getOrThrow()
         return added
     }
 
     /** Fills in coins for runs saved before the prices had loaded. */
     fun fillMissingCoins() {
-        val missing = data.runs.filter { it.coins < 0 }
+        val missing = data.runs.filter { !it.coinsEstimated && it.coins < 0 }
         missing.forEach { it.coins = BazaarPrices.value(it.shards, it.feathers) }
         if (missing.any { it.coins >= 0 }) save()
     }
@@ -127,7 +126,7 @@ internal class LiveHistorySession {
 
 /** The merge behind imports, separate so it can be tested. */
 object HistoryMerge {
-    const val SAME_RUN_MILLIS = 120_000L
+    const val SAME_RUN_MILLIS = 90_000L
     /** Replace one overlapping import of this run; nearby, already-finished runs remain separate. */
     fun removeLiveDuplicate(runs: MutableList<RunRecord>, live: RunRecord): RunRecord? {
         val imported = runs.filter { it.imported && kotlin.math.abs(it.start - live.start) <= SAME_RUN_MILLIS &&
@@ -143,19 +142,31 @@ object HistoryMerge {
      * each other, so two short runs close together both survive.
      */
     fun merge(runs: MutableList<RunRecord>, found: List<RunRecord>): Int {
-        val unmatched = java.util.Collections.newSetFromMap(java.util.IdentityHashMap<RunRecord, Boolean>()).apply { addAll(runs) }
-        var added = 0
-        for (run in found) {
-            val existing = unmatched.filter { kotlin.math.abs(it.start - run.start) <= SAME_RUN_MILLIS }
-                .minByOrNull { kotlin.math.abs(it.start - run.start) }
-            if (existing == null) { runs += run; added++; continue }
-            unmatched.remove(existing)
-            if (existing.imported) {
-                val index = runs.indexOfFirst { it === existing }
-                run.number = existing.number
-                runs[index] = run
+        data class Match(val found: Int, val saved: Int, val distance: Long)
+        val sortedSaved = runs.withIndex().sortedBy { it.value.start }
+        val candidates = mutableMapOf<Pair<Int, Int>, Long>()
+        fun lowerBound(at: Long): Int {
+            var lo = 0; var hi = sortedSaved.size
+            while (lo < hi) { val mid = (lo + hi) ushr 1; if (sortedSaved[mid].value.start < at) lo = mid + 1 else hi = mid }
+            return lo
+        }
+        found.forEachIndexed { fi, run ->
+            listOf(run.start, run.ticketAt).filter { it > 0 }.distinct().forEach { anchor ->
+                var index = lowerBound(anchor - SAME_RUN_MILLIS)
+                while (index < sortedSaved.size && sortedSaved[index].value.start <= anchor + SAME_RUN_MILLIS) {
+                    val saved = sortedSaved[index++]
+                    val pair = fi to saved.index
+                    candidates[pair] = minOf(candidates[pair] ?: Long.MAX_VALUE, kotlin.math.abs(saved.value.start - anchor))
+                }
             }
         }
+        val matchedFound = mutableSetOf<Int>(); val matchedSaved = mutableSetOf<Int>()
+        candidates.map { (pair, distance) -> Match(pair.first, pair.second, distance) }.sortedBy { it.distance }.forEach {
+            if (it.found !in matchedFound && it.saved !in matchedSaved) { matchedFound += it.found; matchedSaved += it.saved }
+        }
+        found.forEachIndexed { index, run -> if (index !in matchedFound) runs += run }
+        val added = found.size - matchedFound.size
+        // Saved native and imported details are preserved; only chronological numbering changes.
         runs.sortBy { it.start }
         runs.forEachIndexed { index, run -> run.number = index + 1 }
         runs.sortByDescending { it.start }

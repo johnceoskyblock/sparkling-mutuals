@@ -19,7 +19,7 @@ object SafariPanels {
         val title = when { run == null -> "Critter Safari (ready)"; run.endedAt != null -> "Last Safari  $time"; else -> "Critter Safari  $time" }
         fun bar(label: String, critters: List<SafariCritter>, color: Int): HudRow {
             if (SafariFullClear.mode == SafariMode.SPARKLING && !party.ready) return HudRow(label, "?", color, color)
-            val targets = if (SafariFullClear.mode == SafariMode.SPARKLING) critters.filter { party.needs(it.name) } else critters
+            val targets = if (SafariFullClear.mode == SafariMode.SPARKLING) critters.filter { party.needs(it.name) || run?.sparklePending(it.name) == true } else critters
             val count = run?.completed(SafariFullClear.mode, targets, party) ?: 0
             return HudRow(label, "$count/${targets.size}", color, color,
                 if (targets.isEmpty()) 1f else count.toFloat() / targets.size)
@@ -30,7 +30,7 @@ object SafariPanels {
     /** Critters of this biome the current mode still needs; the missing panel and `!m` both read it. */
     fun missingCritters(run: SafariRun?, biome: SafariBiome, party: PartySparklingState = SafariSparklingMode.state): List<SafariCritter> {
         val sparkling = SafariFullClear.mode == SafariMode.SPARKLING
-        return biome.critters.filter { if (sparkling) {
+        return biome.critters.filter { if (run?.sparklePending(it.name) == true) true else if (sparkling) {
                 party.needs(it.name) && run?.sparklingComplete(it.name, party) != true ||
                     run?.sparklingChecks?.wumpaPrerequisite(it.name, party) == true && run.count(it.name) == 0
             }

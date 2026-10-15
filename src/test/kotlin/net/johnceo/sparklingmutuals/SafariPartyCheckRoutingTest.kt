@@ -11,7 +11,7 @@ class SafariPartyCheckRoutingTest {
             val run = SafariRun(0)
             val lines = SafariMessages.lines("§9Party > §a[MVP+] Player: $word", run.sparklingChecks)
             assertTrue(lines.isEmpty())
-            assertTrue(biome.critters.all { run.sparklingChecks.checked(it.name) })
+            assertTrue(biome.critters.all { run.sparklingChecks.checked(it.name) == (it.name !in setOf("Wumpa", "Doomspiral")) })
             assertTrue(SafariRoster.all.filter { it.biome != biome }.none { run.sparklingChecks.checked(it.name) })
             assertEquals(0, run.progress(SafariRoster.all, true))
             assertTrue(run.biomeClears.isEmpty()); assertTrue(run.uniqueBiomeClears.isEmpty())

@@ -23,7 +23,7 @@ Nine possible starting items: **Icebreaker, Yogi Berry, Wriggleworm, Bag of Seed
 
 The supplied Shiny Hunter JAR predicts quest-drop types from loaded display groups and numeric entity spawn order; it does not read a literal reward name from each unopened marker. See [mapping, evidence and implementation handoff](FLOOR_DROPS.md). Requested filtering: Cavern gems; Forest bird food; Haunted incense/coins; Icy Icebreakers. This changes highlight selection only: all critter spawn/check/capture rules remain unchanged. Predictions never count as pickups, used resources or proof that no needed drops remain.
 
-Haunted typed need checks are independent: missing Sparkling Gimmiegold requires collecting **all Shining Coin drops**, not just satisfying its minimum spawn count. In Sparkling mode, missing Doomspiral keeps **Incense ESP until four confirmed incense floor pickups**; everyone owning Doomspiral suppresses Incense ESP entirely. See [Haunted filtering](FLOOR_DROPS.md#haunted-item-specific-need-rules).
+Haunted typed need checks are independent: missing Sparkling Gimmiegold requires collecting **all Shining Coin drops**, not just satisfying its minimum spawn count. In Sparkling mode, missing Doomspiral keeps **Incense ESP until four confirmed incense floor pickups or four incense held at once at any point in the run**, including starting incense; everyone owning Doomspiral suppresses Incense ESP entirely. Sparkling mode hides coin ESP entirely if nobody needs Gimmiegold. Every mode further limits incense to the closest four known spawns to (4,47,-27), or two with one/two starting incense, and stops incense ESP after four floor pickups or four held simultaneously. See [Haunted filtering](FLOOR_DROPS.md#haunted-item-specific-need-rules) and [waypoint selection](FLOOR_DROPS.md#incense-waypoint-selection-in-every-mode).
 
 ## Evidence ledger
 
@@ -180,6 +180,17 @@ Forest retains **Bee nests to punch** while nest work is unresolved. Cavern reta
 - Gate each helper independently by Honeybug, Snoozle or Rockmite; another missing discovery cannot keep it visible. Hide resolved sources. Preserve unknown wall counts rather than claiming those walls are broken.
 - Gazer has no separate footer in any mode; keep its only counter on its plain species row. No extra absence prose or survey warnings are restored.
 
+**Wumpa and Doomspiral are capture-required exceptions in Sparkling mode.** A needed boss remains unchecked until this run receives a personal capture or party loot-share confirmation. Seeing or retaining its UUID, a spawn/awoken/slain message, and a party biome-completion report cannot substitute for that capture. The confirmed catch completes its check immediately and remains valid across unloading, biome reentry and mode changes. Other species keep their existing checking rules.
+
+## Sparkling captures block biome completion in every mode
+
+Any positively detected **Sparkling critter** creates a capture requirement for its species and biome in the current run, even if everybody already owns that discovery. This rule applies in Unique, Full Clear and Sparkling modes, including a Sparkling Macaw after the ordinary one-Macaw requirement is met.
+
+- Record distinct Sparkling label UUIDs as they load, independently of alert/ESP toggles, the player's current biome and the ordinary 80-block display radius. Retain unresolved sightings through unloading, biome reentry and mode switches; a new run starts with a fresh ledger.
+- Keep the affected species in the missing panel and out of completed progress while any detected Sparkling of that species remains unresolved. In Sparkling mode this adds a temporary capture target even when the party does not need its discovery. Party biome reports, normal population checks and ordinary catches cannot resolve it.
+- Require a confirmed Sparkling personal capture, Sparkling loot share or trusted global `SPARKLING! <player> caught/found a SPARKLING <species>!` message. Reconcile the global announcement and its capture/loot-share reward as one catch, in either order. Each confirmed catch resolves one outstanding sighting of the same species; multiple detected Sparklings require multiple catches.
+- Reopen a previously completed biome when a new Sparkling is detected. Suppress queued biome reports and run-complete alerts while capture obligations remain. Once caught, reevaluate the mode's normal sources/checks/captures before completing. Do not manufacture ordinary catch totals or PB evidence from a global Sparkling announcement.
+
 ## Biome completion and party synchronization
 
 - Locally complete the **current biome** when every required critter satisfies its active-mode completion check. Send its party completion word: **Forest `fd`, Cavern `cd`, Icy `id`, Haunted `hd`**. This lets other mod users synchronize; receiving a report alone must not echo it back as a new local completion.
@@ -244,4 +255,4 @@ For the observed three-floor-coin baseline, confirmed pickup/use history outrank
 
 ## Last updated
 
-2026-10-15 - Aligned completed missing-panel wording and mode definitions: Unique/Full Clear show All caught and checked!; Sparkling retains All checked!.
+2026-10-15 - Added all-mode incense waypoint limits with retained starting inventory and four-held cutoff, alongside Sparkling capture obligations.

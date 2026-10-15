@@ -59,15 +59,10 @@ object SparklingLog {
     fun onTicket() { data.ticketsSinceSparkling++; save() }
 
     /** Adds catches found elsewhere (old logs), skipping any already here. Returns how many were added. */
-    fun importEntries(found: List<SparklingEntry>): Int {
-        val added = found.filter { candidate -> data.entries.none {
-            it.player.equals(candidate.player, true) && it.critter.equals(candidate.critter, true) && kotlin.math.abs(it.at - candidate.at) <= 300_000
-        } }
-        if (added.isEmpty()) return 0
-        data.entries.addAll(added)
-        data.entries.sortByDescending { it.at }
-        save()
-        return added.size
+    fun importEntries(found: List<SparklingEntry>, ticketTimes: List<Long> = emptyList()): Int {
+        val added = SparklingHistoryMerge.merge(data.entries, found, ticketTimes)
+        if (added > 0) save().getOrThrow()
+        return added
     }
 
     /** Which catch of this critter an entry was, counting everyone's. */

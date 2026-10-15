@@ -36,6 +36,7 @@ object ContestTracker {
         "SPECIAL"
     )
 
+    private val downtime = ContestDowntimeState()
     private var tickCounter = 0
     private var windowKey = -1L
     private var secondsIntoWindow = 0
@@ -56,13 +57,17 @@ object ContestTracker {
     }
 
     fun onClientTick(client: Minecraft) {
-        if (!ContestConfig.trackContest && !ConfigManager.honeyHives) return
+        if (!ContestConfig.trackContest && !ConfigManager.honeyHives && !ContestConfig.autoContestDowntime) return
         if (client.player == null || client.level == null) return
 
         if (++tickCounter < 10) return
         tickCounter = 0
 
         rollWindow()
+        if (downtime.poll(windowKey, secondsIntoWindow, ContestConfig.autoContestDowntime,
+                SkyblockSidebar.inSkyblock(client), net.johnceo.sparklingmutuals.party.PartyManager.hasInfo &&
+                    net.johnceo.sparklingmutuals.party.PartyManager.getMembers().size > 1))
+            client.connection?.sendCommand("pc !dt contest")
         readSidebar(client)
         if (ContestConfig.trackContest) maybeWarn(client)
     }

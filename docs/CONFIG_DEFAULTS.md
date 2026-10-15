@@ -15,6 +15,20 @@ Mode selectors remain mutually exclusive; “all on” applies to independent fe
 
 The ESP tab offers **ESP text scale**, from **0.5 to 4** in **0.25** steps. The new default is **2** (twice the original label size); **1** restores the original size. It controls floor-drop names, critter timers, nest labels and teammate names. Teammate names retain their existing distance scaling. Labels stay centered and retain their colors and visibility settings. Changes apply through the GUI and persist across restarts as `esp.textScale`; invalid/non-finite values use the default, and finite values are clamped to the allowed range.
 
+## Floor-drop colors
+
+The ESP tab has a **Floor-drop colors** accordion with separate color pickers for Lime Gem, Purple Gem, Orange Gem, Wriggleworm, Yogi Berry, Bag of Seeds, Soothing Incense, Shining Coin and Icebreaker. Each color controls that drop's outline, translucent fill and name label. The existing **Customization → All floor-drop colors** control changes every type together; applying unchanged shared settings does not overwrite individual choices.
+
+All types initially inherit the old saved floor-drop color (green on a fresh configuration). Per-type choices persist as `esp.floor.<type>.color`; missing/invalid choices fall back to the shared saved color. Generic/unknown drops remain unhighlighted, and changing colors does not alter mode/biome/resource eligibility.
+
+## Automatic contest downtime
+
+**Miria contest → Auto !dt contest** defaults **on**, consistent with the independent-feature default policy, and explicit saved off choices persist. It sends the literal `!dt contest` to party chat once when a new contest window starts while online in SkyBlock with a known party. It works independently of the contest HUD/tracking toggle. Joining/loading settings, switching profiles, repeated scans and enabling it mid-contest must not send a duplicate or stale request. See [contest downtime](CONTEST_DOWNTIME.md).
+
+## History actions
+
+The History tab begins with the **History** button, followed immediately by **Import History from Logs**. Import is an explicit action that backfills both histories from existing logs. There is no **Import logs on launch** toggle or automatic startup scan: normal sessions already record history live. Older saved auto-import settings are ignored. See [history import](HISTORY_IMPORT.md) for supported files, estimates and merge rules.
+
 ## Last updated
 
-2026-10-15 - Added ESP text scale in the ESP tab: default 2, range 0.5–4, saved across restarts.
+2026-10-15 - Added independent floor-drop colors and the saved Auto !dt contest switch, alongside History actions and ESP text scale.

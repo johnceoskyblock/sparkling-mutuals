@@ -101,10 +101,10 @@ class UpdatedDocumentationFeaturesTest {
         assertTrue(run.uniqueComplete("Gemzie", party()))
     }
 
-    @Test fun `Sparkling incense is controlled by Doomspiral discovery and actual floor quantities only`() {
+    @Test fun `Sparkling incense is controlled by Doomspiral discovery and floor pickup cutoff`() {
         val state = FloorDropState()
         state.startingGrant(FloorDropType.INCENSE)
-        state.inventory(listOf("Soothing Incense" to 4))
+        state.inventory(listOf("Soothing Incense" to 2))
         assertTrue(state.needed(FloorDropType.INCENSE, SafariMode.SPARKLING, party("Doomspiral")))
         assertFalse(state.needed(FloorDropType.INCENSE, SafariMode.SPARKLING, party("Gimmiegold")))
         assertTrue(state.needed(FloorDropType.COIN, SafariMode.SPARKLING, party("Gimmiegold")))
@@ -118,6 +118,27 @@ class UpdatedDocumentationFeaturesTest {
         assertTrue(state.needed(FloorDropType.COIN, SafariMode.SPARKLING, party("Doomspiral", "Gimmiegold")))
         for (mode in listOf(SafariMode.UNIQUE, SafariMode.FULL_CLEAR))
             assertFalse(state.needed(FloorDropType.INCENSE, mode, party("Gimmiegold")), "Four floor pickups hide incense in every mode")
+        state.reset()
+        assertTrue(state.needed(FloorDropType.INCENSE, SafariMode.SPARKLING, party("Doomspiral")))
+    }
+
+    @Test fun `Sparkling hides unneeded coins and latches four incense including two starting items`() {
+        val state = FloorDropState()
+        assertFalse(state.needed(FloorDropType.COIN, SafariMode.SPARKLING, party()))
+        assertFalse(state.enabledForMode(SafariBiome.HAUNTED, SafariMode.SPARKLING, true, null, party()))
+        assertTrue(state.needed(FloorDropType.COIN, SafariMode.SPARKLING, party("Gimmiegold")))
+        assertFalse(state.needed(FloorDropType.COIN, SafariMode.SPARKLING, party("Doomspiral")))
+        for (mode in listOf(SafariMode.UNIQUE, SafariMode.FULL_CLEAR))
+            assertTrue(state.needed(FloorDropType.COIN, mode, party()))
+        state.inventory(listOf("Soothing Incense" to 2))
+        repeat(2) { state.record("FLOOR DROP! You found Soothing Incense on the ground!", SafariBiome.HAUNTED) }
+        state.inventory(listOf("§fSoothing Incense" to 2, "Soothing Incense" to 2), initial = false)
+        assertFalse(state.needed(FloorDropType.INCENSE, SafariMode.SPARKLING, party("Doomspiral")))
+        state.inventory(emptyList(), initial = false)
+        state.visit(SafariBiome.FOREST); state.visit(SafariBiome.HAUNTED)
+        assertFalse(state.needed(FloorDropType.INCENSE, SafariMode.SPARKLING, party("Doomspiral", "Gimmiegold")))
+        assertFalse(state.enabledForMode(SafariBiome.HAUNTED, SafariMode.SPARKLING, true, null, party("Doomspiral")))
+        assertTrue(state.enabledForMode(SafariBiome.HAUNTED, SafariMode.SPARKLING, true, null, party("Doomspiral", "Gimmiegold")))
         state.reset()
         assertTrue(state.needed(FloorDropType.INCENSE, SafariMode.SPARKLING, party("Doomspiral")))
     }

@@ -13,10 +13,11 @@ class SafariCompletionEvents {
     private val announced = mutableSetOf<SafariBiome>()
     private val pending = mutableSetOf<SafariBiome>()
     private var alerted = false
+    fun reopen(biome: SafariBiome) { announced.remove(biome); pending.remove(biome); alerted = false }
     fun announcement(run: SafariRun, biome: SafariBiome, mode: SafariMode, party: PartySparklingState): String? {
         if (run.lastBiome != biome) { pending.remove(biome); return null }
         val targets = biome.critters.filter { mode != SafariMode.SPARKLING || party.needs(it.name) }
-        if (!run.hasCaptureEvidence(biome) || mode == SafariMode.SPARKLING && !party.ready ||
+        if (run.sparklingCaptures.pending(biome) || !run.hasCaptureEvidence(biome) || mode == SafariMode.SPARKLING && !party.ready ||
             run.completed(mode, targets, party, localOnly = true) != targets.size) {
             pending.remove(biome)
             return null
@@ -28,7 +29,7 @@ class SafariCompletionEvents {
         if (pending.remove(biome)) announced.add(biome)
     }
     fun alert(run: SafariRun, mode: SafariMode, party: PartySparklingState, enabled: Boolean): Boolean {
-        if (!enabled || alerted || mode == SafariMode.SPARKLING && !party.ready) return false
+        if (run.sparklingCaptures.anyPending() || !enabled || alerted || mode == SafariMode.SPARKLING && !party.ready) return false
         val targets = SafariRoster.all.filter { mode != SafariMode.SPARKLING || party.needs(it.name) }
         if (targets.isEmpty() || run.completed(mode, targets, party) != targets.size) return false
         alerted = true
@@ -49,7 +50,7 @@ object SafariCompletion {
             run.completion.announcement(run, area, mode, party)?.let { queue.addLast(area to it) }
         }
         // Revalidate queued completions after contradictory local evidence or a mode change.
-        queue.removeAll { (area, _) -> area != biome || mode == SafariMode.SPARKLING && !party.ready || run.completed(mode,
+        queue.removeAll { (area, _) -> run.sparklingCaptures.pending(area) || area != biome || mode == SafariMode.SPARKLING && !party.ready || run.completed(mode,
             area.critters.filter { mode != SafariMode.SPARKLING || party.needs(it.name) }, party, localOnly = true) !=
             area.critters.count { mode != SafariMode.SPARKLING || party.needs(it.name) } }
         val now = System.currentTimeMillis()

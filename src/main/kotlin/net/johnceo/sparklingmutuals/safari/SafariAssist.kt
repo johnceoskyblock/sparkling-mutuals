@@ -49,7 +49,7 @@ object SafariAssist {
         biome = if (inSafari) SafariBiome.mapped(mappedBiome) else null
         inHaunted = inSafari && (SafariRules.isHaunted(lines) || biome == SafariBiome.HAUNTED)
         SafariTracking.ensureRun(client)
-        if (!inSafari || !(ConfigManager.shinyDetection || ConfigManager.sparklingAlert || ConfigManager.sparklingPartyAnnouncer)) {
+        if (!inSafari) {
             shinies = emptyList(); SparklingEncounters.leave(); return
         }
         val entities = client.level!!.entitiesForRendering().filterNot { it.isRemoved }.toList()
@@ -57,6 +57,7 @@ object SafariAssist {
         val matchedBodies = mutableSetOf<Int>()
         shinies = entities.mapNotNull { label ->
             val name = label.customName?.string?.let(SafariRules::sparklingSpecies) ?: return@mapNotNull null
+            SafariTracking.ledger.current?.observeSparkling(label.uuid, name)
             val body = bodies.minByOrNull { it.position().distanceToSqr(label.position()) }
                 ?.takeIf { it.position().distanceToSqr(label.position()) < 9 } ?: label
             if (!SafariRules.withinRange(player.distanceToSqr(body)) ||

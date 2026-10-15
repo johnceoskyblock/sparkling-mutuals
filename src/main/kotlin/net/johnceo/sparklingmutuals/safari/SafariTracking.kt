@@ -61,6 +61,7 @@ object SafariTracking {
         }
         if (SafariAssist.inSafari) {
             ensureRun(client)
+            ledger.current?.sparklingBroadcast(text, now)
             ledger.current?.entry?.chat(text)
             ledger.current?.resources?.headStart(text)
             if (text.startsWith("HEAD START!")) ledger.current?.entry?.headStart?.let { type ->
@@ -82,7 +83,7 @@ object SafariTracking {
         val catch = SafariCatch.parse(text) ?: return
         SafariAssist.markEntered()
         ensureRun(client)
-        ledger.current!!.record(catch)
+        ledger.current!!.record(catch, now, client.player!!.name.string)
         checkPartyUnique(client, catch.critter.biome, now)
         if (catch.personal) {
             SafariEsp.caught(catch.critter.name)

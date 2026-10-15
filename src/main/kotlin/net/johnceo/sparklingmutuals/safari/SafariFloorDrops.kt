@@ -12,12 +12,20 @@ class FloorDropState {
     fun needed(type: FloorDropType, mode: SafariMode, party: PartySparklingState): Boolean = when (type) {
         FloorDropType.LIME, FloorDropType.PURPLE, FloorDropType.ORANGE -> amount(type) == 0
         FloorDropType.ICEBREAKER -> mode == SafariMode.FULL_CLEAR && amount(type) == 0
-        FloorDropType.COIN -> party.needs("Gimmiegold") || amount(type) == 0
-        FloorDropType.INCENSE -> (acquired[type] ?: 0) < 4 &&
+        FloorDropType.COIN -> party.needs("Gimmiegold") || mode != SafariMode.SPARKLING && amount(type) == 0
+        FloorDropType.INCENSE -> (acquired[type] ?: 0) < 4 && (inventoryPeak[type] ?: 0) < 4 &&
             if (mode == SafariMode.SPARKLING) party.needs("Doomspiral")
             else party.needs("Gimmiegold") || amount(type) < 4
         FloorDropType.WORM, FloorDropType.BERRY, FloorDropType.SEEDS -> true
         FloorDropType.GENERIC -> false
+    }
+    /** Rank all known incense locations, including unloaded/collected ones, without replacing picked spawns. */
+    fun incenseDropIds(known: List<PredictedFloorDrop>): Set<Int> {
+        val limit = if ((heldMaximum[FloorDropType.INCENSE] ?: 0) > 0) 2 else 4
+        return known.filter { it.biome == SafariBiome.HAUNTED && it.type == FloorDropType.INCENSE }
+            .sortedWith(compareBy<PredictedFloorDrop> {
+                (it.x - 4) * (it.x - 4) + (it.y - 47) * (it.y - 47) + (it.z + 27) * (it.z + 27)
+            }.thenBy { it.id }).take(limit).map { it.id }.toSet()
     }
     private fun amount(type: FloorDropType) = maxOf((acquired[type] ?: 0) + (heldMaximum[type] ?: 0), inventoryPeak[type] ?: 0)
     private var gemsReady = false
@@ -84,11 +92,11 @@ class FloorDropState {
 
 object SafariFloorDrops {
     val state = FloorDropState()
-    fun selected(drop: PredictedFloorDrop): Boolean {
+    fun selected(drop: PredictedFloorDrop, incenseIds: Set<Int>): Boolean {
         val type = drop.type ?: return false
         val mode = SafariFullClear.mode
         val party = SafariSparklingMode.state
-        return enabled(drop.biome) && state.needed(type, mode, party)
+        return (type != FloorDropType.INCENSE || drop.id in incenseIds) && enabled(drop.biome) && state.needed(type, mode, party)
     }
     fun enabled(biome: SafariBiome? = SafariAssist.biome): Boolean {
         state.visit(SafariAssist.biome)

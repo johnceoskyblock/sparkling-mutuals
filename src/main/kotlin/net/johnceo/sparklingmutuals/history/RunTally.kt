@@ -40,6 +40,6 @@ class RunTally {
         val quantity = Regex("""(\d+)x [A-Za-z' ]+? Shard""")
         /** "received a Rainbow Feather" / "received 2x Rainbow Feather" on a sparkling catch or its loot share. */
         val feather = Regex("""(?:(\d+)x |an? )Rainbow Feather""")
-        val sparkling = Regex("""^SPARKLING! ([A-Za-z0-9_]{1,16}) caught a SPARKLING (.+?)!$""")
+        val sparkling = Regex("""^SPARKLING!\s+(?:\[[^]\r\n]* head]\s*)?([A-Za-z0-9_]{1,16})\s+(?:caught|found) a SPARKLING (.+?)!$""", RegexOption.IGNORE_CASE)
     }
 }

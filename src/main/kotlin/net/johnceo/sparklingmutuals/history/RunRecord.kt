@@ -33,10 +33,14 @@ class RunRecord(
     var macaws: Int = 0,
     /** Biome -> time from the start of the run until the mode had it complete. */
     var splits: MutableMap<String, Long> = linkedMapOf(),
-    /** Rebuilt from old logs: no splits, and the party count is what the logs showed. */
+    /** Rebuilt from old logs: only observable splits/counts, with estimates explicitly marked. */
     var imported: Boolean = false,
     /** Shards and Rainbow Feathers at bazaar prices when the run ended; -1 until prices load. */
     var coins: Long = -1,
+    /** Original ticket timestamp helps match a hotspot-based import to its live-recorded run. */
+    var ticketAt: Long = 0,
+    var coinsEstimated: Boolean = false,
+    var modeEstimated: Boolean = false,
 ) {
     fun hasSparkling() = sparklings.isNotEmpty()
 }
@@ -49,4 +53,6 @@ class SparklingEntry(
     var unique: Boolean = false,
     /** Tickets the party used since the previous sparkling. */
     var tickets: Int? = null,
+    /** The first occurrence in available logs is an estimate, not a historical API discovery lookup. */
+    var uniqueEstimated: Boolean = false,
 )
