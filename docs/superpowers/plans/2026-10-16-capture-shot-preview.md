@@ -44,7 +44,7 @@ Sequence: **1 → 2 → 3 → 4**. Tasks 1–3 each end with a focused testable 
 
 **Interfaces:** `object CapsulePathModel` exposes `const val MODEL_ID = "ordinary-stationary-visual-ordinal-candidate-v1"`, `const val SPEED`, `const val VERTICAL_ACCELERATION`, `const val POINT_COUNT = 64`, `val endParameter: Double`, `fun point(eye: ShotVector, aim: ShotVector, parameter: Double): ShotVector?`, and `fun points(eye: ShotVector, aim: ShotVector): List<ShotVector>`. Normalize a finite nonzero aim. Reject parameters outside `[2, endParameter]`, non-finite inputs/results and zero aim; invalid paths return an empty list. No clipping or time simulation.
 
-- [ ] **Step 1 — Write failing model tests.** Use literal independently calculated examples, translated origins and scaled nonzero aim. Check exactly 64 points, both endpoints, all finite, monotonically increasing parameter/range and invalid inputs. Review Focus 4: NaN/infinity/zero aim cannot reach geometry; a huge finite origin that cannot remain safely renderable must be rejected at the render boundary in Task 3.
+- [x] **Step 1 — Write failing model tests.** Use literal independently calculated examples, translated origins and scaled nonzero aim. Check exactly 64 points, both endpoints, all finite, monotonically increasing parameter/range and invalid inputs. Review Focus 4: NaN/infinity/zero aim cannot reach geometry; a huge finite origin that cannot remain safely renderable must be rejected at the render boundary in Task 3.
 
 ```kotlin
 @Test fun `first observed parameter matches fixed spatial curve`() {
@@ -54,10 +54,10 @@ Sequence: **1 → 2 → 3 → 4**. Tasks 1–3 each end with a focused testable 
     assertEquals(3.0, p.z, 1e-12)
 }
 ```
-- [ ] **Step 2 — Run red.** `./gradlew.bat :26.1.2:test --tests '*preview.CapsulePathModelTest' --no-parallel`; expect missing model/API or failed new assertions.
-- [ ] **Step 3 — Implement the pure model.** Copy the exact reviewed constants/formula. Generate uniform parameter samples including both endpoints; no model/file load or world access. Keep returned point lists detached from mutable scratch state.
-- [ ] **Step 4 — Run green.** Repeat the focused suite, independently check the last point's nominal range is 15, and verify local frozen coefficients still match the constants. Never add private raw recordings to tests.
-- [ ] **Step 5 — Commit.** Commit only model and its tests as `Add fixed experimental capsule path model`.
+- [x] **Step 2 — Run red.** `./gradlew.bat :26.1.2:test --tests '*preview.CapsulePathModelTest' --no-parallel`; expect missing model/API or failed new assertions.
+- [x] **Step 3 — Implement the pure model.** Copy the exact reviewed constants/formula. Generate uniform parameter samples including both endpoints; no model/file load or world access. Keep returned point lists detached from mutable scratch state.
+- [x] **Step 4 — Run green.** Repeat the focused suite, independently check the last point's nominal range is 15, and verify local frozen coefficients still match the constants. Never add private raw recordings to tests.
+- [x] **Step 5 — Commit.** Commit only model and its tests as `Add fixed experimental capsule path model`.
 
 ### Task 2: Availability, stability and persistent opt-in control
 
@@ -70,7 +70,7 @@ Sequence: **1 → 2 → 3 → 4**. Tasks 1–3 each end with a focused testable 
 - `class CapsulePreviewRules` exposes `tick(worldIdentity: Any?, state: CapsulePreviewState?): CapsulePreviewAvailability`, `evaluate(state: CapsulePreviewState?): CapsulePreviewAvailability`, and `reset(): Unit`. Tick compares world identity and positions, advances at most one stability observation per client tick, and stores no Minecraft entity. `evaluate` never advances stability; it immediately rechecks all current restrictions.
 - Add `ConfigManager.experimentalCapsulePath = false` to the existing boolean flag map (therefore using existing load/save). Add `SafariSettings.Safari.experimentalCapsulePath` with `ConfigOption` name **Experimental capsule path**, help **Experimental visual guide. Terrain collision and capture targeting are unverified.**, and include it in `SafariSettings.apply`'s changes list.
 
-- [ ] **Step 1 — Write failing rule/config tests.** Pin pitch `-10`/`+1` inclusive and neighboring values unavailable; default/invalid config off and true survives save/reload. Assert two stable tick observations are required and `evaluate` cannot advance them. Standing vertical gravity velocity alone does not reject an on-ground player. Review Focus 1/2/5: world replacement/null state/reset clears stability, changing view/item/movement between ticks suppresses immediately, and a saved toggle does not turn on recording.
+- [x] **Step 1 — Write failing rule/config tests.** Pin pitch `-10`/`+1` inclusive and neighboring values unavailable; default/invalid config off and true survives save/reload. Assert two stable tick observations are required and `evaluate` cannot advance them. Standing vertical gravity velocity alone does not reject an on-ground player. Review Focus 1/2/5: world replacement/null state/reset clears stability, changing view/item/movement between ticks suppresses immediately, and a saved toggle does not turn on recording.
 
 ```kotlin
 @Test fun `render evaluation cannot create stationary history`() {
@@ -84,10 +84,10 @@ Sequence: **1 → 2 → 3 → 4**. Tasks 1–3 each end with a focused testable 
     assertEquals(CapsulePreviewAvailability.AVAILABLE, rules.evaluate(state))
 }
 ```
-- [ ] **Step 2 — Run red.** `./gradlew.bat :26.1.2:test --tests '*preview.CapsulePreviewRulesTest' --tests '*config.ConfigTest' --no-parallel`.
-- [ ] **Step 3 — Implement rules and binding.** Define eligibility precedence as hidden conditions, view/hiding restrictions, stationary restrictions, angle restriction, then available. Reset stable history on world/state loss and every physical ineligible state; GUI/status changes may suppress the frame but must never count render evaluations as ticks. Add only the one boolean control; no optional color or physics controls.
-- [ ] **Step 4 — Run green.** Repeat the suites; cover every restriction and threshold, position drift on each axis, horizontal velocity, stable same-world reset and settings application. Restore shared config values in tests to avoid suite order dependence.
-- [ ] **Step 5 — Commit.** `Add conservative capsule preview availability and setting`.
+- [x] **Step 2 — Run red.** `./gradlew.bat :26.1.2:test --tests '*preview.CapsulePreviewRulesTest' --tests '*config.ConfigTest' --no-parallel`.
+- [x] **Step 3 — Implement rules and binding.** Define eligibility precedence as hidden conditions, view/hiding restrictions, stationary restrictions, angle restriction, then available. Reset stable history on world/state loss and every physical ineligible state; GUI/status changes may suppress the frame but must never count render evaluations as ticks. Add only the one boolean control; no optional color or physics controls.
+- [x] **Step 4 — Run green.** Repeat the suites; cover every restriction and threshold, position drift on each axis, horizontal velocity, stable same-world reset and settings application. Restore shared config values in tests to avoid suite order dependence.
+- [x] **Step 5 — Commit.** `Add conservative capsule preview availability and setting`.
 
 ### Task 3: Isolated depth-tested renderer and passive integration
 
@@ -102,7 +102,7 @@ Sequence: **1 → 2 → 3 → 4**. Tasks 1–3 each end with a focused testable 
 - `object CapsulePreview` exposes `register(): Unit`, `tick(client: Minecraft): Unit`, `reset(): Unit`, `renderHud(graphics: GuiGraphicsExtractor): Unit`, `internal fun currentState(client: Minecraft): CapsulePreviewState?`, and `internal fun availability(state: CapsulePreviewState?): CapsulePreviewAvailability`; it owns the rules and a narrow immutable state snapshot adapter. `object CapsulePreviewRenderer` exposes `render(context: LevelRenderContext): Unit`, uses the current frame's interpolated eye/look, rechecks current eligibility, builds the frame, and passes its points to the isolated OCCLUDED render type.
 - Add one feature registration, one end-tick call and one reset call in `SparklingMutuals`. Call `renderHud` in its existing HUD callback. No item-use/mixin/recorder callback is added or changed.
 
-- [ ] **Step 1 — Write failing geometry/frame tests.** Review Focus 1/4: translated-camera inputs produce exactly one subtraction; zero-length segments vanish; NaN/infinity/overflow produces no invalid vertices; 64 points yield at most 63 segments. Mutating the caller's list after capture must not change captured segments. World change/ineligible current view produces no preview frame. Test every availability-to-status mapping and invalid geometry fallback. Review Focus 3's actual depth/ESP preservation check is the controlled-scene regression in Task 4, rather than a test merely repeating enum constants.
+- [x] **Step 1 — Write failing geometry/frame tests.** Review Focus 1/4: translated-camera inputs produce exactly one subtraction; zero-length segments vanish; NaN/infinity/overflow produces no invalid vertices; 64 points yield at most 63 segments. Mutating the caller's list after capture must not change captured segments. World change/ineligible current view produces no preview frame. Test every availability-to-status mapping and invalid geometry fallback. Review Focus 3's actual depth/ESP preservation check is the controlled-scene regression in Task 4, rather than a test merely repeating enum constants.
 
 ```kotlin
 @Test fun `camera subtraction happens once`() {
@@ -112,10 +112,10 @@ Sequence: **1 → 2 → 3 → 4**. Tasks 1–3 each end with a focused testable 
     assertEquals(Vec3(1.0, 0.0, 0.0), lines.single().normal)
 }
 ```
-- [ ] **Step 2 — Run red.** `./gradlew.bat :26.1.2:test --tests '*compat.WorldLineGeometryTest' --tests '*preview.CapsulePreviewFrameTest' --no-parallel`.
-- [ ] **Step 3 — Implement the compatibility helper and integration.** Reuse `WorldRenderCompat`'s existing version-specific registration/submission hooks. Register one preview pipeline, use fixed amber/2f, no depth writes, and avoid per-frame render-type creation. Current player state must be rechecked without caching a stale available result. Draw the short status horizontally centered 18 GUI pixels below the crosshair, with font shadow, only when the spec permits status. Map enum reasons to the spec's copy; add **Disable capsule hiding for preview** for HIDING_UNAVAILABLE. Use existing `smScreen`, `smHideGui`, `smCamera` and mapped interpolation APIs.
-- [ ] **Step 4 — Run green and integration checks.** Repeat focused suites plus existing `ShotRecordingIsolationTest` and `ShotRecorderTest`. Verify renderer code has no target/entity scan, file I/O, input callback or capture-memory mutation. Ensure `register()` is invoked once; ticks/reset/HUD calls are separate and no path can survive a new world.
-- [ ] **Step 5 — Commit.** `Render experimental capsule path with isolated depth-tested geometry`.
+- [x] **Step 2 — Run red.** `./gradlew.bat :26.1.2:test --tests '*compat.WorldLineGeometryTest' --tests '*preview.CapsulePreviewFrameTest' --no-parallel`.
+- [x] **Step 3 — Implement the compatibility helper and integration.** Reuse `WorldRenderCompat`'s existing version-specific registration/submission hooks. Register one preview pipeline, use fixed amber/2f, no depth writes, and avoid per-frame render-type creation. Current player state must be rechecked without caching a stale available result. Draw the short status horizontally centered 18 GUI pixels below the crosshair, with font shadow, only when the spec permits status. Map enum reasons to the spec's copy; add **Disable capsule hiding for preview** for HIDING_UNAVAILABLE. Use existing `smScreen`, `smHideGui`, `smCamera` and mapped interpolation APIs.
+- [x] **Step 4 — Run green and integration checks.** Repeat focused suites plus existing `ShotRecordingIsolationTest` and `ShotRecorderTest`. Verify renderer code has no target/entity scan, file I/O, input callback or capture-memory mutation. Ensure `register()` is invoked once; ticks/reset/HUD calls are separate and no path can survive a new world.
+- [x] **Step 5 — Commit.** `Render experimental capsule path with isolated depth-tested geometry`.
 
 ### Task 4: Three-target verification, documentation and reviewable delivery
 
@@ -123,21 +123,21 @@ Sequence: **1 → 2 → 3 → 4**. Tasks 1–3 each end with a focused testable 
 
 **Interfaces:** Consumes Tasks 1–3's complete preview. Produces tested three-target artifacts, a concise enable/test guide and an honest list of remaining Hypixel visual/server limitations. The issue remains open for broader mechanics and endpoint work.
 
-- [ ] **Step 1 — Reconcile docs and verification cases.** Document the option, exact scope, initial unobserved segment, experimental status, movement/view/angle/hiding restrictions and no-impact-marker meaning. Add live checks for terrain depth occlusion, camera turn/FOV/GUI size, HUD/screens, holding/hand changes, stop/start movement, world transfer and disabled setting. Preserve prior recorder evidence distinctions.
-- [ ] **Step 2 — Run the required matrix.** With Java 25, run `./gradlew.bat clean buildAllTargets` and `python -m unittest discover -s tools/capture_shots/tests -p "test_*.py" -v`. Require all target tests/build/distribution checks and helper tests to pass. Inspect actual test results; do not copy historical counts.
-- [ ] **Step 3 — Check clients on all three targets.** Use the documented `-PclientSmoke` setup without reading authentication files. Verify required hooks/startup, setting discovery/save/reopen, no geometry while disabled, and controlled finite geometry. In a local scene, put the preview line and an existing ESP outline behind the same solid obstacle: the line must be occluded and the original ESP must retain its prior through-terrain behavior. This is Review Focus 3's regression; if a scene cannot be exercised, record it as unverified rather than substituting an enum-value assertion. Recheck recording/ESP before and after toggle; perform live Hypixel visual tests only when available. Record startup/controlled-scene checks separately from server accuracy.
-- [ ] **Step 4 — Request independent review.** Native implementation ends with one independent whole-change review under the review skill. Address material findings with regression coverage and rerun affected checks; repeat the full matrix only if changes justify it. Confirm only approved scope is implemented and preview-off tracking is unchanged.
-- [ ] **Step 5 — Finish delivery.** Recheck docs and branch/tree, commit the final corrections/docs, push only the issue branch when authorized delivery is ready, verify Actions on that exact commit, download/verify all three JARs and relevant tools/test artifacts. Do not upload raw observations or private analysis. Provide version notes, download links and a small runtime preview test guide in this chat. Recheck issue #51 is open before any permitted issue reply; route approval requests here. Do not merge, create a PR or publish a release. Keep scheduled monitoring paused.
+- [x] **Step 1 — Reconcile docs and verification cases.** Document the option, exact scope, initial unobserved segment, experimental status, movement/view/angle/hiding restrictions and no-impact-marker meaning. Add live checks for terrain depth occlusion, camera turn/FOV/GUI size, HUD/screens, holding/hand changes, stop/start movement, world transfer and disabled setting. Preserve prior recorder evidence distinctions.
+- [x] **Step 2 — Run the required matrix.** With Java 25, run `./gradlew.bat clean buildAllTargets` and `python -m unittest discover -s tools/capture_shots/tests -p "test_*.py" -v`. Require all target tests/build/distribution checks and helper tests to pass. Inspect actual test results; do not copy historical counts.
+- [x] **Step 3 — Check clients on all three targets.** Use the documented `-PclientSmoke` setup without reading authentication files. Verify required hooks/startup, setting discovery/save/reopen, no geometry while disabled, and controlled finite geometry. In a local scene, put the preview line and an existing ESP outline behind the same solid obstacle: the line must be occluded and the original ESP must retain its prior through-terrain behavior. This is Review Focus 3's regression; if a scene cannot be exercised, record it as unverified rather than substituting an enum-value assertion. Recheck recording/ESP before and after toggle; perform live Hypixel visual tests only when available. Record startup/controlled-scene checks separately from server accuracy.
+- [x] **Step 4 — Request independent review.** Native implementation ends with one independent whole-change review under the review skill. Address material findings with regression coverage and rerun affected checks; repeat the full matrix only if changes justify it. Confirm only approved scope is implemented and preview-off tracking is unchanged.
+- [x] **Step 5 — Finish delivery.** Recheck docs and branch/tree, commit the final corrections/docs, push only the issue branch when authorized delivery is ready, verify Actions on that exact commit, download/verify all three JARs and relevant tools/test artifacts. Do not upload raw observations or private analysis. Provide version notes, download links and a small runtime preview test guide in this chat. Recheck issue #51 is open before any permitted issue reply; route approval requests here. Do not merge, create a PR or publish a release. Keep scheduled monitoring paused.
 
 ## Self-review and handoff
 
 The four tasks cover model math, every eligibility/config restriction, immutable bounded rendering and isolated depth behavior, lifecycle/HUD integration, all-target verification and delivery. Review Focus cases map to explicit tests above. No new world scan, collision solver, time-based flight animation, packet observer, endpoint marker or Masterful extrapolation is part of this plan.
 
-The spec's optional color control is intentionally omitted; fixed amber and 2f width are sufficient for this experiment. The HUD placement and exact unavailable copy are implementation decisions fixed here for review. Existing public ESP defaults and saved flags are preserved. Execution is **Native**, explicitly approved in chat. Tasks 1–3 are implemented; final runtime checks, independent review and delivery are tracked in the execution ledger.
+The spec's optional color control is intentionally omitted; fixed amber and 2f width are sufficient for this experiment. The HUD placement and exact unavailable copy are implementation decisions fixed here for review. Existing public ESP defaults and saved flags are preserved. Execution is **Native**, explicitly approved in chat. All four tasks are complete within the human-updated 26.1.2-only development scope; execution, artifact receipts and remaining live checks are recorded outside the repository.
 
 ## Last updated
 
-2026-10-16 (America/New_York) — Recorded plan approval and Native implementation of the model, availability, opt-in control and renderer. Three-target clean builds and replay tests pass; runtime/review/delivery checks are in progress.
+2026-10-16 (America/New_York) — Completed Native implementation, 26.1.2 offline depth/ESP/settings checks, independent review and verified development delivery. Real-player transition/FOV/world-transfer checks and Hypixel display/server fidelity remain unverified. One nonblocking custom-data-copy allocation finding is deferred.
 
 ## Human execution update
 
