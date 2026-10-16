@@ -55,6 +55,8 @@ Branch pushes and pull requests run read-only CI: helper tests, three target tes
 
 The required `build` status check succeeds only when build-helper tests, all target jobs and distribution verification succeed. Failed or skipped dependencies keep that gate from passing.
 
+Temporary development exception: pushes or PRs from `feature/capture-shot-projection` build/test/package **26.1.2 only** while capture-shot work is in progress. The complete three-JAR aggregate is skipped for that branch. Other branches and tag releases retain the full matrix. Restore the full branch matrix when the feature work is finished.
+
 For a future release, choose a new `mod_version` and matching **`v<mod_version>`** tag. The tag workflow checks out the event's immutable commit, validates the tag, tests/builds all three targets and verifies the complete artifact set. Only the final publishing job has release write permission. It checks the tag still points at the tested commit and stages one draft before publishing.
 
 Draft reruns retain maintainer-written release notes, generate notes only when blank, retain unrelated non-JAR assets, reuse matching uploads and replace only stale expected JAR assets. Unexpected or duplicate JAR assets stop publication. A failed upload leaves a draft; publication requires all three matching sizes/digests. Rerunning an identical published release does nothing; a different or unverifiable published asset set fails for manual attention. Tokens stay in the publishing environment and are never forwarded through redirects.

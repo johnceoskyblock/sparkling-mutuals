@@ -64,7 +64,7 @@ Use the existing IntelliJ Minecraft Client/DevAuth configuration. These are manu
 ## Updated GUI defaults and Hideyho scope
 
 - **ESP text scale:** verify default 2× label size; move the ESP-tab slider between 0.5, 1, 2 and 4. Check distant floor names, critter timers, nest labels and teammate names for readable size, centering, colors and unchanged visibility. Close/reopen settings and restart the client to confirm persistence.
-- With a fresh or partial configuration, independently switchable GUI features start on except Coins at Insta Sell, Achievements to Party and Warp reminders. Modes remain mutually exclusive; numeric/text selections and mode presets keep their established behavior.
+- With a fresh or partial configuration, independently switchable GUI features start on except Coins at Insta Sell, Achievements to Party, Warp reminders and Experimental capsule path. Modes remain mutually exclusive; numeric/text selections and mode presets keep their established behavior.
 - Save disabled features and panel borders, enable the default-off exceptions, then restart: those explicit choices must persist.
 - Arm Hideyho in Haunted, then leave before it settles. The pending watch must cancel. Hideyho dialogue and entities observed from Forest, Cavern or Icy must not emit inside/outside titles/chat there. In Unique and Full Clear, entering Haunted can still detect its current settled hiding location. In Sparkling, no inside/outside title or chat should appear. Switch to Sparkling while a watch is armed: cancel it without a delayed alert. Return to Unique/Full Clear and confirm normal detection resumes.
 
@@ -237,6 +237,15 @@ Verify Full Clear report trust: capture a variable species' minimum and perform 
 - Automated scan recovery: clearing the real entity-map type between batches must skip empty slots within the allowance, retain later capsule packets and allow normal finalization; genuine inspection failures still propagate for diagnostics.
 - Gameplay pending: repeat the small ordinary-capsule sanity block in a populated Safari area, then inspect target coverage and raw capsule continuity with hiding off/on. Record status near start/stop. On error, retain the chosen JSONL and recorder-related `latest.log` excerpt; synthetic tests do not establish live field fidelity.
 
+## Experimental capsule path
+
+- Fresh/missing/invalid configuration defaults off; settings save, reopen and restart retain deliberate choices. Toggling must not start recording or change capture/history/completion/ESP state.
+- Enable in Safari helpers, disable both capsule-hiding settings, hold an ordinary main-hand capsule in first person and stand still on the ground. After two stable ticks, expect an amber path and **Experimental path**, with no impact marker. Its initial unseen launch segment is omitted and its nominal limit is 15 blocks.
+- Test pitch -10 through +1 degrees inclusive and immediately outside both limits. Walk, jump/fall, swim, fly, ride, sneak and sprint: suppress immediately; settle for two ticks before returning. Switch ordinary/Masterful/unsupported items, hands and third-person view between ticks: no stale line.
+- Turn the camera and vary FOV, window size and GUI scale. Hide HUD or open any screen: hide geometry/status. Disconnect/world transfer: discard old stability/geometry. Disable the option: no preview status or line.
+- In the same controlled scene, place the preview line and an existing ESP outline behind one solid obstacle: the path is occluded, existing through-terrain ESP remains visible. Check normal unoccluded path continuity and finite geometry. Depth occlusion does not establish collision or target selection.
+- Compare visible ordinary capsule centers with the guide while stationary in the tested range; keep recorder exports separate if used. Offline startup, synthetic geometry tests and numeric observation residuals do not certify Hypixel appearance, interpolation, impact or capture success. Record live checks still pending.
+
 ## Last updated
 
-2026-10-16 (America/New_York) - Added recorder v2 populated-area budget, diagnostic and cleared-entity-map recovery checks; gameplay field fidelity remains pending.
+2026-10-16 (America/New_York) - Added conservative preview controls, lifecycle, camera and terrain/ESP regression checks.

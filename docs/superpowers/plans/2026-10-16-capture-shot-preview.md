@@ -8,7 +8,7 @@
 
 **Tech Stack:** Existing Kotlin 2.4.20, Java 25, Fabric/Stonecutter and JUnit setup; Minecraft 26.1.2, 26.2 and 26.3. No new runtime dependency or recording format.
 
-**Spec:** [Approved preview specification](../specs/2026-10-16-capture-shot-preview-design.md), initially committed at `130f731f0f40051a82882a444f8a4ec1c4d68f6a`. The human approved it in chat. This plan awaits review. Preserve the human's **Native** execution preference.
+**Spec:** [Approved preview specification](../specs/2026-10-16-capture-shot-preview-design.md), initially committed at `130f731f0f40051a82882a444f8a4ec1c4d68f6a`. The human approved it in chat. The human approved this plan in chat and chose **Native** implementation.
 
 ## Global Constraints
 
@@ -133,8 +133,12 @@ Sequence: **1 → 2 → 3 → 4**. Tasks 1–3 each end with a focused testable 
 
 The four tasks cover model math, every eligibility/config restriction, immutable bounded rendering and isolated depth behavior, lifecycle/HUD integration, all-target verification and delivery. Review Focus cases map to explicit tests above. No new world scan, collision solver, time-based flight animation, packet observer, endpoint marker or Masterful extrapolation is part of this plan.
 
-The spec's optional color control is intentionally omitted; fixed amber and 2f width are sufficient for this experiment. The HUD placement and exact unavailable copy are implementation decisions fixed here for review. Existing public ESP defaults and saved flags are preserved. Execution remains **Native**, subject to the human's review of this written plan before product code starts.
+The spec's optional color control is intentionally omitted; fixed amber and 2f width are sufficient for this experiment. The HUD placement and exact unavailable copy are implementation decisions fixed here for review. Existing public ESP defaults and saved flags are preserved. Execution is **Native**, explicitly approved in chat. Tasks 1–3 are implemented; final runtime checks, independent review and delivery are tracked in the execution ledger.
 
 ## Last updated
 
-2026-10-16 (America/New_York) — Prepared four-task Native plan after written-specification approval in chat. Plan review is pending; no preview implementation is claimed.
+2026-10-16 (America/New_York) — Recorded plan approval and Native implementation of the model, availability, opt-in control and renderer. Three-target clean builds and replay tests pass; runtime/review/delivery checks are in progress.
+
+## Human execution update
+
+The human subsequently directed capture-shot development to build and deliver **26.1.2 only** until the feature is finished. This overrides the three-target production/check steps above for ongoing development. Preserve the compatibility sources and full release matrix; do not produce 26.2/26.3 artifacts now. The earlier clean three-target matrix completed before this instruction.

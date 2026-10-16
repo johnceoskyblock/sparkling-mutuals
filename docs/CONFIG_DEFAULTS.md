@@ -7,8 +7,9 @@ Implemented defaults for fresh or missing settings. Enable all independently swi
 | Warp reminder (`warpAlertsEnabled`, `/alert`) | Off |
 | Coins at Insta Sell (`runCoinsInstaSell`) | Off |
 | Achievements to Party (`achievementsToParty`, including any equivalent achievement-to-party toggles) | Off |
+| Experimental capsule path (`experimentalCapsulePath`) | Off |
 
-Keep achievements themselves enabled; the exception is their party announcement. These are defaults for fresh/missing settings, not permission to overwrite existing saved user choices on every launch. Automatic unused starting-food/coin title alerts and party reminders have no config toggle, as documented in [tracking rules](critters/TRACKING.md#unused-starting-foodcoin-reminders).
+Keep achievements themselves enabled; the exception is their party announcement. The experimental capsule path is separately opt-in under Safari helpers and does not start recording. Missing/invalid saved preview values default off; explicit choices persist. Both capsule-hiding options must be off to use the preview. See its [scope and controls](CAPTURE_SHOT_RECORDING.md#experimental-capsule-path). These are defaults for fresh/missing settings, not permission to overwrite existing saved user choices on every launch. Automatic unused starting-food/coin title alerts and party reminders have no config toggle, as documented in [tracking rules](critters/TRACKING.md#unused-starting-foodcoin-reminders).
 
 Mode selectors remain mutually exclusive; “all on” applies to independent feature toggles, not simultaneous Unique/Full Clear/Sparkling modes. Retain established numeric/text selections and explicit mode-preset behavior unless separately changed. Field initialization, config-load fallbacks and GUI defaults agree. Explicitly saved GUI choices remain in effect.
 
@@ -57,3 +58,5 @@ The History tab begins with the **History** button, followed immediately by **Im
 2026-10-17 - Default warp alerts off for fresh and missing settings while preserving saved choices.
 
 2026-10-16 - Restricted automatic contest downtime requests to the confirmed party leader; retained existing defaults.
+
+2026-10-16 (America/New_York) - Added the explicit default-off experimental capsule path exception.
