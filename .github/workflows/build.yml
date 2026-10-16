@@ -71,3 +71,17 @@ jobs:
           merge-multiple: true
       - run: chmod +x gradlew
       - run: ./gradlew verifyDistributions -PdistributionDir=incoming
+  build:
+    if: always()
+    needs: [build-logic, target, verify-all-targets]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Require every build and verification job to pass
+        env:
+          BUILD_LOGIC_RESULT: ${{ needs.build-logic.result }}
+          TARGET_RESULT: ${{ needs.target.result }}
+          DISTRIBUTION_RESULT: ${{ needs.verify-all-targets.result }}
+        run: |
+          test "$BUILD_LOGIC_RESULT" = success
+          test "$TARGET_RESULT" = success
+          test "$DISTRIBUTION_RESULT" = success

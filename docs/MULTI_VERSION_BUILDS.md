@@ -53,6 +53,8 @@ Build tools are pinned to Gradle 9.7.1, Stonecutter 0.9.8, Loom 1.17.21 and Kotl
 
 Branch pushes and pull requests run read-only CI: helper tests, three target test/build/packaging jobs, and an aggregate verification job. Download the matching `jar-mc<target>` Actions artifact. No PR or branch job publishes a release.
 
+The required `build` status check succeeds only when build-helper tests, all target jobs and distribution verification succeed. Failed or skipped dependencies keep that gate from passing.
+
 For a future release, choose a new `mod_version` and matching **`v<mod_version>`** tag. The tag workflow checks out the event's immutable commit, validates the tag, tests/builds all three targets and verifies the complete artifact set. Only the final publishing job has release write permission. It checks the tag still points at the tested commit and stages one draft before publishing.
 
 Draft reruns retain maintainer-written release notes, generate notes only when blank, retain unrelated non-JAR assets, reuse matching uploads and replace only stale expected JAR assets. Unexpected or duplicate JAR assets stop publication. A failed upload leaves a draft; publication requires all three matching sizes/digests. Rerunning an identical published release does nothing; a different or unverifiable published asset set fails for manual attention. Tokens stay in the publishing environment and are never forwarded through redirects.
@@ -67,4 +69,4 @@ Adding a target is a deliberate change: verify official Minecraft/Fabric/library
 
 ## Last updated
 
-2026-10-15 - Added exact three-target setup, dependency exception evidence, build commands, installation rules, staging guarantees and runtime testing limits.
+2026-10-16 - Preserved the required build gate across all target/helper/distribution jobs while rebasing the three-target implementation onto master.
