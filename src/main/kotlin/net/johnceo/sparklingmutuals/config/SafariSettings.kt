@@ -154,6 +154,8 @@ class SafariSettings : Config() {
         @ConfigEditorButton(runnableId = 5, buttonText = "Reset to 25s") var reset = false
     }
     class Safari {
+        @JvmField @ConfigOption(name = "Experimental capsule path", desc = "Experimental visual guide. Terrain collision and capture targeting are unverified.")
+        @ConfigEditorBoolean var experimentalCapsulePath = ConfigManager.experimentalCapsulePath
         @JvmField @ConfigOption(name = "Highlight teammates", desc = "Outline loaded party members anywhere in SkyBlock.")
         @ConfigEditorBoolean var highlightTeammates = ConfigManager.highlightTeammates
         @JvmField @ConfigOption(name = "Show teammate names", desc = "Show party member names through walls anywhere in SkyBlock.")
@@ -287,6 +289,7 @@ class SafariSettings : Config() {
         val changes = listOf(ConfigManager::highlightTeammates to safari.highlightTeammates, ConfigManager::showTeammateNames to safari.showTeammateNames, ConfigManager::profitableShardEsp to modes.unique.profitable, ConfigManager::sparklingProfitableShardEsp to modes.sparkling.profitable, ConfigManager::partyCommandsEnabled to party.enabled, ConfigManager::downtimeCommand to party.downtime, ConfigManager::useCloudApi to api.cloud, ConfigManager::hideHauntedPaintings to safari.paintings,
             ConfigManager::shinyDetection to safari.shiny, ConfigManager::hideyhoQuestClicks to safari.hideyho, ConfigManager::hideyhoInsideOutside to safari.hideyhoInsideOutside,
             ConfigManager::progressHud to tracking.progress,
+            ConfigManager::experimentalCapsulePath to safari.experimentalCapsulePath,
             ConfigManager::missingPanel to tracking.missing,
             ConfigManager::removeDarkness to safari.darkness,
             ConfigManager::sparklingAlert to safari.alert, ConfigManager::sparklingPartyAnnouncer to safari.announce,

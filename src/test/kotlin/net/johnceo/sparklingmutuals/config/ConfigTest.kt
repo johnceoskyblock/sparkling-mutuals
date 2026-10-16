@@ -10,6 +10,23 @@ import org.junit.jupiter.api.io.TempDir
 
 class ConfigTest {
     @TempDir lateinit var dir: Path
+    @Test fun `capsule preview is opt in and survives settings application and reload`() {
+        val old=ConfigManager.experimentalCapsulePath
+        try {
+            ConfigManager.init(dir)
+            assertFalse(ConfigManager.experimentalCapsulePath)
+            Files.writeString(dir.resolve("sparkling-mutuals.properties"),"experimentalCapsulePath=invalid\n")
+            ConfigManager.init(dir)
+            assertFalse(ConfigManager.experimentalCapsulePath)
+            val settings=SafariSettings()
+            settings.safari.experimentalCapsulePath=true
+            settings.apply()
+            ConfigManager.experimentalCapsulePath=false
+            ConfigManager.init(dir)
+            assertTrue(ConfigManager.experimentalCapsulePath)
+            assertTrue(SafariSettings().safari.experimentalCapsulePath)
+        } finally { ConfigManager.experimentalCapsulePath=old }
+    }
     @Test fun `HUD layouts and personal bests survive actual configuration saving`() {
         ConfigManager.init(dir)
         ConfigManager.personalBests.record("CAPTURE! You caught a Doomspiral!", SafariRun(1000), 62000)
