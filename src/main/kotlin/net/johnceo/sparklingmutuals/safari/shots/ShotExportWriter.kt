@@ -11,7 +11,8 @@ import com.google.gson.JsonParser
 /** One worker owns disk I/O. The monitor is never held during open/write/close/move. */
 class ShotExportWriter private constructor(private val directory: Path, token: String,
     private val budget: ShotByteBudget, private val completed: (ShotExportResult)->Unit,
-    private val openStream: (Path)->OutputStream) : ShotSink {
+    private val openStream: (Path)->OutputStream,private val diagnose:(ShotFailure)->Unit) : ShotSink {
+    private val sessionToken=token
     val ready = CompletableFuture<Unit>()
     val result = CompletableFuture<ShotExportResult>()
     private val partial = directory.resolve("$token.jsonl.part")
@@ -38,10 +39,12 @@ class ShotExportWriter private constructor(private val directory: Path, token: S
     }
     private fun write() {
         var outcome = ShotExportResult(partial,false,"io_error")
+        var stage="writer/open"
         try {
             Files.createDirectories(directory)
             openStream(partial).use { output ->
                 ready.complete(Unit)
+                stage="writer/write"
                 while (!aborted) {
                     var terminal = false
                     val line = synchronized(lock) {
@@ -62,12 +65,17 @@ class ShotExportWriter private constructor(private val directory: Path, token: S
                         break
                     }
                 }
+                stage="writer/close"
             }
             if (!aborted && outcome.path == destination) {
                 // Default move has no REPLACE_EXISTING; ATOMIC_MOVE may overwrite an existing target on some providers.
+                stage="writer/publish"
                 Files.move(partial,destination)
             } else outcome=ShotExportResult(partial,false,"shutdown_timeout")
-        } catch (_: Exception) { outcome=ShotExportResult(partial,false,if (aborted) "shutdown_timeout" else "io_error") }
+        } catch (failure: Exception) {
+            ShotDiagnostics.safely(diagnose,ShotFailure(sessionToken,stage,null,failure))
+            outcome=ShotExportResult(partial,false,if (aborted) "shutdown_timeout" else "io_error")
+        }
         finally {
             synchronized(lock) {
                 finished=true
@@ -85,10 +93,15 @@ class ShotExportWriter private constructor(private val directory: Path, token: S
         if (worker.isAlive) { aborted=true;worker.interrupt() }
     }
     companion object {
+        fun openWithDiagnostics(directory:Path,sessionToken:String,budget:ShotByteBudget,completed:(ShotExportResult)->Unit,
+            diagnose:(ShotFailure)->Unit,openStream:(Path)->OutputStream={ Files.newOutputStream(it,StandardOpenOption.CREATE_NEW,StandardOpenOption.WRITE) }):ShotExportWriter {
+            require(sessionToken.matches(Regex("[A-Za-z0-9_-]{1,48}"))) { "invalid_session_token" }
+            return ShotExportWriter(directory,sessionToken,budget,completed,openStream,diagnose)
+        }
         fun open(directory: Path, sessionToken: String, budget: ShotByteBudget, completed: (ShotExportResult)->Unit,
             openStream: (Path)->OutputStream = { Files.newOutputStream(it,StandardOpenOption.CREATE_NEW,StandardOpenOption.WRITE) }): ShotExportWriter {
             require(sessionToken.matches(Regex("[A-Za-z0-9_-]{1,48}"))) { "invalid_session_token" }
-            return ShotExportWriter(directory,sessionToken,budget,completed,openStream)
+            return openWithDiagnostics(directory,sessionToken,budget,completed,ShotDiagnostics::report,openStream)
         }
     }
 }

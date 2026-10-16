@@ -1,7 +1,8 @@
 package net.johnceo.sparklingmutuals.safari.shots
 
 /** Client-thread reducer. Sink ownership is explicit so ring-to-writer transfer never double-reserves bytes. */
-class ShotSession(val metadata: ShotMetadata, private val limits: ShotLimits, private val sink: ShotSink, private val budget: ShotBufferBudget) {
+class ShotSession(val metadata: ShotMetadata, private val limits: ShotLimits, private val sink: ShotSink, private val budget: ShotBufferBudget,
+    private val diagnose:(ShotFailure)->Unit=ShotDiagnostics::report) {
     private data class Pending(val event: ShotRecord.Event, val line: ByteArray)
     private data class InputState(val input: ShotObservation.Input, val at: Long,
         val tracks: MutableSet<String> = linkedSetOf(), val feedback: ArrayDeque<Long> = ArrayDeque(),
@@ -27,7 +28,10 @@ class ShotSession(val metadata: ShotMetadata, private val limits: ShotLimits, pr
     fun status() = ShotStatus(metadata.session, reason == null, reason, inputs.size, events, bytes, sink.queuedBytes())
     fun advance(stamp: ShotStamp) {
         if (reason != null) return
-        if (stamp.micros < last.micros || stamp.tick < last.tick) { stop(last,ShotStopReason.ERROR); return }
+        if (stamp.micros < last.micros || stamp.tick < last.tick) {
+            ShotDiagnostics.safely(diagnose,ShotFailure(metadata.session,"clock",stamp,IllegalArgumentException("shot_clock_reversed")))
+            stop(last,ShotStopReason.ERROR); return
+        }
         last = stamp
         trimRing(stamp.micros)
         if (stamp.micros >= metadata.durationSeconds * 1_000_000L) stop(stamp,ShotStopReason.DURATION_LIMIT)
@@ -41,7 +45,10 @@ class ShotSession(val metadata: ShotMetadata, private val limits: ShotLimits, pr
         if (event is ShotObservation.Annotation && event.token !in inputs) return false
         if (event is ShotObservation.Input && event.token in inputs) return false
         val record = ShotRecord.Event(++sequence,stamp.micros,stamp.tick,event)
-        val line = try { ShotCodec.encode(record) } catch (_: IllegalArgumentException) { stop(stamp,ShotStopReason.ERROR);return false }
+        val line = try { ShotCodec.encode(record) } catch (failure: IllegalArgumentException) {
+            ShotDiagnostics.safely(diagnose,ShotFailure(metadata.session,"encode/"+event.javaClass.simpleName.lowercase(),stamp,failure))
+            stop(stamp,ShotStopReason.ERROR);return false
+        }
         if (event is ShotObservation.Input) {
             while (ring.isNotEmpty() && reason == null) {
                 val pending = ring.removeFirst()

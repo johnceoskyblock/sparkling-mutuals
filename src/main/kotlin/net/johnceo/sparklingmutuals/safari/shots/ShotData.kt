@@ -69,7 +69,7 @@ sealed interface ShotObservation {
 }
 data class ShotMetadata(val session: String, val minecraft: String, val mod: String, val fabric: String,
     val dimension: String, val hideFlying: Boolean, val hideGround: Boolean, val durationSeconds: Int = 180,
-    val recorderVersion: Int = 1, val schemaVersion: Int = 1, val modelVersion: String? = null,
+    val recorderVersion: Int = 2, val schemaVersion: Int = 1, val modelVersion: String? = null,
     val coordinates: String = "session_relative_game_axes", val timeBasis: String = "client_monotonic_microseconds")
 data class ShotSummary(val token: String, val variant: ShotVariant, val scenario: ShotScenario, val split: ShotSplit,
     val tracks: List<String>, val association: ShotAssociation, val feedback: List<Long>, val annotations: List<ShotManualOutcome>)

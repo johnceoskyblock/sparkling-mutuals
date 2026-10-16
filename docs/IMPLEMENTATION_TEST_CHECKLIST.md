@@ -231,6 +231,11 @@ Verify Full Clear report trust: capture a variable species' minimum and perform 
 - Transfer/disconnect while recording and while a writer finishes; old-world files must not receive new-world input and reconnect remains off. Check completed and partial files using replay. Errors must preserve older exports and report once locally.
 - Reserve fresh validation sessions before model inspection; verify file/session overlap rejection, per-variant frozen parameters, conditioning exclusion and explicit uncurated/ambiguous/incomplete exclusions. Optional predictions match exact observed times only. Last observed position is not proven impact.
 
+### Recorder v2 volume/error follow-up
+
+- Automated: 64 moving targets plus busy target packets; input snapshots; static suppression; shared focus cadence; range changes; capsule packet preservation; 180-second / 20-throw and 600-second / nine-throw encoded budgets under unchanged caps. Check original local exceptions at hook/codec/writer boundaries and incomplete exports with safe status.
+- Gameplay pending: repeat the small ordinary-capsule sanity block in a populated Safari area, then inspect target coverage and raw capsule continuity with hiding off/on. Record status near start/stop. On error, retain the chosen JSONL and recorder-related `latest.log` excerpt; synthetic tests do not establish live field fidelity.
+
 ## Last updated
 
-2026-10-16 (America/New_York) - Added recorder, privacy, gameplay field-fidelity and held-out collection checks. Retained unrelated feature regressions.
+2026-10-16 (America/New_York) - Added recorder v2 populated-area budget and diagnostic checks; gameplay field fidelity remains pending.
