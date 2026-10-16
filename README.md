@@ -46,6 +46,7 @@ Use the [37 individual critter notes](docs/critters/README.md) for species rules
 - **Chat filtering:** hide repetitive Safari messages while keeping tracking active.
 - **Ground capsule hiding:** hide ordinary dropped capsules in Safari.
 - **Flying capsule hiding:** hide capsules near the camera at a configurable distance.
+- **Local shot recorder (`/sm shots`):** opt in to bounded capsule/input observations and local replay tools. Live aiming projections await gameplay calibration. [Controls and collection guide](docs/CAPTURE_SHOT_RECORDING.md).
 
 ## Alerts and contests
 
@@ -128,3 +129,5 @@ Per-drop colors are configurable in **ESP → Floor-drop colors**. **Miria conte
 2026-10-16 - Added !since sparkling / !since unique for credited party catches, with critter/catcher details.
 
 2026-10-15 - Added exact three-target development installation guidance; distinguished future multi-version releases from the existing published release.
+
+2026-10-16 (America/New_York) - Added the opt-in capture-shot collection kit; live aiming projections remain awaiting calibration.

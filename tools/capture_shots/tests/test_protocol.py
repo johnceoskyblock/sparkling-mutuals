@@ -22,6 +22,14 @@ def encoded(items):
     return result
 
 class ProtocolTest(unittest.TestCase):
+    def test_real_kotlin_service_export_preserves_whole_path_provenance(self):
+        s=read_session(FIXTURES/'service-export.jsonl')
+        self.assertTrue(s.complete);self.assertEqual(8,len(s.events));self.assertEqual(1,len(s.shots))
+        self.assertEqual(('unknown',),s.shots[0].annotations)
+        packet=next(e for e in s.events if e.kind=='packet' and e.data['update']=='move')
+        self.assertAlmostEqual(.25,packet.data['points'][0]['position']['x'])
+        self.assertNotEqual(packet.data['points'][0]['position']['x'],packet.data['resolvedEnd']['x'])
+        self.assertEqual('game',next(e for e in s.events if e.kind=='feedback').data['source'])
     def setUp(self):
         self.temp=tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup)
         self.path=Path(self.temp.name)/'input.jsonl'

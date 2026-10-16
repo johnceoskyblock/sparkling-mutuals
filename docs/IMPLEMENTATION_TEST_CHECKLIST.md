@@ -220,3 +220,17 @@ Verify Full Clear report trust: capture a variable species' minimum and perform 
 2026-10-15 - Added ticket-earned release/announcement and automatic warp timer checks, retaining detector and incense regressions.
 
 2026-10-15 - Fixed complete, independently gated starting-resource reminder delivery (#55).
+
+## Capture-shot collection
+
+- Follow the complete [collection checklist](CAPTURE_SHOT_RECORDING.md#first-collection-checklist), beginning with a small ordinary-capsule sanity export. Confirm useful raw/tick/display/target fields before larger or Masterful collection.
+- Verify off/start/status/stop/export, duration/input/byte limits, opening/finalizing refusal, both hands and variants, and block-to-air fallthrough. Starting outside a loaded Safari world must fail. Unsupported held items must not become inputs.
+- Compare recorder off/on with ESP display disabled and capsule hiding off/on in separate sessions. Existing capture/history/completion totals, retained checks, alerts and settings must behave identically. Confirm no automatic chat or upload.
+- Exercise delayed metadata, pre-existing capsules, rapid throws, another nearby thrower, escape/removal/unload and a reused entity ID. Keep uncertain ownership/outcomes unknown; absence or timeout must not become a miss. Repeated genuine feedback stays separate, shared catches/startles never settle local captures.
+- Check movement, camera, target bounds and loaded-block obstructions; preserve raw packet paths, arrival times, reconstructed endpoints and smooth samples separately. No chunk loads or whole-world/per-frame scans. Synthetic tests and startup checks do not establish Hypixel field fidelity.
+- Transfer/disconnect while recording and while a writer finishes; old-world files must not receive new-world input and reconnect remains off. Check completed and partial files using replay. Errors must preserve older exports and report once locally.
+- Reserve fresh validation sessions before model inspection; verify file/session overlap rejection, per-variant frozen parameters, conditioning exclusion and explicit uncurated/ambiguous/incomplete exclusions. Optional predictions match exact observed times only. Last observed position is not proven impact.
+
+## Last updated
+
+2026-10-16 (America/New_York) - Added recorder, privacy, gameplay field-fidelity and held-out collection checks. Retained unrelated feature regressions.
