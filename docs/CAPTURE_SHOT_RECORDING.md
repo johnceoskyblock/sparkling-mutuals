@@ -50,3 +50,15 @@ The sample matrix is a collection target, not a claim of statistical sufficiency
 ## Format
 
 UTF-8 JSON Lines: one schema-v1 header (`modelVersion: null`), typed ordered events and a footer. [The checked schema](schemas/capture-shots-v1.schema.json) specifies fields, enums and bounds. A footer describes export completeness; unknown outcomes remain unknown. Do not edit raw exports to curate ownership.
+
+## Local replay
+
+Use Python 3.11 or newer, with no extra packages or network access:
+
+```text
+python tools/capture_shots/replay.py session.jsonl --output replay-directory
+```
+
+Use a new output directory. Replay refuses to overwrite reports or an input. It writes `summary.json`, `timeline.csv` and generated `shot-0001.csv` views; imported tokens never choose filenames. CSV rows keep the original kind and typed JSON data, so raw packet updates, smooth samples, display state, targets, feedback and manual annotations remain distinguishable. The full timeline includes unmatched evidence.
+
+The reader checks the shared schema, allowed fields/enums, finite values, sequence/time order, token lifetimes, footer counts/bytes and file/line/event bounds. Complete files exit `0`, recoverable incomplete files exit `2`, and invalid files exit `1`. A truncated final UTF-8/JSON line preserves earlier complete records and remains incomplete; malformed complete interior lines are rejected. Do not repair a partial file by inventing a footer. Synthetic fixtures under `src/test/resources/shots/` exercise both accepted and deliberately invalid examples.
