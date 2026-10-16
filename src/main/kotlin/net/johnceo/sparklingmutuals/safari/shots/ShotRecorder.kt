@@ -15,10 +15,11 @@ data class ShotCommandResult(val ok:Boolean,val message:String)
 data class ShotStartContext(val world:Any,val origin:ShotVector,val metadata:ShotMetadata,val inSafari:Boolean=true)
 
 /** Client-thread state machine. Worker completions are marshalled and epoch-checked before changing state. */
-class ShotRecorderController(private val directory:Path,private val context:()->ShotStartContext?,
+class ShotRecorderController @JvmOverloads constructor(private val directory:Path,private val context:()->ShotStartContext?,
     private val nanoTime:()->Long,private val schedule:((()->Unit))->Unit,private val notice:(String)->Unit,
     private val bind:(ShotObservationAdapter?,()->ShotStamp,(Throwable)->Unit)->Unit,
-    private val open:(Path,String,ShotByteBudget,(ShotExportResult)->Unit)->ShotExportWriter=ShotExportWriter::open) {
+    private val open:(Path,String,ShotByteBudget,(ShotExportResult)->Unit)->ShotExportWriter=ShotExportWriter::open,
+    private val diagnose:(ShotFailure)->Unit=ShotDiagnostics::report) {
     private var epoch=0L
     private var started=0L
     private var tick=0L
@@ -52,14 +53,27 @@ class ShotRecorderController(private val directory:Path,private val context:()->
         w.ready.whenComplete { _,failure -> schedule {
             if(current!=epoch || writer!==w) return@schedule
             if(failure!=null) return@schedule // Completion owns the single local error notice.
-            val reducer=ShotSession(metadata,ShotLimits(),w,budget);session=reducer
+            val reducer=ShotSession(metadata,ShotLimits(),w,budget,::recordFailure);session=reducer
             if(requestedStop==null) requestedStop=boundaryReason()
             if(requestedStop!=null) { reducer.stop(stamp(),requestedStop!!);last=reducer.status();return@schedule }
             adapter=ShotObservationAdapter(c.origin) { _,observation -> accept(observation) }
-            bind(adapter,::stamp) { stop(ShotStopReason.ERROR) }
+            bind(adapter,::stamp) { failure ->
+                if(failure is ShotObservationFailure) fail(failure.stage,failure.cause ?: failure) else fail("observation",failure)
+            }
             notice("Shot recording started ($seconds seconds), local files only. Use /sm shots status or stop.")
         } }
         return ShotCommandResult(true,"Opening local shot recorder…")
+    }
+    private fun recordFailure(failure:ShotFailure) {
+        if(error!=null) return
+        error="${failure.stage}/${failure.cause.javaClass.simpleName}; session=${failure.session}; see latest.log"
+        ShotDiagnostics.safely(diagnose,failure)
+        notice("Shot recorder error: $error")
+    }
+    fun fail(stage:String,failure:Throwable) {
+        if(writer==null || requestedStop!=null) return
+        recordFailure(ShotFailure(status().session ?: "opening",stage,stamp(),failure))
+        stop(ShotStopReason.ERROR)
     }
     private fun boundaryReason():ShotStopReason? {
         val c=context() ?: return ShotStopReason.DISCONNECT
@@ -117,7 +131,7 @@ class ShotRecorderController(private val directory:Path,private val context:()->
         if(result.error==null) {
             lastExport=result.path
             notice("Shot export saved${if(result.complete) "" else " (incomplete)"}: ${result.path}")
-        } else { error=result.error;notice("Shot recording stopped: ${result.error}. A partial file may remain in $directory.") }
+        } else { error="${result.error}; session=${last.session}; see latest.log";notice("Shot recording stopped: $error. A partial file may remain in $directory.") }
         writer=null;session=null;world=null
     }
     fun shutdown() { stop(ShotStopReason.SHUTDOWN);writer?.shutdown(250) }
@@ -141,7 +155,7 @@ object ShotRecorder {
         if(registered) return;registered=true
         ClientReceiveMessageEvents.GAME.register { message,overlay ->
             if(!overlay && controller.status().recording) runCatching { ShotFeedback.parse(message.string)?.let { controller.feedback(it,++gameDispatch) } }
-                .onFailure { controller.stop(ShotStopReason.ERROR) }
+                .onFailure { controller.fail("feedback",it) }
         }
         ClientLifecycleEvents.CLIENT_STOPPING.register { shutdown() }
     }
@@ -153,7 +167,7 @@ object ShotRecorder {
     fun mark(token:String,outcome:ShotManualOutcome)=controller.mark(token,outcome)
     fun tick(client:Minecraft) {
         try { controller.tick();if(controller.status().recording) ShotObservationHooks.tick(client) }
-        catch(_:Exception) { controller.stop(ShotStopReason.ERROR) }
+        catch(failure:Exception) { controller.fail("tick",failure) }
     }
     fun disconnect() { controller.stop(ShotStopReason.DISCONNECT) }
     fun shutdown() { controller.shutdown() }

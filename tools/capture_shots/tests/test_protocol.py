@@ -22,6 +22,13 @@ def encoded(items):
     return result
 
 class ProtocolTest(unittest.TestCase):
+    def test_recorder_policies_one_and_two_share_schema_one_but_unknown_policies_are_rejected(self):
+        for version in (1,2):
+            r=records();r[0]['metadata']['recorderVersion']=version
+            self.assertTrue(self.read(r).complete)
+        for version in (True,0,3,2.0):
+            r=records();r[0]['metadata']['recorderVersion']=version
+            with self.subTest(version=version),self.assertRaises(ProtocolError):self.read(r)
     def test_real_kotlin_service_export_preserves_whole_path_provenance(self):
         s=read_session(FIXTURES/'service-export.jsonl')
         self.assertTrue(s.complete);self.assertEqual(9,len(s.events));self.assertEqual(1,len(s.shots))

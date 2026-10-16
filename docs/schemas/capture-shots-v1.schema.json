@@ -907,7 +907,8 @@
           "maximum": 600
         },
         "recorderVersion": {
-          "const": 1
+          "type": "integer",
+          "enum": [1, 2]
         },
         "schemaVersion": {
           "const": 1

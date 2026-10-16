@@ -18,6 +18,7 @@ import net.minecraft.world.phys.*
 /** Client-thread observer; no render callback, ESP target list, world mutation or unbounded per-frame scan. */
 class ShotObservationAdapter(private val origin:ShotVector,private val cache:ShotEntityCache=ShotEntityCache(),
     private val emit:(ShotStamp,ShotObservation)->Unit) {
+    private val targets=ShotTargetSampler()
     private var scan:Iterator<Entity>?=null
     private var nearbyPlayers=0
     private var scanningPlayers=0
@@ -28,7 +29,18 @@ class ShotObservationAdapter(private val origin:ShotVector,private val cache:Sho
     var split=ShotSplit.UNASSIGNED
     var standalone=false
     fun packetBase(id:Int)=cache.packetBase(id)
-    fun reset() { cache.reset();scan=null;routes.clear();nearbyPlayers=0;scanningPlayers=0;lastInput=null;windowExpired=false }
+    internal fun refreshTargetRange(pose:ShotPose,capsules:List<ShotVector>,position:(ShotEntityCache.Entry)->ShotVector?) {
+        cache.entries().filter { it.species!=null }.forEach { entry ->
+            val p=position(entry)
+            if(p==null || !ShotTargetSampler.eligible(p,pose,capsules)) cache.remove(entry.id)
+        }
+    }
+    internal fun packetObservation(entry:ShotEntityCache.Entry,update:ShotPacketUpdate,stamp:ShotStamp):ShotObservation.Packet? {
+        if(entry.variant!=null) return ShotPacketAdapter.translate(entry,update,origin,stamp.micros)
+        entry.base=ShotPacketAdapter.nextBase(entry.base,update)
+        return null
+    }
+    fun reset() { targets.reset();cache.reset();scan=null;routes.clear();nearbyPlayers=0;scanningPlayers=0;lastInput=null;windowExpired=false }
     fun tick(client:Minecraft,stamp:ShotStamp) {
         val level=client.level ?: return
         if(!windowExpired && lastInput?.let { stamp.micros-it>8_000_000 }==true) {
@@ -39,7 +51,16 @@ class ShotObservationAdapter(private val origin:ShotVector,private val cache:Sho
             windowExpired=true
         }
         cache.expire(stamp.micros)
-        pose(client)?.let { emit(stamp,ShotObservation.PlayerState(it)) }
+        val currentPose=pose(client)
+        currentPose?.let { current ->
+            emit(stamp,ShotObservation.PlayerState(current))
+            val capsules=cache.entries().filter { it.variant!=null }.mapNotNull { entry ->
+                level.getEntity(entry.id)?.takeIf { !it.isRemoved && it.uuid.toString()==entry.identity }?.let { vector(it.position())-origin }
+            }
+            refreshTargetRange(current,capsules) { entry ->
+                level.getEntity(entry.id)?.takeIf { !it.isRemoved && it.uuid.toString()==entry.identity }?.let { vector(it.position())-origin }
+            }
+        }
         if(scan==null) { scan=level.entitiesForRendering().iterator();scanningPlayers=0 }
         try {
             val iterator=scan!!
@@ -53,6 +74,7 @@ class ShotObservationAdapter(private val origin:ShotVector,private val cache:Sho
             if(e==null || e.isRemoved || e.uuid.toString()!=entry.identity) remove(entry.id,ShotRemoval.UNLOADED,stamp)
             else sample(client,e,entry,stamp)
         }
+        currentPose?.let { targetSnapshot(client,it,stamp) }
         gaps(stamp)
     }
     internal fun <T> scanBatch(iterator:Iterator<T>,allowance:Int,stamp:ShotStamp,visit:(T)->Unit):Boolean {
@@ -73,7 +95,8 @@ class ShotObservationAdapter(private val origin:ShotVector,private val cache:Sho
         }
         if(entry==null) { if(entity is Display.ItemDisplay) cache.remember(update,stamp.micros);gaps(stamp);return }
         val previous=entry.base
-        val observation=ShotPacketAdapter.translate(entry,update,origin,stamp.micros)
+        val observation=packetObservation(entry,update,stamp)
+        if(observation==null) { gaps(stamp);return }
         emit(stamp,observation)
         if(!observation.baseKnown) cache.gap(ShotGap.MISSING_BASE)
         if(observation.truncated) cache.gap(ShotGap.RAW_PATH_TRUNCATED)
@@ -101,8 +124,8 @@ class ShotObservationAdapter(private val origin:ShotVector,private val cache:Sho
             vector(entity.position())-origin,vector(entity.deltaMovement),discovery,entity is Display.ItemDisplay,spawnMicros=entry.spawnMicros))
         val pending=cache.takePending(entity.id)
         if(pending!=null && pending.identity==entry.identity) {
-            emit(stamp,ShotPacketAdapter.translate(entry,ShotPacketUpdate.Spawn(entity.id,entry.identity,pending.position),origin,pending.micros))
-            pending.updates.filterNot { it.second is ShotPacketUpdate.Spawn }.forEach { (time,u) -> emit(stamp,ShotPacketAdapter.translate(entry,u,origin,time)) }
+            packetObservation(entry,ShotPacketUpdate.Spawn(entity.id,entry.identity,pending.position),ShotStamp(pending.micros,stamp.tick))?.let { emit(stamp,it) }
+            pending.updates.filterNot { it.second is ShotPacketUpdate.Spawn }.forEach { (time,u) -> packetObservation(entry,u,ShotStamp(time,stamp.tick))?.let { emit(stamp,it) } }
         }
         display(entity,entry,stamp)
         return entry
@@ -111,7 +134,6 @@ class ShotObservationAdapter(private val origin:ShotVector,private val cache:Sho
         val p=vector(e.position())
         if(entry.variant!=null) emit(stamp,ShotObservation.Capsule(entry.token,entry.generation,entry.variant,ShotEntityAction.SAMPLE,p-origin,
             vector(e.deltaMovement),entry.discovery,e is Display.ItemDisplay,spawnMicros=entry.spawnMicros))
-        else if(entry.species!=null) emit(stamp,ShotObservation.Target(entry.token,entry.generation,entry.species,p-origin,bounds(e.boundingBox),vector(e.deltaMovement)))
         entry.sample?.let { if(it!=p && entry.variant!=null) obstruction(client,null,entry.token,it,p,stamp) }
         entry.sample=p
         display(e,entry,stamp)
@@ -122,7 +144,7 @@ class ShotObservationAdapter(private val origin:ShotVector,private val cache:Sho
             (e.sample ?: e.base ?: origin)-origin,discovery=e.discovery,removal=reason,spawnMicros=e.spawnMicros))
     }
     private fun display(e:Entity,entry:ShotEntityCache.Entry,stamp:ShotStamp) {
-        if(e !is Display) return
+        if(entry.variant==null || e !is Display) return
         val t=e.renderState()?.transformation()?.get(1f) ?: return
         val l=t.leftRotation();val r=t.rightRotation();val p=t.translation();val s=t.scale()
         val state=ShotObservation.DisplayState(entry.token,(e as? Display.ItemDisplay)?.itemTransform?.name?.lowercase() ?: "none",
@@ -135,9 +157,22 @@ class ShotObservationAdapter(private val origin:ShotVector,private val cache:Sho
         val p=client.player ?: return
         lastInput=stamp.micros;windowExpired=false;cache.newWindow()
         routes[token]=route
-        emit(stamp,ShotObservation.Input(token.value,hand,variant,route,pose(client) ?: return,scenario,split,standalone))
+        val currentPose=pose(client) ?: return
+        emit(stamp,ShotObservation.Input(token.value,hand,variant,route,currentPose,scenario,split,standalone))
+        targetSnapshot(client,currentPose,stamp,force=true)
         val from=vector(p.eyePosition);val aim=vector(p.lookAngle)
         obstruction(client,token.value,null,from,ShotVector(from.x+aim.x*64,from.y+aim.y*64,from.z+aim.z*64),stamp)
+    }
+    private fun targetSnapshot(client:Minecraft,pose:ShotPose,stamp:ShotStamp,force:Boolean=false) {
+        val level=client.level ?: return
+        val entries=cache.entries()
+        val observations=entries.mapNotNull { entry ->
+            val species=entry.species ?: return@mapNotNull null
+            val e=level.getEntity(entry.id)?.takeIf { !it.isRemoved && it.uuid.toString()==entry.identity } ?: return@mapNotNull null
+            ShotObservation.Target(entry.token,entry.generation,species,vector(e.position())-origin,bounds(e.boundingBox),vector(e.deltaMovement))
+        }
+        val capsules=entries.filter { it.variant!=null }.mapNotNull { (it.sample ?: it.base)?.minus(origin) }
+        targets.sample(stamp,pose,capsules,observations,force).forEach { emit(stamp,it) }
     }
     private fun pose(client:Minecraft):ShotPose? {
         val p=client.player ?: return null

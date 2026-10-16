@@ -20,28 +20,28 @@ object ShotObservationHooks {
             adapter?.input(Minecraft.getInstance(),t,h,v,r,clock())
         },{ t,result,route -> adapter?.route(t,route);adapter?.continuation(t,result,clock()) })
     }
-    private inline fun observe(block:()->Unit) {
+    private inline fun observe(stage:String,block:()->Unit) {
         if(adapter==null) return
-        try { block() } catch(t:Exception) { try { failed(t) } catch(_:Exception) { /* Gameplay still proceeds. */ } }
+        try { block() } catch(t:Exception) { try { failed(ShotObservationFailure(stage,t)) } catch(_:Exception) { /* Gameplay still proceeds. */ } }
     }
-    fun begin()=observe { cycles.begin() }
-    fun end()=observe { cycles.end() }
-    fun tick(client:Minecraft)=observe { adapter?.tick(client,clock()) }
-    fun packet(packet:Any)=observe {
+    fun begin()=observe("input/begin") { cycles.begin() }
+    fun end()=observe("input/end") { cycles.end() }
+    fun tick(client:Minecraft)=observe("tick") { adapter?.tick(client,clock()) }
+    fun packet(packet:Any)=observe("packet") {
         val client=Minecraft.getInstance();val level=client.level ?: return@observe
         ShotPacketCompat.copy(packet,level) { adapter?.packetBase(it) }.forEach { adapter?.packet(client,it,clock()) }
     }
     fun use(player:Player,hand:InteractionHand,route:ShotUseRoute):ShotInputToken? {
         if(adapter==null) return null
         var token:ShotInputToken?=null
-        observe {
+        observe("input/use") {
             if(player!==Minecraft.getInstance().player) return@observe
             val variant=ShotVariant.fromId(player.getItemInHand(hand).get(DataComponents.CUSTOM_DATA)?.copyTag()?.getStringOr("id","")) ?: return@observe
             token=cycles.observe(if(hand==InteractionHand.MAIN_HAND) ShotHand.MAIN else ShotHand.OFF,variant,route)
         }
         return token
     }
-    fun returned(token:ShotInputToken?,result:InteractionResult)=observe {
+    fun returned(token:ShotInputToken?,result:InteractionResult)=observe("input/returned") {
         if(token!=null) cycles.returned(token,when(result) {
             InteractionResult.PASS -> ShotUseResult.PASS
             InteractionResult.FAIL -> ShotUseResult.FAIL
