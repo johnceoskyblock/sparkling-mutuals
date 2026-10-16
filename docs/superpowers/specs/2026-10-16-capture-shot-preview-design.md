@@ -1,6 +1,6 @@
 # Experimental ordinary-capsule path preview
 
-**Status: written specification approved by the human in the implementation chat.** After reviewing this document, the human answered **Approve the written specification**. The implementation plan is the next review stage; product implementation has not started. Approval requests stay in the chat until the human changes that instruction. Execution preference is Native.
+**Status: written specification approved by the human in the implementation chat.** After reviewing this document, the human answered **Approve the written specification**. The human also approved the four-task implementation plan and chose Native execution. Product code is implemented; runtime checks, independent review and delivery are in progress. Approval requests stay in the chat until the human changes that instruction. Execution preference is Native.
 
 ## Purpose and evidence boundary
 
@@ -91,4 +91,8 @@ After the human reviews this written specification in chat, prepare a concrete N
 
 ## Last updated
 
-2026-10-16 (America/New_York) — Defined the first conservative, opt-in path preview and recorded written-specification approval. Implementation-plan review remains pending.
+2026-10-16 (America/New_York) — Defined the first conservative, opt-in path preview and recorded written-specification approval. The implementation plan is approved; Native verification and delivery are in progress.
+
+## Human execution update
+
+The human subsequently directed capture-shot development to build and deliver **26.1.2 only** until the feature is finished. This overrides the three-target production/check steps above for ongoing development. Preserve the compatibility sources and full release matrix; do not produce 26.2/26.3 artifacts now. The earlier clean three-target matrix completed before this instruction.

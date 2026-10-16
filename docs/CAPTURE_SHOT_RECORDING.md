@@ -1,6 +1,18 @@
 # Capture-shot collection kit
 
-This opt-in kit records local observations for ordinary and Masterful Critter Capsules on **26.1.2, 26.2 and 26.3**. It is ready for collecting calibration evidence after the matching build is verified. Live aiming paths and endpoints await measurements and independent model validation. Visible capsule motion may differ from server capture rules.
+This opt-in kit records local observations for ordinary and Masterful Critter Capsules on **26.1.2, 26.2 and 26.3**. A separate, default-off experimental ordinary-capsule path is available within the narrow scope below. Endpoints, terrain collision and capture targeting remain unverified. Visible capsule motion may differ from server capture rules.
+
+## Experimental capsule path
+
+Capture-shot development builds currently target **26.1.2 only**, by maintainer direction; the other two builds resume when this work is finished.
+
+In `/sm` settings, open **Safari helpers → Experimental capsule path**. It starts **off** and saves independently from the recorder. Turn both **Hide capsules on ground** and **Hide flying capsules** off for this experiment. Hold an ordinary capsule in your main hand in Safari, use first person and stand on the ground for two stable client ticks. Look between 10 degrees upward and 1 degree downward, inclusive. A short amber line and **Experimental path** status then appear.
+
+Walking, jumping/falling, swimming, flight, riding, sneaking/sprinting, unsupported items (including Masterful), off-hand-only use and third person suppress the path. Screens and hidden HUD suppress both the path and status. A quiet status explains supported-state restrictions; there are no repeated chat notices. Disconnects/world changes clear stability without changing the saved option or starting recording.
+
+The fixed spatial curve begins at the first observed update parameter, about 1.7 nominal blocks forward; it omits the unobserved launch segment and ends at nominal 15 blocks. Its ordinal parameter is **not server flight time**. The narrow stationary observation check covered nominal 5–15 blocks; it does not certify rendered appearance or broader conditions. At most 64 points/63 segments are drawn with terrain depth occlusion. This is not collision clipping: there is no impact/endpoint marker, target highlight or capture guarantee. The player controls every aim and throw.
+
+For the first visual test, leave recording off, enable the option as above and compare a few ordinary throws in the tested range. Check camera turns/FOV, GUI scale, screen/HUD suppression, movement stop/start, item/hand changes, angle limits and world transfer. Put the line behind a solid obstacle and confirm occlusion while existing ESP keeps its normal visibility. Live Hypixel appearance and server mechanics require gameplay testing; a passing build or numeric observation check cannot establish them. See the [manual checklist](IMPLEMENTATION_TEST_CHECKLIST.md#experimental-capsule-path).
 
 ## Controls
 
@@ -106,8 +118,8 @@ Use schema version `1`, a short model identifier, and coordinates `session_relat
 
 ## Validation boundary
 
-Automated suites exercise the actual coordinator/writer/codec, producer-to-reader fixtures, passive compiled callbacks, bounds, errors, privacy and deterministic arithmetic. Offline client smoke checks verify the required injected hooks, registered controls and a controlled local export on each target. Live Hypixel observation fidelity, both-hands/variants gameplay, hiding comparisons and capture-rule measurements require the collection checklist above; these remain awaiting gameplay. No server motion constants, calibrated aiming model or renderer are included.
+Automated suites exercise the actual coordinator/writer/codec, producer-to-reader fixtures, passive compiled callbacks, bounds, errors, privacy and deterministic arithmetic. Preview suites check the fixed spatial model, conservative availability and finite camera-relative geometry separately. Offline client smoke checks do not establish Hypixel observation fidelity, rendered interpolation, both-hands/variants gameplay, hiding comparisons or capture rules. The experimental preview is limited to the scope above; broader trajectory, endpoint and target-selection work remains pending.
 
 ## Last updated
 
-2026-10-16 (America/New_York) - Added recorder v2 bounded target sampling and local diagnostics; tolerate cleared entity-map slots between bounded scan batches.
+2026-10-16 (America/New_York) - Added the opt-in stationary ordinary-capsule preview guide and its visual/server validation limits.

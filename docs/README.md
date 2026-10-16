@@ -28,7 +28,8 @@ Kotlin source lives under `src/main/kotlin/net/johnceo/sparklingmutuals/`. Packa
 | `safari/esp` | Entity identification, visibility, capture identity, projections and rendering |
 | `safari/hideyho` | Quest prompts, acceptance and hiding-location observations |
 | `safari/resources` | Floor drops, starting supplies, bird feeding and inventory reminders |
-| `safari/shots` | Opt-in local capsule evidence, bounded export and lifecycle; no live aiming model |
+| `safari/shots` | Opt-in local capsule evidence, bounded export and lifecycle |
+| `safari/shots/preview` | Default-off experimental ordinary-capsule curve, conservative availability and passive rendering |
 | `safari/sparkling` | Sparkling detection, encounters and pending capture evidence |
 | `safari/structures` | Bee nests, nest surveys, mounds and Snooper walls |
 | `safari/ui` | Progress/missing panels, capture screen and panel visibility |
@@ -56,7 +57,7 @@ Runtime assets, mod metadata and mixin registration remain under `src/main/resou
 | [History import](HISTORY_IMPORT.md) | Import controls, data sources and estimates |
 | [Credited party Sparkling streaks](SINCE_COMMAND.md) | !since sparkling / !since unique, participation credit and critter/catcher replies |
 
-| [Capture-shot recording](CAPTURE_SHOT_RECORDING.md) | Local controls, privacy, replay, diagnostic analysis and calibration collection checklist |
+| [Capture-shot recording](CAPTURE_SHOT_RECORDING.md) | Experimental preview scope, local controls, privacy, replay and collection checklist |
 | [Warp alerts](WARP_ALERTS.md) | Reminder timing and controls |
 | [Contest downtime](CONTEST_DOWNTIME.md) | Ticket events and downtime coordination |
 | [Manual checklist](IMPLEMENTATION_TEST_CHECKLIST.md) | In-game checks that unit tests cannot establish |
@@ -83,3 +84,5 @@ See [Safari entry guard](SAFARI_ENTRY_GUARD.md) for stage-specific readiness, ki
 2026-10-16 - Indexed stage-specific Safari entry protection.
 
 2026-10-16 (America/New_York) - Added recorder ownership and the local collection/replay guide. Python tools live in `tools/capture_shots/`.
+
+2026-10-16 (America/New_York) - Added the experimental capsule preview package and guide. Python tools remain in `tools/capture_shots/`.

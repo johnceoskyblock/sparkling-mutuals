@@ -45,7 +45,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        minecraft: ['26.1.2', '26.2', '26.3']
+        # Capture-shot development is intentionally 26.1.2-only until the feature is finished.
+        minecraft: ${{ fromJSON((github.ref == 'refs/heads/feature/capture-shot-projection' || github.head_ref == 'feature/capture-shot-projection') && '["26.1.2"]' || '["26.1.2", "26.2", "26.3"]') }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -71,6 +72,7 @@ jobs:
           path: versions/${{ matrix.minecraft }}/build/test-results/test/TEST-*.xml
           if-no-files-found: error
   verify-all-targets:
+    if: github.ref != 'refs/heads/feature/capture-shot-projection' && github.head_ref != 'feature/capture-shot-projection'
     needs: [build-logic, target, capture-shot-tools]
     runs-on: ubuntu-24.04
     steps:
