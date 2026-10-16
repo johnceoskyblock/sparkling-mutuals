@@ -315,6 +315,9 @@
         },
         "split": {
           "$ref": "#/$defs/split"
+        },
+        "standalone": {
+          "type": "boolean"
         }
       },
       "required": [
@@ -324,7 +327,8 @@
         "route",
         "pose",
         "scenario",
-        "split"
+        "split",
+        "standalone"
       ],
       "additionalProperties": false
     },
@@ -413,6 +417,13 @@
               "type": "null"
             }
           ]
+        },
+        "spawnMicros": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
         }
       },
       "required": [
@@ -424,7 +435,8 @@
         "velocity",
         "discovery",
         "flying",
-        "removal"
+        "removal",
+        "spawnMicros"
       ],
       "additionalProperties": false
     },
@@ -542,6 +554,26 @@
             "maxLength": 128
           },
           "maxItems": 16
+        },
+        "observedMicros": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "base": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/vector"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "truncated": {
+          "type": "boolean"
         }
       },
       "required": [
@@ -553,7 +585,10 @@
         "motion",
         "yaw",
         "pitch",
-        "relativeFlags"
+        "relativeFlags",
+        "observedMicros",
+        "base",
+        "truncated"
       ],
       "additionalProperties": false
     },
@@ -922,6 +957,18 @@
         "association",
         "feedback",
         "annotations"
+      ],
+      "additionalProperties": false
+    },
+    "player_state": {
+      "type": "object",
+      "properties": {
+        "pose": {
+          "$ref": "#/$defs/pose"
+        }
+      },
+      "required": [
+        "pose"
       ],
       "additionalProperties": false
     }
@@ -1324,6 +1371,38 @@
         },
         "data": {
           "$ref": "#/$defs/gap"
+        }
+      },
+      "required": [
+        "type",
+        "sequence",
+        "micros",
+        "tick",
+        "kind",
+        "data"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "event"
+        },
+        "sequence": {
+          "type": "integer"
+        },
+        "micros": {
+          "type": "integer"
+        },
+        "tick": {
+          "type": "integer"
+        },
+        "kind": {
+          "const": "player_state"
+        },
+        "data": {
+          "$ref": "#/$defs/player_state"
         }
       },
       "required": [
