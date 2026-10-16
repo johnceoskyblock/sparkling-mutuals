@@ -1,5 +1,6 @@
 package net.johnceo.sparklingmutuals.config
 
+import net.johnceo.sparklingmutuals.compat.*
 import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.gui.components.Button
 import net.minecraft.client.gui.components.EditBox
@@ -43,6 +44,6 @@ class ApiKeyScreen(private val parent: Screen?) : Screen(Component.literal("Hypi
         graphics.centeredText(font, Component.literal(status), width / 2, height / 2 + 31, 0xFFF5ECD7.toInt())
         super.extractRenderState(graphics, mouseX, mouseY, delta)
     }
-    override fun onClose() { minecraft.setScreen(parent) }
+    override fun onClose() { minecraft.smSetScreen(parent) }
     override fun isPauseScreen() = false
 }

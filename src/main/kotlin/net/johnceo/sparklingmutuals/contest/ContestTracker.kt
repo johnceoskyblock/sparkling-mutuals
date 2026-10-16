@@ -1,5 +1,6 @@
 package net.johnceo.sparklingmutuals.contest
 
+import net.johnceo.sparklingmutuals.compat.*
 import java.time.LocalTime
 import kotlin.math.ceil
 import kotlin.math.max
@@ -182,9 +183,9 @@ object ContestTracker {
     }
 
     private fun showTitle(client: Minecraft, remaining: Int) {
-        client.gui.setTimes(5, 60, 15)
-        client.gui.setTitle(Component.literal("§c§lINCOMPLETE!"))
-        client.gui.setSubtitle(
+        client.gui.smSetTimes(5, 60, 15)
+        client.gui.smSetTitle(Component.literal("§c§lINCOMPLETE!"))
+        client.gui.smSetSubtitle(
             Component.literal(
                 "§e${formatRemaining(remaining)} left to reach Uncommon"
             )

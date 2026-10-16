@@ -1,14 +1,17 @@
 package net.johnceo.sparklingmutuals.safari.esp
 
+//? if >=26.2 {
+/*import net.minecraft.world.entity.EntityTypes as EntityType
+*///? } else {
+import net.minecraft.world.entity.EntityType
+//? }
+
+import net.johnceo.sparklingmutuals.compat.*
 import com.mojang.authlib.GameProfile
-import com.mojang.blaze3d.pipeline.DepthStencilState
-import com.mojang.blaze3d.pipeline.RenderPipeline
-import com.mojang.blaze3d.platform.CompareOp
 import java.util.UUID
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents
 import net.fabricmc.fabric.api.event.player.UseItemCallback
-import net.johnceo.sparklingmutuals.SparklingMutuals
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.config.SafariEspConfig
 import net.johnceo.sparklingmutuals.safari.SafariAssist
@@ -25,11 +28,7 @@ import net.johnceo.sparklingmutuals.safari.resources.PredictedFloorDrop
 import net.johnceo.sparklingmutuals.safari.resources.SafariFloorDrops
 import net.johnceo.sparklingmutuals.safari.structures.SafariStructures
 import net.minecraft.client.Minecraft
-import net.minecraft.client.gui.Font
-import net.minecraft.client.renderer.RenderPipelines
-import net.minecraft.client.renderer.rendertype.*
 import net.minecraft.core.component.DataComponents
-import net.minecraft.util.LightCoordsUtil
 import net.minecraft.world.InteractionResult
 import net.minecraft.world.entity.Display
 import net.minecraft.world.entity.Entity
@@ -44,7 +43,6 @@ import net.minecraft.world.item.Items
 import net.minecraft.world.level.block.Block
 import net.minecraft.world.level.block.ShulkerBoxBlock
 import net.minecraft.world.phys.AABB
-import org.joml.Matrix4f
 import org.slf4j.LoggerFactory
 
 data class EspCritterObservation(val id: Int, val species: String, val biome: SafariBiome, val x: Double, val y: Double, val z: Double, val mound: Boolean, val uuid: UUID)
@@ -76,18 +74,11 @@ object SafariEsp {
     private val litterbugs = LitterbugProjection()
     private val shyworms = ShywormProjection()
     private val logger = LoggerFactory.getLogger("sparkling-mutuals/esp")
-    private fun renderType(name: String, snippet: RenderPipeline.Snippet) = RenderType.create("sparkling-mutuals:$name",
-        RenderSetup.builder(RenderPipelines.register(RenderPipeline.builder(snippet)
-            .withLocation(SparklingMutuals.id("pipeline/$name"))
-            .withCull(false)
-            .withDepthStencilState(DepthStencilState(CompareOp.ALWAYS_PASS, false)).build()))
-            .setLayeringTransform(LayeringTransform.VIEW_OFFSET_Z_LAYERING)
-            .setOutputTarget(OutputTarget.ITEM_ENTITY_TARGET).createRenderSetup())
-    private val lines = renderType("safari_esp", RenderPipelines.LINES_SNIPPET)
-    private val fill = renderType("safari_drops", RenderPipelines.DEBUG_FILLED_SNIPPET)
+    private val lines = WorldRenderCompat.renderType("safari_esp")
+    private val fill = WorldRenderCompat.renderType("safari_drops", filled = true)
 
     fun register() {
-        LevelRenderEvents.AFTER_TRANSLUCENT_FEATURES.register(::render)
+        WorldRenderCompat.register(::render)
         UseItemCallback.EVENT.register { player, world, hand ->
             val client = Minecraft.getInstance()
             val id = player.getItemInHand(hand).get(DataComponents.CUSTOM_DATA)?.copyTag()?.getStringOr("id", "")
@@ -122,7 +113,7 @@ object SafariEsp {
     fun isRockmiteMound(entity: Entity, client: Minecraft): Boolean {
         if (entity.isRemoved || client.level?.getEntity(entity.id) !== entity || !SafariAssist.inSafari) return false
         return entity is Display.ItemDisplay && SafariEspRules.identify(describe(entity))?.name == "Rockmite" ||
-            entity.type == net.minecraft.world.entity.EntityType.INTERACTION && SafariStructures.isMound(entity, client)
+            entity.type == EntityType.INTERACTION && SafariStructures.isMound(entity, client)
     }
     private fun modelVisible(entity: Entity): Boolean {
         if (entity !is Display) return true
@@ -287,24 +278,10 @@ object SafariEsp {
     }
     private fun render(context: LevelRenderContext) {
         val client = Minecraft.getInstance()
-        if (!SafariAssist.inSafari || client.player == null || client.level == null || client.options.hideGui) return
-        val camera = client.gameRenderer.mainCamera.position()
+        if (!SafariAssist.inSafari || client.player == null || client.level == null || client.options.smHideGui) return
+        val camera = client.gameRenderer.smCamera.position()
         val playerBiome = SafariAssist.biome
-        val poses = context.poseStack()
-        val buffers = context.bufferSource()
-        val vertices = buffers.getBuffer(lines)
-        val pose = poses.last()
-        fun frame(box: AABB, color: Int) {
-            val b = box.move(-camera.x, -camera.y, -camera.z)
-            EspBoxLines.edges(b.minX.toFloat(), b.minY.toFloat(), b.minZ.toFloat(),
-                b.maxX.toFloat(), b.maxY.toFloat(), b.maxZ.toFloat()) { x, y, z, ex, ey, ez, axis ->
-                val nx = if (axis == 0) 1f else 0f
-                val ny = if (axis == 1) 1f else 0f
-                val nz = if (axis == 2) 1f else 0f
-                vertices.addVertex(pose, x, y, z).setColor(color).setNormal(pose, nx, ny, nz).setLineWidth(2f)
-                vertices.addVertex(pose, ex, ey, ez).setColor(color).setNormal(pose, nx, ny, nz).setLineWidth(2f)
-            }
-        }
+        fun frame(box: AABB, color: Int) = WorldRenderCompat.box(context, lines, box, color)
         val delta = client.deltaTracker.getGameTimeDeltaPartialTick(false)
         val now = System.currentTimeMillis()
         val timers = mutableListOf<Triple<String, Int, AABB>>()
@@ -354,21 +331,14 @@ object SafariEsp {
         selectedDrops.forEach { timers.add(Triple(it.type!!.label, SafariEspConfig.rgb(SafariEspConfig.dropColor(it.type!!)),
             AABB(it.x - .5, it.y, it.z - .5, it.x + .5, it.y + 1, it.z + .5))) }
         tiles.forEach { (tile, color) -> frame(AABB(tile.x.toDouble(), tile.y + 1.0, tile.z.toDouble(), tile.x + 1.0, tile.y + 1.0, tile.z + 1.0), color) }
-        buffers.endBatch(lines)
-        val quads = buffers.getBuffer(fill)
+        WorldRenderCompat.flush(context, lines)
         for ((tile, color) in tiles) {
-            val x = (tile.x - camera.x).toFloat(); val y = (tile.y + 1 - camera.y).toFloat(); val z = (tile.z - camera.z).toFloat()
-            for ((dx, dz) in listOf(0f to 0f, 0f to 1f, 1f to 1f, 1f to 0f))
-                quads.addVertex(pose, x + dx, y, z + dz).setColor(color and 0xFFFFFF or ((color ushr 25) shl 24))
+            WorldRenderCompat.tile(context, fill, tile.x.toDouble(), tile.y + 1.0, tile.z.toDouble(),
+                color and 0xFFFFFF or ((color ushr 25) shl 24))
         }
-        buffers.endBatch(fill)
+        WorldRenderCompat.flush(context, fill)
         for ((text, color, box) in timers) {
-            poses.pushPose(); poses.translate(box.center.x - camera.x, box.maxY + .2 - camera.y, box.center.z - camera.z)
-            val scale = SafariEspConfig.labelWorldScale
-            poses.mulPose(client.gameRenderer.mainCamera.rotation()); poses.scale(scale, -scale, scale)
-            client.font.drawInBatch(text, -client.font.width(text) / 2f, 0f, color, false,
-                Matrix4f(poses.last().pose()), buffers, Font.DisplayMode.SEE_THROUGH, 0x40000000, LightCoordsUtil.FULL_BRIGHT)
-            poses.popPose()
+            WorldRenderCompat.label(context, text, color, box.center.x, box.maxY + .2, box.center.z, SafariEspConfig.labelWorldScale)
         }
     }
     fun reset() { resetDrops(); targets = emptyList(); drops = emptyList(); level = null; ticks = 0; stringDisplays = emptyList(); scanned = false; clearCaptured() }

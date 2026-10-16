@@ -1,5 +1,6 @@
 package net.johnceo.sparklingmutuals.history
 
+import net.johnceo.sparklingmutuals.compat.*
 import java.time.Instant
 import java.time.ZoneId
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents
@@ -251,9 +252,9 @@ object Achievements {
             else player.playSound(SoundEvents.PLAYER_LEVELUP, .6f, 1.6f)
         }
         if (tier.ordinal >= AchievementTier.LEGENDARY.ordinal) {
-            client.gui.setTimes(5, 50, 15)
-            client.gui.setSubtitle(Component.literal("${tier.code}${achievement.name}"))
-            client.gui.setTitle(Component.literal("§6§lACHIEVEMENT"))
+            client.gui.smSetTimes(5, 50, 15)
+            client.gui.smSetSubtitle(Component.literal("${tier.code}${achievement.name}"))
+            client.gui.smSetTitle(Component.literal("§6§lACHIEVEMENT"))
         }
         if (ConfigManager.achievementsToParty) player.connection.sendCommand("pc Achievement unlocked: ${achievement.name}!")
     }

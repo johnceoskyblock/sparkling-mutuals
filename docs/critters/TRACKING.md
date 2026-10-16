@@ -255,6 +255,10 @@ For the observed three-floor-coin baseline, confirmed pickup/use history outrank
 - Confirm numeric species minima and total coin opportunities from Hypixel. The supplied bird example establishes nine Forest food pickups plus applicable starting food; party contributions can add more feeding demand. Other existing baselines remain in the critter index, not promoted to new server facts.
 - Preserve formatting, multiline entry banners and optional Chat Heads segments when testing the [supplied message variants](MESSAGES.md). The supplied coin message confirms the spelling **Gimmiegold**.
 
+After one clearing-completion trigger, keep all unsent independently eligible starting-item reminders available for the run. Recompute quantity, destination and missing discoveries immediately before each delivery; only delivered notices mark notification/source state. Space titles by four seconds. Suppression or cancellation does not consume an unsent reminder. Initial inventory sampling starts at the first available inventory sample, rather than world-arrival time; grants overlap it and separately recorded later floor pickups are subtracted.
+
 ## Last updated
 
 2026-10-15 - Corrected incense limits to 4/3/2 for 0/1/2 starting incense; retained unified positive detection and ordinary scan circles.
+
+2026-10-15 - Fixed complete, independently gated starting-resource reminder delivery (#55).

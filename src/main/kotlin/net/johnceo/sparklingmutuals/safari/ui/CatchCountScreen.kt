@@ -1,5 +1,6 @@
 package net.johnceo.sparklingmutuals.safari.ui
 
+import net.johnceo.sparklingmutuals.compat.*
 import net.johnceo.sparklingmutuals.config.SafariTheme
 import net.johnceo.sparklingmutuals.safari.SafariBiome
 import net.johnceo.sparklingmutuals.safari.SafariTracking
@@ -29,6 +30,6 @@ class CatchCountScreen(private val parent: Screen? = null) : Screen(Component.li
         graphics.centeredText(font, Component.literal("Counts stay until the next Safari run"), width / 2, height - 40, 0xFFAAAAAA.toInt())
         super.extractRenderState(graphics, mouseX, mouseY, delta)
     }
-    override fun onClose() { minecraft.setScreen(parent) }
+    override fun onClose() { minecraft.smSetScreen(parent) }
     override fun isPauseScreen() = false
 }

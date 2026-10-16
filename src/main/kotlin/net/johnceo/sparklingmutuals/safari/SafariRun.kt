@@ -19,6 +19,7 @@ import net.johnceo.sparklingmutuals.safari.structures.SafariMounds
 class SafariRun(val startedAt: Long) {
     val entry = SafariEntryEvidence()
     val resources = SafariResources()
+    val resourceReminders = net.johnceo.sparklingmutuals.safari.resources.StartingResourceDelivery(resources)
     val sparklingCaptures = SparklingCaptureState()
     fun observeSparkling(id: java.util.UUID, name: String, aliases: Set<java.util.UUID> = emptySet()): java.util.UUID {
         if (sparklingCaptures.observe(id, name, aliases)) SafariRoster.named(name)?.biome?.let(completion::reopen)
@@ -36,12 +37,15 @@ class SafariRun(val startedAt: Long) {
     fun liveHoneybugs(amount: Int) { liveBees = amount; sparklingChecks.nestEvidence(nestsResolved) }
     var hadFourIncense = false
         private set
+    private var firstInventoryAt: Long? = null
+    fun inStartingInventoryWindow(now: Long) = firstInventoryAt?.let { now - it in 0..3000 } == true
     fun inventoryEvidence(stacks: List<Pair<String, Int>>, now: Long = System.currentTimeMillis()) {
-        resources.inventory(stacks, now - startedAt in 0..3000)
+        if (firstInventoryAt == null && now >= startedAt) firstInventoryAt = now
+        resources.inventory(stacks, inStartingInventoryWindow(now))
         birds.inventory(stacks)
         sparklingChecks.inventory(stacks)
         sparklingChecks.startingCoins(resources.startingCount(FloorDropType.COIN))
-        if (endedAt == null) birds.startingInventory(stacks, now - startedAt)
+        if (endedAt == null && firstInventoryAt != null) birds.startingInventory(stacks, now - firstInventoryAt!!)
         if (stacks.filter { SafariRules.strip(it.first).trim() == "Soothing Incense" }.sumOf { it.second.coerceAtLeast(0) } >= 4)
             hadFourIncense = true
     }

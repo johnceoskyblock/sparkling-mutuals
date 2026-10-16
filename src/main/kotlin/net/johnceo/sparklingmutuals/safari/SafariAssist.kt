@@ -1,5 +1,6 @@
 package net.johnceo.sparklingmutuals.safari
 
+import net.johnceo.sparklingmutuals.compat.*
 import kotlin.math.sqrt
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.contest.ContestGui
@@ -109,7 +110,7 @@ object SafariAssist {
         return HudPanel("Detected sparklings", rows = rows)
     }
     fun render(graphics: GuiGraphicsExtractor) {
-        if (!ConfigManager.shinyDetection || !inSafari || Minecraft.getInstance().screen is ContestGui) return
+        if (!ConfigManager.shinyDetection || !inSafari || Minecraft.getInstance().smScreen is ContestGui) return
         nearbyPanel()?.draw(graphics, SafariHud.SPARKLINGS)
     }
 

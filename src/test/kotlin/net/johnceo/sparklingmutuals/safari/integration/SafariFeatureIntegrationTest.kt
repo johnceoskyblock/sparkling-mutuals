@@ -219,6 +219,7 @@ class SafariFeatureIntegrationTest {
             assertFalse(resources.noticeStillRelevant(notice, reminder.destination, missing))
             assertTrue(SafariResources().partyNotice("Party > Local: $notice"))
         }
+        notices.forEach { resources.noticeSent("Local", it) }
         assertTrue(resources.notices("Local", SafariBiome.CAVERN, missing).isEmpty())
         resources.inventory(emptyList(), false)
         notices.forEach { assertFalse(resources.noticeStillRelevant(it, SafariBiome.CAVERN, missing)) }

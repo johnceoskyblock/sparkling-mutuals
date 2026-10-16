@@ -1,6 +1,6 @@
 package net.johnceo.sparklingmutuals.safari.automation
 
-import com.mojang.blaze3d.platform.InputConstants
+import net.johnceo.sparklingmutuals.compat.*
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents
 import net.fabricmc.fabric.api.event.player.AttackEntityCallback
 import net.fabricmc.fabric.api.event.player.UseItemCallback
@@ -20,7 +20,6 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen
 import net.minecraft.world.InteractionResult
 import net.minecraft.world.entity.Entity
 import net.minecraft.world.item.Items
-import org.lwjgl.glfw.GLFW
 
 /**
  * Guards the manager, tickets and entry GUI after a kick, during downtime, or while party members are absent.
@@ -111,14 +110,13 @@ object SafariManagerGuard {
     fun shouldBlockEntry(containerId: Int, slotId: Int): Boolean {
         val client = Minecraft.getInstance()
         val player = client.player ?: return false
-        val screen = client.screen as? AbstractContainerScreen<*> ?: return false
+        val screen = client.smScreen as? AbstractContainerScreen<*> ?: return false
         val menu = player.containerMenu
         if (menu.containerId != containerId) return false
         val slot = menu.slots.getOrNull(slotId) ?: return false
         if (!entryItem(screen.title.string, slot.item.`is`(Items.NAME_TAG), slot.container === player.inventory)) return false
         // GUI Shift-click does not necessarily set the player's sneaking flag.
-        val shift = InputConstants.isKeyDown(client.window, GLFW.GLFW_KEY_LEFT_SHIFT) ||
-            InputConstants.isKeyDown(client.window, GLFW.GLFW_KEY_RIGHT_SHIFT)
+        val shift = shiftDown(client)
         val blocked = blocks(client, shift)
         if (!blocked) SafariTracking.ticketSelected(slot.item.hoverName.string)
         return blocked

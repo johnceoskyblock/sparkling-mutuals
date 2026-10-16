@@ -1,8 +1,6 @@
 package net.johnceo.sparklingmutuals.honeyhives
 
-import com.mojang.blaze3d.pipeline.DepthStencilState
-import com.mojang.blaze3d.pipeline.RenderPipeline
-import com.mojang.blaze3d.platform.CompareOp
+import net.johnceo.sparklingmutuals.compat.*
 import java.nio.file.Files
 import java.util.Properties
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents
@@ -11,16 +9,12 @@ import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents
 import net.fabricmc.fabric.api.event.player.AttackBlockCallback
 import net.fabricmc.fabric.api.event.player.UseBlockCallback
 import net.fabricmc.loader.api.FabricLoader
-import net.johnceo.sparklingmutuals.SparklingMutuals
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.contest.ContestTracker
 import net.johnceo.sparklingmutuals.hud.SkyblockSidebar
 import net.johnceo.sparklingmutuals.safari.SafariRules
-import net.johnceo.sparklingmutuals.safari.esp.EspBoxLines
 import net.minecraft.client.Minecraft
-import net.minecraft.client.renderer.RenderPipelines
 import net.minecraft.client.renderer.blockentity.BeaconRenderer
-import net.minecraft.client.renderer.rendertype.*
 import net.minecraft.core.BlockPos
 import net.minecraft.world.InteractionResult
 import net.minecraft.world.entity.Display
@@ -52,12 +46,7 @@ object HoneyHives {
     private var beamsBroken = false
     private val file get() = FabricLoader.getInstance().configDir.resolve("sparkling-mutuals-honeyhives.properties")
 
-    private val lines = RenderType.create("sparkling-mutuals:honeyhive_lines",
-        RenderSetup.builder(RenderPipelines.register(RenderPipeline.builder(RenderPipelines.LINES_SNIPPET)
-            .withLocation(SparklingMutuals.id("pipeline/honeyhive_lines")).withCull(false)
-            .withDepthStencilState(DepthStencilState(CompareOp.ALWAYS_PASS, false)).build()))
-            .setLayeringTransform(LayeringTransform.VIEW_OFFSET_Z_LAYERING)
-            .setOutputTarget(OutputTarget.ITEM_ENTITY_TARGET).createRenderSetup())
+    private val lines = WorldRenderCompat.renderType("honeyhive_lines")
 
     fun register() {
         load()
@@ -68,7 +57,7 @@ object HoneyHives {
             if (!overlay) Minecraft.getInstance().execute { chat(SafariRules.strip(message.string)) }
         }
         LevelRenderEvents.COLLECT_SUBMITS.register(::beams)
-        LevelRenderEvents.AFTER_TRANSLUCENT_FEATURES.register(::outlines)
+        WorldRenderCompat.register(::outlines)
     }
 
     private fun chat(text: String) {
@@ -221,7 +210,7 @@ object HoneyHives {
         val world = client.level ?: return
         if (visible.isEmpty() || beamsBroken) return
         try {
-            val camera = client.gameRenderer.mainCamera.position()
+            val camera = client.gameRenderer.smCamera.position()
             val animation = Math.floorMod(world.gameTime, 40L) + client.deltaTracker.getGameTimeDeltaPartialTick(false)
             val poses = context.poseStack()
             for ((hive, color) in visible) {
@@ -242,23 +231,14 @@ object HoneyHives {
 
     private fun outlines(context: LevelRenderContext) {
         val client = Minecraft.getInstance()
-        if (client.level == null || client.options.hideGui || visible.isEmpty()) return
-        val camera = client.gameRenderer.mainCamera.position()
-        val buffers = context.bufferSource()
-        val vertices = buffers.getBuffer(lines)
-        val pose = context.poseStack().last()
+        if (client.level == null || client.options.smHideGui || visible.isEmpty()) return
         fun box(minX: Double, minY: Double, minZ: Double, maxX: Double, maxY: Double, maxZ: Double, color: Int) =
-            EspBoxLines.edges((minX - camera.x).toFloat(), (minY - camera.y).toFloat(), (minZ - camera.z).toFloat(),
-                (maxX - camera.x).toFloat(), (maxY - camera.y).toFloat(), (maxZ - camera.z).toFloat()) { x, y, z, ex, ey, ez, axis ->
-                val nx = if (axis == 0) 1f else 0f; val ny = if (axis == 1) 1f else 0f; val nz = if (axis == 2) 1f else 0f
-                vertices.addVertex(pose, x, y, z).setColor(color).setNormal(pose, nx, ny, nz).setLineWidth(2f)
-                vertices.addVertex(pose, ex, ey, ez).setColor(color).setNormal(pose, nx, ny, nz).setLineWidth(2f)
-            }
+            WorldRenderCompat.box(context, lines, net.minecraft.world.phys.AABB(minX, minY, minZ, maxX, maxY, maxZ), color)
         for ((hive, color) in visible) {
             box(hive.x.toDouble(), hive.y.toDouble(), hive.z.toDouble(), hive.x + 1.0, hive.y + 1.0, hive.z + 1.0, color)
             if (beamsBroken) box(hive.x + .35, hive.y + 1.0, hive.z + .35, hive.x + .65, hive.y + 64.0, hive.z + .65, color)
         }
-        buffers.endBatch(lines)
+        WorldRenderCompat.flush(context, lines)
     }
 
     // ------------------------------------------------------------------ storage

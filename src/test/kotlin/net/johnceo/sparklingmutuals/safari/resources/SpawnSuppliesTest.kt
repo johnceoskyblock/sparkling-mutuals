@@ -29,7 +29,7 @@ class SpawnSuppliesTest {
         run.birds.pickup("FLOOR DROP! Bag of Seeds", SafariBiome.FOREST)
         run.inventoryEvidence(listOf("Bag of Seeds" to 2, "Wriggleworm" to 1), 4000)
         run.inventoryEvidence(listOf("Bag of Seeds" to 2, "Wriggleworm" to 1), 4000)
-        run.inventoryEvidence(listOf("Bag of Seeds" to 20), 4001)
+        run.inventoryEvidence(listOf("Bag of Seeds" to 20), 7001)
         assertEquals(11, run.birds.sparklingTarget)
         val fresh = SafariRun(5000)
         fresh.inventoryEvidence(listOf("Yogi Berry" to 2), 4999)
