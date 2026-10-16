@@ -1,8 +1,8 @@
 # Capture-shot recorder and replay design
 
-**Status:** proposed written specification; awaiting review on [issue #51](https://github.com/johnceoskyblock/sparkling-mutuals/issues/51). No recorder or prediction is implemented by this document.
+**Status:** written specification approved by the maintainer in the implementation chat following [its review request on issue #51](https://github.com/johnceoskyblock/sparkling-mutuals/issues/51#issuecomment-6207382463). No recorder or prediction is implemented by this document. The implementation plan and execution method are the next review stage.
 
-The maintainer approved the [recorder-first direction](https://github.com/johnceoskyblock/sparkling-mutuals/issues/51#issuecomment-6199770401) in the implementation chat: “I approve of the recorder-first direction.” This approves preparing this specification. Implementation follows written-spec review, a written plan and its execution choice.
+The maintainer approved the [recorder-first direction](https://github.com/johnceoskyblock/sparkling-mutuals/issues/51#issuecomment-6199770401) in the implementation chat: “I approve of the recorder-first direction.” After this specification was posted for review, the maintainer replied: “Capture shot request is approved.” That approves this written specification; implementation follows review of the written plan and its execution choice.
 
 ## Purpose and delivery boundary
 
@@ -165,4 +165,4 @@ Recorder-phase acceptance is a usable bounded local recorder plus reproducible t
 
 ## Last updated
 
-2026-10-15 (America/New_York) - Wrote the proposed recorder-first specification after direction approval; defined evidence boundaries, controls, privacy, resource limits, replay, collection and validation. No product implementation is claimed.
+2026-10-15 (America/New_York) - Defined recorder evidence, controls, privacy, bounds, replay, collection and validation; recorded subsequent written-specification approval. No product implementation is claimed.
