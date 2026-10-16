@@ -1,6 +1,6 @@
 # Experimental ordinary-capsule path preview
 
-**Status: proposed written specification, awaiting human review in the implementation chat.** The human approved the limited-preview direction after the initial ordinary stationary visual-path check. That direction permits preparing this specification; product implementation follows written-specification review and implementation-plan approval. Approval requests stay in the chat until the human changes that instruction. Execution preference is Native.
+**Status: written specification approved by the human in the implementation chat.** After reviewing this document, the human answered **Approve the written specification**. The implementation plan is the next review stage; product implementation has not started. Approval requests stay in the chat until the human changes that instruction. Execution preference is Native.
 
 ## Purpose and evidence boundary
 
@@ -91,4 +91,4 @@ After the human reviews this written specification in chat, prepare a concrete N
 
 ## Last updated
 
-2026-10-16 (America/New_York) — Proposed the first conservative, opt-in path preview following conversational direction approval. Written specification review and implementation planning remain pending.
+2026-10-16 (America/New_York) — Defined the first conservative, opt-in path preview and recorded written-specification approval. Implementation-plan review remains pending.
