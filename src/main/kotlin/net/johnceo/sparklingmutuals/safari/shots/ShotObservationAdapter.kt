@@ -19,7 +19,7 @@ import net.minecraft.world.phys.*
 class ShotObservationAdapter(private val origin:ShotVector,private val cache:ShotEntityCache=ShotEntityCache(),
     private val emit:(ShotStamp,ShotObservation)->Unit) {
     private val targets=ShotTargetSampler()
-    private var scan:Iterator<Entity>?=null
+    private var scan:Iterator<Entity?>?=null
     private var nearbyPlayers=0
     private var scanningPlayers=0
     private var lastInput:Long?=null
@@ -77,9 +77,14 @@ class ShotObservationAdapter(private val origin:ShotVector,private val cache:Sho
         currentPose?.let { targetSnapshot(client,it,stamp) }
         gaps(stamp)
     }
-    internal fun <T> scanBatch(iterator:Iterator<T>,allowance:Int,stamp:ShotStamp,visit:(T)->Unit):Boolean {
+    internal fun <T:Any> scanBatch(iterator:Iterator<T?>,allowance:Int,stamp:ShotStamp,visit:(T)->Unit):Boolean {
         var count=0
-        while(count<allowance && iterator.hasNext()) { visit(iterator.next());count++ }
+        while(count<allowance && iterator.hasNext()) {
+            // The live Java entity map can clear slots between ticks of a retained iterator.
+            // Empty slots still consume work; callback failures must reach the recorder diagnostics.
+            val entity=iterator.next();count++
+            if(entity!=null) visit(entity)
+        }
         val pending=iterator.hasNext()
         if(pending) emit(stamp,ShotObservation.Gap(ShotGap.SCAN_PENDING))
         return pending

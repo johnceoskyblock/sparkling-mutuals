@@ -234,8 +234,9 @@ Verify Full Clear report trust: capture a variable species' minimum and perform 
 ### Recorder v2 volume/error follow-up
 
 - Automated: 64 moving targets plus busy target packets; input snapshots; static suppression; shared focus cadence; range changes; capsule packet preservation; 180-second / 20-throw and 600-second / nine-throw encoded budgets under unchanged caps. Check original local exceptions at hook/codec/writer boundaries and incomplete exports with safe status.
+- Automated scan recovery: clearing the real entity-map type between batches must skip empty slots within the allowance, retain later capsule packets and allow normal finalization; genuine inspection failures still propagate for diagnostics.
 - Gameplay pending: repeat the small ordinary-capsule sanity block in a populated Safari area, then inspect target coverage and raw capsule continuity with hiding off/on. Record status near start/stop. On error, retain the chosen JSONL and recorder-related `latest.log` excerpt; synthetic tests do not establish live field fidelity.
 
 ## Last updated
 
-2026-10-16 (America/New_York) - Added recorder v2 populated-area budget and diagnostic checks; gameplay field fidelity remains pending.
+2026-10-16 (America/New_York) - Added recorder v2 populated-area budget, diagnostic and cleared-entity-map recovery checks; gameplay field fidelity remains pending.
