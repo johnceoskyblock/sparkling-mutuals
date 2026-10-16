@@ -55,9 +55,10 @@ Runtime assets, mod metadata and mixin registration remain under `src/main/resou
 | [Contest downtime](CONTEST_DOWNTIME.md) | Ticket events and downtime coordination |
 | [Manual checklist](IMPLEMENTATION_TEST_CHECKLIST.md) | In-game checks that unit tests cannot establish |
 | [Documentation sync](SOURCE_SYNC.md) | Reviewing document revisions against the source baseline |
+| [Issue implementation handoff](AI_ISSUE_HANDOFF.md) | Required documentation onboarding, source context and revision checks for issue implementation |
 | [GitHub Releases](https://github.com/johnceoskyblock/sparkling-mutuals/releases) | Release notes, upgrade guidance and validation for each published version |
 
-`docs/issues/` holds pending implementation briefs and their reference assets. Remove completed briefs after their lasting rules and evidence are represented in maintained docs and regression tests. Older briefs may name source paths from before this organization; use the package table above to locate moved files.
+Track implementation requests and progress directly in [GitHub Issues](https://github.com/johnceoskyblock/sparkling-mutuals/issues). Read the current issue, relevant comments and reference attachments before implementation. Keep lasting behavior and contributor guidance in the maintained docs above; do not duplicate issue briefs in the repository. Attach issue-specific reference files on GitHub or use immutable links to files already committed in Git history.
 
 ## Local and generated files
 
@@ -65,4 +66,4 @@ Gradle's `.gradle/`, `.kotlin/` and `build/`, IDE settings, the development clie
 
 ## Last updated
 
-2026-10-15 - Documented feature packages, matching test organization and GitHub Releases as the release-note source of truth.
+2026-10-16 - Made GitHub Issues the home for implementation requests and reference attachments; retained the issue implementation handoff and revision-review workflow.
