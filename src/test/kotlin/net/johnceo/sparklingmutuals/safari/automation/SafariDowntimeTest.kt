@@ -20,7 +20,7 @@ class SafariDowntimeTest {
         assertTrue(SafariDowntime.ticketEarned("sTeVe"))
         assertEquals("Alex", SafariDowntime.holders())
         SafariDowntime.chat("Party > Alex: Ticket earned!", false, "Me")
-        assertTrue(SafariDowntime.holding)
+        assertFalse(SafariDowntime.holding, "Ticket earned is ready for any reason")
         SafariDowntime.chat("Party > Alex: r", false, "Me")
         assertFalse(SafariDowntime.holding)
     }
@@ -143,4 +143,37 @@ class SafariDowntimeTest {
         assertNull(SafariDowntime.leftSafari("Me"))
     }
 
+    @Test fun `transfer retains active and banked requests and confirmed roster removes only departed UUIDs`() {
+        SafariDowntime.chat("Party > Farmer: !dt food", true, "Me")
+        SafariDowntime.transfer()
+        assertTrue(SafariDowntime.holding, "banked request becomes the next-entry hold on transfer")
+        assertEquals("Downtime requested: Farmer (food)", SafariDowntime.leftSafari("Farmer"))
+        assertNull(SafariDowntime.leftSafari("Farmer"), "announce once")
+        assertEquals("Farmer", SafariDowntime.holders())
+        SafariDowntime.leftSafari("Me")
+        assertTrue(SafariDowntime.holding)
+        SafariDowntime.chat("Party > Steve: !dt contest", false, "Me")
+        SafariDowntime.pruneVerified(mapOf("farmer" to "a", "steve" to "b"), setOf("b"))
+        assertEquals("Steve", SafariDowntime.holders())
+        assertTrue(SafariDowntime.holding)
+        SafariDowntime.chat("Party > Steve: r", false, "Me")
+        assertFalse(SafariDowntime.holding)
+    }
+    @Test fun `case variants update one request and quoted readiness never releases somebody else`() {
+        SafariDowntime.chat("Party > Farmer: !dt food", false, "Me")
+        SafariDowntime.chat("Party > fArMeR: !dt brb", false, "Me")
+        assertEquals("Farmer", SafariDowntime.holders())
+        SafariDowntime.chat("Party > Steve: Farmer r", false, "Me")
+        SafariDowntime.chat("Party > Steve: Farmer Ticket earned!", false, "Me")
+        assertTrue(SafariDowntime.holding)
+        assertFalse(SafariDowntime.ticketEarned("Farmer"), "local scoreboard is only applicable to contest requests")
+        SafariDowntime.chat("Party > FARMER: Ticket earned!", false, "Me")
+        assertFalse(SafariDowntime.holding)
+    }
+    @Test fun `Torrhus interaction holds banked readiness before the run exit tick`() {
+        SafariDowntime.chat("Party > Farmer: !dt food", true, "Me")
+        assertFalse(SafariDowntime.holding)
+        assertTrue(EntryGuardDecision.block(EntryStage.TORRHUS, false, SafariDowntime.entryHold, false, true, false))
+        assertFalse(EntryGuardDecision.block(EntryStage.SAFARI, true, SafariDowntime.entryHold, false, true, false))
+    }
 }

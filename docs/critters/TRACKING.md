@@ -7,6 +7,8 @@ Based on the supplied Hypixel Safari observations, clarified on 2026-10-14. [Exa
 ## Entry and starting resources
 
 - Entry is through the Safari Manager at Critter Safari Entrance on the canyon server (called Torrhus Canyon in the supplied description).
+[Entry protection](../SAFARI_ENTRY_GUARD.md) holds Torrhus entry for requester readiness and Safari waiting entry for kick recovery/current-party presence; no Shift bypass. These checks do not add catches, starting items or confirmed admissions.
+
 - The global entry banner names the IGN (possibly with rank/Chat Heads text); the separate queue attempt is visible only to the leader. The transfer goes to `mini` plus four characters. Queue attempts are not multiple completed entries.
 - The Manager admits leaders with `I already saw your ticket, so you're free to go.` and members with `Looks good to me. Have fun out there!`. Keep the applicable acknowledgement associated with the same entry; a retry alone must not award another starting item.
 - Record ticket type: Basic, Economy, Premium or First Class. Basic adds no ticket-specific starting quest item. No additional Economy/Premium effect is specified here.
@@ -310,3 +312,4 @@ After one local clearing-completion trigger, keep all unsent independently eligi
 2026-10-15 - Corrected incense limits to 4/3/2 for 0/1/2 starting incense; retained unified positive detection and ordinary scan circles.
 
 2026-10-15 - Fixed complete, independently gated starting-resource reminder delivery (#55).
+2026-10-16 - Linked entry readiness/kick/presence protection; retained all shared evidence rules.

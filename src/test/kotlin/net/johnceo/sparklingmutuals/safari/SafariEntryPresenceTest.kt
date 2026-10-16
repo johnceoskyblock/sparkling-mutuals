@@ -24,20 +24,22 @@ class SafariEntryPresenceTest {
     }
     private val instance = Any()
     private val party = setOf("me", "friend")
-    @Test fun `arrival gives three seconds and waits for the local server list before reporting missing`() {
+    @Test fun `arrival never grants an early loading bypass`() {
         val state = SafariEntryPresence()
         state.update(100, true, false, instance, party, setOf("me"), "me")
         state.update(3099, true, false, instance, party, setOf("me"), "me")
-        assertTrue(state.missing.isEmpty())
+        assertEquals(setOf("friend"), state.missing)
+        assertFalse(state.ready)
         state.update(3100, true, false, instance, party, emptySet(), "me")
-        assertTrue(state.missing.isEmpty())
+        assertEquals(party, state.missing)
+        assertFalse(state.ready)
         state.update(3101, true, false, instance, party, setOf("me"), "me")
         assertEquals(setOf("friend"), state.missing)
     }
     @Test fun `presence is continuously reevaluated as members warp in and leave`() {
         val state = SafariEntryPresence()
         state.update(0, true, false, instance, party, setOf("me"), "me")
-        assertTrue(state.update(3000, true, false, instance, party, setOf("me"), "me"))
+        assertFalse(state.update(3000, true, false, instance, party, setOf("me"), "me"))
         assertFalse(state.update(3100, true, false, instance, party, setOf("me"), "me"))
         assertTrue(state.update(3200, true, false, instance, party, party, "me"))
         assertTrue(state.missing.isEmpty())
@@ -55,13 +57,14 @@ class SafariEntryPresenceTest {
         state.update(14001, true, true, instance, party, setOf("me"), "me")
         assertTrue(state.missing.isEmpty())
     }
-    @Test fun `a changed instance restarts grace and clears stale missing players`() {
+    @Test fun `a changed instance requires its current player list without grace`() {
         val state = SafariEntryPresence()
         state.update(0, true, false, instance, party, setOf("me"), "me")
         state.update(3000, true, false, instance, party, setOf("me"), "me")
         val next = Any()
         state.update(4000, true, false, next, party, setOf("me"), "me")
-        assertTrue(state.missing.isEmpty())
+        assertEquals(setOf("friend"), state.missing)
+        assertFalse(state.ready)
         state.update(7000, true, false, next, party, setOf("me"), "me")
         assertFalse(state.missing.isEmpty())
     }
@@ -77,13 +80,5 @@ class SafariEntryPresenceTest {
         assertTrue(state.missing.isEmpty())
         state.update(4200, true, false, instance, null, setOf("abcd"), "abcd")
         assertTrue(state.missing.isEmpty())
-    }
-    @Test fun `Shift bypasses every entry hold but ordinary clicks obey kick downtime or absence`() {
-        for ((kick, downtime, missing) in listOf(Triple(true, false, false), Triple(false, true, false), Triple(false, false, true))) {
-            assertTrue(SafariEntryPresence.blocks(true, false, kick, downtime, missing, false))
-            assertFalse(SafariEntryPresence.blocks(true, false, kick, downtime, missing, true))
-            assertFalse(SafariEntryPresence.blocks(false, false, kick, downtime, missing, false))
-            assertFalse(SafariEntryPresence.blocks(true, true, kick, downtime, missing, false))
-        }
     }
 }
