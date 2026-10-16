@@ -76,7 +76,7 @@ Use the [37 individual critter notes](docs/critters/README.md) for species rules
 - **`!tickets <IGN>`:** show a player's Safari ticket counts.
 - **`!m [biome]`:** report what remains in the current Safari run.
 - **`!dt [reason]` / `r`:** request downtime after the run and release your hold when ready. Earning an Uncommon contest ticket announces **Ticket earned!** and clears your contest hold.
-- **Safari entry guard:** block Manager, ticket and entry GUI clicks after kick requests or while party members are absent; Shift-click to override.
+- **Safari entry guard:** hold Torrhus entry for party readiness and Safari entry for kicks or missing members; no Shift bypass.
 - **`/sparkling [IGN|party|IGNs]`:** show Safari player cards or compare sparkling collections.
 - **`!pb <biome>`:** share Forest, Cavern, Icy, or Haunted PBs for the active mode.
 - **`!pb doom` / `!pb wumpa`:** share solo boss PBs; add `duo` or an IGN for other records.
@@ -118,4 +118,4 @@ Per-drop colors are configurable in **ESP → Floor-drop colors**. **Miria conte
 
 ## Last updated
 
-2026-10-15 - Added exact three-target development installation guidance; distinguished future multi-version releases from the existing published release.
+2026-10-16 - Summarized stage-specific Safari entry protection without a Shift override.

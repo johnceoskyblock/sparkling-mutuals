@@ -65,6 +65,8 @@ Runtime assets, mod metadata and mixin registration remain under `src/main/resou
 
 Gradle's `.gradle/`, `.kotlin/` and `build/`, IDE settings, the development client's `run/`, and local `logs/` are ignored working files. They are not source folders. Keep local authentication files and development profiles in place when doing routine repository cleanup.
 
+See [Safari entry guard](SAFARI_ENTRY_GUARD.md) for stage-specific readiness, kick recovery, identity and presence evidence.
+
 ## Last updated
 
-2026-10-15 - Added compatibility/build-helper owners, per-target test locations and the multi-version build guide.
+2026-10-16 - Indexed stage-specific Safari entry protection.

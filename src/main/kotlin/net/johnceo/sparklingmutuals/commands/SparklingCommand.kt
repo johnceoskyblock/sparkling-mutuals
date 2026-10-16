@@ -49,6 +49,9 @@ object SparklingCommand {
                         open { HistoryScreen(null, HistoryScreen.Tab.STATS) } })
                     .then(ClientCommands.literal("debug").executes { context ->
                         SafariEsp.debug(Minecraft.getInstance())
+                        net.johnceo.sparklingmutuals.safari.automation.SafariManagerGuard.debug().forEach {
+                            org.slf4j.LoggerFactory.getLogger("sparkling-mutuals/entry-guard").info(it)
+                        }
                         BeeNests.debug(Minecraft.getInstance())
                         HoneyHives.debug(Minecraft.getInstance())
                         context.source.sendFeedback(LocalChat.component("[SM] Entity, nest and honeyhive diagnostics saved to latest.log."))

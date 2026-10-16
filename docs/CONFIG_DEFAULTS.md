@@ -33,6 +33,10 @@ The existing enabled **Warp reminder** / `/alert` setting now shows the timer al
 
 The History tab begins with the **History** button, followed immediately by **Import History from Logs**. Import is an explicit action that backfills both histories from existing logs. There is no **Import logs on launch** toggle or automatic startup scan: normal sessions already record history live. Older saved auto-import settings are ignored. See [history import](HISTORY_IMPORT.md) for supported files, estimates and merge rules.
 
+## Safari entry protection
+
+**Guard Safari entry** and **!dt downtime** retain their independent saved switches. Guard Safari entry controls Safari-instance kick/presence checks; downtime controls Torrhus readiness holds. Shift does not override either. See [entry guard](SAFARI_ENTRY_GUARD.md).
+
 ## Last updated
 
-2026-10-15 - Documented automatic /p warp under the existing alert toggle; retained contest request, color and History settings.
+2026-10-16 - Clarified independent Safari entry settings and removed the sneak override.

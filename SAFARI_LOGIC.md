@@ -62,6 +62,8 @@ Documentation revisions and source synchronization: [SOURCE_SYNC.md](docs/SOURCE
 
 A detected Sparkling of any species blocks its biome completion in **every mode**, regardless of party discoveries. Retain the obligation after unloading/reentry, require a confirmed Sparkling catch, and reopen completion if a new Sparkling appears. Party biome reports and ordinary catches cannot bypass it. See [Sparkling capture obligations](docs/critters/TRACKING.md#sparkling-captures-block-biome-completion-in-every-mode).
 
+Safari entry protection is stage-specific: [Torrhus readiness and Safari kick/presence checks](docs/SAFARI_ENTRY_GUARD.md). Sender-specific party readiness clears only that sender's hold; unknown/loading presence stays blocked. Shift never bypasses entry protection.
+
 ## Last updated
 
-2026-10-15 - Added mandatory capture of any observed Sparkling before biome completion in every mode; retained boss capture exceptions.
+2026-10-16 - Added stage-specific entry protection; retained all capture/check evidence rules.

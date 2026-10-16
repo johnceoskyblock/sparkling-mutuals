@@ -15,14 +15,16 @@ object SafariIsland {
     const val MODE = "safari"
     @Volatile var onIsland = false
         private set
+    var currentMode: String? = null
+        private set
 
     fun register() {
         HypixelNetworking.registerToEvents(Object2IntOpenHashMap<net.minecraft.network.protocol.common.custom.CustomPacketPayload.Type<HypixelS2CPacket>>()
             .apply { put(LocationUpdateS2CPacket.ID, 1) })
         HypixelPacketEvents.LOCATION_UPDATE.register { packet ->
-            if (packet is LocationUpdateS2CPacket) Minecraft.getInstance().execute { onIsland = isSafari(packet.mode().orElse(null)) }
+            if (packet is LocationUpdateS2CPacket) Minecraft.getInstance().execute { currentMode = packet.mode().orElse(null); onIsland = isSafari(currentMode) }
         }
     }
     fun isSafari(mode: String?) = mode.equals(MODE, true)
-    fun reset() { onIsland = false }
+    fun reset() { onIsland = false; currentMode = null }
 }

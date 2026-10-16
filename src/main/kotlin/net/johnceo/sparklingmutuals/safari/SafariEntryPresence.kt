@@ -12,46 +12,24 @@ class SafariEntryRunState {
     fun reset() { instance = null; entered = false }
 }
 
-/** Presence in the server player list, independent of entity render distance. */
+/** Current connection player-list membership, independent of entity render distance. Unknown is never ready. */
 class SafariEntryPresence {
     var missing: Set<String> = emptySet()
         private set
-    private var waiting = false
-    private var instance: Any? = null
-    private var readyAt = 0L
-
+    var ready = false
+        private set
     fun update(now: Long, onIsland: Boolean, inRun: Boolean, instance: Any?,
                members: Set<String>?, online: Set<String>, self: String): Boolean {
-        val previous = missing
-        if (!onIsland || inRun || instance == null) {
-            reset()
-        } else {
-            if (!waiting || this.instance !== instance) {
-                waiting = true
-                this.instance = instance
-                readyAt = now + 3_000L
-            }
-            val present = online.mapTo(HashSet(), ::normalize)
-            missing = if (now < readyAt || members == null || normalize(self) !in present) emptySet()
-                else members.mapTo(HashSet(), ::normalize) - present
-        }
-        return missing != previous
+        val previous = missing to ready
+        val present = online.mapTo(HashSet(), ::normalize)
+        val roster = members?.mapTo(HashSet(), ::normalize)
+        missing = if (onIsland && !inRun && instance != null && roster != null) roster - present else emptySet()
+        ready = onIsland && !inRun && instance != null && roster != null && normalize(self) in present && missing.isEmpty()
+        return previous != (missing to ready)
     }
-
-    fun reset() {
-        missing = emptySet()
-        waiting = false
-        instance = null
-        readyAt = 0L
-    }
-
+    fun reset() { missing = emptySet(); ready = false }
     companion object {
-        private fun normalize(uuid: String) = uuid.replace("-", "").lowercase()
-        fun blocks(onIsland: Boolean, inRun: Boolean, kick: Boolean, downtime: Boolean,
-                   missing: Boolean, shift: Boolean) =
-            onIsland && !inRun && (kick || downtime || missing) && !shift
-
-        // The Canyon-to-island chat message is not evidence of entering the actual run.
+        fun normalize(uuid: String) = uuid.replace("-", "").lowercase()
         fun inRun(location: SafariLocation, mappedArea: Int?) =
             location == SafariLocation.INSIDE && mappedArea in 0..4
     }

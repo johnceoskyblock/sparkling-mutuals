@@ -86,7 +86,6 @@ object SparklingMutuals : ModInitializer {
         TeammateEsp.register()
         SafariIsland.register()
         SafariManagerGuard.register()
-        SafariDowntime.register()
     }
 
     private fun registerCallbacks() {
@@ -142,7 +141,8 @@ object SparklingMutuals : ModInitializer {
         SafariEsp.reset()
         AutoClicker.reset()
         SafariManagerGuard.reset()
-        SafariDowntime.reset()
+        SafariDowntime.transfer()
+        net.johnceo.sparklingmutuals.safari.automation.SafariPartyInput.disconnect()
         SafariIsland.reset()
     }
 

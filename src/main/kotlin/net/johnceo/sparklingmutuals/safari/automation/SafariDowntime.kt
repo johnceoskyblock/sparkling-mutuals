@@ -1,17 +1,15 @@
 package net.johnceo.sparklingmutuals.safari.automation
 
-import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents
 import net.johnceo.sparklingmutuals.LocalChat
 import net.johnceo.sparklingmutuals.commands.PartyChat
 import net.johnceo.sparklingmutuals.config.ConfigManager
-import net.johnceo.sparklingmutuals.safari.SafariAssist
 import net.johnceo.sparklingmutuals.safari.SafariRules
 import net.minecraft.client.Minecraft
 
 /**
  * `!dt [reason]` in party chat: someone wants a break after this run. The request waits until the run ends, then the
  * requester's own client posts "X has requested downtime" (one client, not every member's) and every client holds the
- * Safari Manager shut until the requester says `r`, earns their contest ticket, or someone sneak-clicks past it once. Asked outside the Safari,
+ * Safari Manager shut until the requester says `r`, earns their contest ticket, or personally announces Ticket earned!. Asked outside the Safari,
  * it takes effect straight away. Requests leave with their requester: someone leaving or being removed from the party
  * drops theirs, and this client leaving, joining another party or the party disbanding drops them all. Turning the
  * setting off drops everything too.
@@ -34,18 +32,11 @@ object SafariDowntime {
     /** Requester -> reason (may be empty), in the order they asked. */
     private val requests = linkedMapOf<String, String>()
     private var active = false
+    private var announcementDue = false
     /** A hold only stands while the setting is on, so switching it off releases the manager at once. */
     val holding get() = active && ConfigManager.downtimeCommand
-    private var wasInSafari = false
-
-    fun register() {
-        ClientReceiveMessageEvents.GAME.register { message, overlay ->
-            if (!overlay) Minecraft.getInstance().execute {
-                val client = Minecraft.getInstance()
-                chat(message.string, SafariAssist.inSafari, client.player?.name?.string.orEmpty())?.let(::send)
-            }
-        }
-    }
+    /** Torrhus entry must see banked requests synchronously, even before the next run-exit tick. */
+    val entryHold get() = requests.isNotEmpty() && ConfigManager.downtimeCommand
 
     /** Handles one chat line; returns a party message this client should send, if any. */
     fun chat(text: String, inSafari: Boolean, self: String): String? {
@@ -54,12 +45,13 @@ object SafariDowntime {
         val chat = PartyChat.parse(text) ?: return null
         request.matchEntire(chat.body)?.let { match ->
             val reason = match.groupValues[1].trim()
-            requests[chat.sender] = reason
+            val existing = requests.keys.firstOrNull { it.equals(chat.sender, true) }
+            requests[existing ?: chat.sender] = reason
             tell("[SM] ${chat.sender} wants downtime after this run" + if (reason.isEmpty()) "." else ": $reason")
             return if (!inSafari) leftSafari(self) else null
         }
         if (chat.body.equals("Ticket earned!", ignoreCase = true)) {
-            ticketEarned(chat.sender)
+            ready(chat.sender)
             return null
         }
         if (resume.matches(chat.body)) {
@@ -73,6 +65,19 @@ object SafariDowntime {
         return null
     }
 
+    /** Party readiness is sender-specific for every reason; local scoreboard still calls ticketEarned. */
+    fun ready(player: String): Boolean {
+        val key = requests.keys.firstOrNull { it.equals(player, true) } ?: return false
+        requests.remove(key)
+        if (requests.isEmpty()) active = false
+        tell("[SM] $key is ready." + if (active) " Still waiting on ${holders()}." else " Downtime cleared.")
+        return true
+    }
+    /** A connection transfer invalidates run context, not the same party's requests. */
+    fun transfer() {
+        if (!active && requests.isNotEmpty()) { active = true; announcementDue = true }
+    }
+
     /** A ticket releases only this player's contest request, pending or already blocking entry. */
     fun ticketEarned(player: String): Boolean {
         val key = requests.entries.firstOrNull { it.key.equals(player, true) && it.value.equals("contest", true) }?.key
@@ -82,6 +87,8 @@ object SafariDowntime {
         tell("[SM] $key earned a ticket. " + if (active) "Still waiting on ${holders()}." else "Contest downtime cleared.")
         return true
     }
+
+    fun partyResetSignal(line: String) = partyGone.any { it.matches(SafariRules.strip(line).trim()) }
 
     /** Party membership notices. Returns whether the line was one, so it isn't read as chat. */
     private fun partyChanged(line: String): Boolean {
@@ -103,24 +110,34 @@ object SafariDowntime {
     /** The run is over: banked requests become a hold. Returns the requester's own announcement, if this is them. */
     fun leftSafari(self: String): String? {
         if (!ConfigManager.downtimeCommand) { clear(); return null }
-        if (requests.isEmpty() || active) return null
-        active = true
-        tell("[SM] Safari Manager held for downtime. Say r in party chat when ready (sneak-click to skip).")
+        if (requests.isEmpty()) return null
+        if (!active) {
+            active = true; announcementDue = true
+            tell("[SM] Safari Manager held for downtime. Say r in party chat when ready.")
+        }
+        if (!announcementDue || self.isBlank()) return null
+        announcementDue = false
         val mine = requests.entries.firstOrNull { it.key.equals(self, true) } ?: return null
         return "${mine.key} has requested downtime" + if (mine.value.isEmpty()) "" else " for reason: ${mine.value}"
     }
 
     fun onClientTick(client: Minecraft) {
         if (!ConfigManager.downtimeCommand && (active || requests.isNotEmpty())) clear()
-        val inSafari = SafariAssist.inSafari
-        if (wasInSafari && !inSafari) leftSafari(client.player?.name?.string.orEmpty())?.let(::send)
-        wasInSafari = inSafari
+        if (client.player == null || client.connection == null || !net.johnceo.sparklingmutuals.party.PartyManager.hasInfo) return
+        val inSafari = SafariManagerGuard.activeRun(client)
+        if (!inSafari) leftSafari(client.player?.name?.string.orEmpty())?.let(::send)
+    }
+
+    /** Remove only identities proven absent from the new known party, not people merely outside render range. */
+    fun pruneVerified(ids: Map<String, String>, members: Set<String>) {
+        requests.keys.removeAll { name -> ids[name.lowercase()]?.let { it !in members } == true }
+        if (requests.isEmpty()) active = false
     }
 
     fun holders() = requests.keys.joinToString(", ")
-    /** The one-time bypass: a sneak-click on the manager ends the hold for good. */
-    fun clear() { active = false; requests.clear() }
-    fun reset() { clear(); wasInSafari = false }
+    /** Explicit disable or confirmed party change drops requests. */
+    fun clear() { active = false; announcementDue = false; requests.clear() }
+    fun reset() { clear() }
 
     private fun send(message: String) { Minecraft.getInstance().player?.connection?.sendCommand("pc $message") }
     private fun tell(text: String) { Minecraft.getInstance()?.player?.sendSystemMessage(LocalChat.component(text)) }
