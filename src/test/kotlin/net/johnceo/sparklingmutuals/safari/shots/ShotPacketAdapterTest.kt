@@ -35,7 +35,9 @@ class ShotPacketAdapterTest {
         e.base=ShotVector(100.123456,40.222222,-20.333333)
         val codec=net.minecraft.network.protocol.game.VecDeltaCodec().also { it.setBase(net.minecraft.world.phys.Vec3(e.base!!.x,e.base!!.y,e.base!!.z)) }
         val expected=net.johnceo.sparklingmutuals.compat.ShotPacketCompat.vector(codec.decode(10,0,-10))
-        ShotPacketAdapter.translate(e,ShotPacketUpdate.Move(1,listOf(ShotPathPoint(ShotVector(10.0/4096,0.0,-10.0/4096)))),origin,50)
+        val packet=ShotPacketAdapter.translate(e,ShotPacketUpdate.Move(1,listOf(ShotPathPoint(ShotVector(10.0/4096,0.0,-10.0/4096)))),origin,50)
         assertEquals(expected,e.base)
+        assertEquals(expected-origin,packet.resolvedPoints.single().position)
+        assertEquals(expected-origin,packet.resolvedEnd)
     }
 }

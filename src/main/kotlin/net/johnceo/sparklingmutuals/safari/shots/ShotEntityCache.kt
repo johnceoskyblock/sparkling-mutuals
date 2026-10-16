@@ -8,7 +8,7 @@ class ShotEntityCache {
         var sample:ShotVector?=null
     }
     data class Pending(val identity:String,val position:ShotVector,val micros:Long,
-        val updates:MutableList<Pair<Long,ShotPacketUpdate>> = mutableListOf())
+        val updates:MutableList<Pair<Long,ShotPacketUpdate>> = mutableListOf(),var currentBase:ShotVector=position)
     private val live=linkedMapOf<Int,Entry>()
     private val pending=linkedMapOf<Int,Pending>()
     private val gaps=linkedSetOf<ShotGap>()
@@ -18,6 +18,7 @@ class ShotEntityCache {
     val pendingCount get()=pending.size
     fun entries()=live.values.toList()
     fun get(id:Int)=live[id]
+    fun packetBase(id:Int)=live[id]?.base ?: pending[id]?.currentBase
     fun pendingSpawn(id:Int,identity:String,position:ShotVector,micros:Long) {
         if (pending.size>=256 && id !in pending) { pending.remove(pending.keys.first());gaps.add(ShotGap.CACHE_BACKLOG) }
         pending[id]=Pending(identity,position,micros)
@@ -26,6 +27,12 @@ class ShotEntityCache {
         val p=pending[update.id] ?: return
         if(p.updates.size>=8) { p.updates.removeAt(0);gaps.add(ShotGap.CACHE_BACKLOG) }
         p.updates.add(micros to update)
+        when(update) {
+            is ShotPacketUpdate.Move -> update.resolvedEnd?.let { p.currentBase=it }
+            is ShotPacketUpdate.PositionSync -> (update.end ?: update.points.lastOrNull()?.position)?.let { p.currentBase=it }
+            is ShotPacketUpdate.Spawn -> p.currentBase=update.position
+            else -> {}
+        }
     }
     fun takePending(id:Int)=pending.remove(id)
     fun expire(micros:Long) { pending.entries.removeIf { micros-it.value.micros>500_000 } }

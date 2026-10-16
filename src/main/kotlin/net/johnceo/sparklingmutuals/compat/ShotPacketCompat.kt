@@ -23,28 +23,37 @@ object ShotPacketCompat {
         return result.toList()
     }
     *///? }
-    fun copy(packet:Any,level:ClientLevel):List<ShotPacketUpdate> = when(packet) {
+    fun copy(packet:Any,level:ClientLevel,base:(Int)->ShotVector?={null}):List<ShotPacketUpdate> = when(packet) {
         is ClientboundAddEntityPacket -> listOf(ShotPacketUpdate.Spawn(packet.id,packet.uuid.toString(),ShotVector(packet.x,packet.y,packet.z)))
         is ClientboundMoveEntityPacket -> {
             val e=packet.getEntity(level)
             if(e==null) emptyList() else {
                 // Decode against our own zero base to retain raw deltas. Never touch the entity codec.
                 val codec=VecDeltaCodec().also { it.setBase(Vec3.ZERO) }
+                val known=base(e.id)
+                val resolvedCodec=known?.let { p -> VecDeltaCodec().also { it.setBase(Vec3(p.x,p.y,p.z)) } }
                 //? if >=26.3 {
                 /*val raw=packet.positionDelta.decode(codec)
                 val points=if(packet.hasPosition()) path(raw) else emptyList()
                 val truncated=(raw as? PositionPath.Stepped)?.steps()?.size?.let { it>64 }==true
+                val endpoint=vector(raw.endPosition())
+                val absolute=resolvedCodec?.let { packet.positionDelta.decode(it) }
+                val resolved=absolute?.let(::path)
+                val resolvedEnd=absolute?.endPosition()?.let(::vector)
                 *///? } else {
                 val points=if(packet.hasPosition()) listOf(ShotPathPoint(vector(codec.decode(packet.xa.toLong(),packet.ya.toLong(),packet.za.toLong())))) else emptyList()
                 val truncated=false
+                val endpoint=points.lastOrNull()?.position
+                val resolved=if(packet.hasPosition()) resolvedCodec?.let { listOf(ShotPathPoint(vector(it.decode(packet.xa.toLong(),packet.ya.toLong(),packet.za.toLong())))) } else null
+                val resolvedEnd=resolved?.lastOrNull()?.position
                 //? }
-                listOf(ShotPacketUpdate.Move(e.id,points,packet.yRot.takeIf { packet.hasRotation() },packet.xRot.takeIf { packet.hasRotation() },truncated))
+                listOf(ShotPacketUpdate.Move(e.id,points,packet.yRot.takeIf { packet.hasRotation() },packet.xRot.takeIf { packet.hasRotation() },truncated,endpoint,resolved,resolvedEnd))
             }
         }
         is ClientboundEntityPositionSyncPacket -> {
             //? if >=26.3 {
             /*listOf(ShotPacketUpdate.PositionSync(packet.id(),path(packet.position()),packet.yRot(),packet.xRot(),
-                (packet.position() as? PositionPath.Stepped)?.steps()?.size?.let { it>64 }==true))
+                (packet.position() as? PositionPath.Stepped)?.steps()?.size?.let { it>64 }==true,vector(packet.position().endPosition())))
             *///? } else {
             listOf(ShotPacketUpdate.PositionSync(packet.id(),listOf(ShotPathPoint(vector(packet.values().position()))),packet.values().yRot(),packet.values().xRot()))
             //? }

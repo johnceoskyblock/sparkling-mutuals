@@ -29,7 +29,7 @@ object ShotObservationHooks {
     fun tick(client:Minecraft)=observe { adapter?.tick(client,clock()) }
     fun packet(packet:Any)=observe {
         val client=Minecraft.getInstance();val level=client.level ?: return@observe
-        ShotPacketCompat.copy(packet,level).forEach { adapter?.packet(client,it,clock()) }
+        ShotPacketCompat.copy(packet,level) { adapter?.packetBase(it) }.forEach { adapter?.packet(client,it,clock()) }
     }
     fun use(player:Player,hand:InteractionHand,route:ShotUseRoute):ShotInputToken? {
         if(adapter==null) return null
