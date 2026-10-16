@@ -4,6 +4,24 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class ShotSessionTest {
+    @Test fun `expired terminal evidence survives the next ring trim and stop`() {
+        val s=session();s.accept(at(0),ShotTestFixtures.input("s1"))
+        val capsule=ShotObservation.Capsule("c1",1,ShotVariant.ORDINARY,ShotEntityAction.DISCOVERED,ShotTestFixtures.zero,discovery=ShotDiscovery.SPAWN)
+        s.accept(at(1),capsule)
+        s.accept(at(8_000_001),capsule.copy(action=ShotEntityAction.REMOVED,removal=ShotRemoval.WINDOW_EXPIRED))
+        s.advance(at(9_000_000));s.stop(at(9_000_001),ShotStopReason.USER_STOP)
+        val terminal=sink.records().filter { it.get("kind")?.asString=="capsule" }.last()["data"].asJsonObject
+        assertEquals("removed",terminal["action"].asString);assertEquals("window_expired",terminal["removal"].asString)
+        assertTrue(sink.records().last()["complete"].asBoolean)
+    }
+    @Test fun `stopping with a live track retains explicit incomplete termination`() {
+        val s=session();s.accept(at(0),ShotTestFixtures.input("s1"))
+        s.accept(at(1),ShotObservation.Capsule("c1",1,ShotVariant.ORDINARY,ShotEntityAction.DISCOVERED,ShotTestFixtures.zero,discovery=ShotDiscovery.SPAWN))
+        s.stop(at(2),ShotStopReason.USER_STOP)
+        val terminal=sink.records().filter { it.get("kind")?.asString=="capsule" }.last()["data"].asJsonObject
+        assertEquals("removed",terminal["action"].asString);assertEquals("recording_stopped",terminal["removal"].asString)
+        assertEquals(0,budget.usedBytes)
+    }
     @Test fun `known capsule variant feedback does not attach to incompatible input variants`() {
         val session=session()
         session.accept(at(0),ShotTestFixtures.input("ordinary"))

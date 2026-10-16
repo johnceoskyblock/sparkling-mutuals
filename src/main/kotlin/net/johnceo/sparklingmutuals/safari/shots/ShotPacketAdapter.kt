@@ -13,6 +13,16 @@ sealed interface ShotPacketUpdate {
     data class Removed(override val id:Int):ShotPacketUpdate
 }
 object ShotPacketAdapter {
+    fun nextBase(old:ShotVector?,u:ShotPacketUpdate):ShotVector? = when(u) {
+            is ShotPacketUpdate.Spawn -> u.position
+            is ShotPacketUpdate.PositionSync -> u.end ?: u.points.lastOrNull()?.position ?: old
+            is ShotPacketUpdate.Move -> u.resolvedEnd ?: old?.let { p -> (u.end ?: u.points.lastOrNull()?.position)?.let { net.johnceo.sparklingmutuals.compat.ShotPacketCompat.resolveDelta(p,it) } ?: p }
+            is ShotPacketUpdate.Teleport -> if(old==null && u.flags.any { it in listOf("X","Y","Z") }) null else ShotVector(
+                u.position.x+if("X" in u.flags) old!!.x else 0.0,
+                u.position.y+if("Y" in u.flags) old!!.y else 0.0,
+                u.position.z+if("Z" in u.flags) old!!.z else 0.0)
+            else -> old
+        }
     fun translate(e:ShotEntityCache.Entry,u:ShotPacketUpdate,origin:ShotVector,observedMicros:Long):ShotObservation.Packet {
         val old=e.base
         val points=when(u) {
@@ -25,16 +35,7 @@ object ShotPacketAdapter {
                 u.position.z-if("Z" in u.flags) 0.0 else origin.z)))
             else -> emptyList()
         }
-        e.base=when(u) {
-            is ShotPacketUpdate.Spawn -> u.position
-            is ShotPacketUpdate.PositionSync -> u.end ?: u.points.lastOrNull()?.position ?: old
-            is ShotPacketUpdate.Move -> u.resolvedEnd ?: old?.let { p -> (u.end ?: u.points.lastOrNull()?.position)?.let { net.johnceo.sparklingmutuals.compat.ShotPacketCompat.resolveDelta(p,it) } ?: p }
-            is ShotPacketUpdate.Teleport -> if(old==null && u.flags.any { it in listOf("X","Y","Z") }) null else ShotVector(
-                u.position.x+if("X" in u.flags) old!!.x else 0.0,
-                u.position.y+if("Y" in u.flags) old!!.y else 0.0,
-                u.position.z+if("Z" in u.flags) old!!.z else 0.0)
-            else -> old
-        }
+        e.base=nextBase(old,u)
         val relative=u is ShotPacketUpdate.Move || u is ShotPacketUpdate.Teleport && u.flags.isNotEmpty()
         val resolved=when(u) {
             is ShotPacketUpdate.Move -> u.resolved?.map { it.copy(position=it.position-origin) } ?:

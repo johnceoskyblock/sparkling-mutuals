@@ -24,7 +24,7 @@ def encoded(items):
 class ProtocolTest(unittest.TestCase):
     def test_real_kotlin_service_export_preserves_whole_path_provenance(self):
         s=read_session(FIXTURES/'service-export.jsonl')
-        self.assertTrue(s.complete);self.assertEqual(8,len(s.events));self.assertEqual(1,len(s.shots))
+        self.assertTrue(s.complete);self.assertEqual(9,len(s.events));self.assertEqual(1,len(s.shots))
         self.assertEqual(('unknown',),s.shots[0].annotations)
         packet=next(e for e in s.events if e.kind=='packet' and e.data['update']=='move')
         self.assertAlmostEqual(.25,packet.data['points'][0]['position']['x'])
@@ -37,7 +37,7 @@ class ProtocolTest(unittest.TestCase):
         self.path.write_bytes(encoded(items));return read_session(self.path)
     def test_actual_producer_fixture_counts_and_unknown_outcomes(self):
         s=read_session(FIXTURES/'isolated.jsonl')
-        self.assertTrue(s.complete);self.assertEqual(3,len(s.events));self.assertEqual('s1',s.shots[0].token)
+        self.assertTrue(s.complete);self.assertEqual(4,len(s.events));self.assertEqual('s1',s.shots[0].token)
         self.assertEqual(('c1',),s.shots[0].tracks);self.assertEqual('candidate_unique',s.shots[0].association)
         self.assertEqual((),s.shots[0].annotations)
     def test_partial_file_never_becomes_complete(self):
@@ -46,7 +46,7 @@ class ProtocolTest(unittest.TestCase):
         self.assertTrue(all(e.kind!='miss' for e in s.events))
     def test_truncated_utf8_tail_retains_complete_prior_lines(self):
         self.path.write_bytes((FIXTURES/'partial.jsonl').read_bytes()+b'{"broken":"\xe2\x82')
-        s=read_session(self.path);self.assertFalse(s.complete);self.assertEqual(3,len(s.events));self.assertIn('partial_tail',s.issues)
+        s=read_session(self.path);self.assertFalse(s.complete);self.assertEqual(4,len(s.events));self.assertIn('partial_tail',s.issues)
     def test_duplicate_keys_nonfinite_and_malformed_interior_are_rejected(self):
         for raw in (b'{"type":"header","type":"header"}\n',b'{"value":NaN}\n',b'{"value":Infinity}\n',b'{"value":1e999}\n',b'not json\n'):
             with self.subTest(raw=raw):
@@ -73,7 +73,7 @@ class ProtocolTest(unittest.TestCase):
                 again=copy.deepcopy(r[2]);again['sequence']=5;again['micros']=150000;r[-1]['sequence']=6;r[-1:-1]=[removed,again]
             with self.subTest(change=change),self.assertRaises(ProtocolError):self.read(r)
     def test_footer_byte_count_is_not_trusted(self):
-        r=records();data=encoded(r).replace(b'"eventCount":3',b'"eventCount":8');self.path.write_bytes(data)
+        r=records();data=encoded(r).replace(b'"eventCount":4',b'"eventCount":8');self.path.write_bytes(data)
         with self.assertRaisesRegex(ProtocolError,'footer'):read_session(self.path)
     def test_boolean_cannot_impersonate_schema_version_one(self):
         r=records();r[0]['metadata']['schemaVersion']=True
@@ -86,9 +86,9 @@ class ProtocolTest(unittest.TestCase):
         r=records();r[0]['limits']['maxEvents']=2
         with self.assertRaisesRegex(ProtocolError,'event'):self.read(r)
     def test_shared_and_manual_outcome_provenance_stays_typed(self):
-        r=records();r[-1]['sequence']=6
-        r[-1:-1]=[{'type':'event','sequence':4,'micros':130000,'tick':3,'kind':'feedback','data':{'feedback':{'kind':'shared_capture','species':'Gemzie','variant':None},'dispatch':1,'source':'game'}},
-                   {'type':'event','sequence':5,'micros':140000,'tick':3,'kind':'annotation','data':{'token':'s1','outcome':'miss'}}]
+        r=records();r[-1].update(sequence=7,micros=800000,tick=16)
+        r[-1:-1]=[{'type':'event','sequence':5,'micros':600000,'tick':12,'kind':'feedback','data':{'feedback':{'kind':'shared_capture','species':'Gemzie','variant':None},'dispatch':1,'source':'game'}},
+                   {'type':'event','sequence':6,'micros':700000,'tick':14,'kind':'annotation','data':{'token':'s1','outcome':'miss'}}]
         s=self.read(r)
         self.assertEqual('shared_capture',s.events[-2].data['feedback']['kind']);self.assertEqual('annotation',s.events[-1].kind)
 

@@ -16,8 +16,8 @@ import net.minecraft.world.level.ClipContext
 import net.minecraft.world.phys.*
 
 /** Client-thread observer; no render callback, ESP target list, world mutation or unbounded per-frame scan. */
-class ShotObservationAdapter(private val origin:ShotVector,private val emit:(ShotStamp,ShotObservation)->Unit) {
-    private val cache=ShotEntityCache()
+class ShotObservationAdapter(private val origin:ShotVector,private val cache:ShotEntityCache=ShotEntityCache(),
+    private val emit:(ShotStamp,ShotObservation)->Unit) {
     private var scan:Iterator<Entity>?=null
     private var nearbyPlayers=0
     private var scanningPlayers=0
@@ -42,15 +42,12 @@ class ShotObservationAdapter(private val origin:ShotVector,private val emit:(Sho
         pose(client)?.let { emit(stamp,ShotObservation.PlayerState(it)) }
         if(scan==null) { scan=level.entitiesForRendering().iterator();scanningPlayers=0 }
         try {
-            repeat(256-cache.entries().size) {
-                val iterator=scan ?: return@repeat
-                if(!iterator.hasNext()) { nearbyPlayers=scanningPlayers;scan=null;return@repeat }
-                val entity=iterator.next()
+            val iterator=scan!!
+            if(!scanBatch(iterator,256-cache.entries().size,stamp) { entity ->
                 if(entity is Player && entity!==client.player && client.player?.distanceToSqr(entity)?.let { it<=32.0*32 }==true) scanningPlayers++
                 discover(entity,ShotDiscovery.BOOTSTRAP,stamp)
-            }
+            }) { nearbyPlayers=scanningPlayers;scan=null }
         } catch(_:ConcurrentModificationException) { scan=null;cache.gap(ShotGap.CACHE_BACKLOG) }
-        if(scan!=null) cache.gap(ShotGap.CACHE_BACKLOG)
         cache.entries().forEach { entry ->
             val e=level.getEntity(entry.id)
             if(e==null || e.isRemoved || e.uuid.toString()!=entry.identity) remove(entry.id,ShotRemoval.UNLOADED,stamp)
@@ -58,14 +55,22 @@ class ShotObservationAdapter(private val origin:ShotVector,private val emit:(Sho
         }
         gaps(stamp)
     }
+    internal fun <T> scanBatch(iterator:Iterator<T>,allowance:Int,stamp:ShotStamp,visit:(T)->Unit):Boolean {
+        var count=0
+        while(count<allowance && iterator.hasNext()) { visit(iterator.next());count++ }
+        val pending=iterator.hasNext()
+        if(pending) emit(stamp,ShotObservation.Gap(ShotGap.SCAN_PENDING))
+        return pending
+    }
     fun packet(client:Minecraft,update:ShotPacketUpdate,stamp:ShotStamp) {
         val level=client.level ?: return
         if(update is ShotPacketUpdate.Removed) { remove(update.id,ShotRemoval.SERVER_REMOVE,stamp);return }
         val entity=level.getEntity(update.id) ?: return
-        if(update is ShotPacketUpdate.Spawn && entity is Display.ItemDisplay)
-            cache.pendingSpawn(update.id,update.identity,update.position,stamp.micros)
-        var entry=cache.get(update.id)
-        if(entry==null) entry=discover(entity,if(update is ShotPacketUpdate.Spawn) ShotDiscovery.SPAWN else ShotDiscovery.METADATA,stamp)
+        val entry=packetEntry(update.id,entity.uuid.toString(),stamp) {
+            if(update is ShotPacketUpdate.Spawn && entity is Display.ItemDisplay)
+                cache.pendingSpawn(update.id,update.identity,update.position,stamp.micros)
+            discover(entity,if(update is ShotPacketUpdate.Spawn) ShotDiscovery.SPAWN else ShotDiscovery.METADATA,stamp)
+        }
         if(entry==null) { if(entity is Display.ItemDisplay) cache.remember(update,stamp.micros);gaps(stamp);return }
         val previous=entry.base
         val observation=ShotPacketAdapter.translate(entry,update,origin,stamp.micros)
@@ -75,6 +80,11 @@ class ShotObservationAdapter(private val origin:ShotVector,private val emit:(Sho
         if(previous!=null && entry.base!=null && observation.points.isNotEmpty()) obstruction(client,null,entry.token,previous,entry.base!!,stamp)
         if(update is ShotPacketUpdate.MetadataChanged) display(entity,entry,stamp)
         gaps(stamp)
+    }
+    internal fun packetEntry(id:Int,identity:String,stamp:ShotStamp,discover:()->ShotEntityCache.Entry?):ShotEntityCache.Entry? {
+        // Numeric IDs can be reused between recorder ticks. Retire before any new packet is attributed.
+        cache.get(id)?.let { if(it.identity!=identity) remove(id,ShotRemoval.UNLOADED,stamp) }
+        return cache.get(id) ?: discover()
     }
     private fun discover(entity:Entity,discovery:ShotDiscovery,stamp:ShotStamp):ShotEntityCache.Entry? {
         cache.get(entity.id)?.let { if(it.identity==entity.uuid.toString()) return it }

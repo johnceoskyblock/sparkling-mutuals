@@ -20,6 +20,8 @@ def synthetic(path,session='fit-session',variant='ordinary',split='fit',later=0,
         else:
             e=copy.deepcopy(capsule);e['data'].update(action='sample',position=p)
         e.update(sequence=len(events)+1,micros=int(t*1000000),tick=int(t*20));events.append(e)
+    terminal=copy.deepcopy(capsule);terminal.update(sequence=len(events)+1,micros=9000000,tick=180)
+    terminal['data'].update(action='removed',removal='server_remove');events.append(terminal)
     footer=base[-1];footer.update(sequence=len(events)+1,micros=10000000,tick=200)
     footer['shots'][0].update(variant=variant,split=split,scenario='stationary_level')
     path.write_bytes(encoded([header,*events,footer]));return read_session(path)
@@ -31,6 +33,22 @@ def curate(path,*sessions):
 class AnalysisTest(unittest.TestCase):
     def setUp(self):
         self.temp=tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup);self.root=Path(self.temp.name)
+    def test_incomplete_tracks_are_excluded_unless_provisional(self):
+        from dataclasses import replace
+        from tools.capture_shots.protocol import Event,freeze
+        for removal in ('window_expired','recording_stopped','unloaded',None):
+            session=synthetic(self.root/'fit.jsonl')
+            track=session.tracks[0];events=list(track.events)
+            if removal is None:events.pop()
+            else:
+                old=events[-1];data=dict(old.data);data['removal']=removal
+                events[-1]=replace(old,data=freeze(data))
+            session=replace(session,tracks=(replace(track,events=tuple(events)),))
+            c=curate(self.root/'c.json',session)
+            result=analyze([session],[],c).summary
+            self.assertEqual([],result['fitting_diagnostics'])
+            self.assertEqual('incomplete_track',result['excluded'][0]['reason'])
+            self.assertEqual(1,len(analyze([session],[],c,True).summary['fitting_diagnostics']))
     def test_heldout_acceleration_and_validation_seeds_are_separate(self):
         fit=synthetic(self.root/'fit.jsonl');val=synthetic(self.root/'val.jsonl','validation-session',split='validation')
         result=analyze([fit],[val],curate(self.root/'curation.json',fit,val)).summary

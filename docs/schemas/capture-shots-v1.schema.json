@@ -410,7 +410,8 @@
               "enum": [
                 "server_remove",
                 "unloaded",
-                "window_expired"
+                "window_expired",
+            "recording_stopped"
               ]
             },
             {
@@ -810,7 +811,8 @@
             "target_limit",
             "missing_base",
             "window_expired",
-            "raw_path_truncated"
+            "raw_path_truncated",
+            "scan_pending"
           ]
         }
       },
