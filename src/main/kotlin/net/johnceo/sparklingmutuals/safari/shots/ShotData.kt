@@ -28,6 +28,7 @@ enum class ShotUpdateKind { SPAWN, MOVE, POSITION_SYNC, TELEPORT, MOTION, METADA
 enum class ShotGap { CACHE_BACKLOG, CAPSULE_LIMIT, TARGET_LIMIT, MISSING_BASE, WINDOW_EXPIRED, RAW_PATH_TRUNCATED }
 enum class ShotAssociation { UNMATCHED, CANDIDATE_UNIQUE, AMBIGUOUS, MANUAL }
 enum class ShotFeedbackKind { HIT, ESCAPE, PERSONAL_CAPTURE, SHARED_CAPTURE, STARTLE }
+enum class ShotFeedbackSource { GAME }
 enum class ShotStopReason { USER_STOP, EXPORT, DURATION_LIMIT, INPUT_LIMIT, EVENT_LIMIT, BYTE_LIMIT, QUEUE_LIMIT,
     WORLD_CHANGE, SAFARI_EXIT, DISCONNECT, SHUTDOWN, ERROR }
 data class ShotFeedbackObservation(val kind: ShotFeedbackKind, val species: String, val variant: ShotVariant? = null)
@@ -61,7 +62,7 @@ sealed interface ShotObservation {
     data class Obstruction(val shot: String?, val track: String?, val loaded: Boolean, val from: ShotVector,
         val to: ShotVector, val position: ShotVector? = null, val face: String? = null, val block: String? = null,
         val bounds: List<ShotBounds> = emptyList()) : ShotObservation
-    data class Feedback(val feedback: ShotFeedbackObservation, val dispatch: Long) : ShotObservation
+    data class Feedback(val feedback: ShotFeedbackObservation, val dispatch: Long, val source:ShotFeedbackSource=ShotFeedbackSource.GAME) : ShotObservation
     data class Annotation(val token: String, val outcome: ShotManualOutcome) : ShotObservation
     data class Gap(val reason: ShotGap) : ShotObservation
 }

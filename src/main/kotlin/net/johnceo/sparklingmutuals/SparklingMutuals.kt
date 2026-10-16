@@ -87,6 +87,7 @@ object SparklingMutuals : ModInitializer {
         TeammateEsp.register()
         SafariIsland.register()
         SafariManagerGuard.register()
+        net.johnceo.sparklingmutuals.safari.shots.ShotRecorder.register()
     }
 
     private fun registerCallbacks() {
@@ -127,9 +128,11 @@ object SparklingMutuals : ModInitializer {
         HideyhoSpotter.onClientTick(client)
         SafariDowntime.onClientTick(client)
         SafariManagerGuard.onClientTick(client)
+        net.johnceo.sparklingmutuals.safari.shots.ShotRecorder.tick(client)
     }
 
     private fun resetSession() {
+        net.johnceo.sparklingmutuals.safari.shots.ShotRecorder.disconnect()
         PartyCommands.reset()
         PartyManager.reset()
         SafariSparklingMode.reset()

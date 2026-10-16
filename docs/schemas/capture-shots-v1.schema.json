@@ -739,11 +739,17 @@
         },
         "dispatch": {
           "type": "integer"
+        },
+        "source": {
+          "enum": [
+            "game"
+          ]
         }
       },
       "required": [
         "feedback",
-        "dispatch"
+        "dispatch",
+        "source"
       ],
       "additionalProperties": false
     },
