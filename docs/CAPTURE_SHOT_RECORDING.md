@@ -62,3 +62,40 @@ python tools/capture_shots/replay.py session.jsonl --output replay-directory
 Use a new output directory. Replay refuses to overwrite reports or an input. It writes `summary.json`, `timeline.csv` and generated `shot-0001.csv` views; imported tokens never choose filenames. CSV rows keep the original kind and typed JSON data, so raw packet updates, smooth samples, display state, targets, feedback and manual annotations remain distinguishable. The full timeline includes unmatched evidence.
 
 The reader checks the shared schema, allowed fields/enums, finite values, sequence/time order, token lifetimes, footer counts/bytes and file/line/event bounds. Complete files exit `0`, recoverable incomplete files exit `2`, and invalid files exit `1`. A truncated final UTF-8/JSON line preserves earlier complete records and remains incomplete; malformed complete interior lines are rejected. Do not repair a partial file by inventing a footer. Synthetic fixtures under `src/test/resources/shots/` exercise both accepted and deliberately invalid examples.
+
+## Visual diagnostics and independent validation
+
+```text
+python tools/capture_shots/analyze.py --fit fit-session.jsonl --validation validation-session.jsonl --curation choices.json --output analysis-directory
+```
+
+Repeat `--fit`/`--validation` for additional sessions. `analysis.json` reports exclusions, counts, input/feedback delays, arrival intervals/gaps, apparent visual speed and separate variant results. Raw arrival endpoints are the default sample source. Tick-only descriptions stay separate; stepped packet offsets remain in replay and are not promoted to authoritative launch timing.
+
+Default analysis excludes uncurated, ambiguous, unmatched, incomplete and incorrectly labelled samples. Curate ownership separately, using the SHA-256 printed in replay's summary and a rationale for each selected shot/track pair:
+
+```json
+{
+  "schemaVersion": 1,
+  "choices": [
+    {"sha256": "COPY_THE_64_CHARACTER_INPUT_HASH", "session": "COPY_SESSION_TOKEN", "shot": "s1", "track": "c1", "rationale": "Explain why this isolated pair was selected."}
+  ]
+}
+```
+
+Keep raw exports unchanged. Hashes must match the selected files. `--provisional` deliberately includes provisional candidate diagnostics and labels the report accordingly; it does not verify ownership or create a gameplay model. Useful for a first sanity check:
+
+```text
+python tools/capture_shots/analyze.py --fit src/test/resources/shots/accelerating-fit.jsonl --validation src/test/resources/shots/accelerating-validation.jsonl --provisional --output synthetic-analysis
+```
+
+Constant velocity and constant acceleration are **diagnostic visual baselines**. On fitting tracks, only the first half trains the models; later points score them. Independent validation freezes each variant's component-wise median fitting acceleration, initializes position/velocity from the first two distinct-time observations, excludes those conditioning points from scoring and never refits on validation. A variant without its own fitting evidence remains unavailable. Reusing the same session token or source bytes across splits is rejected, even after renaming files.
+
+Residual reports give count, RMSE, nearest-rank p50/p95, maximum and **last observed point** error in blocks. The last visible capsule position is not a proven impact. No model is selected for live aiming by this kit.
+
+Optional `--predictions predictions.csv` compares a separate model's supplied coordinates at exact observed times only. Required columns, in order:
+
+```text
+schemaVersion,session,shot,track,micros,x,y,z,model,coordinates
+```
+
+Use schema version `1`, a short model identifier, and coordinates `session_relative_game_axes`. Uncovered observations/unmatched predictions are reported; the tool does not invent interpolation, collision or capture outcomes. Outputs always require a fresh directory and input files remain unchanged.

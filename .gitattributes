@@ -6,6 +6,8 @@
 *.kt            text eol=lf
 *.md            text eol=lf
 *.jsonl         text eol=lf
+*.jsonl.part    -text
+*.py            text eol=lf
 
 # These are Windows script files and should use crlf
 *.bat           text eol=crlf

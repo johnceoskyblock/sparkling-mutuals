@@ -27,6 +27,7 @@ class ShotObservationAdapter(private val origin:ShotVector,private val emit:(Sho
     var scenario=ShotScenario.UNSPECIFIED
     var split=ShotSplit.UNASSIGNED
     var standalone=false
+    fun packetBase(id:Int)=cache.packetBase(id)
     fun reset() { cache.reset();scan=null;routes.clear();nearbyPlayers=0;scanningPlayers=0;lastInput=null;windowExpired=false }
     fun tick(client:Minecraft,stamp:ShotStamp) {
         val level=client.level ?: return

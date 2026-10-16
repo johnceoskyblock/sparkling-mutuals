@@ -574,6 +574,33 @@
         },
         "truncated": {
           "type": "boolean"
+        },
+        "resolvedPoints": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/pathPoint"
+          },
+          "maxItems": 64
+        },
+        "endPosition": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/vector"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "resolvedEnd": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/vector"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
@@ -588,7 +615,10 @@
         "relativeFlags",
         "observedMicros",
         "base",
-        "truncated"
+        "truncated",
+        "resolvedPoints",
+        "endPosition",
+        "resolvedEnd"
       ],
       "additionalProperties": false
     },

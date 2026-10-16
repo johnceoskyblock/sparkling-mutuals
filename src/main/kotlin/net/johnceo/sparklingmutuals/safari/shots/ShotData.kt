@@ -55,7 +55,8 @@ sealed interface ShotObservation {
     data class Packet(val token: String, val update: ShotUpdateKind, val points: List<ShotPathPoint> = emptyList(),
         val relative: Boolean = false, val baseKnown: Boolean = true, val motion: ShotVector? = null,
         val yaw: Float? = null, val pitch: Float? = null, val relativeFlags: List<String> = emptyList(),
-        val observedMicros: Long? = null, val base: ShotVector? = null, val truncated: Boolean = false) : ShotObservation
+        val observedMicros: Long? = null, val base: ShotVector? = null, val truncated: Boolean = false,
+        val resolvedPoints:List<ShotPathPoint> = emptyList(),val endPosition:ShotVector?=null,val resolvedEnd:ShotVector?=null) : ShotObservation
     data class DisplayState(val token: String, val context: String, val translation: ShotVector, val scale: ShotVector,
         val leftRotation: ShotQuaternion, val rightRotation: ShotQuaternion, val interpolationDelay: Int,
         val interpolationDuration: Int, val positionInterpolationDuration: Int) : ShotObservation
