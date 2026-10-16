@@ -22,15 +22,18 @@ import net.minecraft.client.renderer.rendertype.*
 import net.minecraft.network.chat.Component
 import net.minecraft.util.LightCoordsUtil
 import net.minecraft.world.phys.AABB
+import net.minecraft.world.phys.Vec3
 import org.joml.Matrix4f
 
 /** API changes only: all callers retain their world coordinates, colors and visibility rules. */
+enum class WorldDepthMode { THROUGH_TERRAIN, OCCLUDED }
+
 object WorldRenderCompat {
-    fun renderType(name: String, filled: Boolean = false, cull: Boolean? = false): RenderType {
+    fun renderType(name: String, filled: Boolean = false, cull: Boolean? = false, depth: WorldDepthMode = WorldDepthMode.THROUGH_TERRAIN): RenderType {
         val builder = RenderPipeline.builder(
             if (filled) RenderPipelines.DEBUG_FILLED_SNIPPET else RenderPipelines.LINES_SNIPPET)
             .withLocation(SparklingMutuals.id("pipeline/$name"))
-            .withDepthStencilState(DepthStencilState(CompareOp.ALWAYS_PASS, false))
+            .withDepthStencilState(DepthStencilState(if(depth==WorldDepthMode.OCCLUDED) CompareOp.LESS_THAN_OR_EQUAL else CompareOp.ALWAYS_PASS, false))
         cull?.let { builder.withCull(it) }
         val pipeline = RenderPipelines.register(builder.build())
         val setup = RenderSetup.builder(pipeline).setLayeringTransform(LayeringTransform.VIEW_OFFSET_Z_LAYERING)
@@ -72,6 +75,21 @@ object WorldRenderCompat {
                 val nx = if (axis == 0) 1f else 0f; val ny = if (axis == 1) 1f else 0f; val nz = if (axis == 2) 1f else 0f
                 vertices.addVertex(pose, x, y, z).setColor(color).setNormal(pose, nx, ny, nz).setLineWidth(width)
                 vertices.addVertex(pose, ex, ey, ez).setColor(color).setNormal(pose, nx, ny, nz).setLineWidth(width)
+            }
+        }
+    }
+
+    fun polyline(context: LevelRenderContext, type: RenderType, worldPoints: List<Vec3>, color: Int, width: Float = 2f) {
+        if(!width.isFinite() || width<=0f) return
+        val client=Minecraft.getInstance()
+        val world=client.level
+        val lines=WorldLineGeometry.segments(worldPoints,client.gameRenderer.smCamera.position())
+        if(lines.isEmpty()) return
+        geometry(context,type) { pose,vertices ->
+            if(client.level !== world) return@geometry
+            for(line in lines) for(point in listOf(line.from,line.to)) {
+                vertices.addVertex(pose,point.x.toFloat(),point.y.toFloat(),point.z.toFloat()).setColor(color)
+                    .setNormal(pose,line.normal.x.toFloat(),line.normal.y.toFloat(),line.normal.z.toFloat()).setLineWidth(width)
             }
         }
     }

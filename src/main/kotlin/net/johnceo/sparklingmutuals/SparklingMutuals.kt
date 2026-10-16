@@ -42,6 +42,7 @@ import net.johnceo.sparklingmutuals.safari.resources.SafariInventoryAlerts
 import net.johnceo.sparklingmutuals.safari.sparkling.SparklingEncounters
 import net.johnceo.sparklingmutuals.safari.structures.BeeNests
 import net.johnceo.sparklingmutuals.safari.structures.SafariStructures
+import net.johnceo.sparklingmutuals.safari.shots.preview.CapsulePreview
 import net.minecraft.client.Minecraft
 import net.minecraft.resources.Identifier
 import org.slf4j.LoggerFactory
@@ -88,6 +89,7 @@ object SparklingMutuals : ModInitializer {
         SafariIsland.register()
         SafariManagerGuard.register()
         net.johnceo.sparklingmutuals.safari.shots.ShotRecorder.register()
+        CapsulePreview.register()
     }
 
     private fun registerCallbacks() {
@@ -103,6 +105,7 @@ object SparklingMutuals : ModInitializer {
             SafariTracking.render(graphics)
             SparklingEncounters.render(graphics)
             SmallAlerts.render(graphics)
+            CapsulePreview.renderHud(graphics)
         }
     }
 
@@ -129,9 +132,11 @@ object SparklingMutuals : ModInitializer {
         SafariDowntime.onClientTick(client)
         SafariManagerGuard.onClientTick(client)
         net.johnceo.sparklingmutuals.safari.shots.ShotRecorder.tick(client)
+        CapsulePreview.tick(client)
     }
 
     private fun resetSession() {
+        CapsulePreview.reset()
         net.johnceo.sparklingmutuals.safari.shots.ShotRecorder.disconnect()
         PartyCommands.reset()
         PartyManager.reset()
