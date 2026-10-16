@@ -41,17 +41,20 @@ data class ShotPathPoint(val position: ShotVector, val tickOffset: Int = 0)
 
 /** Only typed, allowlisted values cross the export boundary. Runtime entity IDs and UUIDs stay in the adapter. */
 sealed interface ShotObservation {
+    data class PlayerState(val pose:ShotPose):ShotObservation
     data class Input(val token: String, val hand: ShotHand, val variant: ShotVariant, val route: ShotUseRoute,
-        val pose: ShotPose, val scenario: ShotScenario = ShotScenario.UNSPECIFIED, val split: ShotSplit = ShotSplit.UNASSIGNED) : ShotObservation
+        val pose: ShotPose, val scenario: ShotScenario = ShotScenario.UNSPECIFIED, val split: ShotSplit = ShotSplit.UNASSIGNED,
+        val standalone: Boolean = false) : ShotObservation
     data class Continuation(val token: String, val result: ShotUseResult, val route: ShotUseRoute) : ShotObservation
     data class Capsule(val token: String, val generation: Int, val variant: ShotVariant, val action: ShotEntityAction,
         val position: ShotVector, val velocity: ShotVector? = null, val discovery: ShotDiscovery = ShotDiscovery.BOOTSTRAP,
-        val flying: Boolean = true, val removal: ShotRemoval? = null) : ShotObservation
+        val flying: Boolean = true, val removal: ShotRemoval? = null, val spawnMicros: Long? = null) : ShotObservation
     data class Target(val token: String, val generation: Int, val species: String, val position: ShotVector,
         val bounds: ShotBounds, val velocity: ShotVector? = null, val source: String = "descriptor") : ShotObservation
     data class Packet(val token: String, val update: ShotUpdateKind, val points: List<ShotPathPoint> = emptyList(),
         val relative: Boolean = false, val baseKnown: Boolean = true, val motion: ShotVector? = null,
-        val yaw: Float? = null, val pitch: Float? = null, val relativeFlags: List<String> = emptyList()) : ShotObservation
+        val yaw: Float? = null, val pitch: Float? = null, val relativeFlags: List<String> = emptyList(),
+        val observedMicros: Long? = null, val base: ShotVector? = null, val truncated: Boolean = false) : ShotObservation
     data class DisplayState(val token: String, val context: String, val translation: ShotVector, val scale: ShotVector,
         val leftRotation: ShotQuaternion, val rightRotation: ShotQuaternion, val interpolationDelay: Int,
         val interpolationDuration: Int, val positionInterpolationDuration: Int) : ShotObservation
