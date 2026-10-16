@@ -8,6 +8,24 @@ permissions:
   contents: read
 
 jobs:
+  capture-shot-tools:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - name: Test local replay and visual diagnostics
+        run: python -m unittest discover -s tools/capture_shots/tests -p 'test_*.py' -v
+      - name: Package allowlisted sources and synthetic fixtures
+        run: python tools/capture_shots/package_tools.py --output build/capture-shot-tools
+      - uses: actions/upload-artifact@v7
+        with:
+          name: capture-shot-tools
+          path: build/capture-shot-tools/
+          if-no-files-found: error
   build-logic:
     runs-on: ubuntu-24.04
     steps:
@@ -53,7 +71,7 @@ jobs:
           path: versions/${{ matrix.minecraft }}/build/test-results/test/TEST-*.xml
           if-no-files-found: error
   verify-all-targets:
-    needs: [build-logic, target]
+    needs: [build-logic, target, capture-shot-tools]
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6

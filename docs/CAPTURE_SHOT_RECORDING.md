@@ -99,3 +99,11 @@ schemaVersion,session,shot,track,micros,x,y,z,model,coordinates
 ```
 
 Use schema version `1`, a short model identifier, and coordinates `session_relative_game_axes`. Uncovered observations/unmatched predictions are reported; the tool does not invent interpolation, collision or capture outcomes. Outputs always require a fresh directory and input files remain unchanged.
+
+## Validation boundary
+
+Automated suites exercise the actual coordinator/writer/codec, producer-to-reader fixtures, passive compiled callbacks, bounds, errors, privacy and deterministic arithmetic. Offline client smoke checks verify the required injected hooks, registered controls and a controlled local export on each target. Live Hypixel observation fidelity, both-hands/variants gameplay, hiding comparisons and capture-rule measurements require the collection checklist above; these remain awaiting gameplay. No server motion constants, calibrated aiming model or renderer are included.
+
+## Last updated
+
+2026-10-16 (America/New_York) - Added the local recorder, strict replay, held-out diagnostic analysis, standalone collection kit and exact first measurement checklist.
