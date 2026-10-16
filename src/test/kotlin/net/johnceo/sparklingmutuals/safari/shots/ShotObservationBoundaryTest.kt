@@ -8,6 +8,39 @@ import org.junit.jupiter.api.Test
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable
 
 class ShotObservationBoundaryTest {
+    @Test fun `live entity map cleared between bounded batches does not stop recording`() {
+        // EntityLookup uses this Java map. Its retained iterator can return null after a later tick clears it.
+        val entities=it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap<String>()
+        entities.put(1,"first");entities.put(2,"removed-second");entities.put(3,"removed-third")
+        val iterator=entities.values.iterator();val visited=mutableListOf<String>()
+        val budget=ShotTestFixtures.Budget();val sink=ShotTestFixtures.Sink(budget)
+        val session=ShotSession(ShotTestFixtures.metadata(),ShotLimits(),sink,budget)
+        val adapter=ShotObservationAdapter(ShotTestFixtures.zero) { stamp,o -> session.accept(stamp,o) }
+        assertTrue(adapter.scanBatch(iterator,1,ShotStamp(0,0)) { entity:String -> visited.add(entity) })
+        entities.clear()
+        // Empty slots still consume the allowance, so each call advances only one retained slot.
+        assertTrue(adapter.scanBatch(iterator,1,ShotStamp(50_000,1)) { entity:String -> visited.add(entity) })
+        assertFalse(adapter.scanBatch(iterator,1,ShotStamp(100_000,2)) { entity:String -> visited.add(entity) })
+        assertEquals(listOf("first"),visited);assertTrue(session.status().recording)
+        session.accept(ShotStamp(200_000,4),ShotTestFixtures.input("s1"))
+        val capsule=ShotObservation.Capsule("c1",1,ShotVariant.ORDINARY,ShotEntityAction.DISCOVERED,ShotTestFixtures.zero,discovery=ShotDiscovery.SPAWN)
+        session.accept(ShotStamp(250_000,5),capsule)
+        session.accept(ShotStamp(300_000,6),ShotObservation.Packet("c1",ShotUpdateKind.POSITION_SYNC,listOf(ShotPathPoint(ShotVector(0.0,0.0,1.0)))))
+        session.accept(ShotStamp(350_000,7),capsule.copy(action=ShotEntityAction.REMOVED,removal=ShotRemoval.SERVER_REMOVE))
+        session.stop(ShotStamp(400_000,8),ShotStopReason.USER_STOP)
+        assertTrue(sink.records().last()["complete"].asBoolean)
+        assertFalse(sink.records().last()["gaps"].asBoolean)
+        assertEquals(1,sink.records().count { it["kind"]?.asString=="packet" })
+        assertEquals(0,budget.usedBytes)
+    }
+    @Test fun `real discovery failure still escapes scan for recorder diagnostics`() {
+        val adapter=ShotObservationAdapter(ShotTestFixtures.zero) { _,_ -> }
+        val failure=NullPointerException("real callback failure")
+        val actual=assertThrows(NullPointerException::class.java) {
+            adapter.scanBatch(listOf("valid entity").iterator(),1,ShotStamp(0,0)) { throw failure }
+        }
+        assertSame(failure,actual)
+    }
     @Test fun `lossless multi batch scan before input does not poison a later complete trace`() {
         val budget=ShotTestFixtures.Budget();val sink=ShotTestFixtures.Sink(budget)
         val session=ShotSession(ShotTestFixtures.metadata(),ShotLimits(),sink,budget)
