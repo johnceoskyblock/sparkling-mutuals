@@ -72,7 +72,8 @@ class ShotSession(val metadata: ShotMetadata, private val limits: ShotLimits, pr
                 }
             }
             is ShotObservation.Feedback -> if (event.feedback.kind !in setOf(ShotFeedbackKind.SHARED_CAPTURE,ShotFeedbackKind.STARTLE))
-                inputs.values.filter { stamp.micros-it.at <= limits.feedbackMicros }.forEach {
+                inputs.values.filter { stamp.micros-it.at <= limits.feedbackMicros &&
+                    (event.feedback.variant==null || event.feedback.variant==it.input.variant) }.forEach {
                     if (it.feedback.size == 16) { it.feedback.removeFirst();gaps=true };it.feedback.addLast(record.sequence)
                 }
             is ShotObservation.Annotation -> inputs[event.token]?.let {

@@ -4,6 +4,16 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class ShotSessionTest {
+    @Test fun `known capsule variant feedback does not attach to incompatible input variants`() {
+        val session=session()
+        session.accept(at(0),ShotTestFixtures.input("ordinary"))
+        session.accept(at(1),ShotTestFixtures.input("masterful").copy(variant=ShotVariant.MASTERFUL))
+        session.accept(at(2),ShotObservation.Feedback(ShotFeedbackObservation(ShotFeedbackKind.HIT,"Gemzie",ShotVariant.MASTERFUL),1))
+        session.stop(at(3),ShotStopReason.USER_STOP)
+        val shots=sink.records().last()["shots"].asJsonArray
+        assertEquals(0,shots[0].asJsonObject["feedback"].asJsonArray.size())
+        assertEquals(1,shots[1].asJsonObject["feedback"].asJsonArray.size())
+    }
     private val budget = ShotTestFixtures.Budget()
     private val sink = ShotTestFixtures.Sink(budget)
     private fun session(limits: ShotLimits = ShotLimits()) = ShotSession(ShotTestFixtures.metadata(), limits, sink, budget)
