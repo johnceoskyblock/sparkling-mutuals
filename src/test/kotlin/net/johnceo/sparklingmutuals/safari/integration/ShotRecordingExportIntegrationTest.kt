@@ -41,7 +41,7 @@ class ShotRecordingExportIntegrationTest {
         recorder.stop(ShotStopReason.USER_STOP);await { recorder.phase=="off" }
         val bytes=Files.readAllBytes(recorder.lastExport!!);val text=bytes.toString(Charsets.UTF_8)
         val records=text.lineSequence().filter { it.isNotBlank() }.map { JsonParser.parseString(it).asJsonObject }.toList()
-        assertEquals(8,records.count { it["type"].asString=="event" })
+        assertEquals(9,records.count { it["type"].asString=="event" })
         assertTrue(records.last()["complete"].asBoolean)
         assertEquals("candidate_unique",records.last()["shots"].asJsonArray[0].asJsonObject["association"].asString)
         assertTrue(text.contains("\"resolvedEnd\""));assertTrue(text.contains("\"source\":\"game\""))

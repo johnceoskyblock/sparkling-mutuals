@@ -8,6 +8,7 @@ class ShotSession(val metadata: ShotMetadata, private val limits: ShotLimits, pr
         val annotations: ArrayDeque<ShotManualOutcome> = ArrayDeque(), var ambiguous: Boolean = false)
     private val inputs = linkedMapOf<String, InputState>()
     private val seenCapsules = mutableSetOf<String>()
+    private val activeCapsules = linkedMapOf<String,ShotObservation.Capsule>()
     private val ring = ArrayDeque<Pending>()
     private var last = ShotStamp(0,0)
     private var sequence = 0L
@@ -44,7 +45,7 @@ class ShotSession(val metadata: ShotMetadata, private val limits: ShotLimits, pr
         if (event is ShotObservation.Input) {
             while (ring.isNotEmpty() && reason == null) {
                 val pending = ring.removeFirst()
-                if (!commitReserved(pending.line)) break
+                if (!commitReserved(pending.line,pending.event.observation)) break
             }
             if (reason != null || !commit(line)) return false
             inputs.values.filter { stamp.micros-it.at <= limits.associationMicros }.forEach { it.ambiguous=true }
@@ -55,8 +56,9 @@ class ShotSession(val metadata: ShotMetadata, private val limits: ShotLimits, pr
         }
         val inside = lastInput?.let { stamp.micros-it <= limits.sampleWindowMicros } == true
         val feedback = event is ShotObservation.Feedback && inputs.values.any { stamp.micros-it.at <= limits.feedbackMicros }
-        if (inside || feedback || event is ShotObservation.Annotation || event is ShotObservation.Continuation) {
-            if (!commit(line)) return false
+        val terminal = event is ShotObservation.Capsule && event.action==ShotEntityAction.REMOVED && event.token in activeCapsules
+        if (inside || feedback || terminal || event is ShotObservation.Annotation || event is ShotObservation.Continuation) {
+            if (!commit(line,event)) return false
         } else {
             if (!budget.tryReserve(line.size)) { stop(stamp,ShotStopReason.QUEUE_LIMIT);return false }
             ring.addLast(Pending(record,line))
@@ -79,7 +81,7 @@ class ShotSession(val metadata: ShotMetadata, private val limits: ShotLimits, pr
             is ShotObservation.Annotation -> inputs[event.token]?.let {
                 if (it.annotations.size == 16) { it.annotations.removeFirst();gaps=true };it.annotations.addLast(event.outcome)
             }
-            is ShotObservation.Gap -> gaps=true
+            is ShotObservation.Gap -> if(event.reason!=ShotGap.SCAN_PENDING) gaps=true
             else -> {}
         }
         return reason == null
@@ -94,14 +96,17 @@ class ShotSession(val metadata: ShotMetadata, private val limits: ShotLimits, pr
         bytes += line.size
         return true
     }
-    private fun commit(line: ByteArray): Boolean {
+    private fun commit(line: ByteArray, observation:ShotObservation?=null): Boolean {
         // Feedback can arrive after the sample window. Flush earlier buffered evidence before any direct write.
-        while (ring.isNotEmpty() && reason == null) if (!commitReserved(ring.removeFirst().line)) return false
+        while (ring.isNotEmpty() && reason == null) {
+            val pending=ring.removeFirst()
+            if (!commitReserved(pending.line,pending.event.observation)) return false
+        }
         if (reason != null) return false
         if (!budget.tryReserve(line.size)) { stop(last,ShotStopReason.QUEUE_LIMIT);return false }
-        return commitReserved(line)
+        return commitReserved(line,observation)
     }
-    private fun commitReserved(line: ByteArray): Boolean {
+    private fun commitReserved(line: ByteArray, observation:ShotObservation?=null): Boolean {
         val stop = when {
             events >= limits.maxEvents-1 -> ShotStopReason.EVENT_LIMIT
             bytes+line.size > limits.maxBytes-limits.footerReserve -> ShotStopReason.BYTE_LIMIT
@@ -110,12 +115,25 @@ class ShotSession(val metadata: ShotMetadata, private val limits: ShotLimits, pr
         if (stop != null) { budget.release(line.size);stop(last,stop);return false }
         if (!sink.offer(line)) { budget.release(line.size);stop(last,ShotStopReason.QUEUE_LIMIT);return false }
         events++;bytes+=line.size
+        if(observation is ShotObservation.Capsule) {
+            if(observation.action==ShotEntityAction.REMOVED) activeCapsules.remove(observation.token)
+            else activeCapsules[observation.token]=observation
+        }
         return true
     }
     fun stop(stamp: ShotStamp, reason: ShotStopReason) {
         if (this.reason != null) return
         this.reason=reason
         while (ring.isNotEmpty()) budget.release(ring.removeFirst().line.size)
+        // File finalization and track completeness are distinct. Never turn a stop into an observed outcome.
+        for(capsule in activeCapsules.values) {
+            val terminal=ShotRecord.Event(++sequence,maxOf(last.micros,stamp.micros),maxOf(last.tick,stamp.tick),
+                capsule.copy(action=ShotEntityAction.REMOVED,removal=ShotRemoval.RECORDING_STOPPED))
+            val line=ShotCodec.encode(terminal)
+            if(events>=limits.maxEvents-1 || bytes+line.size>limits.maxBytes-limits.footerReserve || !send(line)) { gaps=true;break }
+            events++
+        }
+        activeCapsules.clear()
         val summaries = inputs.values.map { state ->
             ShotSummary(state.input.token,state.input.variant,state.input.scenario,state.input.split,state.tracks.toList(),
                 if (state.ambiguous || state.tracks.size > 1) ShotAssociation.AMBIGUOUS else if (state.tracks.size == 1) ShotAssociation.CANDIDATE_UNIQUE else ShotAssociation.UNMATCHED,

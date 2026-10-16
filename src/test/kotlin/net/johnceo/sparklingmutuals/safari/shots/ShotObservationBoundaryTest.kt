@@ -8,6 +8,46 @@ import org.junit.jupiter.api.Test
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable
 
 class ShotObservationBoundaryTest {
+    @Test fun `lossless multi batch scan before input does not poison a later complete trace`() {
+        val budget=ShotTestFixtures.Budget();val sink=ShotTestFixtures.Sink(budget)
+        val session=ShotSession(ShotTestFixtures.metadata(),ShotLimits(),sink,budget)
+        val adapter=ShotObservationAdapter(ShotTestFixtures.zero) { stamp,o -> session.accept(stamp,o) }
+        val iterator=(1..257).iterator();val visited=mutableListOf<Int>()
+        assertTrue(adapter.scanBatch(iterator,256,ShotStamp(0,0),visited::add))
+        assertFalse(adapter.scanBatch(iterator,256,ShotStamp(50_000,1),visited::add));assertEquals(257,visited.size)
+        session.accept(ShotStamp(1_000_000,20),ShotTestFixtures.input("s1"))
+        val capsule=ShotObservation.Capsule("c1",1,ShotVariant.ORDINARY,ShotEntityAction.DISCOVERED,ShotTestFixtures.zero,discovery=ShotDiscovery.SPAWN)
+        session.accept(ShotStamp(1_100_000,22),capsule)
+        session.accept(ShotStamp(2_000_000,40),capsule.copy(action=ShotEntityAction.REMOVED,removal=ShotRemoval.SERVER_REMOVE))
+        session.stop(ShotStamp(3_000_000,60),ShotStopReason.USER_STOP)
+        assertTrue(sink.records().last()["complete"].asBoolean);assertFalse(sink.records().last()["gaps"].asBoolean)
+    }
+    @Test fun `actual pending evidence overflow remains incomplete even before an input`() {
+        val cache=ShotEntityCache();repeat(257) { cache.pendingSpawn(it,"private$it",ShotTestFixtures.zero,0) }
+        val budget=ShotTestFixtures.Budget();val sink=ShotTestFixtures.Sink(budget)
+        val session=ShotSession(ShotTestFixtures.metadata(),ShotLimits(),sink,budget)
+        cache.takeGaps().forEach { session.accept(ShotStamp(0,0),ShotObservation.Gap(it)) }
+        session.accept(ShotStamp(1_000_000,20),ShotTestFixtures.input("s1"));session.stop(ShotStamp(2_000_000,40),ShotStopReason.USER_STOP)
+        assertFalse(sink.records().last()["complete"].asBoolean);assertTrue(sink.records().last()["gaps"].asBoolean)
+    }
+    @Test fun `packet boundary retires reused id before translating the new variant without a tick`() {
+        val cache=ShotEntityCache();val emitted=mutableListOf<ShotObservation>()
+        val adapter=ShotObservationAdapter(ShotTestFixtures.zero,cache) { _,o -> emitted.add(o) }
+        val old=cache.discover(7,"old-private",ShotVariant.ORDINARY,null,ShotDiscovery.SPAWN,0)!!
+        old.base=ShotTestFixtures.zero
+        val fresh=adapter.packetEntry(7,"new-private",ShotStamp(100,0)) {
+            cache.pendingSpawn(7,"new-private",ShotVector(10.0,0.0,0.0),100)
+            cache.discover(7,"new-private",ShotVariant.MASTERFUL,null,ShotDiscovery.SPAWN,100)
+        }!!
+        assertNotEquals(old.token,fresh.token);assertEquals(ShotVariant.MASTERFUL,fresh.variant)
+        val retired=emitted.single() as ShotObservation.Capsule
+        assertEquals(old.token,retired.token);assertEquals(ShotRemoval.UNLOADED,retired.removal)
+        val spawn=ShotPacketAdapter.translate(fresh,ShotPacketUpdate.Spawn(7,"new-private",ShotVector(10.0,0.0,0.0)),ShotTestFixtures.zero,100)
+        val again=adapter.packetEntry(7,"new-private",ShotStamp(110,0)) { error("same lifetime must survive") }!!
+        val move=ShotPacketAdapter.translate(again,ShotPacketUpdate.Move(7,listOf(ShotPathPoint(ShotVector(1.0,0.0,0.0)))),ShotTestFixtures.zero,110)
+        assertEquals(fresh.token,spawn.token);assertEquals(fresh.token,move.token)
+        assertEquals(ShotVector(11.0,0.0,0.0),move.resolvedEnd);assertEquals(1,emitted.size)
+    }
     @Test fun `compiled item return callbacks preserve pass fail and success without a recorder`() {
         ShotObservationHooks.bind(null,{ error("off must not read a clock") },{ throw AssertionError(it) })
         val mixin=ShotUseMixin()

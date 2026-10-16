@@ -8,7 +8,7 @@ class ShotEntityCache {
         var sample:ShotVector?=null
     }
     data class Pending(val identity:String,val position:ShotVector,val micros:Long,
-        val updates:MutableList<Pair<Long,ShotPacketUpdate>> = mutableListOf(),var currentBase:ShotVector=position)
+        val updates:MutableList<Pair<Long,ShotPacketUpdate>> = mutableListOf(),var currentBase:ShotVector?=position)
     private val live=linkedMapOf<Int,Entry>()
     private val pending=linkedMapOf<Int,Pending>()
     private val gaps=linkedSetOf<ShotGap>()
@@ -27,12 +27,7 @@ class ShotEntityCache {
         val p=pending[update.id] ?: return
         if(p.updates.size>=8) { p.updates.removeAt(0);gaps.add(ShotGap.CACHE_BACKLOG) }
         p.updates.add(micros to update)
-        when(update) {
-            is ShotPacketUpdate.Move -> update.resolvedEnd?.let { p.currentBase=it }
-            is ShotPacketUpdate.PositionSync -> (update.end ?: update.points.lastOrNull()?.position)?.let { p.currentBase=it }
-            is ShotPacketUpdate.Spawn -> p.currentBase=update.position
-            else -> {}
-        }
+        p.currentBase=ShotPacketAdapter.nextBase(p.currentBase,update)
     }
     fun takePending(id:Int)=pending.remove(id)
     fun expire(micros:Long) { pending.entries.removeIf { micros-it.value.micros>500_000 } }
@@ -52,7 +47,8 @@ class ShotEntityCache {
     fun expireWindow():List<Entry> = live.values.filter { it.variant!=null }.toList().also { entries ->
         entries.forEach { expired.add(it.identity);live.remove(it.id) }
     }
-    fun newWindow() { expired.clear() }
+    // A new input does not create a new entity lifetime. Suppression is bounded by the 256-capsule session cap.
+    fun newWindow() {}
     fun gap(reason:ShotGap) { gaps.add(reason) }
     fun takeGaps()=gaps.toList().also { gaps.clear() }
     fun reset() { live.clear();pending.clear();gaps.clear();expired.clear();generation=0;capsuleCount=0 }

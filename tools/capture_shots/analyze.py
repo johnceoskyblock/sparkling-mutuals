@@ -154,6 +154,9 @@ def analyze(fitting,validation,curation=None,provisional=False,predictions=None)
                 for token in tokens:
                     track=tracks.get(token)
                     if track is None or track.variant!=shot.input.data['variant']:exclude(s,shot,role,'variant_or_track_mismatch',token);continue
+                    terminal=next((e for e in reversed(track.events) if e.kind=='capsule' and e.data['action']=='removed'),None)
+                    if (terminal is None or terminal.data['removal']!='server_remove') and not provisional:
+                        exclude(s,shot,role,'incomplete_track',token);continue
                     observed,problems,coincident=samples(track)
                     tick,_,_=samples(track,'tick')
                     key={'session':s.header['metadata']['session'],'shot':shot.token,'track':token,'variant':track.variant,'role':role,'association':shot.association}

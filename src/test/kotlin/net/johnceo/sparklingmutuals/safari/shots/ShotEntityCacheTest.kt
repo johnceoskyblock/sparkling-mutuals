@@ -4,14 +4,33 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class ShotEntityCacheTest {
-    @Test fun `window expiry finishes tracks once and blocks rediscovery until the next local input`() {
+    @Test fun `unidentified teleport advances packet decoding base before delayed metadata replay`() {
+        for(flags in listOf(emptyList(),listOf("X","Z"))) {
+            val c=ShotEntityCache();val origin=ShotVector(100.0,20.0,30.0)
+            c.pendingSpawn(3,"private",origin,100)
+            val teleport=ShotPacketUpdate.Teleport(3,ShotVector(10.0,50.0,2.0),flags)
+            c.remember(teleport,200)
+            val expected=if(flags.isEmpty()) ShotVector(10.0,50.0,2.0) else ShotVector(110.0,50.0,32.0)
+            assertEquals(expected,c.packetBase(3))
+            val end=ShotVector(expected.x+1,expected.y,expected.z)
+            c.remember(ShotPacketUpdate.Move(3,listOf(ShotPathPoint(ShotVector(1.0,0.0,0.0))),resolvedEnd=end),300)
+            val e=c.discover(3,"private",ShotVariant.ORDINARY,null,ShotDiscovery.METADATA,400)!!
+            val p=c.takePending(3)!!
+            val replay=p.updates.map { (time,u) -> ShotPacketAdapter.translate(e,u,origin,time) }
+            assertEquals(end-origin,replay.last().resolvedEnd)
+            assertEquals(listOf(200L,300L),replay.map { it.observedMicros })
+            assertTrue(replay.all { it.baseKnown })
+        }
+    }
+    @Test fun `window expiry finishes tracks once and never rediscovers the same lifetime`() {
         val c=ShotEntityCache()
         c.discover(1,"private",ShotVariant.ORDINARY,null,ShotDiscovery.BOOTSTRAP,0)
         assertEquals(1,c.expireWindow().size)
         assertTrue(c.expireWindow().isEmpty())
         assertNull(c.discover(1,"private",ShotVariant.ORDINARY,null,ShotDiscovery.BOOTSTRAP,9_000_000))
         c.newWindow()
-        assertNotNull(c.discover(1,"private",ShotVariant.ORDINARY,null,ShotDiscovery.BOOTSTRAP,10_000_000))
+        assertNull(c.discover(1,"private",ShotVariant.ORDINARY,null,ShotDiscovery.BOOTSTRAP,10_000_000))
+        assertNotNull(c.discover(1,"replacement",ShotVariant.MASTERFUL,null,ShotDiscovery.SPAWN,10_000_001))
     }
     @Test fun `reused runtime id gets a new generation and bootstrap never invents an observed spawn`() {
         val c=ShotEntityCache()
