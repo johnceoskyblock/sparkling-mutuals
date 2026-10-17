@@ -43,7 +43,7 @@ object WorldRenderCompat {
                     .setNormal(pose,line.normal.x.toFloat(),line.normal.y.toFloat(),line.normal.z.toFloat()).setLineWidth(width)
         }
     }
-    fun renderType(name: String, filled: Boolean = false, cull: Boolean? = false, depth: WorldDepthMode = WorldDepthMode.THROUGH_TERRAIN): RenderType {
+    fun renderType(name: String, filled: Boolean = false, cull: Boolean? = false, depth: WorldDepthMode = WorldDepthMode.THROUGH_TERRAIN, afterShaders: Boolean = false): RenderType {
         val builder = RenderPipeline.builder(
             if (filled) RenderPipelines.DEBUG_FILLED_SNIPPET else RenderPipelines.LINES_SNIPPET)
             .withLocation(SparklingMutuals.id("pipeline/$name"))
@@ -53,7 +53,7 @@ object WorldRenderCompat {
         val setup = RenderSetup.builder(pipeline).setLayeringTransform(LayeringTransform.VIEW_OFFSET_Z_LAYERING)
         // 26.3 routes feature geometry through the frame's render passes; output targets no longer exist.
         //? if <26.3 {
-        setup.setOutputTarget(OutputTarget.ITEM_ENTITY_TARGET)
+        setup.setOutputTarget(if (afterShaders) OutputTarget.MAIN_TARGET else OutputTarget.ITEM_ENTITY_TARGET)
         //? }
         return RenderType.create("sparkling-mutuals:$name", setup.createRenderSetup())
     }
