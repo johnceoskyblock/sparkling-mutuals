@@ -7,12 +7,18 @@ class ContactTargetCache(private val priority:(ContactTarget)->Double = {0.0}) {
  private var sweep:Iterator<ContactDiscovery?>?=null
  private var metadataDirty=false
  var scanInterrupted=false;private set
- fun invalidate() { complete=false;sweep=null;scanInterrupted=true }
+ var sweepFinished=false;private set
+ fun invalidate() { complete=false;sweep=null;scanInterrupted=true;sweepFinished=false }
  // Metadata cannot corrupt the map iterator. Keep scanning, but require a fresh sweep for full coverage.
  fun metadataChanged() { complete=false;metadataDirty=true }
- fun reset() { world=null;entries.clear();complete=false;overflow=false;sweep=null;scanInterrupted=false;metadataDirty=false }
+ fun reset() { world=null;entries.clear();complete=false;overflow=false;sweep=null;scanInterrupted=false;metadataDirty=false;sweepFinished=false }
  fun tick(world:Any,slots:Iterator<ContactDiscovery?>,inspect:(ContactDiscovery)->ContactTarget?) {
+  tick(world,slots,240,inspect)
+ }
+ fun tick(world:Any,slots:Iterator<ContactDiscovery?>,inspectionLimit:Int,inspect:(ContactDiscovery)->ContactTarget?) {
+  require(inspectionLimit in 64..240)
   if(this.world!==world) { reset();this.world=world }
+  sweepFinished=false
   var used=0
   val ranks=mutableMapOf<String,Double>()
   fun rank(target:ContactTarget)=priority(target).takeIf{it.isFinite() && it>=0.0} ?: Double.POSITIVE_INFINITY
@@ -24,7 +30,7 @@ class ContactTargetCache(private val priority:(ContactTarget)->Double = {0.0}) {
   }
   if(sweep!==slots) { overflow=false;sweep=slots;scanInterrupted=false;metadataDirty=false }
   fun available():Boolean = try { slots.hasNext() } catch(_:java.util.ConcurrentModificationException) { invalidate();false }
-  while(used<240 && available()) {
+  while(used<inspectionLimit && available()) {
    used++
    // Only iterator access is guarded. Real identification/inspection failures still propagate.
    val discovery=try { slots.next() } catch(_:IndexOutOfBoundsException) { invalidate();break }
@@ -44,6 +50,8 @@ class ContactTargetCache(private val priority:(ContactTarget)->Double = {0.0}) {
    }
   }
   val remaining=available()
+  // Exhausting discovery is distinct from retaining every target or proving full coverage.
+  sweepFinished=!scanInterrupted && !remaining
   complete=!scanInterrupted && !metadataDirty && !remaining && !overflow
  }
  fun snapshot():Pair<List<ContactTarget>,ContactCoverage> = entries.values.map{it.second}.toList() to

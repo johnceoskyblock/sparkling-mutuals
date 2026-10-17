@@ -260,12 +260,13 @@ Verify Full Clear report trust: capture a variable species' minimum and perform 
 - Aim across an identified Rockmite mound: its transformed loaded model hull can stop the amber **Estimated mound surface** before the ground beneath it; it must never yield a cyan diamond. Its ESP/source highlight stays intact, and a released silverfish still yields a critter contact. Change the mound transform/remove it before the next tick: an old endpoint must be suppressed. Recorder calibration snapshots omit this display-only surface estimate.
 - Aim at floor/wall seams, convex steps, slabs and mound edges: the amber ring wraps adjoining faces, with no chords through solid corners or across disconnected gaps/narrow slits. Check unknown/over-budget patches and retain a maximum 24 segments. The flight path must not bend along the surface.
 - Aim at a surfaced Shyworm body/tail while its head is low: supported pieces can produce a cyan contact without adding worms to tracking/counts. Test disconnected pieces, different textures/poses, two nearby heads, a changed off-path head, movement/removal/identity reuse and world reset. Body support must invalidate promptly and respect existing scan/validation budgets.
+- Repeat the body/tail check with more than 64 unrelated contact targets and routine unrelated metadata: a finished association sweep must allow known body contacts while global coverage stays Provisional. Displace a connector from the retained target slots between two heads: the independent connection map must still reject the ambiguous component. Remove that connector and finish a safe sweep: unique support may return. More than 64 connection nodes or sixteen heads must withhold body estimates. Check the 176 + 64 + 16 inspection allocation and cached `contact_scene` readiness row.
 - Check real-writer v2 plus strict v1 replay, local target aliases, UTF-8/finite/line bounds, omitted detail flags, one probe per ordinary input and unchanged raw packets/association. Both named populated workloads retain every capsule packet under unchanged caps.
 - Run target-only 26.1.2 verification, helper/Python/package tests, offline loaded fixtures and bounded scene profiling. Live Hypixel broader-angle launch, endpoint and proxy validation remain pending; use the six-throw sanity block before the fitting/validation matrix.
 
 ## Last updated
 
-2026-10-17 - Added separate Shyworm body-piece, visual mound surface and connected marker wrapping checks; server capture/collision geometry remains unverified.
+2026-10-17 - Added combined crowding/body readiness, omitted connector ambiguity and connection-budget checks; server capture/collision geometry remains unverified.
 
 ## Shyworm body diagnostics
 

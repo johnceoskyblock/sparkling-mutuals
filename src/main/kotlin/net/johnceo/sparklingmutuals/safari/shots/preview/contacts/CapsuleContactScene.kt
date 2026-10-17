@@ -36,10 +36,24 @@ object CapsuleContactScene {
     private var wormAssociationDirty=false
     private var partSupport=emptyMap<String,List<ContactTarget>>()
     private var bodyDiscoveryPending=true
-    fun invalidateDiscovery() { if(world!=null) { slots=null;cache.invalidate();validation.invalidate();bodyDiscoveryPending=true;revision++ } }
+    private var bodyEpoch=0L
+    private var bodySweepEpoch=-1L
+    private val wormWitnesses=linkedMapOf<String,ContactTarget>()
+    private var wormWitnessOverflow=false
+    /** Cached counts only, read by the explicit local debug command without extra inspections. */
+    fun debugSummary():Map<String,Any> {
+        val (targets,coverage)=cache.snapshot()
+        return mapOf("sourceTick" to tick,"cachedTargets" to targets.size,
+            "bodyCandidates" to targets.count{it.bodyPart},"supportedBodies" to partSupport.size,
+            "bodyDiscoveryPending" to bodyDiscoveryPending,"associationDirty" to wormAssociationDirty,
+            "sweepFinished" to cache.sweepFinished,"coverageReasons" to coverage.reasons,
+            "witnessParts" to wormWitnesses.size,"witnessHeads" to wormWitnesses.values.count{!it.bodyPart},
+            "witnessOverflow" to wormWitnessOverflow)
+    }
+    fun invalidateDiscovery() { if(world!=null) { slots=null;cache.invalidate();validation.invalidate();bodyDiscoveryPending=true;bodyEpoch++;revision++ } }
     fun metadataChanged(entityId:Int) { if(world!=null) {
         // An unrecognised stand may just have received a Shyworm head/body profile.
-        if(entityId.toString() !in wormKeys && (world as? net.minecraft.client.multiplayer.ClientLevel)?.getEntity(entityId) is ArmorStand) bodyDiscoveryPending=true
+        if(entityId.toString() !in wormKeys && (world as? net.minecraft.client.multiplayer.ClientLevel)?.getEntity(entityId) is ArmorStand) { bodyDiscoveryPending=true;bodyEpoch++ }
         cache.metadataChanged();entityChanged(entityId)
     } }
     fun entityChanged(entityId:Int) { if(world!=null) {
@@ -54,7 +68,7 @@ object CapsuleContactScene {
     }
     private val collectionRules=net.johnceo.sparklingmutuals.safari.shots.preview.CapsulePreviewRules(allowExtendedPreview=false)
     fun probeEligible(client:Minecraft)=collectionRules.evaluate(net.johnceo.sparklingmutuals.safari.shots.preview.CapsulePreview.collectionState(client))==net.johnceo.sparklingmutuals.safari.shots.preview.CapsulePreviewAvailability.AVAILABLE
-    fun reset() { cache.reset();world=null;slots=null;validation.reset();entityCount=-1;unsupported=false;unsupportedSurface=false;wormKeys=emptySet();wormAssociationDirty=false;bodyDiscoveryPending=true;partSupport=emptyMap();priority=null;collectionRules.reset();revision++ }
+    fun reset() { cache.reset();world=null;slots=null;validation.reset();entityCount=-1;unsupported=false;unsupportedSurface=false;wormKeys=emptySet();wormAssociationDirty=false;bodyDiscoveryPending=true;bodyEpoch=0;bodySweepEpoch=-1;wormWitnesses.clear();wormWitnessOverflow=false;partSupport=emptyMap();priority=null;collectionRules.reset();revision++ }
     fun tick(client:Minecraft,enabled:Boolean) {
         val level=client.level
         if(!enabled || !SafariAssist.inSafari || level==null || client.player==null) { reset();return }
@@ -64,8 +78,16 @@ object CapsuleContactScene {
         priority=ContactTargetPriority(ContactCurveSampler.sample(vector(player.eyePosition),vector(player.lookAngle),player.xRot.toDouble()))
         if(entityCount!=level.entityCount) { invalidateDiscovery();entityCount=level.entityCount }
         collectionRules.tick(level,net.johnceo.sparklingmutuals.safari.shots.preview.CapsulePreview.collectionState(client))
+        // Preserve the whole association graph independently of solver retention, including
+        // connectors displaced by unrelated targets. At most 64 extra inspections per tick.
+        for((key,previous) in wormWitnesses.toMap()) {
+            val current=inspect(client,ContactDiscovery(key,previous.generation))
+            if(current==null || current.species!="Shyworm" || current.surface!=null) wormWitnesses.remove(key)
+            else wormWitnesses[key]=current
+        }
         if(slots?.hasNext()!=true) {
             unsupported=false;unsupportedSurface=false
+            bodySweepEpoch=bodyEpoch;wormWitnessOverflow=false
             val entities=level.entitiesForRendering().iterator()
             slots=object:Iterator<ContactDiscovery?> {
                 override fun hasNext()=entities.hasNext()
@@ -75,11 +97,13 @@ object CapsuleContactScene {
                 }
             }
         }
-        cache.tick(level,slots!!){inspect(client,it)}
-        val (refreshed,refreshedCoverage)=cache.snapshot()
-        wormKeys=refreshed.filter{it.species=="Shyworm"}.mapTo(hashSetOf()){it.key}
-        if(refreshedCoverage.complete) bodyDiscoveryPending=false
-        partSupport=if(bodyDiscoveryPending) emptyMap() else ShywormContactParts.support(refreshed)
+        // 176 discovery/refresh + 64 association witnesses + 16 selected validations = 256.
+        cache.tick(level,slots!!,176){inspect(client,it)}
+        val associationTargets=wormWitnesses.values.toList()
+        wormKeys=associationTargets.filter{it.species=="Shyworm"}.mapTo(hashSetOf()){it.key}
+        if(wormWitnessOverflow || associationTargets.count{!it.bodyPart}>16) bodyDiscoveryPending=true
+        else if(cache.sweepFinished && bodySweepEpoch==bodyEpoch) bodyDiscoveryPending=false
+        partSupport=if(bodyDiscoveryPending) emptyMap() else ShywormContactParts.support(associationTargets)
         wormAssociationDirty=false
         if(cache.scanInterrupted) slots=null
     }
@@ -105,7 +129,12 @@ object CapsuleContactScene {
             ShotVector(entity.x,entity.y,entity.z),ShotBounds(ShotVector(b.minX,b.minY,b.minZ),ShotVector(b.maxX,b.maxY,b.maxZ)),true,
             !part && SafariEspRules.identify(descriptor)?.identifiers?.any{it.shulker!=null}==true)
         if(body==null) { unsupported=true;return null }
-        return ContactTarget(d.key,d.generation,species,body.first,body.second,bodyPart=part)
+        val target=ContactTarget(d.key,d.generation,species,body.first,body.second,bodyPart=part)
+        if(species=="Shyworm") {
+            if(d.key in wormWitnesses || wormWitnesses.size<64) wormWitnesses[d.key]=target
+            else wormWitnessOverflow=true
+        }
+        return target
     }
     fun refreshRevision(client:Minecraft) {
         if(world==null || world!==client.level) return

@@ -4,7 +4,9 @@ object ShywormContactParts {
     /** Fitting evidence: seven separate head-item segments, no stable passenger/ID ownership link.
      * A bounded geometric connection is provisional. Ambiguous components are deliberately omitted. */
     fun support(targets:List<ContactTarget>):Map<String,List<ContactTarget>> {
-        val worms=targets.take(64).filter{it.species=="Shyworm" && it.surface==null && it.bounds.valid()}
+        // Never truncate a component: a dropped connector can hide a competing head.
+        val worms=targets.filter{it.species=="Shyworm" && it.surface==null && it.bounds.valid()}.distinctBy{it.key}
+        if(worms.size>64) return emptyMap()
         fun center(t:ContactTarget)=t.bounds.min.lerp(t.bounds.max,.5)
         val positions=worms.associate{it.key to center(it)}
         val neighbors=worms.associate{a->a.key to worms.filter{b->a!==b && positions.getValue(a.key).distanceSquared(positions.getValue(b.key))<=1.75*1.75}}
