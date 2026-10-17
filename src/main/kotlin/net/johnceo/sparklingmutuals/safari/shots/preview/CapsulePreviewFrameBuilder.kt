@@ -11,6 +11,7 @@ object CapsulePreviewFrameBuilder {
         val display=if(estimateLabel==null) trace else trace.copy(nodes=trace.nodes.map{it.copy(observedRegion=false)})
         val reason=when {
             trace.primary?.kind==ContactKind.CRITTER -> "Possible critter contact"
+            trace.primary?.proxy=="mound_surface_v1" -> "Estimated mound surface"
             trace.primary?.kind==ContactKind.TERRAIN -> "Estimated terrain contact"
             trace.stop==ContactStop.UNLOADED -> "Unloaded terrain"
             trace.stop==ContactStop.FLUID -> "Fluid behavior unavailable"
@@ -21,7 +22,8 @@ object CapsulePreviewFrameBuilder {
         val partial=trace.primary!=null && trace.warnings.any{it in setOf("scan_pending","target_limit","unsupported_proxy","stale_target","identity_budget")}
         return CapsulePreviewFrame(display.nodes.map{it.position},"Uncalibrated · "+(estimateLabel?.let{"$it\n"} ?: "")+(if(partial)"Provisional\n" else "")+reason+
             (if(partial)"\nOther critters unverified" else "")+
-            (if("contact_tie" in trace.warnings) " (ambiguous)" else ""),ContactGuideGeometry.build(display,camera,width))
+            (if("contact_tie" in trace.warnings) " (ambiguous)" else "")+
+            (if(trace.primary?.kind==ContactKind.TERRAIN && trace.surfacePatch?.isEmpty()==true) "\nSurface marker unavailable" else ""),ContactGuideGeometry.build(display,camera,width))
     }
     fun build(availability: CapsulePreviewAvailability, eye: ShotVector, aim: ShotVector): CapsulePreviewFrame {
         if (availability==CapsulePreviewAvailability.AVAILABLE) {

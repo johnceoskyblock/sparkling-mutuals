@@ -16,7 +16,7 @@ object ShotContactProbe {
    s.trace.primary?.let{it.copy(position=it.position-origin,targetKey=it.targetKey?.let(aliases::get))},s.trace.stop)
  }
  fun capture(client:Minecraft,input:ShotObservation.Input,origin:ShotVector):ShotContactProbeData =
-  fromSnapshot(input,origin,CapsuleContactScene.snapshot(client,input.pose.eye.let{ShotVector(it.x+origin.x,it.y+origin.y,it.z+origin.z)},input.pose.aim,input.pose.pitch.toDouble()))
+  fromSnapshot(input,origin,CapsuleContactScene.calibrationSnapshot(client,input.pose.eye.let{ShotVector(it.x+origin.x,it.y+origin.y,it.z+origin.z)},input.pose.aim,input.pose.pitch.toDouble()))
  fun produce(input:ShotObservation.Input,eligible:Boolean,snapshot:()->ShotContactProbeData):ShotObservation.ContactProbe? =
   if(eligible && input.variant==ShotVariant.ORDINARY && input.hand==ShotHand.MAIN) ShotObservation.ContactProbe(snapshot()) else null
 
