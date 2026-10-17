@@ -160,6 +160,8 @@ class SafariSettings : Config() {
         @ConfigEditorBoolean var allowUncalibratedCapsuleEstimates = ConfigManager.allowUncalibratedCapsuleEstimates
         @JvmField @ConfigOption(name = "Capsule path width", desc = "Line width from 1 to 5; default 3.")
         @ConfigEditorSlider(minValue = 1f, maxValue = 5f, minStep = 1f) var capsulePathWidth = ConfigManager.capsulePathWidth
+        @JvmField @ConfigOption(name = "Show guide through terrain", desc = "See the capsule guide and contact marker behind terrain. The estimated route still stops at its first predicted collision.")
+        @ConfigEditorBoolean var showCapsuleGuideThroughTerrain = ConfigManager.showCapsuleGuideThroughTerrain
         @JvmField @ConfigOption(name = "Highlight teammates", desc = "Outline loaded party members anywhere in SkyBlock.")
         @ConfigEditorBoolean var highlightTeammates = ConfigManager.highlightTeammates
         @JvmField @ConfigOption(name = "Show teammate names", desc = "Show party member names through walls anywhere in SkyBlock.")
@@ -295,6 +297,7 @@ class SafariSettings : Config() {
             ConfigManager::progressHud to tracking.progress,
             ConfigManager::experimentalCapsulePath to safari.experimentalCapsulePath,
             ConfigManager::allowUncalibratedCapsuleEstimates to safari.allowUncalibratedCapsuleEstimates,
+            ConfigManager::showCapsuleGuideThroughTerrain to safari.showCapsuleGuideThroughTerrain,
             ConfigManager::missingPanel to tracking.missing,
             ConfigManager::removeDarkness to safari.darkness,
             ConfigManager::sparklingAlert to safari.alert, ConfigManager::sparklingPartyAnnouncer to safari.announce,

@@ -30,6 +30,8 @@ The existing `missingPanel` toggle and HUD layout are shared across modes. In Sp
 
 Capsule path width saves independently as `capsulePathWidth`, defaults to **3**, and clamps finite values to **1–5**. Invalid/non-finite values use 3. Uncalibrated estimates requires Experimental capsule path; enabling either option does not start recording. Expanded estimates add a terrain ring or possible-critter diamond, including close launch and broader angles. Keep both hiding settings off; collision and target proxies remain unverified.
 
+**Show guide through terrain** (`showCapsuleGuideThroughTerrain`) defaults **on**, including for missing/invalid saved values; an explicit off choice persists. It only changes guide/marker visibility, with the experimental preview still separately default off and the same collision stops. **Capsule status** uses the standard HUD editor with saved normalized `hud.capsule_status.x` / `y` and `scale` (0.15–2). Its default top-left anchor is 35% across / 55% down at scale 1; Reset positions restores it.
+
 ## ESP label size
 
 The ESP tab offers **ESP text scale**, from **0.5 to 4** in **0.25** steps. The new default is **2** (twice the original label size); **1** restores the original size. It controls floor-drop names, critter timers, nest labels and teammate names. Teammate names retain their existing distance scaling. Labels stay centered and retain their colors and visibility settings. Changes apply through the GUI and persist across restarts as `esp.textScale`; invalid/non-finite values use the default, and finite values are clamped to the allowed range.
@@ -72,3 +74,5 @@ The History tab begins with the **History** button, followed immediately by **Im
 2026-10-16 - Clarified independent Safari entry settings and removed the sneak override.
 
 2026-10-16 (America/New_York) - Added the explicit default-off experimental capsule path exception.
+
+2026-10-17 - Documented guide-through-terrain defaults and the independent capsule-status HUD layout.

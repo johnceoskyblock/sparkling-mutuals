@@ -12,6 +12,7 @@ import net.johnceo.sparklingmutuals.hud.SmallAlerts
 import net.johnceo.sparklingmutuals.safari.SafariAssist
 import net.johnceo.sparklingmutuals.safari.SafariBiome
 import net.johnceo.sparklingmutuals.safari.ui.SafariPanels
+import net.johnceo.sparklingmutuals.safari.shots.preview.CapsuleStatusHud
 import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.gui.components.Button
 import net.minecraft.client.gui.screens.Screen
@@ -46,8 +47,12 @@ class ContestGui(private val parent: Screen? = null) : Screen(Component.literal(
             previews.add(Preview(hud.label, hud.layout, panel.width(font::width), panel.height) { g, x, y ->
                 panel.draw(g, x, y, hud.layout.scale, AppearanceConfig.panels.getValue(hud.name.lowercase())) })
         }
+        previews.add(Preview("Capsule status",CapsuleStatusHud.layout,CapsuleStatusHud.previewWidth,CapsuleStatusHud.previewHeight) { g,x,y ->
+            CapsuleStatusHud.renderPreview(g,x,y)
+        })
         addRenderableWidget(Button.builder(Component.literal("Reset positions")) {
             SafariHud.entries.forEach { it.layout.reset() }
+            CapsuleStatusHud.layout.reset()
             miria.x = 10f / width.coerceAtLeast(1); miria.y = 10f / height.coerceAtLeast(1); miria.scale = 1f
             save()
         }.bounds(width / 2 - 104, height - 24, 120, 20).build())
