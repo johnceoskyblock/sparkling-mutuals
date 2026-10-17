@@ -29,6 +29,17 @@ import org.joml.Matrix4f
 enum class WorldDepthMode { THROUGH_TERRAIN, OCCLUDED }
 
 object WorldRenderCompat {
+    fun contactQuads(context:LevelRenderContext,type:RenderType,worldQuads:List<net.johnceo.sparklingmutuals.safari.shots.preview.contacts.ContactQuad>) {
+        val client=Minecraft.getInstance();val world=client.level;val camera=client.gameRenderer.smCamera.position()
+        val quads=net.johnceo.sparklingmutuals.safari.shots.preview.contacts.ContactTubeGeometry.cameraRelative(worldQuads,
+            net.johnceo.sparklingmutuals.safari.shots.ShotVector(camera.x,camera.y,camera.z))
+        if(quads.isEmpty()) return
+        geometry(context,type) { pose,vertices ->
+            if(client.level!==world) return@geometry
+            for(q in quads) for(point in listOf(q.a,q.b,q.c,q.d))
+                vertices.addVertex(pose,point.x.toFloat(),point.y.toFloat(),point.z.toFloat()).setColor(q.color)
+        }
+    }
     fun contactLines(context:LevelRenderContext,type:RenderType,worldLines:List<net.johnceo.sparklingmutuals.safari.shots.preview.contacts.ContactLine>) {
         val client=Minecraft.getInstance();val world=client.level;val camera=client.gameRenderer.smCamera.position()
         val lines=worldLines.toList().flatMap { line ->
