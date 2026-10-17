@@ -71,7 +71,7 @@ object CapsuleContactScene {
             client.player?.distanceToSqr(entity)?.let{it>4096}!=false) return null
         val descriptor=SafariEsp.describe(entity)
         val species=SafariEspRules.identify(descriptor) ?: return null
-        if(!SafariEsp.contactCurrent(entity,species.name,client)) return null
+        if(!SafariEsp.contactCurrent(entity,species.name,client) || SafariEsp.isRockmiteMound(entity,client)) return null
         val b=entity.boundingBox
         val body=ContactTargetProxies.body(if(entity is Display) "display" else if(entity is ArmorStand) "armor_stand" else "native",
             ShotVector(entity.x,entity.y,entity.z),ShotBounds(ShotVector(b.minX,b.minY,b.minZ),ShotVector(b.maxX,b.maxY,b.maxZ)),true,

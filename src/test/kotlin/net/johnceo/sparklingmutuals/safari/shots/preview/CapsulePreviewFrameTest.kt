@@ -57,11 +57,11 @@ class CapsulePreviewFrameTest {
         val frame=CapsulePreviewFrameBuilder.build(CapsulePreviewAvailability.AVAILABLE,eye,ShotVector(0.0,0.0,0.0))
         assertTrue(frame.points.isEmpty());assertEquals("Capsule path unavailable",frame.status)
     }
-    @Test fun `world reset and current view invalidate a previously available frame`() {
+    @Test fun `world reset and screens invalidate a previously available frame`() {
         val s=CapsulePreviewState(true,true,ShotVariant.ORDINARY,true,true,false,false,false,false,false,false,false,false,false,0.0,eye,ShotVector(0.0,0.0,0.0))
         val r=CapsulePreviewRules();val w=Any();r.tick(w,s);r.tick(w,s)
         assertEquals(64,CapsulePreviewFrameBuilder.build(r.evaluate(s),eye,aim).points.size)
-        assertTrue(CapsulePreviewFrameBuilder.build(r.evaluate(s.copy(firstPerson=false)),eye,aim).points.isEmpty())
+        assertTrue(CapsulePreviewFrameBuilder.build(r.evaluate(s.copy(screenOpen=true)),eye,aim).points.isEmpty())
         r.tick(Any(),s)
         assertTrue(CapsulePreviewFrameBuilder.build(r.evaluate(s),eye,aim).points.isEmpty())
     }
