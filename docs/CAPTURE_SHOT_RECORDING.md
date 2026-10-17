@@ -12,7 +12,9 @@ Walking, jumping/falling, swimming, flight, riding, sneaking/sprinting, unsuppor
 
 Enable **Allow uncalibrated estimates** (also default off) for broader first-person angles and estimated contact. The guide extends the same fixed spatial formula from the eye, including the formerly omitted launch prefix. This is the versioned `contact-guide-center-extrapolation-v1` hypothesis, not measured launch physics. It stops at the first of 64 accumulated blocks, ordinal 128 or 256 segments. Ordinal is **not server flight time**. Launch/wider regions are dashed; the previously observed region is solid. **Capsule path width** saves from 1–5, default 3, with a dark outline. Both passes remain terrain-occluded; existing ESP visibility stays unchanged.
 
-One primary marker clips the path: an amber surface ring for **Estimated terrain contact**, or a cyan diamond with center mark for **Possible critter contact**. Terrain wins indistinguishable ties, which are labelled ambiguous. Terrain uses loaded collision shapes, including partial blocks; critters use current client-body or versioned unpadded visual-body proxies, independent of ESP toggles. Neither those proxies nor the zero-radius curve is a verified server hitbox. No target-motion prediction is performed. **Uncalibrated** remains in the HUD. Fluids, unloaded geometry and incomplete/unsupported critter coverage suppress farther markers; a range/work limit displays no landing or miss claim.
+One primary marker clips the path: an amber surface ring for **Estimated terrain contact**, or a cyan diamond with center mark for **Possible critter contact**. Terrain wins indistinguishable ties, which are labelled ambiguous. Terrain uses loaded collision shapes, including partial blocks; critters use current client-body or versioned unpadded visual-body proxies, independent of ESP toggles. Neither those proxies nor the zero-radius curve is a verified server hitbox. No target-motion prediction is performed. **Uncalibrated** remains in the HUD. With incomplete/unsupported critter coverage, a known contact remains visible with **Provisional** and **Other critters unverified**: an unchecked critter could come first. Fluids and unloaded geometry still suppress markers beyond them; a range/work limit displays no landing or miss claim.
+
+Discovery keeps its progress through routine entity metadata updates, while marking coverage incomplete until a fresh sweep finishes. Structural entity-map changes still restart discovery safely. The 64 retained targets favor bodies near the current estimated curve, reconsidered as aim changes; this bounded ranking is not proof that every relevant critter was checked. The shared 256-slot tick allowance is unchanged. Crowded raw recordings can still reach their separate target limit and export as incomplete; readable observations remain useful diagnostics without becoming complete calibration evidence.
 
 For the first visual test, leave recording off, enable the option as above and compare a few ordinary throws in the tested range. Check camera turns/FOV, GUI scale, screen/HUD suppression, movement stop/start, item/hand changes, angle limits and world transfer. Put the line behind a solid obstacle and confirm occlusion while existing ESP keeps its normal visibility. Live Hypixel appearance and server mechanics require gameplay testing; a passing build or numeric observation check cannot establish them. See the [manual checklist](IMPLEMENTATION_TEST_CHECKLIST.md#experimental-capsule-path).
 
@@ -34,7 +36,7 @@ Schema v2 / recorder policy v3 adds one typed contact probe per eligible ordinar
 python tools/capture_shots/contacts.py session.jsonl --output new-contact-report
 ```
 
-The report separates predicted contact, coverage, typed/manual outcomes and raw removals. Endpoint error stays null until an independent terminal position exists; removal/last position/capture feedback cannot supply it. The existing collection matrix below is historical/general recorder coverage; the bounded ordinary contact sequence above is the current next collection.
+The report separates predicted contact, coverage, typed/manual outcomes and raw removals. `predicted_contact_provisional` flags a retained contact with partial target coverage or truncated probe detail. Raw-file completeness remains independent. Endpoint error stays null until an independent terminal position exists; removal/last position/capture feedback cannot supply it. The existing collection matrix below is historical/general recorder coverage; the bounded ordinary contact sequence above is the current next collection.
 
 Recording starts off and never resumes automatically. In a loaded Safari world:
 
@@ -142,4 +144,4 @@ Automated suites exercise the actual coordinator/writer/codec, producer-to-reade
 
 ## Last updated
 
-2026-10-16 (America/New_York) - Added the opt-in stationary ordinary-capsule preview guide and its visual/server validation limits.
+2026-10-17 - Documented provisional known-contact markers, metadata scan continuity, aim-prioritized bounded targets and unchanged raw recording limitations.

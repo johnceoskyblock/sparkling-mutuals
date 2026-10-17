@@ -3,10 +3,13 @@ object CapsuleContactSolver {
     const val TIE = 1e-7
     fun trace(curve:ContactCurve,targets:List<ContactTarget>,coverage:ContactCoverage,scene:(ContactNode,ContactNode)->ContactSegmentScene):ContactTrace {
         val warnings=coverage.reasons.filterTo(linkedSetOf()){it in ContactWarnings.allowed}
+        if(!coverage.complete && warnings.isEmpty()) warnings.add("scan_pending")
         if(curve.nodes.isEmpty()) return ContactTrace(emptyList(),null,curve.stop,warnings.toSet())
         val nodes=ArrayList<ContactNode>(); nodes.add(curve.nodes.first())
-        fun finish(primary:ContactCandidate?,stop:ContactStop)=ContactTrace(nodes.toList(),if(coverage.complete) primary else null,
-            if(coverage.complete || stop in setOf(ContactStop.FLUID,ContactStop.UNLOADED,ContactStop.INVALID)) stop else ContactStop.TARGET_COVERAGE,warnings.toSet())
+        // A known contact remains useful with partial targets, but cannot establish the nearest contact.
+        // Unknown terrain still ends traversal before any candidate beyond it.
+        fun finish(primary:ContactCandidate?,stop:ContactStop)=ContactTrace(nodes.toList(),primary,
+            if(primary!=null || coverage.complete || stop in setOf(ContactStop.FLUID,ContactStop.UNLOADED,ContactStop.INVALID,ContactStop.WORK_LIMIT)) stop else ContactStop.TARGET_COVERAGE,warnings.toSet())
         for((a,b) in curve.nodes.zipWithNext()) {
             val environment=scene(a,b)
             var best=environment.terrain?.takeIf{it.position.finite() && it.parameter.isFinite() && it.parameter>=a.parameter-TIE && it.parameter<=b.parameter+TIE}

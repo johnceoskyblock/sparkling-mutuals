@@ -10,6 +10,15 @@ from tools.capture_shots.replay import replay
 from tools.capture_shots.tests.test_protocol import FIXTURES,records,encoded
 
 class ContactsTest(unittest.TestCase):
+    def test_known_contact_with_partial_targets_is_explicitly_provisional_without_changing_raw_completeness(self):
+        r=records('contact-probe-v2.jsonl');p=r[2]['data']['probe']
+        p['coverage']={'complete':False,'reasons':['target_limit']}
+        p['primary']={'kind':'terrain','parameter':.5,'position':{'x':0,'y':0,'z':.4},'normal':{'x':0,'y':0,'z':-1},'targetKey':None,'proxy':None};p['stop']='contact'
+        session=self.read(r);report=contacts.summarize(session)
+        self.assertTrue(report['raw_file_complete'])
+        self.assertTrue(report['shots'][0]['predicted_contact_provisional'])
+        self.assertFalse(report['shots'][0]['coverage']['complete'])
+        self.assertIsNone(report['shots'][0]['endpoint_error'])
     def test_actual_writer_inside_contact_and_zero_boundary_probes_are_readable(self):
         s=read_session(FIXTURES/'contact-boundaries-v2.jsonl')
         self.assertTrue(s.complete);report=contacts.summarize(s)

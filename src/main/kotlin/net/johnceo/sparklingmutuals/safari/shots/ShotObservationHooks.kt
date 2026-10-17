@@ -30,9 +30,10 @@ object ShotObservationHooks {
     fun packet(packet:Any) {
         // Existing client-thread hooks invalidate live-map sweeps even with recording off; no world inspection here.
         if(packet is net.minecraft.network.protocol.game.ClientboundAddEntityPacket ||
-            packet is net.minecraft.network.protocol.game.ClientboundRemoveEntitiesPacket ||
-            packet is net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket)
+            packet is net.minecraft.network.protocol.game.ClientboundRemoveEntitiesPacket)
             net.johnceo.sparklingmutuals.safari.shots.preview.contacts.CapsuleContactScene.invalidateDiscovery()
+        else if(packet is net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket)
+            net.johnceo.sparklingmutuals.safari.shots.preview.contacts.CapsuleContactScene.metadataChanged()
         observe("packet") {
             val client=Minecraft.getInstance();val level=client.level ?: return@observe
             ShotPacketCompat.copy(packet,level) { adapter?.packetBase(it) }.forEach { adapter?.packet(client,it,clock()) }

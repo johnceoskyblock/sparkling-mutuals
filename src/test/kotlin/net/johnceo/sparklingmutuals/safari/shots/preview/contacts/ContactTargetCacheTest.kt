@@ -3,6 +3,34 @@ import net.johnceo.sparklingmutuals.safari.shots.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 class ContactTargetCacheTest {
+    @Test fun `metadata churn retains progress through more than one discovery allowance`() {
+        val cache=ContactTargetCache();val world=Any()
+        val slots=List(600){ContactDiscovery("local_$it",1)}.iterator()
+        var inspected=0
+        repeat(3) {
+            cache.metadataChanged()
+            cache.tick(world,slots){inspected++;null}
+        }
+        assertEquals(600,inspected)
+        assertFalse(cache.snapshot().second.complete)
+        cache.tick(world,emptyList<ContactDiscovery>().iterator()){null}
+        assertTrue(cache.snapshot().second.complete)
+    }
+    @Test fun `late relevant critter replaces off path entries without exceeding slots or declaring coverage`() {
+        var wanted="late"
+        val cache=ContactTargetCache{if(it.key==wanted)0.0 else 100.0};val world=Any()
+        val discoveries=List(400){ContactDiscovery(if(it==399)"late" else "local_$it",1)}
+        val sweep=discoveries.iterator();var calls=0
+        repeat(3){cache.tick(world,sweep){calls++;target(it)}}
+        assertTrue(cache.snapshot().first.any{it.key=="late"})
+        assertEquals(64,cache.snapshot().first.size);assertFalse(cache.snapshot().second.complete)
+        assertTrue(calls<=3*240)
+        wanted="local_398"
+        val turned=discoveries.iterator()
+        repeat(3){cache.tick(world,turned,::target)}
+        assertTrue(cache.snapshot().first.any{it.key==wanted})
+        assertFalse(cache.snapshot().second.complete)
+    }
     private fun target(d:ContactDiscovery)=ContactTarget(d.key,d.generation,"Foxtrot",ShotBounds(ShotVector(0.0,0.0,0.0),ShotVector(1.0,1.0,1.0)),"client_body_v1")
     @Test fun `empty cache charges 240 discoveries and unfinished sweep is unknown`() {
         val c=ContactTargetCache();var calls=0

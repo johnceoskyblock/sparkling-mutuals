@@ -18,6 +18,7 @@ def summarize(session:Session)->dict:
         shots.append({'shot':shot.token,'model':p['model'] if p else None,'hypothesis':p['hypothesis'] if p else None,
             'proxy_versions':sorted({t['proxy'] for t in p['targets']}) if p else [],
             'predicted_contact':plain(p['primary']) if p else None,'coverage':plain(p['coverage']) if p else None,
+            'predicted_contact_provisional':bool(p and p['primary'] and (not p['coverage']['complete'] or p['truncated'])),
             'prediction_stop':p['stop'] if p else None,'probe_incomplete':bool(p and p['truncated']),
             'raw_removals':removals,'observed_endpoint_available':False,'endpoint_error':None,
             'typed_feedback':feedback,'manual_outcomes':list(shot.annotations),'association':shot.association})

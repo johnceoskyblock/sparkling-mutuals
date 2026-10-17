@@ -69,7 +69,10 @@ object CapsulePreview {
             frames.current(client.level,ShotPacketCompat.vector(p.lookAngle)) ?: return
             else CapsulePreviewFrameBuilder.build(available,ShotPacketCompat.vector(p.eyePosition),ShotPacketCompat.vector(p.lookAngle))
         val status=frame.status ?: return
-        graphics.text(client.font,status,(graphics.guiWidth()-client.font.width(status))/2,
-            graphics.guiHeight()/2+18,0xFFFFB347.toInt(),true)
+        val lines=client.font.split(net.minecraft.network.chat.Component.literal(status),(graphics.guiWidth()-16).coerceAtLeast(1))
+        lines.forEachIndexed { index,line ->
+            graphics.text(client.font,line,(graphics.guiWidth()-client.font.width(line))/2,
+                graphics.guiHeight()/2+18+index*client.font.lineHeight,0xFFFFB347.toInt(),true)
+        }
     }
 }
