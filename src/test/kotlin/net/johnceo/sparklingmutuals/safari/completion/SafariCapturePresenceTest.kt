@@ -31,6 +31,8 @@ class SafariCapturePresenceTest {
         repeat(3) { for (food in listOf("Bag of Seeds", "Wriggleworm", "Yogi Berry")) run.recordBirdFood("FLOOR DROP! $food") }
         repeat(8) { run.record(SafariCatch(SafariRoster.named("Bluebird")!!)); run.birds.spawn("A Bluebird was attracted to the Birdfeeder!") }
         run.birds.spawn("Two Macaws were attracted to the Birdfeeder!")
+        run.inventoryEvidence(emptyList(), 10000)
+        run.scanBirdSources(0)
         run.updateCaptureEvidence(SafariBiome.FOREST, setOf("Macaw"), false)
         assertTrue(run.captureComplete("Bluebird"))
         assertTrue(run.captureComplete("Parakeet")) // No Parakeet was announced or remains.

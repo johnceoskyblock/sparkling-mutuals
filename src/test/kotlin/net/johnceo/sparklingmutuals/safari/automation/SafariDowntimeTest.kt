@@ -36,17 +36,17 @@ class SafariDowntimeTest {
         assertFalse(SafariDowntime.holding)
         assertEquals("", SafariDowntime.holders())
     }
-    @Test fun `a request in the Safari waits for the run to end and only the requester announces it`() {
+    @Test fun `a request in the Safari waits for the run to end and any client can announce it`() {
         assertNull(SafariDowntime.chat("Party > [MVP+] Farmer: !dt food", inSafari = true, self = "Other"))
         assertFalse(SafariDowntime.holding)
-        assertNull(SafariDowntime.leftSafari("Other"))
+        assertEquals("Downtime requested: Farmer (food)", SafariDowntime.leftSafari("Other"))
         assertTrue(SafariDowntime.holding)
         SafariDowntime.reset()
         SafariDowntime.chat("Party > Farmer: !dt food", inSafari = true, self = "Farmer")
-        assertEquals("Farmer has requested downtime for reason: food", SafariDowntime.leftSafari("Farmer"))
+        assertEquals("Downtime requested: Farmer (food)", SafariDowntime.leftSafari("Farmer"))
     }
     @Test fun `asked outside the Safari it holds straight away`() {
-        assertEquals("Farmer has requested downtime", SafariDowntime.chat("Party > Farmer: !DT", inSafari = false, self = "Farmer"))
+        assertEquals("Downtime requested: Farmer (no reason)", SafariDowntime.chat("Party > Farmer: !DT", inSafari = false, self = "Farmer"))
         assertTrue(SafariDowntime.holding)
     }
     @Test fun `a requester ready before the run ends cancels their pending downtime`() {
@@ -135,4 +135,12 @@ class SafariDowntimeTest {
         assertNull(SafariDowntime.chat("Party > Farmer: !dtx", inSafari = false, self = "Farmer"))
         assertFalse(SafariDowntime.holding)
     }
+    @Test fun `return announcement includes all requesters and their latest reasons in one message`() {
+        SafariDowntime.chat("Party > Alex: !dt food", true, "Me")
+        SafariDowntime.chat("Party > Steve: !dt contest", true, "Me")
+        SafariDowntime.chat("Party > Bob: !dt", true, "Me")
+        assertEquals("Downtime requested: Alex (food); Steve (contest); Bob (no reason)", SafariDowntime.leftSafari("Me"))
+        assertNull(SafariDowntime.leftSafari("Me"))
+    }
+
 }

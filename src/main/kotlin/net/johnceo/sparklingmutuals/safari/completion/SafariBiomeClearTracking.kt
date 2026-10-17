@@ -29,6 +29,7 @@ object SafariBiomeClearTracking {
         val inventory = player.inventory
         run.inventoryEvidence((0 until inventory.containerSize).map { inventory.getItem(it) }
             .filterNot { it.isEmpty }.map { it.hoverName.string to it.count })
+        run.localPlayer(player.name.string)
         run.observePopulation(snapshot.critters.filterNot { it.mound }.map { it.species to it.uuid })
         snapshot.critters.filterNot { it.mound }.forEach { run.observeCritter(it.id, it.species, it.uuid) }
         run.updateCaptureEvidence(biome, snapshot.critters.filter {
@@ -38,15 +39,16 @@ object SafariBiomeClearTracking {
             macawsInRange = snapshot.critters.count { it.biome == biome && it.species == "Macaw" },
             playerX = player.x, playerZ = player.z, nestsPunched = BeeNests.punchedCount, nestsFound = BeeNests.nestCount)
         run.liveHoneybugs(snapshot.critters.filter { it.species == "Honeybug" && !it.mound }.map { it.uuid }.distinct().size)
-        if (biome == SafariBiome.FOREST || biome == SafariBiome.HAUNTED) {
+        if (biome == SafariBiome.HAUNTED) {
+            run.scanGimmiegolds(snapshot.critters.filter { it.species == "Gimmiegold" && !it.mound }.map { it.uuid },
+                (player.x + 4) * (player.x + 4) + (player.z + 64) * (player.z + 64) <= 225)
             fun population(name: String) = run.count(name) + snapshot.critters.filter { it.species == name && !it.mound }.map { it.uuid }.distinct().size
-            run.resources.scan(biome, if (biome == SafariBiome.HAUNTED) population("Gimmiegold") else
-                population("Bluebird") + population("Parakeet") + population("Macaw") / 2)
+            run.resources.scan(biome, population("Gimmiegold"))
         }
-        if (biome == SafariBiome.FOREST) run.scanBirdSources(player.x, player.z,
-            snapshot.critters.filter { it.biome == biome && !it.mound }.map { it.species to it.uuid },
+        if (biome == SafariBiome.FOREST) run.scanBirdSources(
             // Include unselected and uncertain markers: predicted type is not absence evidence.
-            snapshot.floorDrops.count { SafariEspRules.biomeAt(it.x.toDouble(), it.z.toDouble()) == biome })
+            snapshot.floorDrops.count { SafariEspRules.biomeAt(it.x.toDouble(), it.z.toDouble()) == biome },
+            snapshot.critters.filter { it.biome == biome && !it.mound }.map { it.species })
         run.sparklingChecks.scan(biome, player.x, player.z,
             snapshot.critters.filterNot { it.mound }.map { it.species to it.uuid },
             nestsChecked = run.nestsResolved,

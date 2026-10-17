@@ -10,6 +10,7 @@ import net.minecraft.resources.Identifier
 
 object ConfigManager {
     private lateinit var configPath: Path
+    private lateinit var personalBestConfig: PersonalBestConfig
     @Volatile var apiKey = ""
     var highlightTeammates = true
     var showTeammateNames = true
@@ -20,7 +21,7 @@ object ConfigManager {
     var sparklingProfitableShardEsp = true
     var profitableShardEsp = true
     var timesaveOnly = true
-    var warpAlertsEnabled = true
+    var warpAlertsEnabled = false
     var warpDelaySeconds = 25
     var hideyhoQuestClicks = true
     var hideyhoInsideOutside = true
@@ -64,7 +65,7 @@ object ConfigManager {
     var capsuleHideDistance = 2f
     var showWhere = 1
     val personalBests = SafariPersonalBests()
-    private val flags = mapOf(::highlightTeammates to true, ::showTeammateNames to true, ::partyCommandsEnabled to true, ::useCloudApi to true, ::fullClearMode to false, ::sparklingMode to false, ::sparklingProfitableShardEsp to true, ::profitableShardEsp to true, ::timesaveOnly to true, ::warpAlertsEnabled to true,
+    private val flags = mapOf(::highlightTeammates to true, ::showTeammateNames to true, ::partyCommandsEnabled to true, ::useCloudApi to true, ::fullClearMode to false, ::sparklingMode to false, ::sparklingProfitableShardEsp to true, ::profitableShardEsp to true, ::timesaveOnly to true, ::warpAlertsEnabled to false,
         ::hideyhoQuestClicks to true, ::hideyhoInsideOutside to true, ::hideHauntedPaintings to true, ::shinyDetection to true,
         ::progressHud to true, ::countUniqueOnly to false, ::missingPanel to true,
         ::highlightBeeNests to true, ::removeDarkness to true, ::sparklingAlert to true,
@@ -92,7 +93,8 @@ object ConfigManager {
         showWhere = properties.getProperty("showWhere")?.toIntOrNull()?.takeIf { it in 0..2 } ?: 1
         capsuleHideDistance = validCapsuleDistance(properties.getProperty("capsuleHideDistance")?.toFloatOrNull())
         SafariHud.load(properties)
-        personalBests.load(properties)
+        personalBestConfig = PersonalBestConfig(configPath)
+        personalBestConfig.load(properties, personalBests)
         SafariFullClear.syncMode()
         SafariEspConfig.load(properties)
         SafariFullClear.applyEspPreset()
@@ -101,6 +103,7 @@ object ConfigManager {
 
     fun save() {
         Files.createDirectories(configPath.parent)
+        personalBestConfig.save(personalBests)
         Properties().apply {
             setProperty("apiKey", apiKey)
             setProperty("runCompleteTitle", runCompleteTitle)
@@ -113,10 +116,9 @@ object ConfigManager {
             setProperty("showWhere", showWhere.coerceIn(0, 2).toString())
             setProperty("capsuleHideDistance", validCapsuleDistance(capsuleHideDistance).toString())
             SafariHud.save(this)
-            personalBests.save(this)
             SafariEspConfig.save(this)
             AppearanceConfig.save(this)
-            Files.newOutputStream(configPath).use { store(it, "Sparkling Mutuals configuration") }
+            PersonalBestConfig.write(configPath, this, "Sparkling Mutuals configuration")
         }
     }
 }

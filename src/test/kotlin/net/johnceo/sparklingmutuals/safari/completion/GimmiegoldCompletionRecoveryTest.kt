@@ -23,13 +23,17 @@ class GimmiegoldCompletionRecoveryTest {
         select(setOf("local")); accept(setOf("local"), mapOf("local" to SafariRoster.all.map { it.name }.toSet() - "Gimmiegold"))
     }
     private fun run(coins: Int = 3) = SafariRun(0).apply {
+        (1..coins).forEach { gimmiegoldCheck.floor(it, false) }
         repeat(coins) { sparklingChecks.chat("FLOOR DROP! You found a Shining Coin!") }
         inventoryEvidence(emptyList(), 10000)
     }
     private fun scan(run: SafariRun, live: List<Pair<String, UUID>>, drops: Int = 0, x: Double = -4.0) {
+        if (run.gimmiegoldCheck.floorMinimum == 0) (1..3).forEach { run.gimmiegoldCheck.floor(it, false) }
+        run.gimmiegoldCheck.floor(1, if (drops < 0) null else drops > 0)
         run.observePopulation(live)
         run.updateCaptureEvidence(SafariBiome.HAUNTED, live.map { it.first }.toSet(), false, playerX = x, playerZ = -64.0)
         run.sparklingChecks.scan(SafariBiome.HAUNTED, x, -64.0, live, hauntedCoinDropsRemaining = drops)
+        run.scanGimmiegolds(live.map { it.second }, (x + 4) * (x + 4) <= 225)
     }
     @Test fun `sewer shared catch plus current live population completes Unique and Sparkling without every spawn message`() {
         val run = run(6)
@@ -51,6 +55,7 @@ class GimmiegoldCompletionRecoveryTest {
         scan(run, emptyList(), x = -30.0)
         assertTrue(run.captureComplete("Gimmiegold"), "Verified coin-source absence survives ordinary movement")
         assertTrue(run.sparklingComplete("Gimmiegold", party()))
+        run.partyFullClear("Party > Friend: hd")
         assertEquals(0xFF55FF55.toInt(), SafariPanels.captures(run, SafariBiome.HAUNTED).rows.single { it.label == "Gimmiegold" }.valueColor)
     }
     @Test fun `population below target duplicate UUIDs held coins and remaining floor markers block recovery`() {
@@ -59,7 +64,7 @@ class GimmiegoldCompletionRecoveryTest {
         scan(run, List(3) { "Gimmiegold" to id })
         assertFalse(run.sparklingComplete("Gimmiegold", party()))
         val live = List(3) { "Gimmiegold" to UUID.randomUUID() }
-        run.inventoryEvidence(listOf("Shining Coin" to 1), 10000)
+        run.inventoryEvidence(listOf("Shining Coin" to 1), 20000)
         scan(run, live)
         assertFalse(run.sparklingComplete("Gimmiegold", party()))
         run.inventoryEvidence(emptyList(), 10000)
@@ -75,16 +80,21 @@ class GimmiegoldCompletionRecoveryTest {
         val firstThree = List(3) { "Gimmiegold" to UUID.randomUUID() }
         scan(run, firstThree)
         assertTrue(run.sparklingComplete("Gimmiegold", party()))
+        run.gimmiegoldCheck.floor(4, false)
         run.sparklingChecks.chat("FLOOR DROP! You found a Shining Coin!")
         run.inventoryEvidence(emptyList(), 10000)
         scan(run, firstThree)
         assertFalse(run.sparklingComplete("Gimmiegold", party()))
         scan(run, listOf("Gimmiegold" to UUID.randomUUID()))
+        assertFalse(run.sparklingComplete("Gimmiegold", party()), "history cannot replace the full current population")
+        scan(run, firstThree + ("Gimmiegold" to UUID.randomUUID()))
         assertTrue(run.sparklingComplete("Gimmiegold", party()))
         run.visitBiome(SafariBiome.CAVERN); run.visitBiome(SafariBiome.HAUNTED)
         assertFalse(run.sparklingComplete("Gimmiegold", party()))
         scan(run, emptyList())
-        assertTrue(run.sparklingComplete("Gimmiegold", party()), "Revalidate source conditions while retaining the checked UUIDs")
+        assertFalse(run.sparklingComplete("Gimmiegold", party()), "reentry needs current population, not old UUID checks")
+        scan(run, List(4) { "Gimmiegold" to UUID.randomUUID() })
+        assertTrue(run.sparklingComplete("Gimmiegold", party()))
     }
     @Test fun `complete incense triple across block boundaries never masquerades as uncollected coins`() {
         val group = PredictedFloorDrop(100, -4.01, 65.0, -64.01, SafariBiome.HAUNTED, FloorDropType.INCENSE)
@@ -98,6 +108,7 @@ class GimmiegoldCompletionRecoveryTest {
         run.inventoryEvidence(emptyList(), 10000)
         scan(run, emptyList())
         assertTrue(run.sparklingComplete("Gimmiegold", party()))
+        run.gimmiegoldCheck.floor(4, false)
         run.sparklingChecks.chat("FLOOR DROP! You found a Shining Coin!")
         run.inventoryEvidence(emptyList(), 10000)
         scan(run, emptyList())

@@ -18,7 +18,7 @@ class SafariModeRetentionTest {
             for (selected in SafariMode.entries) {
                 SafariFullClear.select(selected)
                 assertTrue(biome.critters.all { run.sparklingChecks.checked(it.name) == (it.name !in setOf("Wumpa", "Doomspiral")) })
-                assertEquals(biome.critters.size, run.fullClearProgress(biome.critters))
+                assertEquals(biome.critters.count { SafariFullClear.minimum(it.name) == 0 && it.name != "Macaw" }, run.fullClearProgress(biome.critters))
                 assertEquals(0, run.progress(biome.critters, true))
                 assertTrue(run.biomeClears.isEmpty()); assertTrue(run.uniqueBiomeClears.isEmpty())
             }

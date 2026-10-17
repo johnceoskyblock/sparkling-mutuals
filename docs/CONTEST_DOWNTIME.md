@@ -3,9 +3,9 @@
 **Miria contest → Auto !dt contest** controls an automatic party-chat request. When enabled, the client sends `/pc !dt contest` once as a new Miria contest window starts. This is the literal downtime request, using the same contest schedule as the existing tracker.
 
 - The setting defaults on and is saved in `sparkling-mutuals-contest.properties` as `autoContestDowntime`. Explicit saved off values persist. It is independent of the contest HUD and warning switches.
-- Require an online player, SkyBlock detection, and known party membership with more than one member. Do not send to public chat or when solo/party membership is unknown.
+- Require an online player, SkyBlock detection, known party membership with more than one member, and a server-confirmed local **Party Leader** role. Members and moderators must not send automatic requests; unknown or invalidated leadership is not sufficient. Leadership transfer refreshes the role. Do not send to public chat or when solo/party membership is unknown.
 - Observe a transition into a different absolute contest window, including across dates. A first observation establishes a baseline. Only a transition observed in the new window's first ten seconds sends the request; do not catch up missed/offline contests.
-- Send once per observed transition. Repeated polls, profile/scope changes, joining a party or enabling the switch later in the same window do not send another request. Disabled, non-SkyBlock and solo transitions are skipped.
+- Send once per observed transition. Repeated polls, profile/scope changes, joining a party or enabling the switch later in the same window do not send another request. Disabled, non-SkyBlock, nonleader and solo transitions are skipped. Becoming leader mid-contest does not send a catch-up request.
 
 ## Ticket earned and entry release
 
@@ -17,9 +17,15 @@ On receiving a party member's **Ticket earned!** message, remove **only that sen
 
 The **Auto !dt contest** toggle controls the automatic start request, not whether an earned ticket resolves an existing manual contest request. It does not suppress the requested Ticket earned! announcement.
 
+## Combined downtime reminder
+
+Anyone may manually request `!dt [reason]`. On returning from Safari to Torrhus Canyon, announce all outstanding requests in **one party-chat message**, including other players' requests even when the local player did not request downtime. Example: `Downtime requested: Alex (food); Steve (contest); Bob (no reason)`.
+
+Wait for the destination to be available before sending. Clients stagger reports by party UUID order and suppress a matching report already heard from another client, including while still inside Safari. During the delay, resume, departure and earned-ticket events remove obsolete requests from the report. Requests made outside Safari activate the hold immediately and can announce at the Canyon. Each requester must still resume independently. Very long reasons share the available chat space and are shortened with `...` to retain the names in a single normal-sized party message.
+
 ## Minecraft checks
 
-1. Enable **Auto !dt contest**, stay online in SkyBlock with a party, and cross a contest start. Expect exactly one `!dt contest` in party chat. Continue polling and switch profiles: no duplicate for that window.
+1. Enable **Auto !dt contest**, stay online in SkyBlock as party leader with a party, and cross a contest start. Expect exactly one `!dt contest` in party chat. Continue polling and switch profiles: no duplicate for that window.
 2. Turn it off before another start: no message. Reenable mid-contest: no stale message. Restart and verify the switch persists.
 3. Repeat solo and outside SkyBlock: no message. Join a party or log in partway through a contest: no catch-up request. Check that disabling only contest HUD/tracking does not disable an enabled automatic request.
 
@@ -27,6 +33,9 @@ The **Auto !dt contest** toggle controls the automatic start request, not whethe
 5. Have two party members waiting for contest tickets and a third waiting for another reason. One member earning a ticket removes only their own contest request. Confirm the final contest hold releases only after the other ticket is earned, while unrelated downtime still needs `r`.
 6. Keep the Uncommon row visible, advance to Rare, toggle HUD/tracking or refresh the profile: no duplicate announcement for the same player/window. At the next contest, earn the ticket again and expect one new message.
 
+7. As a member or moderator, cross a contest start: no automatic request. Transfer leadership and cross the next start: only the new leader sends it. Becoming leader partway through a contest sends nothing.
+8. Have several players request `!dt food`, `!dt contest`, and `!dt` during a run. Return to Torrhus without requesting downtime yourself: expect one combined party message naming all three and their reasons. Repeat with two mod users, one returning later, and with a requester resuming/earning their ticket before the report sends.
+
 ## Last updated
 
-2026-10-15 - Added once-per-contest Ticket earned! announcements and sender-specific release of contest entry holds, including banked requests.
+2026-10-16 - Restricted automatic requests to the confirmed party leader and added combined Canyon reminders for every requester and reason.

@@ -13,7 +13,7 @@ Use the [37 individual critter notes](docs/critters/README.md) for species rules
 - **Sparkling mode (`/sparkle`):** target sparkling discoveries missing for you or your party.
 - **Profitable shard ESP:** optionally keep profitable critters highlighted in Unique and Sparkling modes.
 - **Progress HUD:** show elapsed time and overall/per-biome completion.
-- **Missing panel:** list remaining species, nests, mounds, and Snooper walls.
+- **Missing / Unchecked panel:** list remaining captures in Unique/Full Clear, or unchecked critters in Sparkling mode, with nest/mound/wall helpers.
 - **Biome captures HUD:** show species counts and Rockmite mound statistics.
 - **Capture review (`/captures`):** view the current or last run's captures.
 - **Biome personal bests:** save separate Full Clear and Unique clear times.
@@ -56,7 +56,7 @@ Use the [37 individual critter notes](docs/critters/README.md) for species rules
 - **All Incense alert:** notify when four Soothing Incense are in your inventory.
 - **Run completion alert:** notify when all biomes are complete in the active mode.
 - **Unused starting supplies:** automatic titles and party reminders identify starting bird food or Shining Coins still needed by the party.
-- **Warp alerts (`/alert`, `/alertdelay <seconds>`):** show the reminder and automatically run `/p warp` when the delay expires in the current run. [Timer behavior](docs/WARP_ALERTS.md).
+- **Warp alerts (`/alert`, `/alertdelay <seconds>`):** disabled by default; when enabled, show the reminder and automatically run `/p warp` when the delay expires in the current run. [Timer behavior](docs/WARP_ALERTS.md).
 - **Miria contest HUD:** track contest time, score, and tier.
 - **Miria warnings:** warn below Uncommon at the selected 5-, 3-, and 1-minute marks.
 - **Honeyhive beacons:** mark full Torrhus Canyon hives during an incomplete Miria contest.
@@ -74,6 +74,7 @@ Use the [37 individual critter notes](docs/critters/README.md) for species rules
 - **`!mutual` / `!mutuals`:** list shared sparkling discoveries that save Safari time.
 - **`!missing <IGN>`:** list a player's missing sparkling discoveries that save time.
 - **`!tickets <IGN>`:** show a player's Safari ticket counts.
+- **`!since sparkling` / `!since unique`:** post runs since your last credited party Sparkling or flagged unique Sparkling, naming the critter and catcher. [Streak rules](docs/SINCE_COMMAND.md).
 - **`!m [biome]`:** report what remains in the current Safari run.
 - **`!dt [reason]` / `r`:** request downtime after the run and release your hold when ready. Earning an Uncommon contest ticket announces **Ticket earned!** and clears your contest hold.
 - **Safari entry guard:** block Manager, ticket and entry GUI clicks after kick requests or while party members are absent; Shift-click to override.
@@ -114,8 +115,16 @@ Documentation revision workflow: [Source synchronization](docs/SOURCE_SYNC.md). 
 
 Honeyhive state rules, data sources and debugging: [Torrhus Canyon Honeyhives](docs/HONEYHIVES.md).
 
-Per-drop colors are configurable in **ESP → Floor-drop colors**. **Miria contest → Auto !dt contest** controls the automatic party downtime request at new contest starts. See [contest request behavior](docs/CONTEST_DOWNTIME.md).
+Per-drop colors are configurable in **ESP → Floor-drop colors**. **Miria contest → Auto !dt contest** controls the automatic party downtime request at new contest starts, sent only by the confirmed party leader. Returning to Torrhus announces all downtime requesters and reasons together in party chat. See [contest request behavior](docs/CONTEST_DOWNTIME.md).
 
 ## Last updated
+
+2026-10-17 - Named Sparkling checklists Unchecked and retained initial Honeybug source counts and party checking trust.
+
+2026-10-17 - Synchronized source with current mode/resource documentation and recorded the reviewed baseline; warp alerts default off.
+
+2026-10-16 - Added leader-only automatic contest requests and a combined party downtime reminder naming all requesters and reasons.
+
+2026-10-16 - Added !since sparkling / !since unique for credited party catches, with critter/catcher details.
 
 2026-10-15 - Added exact three-target development installation guidance; distinguished future multi-version releases from the existing published release.

@@ -13,6 +13,7 @@ data class BiomeClearEvidence(val observed: Boolean = false, val nearbyCritters:
 
 /** Command-owned presets change presentation, never the per-run capture ledger. */
 object SafariFullClear {
+    val fixedCaptureTargets = mapOf("Scrappy" to 3, "Gemzie" to 3, "Troodon" to 3, "Gazer" to 4)
     private val minimums = mapOf(
         "Foxtrot" to 6, "Bluebird" to 0, "Honeybug" to 3, "Treefrog" to 3, "Woodchucker" to 3,
         "Fluffling" to 1, "Hideonfloor" to 1, "Parakeet" to 0, "Macaw" to 0,

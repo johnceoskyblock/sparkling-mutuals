@@ -9,6 +9,8 @@ object CommandHelp {
         PartyCommandKind.MUTUALS to "Shared sparkling discoveries",
         PartyCommandKind.MISSING to "Missing sparkling discoveries",
         PartyCommandKind.TICKETS to "Safari ticket counts",
+        PartyCommandKind.SINCE_SPARKLING to "Recorded runs since your last credited party sparkling",
+        PartyCommandKind.SINCE_UNIQUE to "Recorded runs since your last credited unique party sparkling",
         PartyCommandKind.PB_DOOM to "Solo Doomspiral PB (add duo or a player name)",
         PartyCommandKind.PB_WUMPA to "Solo Wumpa PB (add duo or a player name)",
         PartyCommandKind.PB_FOREST to "Forest biome PB",

@@ -42,7 +42,9 @@ object SparklingDetector {
                 (it.body || it in skins) && (skins[it] == null || skins[it] == species) && distance(label, it) < 9 }
                 .minWithOrNull(compareBy<SparklingEntity> { if (skins[it] == species) 0 else 1 }
                     .thenBy { distance(label, it) }.thenBy { it.id }) ?: label
-            matches.putIfAbsent(body.id, SparklingDetection(species, body.id, label.id, setOf(body.uuid, label.uuid)))
+            val previous = matches[body.id]
+            matches[body.id] = SparklingDetection(species, body.id, previous?.label ?: label.id,
+                previous?.aliases.orEmpty() + body.uuid + label.uuid)
         }
         skins.forEach { (body, species) ->
             // A real name tag wins if a future skin table no longer agrees with the server label.

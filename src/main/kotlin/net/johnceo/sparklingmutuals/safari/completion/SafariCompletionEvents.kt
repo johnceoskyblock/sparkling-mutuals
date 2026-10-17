@@ -12,11 +12,17 @@ class SafariCompletionEvents {
     private val pending = mutableSetOf<SafariBiome>()
     private var alerted = false
     fun reopen(biome: SafariBiome) { announced.remove(biome); pending.remove(biome); alerted = false }
+    /** Local clearing can trigger supplies even if a teammate's report suppresses our announcement. */
+    fun locallyComplete(run: SafariRun, biome: SafariBiome, mode: SafariMode, party: PartySparklingState): Boolean {
+        if (run.lastBiome != biome || run.sparklingCaptures.pending(biome) || !run.hasCaptureEvidence(biome) ||
+            mode == SafariMode.SPARKLING && !party.ready) return false
+        val targets = biome.critters.filter { mode != SafariMode.SPARKLING || party.needs(it.name) }
+        return run.completed(mode, targets, party, localOnly = true) == targets.size
+    }
     fun announcement(run: SafariRun, biome: SafariBiome, mode: SafariMode, party: PartySparklingState): String? {
         if (run.lastBiome != biome) { pending.remove(biome); return null }
-        val targets = biome.critters.filter { mode != SafariMode.SPARKLING || party.needs(it.name) }
-        if (run.sparklingCaptures.pending(biome) || !run.hasCaptureEvidence(biome) || mode == SafariMode.SPARKLING && !party.ready ||
-            run.completed(mode, targets, party, localOnly = true) != targets.size) {
+        if (mode == SafariMode.UNIQUE && run.uniqueReportReceived(biome)) { pending.remove(biome); return null }
+        if (!locallyComplete(run, biome, mode, party)) {
             pending.remove(biome)
             return null
         }

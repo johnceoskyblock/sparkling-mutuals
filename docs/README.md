@@ -48,10 +48,12 @@ Runtime assets, mod metadata and mixin registration remain under `src/main/resou
 | --- | --- |
 | [Safari logic](../SAFARI_LOGIC.md) | Mode goals and gameplay evidence |
 | [Critter index](critters/README.md) | Species rules and links to shared tracking/message evidence |
+| [Missing panel](MISSING_PANEL.md) | Current missing/progress behavior for all 37 critters in every mode |
 | [Config defaults](CONFIG_DEFAULTS.md) | Default settings and migration expectations |
 | [Honeyhives](HONEYHIVES.md) | Hive observation and state rules |
 | [Sparkling detection](SPARKLING_DETECTION.md) | Detection evidence and bundled skin registry |
 | [History import](HISTORY_IMPORT.md) | Import controls, data sources and estimates |
+| [Credited party Sparkling streaks](SINCE_COMMAND.md) | !since sparkling / !since unique, participation credit and critter/catcher replies |
 | [Warp alerts](WARP_ALERTS.md) | Reminder timing and controls |
 | [Contest downtime](CONTEST_DOWNTIME.md) | Ticket events and downtime coordination |
 | [Manual checklist](IMPLEMENTATION_TEST_CHECKLIST.md) | In-game checks that unit tests cannot establish |
@@ -67,5 +69,9 @@ Track implementation requests and progress directly in [GitHub Issues](https://g
 Gradle's `.gradle/`, `.kotlin/` and `build/`, IDE settings, the development client's `run/`, and local `logs/` are ignored working files. They are not source folders. Keep local authentication files and development profiles in place when doing routine repository cleanup.
 
 ## Last updated
+
+2026-10-17 - Indexed the per-critter missing-panel implementation reference.
+
+2026-10-16 - Indexed credited party Sparkling streaks and their participation/history rules.
 
 2026-10-16 - Retained GitHub Issues and handoff guidance alongside compatibility owners, per-target tests and the multi-version build guide.

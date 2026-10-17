@@ -4,17 +4,22 @@ import net.johnceo.sparklingmutuals.safari.SafariRules
 
 /** Client-independent personal timers and ordered click/chat correlation. */
 class HoneyHiveTracker(private var refillAt: MutableMap<String, Long>, private var queenFull: MutableSet<String> = mutableSetOf(),
-    private var provisional: Boolean = false) {
+    private var provisional: Boolean = false, private var lootedAt: MutableMap<String, Long> = mutableMapOf()) {
     private val confirmedKeys = mutableSetOf<String>()
     private data class Click(val key: String, val at: Long, var eligible: Boolean = true)
     private val clicks = ArrayDeque<Click>()
     private var lastLoot: Click? = null
+    private var queenBeforeLoot: Click? = null
     private val changedAt = mutableMapOf<String, Long>()
     private val emptyObserved = mutableSetOf<String>()
+    private val blockEmpty = mutableSetOf<String>()
+    fun state(key: String, now: Long) = if (key in blockEmpty) HiveState.EMPTY else HoneyHiveRules.state(now, refillAt[key])
 
     fun click(key: String, now: Long) {
         expire(now)
-        val eligible = HoneyHiveRules.state(now, refillAt[key]) == HiveState.FULL
+        // A fresh interaction starts a new loot, even after a Queen-first response.
+        queenBeforeLoot = null
+        val eligible = state(key, now) == HiveState.FULL
         val previous = clicks.firstOrNull { it.key == key }
         if (previous == null) clicks.addLast(Click(key, now, eligible))
         else if (eligible && !previous.eligible) {
@@ -27,16 +32,29 @@ class HoneyHiveTracker(private var refillAt: MutableMap<String, Long>, private v
         expire(now)
         val key = when {
             line.startsWith("HIVE!") -> {
+                val queen = queenBeforeLoot?.takeIf { now - it.at in 0..CLICK_WINDOW }
+                if (queen != null) {
+                    queenBeforeLoot = null
+                    lootedAt[queen.key] = now
+                    return true // This response belongs to the loot whose refill arrived first.
+                }
                 val click = clicks.firstOrNull { it.eligible } ?: return false
                 clicks.remove(click)
                 lastLoot = Click(click.key, now)
+                lootedAt[click.key] = now
                 refillAt[click.key] = now + HoneyHiveRules.REFILL_MILLIS
+                blockEmpty.remove(click.key)
                 queenFull.remove(click.key)
                 click.key
             }
             line.startsWith("QUEEN BEE!") -> {
-                val loot = lastLoot?.takeIf { now - it.at in 0..CLICK_WINDOW } ?: return false
+                val loot = lastLoot?.takeIf { now - it.at in 0..CLICK_WINDOW }
+                    ?: clicks.singleOrNull()?.also {
+                        clicks.remove(it)
+                        queenBeforeLoot = Click(it.key, now)
+                    } ?: return false
                 refillAt.remove(loot.key)
+                blockEmpty.remove(loot.key)
                 queenFull.add(loot.key)
                 clicks.filter { it.key == loot.key }.forEach { it.eligible = true }
                 lastLoot = null
@@ -49,37 +67,43 @@ class HoneyHiveTracker(private var refillAt: MutableMap<String, Long>, private v
         return true
     }
 
-    /** Personal holograms and confirmed chat drive readiness; decorative honey levels are ignored. */
-    @Suppress("UNUSED_PARAMETER")
+    /** Level five is full; lower levels use the matching status label when available. */
     fun observe(key: String, label: String?, honeyLevel: Int? = null, now: Long): Boolean {
-        // A confirmed Queen Bee refill wins over delayed empty holograms until the next confirmed loot.
-        if (key in queenFull) return false
-        if (changedAt[key]?.let { now - it in 0..SERVER_GRACE } == true) return false
+        val status = label?.let(SafariRules::strip)?.replace('\u00a0', ' ')?.trim()
+        val countdown = status?.let(::countdownMillis)
+        val fullLabel = status?.equals("Click to loot!", true) == true
+        if (honeyLevel != 0 && honeyLevel != 5 && !fullLabel && countdown == null) return false
         val previous = refillAt[key]
-        val countdown = label?.let(::countdownMillis)
         val wasQueenFull = key in queenFull
+        val wasBlockEmpty = key in blockEmpty
         when {
-            label?.trim()?.equals("Click to loot!", ignoreCase = true) == true -> {
-                refillAt.remove(key); emptyObserved.remove(key); allowClicks(key)
+            honeyLevel == 5 || fullLabel -> {
+                refillAt.remove(key); blockEmpty.remove(key); emptyObserved.remove(key); allowClicks(key)
             }
             countdown != null -> {
-                queenFull.remove(key)
-                refillAt[key] = now + countdown; emptyObserved.add(key)
+                queenFull.remove(key); blockEmpty.remove(key)
+                refillAt[key] = now + countdown
             }
-            // The build's honey level is not a per-player readiness signal.
+            honeyLevel == 0 -> {
+                queenFull.remove(key)
+                // Without a label, empty block state does not establish a new loot/deadline.
+                blockEmpty.add(key)
+            }
         }
-        return previous != refillAt[key] || wasQueenFull != (key in queenFull)
+        return previous != refillAt[key] || wasQueenFull != (key in queenFull) || wasBlockEmpty != (key in blockEmpty)
     }
 
-    fun resetSession() { clicks.clear(); lastLoot = null; changedAt.clear(); emptyObserved.clear() }
+    fun resetSession() { clicks.clear(); lastLoot = null; queenBeforeLoot = null; changedAt.clear(); emptyObserved.clear(); blockEmpty.clear() }
 
     /** The profile join line can arrive between a click, loot and Queen Bee messages. */
-    fun promote(times: MutableMap<String, Long>, full: MutableSet<String>) {
+    fun promote(times: MutableMap<String, Long>, full: MutableSet<String>, loots: MutableMap<String, Long> = mutableMapOf()) {
         // Confirmed loots while the profile was unknown are newer than its saved Queen Bee state.
         val transferable = if (provisional) refillAt.filterKeys { it in confirmedKeys } else refillAt
         full.removeAll(transferable.keys)
         if (times !== refillAt) times.putAll(transferable)
         full.addAll(if (provisional) queenFull.filter { it in confirmedKeys } else queenFull)
+        loots.putAll(if (provisional) lootedAt.filterKeys { it in confirmedKeys } else lootedAt)
+        lootedAt = loots
         provisional = false
         full.forEach(times::remove)
         refillAt = times; queenFull = full

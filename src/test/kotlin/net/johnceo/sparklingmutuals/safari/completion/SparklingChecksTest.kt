@@ -117,6 +117,7 @@ class SparklingChecksTest {
             birds.pickup("FLOOR DROP! You found $food", SafariBiome.FOREST)
         }
         birds.inventory(emptyList())
+        birds.scan(0)
         repeat(8) { birds.spawn("A Bluebird was attracted to the Birdfeeder!") }
         checks.scan(SafariBiome.FOREST, 6.0, 51.0, emptyList(), birdsSpawned = birds.allSpawned)
         assertFalse(checks.checked("Macaw"))

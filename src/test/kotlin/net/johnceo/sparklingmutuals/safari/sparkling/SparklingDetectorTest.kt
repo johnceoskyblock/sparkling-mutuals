@@ -16,6 +16,25 @@ class SparklingDetectorTest {
         SparklingEntity(id, UUID.randomUUID(), -4.0, 71.0, -72.0, texture = texture, skinCarrier = true, body = true)
     private fun label(id: Int = 2, name: String = "Duplico") =
         SparklingEntity(id, UUID.randomUUID(), -4.0, 73.0, -72.0, name = "Sparkling $name")
+    @Test fun `all labels for one Sparkling share its resolved capture identity`() {
+        val body = model()
+        val first = label()
+        val second = label(3)
+        val run = SafariRun(0)
+        val match = SparklingDetector.detect(listOf(body, first, second)).single()
+        assertEquals(setOf(body.uuid, first.uuid, second.uuid), match.aliases)
+        run.observeSparkling(body.uuid, match.species, match.aliases)
+        run.record(SafariCatch(SafariRoster.named("Duplico")!!, sparkling = true), 1000)
+        for (entity in listOf(body, first, second)) {
+            val lingering = SparklingDetector.detect(listOf(entity)).single()
+            run.observeSparkling(entity.uuid, lingering.species, lingering.aliases)
+            assertFalse(run.sparklePending("Duplico"))
+            assertTrue(run.sparklingCaptures.resolved(entity.uuid))
+        }
+        val fresh = model(10)
+        run.observeSparkling(fresh.uuid, "Duplico")
+        assertTrue(run.sparklePending("Duplico"), "a genuinely new Sparkling still blocks completion")
+    }
     @Test fun `sheet covers 36 distinct skins with Areita spelling normalized and Tepid left unknown`() {
         assertEquals(36, SparklingSkins.textures.size)
         assertEquals(36, SparklingSkins.textures.values.toSet().size)

@@ -1,5 +1,6 @@
 package net.johnceo.sparklingmutuals.party
 
+import net.azureaaron.hmapi.data.party.PartyRole
 import net.azureaaron.hmapi.events.HypixelPacketEvents
 import net.azureaaron.hmapi.network.HypixelNetworking
 import net.azureaaron.hmapi.network.packet.s2c.HelloS2CPacket
@@ -42,7 +43,9 @@ object PartyManager {
                         requestPartyInfo()
                         return@execute
                     }
-                    roster.update(if (packet.inParty) packet.members?.keys?.map { it.toString() }.orEmpty() else emptyList())
+                    roster.update(
+                        if (packet.inParty) packet.members?.keys?.map { it.toString() }.orEmpty() else emptyList(),
+                        if (packet.inParty) packet.members?.entries?.firstOrNull { it.value == PartyRole.LEADER }?.key?.toString() else null)
                     revision++
                     val ready = callbacks.toList()
                     callbacks.clear()
@@ -82,6 +85,7 @@ object PartyManager {
     }
 
     fun reset() { roster.reset(); revision++; callbacks.clear(); requestedAt = 0; refreshAgain = false }
+    fun isLeader(uuid: String) = roster.isLeader(uuid)
     fun getMembers(): List<String> = roster.members
     fun withLocal(local: String) = roster.withLocal(local)
 }

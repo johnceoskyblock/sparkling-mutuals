@@ -34,14 +34,26 @@ class HauntedDropAndPanelFixTest {
         run.observePopulation(seen)
         run.updateCaptureEvidence(SafariBiome.HAUNTED, if (live > 0) setOf("Gimmiegold") else emptySet(), false,
             playerX = -4.0, playerZ = -64.0)
-        run.sparklingChecks.inventory(emptyList())
+        run.inventoryEvidence(emptyList(), 10000)
+        run.scanGimmiegolds(seen.map { it.second }, true)
         run.sparklingChecks.scan(SafariBiome.HAUNTED, -4.0, -64.0, seen,
             hauntedDropsRemaining = 1, hauntedCoinDropsRemaining = coins)
     }
     private fun spentRun(coins: Int = 3) = SafariRun(0).apply {
+        (1..coins).forEach { gimmiegoldCheck.floor(it, false) }
         repeat(coins) {
             sparklingChecks.chat("FLOOR DROP! You found a Shining Coin!")
             sparklingChecks.chat("A Gimmiegold appeared out of nowhere and gobbled up your Shining Coin!")
+        }
+    }
+    @Test fun `coin ESP survives pickups inventory use and mode switches until discovery gate excludes it`() {
+        val state = FloorDropState()
+        state.inventory(listOf("Shining Coin" to 2))
+        repeat(4) { state.record("FLOOR DROP! You found Shining Coin!", SafariBiome.HAUNTED) }
+        state.inventory(emptyList(), initial = false)
+        for (mode in SafariMode.entries + SafariMode.entries.reversed()) {
+            assertTrue(state.needed(FloorDropType.COIN, mode, party("Gimmiegold")))
+            assertEquals(mode == SafariMode.FULL_CLEAR, state.needed(FloorDropType.COIN, mode, party()))
         }
     }
     @Test fun `four actual incense pickups hide incense in all modes even when Gimmiegold is missing`() {
@@ -78,6 +90,7 @@ class HauntedDropAndPanelFixTest {
         repeat(3) { run.record(SafariCatch(SafariRoster.named("Gimmiegold")!!, false)) }
         scan(run, 0)
         assertTrue(run.captureComplete("Gimmiegold"))
+        run.partyFullClear("Party > Friend: hd")
         assertEquals(0xFF55FF55.toInt(), SafariPanels.captures(run, SafariBiome.HAUNTED).rows.single { it.label == "Gimmiegold" }.valueColor)
         assertTrue(run.sparklingComplete("Gimmiegold", party("Gimmiegold")))
     }
@@ -124,13 +137,13 @@ class HauntedDropAndPanelFixTest {
             }
         }
     }
-    @Test fun `Unique pending Gazer check stays as one plain Gazer row after the first catch`() {
+    @Test fun `Unique Gazer row disappears after its first catch despite unfinished Sparkling checks`() {
         ConfigManager.init(dir)
         val run = SafariRun(0)
         run.record(SafariCatch(SafariRoster.named("Gazer")!!))
         run.sparklingChecks.scan(SafariBiome.HAUNTED, -4.0, -64.0, listOf("Gazer" to UUID.randomUUID()))
         val rows = SafariPanels.missing(run, SafariBiome.HAUNTED, true, 0, party = party("Gazer")).rows
-        assertEquals("2/4 checked", rows.single { it.label == "Gazer" }.value)
+        assertFalse(rows.any { it.label == "Gazer" })
         assertFalse(rows.any { it.label.startsWith("Gazers") || it.label.contains("still needs") })
     }
 }

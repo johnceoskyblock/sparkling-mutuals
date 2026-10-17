@@ -8,7 +8,10 @@ import net.johnceo.sparklingmutuals.safari.SafariRoster
 class SparklingCaptureState {
     private val identities = mutableMapOf<UUID, UUID>()
     fun identity(id: UUID) = identities[id] ?: id
+    fun resolved(id: UUID) = identities[id]?.let { it !in pending } == true
     private val pending = linkedMapOf<UUID, String>()
+    private val capturedSpecies = mutableSetOf<String>()
+    fun captured(species: String) = species in capturedSpecies
     private data class Proof(val species: String, val player: String?, val broadcast: Boolean, val at: Long)
     private val proofs = mutableListOf<Proof>()
     fun observe(id: UUID, species: String, aliases: Set<UUID> = emptySet()): Boolean {
@@ -34,6 +37,7 @@ class SparklingCaptureState {
         val duplicate = proofs.indexOfFirst { it.species == species && it.broadcast != broadcast &&
             (it.player == null || player == null || it.player.equals(player, true)) && kotlin.math.abs(at - it.at) <= 5000 }
         if (duplicate >= 0) { proofs.removeAt(duplicate); return }
+        capturedSpecies.add(species)
         proofs += Proof(species, player, broadcast, at)
         pending.entries.firstOrNull { it.value == species }?.key?.let(pending::remove)
     }

@@ -27,7 +27,7 @@ class BeeNestCompletionTest {
         run.sparklingChecks.scan(SafariBiome.FOREST, 3.0, 47.0, emptyList(), nestsChecked = false)
         assertFalse(run.sparklingComplete("Honeybug", party(true), localOnly = true))
     }
-    @Test fun `Unique Honeybug needs one capture and all nests only when sparkling is needed`() {
+    @Test fun `Unique Honeybug needs one capture without local nest-check requirements`() {
         val run = SafariRun(0)
         run.visitBiome(SafariBiome.FOREST)
         run.updateCaptureEvidence(SafariBiome.FOREST, emptySet(), false, true, nestsPunched = 3)
@@ -35,9 +35,9 @@ class BeeNestCompletionTest {
         run.record(SafariCatch(SafariRoster.named("Honeybug")!!))
         assertTrue(run.uniqueComplete("Honeybug", party(true), localOnly = true))
         run.updateCaptureEvidence(SafariBiome.FOREST, emptySet(), false, false, nestsPunched = 2)
-        assertFalse(run.uniqueComplete("Honeybug", party(true), localOnly = true))
+        assertTrue(run.uniqueComplete("Honeybug", party(true), localOnly = true))
         assertTrue(run.uniqueComplete("Honeybug", party(false), localOnly = true))
-        assertTrue(SafariHelperRules.showNests(SafariMode.UNIQUE, run, party(true)))
+        assertFalse(SafariHelperRules.showNests(SafariMode.UNIQUE, run, party(true)), "a completed punch survey remains resolved")
         assertFalse(SafariEspRules.neededForRun("Honeybug", false, run, false, party = party(true)))
     }
     @Test fun `Full Clear requires every observed bee even without a center zone scan`() {
@@ -52,6 +52,6 @@ class BeeNestCompletionTest {
         run.updateCaptureEvidence(SafariBiome.FOREST, setOf("Honeybug"), false, true)
         assertFalse(run.captureComplete("Honeybug"))
         run.updateCaptureEvidence(SafariBiome.FOREST, emptySet(), false, false)
-        assertFalse(run.captureComplete("Honeybug"))
+        assertTrue(run.captureComplete("Honeybug"), "completed source evidence survives later empty scans")
     }
 }

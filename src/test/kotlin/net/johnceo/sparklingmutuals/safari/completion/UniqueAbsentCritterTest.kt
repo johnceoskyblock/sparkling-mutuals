@@ -26,7 +26,7 @@ class UniqueAbsentCritterTest {
         run.updateCaptureEvidence(SafariBiome.CAVERN, emptySet(), true)
         run.reconcileStructures(SafariBiome.CAVERN, false, false)
         assertFalse(run.uniqueComplete("Rockmite", state)); assertFalse(run.uniqueComplete("Snoozle", state))
-        assertEquals(0, run.completed(SafariMode.UNIQUE, SafariBiome.CAVERN.critters, state))
+        assertEquals(7, run.completed(SafariMode.UNIQUE, SafariBiome.CAVERN.critters, state))
         assertNull(run.completion.announcement(run, SafariBiome.CAVERN, SafariMode.UNIQUE, state))
         assertTrue(SafariPanels.missing(run, SafariBiome.CAVERN, true, 0, party = state).rows.any { it.label in setOf("Rockmite", "Snoozle") })
         run.reconcileStructures(SafariBiome.CAVERN, true, true)
@@ -47,7 +47,7 @@ class UniqueAbsentCritterTest {
         SafariBiome.FOREST.critters.filter { it.name != "Macaw" }.forEach { run.record(SafariCatch(it)) }
         run.partyFullClear("Party > Friend: fd")
         run.visitBiome(SafariBiome.FOREST)
-        assertEquals(0, run.completed(SafariMode.UNIQUE, SafariBiome.FOREST.critters, state))
+        assertEquals(8, run.completed(SafariMode.UNIQUE, SafariBiome.FOREST.critters, state))
         assertEquals(0, run.count("Macaw")); assertEquals(0, run.personalCount("Macaw"))
         assertFalse(run.uniqueComplete("Macaw", state, localOnly = true))
     }
@@ -60,6 +60,6 @@ class UniqueAbsentCritterTest {
         }
         assertTrue(SafariEspRules.neededForRun("Rockmite", true, run, false, true, state))
         assertTrue(SafariHelperRules.needed("Snoozle", SafariMode.UNIQUE, run, state))
-        assertTrue(SafariHelperRules.showNests(SafariMode.UNIQUE, run, state))
+        assertTrue(SafariHelperRules.showNests(SafariMode.UNIQUE, run, state), "a needed Sparkling Honeybug keeps its independent nest work")
     }
 }

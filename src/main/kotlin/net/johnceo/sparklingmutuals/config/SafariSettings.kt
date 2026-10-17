@@ -217,7 +217,7 @@ class SafariSettings : Config() {
         @JvmField @ConfigOption(name = "Show where", desc = "Where the Progress HUD appears.")
         @ConfigEditorDropdown(values = ["Only in Safari", "Safari and entrance", "Everywhere"])
         var where = ConfigManager.showWhere
-        @JvmField @ConfigOption(name = "Missing panel", desc = "List missing critters in your current biome.")
+        @JvmField @ConfigOption(name = "Missing / Unchecked panel", desc = "List missing captures, or unchecked critters in Sparkling mode, in your current biome.")
         @ConfigEditorBoolean var missing = ConfigManager.missingPanel
         @JvmField @ConfigOption(name = "Capture count screen", desc = "Review the current or last run's captures.")
         @ConfigEditorButton(runnableId = 8, buttonText = "View captures") var view = false

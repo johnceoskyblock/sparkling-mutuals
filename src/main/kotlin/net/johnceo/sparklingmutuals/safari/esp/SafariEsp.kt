@@ -56,7 +56,8 @@ object SafariEsp {
     private var drops = emptyList<EspDrop>()
     private val dropPredictor = FloorDropPredictor()
     private var predictedDrops = emptyList<PredictedFloorDrop>()
-    fun resetDrops() { dropPredictor.reset(); predictedDrops = emptyList() }
+    private val coinFloorIds = mutableSetOf<Int>()
+    fun resetDrops() { dropPredictor.reset(); predictedDrops = emptyList(); coinFloorIds.clear() }
     fun floorPickup(text: String) {
         val reward = FloorPickup.parse(text) ?: return
         val player = Minecraft.getInstance().player ?: return
@@ -195,6 +196,24 @@ object SafariEsp {
         }
         shyworms.reconcile(now)
         targets = targets.filter { live(it, client) }
+        SafariTracking.ledger.current?.let { run ->
+            run.localPlayer(client.player!!.name.string)
+            dropPredictor.knownDrops.filter { it.biome == SafariBiome.HAUNTED &&
+                (it.actual?.type ?: it.type) == net.johnceo.sparklingmutuals.safari.resources.FloorDropType.COIN }.forEach { drop ->
+                val members = (0..2).map { client.level!!.getEntity(drop.id + it) }
+                val active = members.count(::activeFloorDisplay)
+                // Only real STRING reward triples establish slots, not decorative/model triples.
+                if (active == 3 || drop.actual?.type == net.johnceo.sparklingmutuals.safari.resources.FloorDropType.COIN)
+                    coinFloorIds.add(drop.id)
+                if (drop.id in coinFloorIds) {
+                    val observable = client.level!!.hasChunkAt(net.minecraft.core.BlockPos.containing(drop.x, drop.y, drop.z)) &&
+                        client.player!!.distanceToSqr(drop.x, drop.y, drop.z) <= 80.0 * 80
+                    run.gimmiegoldCheck.floor(drop.id,
+                        if (active > 0) true else if (observable) false else null,
+                        collected = drop.actual?.type == net.johnceo.sparklingmutuals.safari.resources.FloorDropType.COIN)
+                }
+            }
+        }
         stringDisplays = strings.toList()
         drops = SafariEspRules.floorDrops(strings)
         scanned = true
@@ -203,6 +222,7 @@ object SafariEsp {
     private fun trackedModel(target: Target) = SafariEspRules.requiresModelLabel(target.species, target.entity.type.toShortString())
     private fun live(target: Target, client: Minecraft, forEsp: Boolean = false): Boolean {
         val entity = target.entity
+        if (SafariTracking.ledger.current?.sparklingCaptures?.resolved(entity.uuid) == true) return false
         val current = SafariEspRules.targetCurrent(target.species, describe(entity), entity.isRemoved,
             !captures.hidden(entity.uuid) && client.level?.getEntity(entity.id) === entity, entity.level() === client.level)
         val now = System.currentTimeMillis()
@@ -220,6 +240,7 @@ object SafariEsp {
         logger.info("Safari ESP diagnostics: biome={}, fullClear={}, collected={}", SafariAssist.biome,
             ConfigManager.fullClearMode, SafariRoster.all.associate { it.name to (SafariTracking.run?.count(it.name) ?: 0) })
         SafariTracking.run?.let { logger.info("Gimmiegold completion: {} coinDropMarkers={}", it.sparklingChecks.gimmiegoldDebug(), observations().hauntedCoinDropsRemaining) }
+        SafariTracking.run?.let { logger.info("Gimmiegold Sparkling check: {}", it.gimmiegoldCheck.debug()) }
         val incenseIds = SafariFloorDrops.state.incenseDropIds(dropPredictor.knownDrops)
         predictedDrops.forEach { logger.info("Floor prediction: id={} biome={} pos={},{},{} predicted={} actual={} selected={}",
             it.id, it.biome, it.x, it.y, it.z, it.type?.label, it.actual, SafariFloorDrops.selected(it, incenseIds)) }

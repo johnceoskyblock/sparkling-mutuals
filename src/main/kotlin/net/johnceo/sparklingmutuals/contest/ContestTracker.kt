@@ -59,7 +59,8 @@ object ContestTracker {
         rollWindow()
         if (downtime.poll(windowKey, secondsIntoWindow, ContestConfig.autoContestDowntime,
                 SkyblockSidebar.inSkyblock(client), PartyManager.hasInfo &&
-                    PartyManager.getMembers().size > 1))
+                    PartyManager.getMembers().size > 1,
+                PartyManager.isLeader(client.player!!.uuid.toString())))
             client.connection?.sendCommand("pc !dt contest")
         if (SkyblockSidebar.inSkyblock(client)) readSidebar(client)
         if (ContestConfig.trackContest) maybeWarn(client)

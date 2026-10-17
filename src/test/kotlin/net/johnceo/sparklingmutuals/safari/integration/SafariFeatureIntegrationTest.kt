@@ -49,7 +49,7 @@ class SafariFeatureIntegrationTest {
         }
         inspect(SafariSettings())
         assertTrue(switches.size >= 40, "Inspect nested GUI options, including panel borders")
-        val exceptions = setOf("history.instaSell", "history.toParty")
+        val exceptions = setOf("history.instaSell", "history.toParty", "warp.enabled")
         val modes = setOf("modes.unique.enabled", "modes.fullClear.enabled", "modes.sparkling.enabled")
         switches.filterKeys { it !in modes }.forEach { (name, value) -> assertEquals(name !in exceptions, value, name) }
         assertEquals(1, modes.count { switches[it] == true })
@@ -78,7 +78,7 @@ class SafariFeatureIntegrationTest {
         Files.writeString(dir.resolve("sparkling-mutuals.properties"), "shinyDetection=false\nwarpDelaySeconds=42\nshowWhere=2\n")
         ConfigManager.init(dir)
         assertFalse(ConfigManager.shinyDetection)
-        assertTrue(ConfigManager.warpAlertsEnabled)
+        assertFalse(ConfigManager.warpAlertsEnabled)
         assertTrue(ConfigManager.hideCaptureChat)
         assertTrue(AppearanceConfig.panels.values.all { it.borderEnabled })
         assertEquals(42, ConfigManager.warpDelaySeconds)
@@ -105,15 +105,15 @@ class SafariFeatureIntegrationTest {
         assertNull(SafariPanels.fixedCounter("Foxtrot", SafariRun(0), SafariMode.FULL_CLEAR, party()))
     }
 
-    @Test fun `Unique Gemzie catch keeps an explicit pending checked note when discovery is needed`() {
+    @Test fun `Unique Gemzie catch completes independently of the three-spawn Sparkling check`() {
         ConfigManager.init(dir)
         val run = SafariRun(0)
         run.record(SafariCatch(SafariRoster.named("Gemzie")!!, false))
         run.sparklingChecks.scan(SafariBiome.CAVERN, -141.0, 51.0, listOf("Gemzie" to UUID.randomUUID()))
         val panel = SafariPanels.missing(run, SafariBiome.CAVERN, true, 0, party = party("Gemzie"))
-        assertEquals(1, panel.rows.count { it.label == "Gemzie" })
-        assertEquals("2/3 checked", panel.rows.single { it.label.startsWith("Gemzie") }.value)
-        assertFalse(run.uniqueComplete("Gemzie", party("Gemzie")))
+        assertEquals(0, panel.rows.count { it.label == "Gemzie" })
+        assertEquals(2, run.sparklingChecks.checkCount("Gemzie"), "ordinary checking evidence stays independent of Unique completion")
+        assertTrue(run.uniqueComplete("Gemzie", party("Gemzie")))
         assertTrue(run.uniqueComplete("Gemzie", party()))
     }
 
@@ -145,7 +145,7 @@ class SafariFeatureIntegrationTest {
         assertTrue(state.needed(FloorDropType.COIN, SafariMode.SPARKLING, party("Gimmiegold")))
         assertFalse(state.needed(FloorDropType.COIN, SafariMode.SPARKLING, party("Doomspiral")))
         for (mode in listOf(SafariMode.UNIQUE, SafariMode.FULL_CLEAR))
-            assertTrue(state.needed(FloorDropType.COIN, mode, party()))
+            assertEquals(mode == SafariMode.FULL_CLEAR, state.needed(FloorDropType.COIN, mode, party()))
         state.inventory(listOf("Soothing Incense" to 2))
         repeat(2) { state.record("FLOOR DROP! You found Soothing Incense on the ground!", SafariBiome.HAUNTED) }
         state.inventory(listOf("§fSoothing Incense" to 2, "Soothing Incense" to 2), initial = false)
@@ -161,13 +161,20 @@ class SafariFeatureIntegrationTest {
 
     @Test fun `remaining Haunted drops block Gimmiegold checks despite the minimum captured population`() {
         val run = SafariRun(0)
+        (1..3).forEach { run.gimmiegoldCheck.floor(it, true) }
+        run.inventoryEvidence(emptyList(), 10000)
         repeat(3) { run.record(SafariCatch(SafariRoster.named("Gimmiegold")!!, false)) }
         run.sparklingChecks.inventory(emptyList())
+        run.scanGimmiegolds(emptyList(), true)
         run.sparklingChecks.scan(SafariBiome.HAUNTED, -4.0, -64.0, emptyList(), hauntedDropsRemaining = 1)
         assertFalse(run.sparklingComplete("Gimmiegold", party("Gimmiegold")))
-        assertFalse(run.uniqueComplete("Gimmiegold", party("Gimmiegold")))
+        assertTrue(run.uniqueComplete("Gimmiegold", party("Gimmiegold")))
+        run.scanGimmiegolds(emptyList(), true)
         run.sparklingChecks.scan(SafariBiome.HAUNTED, -4.0, -64.0, emptyList(), hauntedDropsRemaining = -1)
         assertFalse(run.sparklingComplete("Gimmiegold", party("Gimmiegold")))
+        run.scanGimmiegolds(emptyList(), true)
+        (1..3).forEach { run.gimmiegoldCheck.floor(it, false) }
+        run.scanGimmiegolds(emptyList(), true)
         run.sparklingChecks.scan(SafariBiome.HAUNTED, -4.0, -64.0, emptyList(), hauntedDropsRemaining = 0)
         assertTrue(run.sparklingComplete("Gimmiegold", party("Gimmiegold")))
     }
@@ -212,7 +219,8 @@ class SafariFeatureIntegrationTest {
             assertEquals(1, reminder.missing.size)
         }
         notices.forEach { notice ->
-            assertTrue(notice.contains("Local; party needs Sparkling"))
+            assertTrue(notice.startsWith("[SM] Use: "))
+            assertFalse(notice.contains("party needs"))
             assertTrue(resources.noticeStillRelevant(notice, SafariBiome.CAVERN, missing))
             assertFalse(resources.noticeStillRelevant(notice, SafariBiome.CAVERN, party()))
             val reminder = StartingResourceReminder.parse(notice, missing)!!

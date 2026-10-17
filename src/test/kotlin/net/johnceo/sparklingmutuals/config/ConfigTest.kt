@@ -24,8 +24,35 @@ class ConfigTest {
         assertEquals(1.3f, SafariHud.CAPTURES.layout.scale)
         assertTrue(ConfigManager.catchCountPanel)
         val saved = Files.readString(dir.resolve("sparkling-mutuals.properties"))
-        assertTrue(saved.contains("pb.duo.doomspiralMillis=61000"))
+        assertFalse(saved.contains("pb."))
+        assertTrue(Files.readString(dir.resolve("sparkling-mutuals-pbs.properties")).contains("pb.duo.doomspiralMillis=61000"))
         assertTrue(saved.contains("hud.captures.scale=1.3"))
+    }
+
+    @Test fun `legacy PBs migrate automatically without losing other settings`() {
+        val main = dir.resolve("sparkling-mutuals.properties")
+        val previous = dir.resolve("Sparkling Mutual's PBs.properties")
+        Files.writeString(previous, "pb.duo.wumpaMillis=30000\n")
+        Files.writeString(main, "apiKey=keep-me\npb.doomspiralMillis=61000\npb.unique.forestMillis=90000\npb.party.friend.name=Friend\npb.party.friend.wumpaMillis=70000\n")
+        ConfigManager.init(dir)
+        val separate = dir.resolve("sparkling-mutuals-pbs.properties")
+        assertTrue(Files.exists(separate))
+        assertFalse(Files.exists(previous))
+        assertEquals(30000L, ConfigManager.personalBests.time("Wumpa", duo = true))
+        assertFalse(Files.readString(main).contains("pb."))
+        assertEquals("keep-me", ConfigManager.apiKey)
+        assertEquals(61000L, ConfigManager.personalBests.time("Doomspiral", duo = true))
+        assertTrue(Files.readString(separate).contains("pb.party.friend.wumpaMillis=70000"))
+        ConfigManager.init(dir)
+        assertEquals(61000L, ConfigManager.personalBests.time("Doomspiral", duo = true))
+        assertEquals(90000L, ConfigManager.personalBests.time("Forest", net.johnceo.sparklingmutuals.safari.completion.BiomePbType.UNIQUE))
+    }
+    @Test fun `migration merges existing PB file keeping faster times`() {
+        Files.writeString(dir.resolve("sparkling-mutuals.properties"), "pb.duo.doomspiralMillis=60000\npb.duo.wumpaMillis=80000\n")
+        Files.writeString(dir.resolve("sparkling-mutuals-pbs.properties"), "pb.duo.doomspiralMillis=50000\npb.duo.wumpaMillis=90000\n")
+        ConfigManager.init(dir)
+        assertEquals(50000L, ConfigManager.personalBests.time("Doomspiral", duo = true))
+        assertEquals(80000L, ConfigManager.personalBests.time("Wumpa", duo = true))
     }
 
     @Test
@@ -34,7 +61,7 @@ class ConfigTest {
         ConfigManager.init(dir)
         assertEquals("example-key", ConfigManager.apiKey)
         assertEquals(25, ConfigManager.warpDelaySeconds)
-        assertTrue(ConfigManager.warpAlertsEnabled)
+        assertFalse(ConfigManager.warpAlertsEnabled)
         assertTrue(ConfigManager.partyCommandsEnabled)
     }
 

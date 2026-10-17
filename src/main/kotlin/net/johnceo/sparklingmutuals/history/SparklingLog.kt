@@ -30,6 +30,7 @@ object SparklingLog {
 
     private fun chat(text: String) {
         val match = RunTally.sparkling.matchEntire(text) ?: return
+        if (!HistoryServerPolicy.allows()) return
         val player = match.groupValues[1]
         val critter = SafariRoster.named(match.groupValues[2].trim())?.name ?: match.groupValues[2].trim()
         val entry = SparklingEntry(System.currentTimeMillis(), player, critter, tickets = data.ticketsSinceSparkling)
@@ -57,7 +58,7 @@ object SparklingLog {
         }
     }
 
-    fun onTicket() { data.ticketsSinceSparkling++; save() }
+    fun onTicket() { if (HistoryServerPolicy.allows()) { data.ticketsSinceSparkling++; save() } }
 
     /** Adds catches found elsewhere (old logs), skipping any already here. Returns how many were added. */
     fun importEntries(found: List<SparklingEntry>, ticketTimes: List<Long> = emptyList()): Int {

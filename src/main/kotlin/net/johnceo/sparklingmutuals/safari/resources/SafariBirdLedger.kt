@@ -2,7 +2,6 @@ package net.johnceo.sparklingmutuals.safari.resources
 
 import net.johnceo.sparklingmutuals.safari.SafariBiome
 import net.johnceo.sparklingmutuals.safari.SafariRules
-import net.johnceo.sparklingmutuals.safari.completion.ForestCompletionZones
 
 /** Run-owned food accounting; each feeder announcement consumes one food. */
 class SafariBirdLedger {
@@ -11,21 +10,22 @@ class SafariBirdLedger {
     private val forest = mutableMapOf<String, Int>()
     private val removed = mutableMapOf<String, Int>()
     private var feedings = 0
-    private var populationProof: Int? = null
-    private var recoveredDemand = 0
+    private var validatedDemand = 0
+    private var floorDropsRemaining: Int? = null
+    private var currentPopulation: Int? = null
     private var heldFoods: Int? = null
-    fun reenter() { populationProof = null }
-    /** A current, central scan can recover feeder evidence missed before Forest entry. */
-    fun scan(x: Double, z: Double, population: Int, dropsRemaining: Int) {
-        if (dropsRemaining != 0 || heldFoods != 0) populationProof = null
-        if (!ForestCompletionZones.inBirdScanRadius(x, z)) return
-        if (dropsRemaining == 0 && heldFoods == 0) populationProof = maxOf(populationProof ?: 0, population)
-        // Keep a previously validated source proof through ordinary unloading. New food,
-        // live drops, held food and reentry still invalidate it through their own paths.
-        if ((populationProof ?: -1) >= feedingTarget) recoveredDemand = maxOf(recoveredDemand, feedingTarget)
+    fun reenter() { floorDropsRemaining = null; currentPopulation = null }
+    /** Raw Forest floor markers, including drops hidden by ESP settings. No bird UUID accounting. */
+    fun scan(dropsRemaining: Int, population: Int = 0) {
+        floorDropsRemaining = dropsRemaining
+        currentPopulation = population
     }
-    private fun populationResolves(target: Int) = heldFoods == 0 && (populationProof ?: -1) >= target
-    val feedingResolved get() = used >= feedingTarget || populationResolves(feedingTarget)
+    // Captures plus the current nearby bird count overlap announcements; never add both.
+    val accountedFeedings get() = maxOf(used, currentPopulation ?: 0)
+    /** Positive unused supplies contradict a report; unknown inventory/coverage does not. */
+    val knownFoodUnresolved get() = (heldFoods ?: 0) > 0 || (floorDropsRemaining ?: 0) > 0 ||
+        validatedDemand > accountedFeedings
+    val feedingResolved get() = floorDropsRemaining == 0 && heldFoods == 0 && accountedFeedings >= feedingTarget
     private var macawPairs = 0
     private val spawned = mutableMapOf<String, Int>()
     private var announced = false
@@ -33,7 +33,6 @@ class SafariBirdLedger {
     private val startingPickups = mutableMapOf<String, Int>()
     fun startingGrant(name: String) {
         if (name in foods) {
-            populationProof = null
             startingFoods[name] = maxOf(startingFoods[name] ?: 0, 1)
         }
     }
@@ -42,9 +41,9 @@ class SafariBirdLedger {
         val early = startingPickups[food] ?: 0
         maxOf(startingFoods[food] ?: 0, early) + (picked[food] ?: 0) - (forest[food] ?: 0) - early
     }
-    val sparklingTarget get() = maxOf(9 + extraFoods, recoveredDemand)
-    val feedingTarget get() = maxOf(maxOf(9, forest.values.sum()) + extraFoods, recoveredDemand)
-    val sparklingSpawned get() = used >= sparklingTarget || populationResolves(sparklingTarget)
+    val sparklingTarget get() = feedingTarget
+    val feedingTarget get() = maxOf(maxOf(9, forest.values.sum()) + extraFoods, validatedDemand)
+    val sparklingSpawned get() = feedingResolved
     /** Sample every tick during Head Start; subtract already reported Forest floor pickups. */
     fun startingInventory(stacks: List<Pair<String, Int>>, elapsed: Long) {
         if (elapsed !in 0L..3000L) return
@@ -52,12 +51,11 @@ class SafariBirdLedger {
             .mapValues { (_, items) -> items.sumOf { it.second.coerceAtLeast(0) } }
         foods.forEach { food ->
             val amount = maxOf(startingFoods[food] ?: 0, (held[food] ?: 0) - ((picked[food] ?: 0) - (startingPickups[food] ?: 0)))
-            if (amount > (startingFoods[food] ?: 0)) populationProof = null
             startingFoods[food] = amount
         }
     }
     val foodsComplete get() = foods.all { (forest[it] ?: 0) >= 3 }
-    val allSpawned get() = foodsComplete && used >= feedingTarget
+    val allSpawned get() = foodsComplete && feedingResolved
     val collected get() = picked.values.sum()
     val used get() = feedings
     fun spawnedCount(species: String) = spawned[species] ?: 0
@@ -71,8 +69,11 @@ class SafariBirdLedger {
         if (!text.startsWith("FLOOR DROP!")) return false
         val food = foods.firstOrNull { Regex("\\b${Regex.escape(it)}\\b(?! Shard)").containsMatchIn(text) } ?: return false
         val quantity = FloorPickup.parse(text)?.quantity ?: 1
-        if (recoveredDemand > 0) recoveredDemand += quantity
-        populationProof = null
+        // A newly discovered item after completion needs a new feeding, even if teammates
+        // already contributed more announcements than the original minimum.
+        if (feedingResolved) validatedDemand = maxOf(validatedDemand, accountedFeedings) + quantity
+        else if (validatedDemand > 0) validatedDemand += quantity
+        floorDropsRemaining = null
         picked.merge(food, quantity, Int::plus)
         if (biome == SafariBiome.FOREST) forest.merge(food, quantity, Int::plus)
         else if (elapsed == null || elapsed in 0L..3000L) startingPickups.merge(food, quantity, Int::plus)
@@ -86,8 +87,6 @@ class SafariBirdLedger {
             "Two Macaws were attracted to the Birdfeeder!" -> { macawPairs++; "Macaw" }
             else -> return false
         }
-        if (populationProof != null && populationResolves(feedingTarget)) recoveredDemand = feedingTarget + 1
-        populationProof = null
         spawned.merge(species, if (species == "Macaw") 2 else 1, Int::plus)
         feedings++
         return true
@@ -95,7 +94,6 @@ class SafariBirdLedger {
     fun inventory(stacks: List<Pair<String, Int>>) {
         val held = stacks.groupBy { SafariRules.strip(it.first).trim() }.mapValues { (_, items) -> items.sumOf { it.second.coerceAtLeast(0) } }
         heldFoods = foods.sumOf { held[it] ?: 0 }
-        if (heldFoods != 0) populationProof = null
         foods.forEach { removed[it] = maxOf(removed[it] ?: 0, (picked[it] ?: 0) - (held[it] ?: 0)) }
     }
     private fun pairs(caught: Int, remaining: Int) = maxOf(macawPairs, (caught + remaining.coerceAtLeast(0) + 1) / 2)
