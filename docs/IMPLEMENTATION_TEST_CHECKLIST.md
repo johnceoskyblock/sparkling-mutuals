@@ -240,7 +240,7 @@ Verify Full Clear report trust: capture a variable species' minimum and perform 
 ## Experimental capsule path
 
 - Fresh/missing/invalid configuration defaults off; settings save, reopen and restart retain deliberate choices. Toggling must not start recording or change capture/history/completion/ESP state.
-- Enable in Safari helpers, disable both capsule-hiding settings, hold an ordinary main-hand capsule in first person and stand still on the ground. After two stable ticks, expect an amber path and **Experimental path**, with no impact marker. Its initial unseen launch segment is omitted and its nominal limit is 15 blocks.
+- With Allow uncalibrated estimates off, enable in Safari helpers, disable both capsule-hiding settings, hold an ordinary main-hand capsule in first person and stand still on the ground. After two stable ticks, expect an amber path and **Experimental path**, with no impact marker. Its initial unseen launch segment is omitted and its nominal limit is 15 blocks.
 - Test pitch -10 through +1 degrees inclusive and immediately outside both limits. Walk, jump/fall, swim, fly, ride, sneak and sprint: suppress immediately; settle for two ticks before returning. Switch ordinary/Masterful/unsupported items, hands and third-person view between ticks: no stale line.
 - Turn the camera and vary FOV, window size and GUI scale. Hide HUD or open any screen: hide geometry/status. Disconnect/world transfer: discard old stability/geometry. Disable the option: no preview status or line.
 - With Show guide through terrain off, place the preview line and an existing ESP outline behind a sight-line obstacle: the path is occluded, existing through-terrain ESP remains visible. Turn it on: the guide also becomes visible. Check normal path continuity and finite geometry. Visibility does not establish collision or target selection.
@@ -248,7 +248,8 @@ Verify Full Clear report trust: capture a variable species' minimum and perform 
 
 ## Experimental terrain/critter contacts
 
-- Both toggles default off, width defaults 3 and saves/clamps 1–5. With uncalibrated mode off, retain old pitch/range and no marker. Expanded mode retains all stationary/item/view/hiding exclusions and two stable ticks.
+- Both toggles default off, width defaults 3 and saves/clamps 1–5. With uncalibrated mode off, retain old ordinary/stationary pitch/range restrictions and no marker. Expanded mode accepts main-hand ordinary/Masterful capsules during walking, sprinting, sneaking, jumping and falling without a stationary wait; swimming, flight, riding, third person, off-hand-only, item/view/hiding exclusions remain.
+- Switch capsule variants while moving: guide/status must update immediately, follow interpolated player eye and current character aim and remain finite. Masterful/moving paths are entirely dashed and identified in the HUD; stopping with an ordinary capsule restores the observed-region styling. Check normal and detached-camera aim. Unsupported item switches and opt-out must remove stale geometry. Recorder contact probes must still require two stable ordinary grounded ticks, with no probe for Masterful/moving inputs and no automatic recording.
 - Check a wall inside the first 1.7 blocks before a critter, target before wall, inside-solid origin, slabs/stairs, fluid and unloaded boundaries. One amber ring or cyan diamond only; uncertainty/caps never become a landing or miss. Critter proxies are unpadded/current-position and independent of ESP visibility.
 - In a crowded scene with more than 64 identified bodies, verify known ring/diamond contacts remain visible with **Provisional · Other critters unverified**. Turn aim toward a late-discovered target and allow a bounded sweep to refresh priorities. Routine metadata must not restart the sweep; add/remove churn must still invalidate safely. Unknown terrain/fluid and stale selected bodies must not show farther contacts. Repeat with recording off/on; an incomplete raw export must stay incomplete.
 - Turn camera, change FOV/GUI scale, open screens, hide HUD, switch item/world. No stale marker/status. Dark outline/core use the selected depth mode without writes; old ESP remains visible through terrain.
@@ -261,4 +262,4 @@ Verify Full Clear report trust: capture a variable species' minimum and perform 
 
 ## Last updated
 
-2026-10-17 - Added detached-camera aim anchoring and unchanged third-person restriction checks. Live field validation remains pending.
+2026-10-17 - Added Masterful/movement eligibility, unverified styling and strict recorder-probe regression checks. Live field validation remains pending.

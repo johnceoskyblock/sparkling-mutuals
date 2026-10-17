@@ -6,7 +6,9 @@ import net.johnceo.sparklingmutuals.safari.shots.preview.contacts.*
 data class CapsulePreviewFrame(val points: List<ShotVector>, val status: String?,val mesh:ContactGuideMesh?=null)
 
 object CapsulePreviewFrameBuilder {
-    fun contacts(trace:ContactTrace,camera:ShotVector,width:Float):CapsulePreviewFrame {
+    fun contacts(trace:ContactTrace,camera:ShotVector,width:Float,estimateLabel:String?=null):CapsulePreviewFrame {
+        // The ordinary stationary observation window does not apply to other launch conditions.
+        val display=if(estimateLabel==null) trace else trace.copy(nodes=trace.nodes.map{it.copy(observedRegion=false)})
         val reason=when {
             trace.primary?.kind==ContactKind.CRITTER -> "Possible critter contact"
             trace.primary?.kind==ContactKind.TERRAIN -> "Estimated terrain contact"
@@ -17,9 +19,9 @@ object CapsulePreviewFrameBuilder {
             else -> "No contact within preview range"
         }
         val partial=trace.primary!=null && trace.warnings.any{it in setOf("scan_pending","target_limit","unsupported_proxy","stale_target","identity_budget")}
-        return CapsulePreviewFrame(trace.nodes.map{it.position},"Uncalibrated · "+(if(partial)"Provisional\n" else "")+reason+
+        return CapsulePreviewFrame(display.nodes.map{it.position},"Uncalibrated · "+(estimateLabel?.let{"$it\n"} ?: "")+(if(partial)"Provisional\n" else "")+reason+
             (if(partial)"\nOther critters unverified" else "")+
-            (if("contact_tie" in trace.warnings) " (ambiguous)" else ""),ContactGuideGeometry.build(trace,camera,width))
+            (if("contact_tie" in trace.warnings) " (ambiguous)" else ""),ContactGuideGeometry.build(display,camera,width))
     }
     fun build(availability: CapsulePreviewAvailability, eye: ShotVector, aim: ShotVector): CapsulePreviewFrame {
         if (availability==CapsulePreviewAvailability.AVAILABLE) {

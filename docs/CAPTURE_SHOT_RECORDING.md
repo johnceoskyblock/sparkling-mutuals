@@ -1,6 +1,6 @@
 # Capture-shot collection kit
 
-This opt-in kit records local observations for ordinary and Masterful Critter Capsules on **26.1.2, 26.2 and 26.3**. A separate, default-off experimental ordinary-capsule path is available within the narrow scope below. Endpoints, terrain collision and capture targeting remain unverified. Visible capsule motion may differ from server capture rules.
+This opt-in kit records local observations for ordinary and Masterful Critter Capsules on **26.1.2, 26.2 and 26.3**. A separate, default-off experimental capsule path is available within the scope below. Current preview increments are built and delivered for **26.1.2 only**. Endpoints, terrain collision and capture targeting remain unverified. Visible capsule motion may differ from server capture rules.
 
 ## Experimental capsule path
 
@@ -8,9 +8,11 @@ Capture-shot development builds currently target **26.1.2 only**, by maintainer 
 
 In `/sm` settings, open **Safari helpers → Experimental capsule path**. It starts **off** and saves independently from the recorder. Turn both **Hide capsules on ground** and **Hide flying capsules** off. Hold an ordinary capsule in your main hand in Safari, use first person and stand on the ground for two stable client ticks. With **Allow uncalibrated estimates** off, the original -10 through +1 degree gate, short path and **Experimental path** status remain; no endpoint is shown.
 
-Walking, jumping/falling, swimming, flight, riding, sneaking/sprinting, unsupported items (including Masterful), off-hand-only use and third person suppress the path. Screens and hidden HUD suppress both the path and status. A quiet status explains supported-state restrictions; there are no repeated chat notices. Disconnects/world changes clear stability without changing the saved option or starting recording.
+With uncalibrated estimates off, walking, jumping/falling, swimming, flight, riding, sneaking/sprinting and Masterful capsules suppress the path. Unsupported items, off-hand-only use and third person always suppress it. Screens and hidden HUD suppress both the path and status. A quiet status explains supported-state restrictions; there are no repeated chat notices. Disconnects/world changes clear stability without changing the saved option or starting recording.
 
 Enable **Allow uncalibrated estimates** (also default off) for broader first-person angles and estimated contact. The guide extends the same fixed spatial formula from the eye, including the formerly omitted launch prefix. This is the versioned `contact-guide-center-extrapolation-v1` hypothesis, not measured launch physics. It stops at the first of 64 accumulated blocks, ordinal 128 or 256 segments. Ordinal is **not server flight time**. Launch/wider regions are dashed; the previously observed region is solid. **Capsule path width** saves from 1–5, default 3, with a dark outline.
+
+This option also enables ordinary and **Masterful Critter Capsules** while walking, sprinting, sneaking, jumping or falling. No two-tick stationary wait applies to this expanded display. The route follows the player's interpolated eye and actual current aim each frame; it reuses the existing spatial estimate without inventing a player-momentum correction or a Masterful-specific curve. For Masterful or moving states, the entire route is dashed and the HUD identifies **Masterful**, **Moving** or both. These conditions have no validated observation window. Swimming, flight and riding remain unavailable. The recorder's ordinary, stationary input-probe eligibility and original model identity remain unchanged; raw Masterful/movement observations are still separate. This display extension supersedes the earlier deferred Masterful/movement scope in the historical contact design.
 
 **Show guide through terrain** (default on) makes the path, outline and contact marker visible behind terrain, useful when an estimated arc clears a hill but its far side is hidden from the camera. Turn it off to restore terrain-occluded rendering. This changes visibility only: expanded contact estimates still stop at the first predicted collision, fluid or unloaded boundary. It does not extend the solved route through solid terrain or reveal unloaded targets. The legacy short experimental path still has no contact prediction. Existing ESP visibility stays unchanged.
 
@@ -22,7 +24,7 @@ Discovery keeps its progress through routine entity metadata updates, while mark
 
 The guide and HUD resolve the same current view within each render frame, including camera turns. Repeated frames over an unchanged selected body reuse its validation within the client tick; sixteen distinct full validations remain the limit. Entity movement, metadata, equipment, passenger and capture/model changes invalidate affected checks, and every tick starts fresh. This prevents frame-rate-dependent marker loss without retaining an old contact after a known change. Shyworm still uses the existing head-area visual proxy: full surfaced-body association and server capture bounds remain unverified.
 
-The route starts at the player's interpolated eye position and uses the player's own current yaw/pitch, matching normal local-player aiming. A detached-camera mod's replacement view angles must not retarget it; camera position is used only to display the guide. Freecam can therefore observe a stationary route from another view while first-person perspective remains selected. This does not validate firing through Freecam or server mechanics. Normal front/back third person remains unsupported and suppresses the guide.
+The route starts at the player's interpolated eye position and uses the player's own current yaw/pitch, matching normal local-player aiming. A detached-camera mod's replacement view angles must not retarget it; camera position is used only to display the guide. Freecam can therefore observe the character-anchored route from another view while first-person perspective remains selected. This does not validate firing through Freecam or server mechanics. Normal front/back third person remains unsupported and suppresses the guide.
 
 For the first visual test, leave recording off, enable the option as above and compare a few ordinary throws in the tested range. Check camera turns/FOV, GUI scale, screen/HUD suppression, movement stop/start, item/hand changes, angle limits and world transfer. Compare guide-through-terrain off/on behind a sight-line obstacle while existing ESP keeps its normal visibility. Live Hypixel appearance and server mechanics require gameplay testing; a passing build or numeric observation check cannot establish them. See the [manual checklist](IMPLEMENTATION_TEST_CHECKLIST.md#experimental-capsule-path).
 
@@ -152,4 +154,4 @@ Automated suites exercise the actual coordinator/writer/codec, producer-to-reade
 
 ## Last updated
 
-2026-10-17 - Fixed detached-camera aim substitution while retaining normal local-player aim, interpolated eye position and the first-person-only restriction.
+2026-10-17 - Added uncalibrated Masterful and moving-player previews; retained strict ordinary/stationary recorder probes and first-person-only display.

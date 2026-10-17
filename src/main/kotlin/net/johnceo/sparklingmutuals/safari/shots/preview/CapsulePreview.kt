@@ -38,7 +38,7 @@ object CapsulePreview {
         val p=client.player ?: return null
         val itemId=p.mainHandItem.get(DataComponents.CUSTOM_DATA)?.copyTag()?.getStringOr("id","")
         return CapsulePreviewState(true, SafariAssist.inSafari,
-            ShotVariant.fromId(itemId)==ShotVariant.ORDINARY,client.options.cameraType.isFirstPerson,p.onGround(),
+            ShotVariant.fromId(itemId),client.options.cameraType.isFirstPerson,p.onGround(),
             p.isShiftKeyDown,p.isSprinting,p.isSwimming,p.abilities.flying,p.isPassenger,
             ConfigManager.hideFlyingCapsules,ConfigManager.hideGroundCapsules,client.smScreen!=null,
             client.options.smHideGui,p.xRot.toDouble(),ShotPacketCompat.vector(p.position()),ShotPacketCompat.vector(p.deltaMovement),
@@ -58,7 +58,7 @@ object CapsulePreview {
         val view=listOf(state,eye,aim,camera,ConfigManager.capsulePathWidth,CapsuleContactScene.revision,SafariEsp.contactRevision)
         return frames.resolve(level,view) {
             if(state?.allowUncalibratedEstimates==true) CapsulePreviewFrameBuilder.contacts(
-                CapsuleContactScene.snapshot(client,eye,aim,state.pitch).trace,camera,ConfigManager.capsulePathWidth)
+                CapsuleContactScene.snapshot(client,eye,aim,state.pitch).trace,camera,ConfigManager.capsulePathWidth,state.estimateLabel)
             else CapsulePreviewFrameBuilder.build(available,eye,aim).let{f->f.copy(mesh=ContactGuideGeometry.build(
                 ContactTrace(f.points.mapIndexed{i,v->ContactNode(i.toDouble(),v,true)},null,ContactStop.RANGE_LIMIT,emptySet()),eye,ConfigManager.capsulePathWidth))}
         }
