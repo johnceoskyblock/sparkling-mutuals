@@ -14,11 +14,15 @@ object CapsuleContactSolver {
             val environment=scene(a,b)
             var best=environment.terrain?.takeIf{it.position.finite() && it.parameter.isFinite() && it.parameter>=a.parameter-TIE && it.parameter<=b.parameter+TIE}
             for(target in targets.take(64)) {
-                val f=ContactIntersections.entry(a.position,b.position,target.bounds) ?: continue
-                val candidate=ContactCandidate(ContactKind.CRITTER,a.parameter+(b.parameter-a.parameter)*f,
-                    a.position.lerp(b.position,f),null,target.key,target.proxy)
+                val surfaceHit=target.surface?.entry(a.position,b.position)
+                val f=if(target.surface!=null) surfaceHit?.fraction ?: continue else ContactIntersections.entry(a.position,b.position,target.bounds) ?: continue
+                val candidate=ContactCandidate(if(target.surface!=null)ContactKind.TERRAIN else ContactKind.CRITTER,a.parameter+(b.parameter-a.parameter)*f,
+                    a.position.lerp(b.position,f),surfaceHit?.normal,target.key,target.proxy)
                 if(best==null || candidate.parameter<best.parameter-TIE) best=candidate
-                else if(kotlin.math.abs(candidate.parameter-best.parameter)<=TIE) warnings.add("contact_tie")
+                else if(kotlin.math.abs(candidate.parameter-best.parameter)<=TIE) {
+                    warnings.add("contact_tie")
+                    if(candidate.kind==ContactKind.TERRAIN && best.kind==ContactKind.CRITTER) best=candidate
+                }
             }
             val boundary=environment.boundary?.takeIf { it.fraction.isFinite() && it.fraction in 0.0..1.0 }
             val unknownParameter=boundary?.let{a.parameter+(b.parameter-a.parameter)*it.fraction}

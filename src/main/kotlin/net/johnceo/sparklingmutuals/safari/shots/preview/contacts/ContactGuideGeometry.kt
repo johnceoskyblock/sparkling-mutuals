@@ -38,9 +38,12 @@ object ContactGuideGeometry {
    val u=unit(cross(normal,if(abs(normal.y)<.9)ShotVector(0.0,1.0,0.0) else ShotVector(1.0,0.0,0.0)),ShotVector(1.0,0.0,0.0))
    val v=unit(cross(normal,u),ShotVector(0.0,1.0,0.0))
    fun point(x:Double,y:Double)=plus(plus(center,u,x),v,y)
-   if(hit.kind==ContactKind.TERRAIN) repeat(16){i->
-    val a=2*PI*i/16;val b=2*PI*(i+1)/16
-    marker.add(ContactLine(point(.25*cos(a),.25*sin(a)),point(.25*cos(b),.25*sin(b)),AMBER,width))
+   if(hit.kind==ContactKind.TERRAIN) {
+    if(trace.surfacePatch!=null) marker.addAll(ContactSurfaceRing.build(center,normal,trace.surfacePatch,width))
+    else repeat(16){i->
+     val a=2*PI*i/16;val b=2*PI*(i+1)/16
+     marker.add(ContactLine(point(.25*cos(a),.25*sin(a)),point(.25*cos(b),.25*sin(b)),AMBER,width))
+    }
    } else {
     val points=listOf(point(0.0,.25),point(.25,0.0),point(0.0,-.25),point(-.25,0.0),point(0.0,.25))
     points.zipWithNext().forEach{(a,b)->marker.add(ContactLine(a,b,CYAN,width))}
