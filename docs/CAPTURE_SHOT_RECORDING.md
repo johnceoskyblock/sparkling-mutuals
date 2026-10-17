@@ -22,6 +22,8 @@ Discovery keeps its progress through routine entity metadata updates, while mark
 
 The guide and HUD resolve the same current view within each render frame, including camera turns. Repeated frames over an unchanged selected body reuse its validation within the client tick; sixteen distinct full validations remain the limit. Entity movement, metadata, equipment, passenger and capture/model changes invalidate affected checks, and every tick starts fresh. This prevents frame-rate-dependent marker loss without retaining an old contact after a known change. Shyworm still uses the existing head-area visual proxy: full surfaced-body association and server capture bounds remain unverified.
 
+The route starts at the player's interpolated eye position and uses the player's own current yaw/pitch, matching normal local-player aiming. A detached-camera mod's replacement view angles must not retarget it; camera position is used only to display the guide. Freecam can therefore observe a stationary route from another view while first-person perspective remains selected. This does not validate firing through Freecam or server mechanics. Normal front/back third person remains unsupported and suppresses the guide.
+
 For the first visual test, leave recording off, enable the option as above and compare a few ordinary throws in the tested range. Check camera turns/FOV, GUI scale, screen/HUD suppression, movement stop/start, item/hand changes, angle limits and world transfer. Compare guide-through-terrain off/on behind a sight-line obstacle while existing ESP keeps its normal visibility. Live Hypixel appearance and server mechanics require gameplay testing; a passing build or numeric observation check cannot establish them. See the [manual checklist](IMPLEMENTATION_TEST_CHECKLIST.md#experimental-capsule-path).
 
 ## Controls
@@ -150,4 +152,4 @@ Automated suites exercise the actual coordinator/writer/codec, producer-to-reade
 
 ## Last updated
 
-2026-10-17 - Added movable/resizable capsule status and the saved through-terrain visibility control; collision and Shyworm limitations remain unchanged.
+2026-10-17 - Fixed detached-camera aim substitution while retaining normal local-player aim, interpolated eye position and the first-person-only restriction.

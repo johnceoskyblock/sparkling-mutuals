@@ -49,7 +49,9 @@ object CapsulePreview {
         val p=client.player ?: return null
         if(available!=CapsulePreviewAvailability.AVAILABLE) { frames.reset();return CapsulePreviewFrameBuilder.build(available,ShotPacketCompat.vector(p.eyePosition),ShotPacketCompat.vector(p.lookAngle)) }
         val partial=client.deltaTracker.getGameTimeDeltaPartialTick(false)
-        val eye=ShotPacketCompat.vector(p.getEyePosition(partial));val aim=ShotPacketCompat.vector(p.getViewVector(partial))
+        val eye=ShotPacketCompat.vector(p.getEyePosition(partial))
+        // Local-player aim uses current rotations; view APIs may substitute a detached camera's angles.
+        val aim=ShotPacketCompat.vector(p.lookAngle)
         val level=client.level ?: return null
         val camera=ShotPacketCompat.vector(client.gameRenderer.smCamera.position())
         CapsuleContactScene.refreshRevision(client)
