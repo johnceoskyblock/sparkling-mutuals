@@ -20,7 +20,8 @@ data class ContactSceneSnapshot(val trace:ContactTrace,val targets:List<ContactT
 
 /** Client-thread only. No recording dependency, file access, world mutation or chunk loading. */
 object CapsuleContactScene {
-    private val cache=ContactTargetCache()
+    private var priority:ContactTargetPriority?=null
+    private val cache=ContactTargetCache{priority?.score(it) ?: Double.POSITIVE_INFINITY}
     private var world:Any?=null
     private var slots:Iterator<ContactDiscovery?>?=null
     private var tick=0L
@@ -28,14 +29,17 @@ object CapsuleContactScene {
     private var unsupported=false
     private var entityCount=-1
     fun invalidateDiscovery() { if(world!=null) { slots=null;cache.invalidate() } }
+    fun metadataChanged() { if(world!=null) cache.metadataChanged() }
     private val collectionRules=net.johnceo.sparklingmutuals.safari.shots.preview.CapsulePreviewRules()
     fun probeEligible(client:Minecraft)=collectionRules.evaluate(net.johnceo.sparklingmutuals.safari.shots.preview.CapsulePreview.collectionState(client))==net.johnceo.sparklingmutuals.safari.shots.preview.CapsulePreviewAvailability.AVAILABLE
-    fun reset() { cache.reset();world=null;slots=null;identityAllowance=0;unsupported=false;collectionRules.reset() }
+    fun reset() { cache.reset();world=null;slots=null;identityAllowance=0;unsupported=false;priority=null;collectionRules.reset() }
     fun tick(client:Minecraft,enabled:Boolean) {
         val level=client.level
         if(!enabled || !SafariAssist.inSafari || level==null || client.player==null) { reset();return }
         if(world!==level) { reset();world=level }
         tick++;identityAllowance=16
+        val player=client.player!!
+        priority=ContactTargetPriority(ContactCurveSampler.sample(vector(player.eyePosition),vector(player.lookAngle),player.xRot.toDouble()))
         if(entityCount!=level.entityCount) { invalidateDiscovery();entityCount=level.entityCount }
         collectionRules.tick(level,net.johnceo.sparklingmutuals.safari.shots.preview.CapsulePreview.collectionState(client))
         if(slots?.hasNext()!=true) {

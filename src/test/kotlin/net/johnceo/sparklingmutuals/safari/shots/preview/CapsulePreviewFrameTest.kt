@@ -1,10 +1,22 @@
 package net.johnceo.sparklingmutuals.safari.shots.preview
 
 import net.johnceo.sparklingmutuals.safari.shots.ShotVector
+import net.johnceo.sparklingmutuals.safari.shots.preview.contacts.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class CapsulePreviewFrameTest {
+    @Test fun `partial target coverage visibly labels both rendered contact shapes provisional`() {
+        for(kind in ContactKind.entries) {
+            val hit=ContactCandidate(kind,1.0,ShotVector(0.0,0.0,1.0),ShotVector(0.0,1.0,0.0),null,null)
+            val trace=ContactTrace(emptyList(),hit,ContactStop.CONTACT,setOf("target_limit"))
+            val frame=CapsulePreviewFrameBuilder.contacts(trace,ShotVector(0.0,1.0,0.0),3f)
+            assertTrue(frame.mesh!!.marker.isNotEmpty())
+            assertTrue(frame.status!!.contains("Provisional"))
+            assertTrue(frame.status.contains("Other critters unverified"))
+            assertTrue(frame.status.contains("Uncalibrated"))
+        }
+    }
     private val eye=ShotVector(0.0,2.0,0.0)
     private val aim=ShotVector(0.0,0.0,1.0)
     @Test fun `available frame contains bounded curve without an impact marker`() {

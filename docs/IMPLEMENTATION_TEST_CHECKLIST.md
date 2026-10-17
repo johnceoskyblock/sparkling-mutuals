@@ -250,10 +250,11 @@ Verify Full Clear report trust: capture a variable species' minimum and perform 
 
 - Both toggles default off, width defaults 3 and saves/clamps 1–5. With uncalibrated mode off, retain old pitch/range and no marker. Expanded mode retains all stationary/item/view/hiding exclusions and two stable ticks.
 - Check a wall inside the first 1.7 blocks before a critter, target before wall, inside-solid origin, slabs/stairs, fluid and unloaded boundaries. One amber ring or cyan diamond only; uncertainty/caps never become a landing or miss. Critter proxies are unpadded/current-position and independent of ESP visibility.
+- In a crowded scene with more than 64 identified bodies, verify known ring/diamond contacts remain visible with **Provisional · Other critters unverified**. Turn aim toward a late-discovered target and allow a bounded sweep to refresh priorities. Routine metadata must not restart the sweep; add/remove churn must still invalidate safely. Unknown terrain/fluid and stale selected bodies must not show farther contacts. Repeat with recording off/on; an incomplete raw export must stay incomplete.
 - Turn camera, change FOV/GUI scale, open screens, hide HUD, switch item/world. No stale marker/status. Dark outline/core depth-test without writes; old ESP remains visible through terrain.
 - Check real-writer v2 plus strict v1 replay, local target aliases, UTF-8/finite/line bounds, omitted detail flags, one probe per ordinary input and unchanged raw packets/association. Both named populated workloads retain every capsule packet under unchanged caps.
 - Run target-only 26.1.2 verification, helper/Python/package tests, offline loaded fixtures and bounded scene profiling. Live Hypixel broader-angle launch, endpoint and proxy validation remain pending; use the six-throw sanity block before the fitting/validation matrix.
 
 ## Last updated
 
-2026-10-17 (America/New_York) - Added experimental contact, probe and bounded-scene validation. Live field validation remains pending.
+2026-10-17 - Added crowded-scene provisional marker, metadata continuity and aim turnover checks. Live field validation remains pending.

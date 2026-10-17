@@ -16,8 +16,10 @@ object CapsulePreviewFrameBuilder {
             trace.stop==ContactStop.INVALID -> "Capsule path unavailable"
             else -> "No contact within preview range"
         }
-        return CapsulePreviewFrame(trace.nodes.map{it.position},"Uncalibrated · $reason"+
-            if("contact_tie" in trace.warnings) " (ambiguous)" else "",ContactGuideGeometry.build(trace,camera,width))
+        val partial=trace.primary!=null && trace.warnings.any{it in setOf("scan_pending","target_limit","unsupported_proxy","stale_target","identity_budget")}
+        return CapsulePreviewFrame(trace.nodes.map{it.position},"Uncalibrated · "+(if(partial)"Provisional\n" else "")+reason+
+            (if(partial)"\nOther critters unverified" else "")+
+            (if("contact_tie" in trace.warnings) " (ambiguous)" else ""),ContactGuideGeometry.build(trace,camera,width))
     }
     fun build(availability: CapsulePreviewAvailability, eye: ShotVector, aim: ShotVector): CapsulePreviewFrame {
         if (availability==CapsulePreviewAvailability.AVAILABLE) {

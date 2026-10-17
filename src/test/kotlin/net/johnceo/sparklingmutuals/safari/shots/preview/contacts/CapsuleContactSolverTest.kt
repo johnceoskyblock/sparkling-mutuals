@@ -43,10 +43,25 @@ class CapsuleContactSolverTest {
             assertEquals(.3,t.nodes.last().position.z,1e-10)
         }
     }
-    @Test fun `incomplete targets never establish nearest contact or leak arbitrary reasons`() {
+    @Test fun `incomplete targets retain provisional terrain without leaking arbitrary reasons`() {
         val t=CapsuleContactSolver.trace(curve,listOf(target(2.0)),ContactCoverage(false,setOf("private arbitrary string")),wall(.5))
-        assertNull(t.primary); assertEquals(ContactStop.TARGET_COVERAGE,t.stop)
+        assertEquals(ContactKind.TERRAIN,t.primary?.kind); assertEquals(ContactStop.CONTACT,t.stop)
+        assertTrue("scan_pending" in t.warnings)
         assertFalse(t.warnings.contains("private arbitrary string"))
+    }
+    @Test fun `partial coverage retains known critter before terrain and explains uncertainty`() {
+        val t=CapsuleContactSolver.trace(curve,listOf(target(.5)),ContactCoverage(false,setOf("target_limit")),wall(2.0))
+        assertEquals(ContactKind.CRITTER,t.primary?.kind)
+        assertEquals(.5,t.primary!!.position.z,1e-12)
+        assertTrue("target_limit" in t.warnings)
+    }
+    @Test fun `partial coverage never creates a marker beyond unknown geometry or at range cap`() {
+        for(stop in listOf(ContactStop.UNLOADED,ContactStop.FLUID,ContactStop.WORK_LIMIT)) {
+            val t=CapsuleContactSolver.trace(curve,listOf(target(2.0)),ContactCoverage(false,setOf("target_limit"))){_,_->ContactSegmentScene(null,ContactBoundary(0.0,stop))}
+            assertNull(t.primary);assertEquals(stop,t.stop)
+        }
+        val t=CapsuleContactSolver.trace(curve,emptyList(),ContactCoverage(false,setOf("scan_pending"))){_,_->ContactSegmentScene(null,null)}
+        assertNull(t.primary);assertEquals(ContactStop.TARGET_COVERAGE,t.stop)
     }
     @Test fun `caps do not become endpoints`() {
         val t=CapsuleContactSolver.trace(curve,emptyList(),coverage){_,_->ContactSegmentScene(null,null)}
