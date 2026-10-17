@@ -2,9 +2,7 @@ package net.johnceo.sparklingmutuals.safari.shots.preview.contacts
 import net.johnceo.sparklingmutuals.safari.shots.ShotVector
 import kotlin.math.*
 data class ContactLine(val from:ShotVector,val to:ShotVector,val color:Int,val width:Float)
-data class ContactGuideMesh(val core:List<ContactLine>,val outline:List<ContactLine>,val marker:List<ContactLine>) {
- val tube:ContactTubeMesh by lazy { ContactTubeGeometry.build(core) }
-}
+data class ContactGuideMesh(val core:List<ContactLine>,val outline:List<ContactLine>,val marker:List<ContactLine>)
 object ContactGuideGeometry {
  private const val AMBER=0xFFFFB347.toInt()
  private const val CYAN=0xFF55DDEE.toInt()
