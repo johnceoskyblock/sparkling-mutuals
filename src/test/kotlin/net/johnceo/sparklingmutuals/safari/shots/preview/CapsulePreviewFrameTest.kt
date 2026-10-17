@@ -1,11 +1,28 @@
 package net.johnceo.sparklingmutuals.safari.shots.preview
 
+import net.johnceo.sparklingmutuals.safari.shots.ShotVariant
 import net.johnceo.sparklingmutuals.safari.shots.ShotVector
 import net.johnceo.sparklingmutuals.safari.shots.preview.contacts.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class CapsulePreviewFrameTest {
+    @Test fun `unverified launch conditions dash even the old observation window without moving contact`() {
+        val hit=ContactCandidate(ContactKind.CRITTER,1.0,ShotVector(0.0,0.0,1.0),null,"p1","client_body_v1")
+        val trace=ContactTrace(listOf(ContactNode(0.0,ShotVector(0.0,0.0,0.0),true),
+            ContactNode(1.0,ShotVector(0.0,0.0,1.0),true)),hit,ContactStop.CONTACT,emptySet())
+        fun length(frame:CapsulePreviewFrame)=frame.mesh!!.core.sumOf{kotlin.math.sqrt(it.from.distanceSquared(it.to))}
+        val original=CapsulePreviewFrameBuilder.contacts(trace,ShotVector(0.0,1.0,0.0),3f)
+        assertEquals(1.0,length(original),1e-9)
+        for(label in listOf("Masterful","Moving","Masterful / Moving")) {
+            val frame=CapsulePreviewFrameBuilder.contacts(trace,ShotVector(0.0,1.0,0.0),3f,label)
+            assertEquals(.7,length(frame),1e-9)
+            assertEquals(original.points,frame.points)
+            assertEquals(original.mesh!!.marker,frame.mesh!!.marker)
+            assertTrue(frame.status!!.contains("Uncalibrated"))
+        }
+        assertTrue(trace.nodes.all{it.observedRegion})
+    }
     @Test fun `partial target coverage visibly labels both rendered contact shapes provisional`() {
         for(kind in ContactKind.entries) {
             val hit=ContactCandidate(kind,1.0,ShotVector(0.0,0.0,1.0),ShotVector(0.0,1.0,0.0),null,null)
@@ -41,7 +58,7 @@ class CapsulePreviewFrameTest {
         assertTrue(frame.points.isEmpty());assertEquals("Capsule path unavailable",frame.status)
     }
     @Test fun `world reset and current view invalidate a previously available frame`() {
-        val s=CapsulePreviewState(true,true,true,true,true,false,false,false,false,false,false,false,false,false,0.0,eye,ShotVector(0.0,0.0,0.0))
+        val s=CapsulePreviewState(true,true,ShotVariant.ORDINARY,true,true,false,false,false,false,false,false,false,false,false,0.0,eye,ShotVector(0.0,0.0,0.0))
         val r=CapsulePreviewRules();val w=Any();r.tick(w,s);r.tick(w,s)
         assertEquals(64,CapsulePreviewFrameBuilder.build(r.evaluate(s),eye,aim).points.size)
         assertTrue(CapsulePreviewFrameBuilder.build(r.evaluate(s.copy(firstPerson=false)),eye,aim).points.isEmpty())

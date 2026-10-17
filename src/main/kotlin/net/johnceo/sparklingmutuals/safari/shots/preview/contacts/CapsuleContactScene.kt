@@ -39,7 +39,7 @@ object CapsuleContactScene {
         val level=world as? net.minecraft.client.multiplayer.ClientLevel ?: return
         packet.getEntity(level)?.let{entityChanged(it.id)}
     }
-    private val collectionRules=net.johnceo.sparklingmutuals.safari.shots.preview.CapsulePreviewRules()
+    private val collectionRules=net.johnceo.sparklingmutuals.safari.shots.preview.CapsulePreviewRules(allowExtendedPreview=false)
     fun probeEligible(client:Minecraft)=collectionRules.evaluate(net.johnceo.sparklingmutuals.safari.shots.preview.CapsulePreview.collectionState(client))==net.johnceo.sparklingmutuals.safari.shots.preview.CapsulePreviewAvailability.AVAILABLE
     fun reset() { cache.reset();world=null;slots=null;validation.reset();entityCount=-1;unsupported=false;priority=null;collectionRules.reset();revision++ }
     fun tick(client:Minecraft,enabled:Boolean) {
