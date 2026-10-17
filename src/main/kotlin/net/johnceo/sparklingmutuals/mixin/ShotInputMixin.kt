@@ -9,6 +9,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo
 
 @Mixin(Minecraft::class)
 class ShotInputMixin {
+    @Inject(method=["runTick"],at=[At("HEAD")])
+    private fun previewFrame(renderLevel:Boolean,info:CallbackInfo) {
+        net.johnceo.sparklingmutuals.safari.shots.preview.CapsulePreview.beginFrame()
+    }
     @Inject(method=["startUseItem"],at=[At("HEAD")])
     private fun start(info:CallbackInfo) { ShotObservationHooks.begin() }
     @Inject(method=["startUseItem"],at=[At("RETURN")])
