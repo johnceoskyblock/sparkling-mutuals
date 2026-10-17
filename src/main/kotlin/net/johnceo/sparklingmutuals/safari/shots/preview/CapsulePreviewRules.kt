@@ -12,11 +12,13 @@ data class CapsulePreviewState(
     val hideFlying: Boolean, val hideGround: Boolean, val screenOpen: Boolean, val hudHidden: Boolean,
     val pitch: Double, val position: ShotVector, val velocity: ShotVector,
     val allowUncalibratedEstimates: Boolean = false,
+    val inWater:Boolean = false, val inLava:Boolean = false,
 ) {
     val stationaryForCalibration: Boolean get() = onGround && !sneaking && !sprinting &&
-        !swimming && !flying && !riding && position.finite() && velocity.finite() &&
+        !swimming && !inWater && !inLava && !flying && !riding && position.finite() && velocity.finite() &&
         hypot(velocity.x,velocity.z) <= .001
     val estimateLabel: String? get() = when {
+        inWater || swimming -> if(capsule==ShotVariant.MASTERFUL) "Masterful / Water" else "Water"
         capsule==ShotVariant.MASTERFUL && !stationaryForCalibration -> "Masterful / Moving"
         capsule==ShotVariant.MASTERFUL -> "Masterful"
         !stationaryForCalibration -> "Moving"
@@ -41,7 +43,7 @@ class CapsulePreviewRules(private val allowExtendedPreview: Boolean = true) {
     private fun supportedCapsule(s: CapsulePreviewState) = s.capsule==ShotVariant.ORDINARY ||
         expanded(s) && s.capsule==ShotVariant.MASTERFUL
     private fun motionAllowed(s: CapsulePreviewState) = s.position.finite() && s.velocity.finite() &&
-        !s.swimming && !s.flying && !s.riding && (expanded(s) || s.stationaryForCalibration)
+        !s.inLava && !s.flying && !s.riding && (expanded(s) || s.stationaryForCalibration)
     private fun within(a: ShotVector, b: ShotVector) = abs(a.x-b.x) <= .001 && abs(a.y-b.y) <= .001 && abs(a.z-b.z) <= .001
     private fun physicalEligibility(s: CapsulePreviewState) = s.enabled && s.inSafari && supportedCapsule(s) &&
         viewAllowed(s) && !s.hideFlying && !s.hideGround && motionAllowed(s) && angle(s)
