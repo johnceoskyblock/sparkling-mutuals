@@ -5,6 +5,8 @@ import shutil
 
 ROOT=Path(__file__).resolve().parents[2]
 PACKAGE_FILES=(
+    'tools/capture_shots/contacts.py','tools/capture_shots/tests/test_contacts.py',
+    'docs/schemas/capture-shots-v2.schema.json','src/test/resources/shots/contact-probe-v2.jsonl',
     'tools/capture_shots/__init__.py','tools/capture_shots/protocol.py','tools/capture_shots/replay.py',
     'tools/capture_shots/models.py','tools/capture_shots/analyze.py','tools/capture_shots/package_tools.py','tools/capture_shots/README.md',
     'tools/capture_shots/tests/test_protocol.py','tools/capture_shots/tests/test_replay.py','tools/capture_shots/tests/test_models.py',

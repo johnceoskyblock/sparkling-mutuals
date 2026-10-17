@@ -27,7 +27,8 @@ def replay(session:Session)->ReplayResult:
                           or e.kind in ('player_state','target','gap') and shot.input.micros-500000<=e.micros<=shot.input.micros+8000000
                           or e.kind=='feedback' and e.sequence in shot.feedback
                           or e.kind=='obstruction' and (e.data['shot']==shot.token or e.data['track'] in tracks)))
-    summary={'schemaVersion':1,'modelVersion':None,'prediction_available':False,'input_sha256':session.input_sha256,
+    predictions=[plain(e.data['probe']) for e in session.events if e.kind=='contact_probe']
+    summary={'schemaVersion':session.header['metadata']['schemaVersion'],'modelVersion':None,'prediction_available':bool(predictions),'contact_predictions':predictions,'input_sha256':session.input_sha256,
              'session':session.header['metadata']['session'],'complete':session.complete,'issues':list(session.issues),
              'event_count':len(session.events),'shot_count':len(shots),'track_count':len(session.tracks),'shots':shots}
     return ReplayResult(session,summary,tuple(rows))
@@ -46,6 +47,7 @@ def event_row(e):
 def write_replay(result:ReplayResult,output:Path)->None:
     output=output_directory(output,[result.session.input_path])
     (output/'summary.json').write_text(json.dumps(result.summary,sort_keys=True,indent=2,allow_nan=False)+'\n',encoding='utf-8',newline='\n')
+    (output/'contact-predictions.json').write_text(json.dumps(result.summary['contact_predictions'],sort_keys=True,indent=2,allow_nan=False)+'\n',encoding='utf-8',newline='\n')
     # The full timeline retains unmatched evidence; per-shot views never discard the source timeline.
     for name,events in [('timeline.csv',result.session.events)]+[(f'shot-{i:04d}.csv',rows) for i,rows in enumerate(result.rows,1)]:
         with (output/name).open('w',encoding='utf-8',newline='') as f:
