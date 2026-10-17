@@ -197,6 +197,8 @@ Verify Full Clear report trust: capture a variable species' minimum and perform 
 
 ## Experimental capsule path
 
+- View the 3D flight tube from first person, both third-person views and detached Freecam, at different distances/FOVs. It retains fixed world thickness and follows the same player-eye/aim centerline; nearby sections look larger. Check widths 1/3/5, shaded faces, a dark silhouette, closed dash ends, bend joins and no filled dash gaps. Terrain rings/critter diamonds and movable HUD retain their current styles. Toggle through-terrain rendering behind a sight-line obstacle, both hiding options, screens and hidden HUD; depth writes and other ESP behavior must stay unchanged.
+
 - Fresh/missing/invalid configuration defaults off; settings save, reopen and restart retain deliberate choices. Toggling must not start recording or change capture/history/completion/ESP state.
 - With Allow uncalibrated estimates off, enable in Safari helpers, leave either capsule-hiding setting on or off, hold an ordinary main-hand capsule in first person or either normal third-person view and stand still on the ground. After two stable ticks, expect an amber path and **Experimental path**, with no impact marker. Its initial unseen launch segment is omitted and its nominal limit is 15 blocks.
 - Test pitch -10 through +1 degrees inclusive and immediately outside both limits. Walk, jump/fall, swim, fly, ride, sneak and sprint: suppress immediately; settle for two ticks before returning. Switch ordinary/Masterful/unsupported items and hands between ticks: no stale line. Cycle all normal perspectives: the eligible route stays anchored to player eye/aim, not the third-person camera.
@@ -232,6 +234,8 @@ Verify Full Clear report trust: capture a variable species' minimum and perform 
 - Give fixtures distinctive custom names, raw profile values and arbitrary item data; prefixed JSON must omit them. Preserve finite JSON with unavailable nonfinite fields and cap block-state text. General debug output remains separate. Live collection: three surfaced ordinary-Shyworm snapshots in one world, roughly one second apart, without throwing or recording.
 
 ## Last updated
+
+2026-10-17 (America/New_York) - Added 3D tube perspective, width, join, dash, depth-mode and camera checks.
 
 2026-10-17 (America/New_York) - Added capsule-hiding/guide independence checks and strict recorder stability regressions.
 
