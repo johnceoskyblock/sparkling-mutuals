@@ -248,4 +248,12 @@ Verify Full Clear report trust: capture a variable species' minimum and perform 
 
 ## Last updated
 
+## Experimental terrain/critter contacts
+
+- Both toggles default off, width defaults 3 and saves/clamps 1–5. With uncalibrated mode off, retain old pitch/range and no marker. Expanded mode retains all stationary/item/view/hiding exclusions and two stable ticks.
+- Check a wall inside the first 1.7 blocks before a critter, target before wall, inside-solid origin, slabs/stairs, fluid and unloaded boundaries. One amber ring or cyan diamond only; uncertainty/caps never become a landing or miss. Critter proxies are unpadded/current-position and independent of ESP visibility.
+- Turn camera, change FOV/GUI scale, open screens, hide HUD, switch item/world. No stale marker/status. Dark outline/core depth-test without writes; old ESP remains visible through terrain.
+- Check real-writer v2 plus strict v1 replay, local target aliases, UTF-8/finite/line bounds, omitted detail flags, one probe per ordinary input and unchanged raw packets/association. Both named populated workloads retain every capsule packet under unchanged caps.
+- Run target-only 26.1.2 verification, helper/Python/package tests, offline loaded fixtures and bounded scene profiling. Live Hypixel broader-angle launch, endpoint and proxy validation remain pending; use the six-throw sanity block before the fitting/validation matrix.
+
 2026-10-16 (America/New_York) - Added conservative preview controls, lifecycle, camera and terrain/ESP regression checks.

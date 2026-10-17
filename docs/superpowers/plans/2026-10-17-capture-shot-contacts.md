@@ -8,7 +8,7 @@
 
 **Tech Stack:** Kotlin/JVM, Java 25, Fabric/Minecraft 26.1.2, existing Stonecutter/Gradle setup, JUnit 5, Gson, Python 3.11+ standard library.
 
-**Spec:** [Approved written specification](../specs/2026-10-17-capture-shot-contacts-design.md). The human approved it directly in chat after review request 6232201364. This plan awaits review. Preserve **Native** execution; do not ask the method question again.
+**Spec:** [Approved written specification](../specs/2026-10-17-capture-shot-contacts-design.md). The human approved it directly in chat after review request 6232201364. The human approved this plan directly in chat after review question 6232286774. Preserve **Native** execution; do not ask the method question again.
 
 ## Global Constraints
 
@@ -222,4 +222,4 @@ The human has already selected Native execution. After this plan's review approv
 
 ## Last updated
 
-2026-10-17 (America/New_York) — Prepared the six-task Native implementation plan after direct written-specification approval. Plan review is pending; no product code is changed.
+2026-10-17 (America/New_York) — Prepared the six-task Native implementation plan after direct written-specification approval. Approved directly in chat and implemented natively; software validation and field calibration are tracked separately.

@@ -8,6 +8,7 @@ Implemented defaults for fresh or missing settings. Enable all independently swi
 | Coins at Insta Sell (`runCoinsInstaSell`) | Off |
 | Achievements to Party (`achievementsToParty`, including any equivalent achievement-to-party toggles) | Off |
 | Experimental capsule path (`experimentalCapsulePath`) | Off |
+| Allow uncalibrated estimates (`allowUncalibratedCapsuleEstimates`) | Off |
 
 Keep achievements themselves enabled; the exception is their party announcement. The experimental capsule path is separately opt-in under Safari helpers and does not start recording. Missing/invalid saved preview values default off; explicit choices persist. Both capsule-hiding options must be off to use the preview. See its [scope and controls](CAPTURE_SHOT_RECORDING.md#experimental-capsule-path). These are defaults for fresh/missing settings, not permission to overwrite existing saved user choices on every launch. Automatic unused starting-food/coin title alerts and party reminders have no config toggle, as documented in [tracking rules](critters/TRACKING.md#unused-starting-foodcoin-reminders).
 
@@ -26,6 +27,8 @@ On startup, automatically migrate legacy `pb.*` entries from the general config.
 The existing `missingPanel` toggle and HUD layout are shared across modes. In Sparkling mode, every biome's checklist is named **Unchecked**, including the HUD editor label. Unique and Full Clear retain their Missing behavior. The config option names both uses; renaming does not reset saved positions or visibility preferences.
 
 ## ESP label size
+
+Capsule path width saves independently as `capsulePathWidth`, defaults to **3**, and clamps finite values to **1–5**. Invalid/non-finite values use 3. Uncalibrated estimates requires Experimental capsule path; enabling either option does not start recording. Expanded estimates add a terrain ring or possible-critter diamond, including close launch and broader angles. Keep both hiding settings off; collision and target proxies remain unverified.
 
 The ESP tab offers **ESP text scale**, from **0.5 to 4** in **0.25** steps. The new default is **2** (twice the original label size); **1** restores the original size. It controls floor-drop names, critter timers, nest labels and teammate names. Teammate names retain their existing distance scaling. Labels stay centered and retain their colors and visibility settings. Changes apply through the GUI and persist across restarts as `esp.textScale`; invalid/non-finite values use the default, and finite values are clamped to the allowed range.
 

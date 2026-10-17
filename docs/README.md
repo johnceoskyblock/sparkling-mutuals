@@ -56,8 +56,7 @@ Runtime assets, mod metadata and mixin registration remain under `src/main/resou
 | [Sparkling detection](SPARKLING_DETECTION.md) | Detection evidence and bundled skin registry |
 | [History import](HISTORY_IMPORT.md) | Import controls, data sources and estimates |
 | [Credited party Sparkling streaks](SINCE_COMMAND.md) | !since sparkling / !since unique, participation credit and critter/catcher replies |
-
-| [Capture-shot recording](CAPTURE_SHOT_RECORDING.md) | Experimental preview scope, local controls, privacy, replay and collection checklist |
+| [Capture-shot recording](CAPTURE_SHOT_RECORDING.md) | Opt-in terrain/critter estimates, local v1/v2 replay, privacy and staged collection |
 | [Warp alerts](WARP_ALERTS.md) | Reminder timing and controls |
 | [Contest downtime](CONTEST_DOWNTIME.md) | Ticket events and downtime coordination |
 | [Manual checklist](IMPLEMENTATION_TEST_CHECKLIST.md) | In-game checks that unit tests cannot establish |
