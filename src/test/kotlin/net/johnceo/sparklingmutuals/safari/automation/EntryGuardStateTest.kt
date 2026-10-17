@@ -1,18 +1,41 @@
 package net.johnceo.sparklingmutuals.safari.automation
 
 import net.johnceo.sparklingmutuals.safari.SafariEntryPresence
+import net.johnceo.sparklingmutuals.safari.SafariEntryRunState
+import net.johnceo.sparklingmutuals.safari.SafariLocation
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class EntryGuardStateTest {
-    @Test fun `readiness applies only in Torrhus and kick presence only in Safari waiting`() {
-        assertTrue(EntryGuardDecision.block(EntryStage.TORRHUS, false, true, true, true, false))
-        assertFalse(EntryGuardDecision.block(EntryStage.TORRHUS, false, false, true, true, false))
-        assertFalse(EntryGuardDecision.block(EntryStage.SAFARI, false, true, false, true, false))
-        assertTrue(EntryGuardDecision.block(EntryStage.SAFARI, false, false, false, false, false))
-        assertTrue(EntryGuardDecision.block(EntryStage.SAFARI, false, false, true, true, false))
-        assertFalse(EntryGuardDecision.block(EntryStage.SAFARI, true, true, true, false, true))
-        assertFalse(EntryGuardDecision.block(EntryStage.OTHER, false, true, true, false, true))
+    @Test fun `readiness applies in Torrhus and kick presence applies to all Safari entry attempts`() {
+        assertTrue(EntryGuardDecision.block(EntryStage.TORRHUS, true, true, true, false))
+        assertFalse(EntryGuardDecision.block(EntryStage.TORRHUS, false, true, true, false))
+        assertFalse(EntryGuardDecision.block(EntryStage.SAFARI, true, false, true, false))
+        assertTrue(EntryGuardDecision.block(EntryStage.SAFARI, false, false, false, false))
+        assertTrue(EntryGuardDecision.block(EntryStage.SAFARI, false, true, true, false))
+        assertTrue(EntryGuardDecision.block(EntryStage.SAFARI, true, true, false, true))
+        assertFalse(EntryGuardDecision.block(EntryStage.OTHER, true, true, false, true))
+    }
+    @Test fun `entry stays blocked indefinitely across run detection until every party member returns`() {
+        val presence = SafariEntryPresence()
+        val hold = EntryKickHold()
+        val run = SafariEntryRunState()
+        val world = Any()
+        val members = setOf("self", "friend", "other")
+        hold.report(world, "friend")
+        fun click(now: Long, present: Set<String>): Boolean {
+            presence.update(now, true, false, world, members, present, "self")
+            hold.observe(world, members, present, presence.ready)
+            return EntryGuardDecision.block(EntryStage.SAFARI, false, hold.active, presence.ready, false)
+        }
+        assertFalse(run.active(world, true, SafariLocation.UNKNOWN, null))
+        assertTrue(click(0, setOf("self", "other")))
+        assertTrue(run.active(world, true, SafariLocation.INSIDE, 0))
+        repeat(100) { assertTrue(click(600_000L + it * 1_000, setOf("self", "other"))) }
+        assertTrue(click(800_000, setOf("self", "friend")), "another missing member must keep entry blocked")
+        assertFalse(click(900_000, members))
+        assertTrue(click(1_000_000, setOf("self", "other")), "a later departure must block again")
+        assertFalse(click(1_100_000, members))
     }
     @Test fun `unknown roster or local player list loading cannot permit early entry`() {
         val presence = SafariEntryPresence()
@@ -33,7 +56,7 @@ class EntryGuardStateTest {
         hold.observe(world, setOf("self", "friend"), setOf("self", "friend"), true)
         assertFalse(hold.active)
     }
-    @Test fun `kick member removal requires current ready roster and generic report needs new instance`() {
+    @Test fun `kick member removal requires current ready roster and new instance requires full presence`() {
         val world = Any(); val hold = EntryKickHold()
         hold.report(world, "friend")
         hold.observe(world, setOf("self"), setOf("self"), false)
@@ -46,6 +69,20 @@ class EntryGuardStateTest {
         hold.observe(Any(), null, emptySet(), false)
         assertTrue(hold.active)
         hold.observe(Any(), setOf("self"), setOf("self"), true)
+        assertFalse(hold.active)
+    }
+    @Test fun `generic kick recovers on observed full party return in the same instance`() {
+        val world = Any(); val hold = EntryKickHold(); val members = setOf("self", "a", "b")
+        hold.report(world, null)
+        repeat(100) { hold.observe(world, members, members, true) }
+        assertTrue(hold.active, "unchanged pre-report presence cannot prove recovery")
+        hold.observe(world, members, setOf("self"), false)
+        hold.report(world, null)
+        hold.observe(world, members, setOf("self", "a"), false)
+        assertTrue(hold.active, "partial recovery cannot permit entry")
+        hold.observe(world, null, members, false)
+        assertTrue(hold.active, "unknown roster cannot prove recovery")
+        hold.observe(world, members, members, true)
         assertFalse(hold.active)
     }
     @Test fun `another member cycling does not recover the reported victim`() {

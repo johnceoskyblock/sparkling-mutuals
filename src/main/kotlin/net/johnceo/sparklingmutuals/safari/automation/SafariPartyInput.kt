@@ -45,7 +45,7 @@ object SafariPartyInput {
         val downtime = ConfigManager.downtimeCommand &&
             (chat.body.matches(Regex("^!dt(?:\\s+.*)?$", RegexOption.IGNORE_CASE)) ||
                 chat.body.equals("r", true) || chat.body.equals("Ticket earned!", true))
-        val kick = ConfigManager.holdManagerOnKick && SafariManagerGuard.waitingInSafari(client) &&
+        val kick = ConfigManager.holdManagerOnKick && SafariManagerGuard.inSafariInstance() &&
             chat.body.contains("kick", true)
         if (!downtime && !kick) return
         // Duplicate delivery on GAME/CHAT is idempotent while identity is pending.
@@ -81,7 +81,7 @@ object SafariPartyInput {
                     PartyChat.parse(item.text)?.body?.let { it.equals("r", true) || it.equals("Ticket earned!", true) } == true, roster)
                 if (item.downtime) SafariDowntime.chat(item.text, SafariManagerGuard.activeRun(client), self.name.string)
                     ?.let(SafariDowntime::queueAnnouncement)
-                if (item.kickContext && item.world === client.level && SafariManagerGuard.waitingInSafari(client))
+                if (item.kickContext && item.world === client.level && SafariManagerGuard.inSafariInstance())
                     SafariManagerGuard.partyKick(PartyChat.parse(item.text)!!, id)
             } else if (item.sender !in resolving && System.currentTimeMillis() >= (retryAt[item.sender] ?: 0)) {
                 resolving.add(item.sender)

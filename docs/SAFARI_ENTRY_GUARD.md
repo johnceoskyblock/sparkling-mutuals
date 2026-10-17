@@ -5,10 +5,10 @@ The guard cancels entry actions before the normal interaction packet path. It ne
 | Stage | Blockers | Setting |
 | --- | --- | --- |
 | Safari Manager/entry tickets/menu on Torrhus Canyon (`foraging_3`) | Each party requester's outstanding downtime/readiness | Party: **!dt downtime** |
-| Waiting entrance on the Safari instance (`safari`) | Kick recovery, unknown/loading roster, or missing current party members | Safari: **Guard Safari entry** |
-| Verified active run or unrelated island/NPC/inventory | No entry interruption | Existing settings unchanged |
+| Manager/entry tickets/menu on the Safari instance (`safari`) | Kick recovery, unknown/loading roster, or missing current party members, regardless of run detection | Safari: **Guard Safari entry** |
+| Unrelated island/NPC/inventory | No entry interruption | Existing settings unchanged |
 
-An unknown server location holds recognized entry controls while an applicable guard is enabled. Location updates and actual mapped run evidence distinguish waiting from an active run; transfer/entry chat alone does not establish an active run. Disabling one setting disables only its applicable blocker. Saved preferences are preserved. **Shift/sneak is not a bypass.** Closing the menu and ordinary inventory actions remain possible.
+An unknown server location holds recognized entry controls while an applicable guard is enabled. Safari-instance presence is observed continuously and checked on every entry attempt. A sidebar/map change to an active run cannot release a hold or suppress kick reports. Run detection still controls banking of downtime requests. Disabling one setting disables only its applicable blocker. Saved preferences are preserved. **Shift/sneak is not a bypass.** Closing the menu and ordinary inventory actions remain possible.
 
 ## Readiness and identity
 
@@ -24,9 +24,9 @@ Compare normalized current-party UUIDs, including the local player, with this co
 
 This is the client-visible server player-list evidence, not an independent server-side occupancy guarantee. If Hypixel omits a real same-instance member from that list or supplies stale entries, the client may conservatively wait; use `/sm debug` to inspect the evidence. Actual Hypixel list behavior must be verified in game.
 
-Any case-insensitive `kick` substring in a verified party message body counts, including `kicked`, `I was kicked!` and `kickstart`. A username containing `kick` alone does not count. Reports are accepted only while waiting on the Safari instance, and remain independent of readiness.
+Any case-insensitive `kick` substring in a verified party message body counts, including `kicked`, `I was kicked!` and `kickstart`. A username containing `kick` alone does not count. Reports are accepted on the Safari instance regardless of run detection, and remain independent of downtime readiness.
 
-There is **no timer-only release**. Each identified self-report remains held until that UUID is observed absent after the report and then present with the full roster ready, a confirmed refreshed roster removes that UUID, or a newly verified Safari world has the full roster present. A different member returning cannot clear its hold. Multiple victims are tracked independently. Generic/ambiguous kick requests identify no reliable victim and require full revalidation in a new Safari world; repeated stale snapshots or waiting thirty seconds cannot clear them. Several different unverified kick reports from one sender are conservatively retained as a generic report. Explicitly disabling Guard Safari entry is the deliberate override.
+There is **no timer-only or one-click release**. Each identified self-report remains held until that UUID is observed absent after the report and then present with the full roster ready, a confirmed refreshed roster removes that UUID, or a newly verified Safari world has the full roster present. A different member returning cannot clear its hold. Multiple victims are tracked independently. Generic/ambiguous kick requests identify no reliable victim: they require an observed missing current member followed by full-party presence in the same instance, or full revalidation in a new Safari world. Repeated unchanged snapshots or waiting thirty seconds cannot clear them. Several different unverified kick reports from one sender are conservatively retained as a generic report. A later departure blocks entry again, even after an earlier hold cleared. Explicitly disabling Guard Safari entry is the deliberate override.
 
 ## Interception and validation
 
@@ -37,10 +37,10 @@ Refusal reasons are local and rate-limited to once per three seconds. `/sm debug
 Automated tests cover sender readiness, transfers, unknown/solo/missing presence, independent kick recovery, message coalescing/overflow and the actual mixin callback handlers under controlled game observations. Tests do not claim a real Hypixel packet capture. Verify actual mixin application on all three supported targets and perform these live checks when a session is available:
 
 - Two downtime requesters on Torrhus: each releases only their own hold; repeat with a non-contest reason and banked in-run request.
-- Safari waiting: `I was kicked!`, missing/late/out-of-render-range members, unknown/loading roster, and separate recovery of two reports.
+- Safari entry: `I was kicked!`, missing/late/out-of-render-range members, unknown/loading roster, and separate recovery of two reports. Repeatedly click while someone is missing, including after run detection changes: every attempt must stay blocked.
 - Manager attack/use, both hands, ticket use while aiming at air/block, already-open entry GUI, Shift, keyboard/quick-move; no entry packet/menu while blocked.
-- Resolve all blockers: normal entry works; unrelated NPCs, inventories and close controls remain usable. Test a generic report's fresh-instance recovery and saved disabled settings.
+- Resolve all blockers: normal entry works; unrelated NPCs, inventories and close controls remain usable. Test generic-report recovery after all missing members return, fresh-instance recovery, a later departure, and saved disabled settings.
 
 ## Last updated
 
-2026-10-16 - Documented issue #56's stage-specific entry blocking, evidence-based recovery and validation limits.
+2026-10-17 - Removed the active-run entry bypass, required continuous full-party presence, and allowed generic kick recovery after an observed full-party return.

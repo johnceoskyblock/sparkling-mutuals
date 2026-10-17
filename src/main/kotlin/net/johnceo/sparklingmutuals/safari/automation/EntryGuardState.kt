@@ -2,14 +2,14 @@ package net.johnceo.sparklingmutuals.safari.automation
 
 enum class EntryStage { UNKNOWN, OTHER, TORRHUS, SAFARI }
 
-/** Location policy is shared by every entry boundary, without a sneak override. */
+/** Entry controls always require current party presence; run/location heuristics cannot bypass them. */
 object EntryGuardDecision {
-    fun block(stage: EntryStage, inRun: Boolean, downtime: Boolean, kick: Boolean,
+    fun block(stage: EntryStage, downtime: Boolean, kick: Boolean,
               presenceReady: Boolean, identityPending: Boolean): Boolean = when (stage) {
         EntryStage.OTHER -> false
         EntryStage.UNKNOWN -> downtime || kick || !presenceReady || identityPending
         EntryStage.TORRHUS -> downtime || identityPending
-        EntryStage.SAFARI -> !inRun && (kick || !presenceReady || identityPending)
+        EntryStage.SAFARI -> kick || !presenceReady || identityPending
     }
 }
 
@@ -22,9 +22,15 @@ class EntryKickHold {
     fun observe(instance: Any?, members: Set<String>?, present: Set<String>, ready: Boolean) {
         if (instance == null || members == null) return
         reports.entries.removeAll { (target, report) ->
-            if (target != null && target !in present) report.sawAbsent = true
-            ready && (instance !== report.instance ||
-                target != null && (target !in members || report.sawAbsent && target in present))
+            val absent = if (target == null) members.any { it !in present } else target !in present
+            if (absent) report.sawAbsent = true
+            val recovered = when {
+                instance !== report.instance -> true
+                target == null -> report.sawAbsent
+                target !in members -> true
+                else -> report.sawAbsent && target in present
+            }
+            ready && recovered
         }
     }
     fun reset() { reports.clear() }

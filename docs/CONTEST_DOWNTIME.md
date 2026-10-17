@@ -13,7 +13,7 @@ A current Miria scoreboard tier of **Uncommon or higher** establishes the earned
 
 On the first confirmed earned tier, remove the local player's own `!dt contest` request immediately, whether it was waiting for the current run to end or already blocking Safari entry. With known party membership, send the exact party message **Ticket earned!** once per player and absolute contest window. Repeated scans, higher tiers and profile refreshes in the same window cannot send it again. A new contest window allows a new announcement.
 
-On receiving a verified current party member's **Ticket earned!** message, remove **only that sender's outstanding downtime request, for any reason**. Standalone `r` does the same. Other requesters remain held. Local scoreboard detection still resolves only the local player's applicable contest request. Readiness holds the Torrhus entry stage; Safari waiting uses separate kick/presence protection. Neither ready message clears those protections, and Shift/sneak cannot bypass entry. Guild/private/public/quoted messages cannot release a party hold. See [entry guard](SAFARI_ENTRY_GUARD.md) for identity, transfer, setting and recovery rules.
+On receiving a verified current party member's **Ticket earned!** message, remove **only that sender's outstanding downtime request, for any reason**. Standalone `r` does the same. Other requesters remain held. Local scoreboard detection still resolves only the local player's applicable contest request. Readiness holds the Torrhus entry stage; Safari-instance entry uses separate kick/presence protection regardless of run detection. Neither ready message clears those protections, and Shift/sneak cannot bypass entry. Guild/private/public/quoted messages cannot release a party hold. See [entry guard](SAFARI_ENTRY_GUARD.md) for identity, transfer, setting and recovery rules.
 
 The **Auto !dt contest** toggle controls the automatic start request, not whether an earned ticket resolves an existing manual contest request. It does not suppress the requested Ticket earned! announcement.
 
@@ -40,3 +40,4 @@ Wait for the destination to be available before sending. Clients stagger reports
 
 2026-10-16 - Restricted automatic requests to the confirmed party leader and added combined Canyon reminders for every requester and reason.
 2026-10-16 - Ticket earned! releases the sender's downtime for every reason; documented stage-specific entry holds and removed the sneak bypass.
+2026-10-17 - Clarified that Safari-instance entry protection applies regardless of run detection; downtime remains specific to Torrhus entry.

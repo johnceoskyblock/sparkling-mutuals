@@ -35,29 +35,29 @@ object SafariManagerGuard {
         SafariIsland.currentMode == null -> EntryStage.UNKNOWN
         else -> EntryStage.OTHER
     }
-    fun waitingInSafari(client: Minecraft) = stage() == EntryStage.SAFARI && !activeRun(client)
+    fun inSafariInstance() = stage() == EntryStage.SAFARI
     fun onClientTick(client: Minecraft) {
         SafariPartyInput.tick(client)
         if (!ConfigManager.holdManagerOnKick) kick.reset()
         val player = client.player ?: return
         val connection = client.connection ?: return
         val now = System.currentTimeMillis()
-        val waiting = waitingInSafari(client)
-        if (waiting && ConfigManager.holdManagerOnKick && !PartyManager.hasInfo && now - requestedRosterAt > 5000) {
+        val safari = inSafariInstance()
+        if (safari && ConfigManager.holdManagerOnKick && !PartyManager.hasInfo && now - requestedRosterAt > 5000) {
             requestedRosterAt = now; PartyManager.requestPartyInfo()
         }
         val roster = PartyManager.withLocal(player.uuid.toString())
         val present = connection.listedOnlinePlayers.mapTo(HashSet()) { it.profile.id.toString() }
-        presence.update(now, waiting, false, client.level, roster, present, player.uuid.toString())
-        if (waiting) kick.observe(client.level, roster?.mapTo(HashSet(), SafariEntryPresence::normalize),
+        presence.update(now, safari, false, client.level, roster, present, player.uuid.toString())
+        if (safari) kick.observe(client.level, roster?.mapTo(HashSet(), SafariEntryPresence::normalize),
             present.mapTo(HashSet(), SafariEntryPresence::normalize), presence.ready)
     }
     fun callsKick(text: String) = PartyChat.parse(text)?.body?.contains("kick", true) == true
-    /** Only called after current-party UUID verification, and only for the original waiting instance. */
+    /** Only called after current-party UUID verification, and only for the original Safari instance. */
     fun partyKick(chat: PartyChat, senderId: String) {
         val client = Minecraft.getInstance()
-        if (!ConfigManager.holdManagerOnKick || !waitingInSafari(client) || !chat.body.contains("kick", true)) return
-        // A generic request does not identify its victim. Never recover it using somebody else's return.
+        if (!ConfigManager.holdManagerOnKick || !inSafariInstance() || !chat.body.contains("kick", true)) return
+        // Self-reports require the sender's return; generic reports require a fresh full-party return.
         val selfReport = Regex("\\bi\\s+(?:(?:was|got|am|have been)\\s+)?kicked\\b", RegexOption.IGNORE_CASE)
             .containsMatchIn(chat.body)
         kick.report(client.level, senderId.takeIf { selfReport })
@@ -96,7 +96,7 @@ object SafariManagerGuard {
         val guard = ConfigManager.holdManagerOnKick
         val downtime = SafariDowntime.entryHold
         val active = activeRun(client)
-        val blocked = (guard || ConfigManager.downtimeCommand) && EntryGuardDecision.block(stage(), active,
+        val blocked = (guard || ConfigManager.downtimeCommand) && EntryGuardDecision.block(stage(),
             downtime, guard && kick.active, !guard || presence.ready,
             when (stage()) {
                 EntryStage.TORRHUS -> ConfigManager.downtimeCommand && SafariPartyInput.pendingDowntime

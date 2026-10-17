@@ -161,7 +161,7 @@ class SafariDowntimeTest {
     }
     @Test fun `case variants update one request and quoted readiness never releases somebody else`() {
         SafariDowntime.chat("Party > Farmer: !dt food", false, "Me")
-        SafariDowntime.chat("Party > fArMeR: !dt brb", false, "Me")
+        assertEquals("Downtime requested: Farmer (brb)", SafariDowntime.chat("Party > fArMeR: !dt brb", false, "Me"))
         assertEquals("Farmer", SafariDowntime.holders())
         SafariDowntime.chat("Party > Steve: Farmer r", false, "Me")
         SafariDowntime.chat("Party > Steve: Farmer Ticket earned!", false, "Me")
@@ -173,7 +173,7 @@ class SafariDowntimeTest {
     @Test fun `Torrhus interaction holds banked readiness before the run exit tick`() {
         SafariDowntime.chat("Party > Farmer: !dt food", true, "Me")
         assertFalse(SafariDowntime.holding)
-        assertTrue(EntryGuardDecision.block(EntryStage.TORRHUS, false, SafariDowntime.entryHold, false, true, false))
-        assertFalse(EntryGuardDecision.block(EntryStage.SAFARI, true, SafariDowntime.entryHold, false, true, false))
+        assertTrue(EntryGuardDecision.block(EntryStage.TORRHUS, SafariDowntime.entryHold, false, true, false))
+        assertFalse(EntryGuardDecision.block(EntryStage.SAFARI, SafariDowntime.entryHold, false, true, false))
     }
 }

@@ -51,8 +51,8 @@ object SafariDowntime {
         request.matchEntire(chat.body)?.let { match ->
             val reason = match.groupValues[1].trim()
             if (requests.isEmpty()) announcement.clear()
-            requests.keys.firstOrNull { it.equals(chat.sender, true) }?.let(requests::remove)
-            requests[chat.sender] = reason
+            val existing = requests.keys.firstOrNull { it.equals(chat.sender, true) }
+            requests[existing ?: chat.sender] = reason
             tell("[SM] ${chat.sender} wants downtime after this run" + if (reason.isEmpty()) "." else ": $reason")
             return if (!inSafari) { if (active) summary() else leftSafari(self) } else null
         }
