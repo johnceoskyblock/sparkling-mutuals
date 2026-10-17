@@ -262,4 +262,10 @@ Verify Full Clear report trust: capture a variable species' minimum and perform 
 
 ## Last updated
 
-2026-10-17 - Added Masterful/movement eligibility, unverified styling and strict recorder-probe regression checks. Live field validation remains pending.
+2026-10-17 - Added focused Shyworm body diagnostic checks; live body membership and capture geometry remain unverified.
+
+## Shyworm body diagnostics
+
+- Run `/sm debug` in Safari with an identified Shyworm and nearby unknown displays/interaction parts. Check `SM_SHYWORM_BODY` snapshot/candidate rows, relative positions, native zero bounds, armour poses/equipment appearance, display transforms and vehicle/passenger links. Repeated captures have distinct snapshot IDs. No body proxy or recorder state changes.
+- Verify no-head/outside-Safari cases, players/items excluded, direct carriers outside the proximity radius retained, nearest-head selection, 4,096-entry/2-head/64-part/16-passenger limits and explicit omissions. A missing head or truncated candidate list must not become evidence of body absence.
+- Give fixtures distinctive custom names, raw profile values and arbitrary item data; prefixed JSON must omit them. Preserve finite JSON with unavailable nonfinite fields and cap block-state text. General debug output remains separate. Live collection: three surfaced ordinary-Shyworm snapshots in one world, roughly one second apart, without throwing or recording.
