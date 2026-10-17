@@ -6,7 +6,7 @@ This opt-in kit records local observations for ordinary and Masterful Critter Ca
 
 Capture-shot development builds currently target **26.1.2 only**, by maintainer direction; the other two builds resume when this work is finished.
 
-In `/sm` settings, open **Safari helpers → Experimental capsule path**. It starts **off** and saves independently from the recorder. Turn both **Hide capsules on ground** and **Hide flying capsules** off. Hold an ordinary capsule in your main hand in Safari and stand on the ground for two stable client ticks. First person and normal front/rear third-person views are supported. With **Allow uncalibrated estimates** off, the original -10 through +1 degree gate, short path and **Experimental path** status remain; no endpoint is shown.
+In `/sm` settings, open **Safari helpers → Experimental capsule path**. It starts **off** and saves independently from the recorder. Either or both **Hide capsules on ground** and **Hide flying capsules** can stay on: they hide actual capsule entities while the path, contact markers and status remain visible. Hold an ordinary capsule in your main hand in Safari and stand on the ground for two stable client ticks. First person and normal front/rear third-person views are supported. With **Allow uncalibrated estimates** off, the original -10 through +1 degree gate, short path and **Experimental path** status remain; no endpoint is shown.
 
 With uncalibrated estimates off, walking, jumping/falling, swimming, flight, riding, sneaking/sprinting and Masterful capsules suppress the path. Unsupported items and off-hand-only use always suppress it. Screens and hidden HUD suppress both the path and status. A quiet status explains supported-state restrictions; there are no repeated chat notices. Disconnects/world changes clear stability without changing the saved option or starting recording.
 
@@ -37,6 +37,8 @@ For Shyworm, the four supplied local snapshots showed a distinct body texture on
 Recorder probes retain their existing terrain collision semantics and omit the display-only mound hull and wrapped marker. They may retain the supported Shyworm head-item proxies with existing typed geometry/provenance. Raw recording format, association rules, recording/input eligibility and hard caps are unchanged; strict calibration probes additionally reject standing in water. A visible mound-surface estimate must therefore not be mistaken for measured collision evidence in a saved probe.
 
 For the first visual test, leave recording off, enable the option as above and compare a few ordinary throws in the tested range. Check camera turns/FOV, GUI scale, screen/HUD suppression, movement stop/start, item/hand changes, angle limits and world transfer. Compare guide-through-terrain off/on behind a sight-line obstacle while existing ESP keeps its normal visibility. Live Hypixel appearance and server mechanics require gameplay testing; a passing build or numeric observation check cannot establish them. See the [manual checklist](IMPLEMENTATION_TEST_CHECKLIST.md#experimental-capsule-path).
+
+The visual guide is independent of capsule hiding in both preview modes, including Masterful, moving-player and water estimates where supported. Changing either hiding option does not reset visual-preview stability or change its route. Strict recorder calibration probes still require both hiding options off; raw observation collection remains independent. This supersedes earlier visual-preview hiding restrictions in historical design documents.
 
 ## Controls
 
@@ -167,5 +169,7 @@ Use schema version `1`, a short model identifier, and coordinates `session_relat
 Automated suites exercise the actual coordinator/writer/codec, producer-to-reader fixtures, passive compiled callbacks, bounds, errors, privacy and deterministic arithmetic. Preview suites check the fixed spatial model, conservative availability and finite camera-relative geometry separately. Offline client smoke checks do not establish Hypixel observation fidelity, rendered interpolation, both-hands/variants gameplay, hiding comparisons or capture rules. The contact guide remains an uncalibrated estimate; broader trajectory, endpoint and server target-selection validation remains pending. The legacy raw obstruction event uses its earlier loaded predicate and is not an independent proof of complete terrain coverage; new predicted contact probes use explicit nonloading client-chunk checks.
 
 ## Last updated
+
+2026-10-17 (America/New_York) - Kept visual guides available with either capsule-hiding setting while retaining strict recorder-probe restrictions.
 
 2026-10-17 - Added bounded changed-stand readiness checks and opt-in water traversal/standing/swimming estimates; preserved collision limits and strict dry recorder probes.

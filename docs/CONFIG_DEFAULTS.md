@@ -10,7 +10,7 @@ Implemented defaults for fresh or missing settings. Enable all independently swi
 | Experimental capsule path (`experimentalCapsulePath`) | Off |
 | Allow uncalibrated estimates (`allowUncalibratedCapsuleEstimates`) | Off |
 
-Keep achievements themselves enabled; the exception is their party announcement. The experimental capsule path is separately opt-in under Safari helpers and does not start recording. Missing/invalid saved preview values default off; explicit choices persist. Both capsule-hiding options must be off to use the preview. See its [scope and controls](CAPTURE_SHOT_RECORDING.md#experimental-capsule-path). These are defaults for fresh/missing settings, not permission to overwrite existing saved user choices on every launch. Automatic unused starting-food/coin title alerts and party reminders have no config toggle, as documented in [tracking rules](critters/TRACKING.md#unused-starting-foodcoin-reminders).
+Keep achievements themselves enabled; the exception is their party announcement. The experimental capsule path is separately opt-in under Safari helpers and does not start recording. Missing/invalid saved preview values default off; explicit choices persist. Capsule hiding and the visual preview work independently; either or both hiding options can stay on. See its [scope and controls](CAPTURE_SHOT_RECORDING.md#experimental-capsule-path). These are defaults for fresh/missing settings, not permission to overwrite existing saved user choices on every launch. Automatic unused starting-food/coin title alerts and party reminders have no config toggle, as documented in [tracking rules](critters/TRACKING.md#unused-starting-foodcoin-reminders).
 
 Mode selectors remain mutually exclusive; “all on” applies to independent feature toggles, not simultaneous Unique/Full Clear/Sparkling modes. Retain established numeric/text selections and explicit mode-preset behavior unless separately changed. Field initialization, config-load fallbacks and GUI defaults agree. Explicitly saved GUI choices remain in effect.
 
@@ -28,7 +28,7 @@ The existing `missingPanel` toggle and HUD layout are shared across modes. In Sp
 
 ## Experimental capsule path
 
-Capsule path width saves independently as `capsulePathWidth`, defaults to **3**, and clamps finite values to **1–5**. Invalid/non-finite values use 3. Uncalibrated estimates requires Experimental capsule path; enabling either option does not start recording. Expanded estimates add a terrain ring or possible-critter diamond, including close launch and broader angles. Keep both hiding settings off; collision and target proxies remain unverified.
+Capsule path width saves independently as `capsulePathWidth`, defaults to **3**, and clamps finite values to **1–5**. Invalid/non-finite values use 3. Uncalibrated estimates requires Experimental capsule path; enabling either option does not start recording. Expanded estimates add a terrain ring or possible-critter diamond, including close launch and broader angles. Either or both capsule-hiding settings may stay on; collision and target proxies remain unverified. Strict recorder calibration probes still require both off.
 
 **Show guide through terrain** (`showCapsuleGuideThroughTerrain`) defaults **on**, including for missing/invalid saved values; an explicit off choice persists. It only changes guide/marker visibility, with the experimental preview still separately default off and the same collision stops. **Capsule status** uses the standard HUD editor with saved normalized `hud.capsule_status.x` / `y` and `scale` (0.15–2). Its default top-left anchor is 35% across / 55% down at scale 1; Reset positions restores it.
 
@@ -55,6 +55,8 @@ The **Warp reminder** / `/alert` setting defaults **off** for fresh or missing s
 The History tab begins with the **History** button, followed immediately by **Import History from Logs**. Import is an explicit action that backfills both histories from existing logs. There is no **Import logs on launch** toggle or automatic startup scan: normal sessions already record history live. Older saved auto-import settings are ignored. See [history import](HISTORY_IMPORT.md) for supported files, estimates and merge rules.
 
 ## Last updated
+
+2026-10-17 (America/New_York) - Separated visual capsule-guide availability from capsule hiding; preserved saved options and recorder calibration restrictions.
 
 2026-10-17 - Corrected PB filename to sparkling-mutuals-pbs.properties; also migrate the briefly used display-name filename safely.
 
