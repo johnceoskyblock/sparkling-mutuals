@@ -220,6 +220,9 @@ object SafariEsp {
         rememberAim(client)
     }
     private fun trackedModel(target: Target) = SafariEspRules.requiresModelLabel(target.species, target.entity.type.toShortString())
+    /** Read-only model/capture validity, independent of ESP mode and visibility switches. */
+    internal fun contactCurrent(entity: Entity, species: String, client: Minecraft): Boolean =
+        entity !is Player && live(Target(entity,species,false),client)
     private fun live(target: Target, client: Minecraft, forEsp: Boolean = false): Boolean {
         val entity = target.entity
         if (SafariTracking.ledger.current?.sparklingCaptures?.resolved(entity.uuid) == true) return false
@@ -289,12 +292,9 @@ object SafariEsp {
     }
     private fun bounds(target: Target, delta: Float): AABB {
         val e = target.entity
-        val box = when {
-            e is Display && target.shulker -> AABB(e.x - .5, e.y, e.z - .5, e.x + .5, e.y + 1, e.z + .5)
-            e is Display -> AABB(e.x - .3, e.y - .45, e.z - .3, e.x + .3, e.y + .15, e.z + .3)
-            e is ArmorStand -> AABB(e.x - .3, e.y + 1.35, e.z - .3, e.x + .3, e.y + 1.95, e.z + .3)
-            else -> e.boundingBox
-        }
+        val visual = EspBodyBounds.visual(net.johnceo.sparklingmutuals.safari.shots.ShotVector(e.x,e.y,e.z),
+            if(e is Display) "display" else if(e is ArmorStand) "armor_stand" else "native",target.shulker)
+        val box = visual?.let { AABB(it.min.x,it.min.y,it.min.z,it.max.x,it.max.y,it.max.z) } ?: e.boundingBox
         return EspBoxSize.padded(box.move(e.getPosition(delta).subtract(e.position())), target.species)
     }
     private fun render(context: LevelRenderContext) {
