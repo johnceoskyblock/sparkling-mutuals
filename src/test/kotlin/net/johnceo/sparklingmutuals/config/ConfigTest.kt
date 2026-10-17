@@ -9,6 +9,27 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 
 class ConfigTest {
+    @Test fun `through terrain display preference loads from saved settings`() {
+        Files.writeString(dir.resolve("sparkling-mutuals.properties"),"showCapsuleGuideThroughTerrain=false\n")
+        ConfigManager.init(dir)
+        assertFalse(ConfigManager.showCapsuleGuideThroughTerrain)
+    }
+    @Test fun `through terrain toggle saves through the settings screen and defaults on for old files`() {
+        ConfigManager.init(dir);assertTrue(ConfigManager.showCapsuleGuideThroughTerrain)
+        val settings=SafariSettings();settings.safari.showCapsuleGuideThroughTerrain=false;settings.apply()
+        ConfigManager.init(dir);assertFalse(ConfigManager.showCapsuleGuideThroughTerrain)
+        Files.writeString(dir.resolve("sparkling-mutuals.properties"),"showCapsuleGuideThroughTerrain=invalid\n")
+        ConfigManager.init(dir);assertTrue(ConfigManager.showCapsuleGuideThroughTerrain)
+    }
+    @Test fun `capsule status drag and scale survive saving and reset restores defaults`() {
+        val hud=net.johnceo.sparklingmutuals.safari.shots.preview.CapsuleStatusHud
+        ConfigManager.init(dir);val original=Triple(hud.layout.x,hud.layout.y,hud.layout.scale)
+        hud.layout.move(200.0,50.0,800,450,160,27);hud.layout.scale=1.4f
+        ConfigManager.save();hud.layout.reset();ConfigManager.init(dir)
+        assertEquals(.25f,hud.layout.x);assertEquals(50f/450,hud.layout.y);assertEquals(1.4f,hud.layout.scale)
+        hud.layout.reset();ConfigManager.save();ConfigManager.init(dir)
+        assertEquals(original,Triple(hud.layout.x,hud.layout.y,hud.layout.scale))
+    }
     @Test fun `contact opt in and finite width persist safely for old and invalid files`() {
         ConfigManager.init(dir)
         assertFalse(ConfigManager.allowUncalibratedCapsuleEstimates);assertEquals(3f,ConfigManager.capsulePathWidth)

@@ -69,10 +69,6 @@ object CapsulePreview {
         val client=Minecraft.getInstance()
         val frame=frame(client) ?: return
         val status=frame.status ?: return
-        val lines=client.font.split(net.minecraft.network.chat.Component.literal(status),(graphics.guiWidth()-16).coerceAtLeast(1))
-        lines.forEachIndexed { index,line ->
-            graphics.text(client.font,line,(graphics.guiWidth()-client.font.width(line))/2,
-                graphics.guiHeight()/2+18+index*client.font.lineHeight,0xFFFFB347.toInt(),true)
-        }
+        CapsuleStatusHud.render(graphics,status)
     }
 }
