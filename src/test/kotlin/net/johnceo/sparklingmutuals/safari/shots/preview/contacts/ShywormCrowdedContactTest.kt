@@ -34,13 +34,14 @@ class ShywormCrowdedContactTest {
     @Test fun `reserved witness budget bounds discovery and reset clears completion`() {
         val cache=ContactTargetCache();val world=Any();var inspections=0
         val slots=(0..499).map{ContactDiscovery("$it",1)}.iterator()
-        cache.tick(world,slots,176){inspections++;target(it.key)}
-        assertEquals(176,inspections);assertFalse(cache.sweepFinished)
+        cache.tick(world,slots,160){inspections++;target(it.key)}
+        assertEquals(160,inspections);assertFalse(cache.sweepFinished)
         inspections=0
-        cache.tick(world,slots,176){inspections++;target(it.key)}
-        assertEquals(176,inspections);assertFalse(cache.sweepFinished)
-        cache.tick(world,slots,176){target(it.key)};assertFalse(cache.sweepFinished)
-        cache.tick(world,slots,176){target(it.key)};assertTrue(cache.sweepFinished)
+        cache.tick(world,slots,160){inspections++;target(it.key)}
+        assertEquals(160,inspections);assertFalse(cache.sweepFinished)
+        cache.tick(world,slots,160){target(it.key)};assertFalse(cache.sweepFinished)
+        cache.tick(world,slots,160){target(it.key)};assertFalse(cache.sweepFinished)
+        cache.tick(world,slots,160){target(it.key)};assertTrue(cache.sweepFinished)
         cache.reset();assertFalse(cache.sweepFinished)
     }
     @Test fun `over-budget association cannot silently discard connectors`() {

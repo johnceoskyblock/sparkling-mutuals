@@ -65,10 +65,33 @@ class CapsulePreviewRulesTest {
     }
     @Test fun `expanded preview rejects unsupported modes and nonfinite motion`() {
         val s=eligible().copy(allowUncalibratedEstimates=true)
-        for(blocked in listOf(s.copy(swimming=true),s.copy(flying=true),s.copy(riding=true),
+        for(blocked in listOf(s.copy(flying=true),s.copy(riding=true),
             s.copy(position=ShotVector(Double.NaN,0.0,0.0)),s.copy(velocity=ShotVector(0.0,Double.POSITIVE_INFINITY,0.0)))) {
             val r=CapsulePreviewRules();r.tick(Any(),s)
             assertEquals(CapsulePreviewAvailability.STAND_STILL,r.evaluate(blocked))
+        }
+    }
+    @Test fun `expanded water preview allows swimming without relaxing strict collection or opt out`() {
+        for(variant in listOf(ShotVariant.ORDINARY,ShotVariant.MASTERFUL)) {
+            val s=eligible().copy(allowUncalibratedEstimates=true,capsule=variant,swimming=true,onGround=false,
+                velocity=ShotVector(.1,.02,.1))
+            assertEquals(CapsulePreviewAvailability.AVAILABLE,CapsulePreviewRules().tick(Any(),s))
+            assertNotEquals(CapsulePreviewAvailability.AVAILABLE,CapsulePreviewRules(allowExtendedPreview=false).tick(Any(),s))
+            assertNotEquals(CapsulePreviewAvailability.AVAILABLE,CapsulePreviewRules().tick(Any(),s.copy(allowUncalibratedEstimates=false)))
+        }
+    }
+    @Test fun `standing in water stays uncalibrated and cannot produce strict collection stability`() {
+        val s=eligible().copy(allowUncalibratedEstimates=true,inWater=true)
+        assertEquals(CapsulePreviewAvailability.AVAILABLE,CapsulePreviewRules().tick(Any(),s))
+        assertEquals("Water",s.estimateLabel)
+        val strict=CapsulePreviewRules(allowExtendedPreview=false);val w=Any()
+        repeat(3){assertNotEquals(CapsulePreviewAvailability.AVAILABLE,strict.tick(w,s))}
+        assertNotEquals(CapsulePreviewAvailability.AVAILABLE,ready().evaluate(s.copy(allowUncalibratedEstimates=false)))
+    }
+    @Test fun `lava remains unsupported with expanded water preview enabled`() {
+        for(water in listOf(false,true)) {
+            val s=eligible().copy(allowUncalibratedEstimates=true,inLava=true,inWater=water)
+            assertEquals(CapsulePreviewAvailability.STAND_STILL,CapsulePreviewRules().tick(Any(),s))
         }
     }
     @Test fun `expanded preview still honors hidden view and hiding restrictions`() {

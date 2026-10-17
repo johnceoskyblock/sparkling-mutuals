@@ -42,7 +42,7 @@ object CapsulePreview {
             p.isShiftKeyDown,p.isSprinting,p.isSwimming,p.abilities.flying,p.isPassenger,
             ConfigManager.hideFlyingCapsules,ConfigManager.hideGroundCapsules,client.smScreen!=null,
             client.options.smHideGui,p.xRot.toDouble(),ShotPacketCompat.vector(p.position()),ShotPacketCompat.vector(p.deltaMovement),
-            true)
+            true,p.isInWater,p.isInLava)
     }
     internal fun frame(client:Minecraft):CapsulePreviewFrame? {
         val state=currentState(client);val available=availability(state)
@@ -57,8 +57,12 @@ object CapsulePreview {
         CapsuleContactScene.refreshRevision(client)
         val view=listOf(state,eye,aim,camera,ConfigManager.capsulePathWidth,CapsuleContactScene.revision,SafariEsp.contactRevision)
         return frames.resolve(level,view) {
-            if(state?.allowUncalibratedEstimates==true) CapsulePreviewFrameBuilder.contacts(
-                CapsuleContactScene.snapshot(client,eye,aim,state.pitch).trace,camera,ConfigManager.capsulePathWidth,state.estimateLabel)
+            if(state?.allowUncalibratedEstimates==true) {
+                val scene=CapsuleContactScene.snapshot(client,eye,aim,state.pitch)
+                val label=if(scene.waterEstimate && state.estimateLabel?.contains("Water")!=true)
+                    listOfNotNull(state.estimateLabel,"Water").joinToString(" / ") else state.estimateLabel
+                CapsulePreviewFrameBuilder.contacts(scene.trace,camera,ConfigManager.capsulePathWidth,label)
+            }
             else CapsulePreviewFrameBuilder.build(available,eye,aim).let{f->f.copy(mesh=ContactGuideGeometry.build(
                 ContactTrace(f.points.mapIndexed{i,v->ContactNode(i.toDouble(),v,true)},null,ContactStop.RANGE_LIMIT,emptySet()),eye,ConfigManager.capsulePathWidth))}
         }

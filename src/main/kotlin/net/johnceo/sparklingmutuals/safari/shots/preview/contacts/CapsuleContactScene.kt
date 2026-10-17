@@ -16,7 +16,7 @@ import net.minecraft.world.phys.*
 data class ContactTerrainDetail(val fromParameter:Double,val toParameter:Double,val position:ShotVector?,val normal:ShotVector?,
     val block:String?,val shapes:List<ShotBounds>,val boundary:ContactStop?)
 data class ContactSceneSnapshot(val trace:ContactTrace,val targets:List<ContactTarget>,val coverage:ContactCoverage,
-    val sourceTick:Long,val terrain:List<ContactTerrainDetail> = emptyList())
+    val sourceTick:Long,val terrain:List<ContactTerrainDetail> = emptyList(),val waterEstimate:Boolean=false)
 
 /** Client-thread only. No recording dependency, file access, world mutation or chunk loading. */
 object CapsuleContactScene {
@@ -40,6 +40,12 @@ object CapsuleContactScene {
     private var bodySweepEpoch=-1L
     private val wormWitnesses=linkedMapOf<String,ContactTarget>()
     private var wormWitnessOverflow=false
+    private val metadataChecks=ContactMetadataQueue()
+    private var metadataOverflow=false
+    private var discoveryRestarts=0L
+    private var metadataQueued=0L
+    private var metadataHandled=0L
+    private var completedSweeps=0L
     /** Cached counts only, read by the explicit local debug command without extra inspections. */
     fun debugSummary():Map<String,Any> {
         val (targets,coverage)=cache.snapshot()
@@ -48,12 +54,23 @@ object CapsuleContactScene {
             "bodyDiscoveryPending" to bodyDiscoveryPending,"associationDirty" to wormAssociationDirty,
             "sweepFinished" to cache.sweepFinished,"coverageReasons" to coverage.reasons,
             "witnessParts" to wormWitnesses.size,"witnessHeads" to wormWitnesses.values.count{!it.bodyPart},
-            "witnessOverflow" to wormWitnessOverflow)
+            "witnessOverflow" to wormWitnessOverflow,"pendingMetadata" to metadataChecks.size,
+            "metadataOverflow" to metadataOverflow,"discoveryRestarts" to discoveryRestarts,
+            "metadataQueued" to metadataQueued,"metadataHandled" to metadataHandled,
+            "completedSweeps" to completedSweeps,"bodyEpoch" to bodyEpoch,"sweepEpoch" to bodySweepEpoch)
     }
-    fun invalidateDiscovery() { if(world!=null) { slots=null;cache.invalidate();validation.invalidate();bodyDiscoveryPending=true;bodyEpoch++;revision++ } }
+    fun invalidateDiscovery() { if(world!=null) { slots=null;cache.invalidate();validation.invalidate();bodyDiscoveryPending=true;bodyEpoch++;discoveryRestarts++;revision++ } }
     fun metadataChanged(entityId:Int) { if(world!=null) {
-        // An unrecognised stand may just have received a Shyworm head/body profile.
-        if(entityId.toString() !in wormKeys && (world as? net.minecraft.client.multiplayer.ClientLevel)?.getEntity(entityId) is ArmorStand) { bodyDiscoveryPending=true;bodyEpoch++ }
+        // TAIL packet hooks see the updated equipment. Empty-head labels cannot currently be
+        // Shyworm heads/body items; later equipment events will enqueue a newly equipped stand.
+        val entity=(world as? net.minecraft.client.multiplayer.ClientLevel)?.getEntity(entityId)
+        if(entityId.toString() !in wormKeys && entity is ArmorStand && !entity.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.HEAD).isEmpty) {
+            metadataQueued++
+            if(!metadataChecks.add(ContactDiscovery(entityId.toString(),System.identityHashCode(entity)))) {
+                // A dropped identity may already lie behind the iterator. Require a new whole sweep.
+                metadataOverflow=true;invalidateDiscovery()
+            }
+        }
         cache.metadataChanged();entityChanged(entityId)
     } }
     fun entityChanged(entityId:Int) { if(world!=null) {
@@ -68,7 +85,7 @@ object CapsuleContactScene {
     }
     private val collectionRules=net.johnceo.sparklingmutuals.safari.shots.preview.CapsulePreviewRules(allowExtendedPreview=false)
     fun probeEligible(client:Minecraft)=collectionRules.evaluate(net.johnceo.sparklingmutuals.safari.shots.preview.CapsulePreview.collectionState(client))==net.johnceo.sparklingmutuals.safari.shots.preview.CapsulePreviewAvailability.AVAILABLE
-    fun reset() { cache.reset();world=null;slots=null;validation.reset();entityCount=-1;unsupported=false;unsupportedSurface=false;wormKeys=emptySet();wormAssociationDirty=false;bodyDiscoveryPending=true;bodyEpoch=0;bodySweepEpoch=-1;wormWitnesses.clear();wormWitnessOverflow=false;partSupport=emptyMap();priority=null;collectionRules.reset();revision++ }
+    fun reset() { cache.reset();world=null;slots=null;validation.reset();entityCount=-1;unsupported=false;unsupportedSurface=false;wormKeys=emptySet();wormAssociationDirty=false;bodyDiscoveryPending=true;bodyEpoch=0;bodySweepEpoch=-1;wormWitnesses.clear();wormWitnessOverflow=false;metadataChecks.reset();metadataOverflow=false;discoveryRestarts=0;metadataQueued=0;metadataHandled=0;completedSweeps=0;partSupport=emptyMap();priority=null;collectionRules.reset();revision++ }
     fun tick(client:Minecraft,enabled:Boolean) {
         val level=client.level
         if(!enabled || !SafariAssist.inSafari || level==null || client.player==null) { reset();return }
@@ -97,13 +114,17 @@ object CapsuleContactScene {
                 }
             }
         }
-        // 176 discovery/refresh + 64 association witnesses + 16 selected validations = 256.
-        cache.tick(level,slots!!,176){inspect(client,it)}
+        // Reset sweep overflow above before dirty inspections: a newly revealed 65th node
+        // must remain uncertain, even when metadata arrives at a sweep boundary.
+        for(d in metadataChecks.drain(16)) { inspect(client,d);metadataHandled++ }
+        // 160 cache + 64 association + 16 metadata + 16 selected validations = 256.
+        cache.tick(level,slots!!,160){inspect(client,it)}
         val associationTargets=wormWitnesses.values.toList()
         wormKeys=associationTargets.filter{it.species=="Shyworm"}.mapTo(hashSetOf()){it.key}
         if(wormWitnessOverflow || associationTargets.count{!it.bodyPart}>16) bodyDiscoveryPending=true
-        else if(cache.sweepFinished && bodySweepEpoch==bodyEpoch) bodyDiscoveryPending=false
-        partSupport=if(bodyDiscoveryPending) emptyMap() else ShywormContactParts.support(associationTargets)
+        else if(cache.sweepFinished && bodySweepEpoch==bodyEpoch) { bodyDiscoveryPending=false;metadataOverflow=false }
+        if(cache.sweepFinished) completedSweeps++
+        partSupport=if(bodyDiscoveryPending || metadataChecks.size>0) emptyMap() else ShywormContactParts.support(associationTargets)
         wormAssociationDirty=false
         if(cache.scanInterrupted) slots=null
     }
@@ -149,14 +170,15 @@ object CapsuleContactScene {
         val (discovered,cachedCoverage)=cache.snapshot()
         // A changed off-path part/head can make an otherwise unchanged path ambiguous.
         // Rebuild after the next bounded tick refresh rather than doing extra render-thread inspections.
-        val support=if(wormAssociationDirty || bodyDiscoveryPending) emptyMap() else partSupport
+        val support=if(wormAssociationDirty || bodyDiscoveryPending || metadataChecks.size>0) emptyMap() else partSupport
         val targets=discovered.filter{(!it.bodyPart || it.key in support) && (visualSurfaces || it.surface==null)}
         val omittedBody=discovered.any{it.bodyPart && it.key !in support}
         var coverage=if(unsupported || omittedBody || visualSurfaces && unsupportedSurface) ContactCoverage(false,cachedCoverage.reasons+"unsupported_proxy") else cachedCoverage
         val curve=ContactCurveSampler.sample(eye,aim,pitch)
         if(client.level!==world || client.player==null) return ContactSceneSnapshot(ContactTrace(emptyList(),null,ContactStop.UNLOADED,emptySet()),emptyList(),ContactCoverage(false,setOf("scan_pending")),tick)
         val details=ArrayList<ContactTerrainDetail>()
-        var trace=CapsuleContactSolver.trace(curve,targets,coverage){a,b->segment(client,a,b,details)}
+        var firstWaterParameter=Double.POSITIVE_INFINITY
+        var trace=CapsuleContactSolver.trace(curve,targets,coverage){a,b->segment(client,a,b,details,visualSurfaces){firstWaterParameter=minOf(firstWaterParameter,it)}}
         val primary=trace.primary
         if(primary?.targetKey!=null) {
             val target=targets.firstOrNull{it.key==primary.targetKey}
@@ -172,7 +194,8 @@ object CapsuleContactScene {
             val patch=surfacePatch(client,trace.primary.position,targets)
             trace=trace.copy(surfacePatch=patch ?: emptyList(),warnings=if(patch==null)trace.warnings+"shape_limit" else trace.warnings)
         }
-        return ContactSceneSnapshot(trace,targets.toList(),coverage,tick,details.toList())
+        val waterEstimate=firstWaterParameter.isFinite() && firstWaterParameter<=(trace.nodes.lastOrNull()?.parameter ?: Double.NEGATIVE_INFINITY)+CapsuleContactSolver.TIE
+        return ContactSceneSnapshot(trace,targets.toList(),coverage,tick,details.toList(),waterEstimate)
     }
     private fun surfacePatch(client:Minecraft,center:ShotVector,targets:List<ContactTarget>):List<ContactSurfaceBox>? {
         val level=client.level ?: return null
@@ -201,7 +224,7 @@ object CapsuleContactScene {
         return patch.toList()
     }
     private fun vector(v:Vec3)=ShotVector(v.x,v.y,v.z)
-    private fun segment(client:Minecraft,a:ContactNode,b:ContactNode,details:MutableList<ContactTerrainDetail>):ContactSegmentScene {
+    private fun segment(client:Minecraft,a:ContactNode,b:ContactNode,details:MutableList<ContactTerrainDetail>,waterPreview:Boolean,onWater:(Double)->Unit):ContactSegmentScene {
         val level=client.level ?: return ContactSegmentScene(null,ContactBoundary(0.0,ContactStop.UNLOADED))
         val cells=ContactSceneBoundary.collisionCells(a.position,b.position)
         // ClientLevel.hasChunkAt always returns true in 26.1.2. Explicit false never creates chunks.
@@ -209,13 +232,16 @@ object CapsuleContactScene {
             details.add(ContactTerrainDetail(a.parameter,b.parameter,null,null,null,emptyList(),ContactStop.UNLOADED))
             return ContactSegmentScene(null,ContactBoundary(0.0,ContactStop.UNLOADED))
         }
-        var best:ContactCandidate?=null;var first=Double.POSITIVE_INFINITY;var fluidFraction=Double.POSITIVE_INFINITY
+        var best:ContactCandidate?=null;var first=Double.POSITIVE_INFINITY;var fluidFraction=Double.POSITIVE_INFINITY;var waterFraction=Double.POSITIVE_INFINITY
         var bestBlock:String?=null;var bestBoxes=emptyList<ShotBounds>()
         fun boxes(shapes:List<AABB>,pos:BlockPos)=shapes.map{it.move(pos)}.map{ShotBounds(ShotVector(it.minX,it.minY,it.minZ),ShotVector(it.maxX,it.maxY,it.maxZ))}
         for((x,y,z) in cells) {
             val pos=BlockPos(x,y,z);val state=level.getBlockState(pos)
             val shapes=state.getCollisionShape(level,pos,net.minecraft.world.phys.shapes.CollisionContext.of(client.player!!)).toAabbs()
             val fluid=state.fluidState
+            // Preview uses the same uncalibrated spatial estimate through water. Strict recorder
+            // probes keep their original fluid boundary; solid waterlogged geometry still applies.
+            val water=waterPreview && fluid.`is`(net.minecraft.tags.FluidTags.WATER)
             val fluidShapes=if(fluid.isEmpty) emptyList() else fluid.getShape(level,pos).toAabbs()
             if(shapes.size>32 || fluidShapes.size>32) return ContactSegmentScene(null,ContactBoundary(0.0,ContactStop.WORK_LIMIT))
             val bodies=boxes(shapes,pos)
@@ -229,8 +255,11 @@ object CapsuleContactScene {
                 best=ContactCandidate(ContactKind.TERRAIN,a.parameter+(b.parameter-a.parameter)*f,p,faces.minBy{it.first}.second,null,null)
                 bestBlock=BuiltInRegistries.BLOCK.getKey(state.block).toString();bestBoxes=bodies
             }
-            for(body in boxes(fluidShapes,pos)) ContactIntersections.entry(a.position,b.position,body)?.let{fluidFraction=minOf(fluidFraction,it)}
+            for(body in boxes(fluidShapes,pos)) ContactIntersections.entry(a.position,b.position,body)?.let{
+                if(water) waterFraction=minOf(waterFraction,it) else fluidFraction=minOf(fluidFraction,it)
+            }
         }
+        if(waterFraction.isFinite() && waterFraction<=minOf(first,fluidFraction)) onWater(a.parameter+(b.parameter-a.parameter)*waterFraction)
         val boundary=if(fluidFraction.isFinite())ContactBoundary(fluidFraction,ContactStop.FLUID) else null
         if(best!=null || boundary!=null) details.add(ContactTerrainDetail(a.parameter,b.parameter,best?.position ?: a.position.lerp(b.position,fluidFraction),best?.normal,bestBlock,bestBoxes,boundary?.reason))
         return ContactSegmentScene(best,boundary)
