@@ -179,48 +179,6 @@ Verify Full Clear report trust: capture a variable species' minimum and perform 
 - Receive fd, then enter/reenter Forest with incomplete rendering: Honeybug checking remains trusted. Detect an actual uncaught Sparkling and verify it still blocks every mode.
 - Switch to Sparkling in each biome: the checklist header and HUD editor use Unchecked. Unique/Full Clear retain Missing behavior and saved panel positions/settings survive mode changes.
 
-## Last updated
-
-2026-10-17 - Added stale Sparkling alias/population and all-mode coin ESP regressions to live checks.
-
-2026-10-17 - Replaced incense distance-ranking checks with all-five selection and four-pickup cutoff checks.
-
-2026-10-17 - Clarified unused floor-drop notices with resource quantities and relevant missing Sparkling discoveries; retained legacy parsing.
-
-2026-10-17 - Added mode-specific nest highlight checks after fd and individual punches.
-
-2026-10-17 - Added safari-wide mound/wall, Unique zero-spawn and pending-Sparkling checks.
-
-2026-10-17 - Added initial nest retention, capture-based remote Full Clear, persistent Honeybug report trust and all-biome Unchecked checks.
-
-2026-10-17 - Added dynamic Gimmiegold coin-slot checks, current population, party contributions and outside-only report trust.
-
-2026-10-17 - Reconciled superseded checks and added source-audit regressions; all live checks remain pending.
-
-2026-10-17 - Pending Minecraft verification: Full Clear local species completion should advance progress and remove its missing row without a report; move out of its radius/biome and retain that earned progress. In parallel, shared catches in an unvisited biome should wait for its report, subject to existing fixed-count/Honeybug/Macaw exceptions. Positive remaining critters must still reopen their species.
-
-2026-10-17 - Added pending Minecraft checks for independent Honeybug/nest rows, actual nest totals and remote Forest-report retirement on entry.
-
-2026-10-16 - Added Full Clear report/minimum gates, fixed-count early completion and positive-only revalidation tests.
-
-2026-10-16 - Replaced Unique local discovery gates with per-species captures; added cd-gated Cavern and outside-biome loaded-source tests.
-
-2026-10-16 - Added capture-gated Unique party-report trust and per-species Cavern reversal checks.
-
-2026-10-16 - Added compact batched starting-item reminders and receiver compatibility checks.
-
-2026-10-16 - Added all-species Sparkling completion overrides and Full Clear completion after resolving the Sparkling plus remaining captures.
-
-2026-10-16 - Added current bird-count accounting and the captured/scanned Macaw-pair regression; no-Macaw completion in every mode.
-
-2026-10-16 - Added leader-only automatic contest requests and a combined party downtime reminder naming all requesters and reasons.
-
-2026-10-16 - Added !since party-credit regressions and critter/catcher message checks.
-
-2026-10-15 - Added ticket-earned release/announcement and automatic warp timer checks, retaining detector and incense regressions.
-
-2026-10-15 - Fixed complete, independently gated starting-resource reminder delivery (#55).
-
 ## Capture-shot collection
 
 - Follow the complete [collection checklist](CAPTURE_SHOT_RECORDING.md#first-collection-checklist), beginning with a small ordinary-capsule sanity export. Confirm useful raw/tick/display/target fields before larger or Masterful collection.
@@ -265,12 +223,52 @@ Verify Full Clear report trust: capture a variable species' minimum and perform 
 - Check real-writer v2 plus strict v1 replay, local target aliases, UTF-8/finite/line bounds, omitted detail flags, one probe per ordinary input and unchanged raw packets/association. Both named populated workloads retain every capsule packet under unchanged caps.
 - Run target-only 26.1.2 verification, helper/Python/package tests, offline loaded fixtures and bounded scene profiling. Live Hypixel broader-angle launch, endpoint and proxy validation remain pending; use the six-throw sanity block before the fitting/validation matrix.
 
-## Last updated
-
-2026-10-17 - Added metadata starvation/overflow checks and water traversal, standing/swimming, collision and strict dry-probe checks; server geometry remains unverified.
-
 ## Shyworm body diagnostics
 
 - Run `/sm debug` in Safari with an identified Shyworm and nearby unknown displays/interaction parts. Check `SM_SHYWORM_BODY` snapshot/candidate rows, relative positions, native zero bounds, armour poses/equipment appearance, display transforms and vehicle/passenger links. Repeated captures have distinct snapshot IDs. No body proxy or recorder state changes.
 - Verify no-head/outside-Safari cases, players/items excluded, direct carriers outside the proximity radius retained, nearest-head selection, 4,096-entry/2-head/64-part/16-passenger limits and explicit omissions. A missing head or truncated candidate list must not become evidence of body absence.
 - Give fixtures distinctive custom names, raw profile values and arbitrary item data; prefixed JSON must omit them. Preserve finite JSON with unavailable nonfinite fields and cap block-state text. General debug output remains separate. Live collection: three surfaced ordinary-Shyworm snapshots in one world, roughly one second apart, without throwing or recording.
+
+## Last updated
+
+2026-10-17 - Added stale Sparkling alias/population and all-mode coin ESP regressions to live checks.
+
+2026-10-17 - Replaced incense distance-ranking checks with all-five selection and four-pickup cutoff checks.
+
+2026-10-17 - Clarified unused floor-drop notices with resource quantities and relevant missing Sparkling discoveries; retained legacy parsing.
+
+2026-10-17 - Added mode-specific nest highlight checks after fd and individual punches.
+
+2026-10-17 - Added safari-wide mound/wall, Unique zero-spawn and pending-Sparkling checks.
+
+2026-10-17 - Added initial nest retention, capture-based remote Full Clear, persistent Honeybug report trust and all-biome Unchecked checks.
+
+2026-10-17 - Added dynamic Gimmiegold coin-slot checks, current population, party contributions and outside-only report trust.
+
+2026-10-17 - Reconciled superseded checks and added source-audit regressions; all live checks remain pending.
+
+2026-10-17 - Pending Minecraft verification: Full Clear local species completion should advance progress and remove its missing row without a report; move out of its radius/biome and retain that earned progress. In parallel, shared catches in an unvisited biome should wait for its report, subject to existing fixed-count/Honeybug/Macaw exceptions. Positive remaining critters must still reopen their species.
+
+2026-10-17 - Added pending Minecraft checks for independent Honeybug/nest rows, actual nest totals and remote Forest-report retirement on entry.
+
+2026-10-16 - Added Full Clear report/minimum gates, fixed-count early completion and positive-only revalidation tests.
+
+2026-10-16 - Replaced Unique local discovery gates with per-species captures; added cd-gated Cavern and outside-biome loaded-source tests.
+
+2026-10-16 - Added capture-gated Unique party-report trust and per-species Cavern reversal checks.
+
+2026-10-16 - Added compact batched starting-item reminders and receiver compatibility checks.
+
+2026-10-16 - Added all-species Sparkling completion overrides and Full Clear completion after resolving the Sparkling plus remaining captures.
+
+2026-10-16 - Added current bird-count accounting and the captured/scanned Macaw-pair regression; no-Macaw completion in every mode.
+
+2026-10-16 - Added leader-only automatic contest requests and a combined party downtime reminder naming all requesters and reasons.
+
+2026-10-16 - Added !since party-credit regressions and critter/catcher message checks.
+
+2026-10-15 - Added ticket-earned release/announcement and automatic warp timer checks, retaining detector and incense regressions.
+
+2026-10-15 - Fixed complete, independently gated starting-resource reminder delivery (#55).
+
+2026-10-17 - Added metadata starvation/overflow checks and water traversal, standing/swimming, collision and strict dry-probe checks; server geometry remains unverified.
