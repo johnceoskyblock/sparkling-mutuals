@@ -42,6 +42,7 @@ data class ShotPathPoint(val position: ShotVector, val tickOffset: Int = 0)
 
 /** Only typed, allowlisted values cross the export boundary. Runtime entity IDs and UUIDs stay in the adapter. */
 sealed interface ShotObservation {
+    data class ContactProbe(val probe:ShotContactProbeData):ShotObservation
     data class PlayerState(val pose:ShotPose):ShotObservation
     data class Input(val token: String, val hand: ShotHand, val variant: ShotVariant, val route: ShotUseRoute,
         val pose: ShotPose, val scenario: ShotScenario = ShotScenario.UNSPECIFIED, val split: ShotSplit = ShotSplit.UNASSIGNED,
@@ -69,7 +70,7 @@ sealed interface ShotObservation {
 }
 data class ShotMetadata(val session: String, val minecraft: String, val mod: String, val fabric: String,
     val dimension: String, val hideFlying: Boolean, val hideGround: Boolean, val durationSeconds: Int = 180,
-    val recorderVersion: Int = 2, val schemaVersion: Int = 1, val modelVersion: String? = null,
+    val recorderVersion: Int = 3, val schemaVersion: Int = 2, val modelVersion: String? = null,
     val coordinates: String = "session_relative_game_axes", val timeBasis: String = "client_monotonic_microseconds")
 data class ShotSummary(val token: String, val variant: ShotVariant, val scenario: ShotScenario, val split: ShotSplit,
     val tracks: List<String>, val association: ShotAssociation, val feedback: List<Long>, val annotations: List<ShotManualOutcome>)

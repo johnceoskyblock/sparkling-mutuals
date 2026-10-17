@@ -10,7 +10,7 @@ class ShotProtocolTest {
         assertTrue(line.isNotEmpty());assertEquals('\n'.code.toByte(),line.last())
         val json=JsonParser.parseString(line.toString(Charsets.UTF_8)).asJsonObject
         assertEquals("header",json["type"].asString)
-        assertEquals(1,json["metadata"].asJsonObject["schemaVersion"].asInt)
+        assertEquals(2,json["metadata"].asJsonObject["schemaVersion"].asInt)
         assertTrue(json["metadata"].asJsonObject["modelVersion"].isJsonNull)
         assertFalse(json.toString().contains("uuid",true));assertFalse(json.toString().contains("serverAddress"))
     }
@@ -27,7 +27,7 @@ class ShotProtocolTest {
     @Test fun `producer fixtures retain candidates and unknown outcomes for independent replay`() {
         fun capture(ambiguous: Boolean): String {
             val budget=ShotTestFixtures.Budget();val sink=ShotTestFixtures.Sink(budget)
-            val session=ShotSession(ShotTestFixtures.metadata().copy(session=if (ambiguous) "fixture-ambiguous" else "fixture-isolated"),ShotLimits(),sink,budget)
+            val session=ShotSession(ShotTestFixtures.metadata().copy(schemaVersion=1,recorderVersion=2,session=if (ambiguous) "fixture-ambiguous" else "fixture-isolated"),ShotLimits(),sink,budget)
             session.accept(ShotStamp(0,0),ShotTestFixtures.input("s1"))
             repeat(if (ambiguous) 2 else 1) { n ->
                 session.accept(ShotStamp(100_000+n*100_000L,2+n*2L),ShotObservation.Capsule("c${n+1}",1,ShotVariant.ORDINARY,ShotEntityAction.DISCOVERED,ShotVector(0.0,0.0,1.0),discovery=ShotDiscovery.SPAWN))

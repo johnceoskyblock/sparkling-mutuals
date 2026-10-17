@@ -30,14 +30,18 @@ object CapsulePreview {
     fun reset() { world=null;rules.reset();frames.reset();frameState=null;CapsuleContactScene.reset() }
     internal fun currentState(client: Minecraft): CapsulePreviewState? {
         if(!ConfigManager.experimentalCapsulePath || client.level==null) return null
+        return collectionState(client)?.copy(enabled=ConfigManager.experimentalCapsulePath,allowUncalibratedEstimates=ConfigManager.allowUncalibratedCapsuleEstimates)
+    }
+    internal fun collectionState(client:Minecraft):CapsulePreviewState? {
+        if(client.level==null) return null
         val p=client.player ?: return null
         val itemId=p.mainHandItem.get(DataComponents.CUSTOM_DATA)?.copyTag()?.getStringOr("id","")
-        return CapsulePreviewState(ConfigManager.experimentalCapsulePath, SafariAssist.inSafari,
+        return CapsulePreviewState(true, SafariAssist.inSafari,
             ShotVariant.fromId(itemId)==ShotVariant.ORDINARY,client.options.cameraType.isFirstPerson,p.onGround(),
             p.isShiftKeyDown,p.isSprinting,p.isSwimming,p.abilities.flying,p.isPassenger,
             ConfigManager.hideFlyingCapsules,ConfigManager.hideGroundCapsules,client.smScreen!=null,
             client.options.smHideGui,p.xRot.toDouble(),ShotPacketCompat.vector(p.position()),ShotPacketCompat.vector(p.deltaMovement),
-            ConfigManager.allowUncalibratedCapsuleEstimates)
+            true)
     }
     internal fun frame(client:Minecraft):CapsulePreviewFrame? {
         val state=currentState(client);val available=availability(state)
