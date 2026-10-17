@@ -33,6 +33,7 @@ object HoneyHives {
     private val hives = linkedMapOf<String, Hive>()
     /** Scope -> hive key -> when it refills: the one thing that decides whether a hive is full. */
     private val refillAt = mutableMapOf<String, MutableMap<String, Long>>()
+    private val observedRefills = mutableMapOf<String, MutableMap<String, Long>>()
     private val lootedAt = mutableMapOf<String, MutableMap<String, Long>>()
     private val queenFull = mutableMapOf<String, MutableSet<String>>()
     /** The last scope seen, saved, so loots apply straight away after a restart or a server switch. */
@@ -98,11 +99,12 @@ object HoneyHives {
             val times = refillAt.getOrPut(owner) { mutableMapOf() }
             val full = queenFull.getOrPut(owner) { mutableSetOf() }
             val loots = lootedAt.getOrPut(owner) { mutableMapOf() }
+            val observations = observedRefills.getOrPut(owner) { mutableMapOf() }
             if (promote) {
-                tracker!!.apply { promote(times, full, loots) }.also {
-                    refillAt.remove("$player.unknown"); queenFull.remove("$player.unknown"); lootedAt.remove("$player.unknown")
+                tracker!!.apply { promote(times, full, loots, observations) }.also {
+                    refillAt.remove("$player.unknown"); queenFull.remove("$player.unknown"); lootedAt.remove("$player.unknown"); observedRefills.remove("$player.unknown")
                 }
-            } else HoneyHiveTracker(times, full, provisional = selected == null, lootedAt = loots)
+            } else HoneyHiveTracker(times, full, provisional = selected == null, lootedAt = loots, observedRefills = observations)
         }
         if (selected != null && selected != lastScope) { lastScope = selected; save() }
     }
@@ -127,7 +129,7 @@ object HoneyHives {
             visible = emptyList(); return
         }
         if (ticks % 40 == 0) survey(client)
-        verifyLoaded(client, now)
+        verifyHolograms(client, now)
         refreshVisible(client, now)
     }
 
@@ -173,8 +175,7 @@ object HoneyHives {
         if (added) save()
     }
 
-    /** Only inspect loaded known hives; no API response can overwrite what the server shows. */
-    private fun verifyLoaded(client: Minecraft, now: Long) {
+    private fun verifyHolograms(client: Minecraft, now: Long) {
         val world = client.level ?: return
         val current = tracker ?: return
         val labels = world.entitiesForRendering().filter { !it.isRemoved && world.getEntity(it.id) === it }.flatMap { entity ->
@@ -184,11 +185,8 @@ object HoneyHives {
         var changed = false
         for (hive in hives.values) {
             val pos = BlockPos(hive.x, hive.y, hive.z)
-            if (!world.hasChunkAt(pos)) continue
-            val state = world.getBlockState(pos)
-            if (!state.`is`(Blocks.BEE_NEST)) continue
-            val label = HoneyHiveLabels.forHive(hive, hives.values, labels)
-            if (current.observe(hive.key, label, state.getValue(net.minecraft.world.level.block.BeehiveBlock.HONEY_LEVEL), now)) changed = true
+            if (!world.hasChunkAt(pos) || !world.getBlockState(pos).`is`(Blocks.BEE_NEST)) continue
+            if (current.observe(hive.key, HoneyHiveLabels.forHive(hive, hives.values, labels), now = now)) changed = true
         }
         if (changed) save()
     }
@@ -269,6 +267,9 @@ object HoneyHives {
                 .firstOrNull()?.takeIf { it.key != REMOVED_HIVE }?.let { hives.putIfAbsent(it.key, it) }
         }
         saved.stringPropertyNames().forEach { name ->
+            HoneyHiveRules.parseLoot(name, saved.getProperty(name), "observedRefill")?.let { (owner, key, at) ->
+                observedRefills.getOrPut(owner) { mutableMapOf() }[key] = at
+            }
             HoneyHiveRules.parseLoot(name, saved.getProperty(name), "looted")?.let { (owner, key, at) ->
                 lootedAt.getOrPut(owner) { mutableMapOf() }[key] = at
             }
@@ -282,6 +283,7 @@ object HoneyHives {
         out.setProperty("tracking.version", "2")
         hives.values.forEach { out.setProperty("hive.${it.key}", it.id ?: "-") }
         refillAt.forEach { (owner, times) -> times.forEach { (key, at) -> out.setProperty("refill.$owner.$key", at.toString()) } }
+        observedRefills.forEach { (owner, times) -> times.forEach { (key, at) -> out.setProperty("observedRefill.$owner.$key", at.toString()) } }
         val now = System.currentTimeMillis()
         lootedAt.forEach { (owner, times) -> times.forEach { (key, at) ->
             out.setProperty("looted.$owner.$key", at.toString())

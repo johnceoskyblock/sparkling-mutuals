@@ -66,7 +66,13 @@ Starting-resource reminders cover every eligible held item/quantity independentl
 
 Sparkling mode calls the missing/check panel **Unchecked** in all four biomes. For Honeybug, retain initial nest classifications/counts for the whole run. Full Clear completes its known bee population through shared catch messages without another local render scan. Unique needs one catch and, when its Sparkling is needed, local checking or trusted fd for progress; its species row still clears at one catch. Sparkling needs only checking/report trust. Honeybug fd trust survives later Forest entry and never fabricates captures.
 
+Safari entry protection is stage-specific: [Torrhus readiness and Safari kick/presence checks](docs/SAFARI_ENTRY_GUARD.md). In Safari, full current-party tab presence permits entry after a two-second pause from any verified party kick-containing message; pending message checks cannot overrule ready presence. Missing/unknown presence stays blocked. On Torrhus Canyon, sender-specific r or any ticket-containing message clears only that sender's downtime hold. Holding either Shift key bypasses the current entry interaction without clearing any readiness or kick state; releasing Shift restores normal guarding.
+
 ## Last updated
+
+2026-10-17 - Aligned entry guards with tab-first Safari presence, two-second kick pauses, ticket-message downtime release and Shift override.
+
+2026-10-17 - Added per-interaction Shift entry override with local guidance and background missing-member name lookup.
 
 2026-10-17 - Rockmite/Snoozle use retained safari-wide sources: Unique catch plus source proof, report-confirmed unseen zero spawn, and Sparkling checks without ordinary captures.
 
@@ -99,3 +105,4 @@ Sparkling mode calls the missing/check panel **Unchecked** in all four biomes. F
 2026-10-15 - Added mandatory capture of any observed Sparkling before biome completion in every mode; retained boss capture exceptions.
 
 2026-10-15 - Fixed complete, independently gated starting-resource reminder delivery (#55).
+2026-10-16 - Added stage-specific entry protection; retained all capture/check evidence rules.

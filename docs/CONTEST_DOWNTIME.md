@@ -13,7 +13,7 @@ A current Miria scoreboard tier of **Uncommon or higher** establishes the earned
 
 On the first confirmed earned tier, remove the local player's own `!dt contest` request immediately, whether it was waiting for the current run to end or already blocking Safari entry. With known party membership, send the exact party message **Ticket earned!** once per player and absolute contest window. Repeated scans, higher tiers and profile refreshes in the same window cannot send it again. A new contest window allows a new announcement.
 
-On receiving a party member's **Ticket earned!** message, remove **only that sender's contest request**. If other people still have contest requests, or anyone has downtime for another reason, keep those holds. Do not clear kick/missing-member entry protections. Normal `r` and sneak-click behavior remain available; Guild/private/quoted messages cannot release a party hold.
+On receiving any verified current party member's message containing **ticket**, case-insensitively, remove **only that sender's outstanding downtime request, for any reason**. Standalone `r` does the same. Other requesters remain held. Local scoreboard detection still resolves only the local player's applicable contest request. Readiness holds the Torrhus entry stage; Safari-instance entry uses current tab presence, with only a two-second pause after each verified kick-containing party message. After the pause, full party presence permits entry regardless of run detection or older kick context. Neither ready message clears those protections, but holding Shift deliberately bypasses the current entry interaction without clearing those protections. Guild/private/public/quoted messages cannot release a party hold. See [entry guard](SAFARI_ENTRY_GUARD.md) for identity, transfer, setting and recovery rules.
 
 The **Auto !dt contest** toggle controls the automatic start request, not whether an earned ticket resolves an existing manual contest request. It does not suppress the requested Ticket earned! announcement.
 
@@ -30,12 +30,26 @@ Wait for the destination to be available before sending. Clients stagger reports
 3. Repeat solo and outside SkyBlock: no message. Join a party or log in partway through a contest: no catch-up request. Check that disabling only contest HUD/tracking does not disable an enabled automatic request.
 
 4. Request `!dt contest` and earn Uncommon: expect one **Ticket earned!** and immediate release of your own entry hold. Repeat with a banked in-run request, then with a hold already active outside Safari.
-5. Have two party members waiting for contest tickets and a third waiting for another reason. One member earning a ticket removes only their own contest request. Confirm the final contest hold releases only after the other ticket is earned, while unrelated downtime still needs `r`.
+5. Have two party members waiting for contest tickets and a third waiting for another reason. One member earning a ticket removes only their own contest request. Confirm the final contest hold releases only after the other ticket is earned, while another requester remains held until their own `r` or `Ticket earned!`.
 6. Keep the Uncommon row visible, advance to Rare, toggle HUD/tracking or refresh the profile: no duplicate announcement for the same player/window. At the next contest, earn the ticket again and expect one new message.
 
 7. As a member or moderator, cross a contest start: no automatic request. Transfer leadership and cross the next start: only the new leader sends it. Becoming leader partway through a contest sends nothing.
 8. Have several players request `!dt food`, `!dt contest`, and `!dt` during a run. Return to Torrhus without requesting downtime yourself: expect one combined party message naming all three and their reasons. Repeat with two mod users, one returning later, and with a requester resuming/earning their ticket before the report sends.
 
+A verified leader `!dt contest` creates a readiness hold for every member of the current party, including the leader and local user. Each member releases only their own hold by saying `r` or sending a ticket-containing message (including `ticket earned` and `Ticket earned!`). Existing individual downtime reasons are preserved. Unknown member names stay held by UUID until resolved; leaving members are pruned. Other members’ contest requests remain individual. Local notices list all remaining players and tell the mod user to wait for them, with a Shift override hint.
+
+Readiness messages accept clear confirmations (`r`, `rdy`, `ready`, `I'm ready`, `ready to go`, `ready when you are`), ignoring case and common punctuation. Short r-spam and one adjacent keyboard-key typo (`r/`, `rrr`, `rt`, `er`) also count. `nr`/`NR`, unrelated words (`party`, `red`, `brb`), questions and negative/future statements (`not ready`, `almost ready`, `I will be ready`) do not release a hold. This parser is shared by normal and contest downtime and pending identity validation. A ready message releases only its sender's outstanding request.
+
 ## Last updated
 
+2026-10-17 - Added affirmative readiness phrases and conservative r-typo tolerance; nr remains not ready.
+
+2026-10-17 - Added whole-party leader contest readiness, audience-correct multi-player notices, and normal ticket selection when Shift overrides entry.
+
+2026-10-17 - Aligned entry guards with tab-first Safari presence, two-second kick pauses, ticket-message downtime release and Shift override.
+
+2026-10-17 - Added per-interaction Shift entry override with local guidance and background missing-member name lookup.
+
 2026-10-16 - Restricted automatic requests to the confirmed party leader and added combined Canyon reminders for every requester and reason.
+2026-10-16 - Ticket earned! releases the sender's downtime for every reason; documented stage-specific entry holds and removed the sneak bypass.
+2026-10-17 - Clarified that Safari-instance entry protection applies regardless of run detection; downtime remains specific to Torrhus entry.

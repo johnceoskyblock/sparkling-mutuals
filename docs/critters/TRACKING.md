@@ -6,6 +6,8 @@ Based on the supplied Hypixel Safari observations, clarified on 2026-10-14. [Exa
 
 ## Entry and starting resources
 
+[Entry protection](../SAFARI_ENTRY_GUARD.md) holds Torrhus entry for requester readiness and Safari-instance entry for current-party tab presence, plus a two-second pause after each verified kick message, on every attempt, regardless of run detection; holding Shift bypasses only the current interaction. These checks do not add catches, starting items or confirmed admissions.
+
 - Entry is through the Safari Manager at Critter Safari Entrance on the canyon server (called Torrhus Canyon in the supplied description).
 - The global entry banner names the IGN (possibly with rank/Chat Heads text); the separate queue attempt is visible only to the leader. The transfer goes to `mini` plus four characters. Queue attempts are not multiple completed entries.
 - The Manager admits leaders with `I already saw your ticket, so you're free to go.` and members with `Looks good to me. Have fun out there!`. Keep the applicable acknowledgement associated with the same entry; a retry alone must not award another starting item.
@@ -271,6 +273,10 @@ After one local clearing-completion trigger, keep all unsent independently eligi
 
 ## Last updated
 
+2026-10-17 - Aligned entry guards with tab-first Safari presence, two-second kick pauses, ticket-message downtime release and Shift override.
+
+2026-10-17 - Added per-interaction Shift entry override with local guidance and background missing-member name lookup.
+
 2026-10-17 - Clarified unused floor-drop notices with resource quantities and relevant missing Sparkling discoveries; retained legacy parsing.
 
 2026-10-17 - Full Clear retains unpunched nest highlights until the known nest population is captured; fd and rendered bees cannot hide them. Unique/Sparkling report trust is unchanged.
@@ -310,3 +316,5 @@ After one local clearing-completion trigger, keep all unsent independently eligi
 2026-10-15 - Corrected incense limits to 4/3/2 for 0/1/2 starting incense; retained unified positive detection and ordinary scan circles.
 
 2026-10-15 - Fixed complete, independently gated starting-resource reminder delivery (#55).
+2026-10-16 - Linked entry readiness/kick/presence protection; retained all shared evidence rules.
+2026-10-17 - Clarified continuous entry presence checks regardless of run detection; retained all shared evidence rules.

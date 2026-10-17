@@ -46,7 +46,13 @@ The **Warp reminder** / `/alert` setting defaults **off** for fresh or missing s
 
 The History tab begins with the **History** button, followed immediately by **Import History from Logs**. Import is an explicit action that backfills both histories from existing logs. There is no **Import logs on launch** toggle or automatic startup scan: normal sessions already record history live. Older saved auto-import settings are ignored. See [history import](HISTORY_IMPORT.md) for supported files, estimates and merge rules.
 
+## Safari entry protection
+
+**Guard Safari entry** and **!dt downtime** retain their independent saved switches. Guard Safari entry uses Safari tab-list party presence, with a two-second pause after a party kick message; downtime controls Torrhus readiness holds until each requester says r or mentions ticket. Holding Shift overrides either for the current interaction without clearing the holds. See [entry guard](SAFARI_ENTRY_GUARD.md).
+
 ## Last updated
+
+2026-10-17 - Aligned entry guards with tab-first Safari presence, two-second kick pauses, ticket-message downtime release and Shift override.
 
 2026-10-17 - Corrected PB filename to sparkling-mutuals-pbs.properties; also migrate the briefly used display-name filename safely.
 
@@ -57,3 +63,4 @@ The History tab begins with the **History** button, followed immediately by **Im
 2026-10-17 - Default warp alerts off for fresh and missing settings while preserving saved choices.
 
 2026-10-16 - Restricted automatic contest downtime requests to the confirmed party leader; retained existing defaults.
+2026-10-16 - Clarified independent Safari entry settings and removed the sneak override.

@@ -77,7 +77,7 @@ class SafariSettings : Config() {
     class Party {
         @JvmField @ConfigOption(name = "Respond to party commands", desc = "Reply to party commands; each mod user shares their PB.")
         @ConfigEditorBoolean var enabled = ConfigManager.partyCommandsEnabled
-        @JvmField @ConfigOption(name = "!dt downtime", desc = "After a run, hold the Safari Manager for whoever said !dt until they say r. Sneak-click skips.")
+        @JvmField @ConfigOption(name = "!dt downtime", desc = "Hold Torrhus Safari entry for each !dt requester until their own r or Ticket earned!. No sneak bypass.")
         @ConfigEditorBoolean var downtime = ConfigManager.downtimeCommand
 
     }
@@ -170,7 +170,7 @@ class SafariSettings : Config() {
         var capsuleHideDistance = ConfigManager.capsuleHideDistance
         @JvmField @ConfigOption(name = "Full candle hitbox", desc = "Easier candle clicks in Haunted while holding Soothing Incense.")
         @ConfigEditorBoolean var candleHitbox = ConfigManager.candleHitbox
-        @JvmField @ConfigOption(name = "Guard Safari entry", desc = "Block Manager, tickets and entry GUI for 30s after a kick or while party members are missing. Shift-click to override.")
+        @JvmField @ConfigOption(name = "Guard Safari entry", desc = "Hold Safari entry for missing/loading party members, with a 2-second pause after kick reports. Hold Shift to bypass entry blocks for the current click. Readiness on Torrhus uses !dt downtime.")
         @ConfigEditorBoolean var holdManagerOnKick = ConfigManager.holdManagerOnKick
         @JvmField @ConfigOption(name = "Auto Clicker", desc = "Hold Mouse 0 on Rockmite mounds for 12 CPS.")
         @ConfigEditorBoolean var autoClicker = ConfigManager.autoClicker

@@ -10,7 +10,7 @@ data class Hive(val x: Int, val y: Int, val z: Int, var id: String? = null) {
 /** The decisions behind the honeyhive beacons, free of the client so they can be tested. */
 object HoneyHiveRules {
     const val REMOVED_HIVE = "-730,132,184"
-    fun correctedKey(key: String) = if (key == "-705,92,225") "-704,92,225" else key
+    fun correctedKey(key: String) = if (key == "-704,92,225") "-705,92,225" else key
     /** Discard pre-fix timers once; later launches retain each valid hive's personal deadline. */
     fun savedRefills(saved: java.util.Properties, now: Long): Map<String, Map<String, Long>> {
         if (saved.getProperty("tracking.version") != "2") return emptyMap()
@@ -20,6 +20,25 @@ object HoneyHiveRules {
                 ?.takeIf { (owner, key, at) -> !owner.endsWith(".unknown") && key != REMOVED_HIVE && now < at }
                 ?.let { (owner, key, at) -> result.getOrPut(owner) { mutableMapOf() }.merge(key, at, ::maxOf) }
         }
+        // Exact recorded loots take precedence over older visual-derived deadline values.
+        saved.stringPropertyNames().forEach { name ->
+            parseLoot(name, saved.getProperty(name), "looted")?.let { (owner, key, at) ->
+                if (!owner.endsWith(".unknown") && key != REMOVED_HIVE && at >= 0 && at <= Long.MAX_VALUE - REFILL_MILLIS) {
+                    val times = result.getOrPut(owner) { mutableMapOf() }
+                    if (at + REFILL_MILLIS > now) times[key] = at + REFILL_MILLIS else times.remove(key)
+                }
+            }
+        }
+        saved.stringPropertyNames().forEach { name ->
+            parseLoot(name, saved.getProperty(name), "observedRefill")?.let { (owner, key, at) ->
+                if (!owner.endsWith(".unknown") && key != REMOVED_HIVE) {
+                    val times = result.getOrPut(owner) { mutableMapOf() }
+                    if (at > now) times[key] = at else times.remove(key)
+                }
+            }
+        }
+        savedQueenFull(saved).forEach { (owner, keys) -> keys.forEach { result[owner]?.remove(it) } }
+        result.entries.removeIf { it.value.isEmpty() }
         return result
     }
     fun savedQueenFull(saved: java.util.Properties): Map<String, Set<String>> {
@@ -94,7 +113,7 @@ object HoneyHiveRules {
         val parts = line.substringBefore('#').trim().split(Regex("\\s+"))
         if (parts.size < 3) return@mapNotNull null
         val (x, y, z) = parts.take(3).map { it.toIntOrNull() ?: return@mapNotNull null }
-        Hive(if (x == -705 && y == 92 && z == 225) -704 else x, y, z, parts.getOrNull(3)?.takeIf { it != "-" }).takeIf { it.key != REMOVED_HIVE }
+        Hive(if (x == -704 && y == 92 && z == 225) -705 else x, y, z, parts.getOrNull(3)?.takeIf { it != "-" }).takeIf { it.key != REMOVED_HIVE }
     }
 
 }
