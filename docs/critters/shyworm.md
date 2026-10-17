@@ -39,3 +39,15 @@
 2026-10-16 - Unique advances per shared species capture; Rockmite/Snoozle additionally require cd with loaded-source revalidation.
 
 2026-10-15 - Retained qualified distinct UUID checks for every critter throughout Unique/Sparkling runs, with capture reconciliation and independent source gates. Full Clear remains capture-based.
+
+2026-10-17 - Added focused body diagnostics for capsule-contact investigation; tracking and completion rules are unchanged.
+
+## Capsule body investigation
+
+The human reported that a surfaced Shyworm can be caught by hitting its visible body, while the contact diamond appeared only near its head. The supplied clip shows green body pieces extending beyond that head-area proxy. The selected recorder export contains zero native head bounds and does not identify the other pieces or their relationship to the head; it does not establish the server's capture hitbox.
+
+In Safari, `/sm debug` now appends local `SM_SHYWORM_BODY` JSON lines to `logs/latest.log`. Stand within roughly 8 blocks of one ordinary surfaced Shyworm, leave capsule hiding off, and run the command three times while its green body is visible and moving, about one second apart. No throw or shot recording is required. Stay in the same world for those snapshots. A later hidden snapshot can help distinguish the states if convenient, but no absence in a limited scan proves the worm has gone.
+
+The capture considers at most 4,096 entries from the existing diagnostic list, selects the nearest two identified heads within 24 blocks, and retains at most 64 candidate parts. Visual/interaction entities within 8 blocks of a selected head and directly linked carriers/passengers are candidates. Heads and explicit links are prioritised; scan, head, candidate and passenger limits are reported. Candidates remain unverified membership, not new contact bounds.
+
+Rows contain player-eye-relative positions/bounds, rotation, velocity, visibility, numeric runtime relationships, registry item/block IDs, texture hashes, armour-stand poses and display transforms when observed. Missing/nonfinite geometry stays unavailable. They omit player entities, names, UUIDs, raw profiles, arbitrary item data and text-display content. The existing general debug output is unchanged; share or inspect only the `SM_SHYWORM_BODY` lines for this investigation. Nothing uploads automatically. The capsule guide still uses its previous head-area proxy until body membership and geometry are established.

@@ -30,6 +30,10 @@ For the first visual test, leave recording off, enable the option as above and c
 
 ## Controls
 
+### Shyworm body diagnostics
+
+The existing `/sm debug` command also emits bounded local `SM_SHYWORM_BODY` snapshots of identified nearby Shyworm heads and candidate body pieces. See the [Shyworm collection steps](critters/shyworm.md#capsule-body-investigation). This is an explicit diagnostic action, independent of the shot recorder; it does not alter contact proxies, run automatically, start recording or claim that nearby candidates belong to a worm. Inspect only these prefixed lines, rather than sharing the full general debug log. Current body identification still awaits live snapshots.
+
 ### Contact collection: start small
 
 The working 26.1.2 build and updated tools support this sequence. Use ordinary main-hand capsules, a stationary grounded first-person player, both hiding options off, one thrower and at least eight seconds between throws. Use separate 180-second recordings; stop explicitly in the same world. Recording collects an input-time probe even with the preview off when those conditions and two stable ticks hold. It never starts automatically.
@@ -154,4 +158,4 @@ Automated suites exercise the actual coordinator/writer/codec, producer-to-reade
 
 ## Last updated
 
-2026-10-17 - Added uncalibrated Masterful and moving-player previews; retained strict ordinary/stationary recorder probes and first-person-only display.
+2026-10-17 - Added explicit bounded Shyworm body diagnostics to /sm debug; capsule guides and recorder behavior are unchanged.

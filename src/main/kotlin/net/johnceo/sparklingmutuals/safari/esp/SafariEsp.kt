@@ -244,6 +244,7 @@ object SafariEsp {
     fun debug(client: Minecraft) {
         val player = client.player ?: return
         val entities = client.level?.entitiesForRendering()?.filter { !it.isRemoved && player.distanceToSqr(it) <= 6400 }?.toList() ?: return
+        ShywormBodyDiagnostics.capture(client,entities).forEach { logger.info("SM_SHYWORM_BODY {}",it) }
         SafariAssist.diagnostics().forEach { logger.info("{}", it) }
         logger.info("Safari ESP diagnostics: biome={}, fullClear={}, collected={}", SafariAssist.biome,
             ConfigManager.fullClearMode, SafariRoster.all.associate { it.name to (SafariTracking.run?.count(it.name) ?: 0) })
