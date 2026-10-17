@@ -94,14 +94,41 @@ class CapsulePreviewRulesTest {
             assertEquals(CapsulePreviewAvailability.STAND_STILL,CapsulePreviewRules().tick(Any(),s))
         }
     }
-    @Test fun `expanded preview still honors hidden view and hiding restrictions`() {
+    @Test fun `expanded preview still honors hidden view restrictions`() {
         val s=eligible().copy(capsule=ShotVariant.MASTERFUL,allowUncalibratedEstimates=true,onGround=false)
         val r=CapsulePreviewRules();r.tick(Any(),s)
         for(hidden in listOf(s.copy(enabled=false),s.copy(inSafari=false),s.copy(screenOpen=true),s.copy(hudHidden=true)))
             assertEquals(CapsulePreviewAvailability.HIDDEN,r.evaluate(hidden))
         assertEquals(CapsulePreviewAvailability.AVAILABLE,r.evaluate(s.copy(firstPerson=false)))
-        assertEquals(CapsulePreviewAvailability.HIDING_UNAVAILABLE,r.evaluate(s.copy(hideFlying=true)))
-        assertEquals(CapsulePreviewAvailability.HIDING_UNAVAILABLE,r.evaluate(s.copy(hideGround=true)))
+    }
+    @Test fun `capsule hiding leaves narrow and expanded guides available without resetting stability`() {
+        for(hideGround in listOf(false,true)) for(hideFlying in listOf(false,true)) {
+            val states=listOf(eligible(),eligible().copy(allowUncalibratedEstimates=true)) +
+                listOf(ShotVariant.ORDINARY,ShotVariant.MASTERFUL).flatMap { variant ->
+                    listOf(false,true).map { water -> eligible().copy(allowUncalibratedEstimates=true,capsule=variant,
+                        onGround=false,swimming=water,inWater=water,velocity=ShotVector(.1,.02,.1)) }
+                }
+            for(state in states) {
+                val r=CapsulePreviewRules();val w=Any()
+                r.tick(w,state);r.tick(w,state)
+                val hidden=state.copy(hideGround=hideGround,hideFlying=hideFlying)
+                assertEquals(CapsulePreviewAvailability.AVAILABLE,r.evaluate(hidden))
+                assertEquals(CapsulePreviewAvailability.AVAILABLE,r.tick(w,hidden))
+                assertEquals(CapsulePreviewAvailability.AVAILABLE,r.evaluate(state))
+            }
+        }
+    }
+    @Test fun `strict recorder probes still reject hiding and require fresh stable ticks after it clears`() {
+        for(hideGround in listOf(false,true)) for(hideFlying in listOf(false,true)) {
+            if(!hideGround && !hideFlying) continue
+            val r=CapsulePreviewRules(allowExtendedPreview=false);val w=Any();val state=eligible()
+            r.tick(w,state);r.tick(w,state)
+            val hidden=state.copy(hideGround=hideGround,hideFlying=hideFlying)
+            assertEquals(CapsulePreviewAvailability.HIDING_UNAVAILABLE,r.evaluate(hidden))
+            assertEquals(CapsulePreviewAvailability.HIDING_UNAVAILABLE,r.tick(w,hidden))
+            assertEquals(CapsulePreviewAvailability.STAND_STILL,r.tick(w,state))
+            assertEquals(CapsulePreviewAvailability.AVAILABLE,r.tick(w,state))
+        }
     }
     @Test fun `extended use cannot bank strict stability or survive world loss`() {
         val s=eligible().copy(allowUncalibratedEstimates=true)
@@ -138,8 +165,6 @@ class CapsulePreviewRulesTest {
             assertEquals(CapsulePreviewAvailability.HIDDEN,ready().evaluate(blocked))
         assertEquals(CapsulePreviewAvailability.HIDDEN,ready().evaluate(null))
         assertEquals(CapsulePreviewAvailability.AVAILABLE,ready().evaluate(s.copy(firstPerson=false)))
-        for(blocked in listOf(s.copy(hideFlying=true),s.copy(hideGround=true)))
-            assertEquals(CapsulePreviewAvailability.HIDING_UNAVAILABLE,ready().evaluate(blocked))
     }
     @Test fun `physical restrictions immediately hide path and invalidate stability`() {
         val s=eligible();val w=Any()
@@ -172,7 +197,7 @@ class CapsulePreviewRulesTest {
     }
     @Test fun `unsupported states cannot bank stable ticks`() {
         val s=eligible();val w=Any()
-        for(blocked in listOf(s.copy(enabled=false),s.copy(hideFlying=true),s.copy(capsule=null),s.copy(pitch=2.0))) {
+        for(blocked in listOf(s.copy(enabled=false),s.copy(capsule=null),s.copy(pitch=2.0))) {
             val r=CapsulePreviewRules();repeat(5){r.tick(w,blocked)}
             r.tick(w,s);assertEquals(CapsulePreviewAvailability.STAND_STILL,r.evaluate(s))
         }

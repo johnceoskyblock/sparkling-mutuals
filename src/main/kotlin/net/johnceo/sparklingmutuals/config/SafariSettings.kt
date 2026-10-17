@@ -169,9 +169,9 @@ class SafariSettings : Config() {
         @JvmField @ConfigOption(name = "Alert", desc = "") @Accordion val alerts = Alerts()
         @JvmField @ConfigOption(name = "Hide useless chats in safari", desc = "Hide throws, captures, escapes, loot shares and mound chatter; tracking continues.")
         @ConfigEditorBoolean var hideCaptureChat = ConfigManager.hideCaptureChat
-        @JvmField @ConfigOption(name = "Hide capsules on ground", desc = "Hide ordinary dropped capsules in Safari.")
+        @JvmField @ConfigOption(name = "Hide capsules on ground", desc = "Hide ordinary dropped capsules in Safari. The projection guide stays visible.")
         @ConfigEditorBoolean var hideGroundCapsules = ConfigManager.hideGroundCapsules
-        @JvmField @ConfigOption(name = "Hide flying capsules", desc = "Hide flying capsules near the camera in Safari.")
+        @JvmField @ConfigOption(name = "Hide flying capsules", desc = "Hide flying capsules near the camera in Safari. The projection guide stays visible.")
         @ConfigEditorBoolean var hideFlyingCapsules = ConfigManager.hideFlyingCapsules
         @JvmField @ConfigOption(name = "Flying capsule distance", desc = "Hide flying capsules within this distance, in blocks.")
         @ConfigEditorSlider(minValue = .5f, maxValue = 6f, minStep = .5f)
