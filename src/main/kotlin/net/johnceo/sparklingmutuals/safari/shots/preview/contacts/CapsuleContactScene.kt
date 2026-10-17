@@ -25,12 +25,15 @@ object CapsuleContactScene {
     private var tick=0L
     private var identityAllowance=0
     private var unsupported=false
-    fun reset() { cache.reset();world=null;slots=null;identityAllowance=0;unsupported=false }
+    private val collectionRules=net.johnceo.sparklingmutuals.safari.shots.preview.CapsulePreviewRules()
+    fun probeEligible(client:Minecraft)=collectionRules.evaluate(net.johnceo.sparklingmutuals.safari.shots.preview.CapsulePreview.collectionState(client))==net.johnceo.sparklingmutuals.safari.shots.preview.CapsulePreviewAvailability.AVAILABLE
+    fun reset() { cache.reset();world=null;slots=null;identityAllowance=0;unsupported=false;collectionRules.reset() }
     fun tick(client:Minecraft,enabled:Boolean) {
         val level=client.level
         if(!enabled || !SafariAssist.inSafari || level==null || client.player==null) { reset();return }
         if(world!==level) { reset();world=level }
         tick++;identityAllowance=16
+        collectionRules.tick(level,net.johnceo.sparklingmutuals.safari.shots.preview.CapsulePreview.collectionState(client))
         if(slots?.hasNext()!=true) {
             unsupported=false
             val entities=level.entitiesForRendering().iterator()

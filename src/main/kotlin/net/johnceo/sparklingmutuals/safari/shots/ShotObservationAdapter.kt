@@ -163,7 +163,11 @@ class ShotObservationAdapter(private val origin:ShotVector,private val cache:Sho
         lastInput=stamp.micros;windowExpired=false;cache.newWindow()
         routes[token]=route
         val currentPose=pose(client) ?: return
-        emit(stamp,ShotObservation.Input(token.value,hand,variant,route,currentPose,scenario,split,standalone))
+        val input=ShotObservation.Input(token.value,hand,variant,route,currentPose,scenario,split,standalone)
+        emit(stamp,input)
+        ShotContactProbe.produce(input,net.johnceo.sparklingmutuals.safari.shots.preview.contacts.CapsuleContactScene.probeEligible(client)) {
+            ShotContactProbe.capture(client,input,origin)
+        }?.let{emit(stamp,it)}
         targetSnapshot(client,currentPose,stamp,force=true)
         val from=vector(p.eyePosition);val aim=vector(p.lookAngle)
         obstruction(client,token.value,null,from,ShotVector(from.x+aim.x*64,from.y+aim.y*64,from.z+aim.z*64),stamp)

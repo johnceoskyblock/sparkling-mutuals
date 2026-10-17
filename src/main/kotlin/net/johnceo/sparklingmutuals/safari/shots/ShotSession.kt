@@ -8,6 +8,7 @@ class ShotSession(val metadata: ShotMetadata, private val limits: ShotLimits, pr
         val tracks: MutableSet<String> = linkedSetOf(), val feedback: ArrayDeque<Long> = ArrayDeque(),
         val annotations: ArrayDeque<ShotManualOutcome> = ArrayDeque(), var ambiguous: Boolean = false)
     private val inputs = linkedMapOf<String, InputState>()
+    private val probes=mutableSetOf<String>()
     private val seenCapsules = mutableSetOf<String>()
     private val activeCapsules = linkedMapOf<String,ShotObservation.Capsule>()
     private val ring = ArrayDeque<Pending>()
@@ -44,6 +45,8 @@ class ShotSession(val metadata: ShotMetadata, private val limits: ShotLimits, pr
         }
         if (event is ShotObservation.Annotation && event.token !in inputs) return false
         if (event is ShotObservation.Input && event.token in inputs) return false
+        if(event is ShotObservation.ContactProbe && (metadata.schemaVersion!=2 || event.probe.shot in probes ||
+            inputs[event.probe.shot]?.input?.let{it.variant==ShotVariant.ORDINARY && it.hand==ShotHand.MAIN}!=true)) return false
         val record = ShotRecord.Event(++sequence,stamp.micros,stamp.tick,event)
         val line = try { ShotCodec.encode(record) } catch (failure: IllegalArgumentException) {
             ShotDiagnostics.safely(diagnose,ShotFailure(metadata.session,"encode/"+event.javaClass.simpleName.lowercase(),stamp,failure))
@@ -71,6 +74,7 @@ class ShotSession(val metadata: ShotMetadata, private val limits: ShotLimits, pr
             ring.addLast(Pending(record,line))
         }
         when (event) {
+            is ShotObservation.ContactProbe -> probes.add(event.probe.shot)
             is ShotObservation.Capsule -> if (event.action == ShotEntityAction.DISCOVERED && seenCapsules.add(event.token)) {
                 if (seenCapsules.size > 256) { stop(stamp,ShotStopReason.EVENT_LIMIT);return false }
                 val candidates = inputs.values.filter { event.flying && it.input.variant == event.variant &&

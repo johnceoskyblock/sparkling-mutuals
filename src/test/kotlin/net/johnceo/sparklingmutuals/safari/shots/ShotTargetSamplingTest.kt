@@ -77,7 +77,8 @@ class ShotTargetSamplingTest {
             for(tick in 0 until seconds*20) {
                 val stamp=ShotStamp(tick*50_000L,tick.toLong());val phase=(tick-10).mod(shotInterval)
                 val input=tick>=10 && phase==0
-                if(input) { inputs++;session.accept(stamp,ShotTestFixtures.input("s$inputs")) }
+                if(input) { inputs++;session.accept(stamp,ShotTestFixtures.input("s$inputs"))
+                    session.accept(stamp,ShotObservation.ContactProbe(ShotContactProbeTest.probe("s$inputs",large=true))) }
                 if(input) {
                     capsule=ShotObservation.Capsule("c$inputs",inputs,ShotVariant.ORDINARY,ShotEntityAction.DISCOVERED,zero,discovery=ShotDiscovery.SPAWN)
                     session.accept(stamp,capsule!!)
@@ -99,13 +100,15 @@ class ShotTargetSamplingTest {
             session.stop(ShotStamp(seconds*1_000_000L-1,seconds*20L-1),ShotStopReason.USER_STOP)
             val result=writer.result.get(5,TimeUnit.SECONDS);assertTrue(result.complete)
             val file=result.path!!;assertTrue(Files.size(file)<10_485_760);assertTrue(session.status().eventCount<100_000)
-            var packets=0;var targets=0
+            var packets=0;var targets=0;var probes=0
             Files.lines(file).use { lines -> lines.forEach { line ->
                 val r=JsonParser.parseString(line).asJsonObject
                 if(r.get("kind")?.asString=="packet") { packets++;assertTrue(r["data"].asJsonObject["token"].asString.startsWith("c")) }
                 if(r.get("kind")?.asString=="target") targets++
+                if(r.get("kind")?.asString=="contact_probe") probes++
             } }
             assertEquals(if(seconds==180) 20 else 9,inputs);assertEquals(rawCapsules,packets);assertTrue(targets>64)
+            assertEquals(inputs,probes)
             println("POPULATED_WORKLOAD duration=$seconds inputs=$inputs targets=$targets capsulePackets=$packets events=${session.status().eventCount} bytes=${Files.size(file)}")
             assertEquals(0,budget.usedBytes)
         }
