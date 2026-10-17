@@ -133,4 +133,3 @@ Per-drop colors are configurable in **ESP → Floor-drop colors**. **Miria conte
 2026-10-16 (America/New_York) - Added the opt-in capture-shot collection kit; live aiming projections remain awaiting calibration.
 
 The 26.1.2 capture-shot development build adds opt-in uncalibrated terrain rings and possible-critter diamonds, broader dashed paths, saved width and local schema-v2 probes. See [enable and collect](docs/CAPTURE_SHOT_RECORDING.md#experimental-capsule-path). Live Hypixel contact accuracy remains pending.
-

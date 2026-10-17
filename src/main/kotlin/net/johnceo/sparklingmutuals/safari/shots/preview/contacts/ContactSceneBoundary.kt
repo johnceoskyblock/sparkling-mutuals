@@ -1,6 +1,10 @@
 package net.johnceo.sparklingmutuals.safari.shots.preview.contacts
 import net.johnceo.sparklingmutuals.safari.shots.*
 object ContactSceneBoundary {
+ /** Vanilla fences/walls extend above their owning voxel; query the bounded one-cell neighborhood. */
+ fun collisionCells(from:ShotVector,to:ShotVector):List<Triple<Int,Int,Int>> = cells(from,to).flatMap{(x,y,z)->
+  (-1..1).flatMap{dx->(-1..1).flatMap{dy->(-1..1).map{dz->Triple(x+dx,y+dy,z+dz)}}}
+ }.distinct()
  /** A bounded supercover includes both sides of a diagonal/corner crossing. */
  fun cells(from:ShotVector,to:ShotVector):List<Triple<Int,Int,Int>> {
   if(!from.finite() || !to.finite() || from.distanceSquared(to)>1.0000001) return emptyList()

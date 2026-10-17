@@ -26,9 +26,11 @@ On startup, automatically migrate legacy `pb.*` entries from the general config.
 
 The existing `missingPanel` toggle and HUD layout are shared across modes. In Sparkling mode, every biome's checklist is named **Unchecked**, including the HUD editor label. Unique and Full Clear retain their Missing behavior. The config option names both uses; renaming does not reset saved positions or visibility preferences.
 
-## ESP label size
+## Experimental capsule path
 
 Capsule path width saves independently as `capsulePathWidth`, defaults to **3**, and clamps finite values to **1–5**. Invalid/non-finite values use 3. Uncalibrated estimates requires Experimental capsule path; enabling either option does not start recording. Expanded estimates add a terrain ring or possible-critter diamond, including close launch and broader angles. Keep both hiding settings off; collision and target proxies remain unverified.
+
+## ESP label size
 
 The ESP tab offers **ESP text scale**, from **0.5 to 4** in **0.25** steps. The new default is **2** (twice the original label size); **1** restores the original size. It controls floor-drop names, critter timers, nest labels and teammate names. Teammate names retain their existing distance scaling. Labels stay centered and retain their colors and visibility settings. Changes apply through the GUI and persist across restarts as `esp.textScale`; invalid/non-finite values use the default, and finite values are clamped to the allowed range.
 

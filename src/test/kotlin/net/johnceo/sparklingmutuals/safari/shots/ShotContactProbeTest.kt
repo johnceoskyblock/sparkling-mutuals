@@ -59,4 +59,22 @@ class ShotContactProbeTest {
   for(p in listOf(probe().copy(hypothesis="秘密".repeat(30000)),probe().copy(pitch=Double.NaN),probe().copy(coverage=ContactCoverage(false,setOf("private-user")))))
    assertThrows(IllegalArgumentException::class.java){ShotCodec.encode(ShotRecord.Event(2,0,0,ShotObservation.ContactProbe(p)))}
  }
+ @Test fun `real writer retains inside and zero fraction boundary probes for strict replay`() {
+  val budget=ShotByteBudget();val writer=ShotExportWriter.open(directory,"contact-boundaries-v2",budget,{})
+  writer.ready.get(3,TimeUnit.SECONDS);val session=ShotSession(ShotTestFixtures.metadata(),ShotLimits(),writer,budget)
+  val curve=ContactCurveSampler.sample(ShotTestFixtures.zero,ShotVector(0.0,0.0,1.0),0.0)
+  val target=ContactTarget("runtime-private",1,"Gemzie",ShotBounds(ShotVector(-1.0,-1.0,-1.0),ShotVector(1.0,1.0,1.0)),"client_body_v1")
+  val coverage=ContactCoverage(true,emptySet())
+  val inside=CapsuleContactSolver.trace(curve,listOf(target),coverage){_,_->ContactSegmentScene(null,null)}
+  val unknown=CapsuleContactSolver.trace(curve,emptyList(),coverage){_,_->ContactSegmentScene(null,ContactBoundary(0.0,ContactStop.UNLOADED))}
+  for((index,trace) in listOf(inside,unknown).withIndex()) {
+   val input=ShotTestFixtures.input("s${index+1}");val stamp=ShotStamp(index*2_000_000L,index*40L)
+   assertTrue(session.accept(stamp,input))
+   assertTrue(session.accept(stamp,ShotObservation.ContactProbe(ShotContactProbe.fromSnapshot(input,ShotTestFixtures.zero,
+    ContactSceneSnapshot(trace,if(index==0)listOf(target) else emptyList(),coverage,index.toLong())))))
+  }
+  session.stop(ShotStamp(3_000_000,60),ShotStopReason.USER_STOP)
+  val result=writer.result.get(3,TimeUnit.SECONDS);assertTrue(result.complete)
+  val fixture=Path.of("build/shot-fixtures/contact-boundaries-v2.jsonl");Files.createDirectories(fixture.parent);Files.copy(result.path!!,fixture,StandardCopyOption.REPLACE_EXISTING)
+ }
 }

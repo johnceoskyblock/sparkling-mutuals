@@ -40,4 +40,26 @@ class ContactTargetCacheTest {
         c.tick(w,slots){if(it.key.substringAfter('_').toInt()<240)target(it) else null}
         assertFalse(c.snapshot().second.complete)
     }
+    @Test fun `shrinking live fastutil map invalidates sweep without escaping client tick`() {
+        val map=it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap<ContactDiscovery>()
+        repeat(400){map.put(it,ContactDiscovery("local_$it",1))}
+        val slots=map.values.iterator();val c=ContactTargetCache();val world=Any()
+        c.tick(world,slots){null}
+        repeat(390){map.remove(it)}
+        assertDoesNotThrow{c.tick(world,slots){null}}
+        assertFalse(c.snapshot().second.complete)
+    }
+    @Test fun `real inspection errors still escape guarded iterator boundary`() {
+        val cache=ContactTargetCache()
+        assertThrows(ArrayIndexOutOfBoundsException::class.java){cache.tick(Any(),listOf(ContactDiscovery("x",1)).iterator()){throw ArrayIndexOutOfBoundsException("inspection")}}
+    }
+    @Test fun `mutation detected while checking sweep completion stays incomplete`() {
+        var calls=0
+        val slots=object:Iterator<ContactDiscovery?> {
+            override fun hasNext():Boolean { if(++calls==1)return false;throw java.util.ConcurrentModificationException() }
+            override fun next():ContactDiscovery?=null
+        }
+        val cache=ContactTargetCache();cache.tick(Any(),slots){null}
+        assertFalse(cache.snapshot().second.complete)
+    }
 }

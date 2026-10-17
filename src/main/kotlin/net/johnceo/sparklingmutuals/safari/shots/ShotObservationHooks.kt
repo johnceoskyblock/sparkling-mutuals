@@ -27,9 +27,16 @@ object ShotObservationHooks {
     fun begin()=observe("input/begin") { cycles.begin() }
     fun end()=observe("input/end") { cycles.end() }
     fun tick(client:Minecraft)=observe("tick") { adapter?.tick(client,clock()) }
-    fun packet(packet:Any)=observe("packet") {
-        val client=Minecraft.getInstance();val level=client.level ?: return@observe
-        ShotPacketCompat.copy(packet,level) { adapter?.packetBase(it) }.forEach { adapter?.packet(client,it,clock()) }
+    fun packet(packet:Any) {
+        // Existing client-thread hooks invalidate live-map sweeps even with recording off; no world inspection here.
+        if(packet is net.minecraft.network.protocol.game.ClientboundAddEntityPacket ||
+            packet is net.minecraft.network.protocol.game.ClientboundRemoveEntitiesPacket ||
+            packet is net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket)
+            net.johnceo.sparklingmutuals.safari.shots.preview.contacts.CapsuleContactScene.invalidateDiscovery()
+        observe("packet") {
+            val client=Minecraft.getInstance();val level=client.level ?: return@observe
+            ShotPacketCompat.copy(packet,level) { adapter?.packetBase(it) }.forEach { adapter?.packet(client,it,clock()) }
+        }
     }
     fun use(player:Player,hand:InteractionHand,route:ShotUseRoute):ShotInputToken? {
         if(adapter==null) return null
