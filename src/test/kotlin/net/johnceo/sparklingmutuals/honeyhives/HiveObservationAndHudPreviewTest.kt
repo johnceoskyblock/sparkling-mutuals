@@ -46,19 +46,12 @@ class HiveObservationAndHudPreviewTest {
         assertNull(HoneyHiveLabels.forHive(b, listOf(a,b), tie))
         assertNull(HoneyHiveLabels.forHive(a, listOf(a,b), listOf(HiveLabel(.5, 18.0, .5, "Click to loot!"))))
     }
-    @Test fun `level five wins while level zero uses full or refill text`() {
+    @Test fun `full block and loot label cannot clear a saved personal cooldown`() {
         val times = mutableMapOf("a" to 9000000L)
         val tracker = HoneyHiveTracker(times)
-        assertTrue(tracker.observe("a", "Refill in: 23m 33s", 5, 1000))
-        assertEquals(HiveState.FULL, tracker.state("a", 1000))
-        assertNull(times["a"])
-        tracker.observe("a", "Click to loot!", 0, 2000)
-        assertEquals(HiveState.FULL, tracker.state("a", 2000))
-        tracker.observe("a", "Refill in: 23m 33s", 0, 3000)
-        assertEquals(HiveState.EMPTY, tracker.state("a", 3000))
-        assertEquals(1416000L, times["a"])
-        tracker.observe("a", null, null, 4000)
-        assertEquals(HiveState.EMPTY, tracker.state("a", 4000))
+        assertFalse(tracker.observe("a", null, 5, 1000))
+        assertEquals(HiveState.EMPTY, tracker.state("a", 1000))
+        assertEquals(9000000L, times["a"])
         val hive = Hive(-693, 94, 147)
         assertEquals("Click to loot!", HoneyHiveLabels.forHive(hive, listOf(hive),
             listOf(HiveLabel(-692.5, 93.28, 147.5, "Click to loot!"))))
@@ -75,7 +68,7 @@ class HiveObservationAndHudPreviewTest {
         assertEquals(5000000L, saved["observed"])
         assertEquals(1200 + HoneyHiveRules.REFILL_MILLIS, saved["looted"])
         tracker.observe("observed", null, 5, 3000)
-        assertNull(saved["observed"])
+        assertEquals(5000000L, saved["observed"])
     }
     @Test fun `exact Hypixel Queen Bee proc refills only the looted hive and a new loot empties it again`() {
         val times = mutableMapOf("other" to 9_000_000L)
@@ -86,7 +79,7 @@ class HiveObservationAndHudPreviewTest {
         assertEquals(HiveState.EMPTY, HoneyHiveRules.state(200, times["hive"]))
         assertTrue(tracker.chat("QUEEN BEE! The Honeyhive instantly refilled with loot!", 300))
         assertEquals(HiveState.FULL, HoneyHiveRules.state(300, times["hive"]))
-        tracker.observe("hive", "Refill in: 59m 55s", 5, 5000)
+        tracker.observe("hive", null, 5, 5000)
         assertEquals(HiveState.FULL, HoneyHiveRules.state(5000, times["hive"]))
         assertEquals(9_000_000L, times["other"])
         tracker.click("hive", 5100); tracker.chat("HIVE! You found honey!", 5200)

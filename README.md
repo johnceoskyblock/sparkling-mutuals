@@ -77,7 +77,7 @@ Use the [37 individual critter notes](docs/critters/README.md) for species rules
 - **`!since sparkling` / `!since unique`:** post runs since your last credited party Sparkling or flagged unique Sparkling, naming the critter and catcher. [Streak rules](docs/SINCE_COMMAND.md).
 - **`!m [biome]`:** report what remains in the current Safari run.
 - **`!dt [reason]` / `r`:** request downtime after the run and release your hold when ready. Earning an Uncommon contest ticket announces **Ticket earned!** and clears your contest hold.
-- **Safari entry guard:** hold Torrhus entry for party readiness and Safari entry for kicks or missing members; no Shift bypass.
+- **Safari entry guard:** hold Torrhus entry for downtime until each requester says r or mentions ticket; in Safari use party tab presence plus a two-second kick pause; hold Shift to bypass a blocked entry interaction.
 - **`/sparkling [IGN|party|IGNs]`:** show Safari player cards or compare sparkling collections.
 - **`!pb <biome>`:** share Forest, Cavern, Icy, or Haunted PBs for the active mode.
 - **`!pb doom` / `!pb wumpa`:** share solo boss PBs; add `duo` or an IGN for other records.
@@ -118,6 +118,10 @@ Honeyhive state rules, data sources and debugging: [Torrhus Canyon Honeyhives](d
 Per-drop colors are configurable in **ESP → Floor-drop colors**. **Miria contest → Auto !dt contest** controls the automatic party downtime request at new contest starts, sent only by the confirmed party leader. Returning to Torrhus announces all downtime requesters and reasons together in party chat. See [contest request behavior](docs/CONTEST_DOWNTIME.md).
 
 ## Last updated
+
+2026-10-17 - Aligned entry guards with tab-first Safari presence, two-second kick pauses, ticket-message downtime release and Shift override.
+
+2026-10-17 - Added per-interaction Shift entry override with local guidance and background missing-member name lookup.
 
 2026-10-17 - Named Sparkling checklists Unchecked and retained initial Honeybug source counts and party checking trust.
 

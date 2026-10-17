@@ -6,7 +6,7 @@ Based on the supplied Hypixel Safari observations, clarified on 2026-10-14. [Exa
 
 ## Entry and starting resources
 
-[Entry protection](../SAFARI_ENTRY_GUARD.md) holds Torrhus entry for requester readiness and Safari-instance entry for kick recovery/current-party presence on every attempt, regardless of run detection; no Shift bypass. These checks do not add catches, starting items or confirmed admissions.
+[Entry protection](../SAFARI_ENTRY_GUARD.md) holds Torrhus entry for requester readiness and Safari-instance entry for current-party tab presence, plus a two-second pause after each verified kick message, on every attempt, regardless of run detection; holding Shift bypasses only the current interaction. These checks do not add catches, starting items or confirmed admissions.
 
 - Entry is through the Safari Manager at Critter Safari Entrance on the canyon server (called Torrhus Canyon in the supplied description).
 - The global entry banner names the IGN (possibly with rank/Chat Heads text); the separate queue attempt is visible only to the leader. The transfer goes to `mini` plus four characters. Queue attempts are not multiple completed entries.
@@ -272,6 +272,10 @@ A received `hd` can override ordinary checking outside Haunted. On entry, revali
 After one local clearing-completion trigger, keep all unsent independently eligible starting-item reminders available for the run, even when an earlier party report suppresses this client's outgoing biome-done message. Repeated local-clear polls do not restart the delivery delay. Recompute quantity, destination and missing discoveries immediately before each delivery; only delivered notices mark notification/source state. Batch all currently eligible items into one title and party message; retain four-second spacing only if a previously suppressed item becomes eligible later. Suppression or cancellation does not consume an unsent reminder. Initial inventory sampling starts at the first available inventory sample, rather than world-arrival time; grants overlap it and separately recorded later floor pickups are subtracted.
 
 ## Last updated
+
+2026-10-17 - Aligned entry guards with tab-first Safari presence, two-second kick pauses, ticket-message downtime release and Shift override.
+
+2026-10-17 - Added per-interaction Shift entry override with local guidance and background missing-member name lookup.
 
 2026-10-17 - Clarified unused floor-drop notices with resource quantities and relevant missing Sparkling discoveries; retained legacy parsing.
 

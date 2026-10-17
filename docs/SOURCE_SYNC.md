@@ -24,6 +24,18 @@ The Macaw Full Clear rule changed on 2026-10-15: once all known bird food is use
 
 ## Latest source review
 
+2026-10-17 downtime/ticket follow-up: local notices now address the mod user and list every waiting requester. A verified leader's !dt contest seeds a hold for each current party member, preserving existing individual reasons and retaining unresolved members by UUID. Each sender clears only their own hold with affirmative readiness or a ticket report. The common parser accepts readiness phrases and short r/keyboard typos, excludes nr, unrelated words, questions and negative/future readiness. Entry GUI Shift quick-move on server ticket controls is normalized to ordinary selection while the shared Shift guard bypass remains active. The focused 26.1.2 entry/inbox/boundary/downtime suite passed 44 tests. Actual Hypixel GUI interaction and party chat remain live IntelliJ checks.
+
+2026-10-17 tab-priority follow-up: Safari entry now follows full current-party tab presence, except for two seconds after a verified kick-containing party message (timed from receipt). Pending identity/old generic kick state cannot prolong that pause when everyone is present; missing or unknown presence still blocks. Torrhus downtime remains sender-specific and now accepts r or any case-insensitive ticket substring in a verified party message. Shift bypasses all blockers without clearing them. The 26.1.2 focused entry/inbox/boundary/downtime suite passed 39 tests; obsolete indefinite kick-recovery cases were replaced with the requested two-second/tab-priority cases.
+
+2026-10-17 names/Shift follow-up: unresolved current-party UUIDs now receive asynchronous Mojang profile-name lookup, independently of tab presence or control messages, with roster validation, caching and retry. Holding either physical Shift key bypasses every guarded entry route for the current interaction without mutating holds. Refusal notices and initial downtime messages explain the override; the config tooltip/docs agree. The 26.1.2 focused guard/boundary/downtime suite passed 31 tests, including a new all-route Shift/release boundary case. Live profile lookup and input behavior remain in-game checks.
+
+2026-10-17 spam-click follow-up on fix/safari-entry-guard: the live log showed a blocked Manager interaction followed by admission without an allowed decision log, indicating a recognition gap. Manager nameplate/proxy identities are now retained within the client world, including aligned interaction/armor-stand targets; local/current-party players are excluded and world transfer resets recognition. Entry decisions still run for every attempt independently of notice throttling. The 26.1.2 focused recognition/guard/boundary suite passed 15 tests, including one new repeated-proxy/nameplate-loss case; existing boundary checks repeatedly cancel all blocked entry routes. Live Hypixel retesting remains required.
+
+2026-10-17 guard-message follow-up on fix/safari-entry-guard: shortened local entry/downtime messages, replaced the presence/loading diagnostic with a missing count and sorted player names, and retained display-name mappings across transfers. Unknown names remain a short loading notice instead of raw UUIDs. The guard decisions, party announcements and three-second local-message limit are unchanged. The 26.1.2 focused guard/downtime suite passed 27 tests, including one formatter/name-list case.
+
+2026-10-17 timer-first hive follow-up: restored hive_7 to (-705, 92, 225), migrating prior -704 saved keys back. Personal loot timestamps rebuild exact one-hour default deadlines; only matched full/refill holograms override them, with corrections persisted separately from the original loot time. Block levels are diagnostic-only. Queen Bee still clears the timer immediately. All 36 focused 26.1.2 hive tests passed, including updated block-independence, coordinate migration and restart correction coverage.
+
 2026-10-17 notification follow-up: identified Sparkling GUI/sound alerts and party announcements now deduplicate independently by species for the entire run, across capsule/escape UUID changes. Capture identities and completion obligations remain independent; unknown particle locations keep their separate identity-based notification handling. The 26.1.2 focused notification/detector suite passed 11 tests, including one new replacement-UUID/reset regression.
 
 2026-10-17 exceptional-hive follow-up: level 5 still establishes full, while other levels consult matched Click to loot/refill status text. Restored live hologram sampling and expanded its vertical association range to include observed armor-stand origins just below the block. Existing contest display gating remains. All 36 focused 26.1.2 hive tests passed, with updated exception/fallback and carrier-coordinate coverage.
@@ -67,6 +79,18 @@ Validation: `:26.1.2:build :26.1.2:verifyTargetJar testBuildLogic` passed, with 
 Focused regressions and the final 26.1.2 build/JAR verification passed **714 feature tests**. Two new cases cover the row/progress distinction and all-biome Unchecked naming; existing nest/report tests were updated for the new rules. Live Minecraft checks remain pending in the manual checklist.
 
 ## Last updated
+
+2026-10-17 - Added whole-party contest readiness, multi-requester local guidance, readiness typo handling and Shift ticket selection; 44 focused checks passed.
+
+2026-10-17 - Implemented tab-priority entry, receipt-time two-second kick pauses and broad ticket-message readiness.
+
+2026-10-17 - Added missing-player profile-name lookup, Shift bypass and local override guidance.
+
+2026-10-17 - Closed Manager recognition gaps during spam clicking.
+
+2026-10-17 - Cleaned Safari guard local messages and named missing party members.
+
+2026-10-17 - Adopted timer-first hive readiness with hologram-only corrections and restored -705 waypoint.
 
 2026-10-17 - Made identified Sparkling notifications once per species per run.
 

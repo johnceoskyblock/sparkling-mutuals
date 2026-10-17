@@ -18,9 +18,12 @@ object EntryBoundaryFixture {
     var downtime = false
     var kick = true
     var ready = true
-    private fun blocked() = entryTarget && EntryGuardDecision.block(stage, downtime, kick, ready, false)
+    var shiftHeld = false
+    private fun blocked() = entryTarget && EntryGuardDecision.block(stage, downtime, kick, ready, false, shiftHeld)
     fun shouldBlock(entity: Entity?) = blocked()
     fun shouldBlockTicket(player: Player?, hand: InteractionHand?) = blocked()
+    fun entryInput(input: ContainerInput, container: Int, slot: Int) =
+        SafariManagerGuard.ticketInput(input, shiftHeld, entryTarget)
     fun shouldBlockEntry(container: Int, slot: Int) = blocked()
 }
 
@@ -56,6 +59,34 @@ class EntryBoundaryTest {
                 assertTrue(invokeBoundary(mixin, name, hand, input).isCancelled, "$name must block a later departure")
             }
         }
+    }
+    @Test fun `holding Shift bypasses every blocked route only until released`() {
+        val mixin = boundary()
+        EntryBoundaryFixture.stage = EntryStage.SAFARI
+        EntryBoundaryFixture.entryTarget = true
+        EntryBoundaryFixture.ready = false
+        EntryBoundaryFixture.kick = true
+        EntryBoundaryFixture.downtime = true
+        try {
+            for (name in listOf("guard", "guardAttack", "guardTicket", "guardTicketOn", "guardEntry")) {
+                EntryBoundaryFixture.shiftHeld = true
+                assertFalse(invokeBoundary(mixin, name, InteractionHand.MAIN_HAND, ContainerInput.entries.first()).isCancelled)
+                EntryBoundaryFixture.shiftHeld = false
+                assertTrue(invokeBoundary(mixin, name, InteractionHand.MAIN_HAND, ContainerInput.entries.first()).isCancelled)
+            }
+        } finally { EntryBoundaryFixture.shiftHeld = false }
+    }
+    @Test fun `entry GUI modifier converts only Shift ticket quick move to a normal selection`() {
+        val mixin = boundary()
+        val handler = mixin.javaClass.declaredMethods.single { it.name == "entryClickInput" }.apply { isAccessible = true }
+        try {
+            for (entry in listOf(false, true)) for (shift in listOf(false, true)) for (input in ContainerInput.entries) {
+                EntryBoundaryFixture.entryTarget = entry
+                EntryBoundaryFixture.shiftHeld = shift
+                val expected = if (entry && shift && input == ContainerInput.QUICK_MOVE) ContainerInput.PICKUP else input
+                assertEquals(expected, handler.invoke(mixin, input, 0, 0, 0, input, null))
+            }
+        } finally { EntryBoundaryFixture.shiftHeld = false }
     }
     private fun boundary(): Any {
         val name = "net.johnceo.sparklingmutuals.mixin.SafariManagerMixin"

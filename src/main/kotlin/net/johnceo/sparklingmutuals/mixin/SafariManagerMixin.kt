@@ -13,12 +13,19 @@ import net.minecraft.world.phys.EntityHitResult
 import org.spongepowered.asm.mixin.Mixin
 import org.spongepowered.asm.mixin.injection.At
 import org.spongepowered.asm.mixin.injection.Inject
+import org.spongepowered.asm.mixin.injection.ModifyVariable
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable
 
 /** Right-clicking an entity has no client-side Fabric event; returning FAIL here means no interact packet is sent. */
 @Mixin(MultiPlayerGameMode::class)
 class SafariManagerMixin {
+    // Hypixel expects a normal selection packet, even when Shift is held to override the guard.
+    @ModifyVariable(method = ["handleContainerInput"], at = [At("HEAD")], argsOnly = true)
+    private fun entryClickInput(input: ContainerInput, containerId: Int, slotId: Int, button: Int,
+                               original: ContainerInput, player: Player): ContainerInput =
+        SafariManagerGuard.entryInput(input, containerId, slotId)
+
     @Inject(method = ["handleContainerInput"], at = [At("HEAD")], cancellable = true)
     private fun guardEntry(containerId: Int, slotId: Int, button: Int, input: ContainerInput, player: Player, info: CallbackInfo) {
         if (SafariManagerGuard.shouldBlockEntry(containerId, slotId)) info.cancel()

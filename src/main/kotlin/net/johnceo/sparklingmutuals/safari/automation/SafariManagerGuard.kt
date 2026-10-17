@@ -11,6 +11,8 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen
 import net.minecraft.world.InteractionHand
 import net.minecraft.world.entity.Entity
 import net.minecraft.world.entity.player.Player
+import net.minecraft.world.inventory.ContainerInput
+import net.minecraft.world.inventory.Slot
 import net.minecraft.world.item.Items
 import org.slf4j.LoggerFactory
 
@@ -20,6 +22,7 @@ object SafariManagerGuard {
     private val presence = SafariEntryPresence()
     private val runState = SafariEntryRunState()
     private val kick = EntryKickHold()
+    private val managerTargets = EntryManagerTargets()
     private var requestedRosterAt = 0L
     private var messagedAt = 0L
     private var lastDecision = ""
@@ -49,31 +52,34 @@ object SafariManagerGuard {
         val roster = PartyManager.withLocal(player.uuid.toString())
         val present = connection.listedOnlinePlayers.mapTo(HashSet()) { it.profile.id.toString() }
         presence.update(now, safari, false, client.level, roster, present, player.uuid.toString())
-        if (safari) kick.observe(client.level, roster?.mapTo(HashSet(), SafariEntryPresence::normalize),
-            present.mapTo(HashSet(), SafariEntryPresence::normalize), presence.ready)
+        kick.observe(client.level)
     }
     fun callsKick(text: String) = PartyChat.parse(text)?.body?.contains("kick", true) == true
-    /** Only called after current-party UUID verification, and only for the original Safari instance. */
-    fun partyKick(chat: PartyChat, senderId: String) {
+    /** Sender identity is verified before this callback. Use receipt time, not delayed lookup time. */
+    fun partyKick(chat: PartyChat, receivedAt: Long = System.currentTimeMillis()) {
         val client = Minecraft.getInstance()
         if (!ConfigManager.holdManagerOnKick || !inSafariInstance() || !chat.body.contains("kick", true)) return
-        // Self-reports require the sender's return; generic reports require a fresh full-party return.
-        val selfReport = Regex("\\bi\\s+(?:(?:was|got|am|have been)\\s+)?kicked\\b", RegexOption.IGNORE_CASE)
-            .containsMatchIn(chat.body)
-        kick.report(client.level, senderId.takeIf { selfReport })
+        kick.report(client.level, receivedAt)
     }
-    fun reset() { messagedAt = 0; requestedRosterAt = 0; lastDecision = ""; presence.reset(); runState.reset(); kick.reset() }
+    fun reset() { messagedAt = 0; requestedRosterAt = 0; lastDecision = ""; presence.reset(); runState.reset(); kick.reset(); managerTargets.reset() }
     fun entryItem(title: String, nameTag: Boolean, playerInventory: Boolean) =
         SafariRules.strip(title).trim().equals("Critter Safari Entry", true) && nameTag && !playerInventory
-    fun shouldBlockEntry(containerId: Int, slotId: Int): Boolean {
+    private fun entrySlot(containerId: Int, slotId: Int): Slot? {
         val client = Minecraft.getInstance()
-        val player = client.player ?: return false
-        val screen = client.smScreen as? AbstractContainerScreen<*> ?: return false
+        val player = client.player ?: return null
+        val screen = client.smScreen as? AbstractContainerScreen<*> ?: return null
         val menu = player.containerMenu
-        if (menu.containerId != containerId) return false
-        val slot = menu.slots.getOrNull(slotId) ?: return false
-        if (!entryItem(screen.title.string, slot.item.`is`(Items.NAME_TAG), slot.container === player.inventory)) return false
-        val blocked = blocks(client, "entry menu")
+        if (menu.containerId != containerId) return null
+        val slot = menu.slots.getOrNull(slotId) ?: return null
+        return slot.takeIf { entryItem(screen.title.string, it.item.`is`(Items.NAME_TAG), it.container === player.inventory) }
+    }
+    internal fun ticketInput(input: ContainerInput, shift: Boolean, entry: Boolean): ContainerInput =
+        if (shift && entry && input == ContainerInput.QUICK_MOVE) ContainerInput.PICKUP else input
+    fun entryInput(input: ContainerInput, containerId: Int, slotId: Int): ContainerInput =
+        ticketInput(input, shiftDown(Minecraft.getInstance()), entrySlot(containerId, slotId) != null)
+    fun shouldBlockEntry(containerId: Int, slotId: Int): Boolean {
+        val slot = entrySlot(containerId, slotId) ?: return false
+        val blocked = blocks(Minecraft.getInstance(), "entry menu")
         if (!blocked) SafariTracking.ticketSelected(slot.item.hoverName.string)
         return blocked
     }
@@ -102,18 +108,16 @@ object SafariManagerGuard {
                 EntryStage.TORRHUS -> ConfigManager.downtimeCommand && SafariPartyInput.pendingDowntime
                 EntryStage.SAFARI -> guard && SafariPartyInput.pendingKick
                 else -> SafariPartyInput.pending
-            })
+            }, shiftDown(client))
         val reason = when (stage()) {
-            EntryStage.TORRHUS -> if (SafariPartyInput.overflowReadiness) "readiness input limit reached; each current member must say r or Ticket earned!"
-                else if (SafariPartyInput.pendingDowntime) "verifying party readiness" else "${SafariDowntime.holders()} asked for downtime"
-            EntryStage.UNKNOWN -> "waiting for server location"
+            EntryStage.TORRHUS -> if (SafariPartyInput.overflowReadiness) "Everyone must say r or Ticket earned! in party chat"
+                else if (SafariPartyInput.pendingDowntime) "Checking party readiness" else "Waiting for ${SafariDowntime.holders()} (downtime)"
+            EntryStage.UNKNOWN -> "Waiting for server info"
             else -> when {
-                SafariPartyInput.overflowKick -> "kick input limit reached; revalidate in a new Safari instance"
-                SafariPartyInput.pendingKick -> "verifying party message identity"
-                !PartyManager.hasInfo -> "waiting for the current party roster"
-                !presence.ready -> "party presence/loading incomplete (${presence.missing.size} missing)"
-                kick.active -> "kick recovery needs a fresh return, membership change or verified new instance"
-                else -> "ready"
+                !PartyManager.hasInfo -> "Loading party members"
+                !presence.ready -> missingMessage(presence.missing, SafariPartyInput::nameOf)
+                kick.active -> "Kick reported; waiting 2 seconds"
+                else -> "Waiting for party readiness"
             }
         }
         val detail = "$route: blocked=$blocked stage=${stage()} run=$active guard=$guard downtime=$downtime " +
@@ -123,20 +127,30 @@ object SafariManagerGuard {
         val now = System.currentTimeMillis()
         if (blocked && now - messagedAt >= 3000) {
             messagedAt = now
-            player.sendSystemMessage(LocalChat.component("[SM] Blocked Safari entry: $reason."))
+            player.sendSystemMessage(LocalChat.component("[SM] Safari: $reason. Hold Shift to enter anyway."))
         }
         return blocked
+    }
+    internal fun missingMessage(missing: Set<String>, nameOf: (String) -> String?): String {
+        if (missing.isEmpty()) return "Waiting for the party to load"
+        val names = missing.map { nameOf(it) ?: "name loading" }.sortedBy { it.lowercase() }
+        return "${missing.size} missing: ${names.joinToString(", ")}"
     }
     fun debug() = listOf("Entry guard: stage=${stage()} setting=${ConfigManager.holdManagerOnKick} " +
         "downtime=${ConfigManager.downtimeCommand} holders=${SafariDowntime.holders()} rosterKnown=${PartyManager.hasInfo} " +
         "ready=${presence.ready} missing=${presence.missing} kick=${kick.active} identityPending=${SafariPartyInput.pending}", lastDecision)
     private fun isManager(client: Minecraft, entity: Entity): Boolean {
         fun named(e: Entity) = SafariRules.strip(e.customName?.string ?: e.name.string).equals("Safari Manager", true)
-        if (named(entity)) return true
-        // Only an unlisted NPC player with its own closely aligned nameplate, never arbitrary nearby entities.
-        if (entity !is Player || client.connection?.listedOnlinePlayers?.any { it.profile.id == entity.uuid } == true) return false
-        return client.level?.getEntities(entity, entity.boundingBox.inflate(.5, 2.5, .5))?.any {
-            named(it) && kotlin.math.abs(it.x - entity.x) <= .5 && kotlin.math.abs(it.z - entity.z) <= .5 && it.y >= entity.y
-        } == true
+        val world = client.level ?: return false
+        val partyPlayer = entity is Player && (entity === client.player ||
+            PartyManager.withLocal(client.player?.uuid?.toString().orEmpty())?.any {
+                SafariEntryPresence.normalize(it) == SafariEntryPresence.normalize(entity.uuid.toString())
+            } == true)
+        val proxy = entity is Player || entity is net.minecraft.world.entity.decoration.ArmorStand ||
+            entity.type.toShortString() in setOf("interaction", "text_display")
+        val labels = world.entitiesForRendering().filter { !it.isRemoved && world.getEntity(it.id) === it && named(it) }
+            .map { Triple(it.x, it.y, it.z) }.toList()
+        return managerTargets.recognize(world, entity.uuid.toString(), proxy, entity.x, entity.y, entity.z,
+            named(entity), partyPlayer, labels)
     }
 }

@@ -48,9 +48,11 @@ The History tab begins with the **History** button, followed immediately by **Im
 
 ## Safari entry protection
 
-**Guard Safari entry** and **!dt downtime** retain their independent saved switches. Guard Safari entry controls Safari-instance kick/presence checks; downtime controls Torrhus readiness holds. Shift does not override either. See [entry guard](SAFARI_ENTRY_GUARD.md).
+**Guard Safari entry** and **!dt downtime** retain their independent saved switches. Guard Safari entry uses Safari tab-list party presence, with a two-second pause after a party kick message; downtime controls Torrhus readiness holds until each requester says r or mentions ticket. Holding Shift overrides either for the current interaction without clearing the holds. See [entry guard](SAFARI_ENTRY_GUARD.md).
 
 ## Last updated
+
+2026-10-17 - Aligned entry guards with tab-first Safari presence, two-second kick pauses, ticket-message downtime release and Shift override.
 
 2026-10-17 - Corrected PB filename to sparkling-mutuals-pbs.properties; also migrate the briefly used display-name filename safely.
 

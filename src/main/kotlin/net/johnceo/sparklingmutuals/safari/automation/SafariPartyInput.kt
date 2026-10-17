@@ -14,6 +14,12 @@ import net.minecraft.client.Minecraft
 object SafariPartyInput {
     private val queue = EntryPartyInbox()
     private val ids = mutableMapOf<String, String>()
+    private val displayNames = mutableMapOf<String, String>()
+    fun nameOf(uuid: String): String? = ids.entries.firstOrNull {
+        it.value == SafariEntryPresence.normalize(uuid)
+    }?.key?.let { displayNames[it] ?: it }
+    private val resolvingNames = mutableSetOf<String>()
+    private val nameRetryAt = mutableMapOf<String, Long>()
     private val resolving = mutableSetOf<String>()
     private val retryAt = mutableMapOf<String, Long>()
     private var epoch = 0L
@@ -44,10 +50,11 @@ object SafariPartyInput {
         SafariDowntime.observeAnnouncement(chat.body)
         val downtime = ConfigManager.downtimeCommand &&
             (chat.body.matches(Regex("^!dt(?:\\s+.*)?$", RegexOption.IGNORE_CASE)) ||
-                chat.body.equals("r", true) || chat.body.equals("Ticket earned!", true))
+                SafariDowntime.readyMessage(chat.body) || SafariDowntime.ticketMessage(chat.body))
         val kick = ConfigManager.holdManagerOnKick && SafariManagerGuard.inSafariInstance() &&
             chat.body.contains("kick", true)
         if (!downtime && !kick) return
+        displayNames[chat.sender.lowercase()] = chat.sender
         // Duplicate delivery on GAME/CHAT is idempotent while identity is pending.
         queue.add(EntryPartyMessage(text.take(1024), chat.sender.lowercase(), client.level, kick, downtime))
         tick(client)
@@ -68,9 +75,36 @@ object SafariPartyInput {
         val roster = PartyManager.withLocal(self.uuid.toString())?.mapTo(HashSet(), SafariEntryPresence::normalize) ?: return
         connection.onlinePlayers.forEach { info ->
             val id = SafariEntryPresence.normalize(info.profile.id.toString())
-            if (id in roster) ids[info.profile.name.lowercase()] = id
+            if (id in roster) {
+                ids[info.profile.name.lowercase()] = id
+                displayNames[info.profile.name.lowercase()] = info.profile.name
+            }
         }
+        displayNames[self.name.string.lowercase()] = self.name.string
         ids[self.name.string.lowercase()] = SafariEntryPresence.normalize(self.uuid.toString())
+        // A missing member may never have appeared in this connection's tab/player list.
+        // Resolve the server-confirmed roster UUID directly; do not depend on them sending a command.
+        roster.filter { nameOf(it) == null && it !in resolvingNames && System.currentTimeMillis() >= (nameRetryAt[it] ?: 0) }
+            .forEach { id ->
+                if (!id.matches(Regex("[0-9a-f]{32}"))) return@forEach
+                val uuid = java.util.UUID.fromString("${id.take(8)}-${id.substring(8, 12)}-${id.substring(12, 16)}-${id.substring(16, 20)}-${id.substring(20)}")
+                resolvingNames.add(id)
+                val generation = epoch
+                CompletableFuture.supplyAsync { client.services().sessionService().fetchProfile(uuid, false)?.profile() }
+                    .whenComplete { profile, error -> client.execute {
+                        if (epoch != generation) return@execute
+                        resolvingNames.remove(id)
+                        val currentRoster = PartyManager.withLocal(client.player?.uuid?.toString().orEmpty())
+                            ?.mapTo(HashSet(), SafariEntryPresence::normalize).orEmpty()
+                        if (error == null && profile != null && SafariEntryPresence.normalize(profile.id.toString()) == id &&
+                            profile.name.matches(Regex("[A-Za-z0-9_]{1,16}"))) {
+                            if (id in currentRoster) {
+                                ids[profile.name.lowercase()] = id
+                                displayNames[profile.name.lowercase()] = profile.name
+                            }
+                        } else nameRetryAt[id] = System.currentTimeMillis() + 10000
+                    } }
+            }
         SafariDowntime.pruneVerified(ids, roster)
         queue.entries().forEach { (key, item) ->
             val id = ids[item.sender]
@@ -78,11 +112,13 @@ object SafariPartyInput {
                 queue.remove(key)
                 if (id !in roster) return@forEach
                 if (item.downtime) queue.validated(id,
-                    PartyChat.parse(item.text)?.body?.let { it.equals("r", true) || it.equals("Ticket earned!", true) } == true, roster)
-                if (item.downtime) SafariDowntime.chat(item.text, SafariManagerGuard.activeRun(client), self.name.string)
+                    PartyChat.parse(item.text)?.body?.let { SafariDowntime.readyMessage(it) || SafariDowntime.ticketMessage(it) } == true, roster)
+                if (item.downtime) SafariDowntime.chat(item.text, SafariManagerGuard.activeRun(client), self.name.string,
+                    if (PartyManager.getMembers().any { PartyManager.isLeader(it) && SafariEntryPresence.normalize(it) == id })
+                        roster.map { nameOf(it) ?: it } else emptyList())
                     ?.let(SafariDowntime::queueAnnouncement)
                 if (item.kickContext && item.world === client.level && SafariManagerGuard.inSafariInstance())
-                    SafariManagerGuard.partyKick(PartyChat.parse(item.text)!!, id)
+                    SafariManagerGuard.partyKick(PartyChat.parse(item.text)!!, item.receivedAt)
             } else if (item.sender !in resolving && System.currentTimeMillis() >= (retryAt[item.sender] ?: 0)) {
                 resolving.add(item.sender)
                 val generation = epoch
@@ -97,9 +133,10 @@ object SafariPartyInput {
                 }
             }
         }
-        if (ids.size > 64) ids.keys.retainAll(queue.entries().map { it.second.sender }.toSet() + SafariDowntime.holders().split(", ").map(String::lowercase) + connection.onlinePlayers.map { it.profile.name.lowercase() })
+        if (ids.size > 64) ids.keys.retainAll(queue.entries().map { it.second.sender }.toSet() + SafariDowntime.holders().split(", ").map(String::lowercase) + connection.onlinePlayers.map { it.profile.name.lowercase() } + ids.filterValues { it in roster }.keys)
+        displayNames.keys.retainAll(ids.keys + queue.entries().map { it.second.sender })
     }
-    private fun resetPending() { epoch++; queue.clear(); resolving.clear(); retryAt.clear() }
+    private fun resetPending() { epoch++; queue.clear(); resolving.clear(); retryAt.clear(); resolvingNames.clear(); nameRetryAt.clear() }
     /** Preserve requests elsewhere, but never replay an old session's unverified chat. */
-    fun disconnect() { epoch++; resolving.clear(); retryAt.clear(); queue.transfer() }
+    fun disconnect() { epoch++; resolving.clear(); retryAt.clear(); resolvingNames.clear(); nameRetryAt.clear(); queue.transfer() }
 }

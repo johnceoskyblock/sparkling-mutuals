@@ -170,7 +170,7 @@ class SafariSettings : Config() {
         var capsuleHideDistance = ConfigManager.capsuleHideDistance
         @JvmField @ConfigOption(name = "Full candle hitbox", desc = "Easier candle clicks in Haunted while holding Soothing Incense.")
         @ConfigEditorBoolean var candleHitbox = ConfigManager.candleHitbox
-        @JvmField @ConfigOption(name = "Guard Safari entry", desc = "Hold Safari entry for unresolved kicks, unknown/loading party or missing members. No Shift bypass; readiness on Torrhus uses !dt downtime.")
+        @JvmField @ConfigOption(name = "Guard Safari entry", desc = "Hold Safari entry for missing/loading party members, with a 2-second pause after kick reports. Hold Shift to bypass entry blocks for the current click. Readiness on Torrhus uses !dt downtime.")
         @ConfigEditorBoolean var holdManagerOnKick = ConfigManager.holdManagerOnKick
         @JvmField @ConfigOption(name = "Auto Clicker", desc = "Hold Mouse 0 on Rockmite mounds for 12 CPS.")
         @ConfigEditorBoolean var autoClicker = ConfigManager.autoClicker

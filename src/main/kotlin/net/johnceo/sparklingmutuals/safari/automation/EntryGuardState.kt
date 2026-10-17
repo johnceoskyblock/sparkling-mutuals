@@ -5,39 +5,31 @@ enum class EntryStage { UNKNOWN, OTHER, TORRHUS, SAFARI }
 /** Entry controls always require current party presence; run/location heuristics cannot bypass them. */
 object EntryGuardDecision {
     fun block(stage: EntryStage, downtime: Boolean, kick: Boolean,
-              presenceReady: Boolean, identityPending: Boolean): Boolean = when (stage) {
+              presenceReady: Boolean, identityPending: Boolean, shiftOverride: Boolean = false): Boolean = !shiftOverride && when (stage) {
         EntryStage.OTHER -> false
         EntryStage.UNKNOWN -> downtime || kick || !presenceReady || identityPending
         EntryStage.TORRHUS -> downtime || identityPending
-        EntryStage.SAFARI -> kick || !presenceReady || identityPending
+        EntryStage.SAFARI -> kick || !presenceReady
     }
 }
 
-/** A timer or repeated snapshot cannot prove recovery from a kick. IDs must be normalized UUIDs. */
+/** Brief packet-settling pause; after two seconds the current party tab list decides. */
 class EntryKickHold {
-    private data class Report(val instance: Any?, var sawAbsent: Boolean = false)
-    private val reports = mutableMapOf<String?, Report>()
-    val active get() = reports.isNotEmpty()
-    fun report(instance: Any?, victim: String?) { reports.putIfAbsent(victim, Report(instance)) }
-    fun observe(instance: Any?, members: Set<String>?, present: Set<String>, ready: Boolean) {
-        if (instance == null || members == null) return
-        reports.entries.removeAll { (target, report) ->
-            val absent = if (target == null) members.any { it !in present } else target !in present
-            if (absent) report.sawAbsent = true
-            val recovered = when {
-                instance !== report.instance -> true
-                target == null -> report.sawAbsent
-                target !in members -> true
-                else -> report.sawAbsent && target in present
-            }
-            ready && recovered
-        }
+    private var instance: Any? = null
+    private var until = 0L
+    val active get() = holding(System.currentTimeMillis())
+    fun holding(now: Long) = now < until
+    fun report(world: Any?, at: Long = System.currentTimeMillis()) {
+        if (instance !== world) reset()
+        instance = world
+        until = maxOf(until, at + 2000)
     }
-    fun reset() { reports.clear() }
+    fun observe(world: Any?) { if (instance !== world) reset() }
+    fun reset() { instance = null; until = 0 }
 }
 
 /** The latest readiness state per sender is sufficient; kick evidence is independent and conservative. */
-data class EntryPartyMessage(val text: String, val sender: String, val world: Any?, val kickContext: Boolean, val downtime: Boolean)
+data class EntryPartyMessage(val text: String, val sender: String, val world: Any?, val kickContext: Boolean, val downtime: Boolean, val receivedAt: Long = System.currentTimeMillis())
 class EntryPartyInbox(private val capacity: Int = 32) {
     private val messages = linkedMapOf<String, EntryPartyMessage>()
     private var lastWorld: Any? = null
@@ -87,4 +79,26 @@ class EntryPartyInbox(private val capacity: Int = 32) {
     fun disableDowntime() { messages.entries.removeAll { it.value.downtime }; overflowReadiness = false; readyAfterOverflow.clear() }
     fun disableKick() { messages.entries.removeAll { it.value.kickContext }; overflowKick = false }
     fun clear() { messages.clear(); readyAfterOverflow.clear(); overflowReadiness = false; overflowKick = false }
+}
+
+/** Manager identity survives temporary label/player-list changes, but never crosses a client world. */
+class EntryManagerTargets {
+    private var world: Any? = null
+    private val known = mutableSetOf<String>()
+    private val anchors = mutableSetOf<Triple<Double, Double, Double>>()
+    fun recognize(instance: Any?, id: String, proxy: Boolean, x: Double, y: Double, z: Double,
+        named: Boolean, partyPlayer: Boolean, labels: List<Triple<Double, Double, Double>>): Boolean {
+        if (world !== instance) { reset(); world = instance }
+        if (instance == null || partyPlayer) return false
+        anchors.addAll(labels)
+        if (named) { anchors.add(Triple(x, y, z)); known.add(id); return true }
+        if (!proxy) return false
+        if (id in known) return true
+        val aligned = anchors.any { (ax, ay, az) ->
+            kotlin.math.abs(x - ax) <= .5 && kotlin.math.abs(z - az) <= .5 && ay - y in -.5..3.5
+        }
+        if (aligned) known.add(id)
+        return aligned
+    }
+    fun reset() { world = null; known.clear(); anchors.clear() }
 }

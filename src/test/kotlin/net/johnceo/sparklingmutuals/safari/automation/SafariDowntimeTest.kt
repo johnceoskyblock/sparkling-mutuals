@@ -10,6 +10,63 @@ class SafariDowntimeTest {
     @BeforeEach fun clear() { ConfigManager.downtimeCommand = true; SafariDowntime.reset() }
     @AfterEach fun restore() { ConfigManager.downtimeCommand = true; SafariDowntime.reset() }
 
+    @Test fun `readiness accepts clear confirmations but ignores unrelated r words questions and negation`() {
+        for (body in listOf("r", "R!", "r/", "/r", "rrr", "rrt", "rt", "er", "ready", "rdy", "I'm ready", "im ready now!", "okay, ready to go!", "we are finally ready", "Ready when you are", "I'm all ready!")) {
+            assertTrue(SafariDowntime.readyMessage(body), body)
+            SafariDowntime.chat("Party > Friend: !dt food", false, "Me")
+            SafariDowntime.chat("Party > Friend: $body", false, "Me")
+            assertFalse(SafariDowntime.entryHold, body)
+        }
+        for (body in listOf("nr", "NR!", "nr/", "brb", "red", "random", "party", "ranger", "already", "not ready", "I'm not ready", "almost ready", "are you ready?", "ready?", "I was ready", "I will be ready", "ready or not", "my friend is ready"))
+            assertFalse(SafariDowntime.readyMessage(body), body)
+    }
+    @Test fun `leader contest waits for every member and local notice lists remaining players`() {
+        SafariDowntime.chat("Party > Leader: !dt contest", false, "Me", listOf("Leader", "Me", "Friend"))
+        assertEquals("Leader, Me, Friend", SafariDowntime.holders())
+        assertTrue(SafariDowntime.localNotice().contains("wait for Leader, Me, Friend to say r"))
+        SafariDowntime.chat("Party > Leader: r", false, "Me")
+        assertTrue(SafariDowntime.entryHold)
+        assertEquals("Me, Friend", SafariDowntime.holders())
+        SafariDowntime.chat("Party > Friend: Ticket earned!", false, "Me")
+        assertTrue(SafariDowntime.entryHold)
+        SafariDowntime.chat("Party > Outsider: r", false, "Me")
+        assertTrue(SafariDowntime.entryHold)
+        SafariDowntime.chat("Party > Me: ticket earned", false, "Me")
+        assertFalse(SafariDowntime.entryHold)
+    }
+    @Test fun `unresolved contest member stays held until name resolves or they leave the party`() {
+        val id = "a".repeat(32)
+        SafariDowntime.chat("Party > Leader: !dt contest", false, "Me", listOf("Leader", id))
+        SafariDowntime.chat("Party > Leader: r", false, "Me")
+        assertTrue(SafariDowntime.entryHold)
+        SafariDowntime.pruneVerified(mapOf("friend" to id), setOf(id))
+        assertEquals("friend", SafariDowntime.holders())
+        SafariDowntime.chat("Party > Friend: r/", false, "Me")
+        assertFalse(SafariDowntime.entryHold)
+        SafariDowntime.chat("Party > Leader: !dt contest", false, "Me", listOf("Leader", id))
+        SafariDowntime.chat("Party > Leader: r", false, "Me")
+        SafariDowntime.pruneVerified(emptyMap(), emptySet())
+        assertFalse(SafariDowntime.entryHold)
+    }
+    @Test fun `contest request preserves another members existing downtime reason`() {
+        SafariDowntime.chat("Party > Friend: !dt food", false, "Me")
+        val summary = SafariDowntime.chat("Party > Leader: !dt contest", false, "Me", listOf("Leader", "Friend", "Me"))
+        assertTrue(summary!!.contains("Friend (food)"))
+        assertFalse(SafariDowntime.ticketEarned("Friend"))
+        assertTrue(SafariDowntime.localNotice().contains("Friend, Leader, Me"))
+    }
+    @Test fun `any ticket mention clears only its senders downtime request`() {
+        for (message in listOf("ticket", "got my TICKET", "two tickets ready", "Ticket earned!")) {
+            SafariDowntime.reset()
+            SafariDowntime.chat("Party > Farmer: !dt food", false, "Me")
+            SafariDowntime.chat("Party > Friend: !dt contest", false, "Me")
+            SafariDowntime.chat("Party > Farmer: $message", false, "Me")
+            assertEquals("Friend", SafariDowntime.holders())
+            assertTrue(SafariDowntime.entryHold)
+            SafariDowntime.chat("Party > Friend: r", false, "Me")
+            assertFalse(SafariDowntime.entryHold)
+        }
+    }
     @Test fun `ticket earned releases only the senders active contest hold`() {
         SafariDowntime.chat("Party > Farmer: !dt contest", false, "Me")
         SafariDowntime.chat("Party > Steve: !dt contest", false, "Me")
