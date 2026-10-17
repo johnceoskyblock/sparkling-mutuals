@@ -1,10 +1,24 @@
 package net.johnceo.sparklingmutuals.safari.shots.preview
 
 import net.johnceo.sparklingmutuals.safari.shots.ShotVector
+import net.johnceo.sparklingmutuals.safari.shots.preview.contacts.*
 
-data class CapsulePreviewFrame(val points: List<ShotVector>, val status: String?)
+data class CapsulePreviewFrame(val points: List<ShotVector>, val status: String?,val mesh:ContactGuideMesh?=null)
 
 object CapsulePreviewFrameBuilder {
+    fun contacts(trace:ContactTrace,camera:ShotVector,width:Float):CapsulePreviewFrame {
+        val reason=when {
+            trace.primary?.kind==ContactKind.CRITTER -> "Possible critter contact"
+            trace.primary?.kind==ContactKind.TERRAIN -> "Estimated terrain contact"
+            trace.stop==ContactStop.UNLOADED -> "Unloaded terrain"
+            trace.stop==ContactStop.FLUID -> "Fluid behavior unavailable"
+            trace.stop==ContactStop.TARGET_COVERAGE -> "Critter coverage unavailable"
+            trace.stop==ContactStop.INVALID -> "Capsule path unavailable"
+            else -> "No contact within preview range"
+        }
+        return CapsulePreviewFrame(trace.nodes.map{it.position},"Uncalibrated · $reason"+
+            if("contact_tie" in trace.warnings) " (ambiguous)" else "",ContactGuideGeometry.build(trace,camera,width))
+    }
     fun build(availability: CapsulePreviewAvailability, eye: ShotVector, aim: ShotVector): CapsulePreviewFrame {
         if (availability==CapsulePreviewAvailability.AVAILABLE) {
             val points=CapsulePathModel.points(eye,aim)

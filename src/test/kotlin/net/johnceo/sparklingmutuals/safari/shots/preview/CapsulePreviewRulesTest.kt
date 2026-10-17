@@ -5,6 +5,16 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class CapsulePreviewRulesTest {
+    @Test fun `expanded angles require opt in and all original physical restrictions`() {
+        for(pitch in listOf(-90.0,35.0,90.0)) {
+            val s=eligible().copy(pitch=pitch,allowUncalibratedEstimates=true);val r=CapsulePreviewRules();val w=Any()
+            assertEquals(CapsulePreviewAvailability.STAND_STILL,r.tick(w,s))
+            assertEquals(CapsulePreviewAvailability.AVAILABLE,r.tick(w,s))
+            assertNotEquals(CapsulePreviewAvailability.AVAILABLE,r.evaluate(s.copy(onGround=false)))
+        }
+        val r=ready()
+        assertEquals(CapsulePreviewAvailability.TESTED_ANGLE_ONLY,r.evaluate(eligible().copy(pitch=35.0)))
+    }
     private fun eligible() = CapsulePreviewState(true,true,true,true,true,false,false,false,false,false,
         false,false,false,false,0.0,ShotVector(1.0,2.0,3.0),ShotVector(0.0,-.0784,0.0))
     private fun ready(): CapsulePreviewRules = CapsulePreviewRules().also { val w=Any(); it.tick(w,eligible());it.tick(w,eligible()) }

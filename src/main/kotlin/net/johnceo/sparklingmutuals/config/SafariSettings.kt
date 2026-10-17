@@ -156,6 +156,10 @@ class SafariSettings : Config() {
     class Safari {
         @JvmField @ConfigOption(name = "Experimental capsule path", desc = "Experimental visual guide. Terrain collision and capture targeting are unverified.")
         @ConfigEditorBoolean var experimentalCapsulePath = ConfigManager.experimentalCapsulePath
+        @JvmField @ConfigOption(name = "Allow uncalibrated estimates", desc = "Experimental terrain and critter contact estimates. Launch, collision and target bounds are unverified. Requires Experimental capsule path.")
+        @ConfigEditorBoolean var allowUncalibratedCapsuleEstimates = ConfigManager.allowUncalibratedCapsuleEstimates
+        @JvmField @ConfigOption(name = "Capsule path width", desc = "Line width from 1 to 5; default 3.")
+        @ConfigEditorSlider(minValue = 1f, maxValue = 5f, minStep = 1f) var capsulePathWidth = ConfigManager.capsulePathWidth
         @JvmField @ConfigOption(name = "Highlight teammates", desc = "Outline loaded party members anywhere in SkyBlock.")
         @ConfigEditorBoolean var highlightTeammates = ConfigManager.highlightTeammates
         @JvmField @ConfigOption(name = "Show teammate names", desc = "Show party member names through walls anywhere in SkyBlock.")
@@ -290,6 +294,7 @@ class SafariSettings : Config() {
             ConfigManager::shinyDetection to safari.shiny, ConfigManager::hideyhoQuestClicks to safari.hideyho, ConfigManager::hideyhoInsideOutside to safari.hideyhoInsideOutside,
             ConfigManager::progressHud to tracking.progress,
             ConfigManager::experimentalCapsulePath to safari.experimentalCapsulePath,
+            ConfigManager::allowUncalibratedCapsuleEstimates to safari.allowUncalibratedCapsuleEstimates,
             ConfigManager::missingPanel to tracking.missing,
             ConfigManager::removeDarkness to safari.darkness,
             ConfigManager::sparklingAlert to safari.alert, ConfigManager::sparklingPartyAnnouncer to safari.announce,
@@ -300,12 +305,14 @@ class SafariSettings : Config() {
         val espChanged = esp.apply()
         val customizationChanged = customization.apply()
         val distance = ConfigManager.validCapsuleDistance(safari.capsuleHideDistance)
-        val generalChanged = espChanged || customizationChanged || changes.any { (property, value) -> property.get() != value } ||
+        val pathWidth = ConfigManager.validCapsulePathWidth(safari.capsulePathWidth)
+        val generalChanged = ConfigManager.capsulePathWidth != pathWidth || espChanged || customizationChanged || changes.any { (property, value) -> property.get() != value } ||
             ConfigManager.showWhere != tracking.where || ConfigManager.capsuleHideDistance != distance ||
             ConfigManager.runCompleteVolume != safari.alerts.runVolume.coerceIn(0, 100) || ConfigManager.sparklingSoundVolume != safari.alerts.volume.coerceIn(0, 100)
         changes.forEach { (property, value) -> property.set(value) }
         ConfigManager.showWhere = tracking.where.coerceIn(0, 2)
         ConfigManager.capsuleHideDistance = distance
+        ConfigManager.capsulePathWidth = pathWidth
         ConfigManager.runCompleteVolume = safari.alerts.runVolume.coerceIn(0, 100)
         ConfigManager.sparklingSoundVolume = safari.alerts.volume.coerceIn(0, 100)
         if (generalChanged) ConfigManager.save()
