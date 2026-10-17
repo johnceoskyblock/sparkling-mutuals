@@ -43,6 +43,8 @@ object ShywormBodyDiagnostics {
             "headsOmitted" to selection.headsOmitted,"candidateCount" to selection.candidates.size,
             "candidatesOmitted" to selection.candidatesOmitted,"coordinates" to "player_eye_relative",
             "membership" to "candidates_only")))
+        rows.add(gson.toJson(mapOf("version" to 1,"kind" to "contact_scene","snapshot" to snapshot,
+            "state" to net.johnceo.sparklingmutuals.safari.shots.preview.contacts.CapsuleContactScene.debugSummary())))
         val byId=source.associateBy{it.id}
         for(part in selection.candidates) {
             val e=byId[part.id] ?: continue
