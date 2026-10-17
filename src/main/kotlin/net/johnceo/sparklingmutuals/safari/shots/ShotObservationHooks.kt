@@ -28,12 +28,19 @@ object ShotObservationHooks {
     fun end()=observe("input/end") { cycles.end() }
     fun tick(client:Minecraft)=observe("tick") { adapter?.tick(client,clock()) }
     fun packet(packet:Any) {
-        // Existing client-thread hooks invalidate live-map sweeps even with recording off; no world inspection here.
-        if(packet is net.minecraft.network.protocol.game.ClientboundAddEntityPacket ||
-            packet is net.minecraft.network.protocol.game.ClientboundRemoveEntitiesPacket)
-            net.johnceo.sparklingmutuals.safari.shots.preview.contacts.CapsuleContactScene.invalidateDiscovery()
-        else if(packet is net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket)
-            net.johnceo.sparklingmutuals.safari.shots.preview.contacts.CapsuleContactScene.metadataChanged()
+        // Existing client-thread hooks invalidate preview checks even with recording off.
+        val scene=net.johnceo.sparklingmutuals.safari.shots.preview.contacts.CapsuleContactScene
+        when(packet) {
+            is net.minecraft.network.protocol.game.ClientboundAddEntityPacket,
+            is net.minecraft.network.protocol.game.ClientboundRemoveEntitiesPacket -> scene.invalidateDiscovery()
+            is net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket -> scene.metadataChanged(packet.id())
+            is net.minecraft.network.protocol.game.ClientboundMoveEntityPacket -> scene.relativeEntityChanged(packet)
+            is net.minecraft.network.protocol.game.ClientboundEntityPositionSyncPacket -> scene.entityChanged(packet.id())
+            is net.minecraft.network.protocol.game.ClientboundTeleportEntityPacket -> scene.entityChanged(packet.id())
+            is net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket -> scene.entityChanged(packet.id())
+            is net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket -> scene.metadataChanged(packet.entity)
+            is net.minecraft.network.protocol.game.ClientboundSetPassengersPacket -> scene.metadataChanged(packet.vehicle)
+        }
         observe("packet") {
             val client=Minecraft.getInstance();val level=client.level ?: return@observe
             ShotPacketCompat.copy(packet,level) { adapter?.packetBase(it) }.forEach { adapter?.packet(client,it,clock()) }

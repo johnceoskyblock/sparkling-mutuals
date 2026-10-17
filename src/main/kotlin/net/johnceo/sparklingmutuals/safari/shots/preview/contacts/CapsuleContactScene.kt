@@ -25,19 +25,28 @@ object CapsuleContactScene {
     private var world:Any?=null
     private var slots:Iterator<ContactDiscovery?>?=null
     private var tick=0L
-    private var identityAllowance=0
+    private val validation=ContactTargetValidation()
+    private var espRevision=0L
+    var revision=0L
+        private set
     private var unsupported=false
     private var entityCount=-1
-    fun invalidateDiscovery() { if(world!=null) { slots=null;cache.invalidate() } }
-    fun metadataChanged() { if(world!=null) cache.metadataChanged() }
+    fun invalidateDiscovery() { if(world!=null) { slots=null;cache.invalidate();validation.invalidate();revision++ } }
+    fun metadataChanged(entityId:Int) { if(world!=null) { cache.metadataChanged();entityChanged(entityId) } }
+    fun entityChanged(entityId:Int) { if(world!=null) { validation.invalidate(entityId.toString());revision++ } }
+    fun relativeEntityChanged(packet:net.minecraft.network.protocol.game.ClientboundMoveEntityPacket) {
+        // O(1) ID routing only; full descriptor/body inspections retain their separate sixteen-check allowance.
+        val level=world as? net.minecraft.client.multiplayer.ClientLevel ?: return
+        packet.getEntity(level)?.let{entityChanged(it.id)}
+    }
     private val collectionRules=net.johnceo.sparklingmutuals.safari.shots.preview.CapsulePreviewRules()
     fun probeEligible(client:Minecraft)=collectionRules.evaluate(net.johnceo.sparklingmutuals.safari.shots.preview.CapsulePreview.collectionState(client))==net.johnceo.sparklingmutuals.safari.shots.preview.CapsulePreviewAvailability.AVAILABLE
-    fun reset() { cache.reset();world=null;slots=null;identityAllowance=0;unsupported=false;priority=null;collectionRules.reset() }
+    fun reset() { cache.reset();world=null;slots=null;validation.reset();entityCount=-1;unsupported=false;priority=null;collectionRules.reset();revision++ }
     fun tick(client:Minecraft,enabled:Boolean) {
         val level=client.level
         if(!enabled || !SafariAssist.inSafari || level==null || client.player==null) { reset();return }
         if(world!==level) { reset();world=level }
-        tick++;identityAllowance=16
+        tick++;validation.beginTick();espRevision=SafariEsp.contactRevision;revision++
         val player=client.player!!
         priority=ContactTargetPriority(ContactCurveSampler.sample(vector(player.eyePosition),vector(player.lookAngle),player.xRot.toDouble()))
         if(entityCount!=level.entityCount) { invalidateDiscovery();entityCount=level.entityCount }
@@ -70,8 +79,13 @@ object CapsuleContactScene {
         if(body==null) { unsupported=true;return null }
         return ContactTarget(d.key,d.generation,species.name,body.first,body.second)
     }
+    fun refreshRevision(client:Minecraft) {
+        if(world==null || world!==client.level) return
+        if(client.level?.entityCount!=entityCount) { invalidateDiscovery();entityCount=client.level?.entityCount ?: -1 }
+        if(espRevision!=SafariEsp.contactRevision) { validation.invalidate();espRevision=SafariEsp.contactRevision;revision++ }
+    }
     fun snapshot(client:Minecraft,eye:ShotVector,aim:ShotVector,pitch:Double):ContactSceneSnapshot {
-        if(client.level?.entityCount!=entityCount) invalidateDiscovery()
+        refreshRevision(client)
         val (targets,cachedCoverage)=cache.snapshot()
         var coverage=if(unsupported) ContactCoverage(false,cachedCoverage.reasons+"unsupported_proxy") else cachedCoverage
         val curve=ContactCurveSampler.sample(eye,aim,pitch)
@@ -81,10 +95,10 @@ object CapsuleContactScene {
         val primary=trace.primary
         if(primary?.kind==ContactKind.CRITTER) {
             val target=targets.firstOrNull{it.key==primary.targetKey}
-            val fresh=if(identityAllowance>0 && target!=null) { identityAllowance--;inspect(client,ContactDiscovery(target.key,target.generation)) } else null
+            val error=if(target==null) "stale_target" else validation.validate(target){inspect(client,ContactDiscovery(it.key,it.generation))}
             // Current-position bounds changed since tick: don't submit an endpoint for the old body.
-            if(fresh==null || fresh!=target) {
-                coverage=ContactCoverage(false,setOf(if(identityAllowance==0) "identity_budget" else "stale_target"))
+            if(error!=null) {
+                coverage=ContactCoverage(false,coverage.reasons+error)
                 trace=trace.copy(primary=null,stop=ContactStop.TARGET_COVERAGE,warnings=trace.warnings+coverage.reasons)
             }
         }

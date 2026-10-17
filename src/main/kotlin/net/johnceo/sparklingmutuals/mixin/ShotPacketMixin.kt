@@ -23,6 +23,10 @@ class ShotPacketMixin {
     private fun motion(packet:ClientboundSetEntityMotionPacket,info:CallbackInfo) { ShotObservationHooks.packet(packet) }
     @Inject(method=["handleSetEntityData"],at=[At("TAIL")])
     private fun metadata(packet:ClientboundSetEntityDataPacket,info:CallbackInfo) { ShotObservationHooks.packet(packet) }
+    @Inject(method=["handleSetEquipment"],at=[At("TAIL")])
+    private fun equipment(packet:ClientboundSetEquipmentPacket,info:CallbackInfo) { ShotObservationHooks.packet(packet) }
+    @Inject(method=["handleSetEntityPassengersPacket"],at=[At("TAIL")])
+    private fun passengers(packet:ClientboundSetPassengersPacket,info:CallbackInfo) { ShotObservationHooks.packet(packet) }
     @Inject(method=["handleRemoveEntities"],at=[At("TAIL")])
     private fun removed(packet:ClientboundRemoveEntitiesPacket,info:CallbackInfo) { ShotObservationHooks.packet(packet) }
 }

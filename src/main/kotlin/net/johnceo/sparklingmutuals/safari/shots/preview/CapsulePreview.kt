@@ -3,6 +3,7 @@ package net.johnceo.sparklingmutuals.safari.shots.preview
 import net.johnceo.sparklingmutuals.compat.*
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.safari.SafariAssist
+import net.johnceo.sparklingmutuals.safari.esp.SafariEsp
 import net.johnceo.sparklingmutuals.safari.shots.ShotVariant
 import net.johnceo.sparklingmutuals.safari.shots.preview.contacts.*
 import net.minecraft.client.Minecraft
@@ -15,7 +16,7 @@ object CapsulePreview {
     private var world: Any?=null
     private var registered=false
     private val frames=ContactGuideLifecycle()
-    private var frameState:CapsulePreviewState?=null
+    fun beginFrame() { frames.reset() }
     fun register() {
         if(registered) return
         registered=true
@@ -27,7 +28,7 @@ object CapsulePreview {
         CapsuleContactScene.tick(client,ConfigManager.experimentalCapsulePath && ConfigManager.allowUncalibratedCapsuleEstimates ||
             net.johnceo.sparklingmutuals.safari.shots.ShotRecorder.status().recording)
     }
-    fun reset() { world=null;rules.reset();frames.reset();frameState=null;CapsuleContactScene.reset() }
+    fun reset() { world=null;rules.reset();frames.reset();CapsuleContactScene.reset() }
     internal fun currentState(client: Minecraft): CapsulePreviewState? {
         if(!ConfigManager.experimentalCapsulePath || client.level==null) return null
         return collectionState(client)?.copy(enabled=ConfigManager.experimentalCapsulePath,allowUncalibratedEstimates=ConfigManager.allowUncalibratedCapsuleEstimates)
@@ -46,15 +47,19 @@ object CapsulePreview {
     internal fun frame(client:Minecraft):CapsulePreviewFrame? {
         val state=currentState(client);val available=availability(state)
         val p=client.player ?: return null
-        if(available!=CapsulePreviewAvailability.AVAILABLE) { frames.reset();frameState=null;return CapsulePreviewFrameBuilder.build(available,ShotPacketCompat.vector(p.eyePosition),ShotPacketCompat.vector(p.lookAngle)) }
+        if(available!=CapsulePreviewAvailability.AVAILABLE) { frames.reset();return CapsulePreviewFrameBuilder.build(available,ShotPacketCompat.vector(p.eyePosition),ShotPacketCompat.vector(p.lookAngle)) }
         val partial=client.deltaTracker.getGameTimeDeltaPartialTick(false)
         val eye=ShotPacketCompat.vector(p.getEyePosition(partial));val aim=ShotPacketCompat.vector(p.getViewVector(partial))
-        val frame=if(state?.allowUncalibratedEstimates==true) CapsulePreviewFrameBuilder.contacts(
-            CapsuleContactScene.snapshot(client,eye,aim,state.pitch).trace,ShotPacketCompat.vector(client.gameRenderer.smCamera.position()),ConfigManager.capsulePathWidth)
-        else CapsulePreviewFrameBuilder.build(available,eye,aim).let{f->f.copy(mesh=ContactGuideGeometry.build(
-            ContactTrace(f.points.mapIndexed{i,v->ContactNode(i.toDouble(),v,true)},null,ContactStop.RANGE_LIMIT,emptySet()),eye,ConfigManager.capsulePathWidth))}
-        client.level?.let{frames.store(it,ShotPacketCompat.vector(p.lookAngle),frame)};frameState=state
-        return frame
+        val level=client.level ?: return null
+        val camera=ShotPacketCompat.vector(client.gameRenderer.smCamera.position())
+        CapsuleContactScene.refreshRevision(client)
+        val view=listOf(state,eye,aim,camera,ConfigManager.capsulePathWidth,CapsuleContactScene.revision,SafariEsp.contactRevision)
+        return frames.resolve(level,view) {
+            if(state?.allowUncalibratedEstimates==true) CapsulePreviewFrameBuilder.contacts(
+                CapsuleContactScene.snapshot(client,eye,aim,state.pitch).trace,camera,ConfigManager.capsulePathWidth)
+            else CapsulePreviewFrameBuilder.build(available,eye,aim).let{f->f.copy(mesh=ContactGuideGeometry.build(
+                ContactTrace(f.points.mapIndexed{i,v->ContactNode(i.toDouble(),v,true)},null,ContactStop.RANGE_LIMIT,emptySet()),eye,ConfigManager.capsulePathWidth))}
+        }
     }
     internal fun availability(state: CapsulePreviewState?): CapsulePreviewAvailability {
         if(Minecraft.getInstance().level !== world) { reset();return CapsulePreviewAvailability.HIDDEN }
@@ -62,12 +67,7 @@ object CapsulePreview {
     }
     fun renderHud(graphics: GuiGraphicsExtractor) {
         val client=Minecraft.getInstance()
-        val state=currentState(client)
-        val available=availability(state)
-        val p=client.player ?: return
-        val frame=if(state==frameState && available==CapsulePreviewAvailability.AVAILABLE)
-            frames.current(client.level,ShotPacketCompat.vector(p.lookAngle)) ?: return
-            else CapsulePreviewFrameBuilder.build(available,ShotPacketCompat.vector(p.eyePosition),ShotPacketCompat.vector(p.lookAngle))
+        val frame=frame(client) ?: return
         val status=frame.status ?: return
         val lines=client.font.split(net.minecraft.network.chat.Component.literal(status),(graphics.guiWidth()-16).coerceAtLeast(1))
         lines.forEachIndexed { index,line ->

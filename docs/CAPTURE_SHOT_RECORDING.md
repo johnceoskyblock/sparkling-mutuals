@@ -16,6 +16,8 @@ One primary marker clips the path: an amber surface ring for **Estimated terrain
 
 Discovery keeps its progress through routine entity metadata updates, while marking coverage incomplete until a fresh sweep finishes. Structural entity-map changes still restart discovery safely. The 64 retained targets favor bodies near the current estimated curve, reconsidered as aim changes; this bounded ranking is not proof that every relevant critter was checked. The shared 256-slot tick allowance is unchanged. Crowded raw recordings can still reach their separate target limit and export as incomplete; readable observations remain useful diagnostics without becoming complete calibration evidence.
 
+The guide and HUD resolve the same current view within each render frame, including camera turns. Repeated frames over an unchanged selected body reuse its validation within the client tick; sixteen distinct full validations remain the limit. Entity movement, metadata, equipment, passenger and capture/model changes invalidate affected checks, and every tick starts fresh. This prevents frame-rate-dependent marker loss without retaining an old contact after a known change. Shyworm still uses the existing head-area visual proxy: full surfaced-body association and server capture bounds remain unverified.
+
 For the first visual test, leave recording off, enable the option as above and compare a few ordinary throws in the tested range. Check camera turns/FOV, GUI scale, screen/HUD suppression, movement stop/start, item/hand changes, angle limits and world transfer. Put the line behind a solid obstacle and confirm occlusion while existing ESP keeps its normal visibility. Live Hypixel appearance and server mechanics require gameplay testing; a passing build or numeric observation check cannot establish them. See the [manual checklist](IMPLEMENTATION_TEST_CHECKLIST.md#experimental-capsule-path).
 
 ## Controls
@@ -144,4 +146,4 @@ Automated suites exercise the actual coordinator/writer/codec, producer-to-reade
 
 ## Last updated
 
-2026-10-17 - Documented provisional known-contact markers, metadata scan continuity, aim-prioritized bounded targets and unchanged raw recording limitations.
+2026-10-17 - Documented shared current-view HUD/guide frames, bounded reusable target validation and the remaining Shyworm body limitation.

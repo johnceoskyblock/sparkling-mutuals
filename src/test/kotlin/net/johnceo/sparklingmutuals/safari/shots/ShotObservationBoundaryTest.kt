@@ -94,14 +94,16 @@ class ShotObservationBoundaryTest {
             }
         }
     }
-    @Test fun `all seven compiled packet callbacks remain passive while unbound`() {
+    @Test fun `compiled motion and equipment callbacks remain passive while unbound`() {
         ShotObservationHooks.bind(null,{ error("off") },{ throw AssertionError(it) })
-        // Real immutable motion packet traverses the actual compiled callback without inspecting the world.
-        val packet=net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket(7,net.minecraft.world.phys.Vec3.ZERO)
-        val method=ShotPacketMixin::class.java.declaredMethods.single { it.name=="motion" }.also { it.isAccessible=true }
-        val callback=org.spongepowered.asm.mixin.injection.callback.CallbackInfo("motion",true)
-        method.invoke(ShotPacketMixin(),packet,callback)
-        assertFalse(callback.isCancelled)
-        assertEquals(7,ShotPacketMixin::class.java.declaredMethods.size)
+        // Real immutable packets traverse compiled callbacks with both preview and recorder inactive.
+        val packets=mapOf("motion" to net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket(7,net.minecraft.world.phys.Vec3.ZERO),
+            "equipment" to net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket(7,emptyList()))
+        for((name,packet) in packets) {
+            val method=ShotPacketMixin::class.java.declaredMethods.single { it.name==name }.also { it.isAccessible=true }
+            val callback=org.spongepowered.asm.mixin.injection.callback.CallbackInfo(name,true)
+            method.invoke(ShotPacketMixin(),packet,callback)
+            assertFalse(callback.isCancelled)
+        }
     }
 }

@@ -51,6 +51,9 @@ data class SafariEspObservations(val critters: List<EspCritterObservation>, val 
 
 /** Nebulune SafariESP identification and box offsets, adapted to our Fabric renderer without Athen. */
 object SafariEsp {
+    /** Invalidates per-tick contact validation when capture/model eligibility changes. */
+    internal var contactRevision=0L
+        private set
     private data class Target(val entity: Entity, val species: String, val shulker: Boolean)
     private var targets = emptyList<Target>()
     private var drops = emptyList<EspDrop>()
@@ -86,7 +89,7 @@ object SafariEsp {
             if (world === client.level && player === client.player && SafariAssist.inSafari &&
                 id in setOf("CRITTER_CAPSULE", "MASTERFUL_CRITTER_CAPSULE")) {
                 rememberAim(client)
-                captures.throwing(System.currentTimeMillis())
+                captures.throwing(System.currentTimeMillis());contactRevision++
             }
             InteractionResult.PASS
         }
@@ -128,13 +131,14 @@ object SafariEsp {
         if (target.species == "Rockmite" && target.entity is Display.ItemDisplay) return
         captures.sighted(target.entity.uuid, target.species, System.currentTimeMillis())
     }
-    fun threw(species: String) { captures.threw(species, System.currentTimeMillis()) }
+    fun threw(species: String) { captures.threw(species, System.currentTimeMillis());contactRevision++ }
     fun shywormMessage(text: String, now: Long) {
         val player = Minecraft.getInstance().player ?: return
         shyworms.chat(text, now, player.x, player.z)
     }
-    fun escaped(species: String) { captures.escaped(species, System.currentTimeMillis())?.let(modelLabels::release) }
+    fun escaped(species: String) { captures.escaped(species, System.currentTimeMillis())?.let(modelLabels::release);contactRevision++ }
     fun caught(species: String) {
+        contactRevision++
         val id = captures.caught(species, System.currentTimeMillis())
         if (id == null) {
             if (targets.any { it.species == species && trackedModel(it) })
@@ -144,7 +148,7 @@ object SafariEsp {
         logger.info("Retired captured {} model {}.", species, id)
         targets = targets.filterNot { it.entity.uuid == id }
     }
-    fun clearCaptured() { captures.reset(); modelLabels.reset(); motion.reset(); litterbugs.reset(); shyworms.reset() }
+    fun clearCaptured() { captures.reset(); modelLabels.reset(); motion.reset(); litterbugs.reset(); shyworms.reset();contactRevision++ }
     fun tick(client: Minecraft) {
         if (level !== client.level) { reset(); level = client.level }
         SafariFloorDrops.state.visit(SafariAssist.biome)
@@ -154,6 +158,7 @@ object SafariEsp {
         rememberAim(client)
         if (++ticks < 5) return
         ticks = 0
+        contactRevision++
         val strings = mutableListOf<EspDrop>()
         val entities = client.level!!.entitiesForRendering().filter { !it.isRemoved && client.level!!.getEntity(it.id) === it }.toList()
         predictedDrops = dropPredictor.scan(entities.filterIsInstance<Display.ItemDisplay>().map {
