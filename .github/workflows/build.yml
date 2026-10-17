@@ -21,6 +21,9 @@ jobs:
         run: python -m unittest discover -s tools/capture_shots/tests -p 'test_*.py' -v
       - name: Package allowlisted sources and synthetic fixtures
         run: python tools/capture_shots/package_tools.py --output build/capture-shot-tools
+      - name: Verify packaged v1 and v2 collection tools
+        working-directory: build/capture-shot-tools
+        run: python -m unittest discover -s tools/capture_shots/tests -p 'test_*.py' -v
       - uses: actions/upload-artifact@v7
         with:
           name: capture-shot-tools
@@ -93,15 +96,22 @@ jobs:
       - run: ./gradlew verifyDistributions -PdistributionDir=incoming
   build:
     if: always()
-    needs: [build-logic, target, verify-all-targets]
+    needs: [build-logic, target, capture-shot-tools, verify-all-targets]
     runs-on: ubuntu-24.04
     steps:
-      - name: Require every build and verification job to pass
+      - name: Require every applicable build and verification job to pass
         env:
           BUILD_LOGIC_RESULT: ${{ needs.build-logic.result }}
           TARGET_RESULT: ${{ needs.target.result }}
+          TOOLS_RESULT: ${{ needs.capture-shot-tools.result }}
           DISTRIBUTION_RESULT: ${{ needs.verify-all-targets.result }}
+          CAPTURE_BRANCH: ${{ github.ref == 'refs/heads/feature/capture-shot-projection' || github.head_ref == 'feature/capture-shot-projection' }}
         run: |
           test "$BUILD_LOGIC_RESULT" = success
           test "$TARGET_RESULT" = success
-          test "$DISTRIBUTION_RESULT" = success
+          test "$TOOLS_RESULT" = success
+          if [ "$CAPTURE_BRANCH" = true ]; then
+            test "$DISTRIBUTION_RESULT" = skipped
+          else
+            test "$DISTRIBUTION_RESULT" = success
+          fi

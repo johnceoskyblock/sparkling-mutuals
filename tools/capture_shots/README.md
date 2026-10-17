@@ -4,6 +4,7 @@ Python **3.11+**, standard library only. No network access, uploads or gameplay 
 
 ```text
 python tools/capture_shots/replay.py session.jsonl --output new-replay-directory
+python tools/capture_shots/contacts.py session.jsonl --output new-contact-directory
 python tools/capture_shots/analyze.py --fit fit.jsonl --validation validation.jsonl --curation choices.json --output new-analysis-directory
 python -m unittest discover -s tools/capture_shots/tests -p "test_*.py" -v
 ```
@@ -22,4 +23,4 @@ python tools/capture_shots/analyze.py --fit src/test/resources/shots/acceleratin
 
 Deliberately invalid fixtures are named `invalid`, `nonfinite` and `reused-token`; `partial` and `utf8-tail` exercise recovery. `service-export` was emitted through the Kotlin coordinator/writer under controlled test observations, rather than recorded from Hypixel.
 
-The checked [schema](../../docs/schemas/capture-shots-v1.schema.json) is the shared producer/consumer contract. No calibrated model or live renderer ships in this kit.
+The checked [v1 schema](../../docs/schemas/capture-shots-v1.schema.json) and [v2 schema](../../docs/schemas/capture-shots-v2.schema.json) are the producer/consumer contracts. Recorder policy v3 uses schema v2 and adds one bounded contact probe per eligible ordinary input. Replay saves these in `contact-predictions.json`, separately from per-shot observed timelines. `contacts.json` reports the frozen hypothesis, proxy versions, coverage, truncation, typed/manual outcomes and raw removals. Endpoint error remains null because no independently observed terminal coordinates exist. A finished raw export can contain a truncated probe; inspect `probe_incomplete` separately. No calibrated model ships in this kit.

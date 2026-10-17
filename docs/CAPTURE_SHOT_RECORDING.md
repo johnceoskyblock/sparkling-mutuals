@@ -6,15 +6,35 @@ This opt-in kit records local observations for ordinary and Masterful Critter Ca
 
 Capture-shot development builds currently target **26.1.2 only**, by maintainer direction; the other two builds resume when this work is finished.
 
-In `/sm` settings, open **Safari helpers → Experimental capsule path**. It starts **off** and saves independently from the recorder. Turn both **Hide capsules on ground** and **Hide flying capsules** off for this experiment. Hold an ordinary capsule in your main hand in Safari, use first person and stand on the ground for two stable client ticks. Look between 10 degrees upward and 1 degree downward, inclusive. A short amber line and **Experimental path** status then appear.
+In `/sm` settings, open **Safari helpers → Experimental capsule path**. It starts **off** and saves independently from the recorder. Turn both **Hide capsules on ground** and **Hide flying capsules** off. Hold an ordinary capsule in your main hand in Safari, use first person and stand on the ground for two stable client ticks. With **Allow uncalibrated estimates** off, the original -10 through +1 degree gate, short path and **Experimental path** status remain; no endpoint is shown.
 
 Walking, jumping/falling, swimming, flight, riding, sneaking/sprinting, unsupported items (including Masterful), off-hand-only use and third person suppress the path. Screens and hidden HUD suppress both the path and status. A quiet status explains supported-state restrictions; there are no repeated chat notices. Disconnects/world changes clear stability without changing the saved option or starting recording.
 
-The fixed spatial curve begins at the first observed update parameter, about 1.7 nominal blocks forward; it omits the unobserved launch segment and ends at nominal 15 blocks. Its ordinal parameter is **not server flight time**. The narrow stationary observation check covered nominal 5–15 blocks; it does not certify rendered appearance or broader conditions. At most 64 points/63 segments are drawn with terrain depth occlusion. This is not collision clipping: there is no impact/endpoint marker, target highlight or capture guarantee. The player controls every aim and throw.
+Enable **Allow uncalibrated estimates** (also default off) for broader first-person angles and estimated contact. The guide extends the same fixed spatial formula from the eye, including the formerly omitted launch prefix. This is the versioned `contact-guide-center-extrapolation-v1` hypothesis, not measured launch physics. It stops at the first of 64 accumulated blocks, ordinal 128 or 256 segments. Ordinal is **not server flight time**. Launch/wider regions are dashed; the previously observed region is solid. **Capsule path width** saves from 1–5, default 3, with a dark outline. Both passes remain terrain-occluded; existing ESP visibility stays unchanged.
+
+One primary marker clips the path: an amber surface ring for **Estimated terrain contact**, or a cyan diamond with center mark for **Possible critter contact**. Terrain wins indistinguishable ties, which are labelled ambiguous. Terrain uses loaded collision shapes, including partial blocks; critters use current client-body or versioned unpadded visual-body proxies, independent of ESP toggles. Neither those proxies nor the zero-radius curve is a verified server hitbox. No target-motion prediction is performed. **Uncalibrated** remains in the HUD. Fluids, unloaded geometry and incomplete/unsupported critter coverage suppress farther markers; a range/work limit displays no landing or miss claim.
 
 For the first visual test, leave recording off, enable the option as above and compare a few ordinary throws in the tested range. Check camera turns/FOV, GUI scale, screen/HUD suppression, movement stop/start, item/hand changes, angle limits and world transfer. Put the line behind a solid obstacle and confirm occlusion while existing ESP keeps its normal visibility. Live Hypixel appearance and server mechanics require gameplay testing; a passing build or numeric observation check cannot establish them. See the [manual checklist](IMPLEMENTATION_TEST_CHECKLIST.md#experimental-capsule-path).
 
 ## Controls
+
+### Contact collection: start small
+
+The working 26.1.2 build and updated tools support this sequence. Use ordinary main-hand capsules, a stationary grounded first-person player, both hiding options off, one thrower and at least eight seconds between throws. Use separate 180-second recordings; stop explicitly in the same world. Recording collects an input-time probe even with the preview off when those conditions and two stable ticks hold. It never starts automatically.
+
+1. **Six-throw sanity:** two near-level into open terrain, two downward at empty nearby ground, two at a small ground critter. Start `/sm shots start 180`; label the applicable scenario `unassigned`, then stop. Inspect probes, raw paths and typed feedback before collecting more. No message means unknown, not miss.
+2. **Wider-angle fitting:** twelve throws, three near each of -30, +15, +35 and +60 degrees. Use `/sm shots label stationary_up fit` or `/sm shots label stationary_down fit`. Recorded pitch defines the bins.
+3. **Close terrain fitting:** twelve throws, four toward feasible visible ground/wall points around 1, 2 and 4 blocks. Use `/sm shots label solid_obstruction fit`. If partial shapes need investigation, use `/sm shots label edge_obstruction fit` in a separate session.
+4. **Proxy fitting:** twelve attempts, six small ground targets and six larger/airborne targets, initially slow or briefly stationary, both unobstructed and wall-adjacent. Use `/sm shots label moving_target fit` only for moving targets; otherwise use the actual stationary scenario. Keep intended species in a separate local note.
+5. **Independent validation:** freeze the candidate/proxy hypothesis and agree tolerances from fitting evidence first; then collect fresh twelve terrain and twelve critter attempts in new sessions, using corresponding `/sm shots label stationary_up validation`, `stationary_down validation`, `solid_obstruction validation`, `edge_obstruction validation` or `moving_target validation`. Do not reuse fitting throws or select validation examples after seeing residuals. No Masterful throws are needed for ordinary calibration.
+
+Schema v2 / recorder policy v3 adds one typed contact probe per eligible ordinary input. Target keys are local to that probe; positions are session-relative. Detail can be compacted below 64 KiB with omitted counts and `truncated=true`. Raw capsule observations keep their original meanings and caps. The tools separate raw-file completeness from incomplete prediction detail:
+
+```text
+python tools/capture_shots/contacts.py session.jsonl --output new-contact-report
+```
+
+The report separates predicted contact, coverage, typed/manual outcomes and raw removals. Endpoint error stays null until an independent terminal position exists; removal/last position/capture feedback cannot supply it. The existing collection matrix below is historical/general recorder coverage; the bounded ordinary contact sequence above is the current next collection.
 
 Recording starts off and never resumes automatically. In a loaded Safari world:
 
@@ -65,7 +85,7 @@ The sample matrix is a collection target, not a claim of statistical sufficiency
 
 ## Format
 
-UTF-8 JSON Lines: one schema-v1 header (`modelVersion: null`), typed ordered events and a footer. [The checked schema](schemas/capture-shots-v1.schema.json) specifies fields, enums and bounds. A footer describes export completeness; unknown outcomes remain unknown. Do not edit raw exports to curate ownership.
+UTF-8 JSON Lines: one versioned header (`modelVersion: null`), typed ordered events and a footer. New recorder policy v3 uses [schema v2](schemas/capture-shots-v2.schema.json); tools also read unchanged [schema v1](schemas/capture-shots-v1.schema.json) files. Legacy raw event meanings are preserved. A footer describes raw export completeness; unknown outcomes remain unknown. Do not edit raw exports to curate ownership.
 
 ## Local replay
 

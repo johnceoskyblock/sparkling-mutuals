@@ -2,7 +2,7 @@
 
 ## Status and agreed intent
 
-The human approved the proposal on issue #51 in the implementation chat: **"Ok, I approve of the proposal"**, after requesting both terrain and critter contact and reviewing the video-informed refinements. After reviewing this written specification, the human answered **"I approve of it"** in the same chat. The written specification is approved; the Native implementation plan awaits review before product implementation.
+The human approved the proposal on issue #51 in the implementation chat: **"Ok, I approve of the proposal"**, after requesting both terrain and critter contact and reviewing the video-informed refinements. After reviewing this written specification, the human answered **"I approve of it"** in the same chat. The written specification is approved; the six-task Native implementation plan is also approved.
 
 The player needs a visible aiming guide with a useful estimated contact point, including downward and close-range aiming. The current short line and narrow pitch gate do not meet that eventual goal. Deliver an opt-in experimental extension that distinguishes terrain contact from possible critter contact, explains unsupported estimates, and supplies reproducible validation support.
 
