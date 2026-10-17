@@ -6,6 +6,23 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class CapsulePreviewRulesTest {
+    @Test fun `preview accepts third person in both narrow and expanded modes`() {
+        for(expanded in listOf(false,true)) {
+            val s=eligible().copy(firstPerson=false,allowUncalibratedEstimates=expanded)
+            val r=CapsulePreviewRules();val w=Any();r.tick(w,s);r.tick(w,s)
+            assertEquals(CapsulePreviewAvailability.AVAILABLE,r.evaluate(s))
+        }
+    }
+    @Test fun `third person moving Masterful display does not relax recorder view restriction`() {
+        val s=eligible().copy(firstPerson=false,allowUncalibratedEstimates=true,capsule=ShotVariant.MASTERFUL,
+            onGround=false,velocity=ShotVector(.2,.3,.1))
+        assertEquals(CapsulePreviewAvailability.AVAILABLE,CapsulePreviewRules().tick(Any(),s))
+        val strict=CapsulePreviewRules(allowExtendedPreview=false);val w=Any();val ordinary=eligible().copy(allowUncalibratedEstimates=true)
+        strict.tick(w,ordinary);strict.tick(w,ordinary)
+        assertEquals(CapsulePreviewAvailability.VIEW_UNAVAILABLE,strict.evaluate(ordinary.copy(firstPerson=false)))
+        assertEquals(CapsulePreviewAvailability.STAND_STILL,strict.tick(w,ordinary))
+        assertEquals(CapsulePreviewAvailability.AVAILABLE,strict.tick(w,ordinary))
+    }
     @Test fun `expanded preview remains available across ground and airborne movement`() {
         val s=eligible().copy(allowUncalibratedEstimates=true)
         val r=CapsulePreviewRules();val w=Any();r.tick(w,s)
@@ -59,7 +76,7 @@ class CapsulePreviewRulesTest {
         val r=CapsulePreviewRules();r.tick(Any(),s)
         for(hidden in listOf(s.copy(enabled=false),s.copy(inSafari=false),s.copy(screenOpen=true),s.copy(hudHidden=true)))
             assertEquals(CapsulePreviewAvailability.HIDDEN,r.evaluate(hidden))
-        assertEquals(CapsulePreviewAvailability.VIEW_UNAVAILABLE,r.evaluate(s.copy(firstPerson=false)))
+        assertEquals(CapsulePreviewAvailability.AVAILABLE,r.evaluate(s.copy(firstPerson=false)))
         assertEquals(CapsulePreviewAvailability.HIDING_UNAVAILABLE,r.evaluate(s.copy(hideFlying=true)))
         assertEquals(CapsulePreviewAvailability.HIDING_UNAVAILABLE,r.evaluate(s.copy(hideGround=true)))
     }
@@ -97,7 +114,7 @@ class CapsulePreviewRulesTest {
             s.copy(screenOpen=true),s.copy(hudHidden=true)))
             assertEquals(CapsulePreviewAvailability.HIDDEN,ready().evaluate(blocked))
         assertEquals(CapsulePreviewAvailability.HIDDEN,ready().evaluate(null))
-        assertEquals(CapsulePreviewAvailability.VIEW_UNAVAILABLE,ready().evaluate(s.copy(firstPerson=false)))
+        assertEquals(CapsulePreviewAvailability.AVAILABLE,ready().evaluate(s.copy(firstPerson=false)))
         for(blocked in listOf(s.copy(hideFlying=true),s.copy(hideGround=true)))
             assertEquals(CapsulePreviewAvailability.HIDING_UNAVAILABLE,ready().evaluate(blocked))
     }
@@ -132,7 +149,7 @@ class CapsulePreviewRulesTest {
     }
     @Test fun `unsupported states cannot bank stable ticks`() {
         val s=eligible();val w=Any()
-        for(blocked in listOf(s.copy(enabled=false),s.copy(firstPerson=false),s.copy(hideFlying=true),s.copy(capsule=null),s.copy(pitch=2.0))) {
+        for(blocked in listOf(s.copy(enabled=false),s.copy(hideFlying=true),s.copy(capsule=null),s.copy(pitch=2.0))) {
             val r=CapsulePreviewRules();repeat(5){r.tick(w,blocked)}
             r.tick(w,s);assertEquals(CapsulePreviewAvailability.STAND_STILL,r.evaluate(s))
         }

@@ -37,13 +37,14 @@ class CapsulePreviewRules(private val allowExtendedPreview: Boolean = true) {
     fun reset() { world = null; previous = null; stableTicks = 0 }
 
     private fun expanded(s: CapsulePreviewState) = allowExtendedPreview && s.allowUncalibratedEstimates
+    private fun viewAllowed(s: CapsulePreviewState) = s.firstPerson || allowExtendedPreview
     private fun supportedCapsule(s: CapsulePreviewState) = s.capsule==ShotVariant.ORDINARY ||
         expanded(s) && s.capsule==ShotVariant.MASTERFUL
     private fun motionAllowed(s: CapsulePreviewState) = s.position.finite() && s.velocity.finite() &&
         !s.swimming && !s.flying && !s.riding && (expanded(s) || s.stationaryForCalibration)
     private fun within(a: ShotVector, b: ShotVector) = abs(a.x-b.x) <= .001 && abs(a.y-b.y) <= .001 && abs(a.z-b.z) <= .001
     private fun physicalEligibility(s: CapsulePreviewState) = s.enabled && s.inSafari && supportedCapsule(s) &&
-        s.firstPerson && !s.hideFlying && !s.hideGround && motionAllowed(s) && angle(s)
+        viewAllowed(s) && !s.hideFlying && !s.hideGround && motionAllowed(s) && angle(s)
     private fun angle(s:CapsulePreviewState) = s.pitch.isFinite() && s.pitch in
         (if(s.allowUncalibratedEstimates) -90.0..90.0 else -10.0..1.0)
 
@@ -62,7 +63,7 @@ class CapsulePreviewRules(private val allowExtendedPreview: Boolean = true) {
         val s = state ?: run { stableTicks = 0; return CapsulePreviewAvailability.HIDDEN }
         if (!physicalEligibility(s)) { stableTicks = 0; previous = null }
         if (!s.enabled || !s.inSafari || !supportedCapsule(s) || s.screenOpen || s.hudHidden) return CapsulePreviewAvailability.HIDDEN
-        if (!s.firstPerson) return CapsulePreviewAvailability.VIEW_UNAVAILABLE
+        if (!viewAllowed(s)) return CapsulePreviewAvailability.VIEW_UNAVAILABLE
         if (s.hideFlying || s.hideGround) return CapsulePreviewAvailability.HIDING_UNAVAILABLE
         if (!motionAllowed(s) || !expanded(s) && previous?.let { !within(it, s.position) } == true) {
             stableTicks = 0

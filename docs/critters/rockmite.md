@@ -30,6 +30,7 @@
 - Partial-clear entry: minimum shared captures + qualifying UUID-check radius + no remaining critters/spawns establishes Full Clear without seeing captured UUIDs again. Apply species-specific source checks and [shared radius rules](TRACKING.md#partially-cleared-biome).
 - Track each mound separately. The four cracking/progress messages do not prove that it broke or released a critter.
 - Terminal revealing message: one Rockmite spawned; track its unique silverfish UUID when visible. Terminal empty message: that mound released none.
+- Capsule-contact guides exclude the identified mound item display from critter targets. A released silverfish Rockmite remains eligible; mound ESP/source tracking and terrain clipping are independent. A cyan diamond is not an instruction to throw a capsule at an unbroken mound.
 - Full Clear requires every mound resolved and every released Rockmite captured. Sparkling checking requires every mound outcome/opportunity resolved; a released ordinary Rockmite need not be caught just to identify its sparkle status.
 - Resolved sources with zero catches remain incomplete in Unique until party `cd` confirms the unseen no-spawn case. A positively encountered ordinary Rockmite still requires a shared catch; no report manufactures captures.
 
@@ -48,3 +49,5 @@
 2026-10-16 - Aligned Unique party-report checking with real per-species captures and limited Cavern source contradictions.
 
 2026-10-15 - Restored mode- and discovery-gated nest/wall/mound helper footers; kept plain critter rows and removed duplicate Gazer counters.
+
+2026-10-17 - Excluded mound displays from capsule-contact candidates while retaining released Rockmites and existing source/ESP rules.
