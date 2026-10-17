@@ -158,7 +158,7 @@ class SafariSettings : Config() {
         @ConfigEditorBoolean var experimentalCapsulePath = ConfigManager.experimentalCapsulePath
         @JvmField @ConfigOption(name = "Allow uncalibrated estimates", desc = "Terrain and critter estimates, including Masterful capsules, movement and water. Launch, collision and target bounds are unverified. Requires Experimental capsule path.")
         @ConfigEditorBoolean var allowUncalibratedCapsuleEstimates = ConfigManager.allowUncalibratedCapsuleEstimates
-        @JvmField @ConfigOption(name = "Capsule path width", desc = "3D path thickness from 1 to 5; default 3. Nearby sections appear larger.")
+        @JvmField @ConfigOption(name = "Capsule path width", desc = "Line width from 1 to 5; default 3.")
         @ConfigEditorSlider(minValue = 1f, maxValue = 5f, minStep = 1f) var capsulePathWidth = ConfigManager.capsulePathWidth
         @JvmField @ConfigOption(name = "Show guide through terrain", desc = "See the capsule guide and contact marker behind terrain. The estimated route still stops at its first predicted collision.")
         @ConfigEditorBoolean var showCapsuleGuideThroughTerrain = ConfigManager.showCapsuleGuideThroughTerrain

@@ -28,7 +28,7 @@ The existing `missingPanel` toggle and HUD layout are shared across modes. In Sp
 
 ## Experimental capsule path
 
-Capsule path width saves independently as `capsulePathWidth`, defaults to **3**, and clamps finite values to **1–5**. Invalid/non-finite values use 3. The 3D path uses an amber diameter of 0.02 blocks per width step (0.06 at default 3), plus a 0.01-block radial dark border; distance and perspective change its apparent screen size. The same selection retains the existing marker stroke width. Uncalibrated estimates requires Experimental capsule path; enabling either option does not start recording. Expanded estimates add a terrain ring or possible-critter diamond, including close launch and broader angles. Either or both capsule-hiding settings may stay on; collision and target proxies remain unverified. Strict recorder calibration probes still require both off.
+Capsule path width saves independently as `capsulePathWidth`, defaults to **3**, and clamps finite values to **1–5**. Invalid/non-finite values use 3. Uncalibrated estimates requires Experimental capsule path; enabling either option does not start recording. Expanded estimates add a terrain ring or possible-critter diamond, including close launch and broader angles. Either or both capsule-hiding settings may stay on; collision and target proxies remain unverified. Strict recorder calibration probes still require both off.
 
 **Show guide through terrain** (`showCapsuleGuideThroughTerrain`) defaults **on**, including for missing/invalid saved values; an explicit off choice persists. It only changes guide/marker visibility, with the experimental preview still separately default off and the same collision stops. **Capsule status** uses the standard HUD editor with saved normalized `hud.capsule_status.x` / `y` and `scale` (0.15–2). Its default top-left anchor is 35% across / 55% down at scale 1; Reset positions restores it.
 
@@ -61,8 +61,6 @@ The History tab begins with the **History** button, followed immediately by **Im
 ## Last updated
 
 2026-10-17 - Aligned entry guards with tab-first Safari presence, two-second kick pauses, ticket-message downtime release and Shift override.
-
-2026-10-17 (America/New_York) - Applied the existing capsule width selection to world-space tube thickness while retaining saved values and marker style.
 
 2026-10-17 (America/New_York) - Separated visual capsule-guide availability from capsule hiding; preserved saved options and recorder calibration restrictions.
 
