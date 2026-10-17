@@ -13,6 +13,7 @@ MAX_LINE=64*1024
 MAX_EVENTS=100_000
 SCHEMA_PATH=Path(__file__).resolve().parents[2]/'docs/schemas/capture-shots-v1.schema.json'
 SCHEMA=json.loads(SCHEMA_PATH.read_text(encoding='utf-8'))
+SCHEMAS={1:SCHEMA,2:json.loads(SCHEMA_PATH.with_name('capture-shots-v2.schema.json').read_text(encoding='utf-8'))}
 
 class ProtocolError(ValueError):
     pass
@@ -27,16 +28,16 @@ def plain(value):
     if isinstance(value,(list,tuple)):return [plain(v) for v in value]
     return value
 
-def _validate(value,schema):
+def _validate(value,schema,root):
     if '$ref' in schema:
         ref=schema['$ref']
         if not ref.startswith('#/$defs/'):raise ProtocolError('unsupported schema reference')
-        return _validate(value,SCHEMA['$defs'][ref.split('/')[-1]])
+        return _validate(value,root['$defs'][ref.split('/')[-1]],root)
     for keyword in ('oneOf','anyOf'):
         if keyword in schema:
             matches=0
             for option in schema[keyword]:
-                try:_validate(value,option);matches+=1
+                try:_validate(value,option,root);matches+=1
                 except ProtocolError:pass
             if matches<1 or keyword=='oneOf' and matches!=1:raise ProtocolError('schema variant/fields mismatch')
     def equal(a,b):return a==b and (type(a) is bool)==(type(b) is bool)
@@ -56,13 +57,13 @@ def _validate(value,schema):
         if 'pattern' in schema and not re.fullmatch(schema['pattern'],value):raise ProtocolError('invalid token/pattern')
     if isinstance(value,list):
         if len(value)>schema.get('maxItems',MAX_EVENTS):raise ProtocolError('array bound')
-        for item in value:_validate(item,schema.get('items',{}))
+        for item in value:_validate(item,schema.get('items',{}),root)
     if isinstance(value,dict):
         props=schema.get('properties',{})
         if not set(schema.get('required',())).issubset(value):raise ProtocolError('missing field')
         if schema.get('additionalProperties') is False and not set(value).issubset(props):raise ProtocolError('unknown/privacy field')
         for k,v in value.items():
-            if k in props:_validate(v,props[k])
+            if k in props:_validate(v,props[k],root)
 
 def _pairs(items):
     result={}
@@ -118,7 +119,7 @@ def read_session(path: Path) -> Session:
     path=Path(path).resolve(strict=True)
     if path.stat().st_size>MAX_BYTES:raise ProtocolError('file byte limit')
     header=None;footer=None;events=[];issues=[];total=0;sha=hashlib.sha256();sequence=0;micros=0;tick=0
-    inputs={};entities={};closed=set();references=set();before_footer=0;by_token={}
+    inputs={};entities={};closed=set();references=set();before_footer=0;by_token={};probes=set();version=None
     with path.open('rb') as source:
         while True:
             raw=source.readline(MAX_LINE+1)
@@ -134,7 +135,10 @@ def read_session(path: Path) -> Session:
                 if partial:issues.append('partial_tail');break
                 raise ProtocolError('malformed complete line') from e
             if partial:issues.append('partial_tail')
-            _validate(r,SCHEMA)
+            if version is None:
+                if not isinstance(r,dict) or not isinstance(r.get('metadata'),dict):raise ProtocolError('missing versioned header')
+                version=r['metadata'].get('schemaVersion')
+            validate_record(r,version)
             if header is None:
                 if r['type']!='header':raise ProtocolError('first record must be header')
                 header=r
@@ -172,6 +176,16 @@ def read_session(path: Path) -> Session:
             elif kind=='obstruction':
                 if d['track']:references.add(d['track'])
                 if d['shot'] and d['shot'] not in inputs:raise ProtocolError('unknown obstruction shot')
+            elif kind=='contact_probe':
+                p=d['probe'];shot=p['shot']
+                if shot not in inputs or shot in probes:raise ProtocolError('unknown or duplicate probe shot')
+                if inputs[shot]['data']['variant']!='ordinary' or inputs[shot]['data']['hand']!='main':raise ProtocolError('unsupported probe input')
+                probes.add(shot)
+                keys=[t['key'] for t in p['targets']]
+                if len(set(keys))!=len(keys):raise ProtocolError('duplicate proxy token')
+                primary=p['primary']
+                if primary and primary['targetKey'] not in keys and primary['targetKey'] is not None and not p['truncated']:raise ProtocolError('unknown primary proxy')
+                if any(b['parameter']<=a['parameter'] for a,b in zip(p['nodes'],p['nodes'][1:])):raise ProtocolError('probe parameter order')
             event=Event(r['sequence'],r['micros'],r['tick'],kind,freeze(d));events.append(event)
             if token:by_token.setdefault(token,[]).append(event)
     if header is None:raise ProtocolError('missing header')
@@ -198,3 +212,8 @@ def read_session(path: Path) -> Session:
         shots.append(Shot(token,by_token[token][0],tuple(summary.get('tracks',())),summary.get('association','unmatched'),tuple(summary.get('feedback',())),annotations))
     tracks=tuple(Track(token,d['generation'],d.get('variant'),d.get('species'),tuple(by_token.get(token,()))) for token,d in entities.items())
     return Session(freeze(header),tuple(events),freeze(footer) if footer else None,not issues,tuple(issues),sha.hexdigest(),path,tuple(shots),tracks)
+
+def validate_record(value: dict, schema_version: int) -> None:
+    if type(schema_version) is not int or schema_version not in SCHEMAS:raise ProtocolError('unknown schema version')
+    schema=SCHEMAS[schema_version]
+    _validate(value,schema,schema)
