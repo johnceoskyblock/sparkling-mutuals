@@ -24,15 +24,19 @@ class UniqueHelperPriorityTest {
         assertFalse(state.enabledForMode(SafariBiome.CAVERN, SafariMode.UNIQUE, true, run, all))
         assertTrue(state.enabledForMode(SafariBiome.CAVERN, SafariMode.FULL_CLEAR, true, run, all))
     }
-    @Test fun `unique bird and coin supplies are not hidden by party sparkling discoveries before captures`() {
+    @Test fun `unique bird supplies precede captures while coins follow missing party discoveries`() {
         val run = SafariRun(0); val state = FloorDropState(); val all = party()
+        val needsCoin = party("Gimmiegold")
         assertTrue(state.enabledForMode(SafariBiome.FOREST, SafariMode.UNIQUE, true, run, all))
         state.inventory(listOf("Soothing Incense" to 4))
-        assertTrue(state.enabledForMode(SafariBiome.HAUNTED, SafariMode.UNIQUE, true, run, all))
-        assertFalse(state.enabledForMode(SafariBiome.HAUNTED, SafariMode.UNIQUE, false, run, all))
+        assertFalse(state.enabledForMode(SafariBiome.HAUNTED, SafariMode.UNIQUE, true, run, all))
+        assertTrue(state.enabledForMode(SafariBiome.HAUNTED, SafariMode.UNIQUE, true, run, needsCoin))
+        assertFalse(state.enabledForMode(SafariBiome.HAUNTED, SafariMode.UNIQUE, false, run, needsCoin))
         run.record(SafariCatch(SafariRoster.named("Gimmiegold")!!))
-        assertTrue(state.enabledForMode(SafariBiome.HAUNTED, SafariMode.UNIQUE, true, run, all))
+        assertTrue(state.enabledForMode(SafariBiome.HAUNTED, SafariMode.UNIQUE, true, run, needsCoin))
+        assertFalse(state.enabledForMode(SafariBiome.HAUNTED, SafariMode.UNIQUE, true, run, all))
         state.record("FLOOR DROP! Shining Coin", SafariBiome.HAUNTED)
+        assertTrue(state.enabledForMode(SafariBiome.HAUNTED, SafariMode.UNIQUE, true, run, needsCoin))
         assertFalse(state.enabledForMode(SafariBiome.HAUNTED, SafariMode.UNIQUE, true, run, all))
     }
     @Test fun `structure helpers prioritize first catch then remaining party checks`() {

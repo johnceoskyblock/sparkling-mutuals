@@ -42,6 +42,7 @@ class SafariClearConsistencyTest {
         repeat(7) { birds.spawn("A Bluebird was attracted to the Birdfeeder!") }
         repeat(2) { birds.spawn("Two Macaws were attracted to the Birdfeeder!") }
         birds.inventory(emptyList())
+        birds.scan(0)
     }
     @Test fun `Honeybug minimum and empty scan cannot turn green before nests are punched`() {
         val run = forest()

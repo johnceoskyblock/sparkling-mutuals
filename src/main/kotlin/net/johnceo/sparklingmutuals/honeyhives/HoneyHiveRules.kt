@@ -10,6 +10,7 @@ data class Hive(val x: Int, val y: Int, val z: Int, var id: String? = null) {
 /** The decisions behind the honeyhive beacons, free of the client so they can be tested. */
 object HoneyHiveRules {
     const val REMOVED_HIVE = "-730,132,184"
+    fun correctedKey(key: String) = if (key == "-705,92,225") "-704,92,225" else key
     /** Discard pre-fix timers once; later launches retain each valid hive's personal deadline. */
     fun savedRefills(saved: java.util.Properties, now: Long): Map<String, Map<String, Long>> {
         if (saved.getProperty("tracking.version") != "2") return emptyMap()
@@ -17,7 +18,7 @@ object HoneyHiveRules {
         saved.stringPropertyNames().forEach { name ->
             parseLoot(name, saved.getProperty(name), "refill")
                 ?.takeIf { (owner, key, at) -> !owner.endsWith(".unknown") && key != REMOVED_HIVE && now < at }
-                ?.let { (owner, key, at) -> result.getOrPut(owner) { mutableMapOf() }[key] = at }
+                ?.let { (owner, key, at) -> result.getOrPut(owner) { mutableMapOf() }.merge(key, at, ::maxOf) }
         }
         return result
     }
@@ -58,6 +59,10 @@ object HoneyHiveRules {
     /** Hive loots belong to one player's SkyBlock profile; unknown until both are known. */
     fun scope(player: String?, profile: String?): String? =
         if (player.isNullOrBlank() || profile.isNullOrBlank()) null else "${player.replace("-", "")}.${profile.replace("-", "")}"
+    /** Reuse only this player's most recently confirmed profile while its join message is pending. */
+    fun resumeScope(player: String?, profile: String?, lastScope: String?): String? = scope(player, profile)
+        ?: lastScope?.takeIf { player != null && it.startsWith("${player.replace("-", "")}.") && !it.endsWith(".unknown") }
+
     private val profileId = Regex("^Profile ID: ([0-9a-fA-F-]{32,36})$")
     /** Hypixel sends `Profile ID: <uuid>` whenever you join a SkyBlock server. */
     fun profileId(line: String): String? = profileId.matchEntire(line.trim())?.groupValues?.get(1)?.lowercase()
@@ -67,7 +72,7 @@ object HoneyHiveRules {
         val rest = name.removePrefix("$prefix.").takeIf { it != name } ?: return null
         val cut = rest.lastIndexOf('.').takeIf { it > 0 } ?: return null
         val time = value.toLongOrNull() ?: return null
-        return Triple(rest.substring(0, cut), rest.substring(cut + 1), time)
+        return Triple(rest.substring(0, cut), correctedKey(rest.substring(cut + 1)), time)
     }
 
     fun nearest(hives: Collection<Hive>, x: Double, y: Double, z: Double): Hive? = hives
@@ -89,7 +94,7 @@ object HoneyHiveRules {
         val parts = line.substringBefore('#').trim().split(Regex("\\s+"))
         if (parts.size < 3) return@mapNotNull null
         val (x, y, z) = parts.take(3).map { it.toIntOrNull() ?: return@mapNotNull null }
-        Hive(x, y, z, parts.getOrNull(3)?.takeIf { it != "-" }).takeIf { it.key != REMOVED_HIVE }
+        Hive(if (x == -705 && y == 92 && z == 225) -704 else x, y, z, parts.getOrNull(3)?.takeIf { it != "-" }).takeIf { it.key != REMOVED_HIVE }
     }
 
 }

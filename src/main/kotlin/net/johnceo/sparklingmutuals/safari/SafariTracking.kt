@@ -62,6 +62,7 @@ object SafariTracking {
         val client = Minecraft.getInstance()
         if (client.level == null || client.player == null) return
         syncWorld(client)
+        net.johnceo.sparklingmutuals.history.HistoryServerPolicy.allows(client)
         val text = SafariRules.strip(raw)
         val now = System.currentTimeMillis()
         if (TicketCounter.isTicket(text)) pendingAdmission = text to now
@@ -121,7 +122,9 @@ object SafariTracking {
         syncWorld(client)
         val previous = ledger.current
         val now = System.currentTimeMillis()
+        net.johnceo.sparklingmutuals.history.HistoryServerPolicy.allows(client)
         ledger.update(SafariAssist.location, SafariAssist.biome, now)
+        net.johnceo.sparklingmutuals.history.HistoryServerPolicy.allows(client)
         if (previous !== ledger.current) {
             resetEncounters()
             ledger.current?.let { entryEvidence(it, now) }

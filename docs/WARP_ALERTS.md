@@ -1,5 +1,7 @@
 # Warp alert and automatic party warp
 
+Warp alerts default **off** for fresh configurations and missing settings; explicit saved on/off choices remain unchanged.
+
 When **`/alert` is enabled**, the real Safari Hunting Hotspot message starts the configured delay. At expiry, show the existing Warp alert and send **`/p warp` once** to bring the party into the run. The default remains **25 seconds**, adjustable with `/alertdelay <seconds>` or **Warp reminders** settings, from 1 to 86400 seconds.
 
 The existing `/alert` switch controls both the visible alert and automatic warp. Settings text and command feedback describe both actions. No extra enable step is required.
@@ -20,5 +22,7 @@ The existing `/alert` switch controls both the visible alert and automatic warp.
 4. Restart to verify the enabled choice and configured delay persist. Test both command and settings controls.
 
 ## Last updated
+
+2026-10-17 - Disabled warp alerts by default, preserving saved settings and the 25-second delay.
 
 2026-10-15 - Added automatic /p warp with trusted triggers, cancellation and binding to the exact active run, including same-world run replacement.

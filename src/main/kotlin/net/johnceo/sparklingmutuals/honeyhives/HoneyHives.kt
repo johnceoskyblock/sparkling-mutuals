@@ -33,6 +33,7 @@ object HoneyHives {
     private val hives = linkedMapOf<String, Hive>()
     /** Scope -> hive key -> when it refills: the one thing that decides whether a hive is full. */
     private val refillAt = mutableMapOf<String, MutableMap<String, Long>>()
+    private val lootedAt = mutableMapOf<String, MutableMap<String, Long>>()
     private val queenFull = mutableMapOf<String, MutableSet<String>>()
     /** The last scope seen, saved, so loots apply straight away after a restart or a server switch. */
     private var lastScope: String? = null
@@ -65,7 +66,11 @@ object HoneyHives {
         val client = Minecraft.getInstance()
         if (!ConfigManager.honeyHives || !onTorrhus || !SkyblockSidebar.inSkyblock(client)) return
         updateScope(client)
-        if (tracker?.chat(text.trim(), System.currentTimeMillis()) == true) save()
+        val now = System.currentTimeMillis()
+        if (tracker?.chat(text.trim(), now) == true) {
+            save()
+            refreshVisible(client, now)
+        } else if (text.startsWith("QUEEN BEE!")) logger.info("Unmatched Queen Bee refill: scope={} text={}", scope, text)
     }
 
     private fun clicked(player: Player, world: Level, pos: BlockPos) {
@@ -82,7 +87,7 @@ object HoneyHives {
     /** Until the join's profile line arrives, track fresh loots under this player only. */
     private fun updateScope(client: Minecraft) {
         val player = client.player?.uuid?.toString()?.replace("-", "")
-        val selected = HoneyHiveRules.scope(player, profile)
+        val selected = HoneyHiveRules.resumeScope(player, profile, lastScope)
         val next = selected ?: player?.let { "$it.unknown" }
         ContestTracker.selectScope(selected)
         if (next == scope) return
@@ -92,11 +97,12 @@ object HoneyHives {
         tracker = next?.let { owner ->
             val times = refillAt.getOrPut(owner) { mutableMapOf() }
             val full = queenFull.getOrPut(owner) { mutableSetOf() }
+            val loots = lootedAt.getOrPut(owner) { mutableMapOf() }
             if (promote) {
-                tracker!!.apply { promote(times, full) }.also {
-                    refillAt.remove("$player.unknown"); queenFull.remove("$player.unknown")
+                tracker!!.apply { promote(times, full, loots) }.also {
+                    refillAt.remove("$player.unknown"); queenFull.remove("$player.unknown"); lootedAt.remove("$player.unknown")
                 }
-            } else HoneyHiveTracker(times, full, provisional = selected == null)
+            } else HoneyHiveTracker(times, full, provisional = selected == null, lootedAt = loots)
         }
         if (selected != null && selected != lastScope) { lastScope = selected; save() }
     }
@@ -107,6 +113,10 @@ object HoneyHives {
         if (client.level !== level) { level = client.level; onTorrhus = false; visible = emptyList(); tracker?.resetSession() }
         updateScope(client)
         if (++ticks % 20 != 0) return
+        val now = System.currentTimeMillis()
+        var expired = false
+        refillAt.values.forEach { times -> if (times.entries.removeIf { now >= it.value }) expired = true }
+        if (expired) save()
         val world = client.level ?: return
         val player = client.player ?: return
         if (!ConfigManager.honeyHives || !SkyblockSidebar.inSkyblock(client)) { visible = emptyList(); return }
@@ -117,15 +127,19 @@ object HoneyHives {
             visible = emptyList(); return
         }
         if (ticks % 40 == 0) survey(client)
-        val now = System.currentTimeMillis()
         verifyLoaded(client, now)
-        refillAt.values.forEach { it.entries.removeIf { e -> now >= e.value } }
+        refreshVisible(client, now)
+    }
+
+    private fun refreshVisible(client: Minecraft, now: Long) {
+        val player = client.player ?: return
+        if (!ConfigManager.honeyHives || !onTorrhus || ContestTracker.isComplete()) { visible = emptyList(); return }
         val refills = scope?.let { refillAt[it] }.orEmpty()
         val shown = mutableListOf<Pair<Hive, Int>>()
         for (hive in hives.values) {
             if (player.distanceToSqr(hive.x + .5, hive.y + .5, hive.z + .5) > RANGE * RANGE) continue
             val refill = refills[hive.key]
-            when (HoneyHiveRules.state(now, refill)) {
+            when (tracker?.state(hive.key, now) ?: HoneyHiveRules.state(now, refill)) {
                 HiveState.FULL -> shown += hive to FULL
                 HiveState.EMPTY -> Unit
             }
@@ -161,15 +175,11 @@ object HoneyHives {
 
     /** Only inspect loaded known hives; no API response can overwrite what the server shows. */
     private fun verifyLoaded(client: Minecraft, now: Long) {
-        // Provisional holograms update rendering immediately; only confirmed loots migrate to a saved profile.
         val world = client.level ?: return
         val current = tracker ?: return
         val labels = world.entitiesForRendering().filter { !it.isRemoved && world.getEntity(it.id) === it }.flatMap { entity ->
-            val text = when (entity) {
-                is Display.TextDisplay -> entity.text.string
-                else -> entity.customName?.string
-            } ?: return@flatMap emptyList()
-            HoneyHiveLabels.statusLines(text).map { HiveLabel(entity.x, entity.y, entity.z, it) }
+            val text = if (entity is Display.TextDisplay) entity.text.string else entity.customName?.string
+            text?.let { HoneyHiveLabels.statusLines(it).map { line -> HiveLabel(entity.x, entity.y, entity.z, line) } }.orEmpty()
         }
         var changed = false
         for (hive in hives.values) {
@@ -178,7 +188,7 @@ object HoneyHives {
             val state = world.getBlockState(pos)
             if (!state.`is`(Blocks.BEE_NEST)) continue
             val label = HoneyHiveLabels.forHive(hive, hives.values, labels)
-            if (current.observe(hive.key, label, now = now)) changed = true
+            if (current.observe(hive.key, label, state.getValue(net.minecraft.world.level.block.BeehiveBlock.HONEY_LEVEL), now)) changed = true
         }
         if (changed) save()
     }
@@ -250,13 +260,18 @@ object HoneyHives {
         if (!Files.exists(file)) return
         val saved = Properties().apply { Files.newInputStream(file).use(::load) }
         val now = System.currentTimeMillis()
-        // One-time migration: earlier API-derived timers were incorrect. Start this revision with all hives full.
+        // Preserve version-2 personal deadlines across upgrades and relogs.
         HoneyHiveRules.savedRefills(saved, now).forEach { (owner, times) -> refillAt[owner] = times.toMutableMap() }
         HoneyHiveRules.savedQueenFull(saved).forEach { (owner, keys) -> queenFull[owner] = keys.toMutableSet() }
         // Keep surveyed positions, except the removed non-existent hive; ids no longer control readiness.
         saved.stringPropertyNames().filter { it.startsWith("hive.") }.forEach { name ->
             HoneyHiveRules.parse(name.removePrefix("hive.").replace(',', ' ') + " " + saved.getProperty(name))
                 .firstOrNull()?.takeIf { it.key != REMOVED_HIVE }?.let { hives.putIfAbsent(it.key, it) }
+        }
+        saved.stringPropertyNames().forEach { name ->
+            HoneyHiveRules.parseLoot(name, saved.getProperty(name), "looted")?.let { (owner, key, at) ->
+                lootedAt.getOrPut(owner) { mutableMapOf() }[key] = at
+            }
         }
         lastScope = saved.getProperty("scope.last")
         save()
@@ -267,6 +282,13 @@ object HoneyHives {
         out.setProperty("tracking.version", "2")
         hives.values.forEach { out.setProperty("hive.${it.key}", it.id ?: "-") }
         refillAt.forEach { (owner, times) -> times.forEach { (key, at) -> out.setProperty("refill.$owner.$key", at.toString()) } }
+        val now = System.currentTimeMillis()
+        lootedAt.forEach { (owner, times) -> times.forEach { (key, at) ->
+            out.setProperty("looted.$owner.$key", at.toString())
+            val current = (if (owner == scope) tracker?.state(key, now) else null)
+                ?: HoneyHiveRules.state(now, refillAt[owner]?.get(key))
+            out.setProperty("state.$owner.$key", current.name.lowercase())
+        } }
         queenFull.forEach { (owner, keys) -> keys.forEach { key -> out.setProperty("full.$owner.$key", "1") } }
         lastScope?.let { out.setProperty("scope.last", it) }
         runCatching { Files.createDirectories(file.parent); Files.newOutputStream(file).use { out.store(it, "Sparkling Mutuals honeyhives") } }

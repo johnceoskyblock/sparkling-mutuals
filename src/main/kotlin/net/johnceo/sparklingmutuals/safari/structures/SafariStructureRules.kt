@@ -8,7 +8,7 @@ import net.johnceo.sparklingmutuals.safari.SafariRules
 data class MoundShape(val x: Double, val y: Double, val z: Double, val width: Double, val height: Double,
     val distanceSquared: Double, val occupied: Boolean = false)
 object SafariMounds {
-    fun detected(shape: MoundShape) = shape.distanceSquared <= 64.0 * 64 && shape.y <= 65 &&
+    fun detected(shape: MoundShape, limitRange: Boolean = true) = (!limitRange || shape.distanceSquared <= 64.0 * 64) && shape.y <= 65 &&
         shape.width in .35..1.10 && shape.height in .25.. .95 && shape.height <= shape.width + .1 &&
         abs(shape.x - (floor(shape.x) + .5)) < .05 && abs(shape.z - (floor(shape.z) + .5)) < .05 && !shape.occupied
     fun outcome(raw: String): Boolean? {
@@ -34,6 +34,7 @@ class MoundSurvey {
     private var scanned = false
     val allBroken get() = scanned && sites.values.all { it }
     val remaining get() = sites.values.count { !it }
+    val hasSites get() = sites.isNotEmpty()
     fun scan(present: Set<Triple<Int, Int, Int>>, observable: (Triple<Int, Int, Int>) -> Boolean) {
         scanned = true
         present.forEach { sites[it] = false }

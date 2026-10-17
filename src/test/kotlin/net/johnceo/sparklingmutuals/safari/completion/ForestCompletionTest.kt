@@ -37,7 +37,7 @@ class ForestCompletionTest {
         run.record(SafariCatch(SafariRoster.named("Honeybug")!!))
         assertTrue(run.captureComplete("Honeybug"))
         run.updateCaptureEvidence(SafariBiome.FOREST,emptySet(),false,false,playerX=3.0,playerZ=47.0)
-        assertFalse(run.captureComplete("Honeybug"))
+        assertTrue(run.captureComplete("Honeybug"), "later empty scans retain the completed source survey")
         val checks=SparklingChecks()
         repeat(4) { checks.scan(SafariBiome.FOREST,500.0,500.0,List(3) { "Honeybug" to ids[0] },nestsChecked=true) }
         assertTrue(checks.checked("Honeybug"))

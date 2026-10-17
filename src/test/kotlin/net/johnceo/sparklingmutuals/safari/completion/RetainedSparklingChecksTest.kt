@@ -40,7 +40,7 @@ class RetainedSparklingChecksTest {
         }
     }
     @Test fun `every critter retains qualified UUID checks despite rendering and biome entry changes`() {
-        for (critter in SafariRoster.all) {
+        for (critter in SafariRoster.all.filter { it.name !in setOf("Bluebird", "Parakeet", "Macaw") }) {
             val checks = SparklingChecks()
             checks.inventory(emptyList())
             val required = maxOf(1, SafariFullClear.minimum(critter.name))
@@ -76,7 +76,7 @@ class RetainedSparklingChecksTest {
         assertEquals(0, checks.checkCount("Gemzie"))
         scan(checks, "Gemzie", listOf(id))
         assertEquals(1, checks.checkCount("Gemzie"))
-        for (name in listOf("Honeybug", "Rockmite", "Snoozle", "Bluebird", "Gimmiegold")) {
+        for (name in listOf("Honeybug", "Rockmite", "Snoozle", "Gimmiegold")) {
             val sourceChecks = SparklingChecks(); sourceChecks.inventory(emptyList())
             repeat(3) { scan(sourceChecks, name, listOf(UUID.randomUUID()), false) }
             assertFalse(sourceChecks.locallyChecked(name), name)
@@ -85,16 +85,16 @@ class RetainedSparklingChecksTest {
             assertTrue(sourceChecks.locallyChecked(name), name)
         }
     }
-    @Test fun `Forest population based feeding proof survives ordinary unloading without waiving new food`() {
+    @Test fun `Forest announcements persist without UUID evidence but never waive new food`() {
         val run = SafariRun(0)
         run.inventoryEvidence(emptyList(), 10000)
-        val live = List(9) { "Bluebird" to UUID.randomUUID() }
-        run.scanBirdSources(6.0, 51.0, live, 0)
+        repeat(9) { run.birds.spawn("A Bluebird was attracted to the Birdfeeder!") }
+        run.scanBirdSources(0)
         assertTrue(run.birds.sparklingSpawned)
-        run.scanBirdSources(6.0, 51.0, emptyList(), 0)
+        run.scanBirdSources(0)
         assertTrue(run.birds.sparklingSpawned)
         run.recordBirdFood("FLOOR DROP! Yogi Berry", SafariBiome.FOREST, 10000)
-        run.scanBirdSources(6.0, 51.0, emptyList(), 0)
+        run.scanBirdSources(0)
         assertFalse(run.birds.sparklingSpawned)
     }
 

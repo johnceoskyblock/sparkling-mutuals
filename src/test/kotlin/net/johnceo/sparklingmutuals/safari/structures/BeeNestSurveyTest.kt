@@ -14,6 +14,7 @@ class BeeNestSurveyTest {
         val survey = BeeNestSurvey()
         observe(survey, setOf(low, other, high))
         survey.observe(high, NestBlock.UNKNOWN)
+        assertEquals(3, survey.nestCount, "unloading cannot erase an initial nest")
         survey.punch(low); survey.punch(other)
         assertFalse(survey.allChecked)
         survey.observe(high, NestBlock.NEST)
@@ -66,6 +67,6 @@ class BeeNestSurveyTest {
         observe(survey, setOf(low, other, high))
         survey.punch(low); survey.punch(other); survey.punch(high)
         survey.observe(Triple(20, 88, 33), NestBlock.UNKNOWN)
-        assertFalse(survey.allChecked)
+        assertTrue(survey.allChecked, "unloading cannot erase an already classified hive")
     }
 }

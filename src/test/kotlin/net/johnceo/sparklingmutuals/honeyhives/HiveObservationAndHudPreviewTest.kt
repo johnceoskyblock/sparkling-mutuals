@@ -46,27 +46,35 @@ class HiveObservationAndHudPreviewTest {
         assertNull(HoneyHiveLabels.forHive(b, listOf(a,b), tie))
         assertNull(HoneyHiveLabels.forHive(a, listOf(a,b), listOf(HiveLabel(.5, 18.0, .5, "Click to loot!"))))
     }
-    @Test fun `countdown wins over a simultaneously loaded full label without using block honey level`() {
-        val hive = Hive(0, 10, 0)
-        val labels = listOf(HiveLabel(.5, 12.0, .5, "Click to loot!"), HiveLabel(.5, 11.5, .5, "Refill in: 23m 33s"))
-        val times = mutableMapOf<String, Long>()
+    @Test fun `level five wins while level zero uses full or refill text`() {
+        val times = mutableMapOf("a" to 9000000L)
         val tracker = HoneyHiveTracker(times)
-        assertTrue(tracker.observe(hive.key, HoneyHiveLabels.forHive(hive, listOf(hive), labels), 5, 1000))
-        assertEquals(HiveState.EMPTY, HoneyHiveRules.state(1000, times[hive.key]))
-        assertTrue(tracker.observe(hive.key, "Click to loot!", 0, 2000))
-        assertEquals(HiveState.FULL, HoneyHiveRules.state(2000, times[hive.key]))
+        assertTrue(tracker.observe("a", "Refill in: 23m 33s", 5, 1000))
+        assertEquals(HiveState.FULL, tracker.state("a", 1000))
+        assertNull(times["a"])
+        tracker.observe("a", "Click to loot!", 0, 2000)
+        assertEquals(HiveState.FULL, tracker.state("a", 2000))
+        tracker.observe("a", "Refill in: 23m 33s", 0, 3000)
+        assertEquals(HiveState.EMPTY, tracker.state("a", 3000))
+        assertEquals(1416000L, times["a"])
+        tracker.observe("a", null, null, 4000)
+        assertEquals(HiveState.EMPTY, tracker.state("a", 4000))
+        val hive = Hive(-693, 94, 147)
+        assertEquals("Click to loot!", HoneyHiveLabels.forHive(hive, listOf(hive),
+            listOf(HiveLabel(-692.5, 93.28, 147.5, "Click to loot!"))))
     }
-    @Test fun `holograms work before profile discovery without overwriting a known profiles timers`() {
+    @Test fun `provisional block observations do not overwrite saved profile timers`() {
         val temporary = mutableMapOf<String, Long>()
         val tracker = HoneyHiveTracker(temporary, provisional = true)
-        tracker.observe("observed", "Refill in: 23m 33s", now = 1000)
-        assertEquals(HiveState.EMPTY, HoneyHiveRules.state(1000, temporary["observed"]))
+        tracker.observe("observed", "Refill in: 23m 33s", 0, 1000)
+        assertEquals(HiveState.EMPTY, tracker.state("observed", 1000))
+        assertNotNull(temporary["observed"])
         tracker.click("looted", 1100); tracker.chat("HIVE! Honey!", 1200)
-        val saved = mutableMapOf("observed" to 5_000_000L)
+        val saved = mutableMapOf("observed" to 5000000L)
         tracker.promote(saved, mutableSetOf())
-        assertEquals(5_000_000L, saved["observed"])
+        assertEquals(5000000L, saved["observed"])
         assertEquals(1200 + HoneyHiveRules.REFILL_MILLIS, saved["looted"])
-        tracker.observe("observed", "Click to loot!", now = 3000)
+        tracker.observe("observed", null, 5, 3000)
         assertNull(saved["observed"])
     }
     @Test fun `exact Hypixel Queen Bee proc refills only the looted hive and a new loot empties it again`() {
@@ -78,7 +86,7 @@ class HiveObservationAndHudPreviewTest {
         assertEquals(HiveState.EMPTY, HoneyHiveRules.state(200, times["hive"]))
         assertTrue(tracker.chat("QUEEN BEE! The Honeyhive instantly refilled with loot!", 300))
         assertEquals(HiveState.FULL, HoneyHiveRules.state(300, times["hive"]))
-        tracker.observe("hive", "Refill in: 59m 55s", 0, 5000)
+        tracker.observe("hive", "Refill in: 59m 55s", 5, 5000)
         assertEquals(HiveState.FULL, HoneyHiveRules.state(5000, times["hive"]))
         assertEquals(9_000_000L, times["other"])
         tracker.click("hive", 5100); tracker.chat("HIVE! You found honey!", 5200)

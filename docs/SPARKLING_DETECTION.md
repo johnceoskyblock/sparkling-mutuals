@@ -6,7 +6,27 @@ The detector runs every five client ticks during Safari and scans entities the c
 
 Any detected Sparkling blocks its species/biome completion in **all modes** until confirmed caught, even when everybody owns the discovery. This also reopens earlier completion. Spawn messages, ordinary same-species catches, retained ordinary UUID checks and party biome reports cannot substitute for the Sparkling capture. A positive name remains authoritative when old skin metadata disagrees.
 
+A model and **all** its nearby matching Sparkling name tags are aliases for one critter; retain every tag rather than only the first one. Resolved aliases are omitted from the detected HUD and live-remainder/population scans, even while a captured model or tag remains loaded. This prevents stale entities from inventing another pending Sparkling or inflating the Full Clear capture target. A genuinely new UUID remains eligible for a new capture obligation.
+
 A model and its nearby matching name tag are aliases for one critter. Retain that identity when skin and label packets arrive in different orders, so the same critter does not produce two alerts or two capture obligations. Retain unresolved obligations after unloading; no longer rendering an entity is not a catch. Capture/loot-share and global Sparkling catch announcements still reconcile as one confirmed catch.
+
+## Safari-only wax-on particle locations
+
+While the player is inside Safari, inspect server `WAX_ON` particle packets in addition to the existing name/skin detector. Observe each packet's origin on the client thread, independently of vanilla particle visibility/distance settings. Do not process particles in Torrhus Canyon, the entrance, or other islands. This rule comes from the user's report that Safari Sparkling critters emit wax-on particles; it still needs live validation.
+
+There is no current-biome or player-distance filter on received Safari particle packets. The server may only send them when their biome/entity becomes loaded; this does not establish whole-map coverage. Local particle settings cannot recover a packet that the server never sent.
+
+A packet alone identifies a **location**, not a species, entity UUID, or distinct critter count. Show **Unknown Sparkling (wax on)** through the existing alert/sound/optional-announcement settings, plus a last-seen world waypoint and Detected sparklings row with coordinates. Waypoint visibility follows the existing Sparkling detection toggle and ESP text scale/color. `/sm debug` reports `source=wax_on`, coordinates, biome and last-seen time.
+
+Coalesce origins within three blocks to avoid alerting on every burst. Retain the last observed location for the run, including after unloading or changing biomes, and reset it with a new run. These are approximate last-seen locations, not tracked moving entities. Spatial clustering can combine nearby critters or leave multiple locations for one moving critter; never use these markers to infer population totals or fabricate species checks/catches. Unknown markers remain until an independent name/skin positive matches within three blocks or the run ends. Unrelated catches/reports cannot reliably identify which anonymous marker was caught.
+
+When a name/skin positive independently identifies a nearby body, retire the matching anonymous waypoint and use the existing identified alert/HUD/capture ledger. Particle-only evidence does not assign a guessed species or add an ordinary UUID check; species-specific completion still uses identified evidence and the documented source/check rules.
+
+## Once-per-species notifications
+
+For an identified critter, show the Sparkling GUI/sound alert at most once per species per run, and queue its party announcement at most once per species per run. These two notification channels retain their independent toggles. Capsule transitions, escapes, replacement UUIDs, unloading/reentry and mode changes must not repeat the species notification. A new run resets both notification histories. Other species can still alert independently.
+
+This is notification memory only: keep the capture ledger, live identities, positions and pending obligations separate. A new detected Sparkling can still block completion without repeating a previously sent species announcement. Unknown particle-only waypoints retain location-based deduplication because their species is not known.
 
 ## Ordinary checking remains separate
 
@@ -36,6 +56,11 @@ User observation, 2026-10-15: Duplico at **(-4, 71, -72)** unloaded when the pla
 
 ## Minecraft checks
 
+- Inside Safari, approach a confirmed Sparkling with its name/skin initially unavailable: wax-on packets should show an unknown-location alert, coordinates in the Detected sparklings panel, and a last-seen world label. Repeated bursts at that spot must not repeatedly alert. Bring the name/skin into view and confirm the anonymous waypoint retires.
+- Test from another biome with its particles loaded, then unload the area: accept received packets across the boundary and retain the last location. No detection is expected for particles the server has not sent. Repeat with reduced vanilla particle settings.
+- Trigger wax-on sources in Torrhus Canyon and outside Safari: no particle alerts or waypoints. Start a new run and confirm old particle locations are absent. Test nearby simultaneous Sparklings and a moving one to assess the three-block grouping in practice.
+
+
 1. In each mode, find a named Sparkling and confirm the alert, glow, Detected sparklings row and missing/progress capture requirement refer to the same species. Repeat with every alert/ESP toggle off: tracking must still block completion.
 2. Observe a known skin while its name tag is absent or beyond the old 80-block range. Expect one skin-based positive, the correct biome/distance and a pending capture. Bring its name tag into range afterward: no duplicate alert or capture requirement. Confirm one Sparkling catch resolves it.
 3. Watch a critter across run start: ordinary appearance first, then Sparkling skin on the same UUID. The later metadata must detect it and reopen progress. Inspect `/sm debug` for `source=skin` when there is no Sparkling name.
@@ -43,6 +68,16 @@ User observation, 2026-10-15: Duplico at **(-4, 71, -72)** unloaded when the pla
 5. Wear a reference skin as a real player, or put it on a party member: no critter alert. Test a normal skin, an unrelated head and missing Tepid skin; only a valid Sparkling name should identify Tepid.
 6. Repeat the Duplico coordinates with a confirmed Sparkling, slowly crossing 80–120 blocks and moving across a biome boundary. Record the last loaded body/name UUID and actual unload point; absence must retain the capture obligation, and loaded range must never be advertised as whole-map coverage.
 
+After confirmed Sparkling capture resolves all pending sightings of a species, Unique and Sparkling immediately mark it complete in progress and remove its missing/check row. Full Clear instead checks its remaining normal captures/sources and completes once those pass. New Sparkling sightings reopen every mode; known lingering captured labels and duplicate reward/announcement pairs must not reopen it.
+
 ## Last updated
+
+2026-10-17 - Deduplicated identified Sparkling alerts/party announcements by species for the full run, including capsule/escape UUID changes.
+
+2026-10-17 - Retained all matching label aliases and excluded resolved Sparkling entities from HUD/live-remainder accounting after capture.
+
+2026-10-17 - Added Safari-only wax-on packet locations, anonymous last-seen waypoints and cross-biome received-particle handling without claiming unloaded coverage.
+
+2026-10-16 - Added post-capture completion behavior for all three modes and stale-obligation checks.
 
 2026-10-15 - Unified positive name/skin evidence with alerts and completion, added 36 reference skins and delayed-metadata checks, removed the 80-block presentation cap, and preserved ordinary scan circles.

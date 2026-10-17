@@ -13,6 +13,7 @@ class SafariBirdLedgerTest {
         repeat(normal) { assertTrue(birds.spawn("A Bluebird was attracted to the Birdfeeder!")) }
         repeat(pairs) { assertTrue(birds.spawn("Two Macaws were attracted to the Birdfeeder!")) }
         birds.inventory(emptyList())
+        birds.scan(0)
     }
     @Test fun `starting food adds to run demand without replacing Forest pickups`() {
         val birds = SafariBirdLedger()
@@ -50,6 +51,7 @@ class SafariBirdLedgerTest {
             birds.inventory(listOf(food to 1))
             birds.spawn("A Parakeet was attracted to the Birdfeeder!")
             birds.inventory(emptyList())
+            birds.scan(0)
         } }
         assertTrue(birds.foodsComplete)
         assertEquals(9, birds.used)
@@ -59,6 +61,7 @@ class SafariBirdLedgerTest {
     @Test fun `feeder announcements confirm usage even before inventory removal`() {
         val birds = SafariBirdLedger(); foods(birds)
         birds.inventory(emptyList())
+        birds.scan(0)
         assertEquals(0, birds.used)
         assertFalse(birds.sufficient(9, 0, 0))
         repeat(9) { birds.spawn("A Bluebird was attracted to the Birdfeeder!") }
@@ -67,15 +70,19 @@ class SafariBirdLedgerTest {
         repeat(9) { stillHeld.spawn("A Bluebird was attracted to the Birdfeeder!") }
         stillHeld.inventory(listOf("Yogi Berry" to 3, "Wriggleworm" to 3, "Bag of Seeds" to 3))
         assertEquals(9, stillHeld.used)
+        assertFalse(stillHeld.sufficient(9, 0, 0))
+        stillHeld.inventory(emptyList())
+        stillHeld.scan(0)
         assertTrue(stillHeld.sufficient(9, 0, 0))
     }
     @Test fun `packet order does not double count food use and held extra food does not erase usage`() {
         val birds = SafariBirdLedger(); foods(birds)
         birds.inventory(emptyList())
+        birds.scan(0)
         feed(birds, 9, 0)
         repeat(3) { birds.inventory(listOf("§aBag of Seeds" to 1)) }
         assertEquals(9, birds.used)
-        assertTrue(birds.sufficient(9, 0, 0))
+        assertFalse(birds.sufficient(9, 0, 0))
     }
     @Test fun `only exact server bird messages and food pickups contribute`() {
         val birds = SafariBirdLedger()

@@ -40,6 +40,33 @@ object SafariAssist {
         private set
     fun markEntered() { entered = true; inSafari = true; location = SafariLocation.INSIDE }
 
+    fun register() { WorldRenderCompat.register(::renderParticleLocations) }
+
+    fun observeParticle(packet: net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket) {
+        if (!inSafari || packet.particle.type != net.minecraft.core.particles.ParticleTypes.WAX_ON) return
+        val run = SafariTracking.ledger.current ?: return
+        val point = run.sparklingParticles.observe(true, true, packet.x, packet.y, packet.z, System.currentTimeMillis()) ?: return
+        // Do not duplicate an already named/skinned positive at the particle origin.
+        shinies.filter { !it.body.isRemoved }.forEach { run.sparklingParticles.identify(it.body.x, it.body.y, it.body.z) }
+        if (!point.identified) SparklingEncounters.observe(point.id, "Unknown Sparkling (wax on)", point.biome,
+            net.minecraft.core.BlockPos.containing(point.x, point.y, point.z))
+    }
+
+    private fun renderParticleLocations(context: net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext) {
+        val client = Minecraft.getInstance()
+        if (!inSafari || !ConfigManager.shinyDetection || client.player == null || client.options.smHideGui) return
+        val points = SafariTracking.ledger.current?.sparklingParticles?.unknown().orEmpty()
+        val color = net.johnceo.sparklingmutuals.config.SafariEspConfig.rgb(
+            net.johnceo.sparklingmutuals.config.AppearanceConfig.sparklingColor)
+        for (point in points) {
+            val pos = net.minecraft.core.BlockPos.containing(point.x, point.y, point.z)
+            val distance = sqrt(point.distanceSquared(client.player!!.x, client.player!!.y, client.player!!.z)).toInt()
+            WorldRenderCompat.label(context, "Unknown Sparkling · ${pos.x} ${pos.y} ${pos.z} · ${distance}m (last seen)",
+                color, point.x, point.y + 1.0, point.z,
+                net.johnceo.sparklingmutuals.config.SafariEspConfig.labelWorldScale)
+        }
+    }
+
     fun onClientTick(client: Minecraft) {
         if (client.level !== lastLevel) { reset(); lastLevel = client.level }
         val player = client.player
@@ -78,6 +105,8 @@ object SafariAssist {
             val label = byId[match.label] ?: return@mapNotNull null
             val biome = SafariRoster.named(match.species)?.biome ?: return@mapNotNull null
             val identity = SafariTracking.ledger.current?.observeSparkling(body.uuid, match.species, match.aliases) ?: body.uuid
+            SafariTracking.ledger.current?.sparklingParticles?.identify(body.x, body.y, body.z)
+            if (SafariTracking.ledger.current?.sparklingCaptures?.resolved(identity) == true) return@mapNotNull null
             SparklingEncounters.observe(identity, match.species, biome, body.blockPosition())
             Shiny(label, body, match.species, biome)
         }.sortedBy { player.distanceToSqr(it.body) }
@@ -86,7 +115,9 @@ object SafariAssist {
 
     fun diagnostics(): List<String> {
         val player = Minecraft.getInstance().player ?: return emptyList()
-        return shinies.map { "Sparkling detection: species=${it.name} biome=${it.biome} " +
+        return SafariTracking.ledger.current?.sparklingParticles?.unknown().orEmpty().map {
+            "Sparkling detection: source=wax_on species=unknown biome=${it.biome} pos=(${it.x}, ${it.y}, ${it.z}) lastSeen=${it.seenAt}"
+        } + shinies.map { "Sparkling detection: species=${it.name} biome=${it.biome} " +
             "source=${if (it.label.customName?.string?.let(SafariRules::sparklingSpecies) != null) "name" else "skin"} " +
             "body=${it.body.uuid} label=${it.label.uuid} distance=${sqrt(player.distanceToSqr(it.body)).toInt()}m" }
     }
@@ -104,9 +135,14 @@ object SafariAssist {
         if (preview) return HudPanel("Detected sparklings", rows = listOf(HudRow("Doomspiral", "32m", SafariRoster.color("Doomspiral"))))
         val player = client.player ?: return null
         val nearby = shinies.filter { !it.body.isRemoved }
-        if (nearby.isEmpty()) return null
+        val particles = SafariTracking.ledger.current?.sparklingParticles?.unknown().orEmpty()
+        if (nearby.isEmpty() && particles.isEmpty()) return null
         val rows = nearby.take(6).map { HudRow(it.name, "${it.biome.label} ${sqrt(player.distanceToSqr(it.body)).toInt()}m", SafariRoster.color(it.name), HudRow.WHITE) }.toMutableList()
-        if (nearby.size > 6) rows.add(HudRow("+${nearby.size - 6} more nearby", color = HudRow.GRAY))
+        particles.take((6 - rows.size).coerceAtLeast(0)).forEach {
+            val pos = net.minecraft.core.BlockPos.containing(it.x, it.y, it.z)
+            rows.add(HudRow("Unknown Sparkling", "${it.biome.label} ${pos.x} ${pos.y} ${pos.z} (last seen)", HudRow.GOLD))
+        }
+        if (nearby.size + particles.size > 6) rows.add(HudRow("+${nearby.size + particles.size - 6} more sightings", color = HudRow.GRAY))
         return HudPanel("Detected sparklings", rows = rows)
     }
     fun render(graphics: GuiGraphicsExtractor) {

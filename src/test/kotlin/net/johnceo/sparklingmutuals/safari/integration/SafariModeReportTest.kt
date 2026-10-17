@@ -57,6 +57,8 @@ class SafariModeReportTest {
         repeat(2) { run.record(SafariCatch(critter)) }
         assertTrue(run.missing(critter, true))
         run.record(SafariCatch(critter))
+        run.partyFullClear("Party > Friend: cd")
+        run.updateCaptureEvidence(SafariBiome.CAVERN, emptySet(), false, playerX = -120.0, playerZ = 55.0)
         assertFalse(run.missing(critter, true))
         run.updateCaptureEvidence(SafariBiome.CAVERN, setOf("Driftling"), false)
         assertTrue(run.missing(critter, true))

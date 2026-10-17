@@ -60,6 +60,7 @@ class SafariBiomeClearTest {
         repeat(8) { run.birds.spawn("A Bluebird was attracted to the Birdfeeder!") }
         run.birds.spawn("Two Macaws were attracted to the Birdfeeder!")
         run.birds.inventory(emptyList())
+        run.birds.scan(0)
         assertTrue(SafariFullClear.eligible(run, SafariBiome.FOREST, ready))
         assertFalse(SafariFullClear.eligible(run, SafariBiome.FOREST, ready.copy(nestsChecked = false)))
     }
@@ -77,6 +78,8 @@ class SafariBiomeClearTest {
         assertTrue(SafariFullClear.eligible(run, SafariBiome.HAUNTED, ready))
     }
     private fun forest(personal: Boolean = true, pairs: Int = 0) = SafariRun(1000).apply {
+        visitBiome(SafariBiome.FOREST)
+        updateCaptureEvidence(SafariBiome.FOREST, emptySet(), false)
         listOf("Foxtrot" to 6, "Honeybug" to 3, "Treefrog" to 3, "Woodchucker" to 3,
             "Fluffling" to 1, "Hideonfloor" to 1, "Bluebird" to (8 - pairs), "Parakeet" to 1).forEach { (name, amount) ->
             repeat(amount) { record(SafariCatch(SafariRoster.named(name)!!, personal)) }
@@ -86,6 +89,7 @@ class SafariBiomeClearTest {
         birds.spawn("A Parakeet was attracted to the Birdfeeder!")
         repeat(pairs) { birds.spawn("Two Macaws were attracted to the Birdfeeder!") }
         birds.inventory(emptyList())
+        scanBirdSources(0)
     }
     @Test fun `Forest PB accepts personally completed birds with all food collected`() {
         val ready = BiomeClearEvidence(observed = true, nestsChecked = true)

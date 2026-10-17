@@ -14,20 +14,25 @@ class SafariBirdAnnouncementsTest {
         repeat(3) { birds.spawn("A Parakeet was attracted to the Birdfeeder!") }
         repeat(3) { birds.spawn("Two Macaws were attracted to the Birdfeeder!") }
         updateCaptureEvidence(SafariBiome.FOREST, emptySet(), false)
+        birds.inventory(emptyList())
+        birds.scan(0)
     }
     private fun SafariRun.catch(name: String, amount: Int, personal: Boolean = true) {
         repeat(amount) { record(SafariCatch(SafariRoster.named(name)!!, personal)) }
     }
-    @Test fun `spawn announcements consume one food each without waiting for inventory packets`() {
+    @Test fun `spawn announcements count food but held inventory blocks completion`() {
         val run = run()
         run.birds.inventory(listOf("Bag of Seeds" to 3, "Wriggleworm" to 3, "Yogi Berry" to 3))
         assertEquals(9, run.birds.used)
+        assertFalse(run.birds.allSpawned)
+        run.birds.inventory(emptyList())
         assertTrue(run.birds.allSpawned)
         run.catch("Bluebird", 3); run.catch("Parakeet", 3); run.catch("Macaw", 1)
         assertTrue(run.birdsComplete(emptySet()))
         run.recordBirdFood("FLOOR DROP! Bag of Seeds")
         assertFalse(run.birds.allSpawned)
         run.birds.spawn("A Bluebird was attracted to the Birdfeeder!")
+        run.birds.scan(0)
         assertFalse(run.birdsComplete(emptySet()))
         run.catch("Bluebird", 1)
         assertTrue(run.birdsComplete(emptySet()))
@@ -48,6 +53,7 @@ class SafariBirdAnnouncementsTest {
         assertFalse(run.birdsComplete(emptySet(), personalOnly = true))
         run.catch("Macaw", 1)
         assertTrue(run.birdsComplete(emptySet(), personalOnly = true))
+        run.partyFullClear("Party > Friend: fd")
         assertFalse(run.missing(SafariRoster.named("Macaw")!!, true))
         assertFalse(SafariRun(1).birds.allSpawned)
     }

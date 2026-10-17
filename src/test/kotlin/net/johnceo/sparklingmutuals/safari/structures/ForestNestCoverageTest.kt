@@ -53,13 +53,13 @@ class ForestNestCoverageTest {
         assertEquals(0, survey.punchedCount)
         assertFalse(survey.allChecked)
     }
-    @Test fun `invalid block data revokes coverage instead of proving an empty site`() {
+    @Test fun `unloaded block data retains the initial source classification`() {
         val survey = BeeNestSurvey()
         survey.scan { blocks()[it] }
         nests.forEach { survey.punch(it) }
         assertTrue(survey.allChecked)
         survey.scan { if (it == Triple(20, 88, 33)) NestBlock.UNKNOWN else null }
-        assertEquals(setOf(Triple(20, 88, 33)), survey.unverified)
-        assertFalse(survey.allChecked)
+        assertTrue(survey.unverified.isEmpty())
+        assertTrue(survey.allChecked)
     }
 }

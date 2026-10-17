@@ -20,6 +20,7 @@ class SafariForestFeedingTest {
         repeat(5) { birds.spawn("A Bluebird was attracted to the Birdfeeder!") }
         repeat(4) { birds.spawn("Two Macaws were attracted to the Birdfeeder!") }
         birds.inventory(emptyList())
+        birds.scan(0)
     }
     @Test fun `six personal birds and seven leftover Macaws record a Forest PB after nests clear`() {
         val run = forest()

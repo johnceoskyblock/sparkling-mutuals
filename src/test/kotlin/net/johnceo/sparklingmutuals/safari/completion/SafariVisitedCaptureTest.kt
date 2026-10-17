@@ -26,6 +26,8 @@ class SafariVisitedCaptureTest {
         run.updateCaptureEvidence(SafariBiome.CAVERN, setOf("Driftling"), false)
         assertEquals(0xFFFF5555.toInt(), color())
         run.updateCaptureEvidence(SafariBiome.CAVERN, emptySet(), false)
+        assertEquals(0xFFFF5555.toInt(), color())
+        run.partyFullClear("Party > Friend: cd")
         assertEquals(0xFF55FF55.toInt(), color())
         assertEquals(0, run.personalCount("Driftling"))
     }

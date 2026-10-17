@@ -13,7 +13,7 @@ class BeeNestSurvey {
     fun classification(pos: Triple<Int, Int, Int>) = states[pos] ?: NestBlock.UNKNOWN
     val punchedCount get() = punched.size
     val allChecked get() = states.values.none { it == NestBlock.UNKNOWN } &&
-        states.values.count { it == NestBlock.NEST } >= 3 && remaining.isEmpty()
+        states.values.any { it == NestBlock.NEST } && remaining.isEmpty()
     /** null means no client block data. Only an inspected nest or hive establishes coverage. */
     fun scan(blockAt: (Triple<Int, Int, Int>) -> NestBlock?) {
         positions.forEach { site -> blockAt(site)?.let { observe(site, it) } }
@@ -21,8 +21,8 @@ class BeeNestSurvey {
     fun waypoints(needed: Boolean): List<NestWaypoint> = if (!needed) emptyList() else
         remaining.map { NestWaypoint(it, true) } + unverified.map { NestWaypoint(it, false) }
     fun observe(pos: Triple<Int, Int, Int>, block: NestBlock) {
-        // A punched nest can disappear on the server; that cannot undo the interaction.
-        if (pos in states && !(pos in punched && block == NestBlock.UNKNOWN)) states[pos] = block
+        // The initial source classification belongs to the run, even after collection or unloading.
+        if (pos in states && block != NestBlock.UNKNOWN && states[pos] != NestBlock.NEST) states[pos] = block
     }
     fun punch(pos: Triple<Int, Int, Int>) = states[pos] == NestBlock.NEST && punched.add(pos)
     fun reset() { states.keys.forEach { states[it] = NestBlock.UNKNOWN }; punched.clear() }

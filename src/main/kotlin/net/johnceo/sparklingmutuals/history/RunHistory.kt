@@ -36,12 +36,14 @@ object RunHistory {
 
     private fun chat(raw: String) {
         val client = Minecraft.getInstance()
+        HistoryServerPolicy.allows(client)
         session.chat(SafariTracking.ledger.current, raw, client.player?.name?.string.orEmpty()) { finish(it, client) }
     }
 
-    fun onTicket() = session.onTicket(SafariTracking.ledger.current)
+    fun onTicket() { if (HistoryServerPolicy.allows()) session.onTicket(SafariTracking.ledger.current) }
 
     fun tick(client: Minecraft) {
+        HistoryServerPolicy.allows(client)
         session.sync(SafariTracking.ledger.current) { finish(it, client) }
         val current = session.active ?: return
         if (++ticks % 10 != 0) return
@@ -53,7 +55,7 @@ object RunHistory {
     }
 
     private fun finish(run: SafariRun, client: Minecraft) {
-        if (!ConfigManager.runHistory || tally.party.isEmpty()) return
+        if (run.historyExcluded || !ConfigManager.runHistory || tally.party.isEmpty()) return
         val record = RunRecord(start = run.startedAt, length = run.elapsed(System.currentTimeMillis()),
             mode = SafariFullClear.mode.name, party = tally.party.size, you = tally.catches.size,
             caught = tally.caught, lootShares = tally.lootShares,

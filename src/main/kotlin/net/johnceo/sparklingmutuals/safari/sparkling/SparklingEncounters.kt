@@ -21,10 +21,12 @@ object SparklingAlert {
 }
 
 class SparklingMemory {
-    private val alerted = mutableSetOf<UUID>()
-    private val announced = mutableSetOf<UUID>()
-    fun alert(id: UUID, enabled: Boolean) = enabled && alerted.add(id)
-    fun announce(id: UUID, enabled: Boolean) = enabled && announced.add(id)
+    private val alerted = mutableSetOf<String>()
+    private val announced = mutableSetOf<String>()
+    private fun key(id: UUID, name: String?) = name?.let(net.johnceo.sparklingmutuals.safari.SafariRoster::named)
+        ?.name ?: id.toString() // Unidentified particle locations still have independent waypoint identities.
+    fun alert(id: UUID, enabled: Boolean, name: String? = null) = enabled && alerted.add(key(id, name))
+    fun announce(id: UUID, enabled: Boolean, name: String? = null) = enabled && announced.add(key(id, name))
     fun reset() { alerted.clear(); announced.clear() }
 }
 
@@ -38,10 +40,10 @@ object SparklingEncounters {
 
     fun observe(id: UUID, name: String, biome: SafariBiome, pos: BlockPos) {
         val where = "${biome.label} ${pos.x} ${pos.y} ${pos.z}"
-        if (memory.alert(id, ConfigManager.sparklingAlert)) {
+        if (memory.alert(id, ConfigManager.sparklingAlert, name)) {
             banner = name to where; shownAt = System.currentTimeMillis(); playSound(Minecraft.getInstance())
         }
-        if (memory.announce(id, ConfigManager.sparklingPartyAnnouncer)) queue.addLast("SPARKLING $name! ($where)")
+        if (memory.announce(id, ConfigManager.sparklingPartyAnnouncer, name)) queue.addLast("SPARKLING $name! ($where)")
     }
     fun tick(client: Minecraft) {
         if (!ConfigManager.sparklingPartyAnnouncer || !SafariAssist.inSafari || client.connection == null) { queue.clear(); return }

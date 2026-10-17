@@ -11,8 +11,12 @@ data class StartingResourceReminder(val type: FloorDropType, val quantity: Int, 
     val detail get() = "${quantity}x ${type.label} -> ${destination.label}; party needs Sparkling ${missing.joinToString(", ")}."
     companion object {
         private val body = Regex("^\\[SM] Unused starting item: ([0-9]+)x (.+) -> (Forest|Haunted)(?: \\([^)]*\\))?$")
+        private val item = Regex("^([0-9]+)x (.+)$")
         fun parse(text: String, party: PartySparklingState): StartingResourceReminder? {
-            val match = body.matchEntire(text.trim()) ?: return null
+            val compact = text.trim().startsWith("[SM] Use: ")
+            val match = if (compact) item.matchEntire(text.trim().removePrefix("[SM] Use: "))
+                else body.matchEntire(text.trim())
+            if (match == null) return null
             val type = FloorDropType.entries.firstOrNull { it.label == match.groupValues[2] } ?: return null
             val species = when (type) {
                 FloorDropType.COIN -> listOf("Gimmiegold")
@@ -21,7 +25,45 @@ data class StartingResourceReminder(val type: FloorDropType, val quantity: Int, 
             }
             val quantity = match.groupValues[1].toIntOrNull()?.takeIf { it in 1..64 } ?: return null
             return StartingResourceReminder(type, quantity, species.filter(party::needs))
-                .takeIf { it.destination.label == match.groupValues[3] }
+                .takeIf { compact || it.destination.label == match.groupValues[3] }
+        }
+    }
+}
+
+/** One party message and one local title for every eligible item in the current inventory. */
+data class StartingResourceNotice(val items: List<StartingResourceReminder>) {
+    val text get() = "[SM] Unused floor drops: " + items.groupBy { it.destination }.values.joinToString("; ") { group ->
+        val drops = group.joinToString(" + ") { "${it.quantity}x ${it.type.label}" }
+        val missing = group.flatMap { it.missing }.distinct().joinToString(", ")
+        "$drops (missing Sparkling $missing)"
+    }
+    val title get() = if (items.map { it.destination }.distinct().size == 1) items.first().title else "USE YOUR STARTING ITEMS!"
+    val detail get() = items.joinToString("; ") { "${it.quantity}x ${it.type.label} -> ${it.destination.label}" }
+    companion object {
+        fun parse(text: String, party: PartySparklingState): StartingResourceNotice? {
+            val trimmed = text.trim()
+            val parts = when {
+                trimmed.startsWith("[SM] Unused floor drops: ") -> {
+                    trimmed.removePrefix("[SM] Unused floor drops: ").split("; ").flatMap { group ->
+                        val match = Regex("""^(.+) \(missing Sparkling ([^()]+)\)$""").matchEntire(group) ?: return null
+                        val missing = match.groupValues[2].split(", ")
+                        val drops = match.groupValues[1].split(" + ")
+                        // Displayed discoveries do not replace the receiver's own party requirements.
+                        drops.map { drop ->
+                            val reminder = StartingResourceReminder.parse("[SM] Use: $drop", party) ?: return null
+                            val allowed = if (reminder.type == FloorDropType.COIN) setOf("Gimmiegold")
+                                else setOf("Bluebird", "Parakeet", "Macaw")
+                            if (missing.any { it !in allowed }) return null
+                            "[SM] Use: $drop"
+                        }
+                    }
+                }
+                trimmed.startsWith("[SM] Use: ") -> trimmed.removePrefix("[SM] Use: ").split(" + ").map { "[SM] Use: $it" }
+                else -> listOf(trimmed)
+            }
+            val items = parts.map { StartingResourceReminder.parse(it, party) ?: return null }
+            if (items.map { it.type }.distinct().size != items.size) return null
+            return StartingResourceNotice(items)
         }
     }
 }
@@ -35,6 +77,8 @@ class SafariResources {
     private data class Outstanding(val amount: Int, val population: Int, val events: Int, val credits: Int)
     private val outstanding = linkedMapOf<Pair<String, FloorDropType>, Outstanding>()
     private val resolved = mutableSetOf<Pair<String, FloorDropType>>()
+    private val reportedCoins = mutableMapOf<String, Int>()
+    fun coinContributions(): Map<String, Int> = reportedCoins.toMap()
     private val populations = mutableMapOf<SafariBiome, Int>()
     private val captured = mutableMapOf<String, Int>()
     private val required = mutableMapOf<SafariBiome, Int>()
@@ -42,11 +86,11 @@ class SafariResources {
     private val events = mutableMapOf<SafariBiome, Int>()
     fun requiredPopulation(biome: SafariBiome) = required[biome] ?: 0
     fun capture(species: String) {
-        if (species !in setOf("Bluebird", "Parakeet", "Macaw", "Gimmiegold")) return
+        // Bird evidence is supplied by the source scan combining shared catches and current birds.
+        if (species != "Gimmiegold") return
         captured.merge(species, 1, Int::plus)
-        val biome = if (species == "Gimmiegold") SafariBiome.HAUNTED else SafariBiome.FOREST
-        val total = if (biome == SafariBiome.HAUNTED) captured[species] ?: 0 else
-            (captured["Bluebird"] ?: 0) + (captured["Parakeet"] ?: 0) + (captured["Macaw"] ?: 0) / 2
+        val biome = SafariBiome.HAUNTED
+        val total = captured[species] ?: 0
         populations[biome] = maxOf(populations[biome] ?: 0, total)
         reconcile(biome)
     }
@@ -68,11 +112,8 @@ class SafariResources {
         else -> null
     }
     fun noticeStillRelevant(text: String, biome: SafariBiome, party: PartySparklingState): Boolean {
-        val type = FloorDropType.entries.firstOrNull { text.contains("x ${it.label} ->") } ?: return false
-        val area = destination(type) ?: return false
-        val needed = if (area == SafariBiome.HAUNTED) party.needs("Gimmiegold")
-            else listOf("Bluebird", "Parakeet", "Macaw").any(party::needs)
-        return needed && area != biome && (held[type] ?: 0) > 0
+        val notice = StartingResourceNotice.parse(text, party) ?: return false
+        return notice.items.any { it.missing.isNotEmpty() && it.destination != biome && (held[it.type] ?: 0) > 0 }
     }
     fun notices(player: String, biome: SafariBiome, party: PartySparklingState): List<String> = starting.mapNotNull { (type, amount) ->
         val destination = destination(type) ?: return@mapNotNull null
@@ -80,25 +121,26 @@ class SafariResources {
             else listOf("Bluebird", "Parakeet", "Macaw").any(party::needs)
         val remaining = minOf(amount, held[type] ?: 0)
         if (!needed || destination == biome || remaining <= (notified[type] ?: 0)) return@mapNotNull null
-        val discoveries = if (destination == SafariBiome.HAUNTED) listOf("Gimmiegold")
-            else listOf("Bluebird", "Parakeet", "Macaw").filter(party::needs)
-        "[SM] Unused starting item: ${remaining}x ${type.label} -> ${destination.label} ($player; party needs Sparkling ${discoveries.joinToString(", ")})"
+        "[SM] Use: ${remaining}x ${type.label}"
     }
     /** Called only after local feedback and party chat were actually dispatched. */
     fun noticeSent(player: String, text: String) {
-        val reminder = StartingResourceReminder.parse(text, PartySparklingState()) ?: return
-        notified[reminder.type] = maxOf(notified[reminder.type] ?: 0, reminder.quantity)
-        notice(player, reminder.type, reminder.quantity)
+        val reminders = StartingResourceNotice.parse(text, PartySparklingState()) ?: return
+        reminders.items.forEach { reminder ->
+            notified[reminder.type] = maxOf(notified[reminder.type] ?: 0, reminder.quantity)
+            notice(player, reminder.type, reminder.quantity)
+        }
     }
     fun partyNotice(raw: String): Boolean {
         val chat = PartyChat.parse(SafariRules.strip(raw)) ?: return false
-        val reminder = StartingResourceReminder.parse(chat.body, PartySparklingState()) ?: return false
-        notice(chat.sender, reminder.type, reminder.quantity)
+        val reminders = StartingResourceNotice.parse(chat.body, PartySparklingState()) ?: return false
+        reminders.items.forEach { notice(chat.sender, it.type, it.quantity) }
         return true
     }
     private fun notice(player: String, type: FloorDropType, amount: Int) {
         val biome = destination(type) ?: return
         val key = player.lowercase() to type
+        if (type == FloorDropType.COIN) reportedCoins[key.first] = maxOf(reportedCoins[key.first] ?: 0, amount)
         if (key in resolved || key in outstanding) return
         // Reserve partially observed evidence belonging to earlier notices, even
         // before their full quantities resolve. Later allocation cannot subtract it twice.

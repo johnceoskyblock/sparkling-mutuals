@@ -45,7 +45,7 @@ object SafariPanels {
                 party.needs(it.name) && run?.sparklingComplete(it.name, party) != true ||
                     run?.sparklingChecks?.wumpaPrerequisite(it.name, party) == true && run.count(it.name) == 0
             }
-            else if (SafariFullClear.mode == SafariMode.UNIQUE) (run?.count(it.name) ?: 0) == 0 && run?.uniqueComplete(it.name, party) != true
+            else if (SafariFullClear.mode == SafariMode.UNIQUE) run?.uniqueComplete(it.name, party) != true
             else run?.missing(it, ConfigManager.fullClearMode) != false }
     }
     fun missing(run: SafariRun?, biome: SafariBiome, unique: Boolean, nests: Int, mounds: Int = 0,
@@ -71,14 +71,17 @@ object SafariPanels {
                     add(HudRow("Mounds to break", "$mounds", HudRow.GOLD, HudRow.GRAY))
             }
         }
-        return HudPanel("${biome.label} Biome — ${listed.size} left", biome.color,
+        return HudPanel("${biome.label} ${if (sparkling) "Unchecked" else "Biome"} — ${listed.size} left", biome.color,
             rows + if (helpers.isEmpty()) emptyList() else listOf(HudRow()) + helpers)
     }
     private fun captureColor(complete: Boolean, verified: Boolean) = if (!ConfigManager.fullClearMode || !verified) HudRow.WHITE
         else if (complete) 0xFF55FF55.toInt() else 0xFFFF5555.toInt()
     fun captures(run: SafariRun?, biome: SafariBiome) = HudPanel("${biome.label} captures", biome.color, buildList {
         biome.critters.forEach { val count = run?.count(it.name) ?: 0
-            add(HudRow(it.name, "$count", it.color, captureColor(run?.captureComplete(it.name) == true, run?.hasCaptureEvidence(biome) == true))) }
+            add(HudRow(it.name, "$count", it.color, captureColor(run?.fullClearComplete(it.name) == true,
+                run?.hasCaptureEvidence(biome) == true || run?.fullClearReportReceived(biome) == true ||
+                    it.name == "Honeybug" && run?.beeNestCountKnown == true ||
+                    it.name in SafariFullClear.fixedCaptureTargets && count > 0))) }
         add(HudRow()); add(HudRow("Total captures", "${biome.critters.sumOf { run?.count(it.name) ?: 0 }}", HudRow.GRAY))
         if (biome == SafariBiome.CAVERN && ConfigManager.showMoundStats) {
             add(HudRow())

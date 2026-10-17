@@ -20,6 +20,8 @@ class SpawnSuppliesTest {
             repeat(8 + extra) { birds.spawn("Two Macaws were attracted to the Birdfeeder!") }
             assertFalse(birds.sparklingSpawned)
             birds.spawn("A Bluebird was attracted to the Birdfeeder!")
+            birds.inventory(emptyList())
+            birds.scan(0)
             assertTrue(birds.sparklingSpawned)
             assertFalse(birds.allSpawned) // Full Clear still needs pickup/capture evidence.
         }
@@ -52,7 +54,7 @@ class SpawnSuppliesTest {
         run.partyFullClear("Party > Friend: fd")
         val party = PartySparklingState()
         assertFalse(run.partyNestsHandled)
-        assertTrue(SafariHelperRules.showNests(SafariMode.FULL_CLEAR, run, party))
+        assertTrue(SafariHelperRules.showNests(SafariMode.FULL_CLEAR, run, party), "remote reports cannot hide unresolved Full Clear nest work")
         assertFalse(SafariHelperRules.showNests(SafariMode.SPARKLING, run, party))
         for (name in SafariHelperRules.species) assertTrue(SafariHelperRules.needed(name, SafariMode.FULL_CLEAR, run, party))
     }

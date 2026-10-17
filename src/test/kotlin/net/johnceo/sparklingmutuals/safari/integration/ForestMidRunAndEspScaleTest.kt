@@ -12,6 +12,7 @@ import net.johnceo.sparklingmutuals.safari.SafariBiome
 import net.johnceo.sparklingmutuals.safari.SafariCatch
 import net.johnceo.sparklingmutuals.safari.SafariRoster
 import net.johnceo.sparklingmutuals.safari.SafariRun
+import net.johnceo.sparklingmutuals.safari.ui.SafariPanels
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -26,97 +27,140 @@ class ForestMidRunAndEspScaleTest {
     private fun caught(run: SafariRun, name: String, n: Int, personal: Boolean = false) {
         repeat(n) { run.record(SafariCatch(SafariRoster.named(name)!!, personal)) }
     }
-    private fun scan(run: SafariRun, live: List<Pair<String, UUID>> = emptyList(), drops: Int = 0,
-        x: Double = 6.0, held: List<Pair<String, Int>> = emptyList()) {
+    private fun scan(run: SafariRun, drops: Int = 0, held: List<Pair<String, Int>> = emptyList()) {
         run.inventoryEvidence(held, 10000)
-        run.observePopulation(live)
-        run.updateCaptureEvidence(SafariBiome.FOREST, live.map { it.first }.toSet(), false,
-            macawsInRange = live.count { it.first == "Macaw" }, playerX = x, playerZ = 51.0)
-        run.scanBirdSources(x, 51.0, live, drops)
-        run.sparklingChecks.scan(SafariBiome.FOREST, x, 51.0, live, birdsSpawned = run.birds.sparklingSpawned)
+        run.scanBirdSources(drops)
+        run.updateCaptureEvidence(SafariBiome.FOREST, emptySet(), false)
+        run.sparklingChecks.scan(SafariBiome.FOREST, 6.0, 51.0, emptyList(), birdsSpawned = run.birds.sparklingSpawned)
     }
-    private fun cleared() = SafariRun(0).apply {
-        caught(this, "Bluebird", 5); caught(this, "Parakeet", 3); caught(this, "Macaw", 2)
+    private fun feed(run: SafariRun, amount: Int = 9) {
+        repeat(amount) { run.birds.spawn("A Bluebird was attracted to the Birdfeeder!") }
     }
-
-    @Test fun `mid run shared catches resolve missing feeding history without inventing personal evidence`() {
-        val run = cleared()
+    @Test fun `no Macaws completes all four scenarios only in Forest with drops and food resolved`() {
+        val run = SafariRun(0)
+        val state = party()
+        run.visitBiome(SafariBiome.FOREST)
         scan(run)
-        birds.forEach { assertTrue(run.captureComplete(it), it); assertTrue(run.sparklingComplete(it, party()), it) }
-        assertEquals(0, run.birds.used)
-        assertEquals(0, run.birds.collected)
-        assertFalse(run.birdFoodsComplete)
-        assertFalse(run.captureComplete("Macaw", personalOnly = true))
-    }
-    @Test fun `current live birds and catches satisfy Sparkling but retain Full Clear catch requirements`() {
-        val run = SafariRun(0)
-        caught(run, "Bluebird", 2); caught(run, "Parakeet", 3); caught(run, "Macaw", 1)
-        val live = List(3) { "Bluebird" to UUID.randomUUID() } + ("Macaw" to UUID.randomUUID())
-        scan(run, live)
-        birds.forEach { assertTrue(run.sparklingComplete(it, party()), it) }
-        assertFalse(run.captureComplete("Bluebird"))
-        assertTrue(run.captureComplete("Parakeet"))
-        assertTrue(run.captureComplete("Macaw"))
-        assertTrue(run.uniqueComplete("Macaw", party()))
-    }
-    @Test fun `below minimum out of radius unknown and remaining drops cannot prove food resolution`() {
+        assertFalse(run.uniqueComplete("Macaw", state))
+        feed(run, 8); scan(run)
+        assertFalse(run.captureComplete("Macaw"))
+        feed(run, 1)
         for (drops in listOf(-1, 1)) {
-            val run = cleared(); scan(run, drops = drops)
-            assertFalse(run.birds.feedingResolved)
-            assertFalse(run.sparklingComplete("Bluebird", party()))
+            scan(run, drops = drops)
+            assertFalse(run.uniqueComplete("Macaw", state))
+            assertFalse(run.captureComplete("Macaw"))
+            assertFalse(run.sparklingComplete("Macaw", state))
         }
-        val outside = cleared(); scan(outside, x = 21.01)
-        assertFalse(outside.birds.feedingResolved)
-        scan(outside, x = 21.0)
-        assertTrue(outside.birds.feedingResolved)
-        val few = SafariRun(0); caught(few, "Bluebird", 8); scan(few)
-        assertFalse(few.birds.feedingResolved)
+        scan(run, held = listOf("Yogi Berry" to 1))
+        assertFalse(run.uniqueComplete("Macaw", state))
+        feed(run, 1) // Inventory revealed another starting food; it needs another feeding.
+        scan(run)
+        assertTrue(run.uniqueComplete("Macaw", state)) // Unique + Sparkling
+        val owned = PartySparklingState().apply {
+            select(setOf("local")); accept(setOf("local"), mapOf("local" to SafariRoster.all.map { it.name }.toSet()))
+        }
+        assertTrue(run.uniqueComplete("Macaw", owned))
+        assertTrue(run.captureComplete("Macaw"))
+        assertTrue(run.sparklingComplete("Macaw", state))
+        ConfigManager.fullClearMode = true; ConfigManager.sparklingMode = false
+        assertFalse(SafariPanels.missing(run, SafariBiome.FOREST, false, 0, party = state).rows.any { it.label == "Macaw" })
+        assertEquals(0xFF55FF55.toInt(), SafariPanels.captures(run, SafariBiome.FOREST).rows.single { it.label == "Macaw" }.valueColor)
+        assertEquals("2/9", SafariPanels.progress(run, true, 0, state).rows.single { it.label == "Forest" }.value,
+            "local no-Parakeet and no-Macaw outcomes both advance Full Clear without fd")
+        ConfigManager.fullClearMode = false
+        assertFalse(SafariPanels.missing(run, SafariBiome.FOREST, true, 0, party = state).rows.any { it.label == "Macaw" })
+        assertEquals("1/9", SafariPanels.progress(run, true, 0, state).rows.single { it.label == "Forest" }.value)
+        ConfigManager.sparklingMode = true
+        assertFalse(SafariPanels.missing(run, SafariBiome.FOREST, false, 0, party = state).rows.any { it.label == "Macaw" })
+        ConfigManager.sparklingMode = false
+        assertEquals(0, run.count("Macaw")); assertEquals(0, run.personalCount("Macaw"))
+        run.visitBiome(SafariBiome.CAVERN)
+        assertTrue(run.uniqueUnavailable("Macaw"), "leaving Forest preserves a locally proven result")
+        val remote = SafariRun(0); remote.visitBiome(SafariBiome.CAVERN)
+        feed(remote); scan(remote)
+        assertFalse(remote.uniqueUnavailable("Macaw"), "an outside scan cannot first establish the no-Macaw exception")
     }
-    @Test fun `duplicate and historical UUIDs and Macaw pairs cannot inflate nine feeding opportunities`() {
-        val run = SafariRun(0)
-        val id = UUID.randomUUID()
-        scan(run, List(9) { "Bluebird" to id })
+    @Test fun `escape UUID history cannot inflate current nearby bird counts`() {
+        val run = SafariRun(0); run.visitBiome(SafariBiome.FOREST)
+        caught(run, "Bluebird", 8)
+        repeat(12) {
+            val live = List(18) { "Macaw" to UUID.randomUUID() }
+            run.observePopulation(live)
+            run.sparklingChecks.scan(SafariBiome.FOREST, 6.0, 51.0, live)
+        }
+        scan(run)
         assertFalse(run.birds.feedingResolved)
-        repeat(10) { scan(run, listOf("Bluebird" to UUID.randomUUID())) }
+        assertEquals(0, run.birds.used)
+        assertEquals(0, run.sparklingChecks.checkCount("Macaw"))
+    }
+    @Test fun `shared captures plus current birds prove spawning without distinct UUID checks`() {
+        val run = SafariRun(0); run.visitBiome(SafariBiome.FOREST)
+        caught(run, "Bluebird", 5)
+        scan(run)
+        assertFalse(run.birds.feedingResolved, "personal catches are already included in shared catches")
+        run.scanBirdSources(0, listOf("Bluebird", "Parakeet", "Macaw", "Macaw"))
+        assertEquals(8, run.birds.accountedFeedings) // Five captures, two normal birds, one Macaw pair.
         assertFalse(run.birds.feedingResolved)
-        scan(run, List(9) { "Macaw" to UUID.randomUUID() })
+        run.scanBirdSources(0, listOf("Bluebird", "Parakeet", "Parakeet", "Macaw", "Macaw"))
+        assertEquals(9, run.birds.accountedFeedings)
+        assertTrue(run.birds.feedingResolved)
+        assertEquals(0, run.birds.used)
+        run.scanBirdSources(0)
+        assertFalse(run.birds.feedingResolved, "a past scan is not the current nearby population")
+    }
+    @Test fun `one captured Macaw and one scanned Macaw account for one food`() {
+        val run = SafariRun(0); run.visitBiome(SafariBiome.FOREST)
+        caught(run, "Bluebird", 8)
+        caught(run, "Macaw", 1)
+        scan(run)
+        assertEquals(8, run.birds.accountedFeedings, "half a pair cannot establish another feeding")
+        run.scanBirdSources(0, listOf("Macaw"))
+        assertEquals(9, run.birds.accountedFeedings)
+        assertTrue(run.birds.feedingResolved)
+        assertTrue(run.captureComplete("Macaw"), "the one-catch Full Clear exception still applies")
+    }
+    @Test fun `Macaw pairs consume one food and prevent the no Macaw exception`() {
+        val run = SafariRun(0); run.visitBiome(SafariBiome.FOREST)
+        repeat(5) { run.birds.spawn("Two Macaws were attracted to the Birdfeeder!") }
+        scan(run)
+        assertEquals(10, run.birds.spawnedCount("Macaw"))
         assertFalse(run.birds.feedingResolved)
-        scan(run, List(18) { "Macaw" to UUID.randomUUID() })
+        feed(run, 4); scan(run)
         assertTrue(run.birds.feedingResolved)
         assertFalse(run.uniqueComplete("Macaw", party()))
+        assertFalse(run.captureComplete("Macaw"))
+        caught(run, "Macaw", 1)
+        assertTrue(run.uniqueComplete("Macaw", party()))
+        assertTrue(run.captureComplete("Macaw"))
     }
-    @Test fun `known held and starting food block the baseline until additional population is accounted for`() {
-        val run = cleared()
+    @Test fun `starting food and later food require additional announcements not extra UUIDs`() {
+        val run = SafariRun(0); run.visitBiome(SafariBiome.FOREST)
         run.birds.startingGrant("Yogi Berry")
-        scan(run)
+        feed(run); scan(run)
         assertFalse(run.birds.feedingResolved)
-        val extra = listOf("Bluebird" to UUID.randomUUID())
-        scan(run, extra, held = listOf("Yogi Berry" to 1))
-        assertFalse(run.birds.feedingResolved)
-        scan(run, extra)
-        assertTrue(run.birds.feedingResolved)
-    }
-    @Test fun `new pickups cannot reuse old population and Forest reentry requires another qualifying scan`() {
-        val run = cleared(); run.visitBiome(SafariBiome.FOREST); scan(run)
+        feed(run, 1); scan(run)
         assertTrue(run.birds.feedingResolved)
         run.recordBirdFood("FLOOR DROP! Yogi Berry", SafariBiome.FOREST, 10000)
         scan(run)
         assertFalse(run.birds.feedingResolved)
-        scan(run, listOf("Bluebird" to UUID.randomUUID()))
+        feed(run, 1); scan(run)
         assertTrue(run.birds.feedingResolved)
         run.visitBiome(SafariBiome.CAVERN); run.visitBiome(SafariBiome.FOREST)
         assertFalse(run.birds.feedingResolved)
-    }
-    @Test fun `party extra food notice requires new population and then normal catch completion`() {
-        val run = cleared(); scan(run)
-        assertTrue(run.resources.partyNotice("Party > Other: [SM] Unused starting item: 1x Yogi Berry -> Forest (Other)"))
         scan(run)
-        assertFalse(run.captureComplete("Macaw"))
-        assertFalse(run.sparklingComplete("Macaw", party()))
-        scan(run, listOf("Bluebird" to UUID.randomUUID()))
-        assertTrue(run.captureComplete("Macaw"))
+        assertTrue(run.birds.feedingResolved)
+    }
+    @Test fun `party extra food notice requires another feeder announcement`() {
+        val run = SafariRun(0); run.visitBiome(SafariBiome.FOREST)
+        feed(run); scan(run)
+        assertTrue(run.resources.partyNotice("Party > Other: [SM] Unused starting item: 1x Yogi Berry -> Forest (Other)"))
+        caught(run, "Bluebird", 9); scan(run)
+        assertFalse(run.uniqueComplete("Macaw", party()))
+        assertTrue(run.resources.pending(SafariBiome.FOREST))
+        feed(run, 1); scan(run)
+        assertFalse(run.resources.pending(SafariBiome.FOREST))
+        assertTrue(run.uniqueComplete("Macaw", party()))
         assertTrue(run.sparklingComplete("Macaw", party()))
-        assertFalse(run.captureComplete("Bluebird"))
     }
     @Test fun `ESP scale defaults larger applies through GUI and persists across restart`() {
         ConfigManager.init(dir); ContestConfig.init(dir)

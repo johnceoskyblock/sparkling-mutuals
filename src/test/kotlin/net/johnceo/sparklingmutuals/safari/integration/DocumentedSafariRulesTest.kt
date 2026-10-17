@@ -1,5 +1,7 @@
 package net.johnceo.sparklingmutuals.safari.integration
 
+import net.johnceo.sparklingmutuals.safari.completion.SafariFullClear
+
 import java.util.UUID
 import net.johnceo.sparklingmutuals.safari.PartySparklingState
 import net.johnceo.sparklingmutuals.safari.SafariBiome
@@ -74,7 +76,7 @@ class DocumentedSafariRulesTest {
         for (mode in SafariMode.entries) {
             assertEquals(mode != SafariMode.SPARKLING, s.needed(FloorDropType.INCENSE, mode, party("Gimmiegold")))
             assertFalse(s.needed(FloorDropType.INCENSE, mode, party()))
-            assertFalse(s.needed(FloorDropType.COIN, mode, party()))
+            assertEquals(mode == SafariMode.FULL_CLEAR, s.needed(FloorDropType.COIN, mode, party()))
             assertTrue(s.needed(FloorDropType.COIN, mode, party("Gimmiegold")))
         }
         assertNull(FloorPickup.parse("FLOOR DROP! You found Shining Coin Shard on the ground!"))
@@ -110,9 +112,10 @@ class DocumentedSafariRulesTest {
             val run = SafariRun(0)
             SafariMessages.forRun("Party > Friend: $word", run, true)
             assertEquals(0, run.completed(SafariMode.UNIQUE, biome.critters, party()))
-            assertEquals(biome.critters.size, run.completed(SafariMode.FULL_CLEAR, biome.critters, party()))
+            assertEquals(biome.critters.count { SafariFullClear.minimum(it.name) == 0 && it.name != "Macaw" }, run.completed(SafariMode.FULL_CLEAR, biome.critters, party()))
             run.visitBiome(biome)
-            assertEquals(0, run.completed(SafariMode.SPARKLING, biome.critters, party()))
+            assertEquals(if (biome == SafariBiome.FOREST) 1 else 0, run.completed(SafariMode.SPARKLING, biome.critters, party()),
+                "Honeybug retains its trusted Forest report on entry")
         }
     }
 
@@ -135,21 +138,26 @@ class DocumentedSafariRulesTest {
         run.liveHoneybugs(2)
         assertTrue(run.nestsResolved)
         assertTrue(run.uniqueComplete("Honeybug", party("Honeybug")))
-        assertFalse(SafariHelperRules.showNests(SafariMode.FULL_CLEAR, run, party("Honeybug")))
+        assertTrue(SafariHelperRules.showNests(SafariMode.FULL_CLEAR, run, party("Honeybug")))
         run.updateNestEvidence(false, 0, 4, 0)
         assertFalse(run.nestsResolved)
-        assertFalse(run.uniqueComplete("Honeybug", party("Honeybug")))
+        assertTrue(run.uniqueComplete("Honeybug", party("Honeybug")))
     }
 
     @Test fun `empty Haunted requires minimum catches and no held coins`() {
         val run = SafariRun(0)
+        (1..3).forEach { run.gimmiegoldCheck.floor(it, false) }
+        run.inventoryEvidence(emptyList(), 10000)
         caught(run, "Gimmiegold", 2)
+        run.scanGimmiegolds(emptyList(), true)
         run.sparklingChecks.scan(SafariBiome.HAUNTED, -4.0, -64.0, emptyList(), hauntedDropsRemaining = 0)
         assertFalse(run.sparklingComplete("Gimmiegold", party("Gimmiegold")))
         caught(run, "Gimmiegold")
+        run.scanGimmiegolds(emptyList(), true)
         run.sparklingChecks.scan(SafariBiome.HAUNTED, -4.0, -64.0, emptyList(), hauntedDropsRemaining = 0)
         assertTrue(run.sparklingComplete("Gimmiegold", party("Gimmiegold")))
-        run.sparklingChecks.inventory(listOf("Shining Coin" to 1))
+        run.inventoryEvidence(listOf("Shining Coin" to 1), 20000)
+        run.scanGimmiegolds(emptyList(), true)
         run.sparklingChecks.scan(SafariBiome.HAUNTED, -4.0, -64.0, emptyList(), hauntedDropsRemaining = 0)
         assertFalse(run.sparklingComplete("Gimmiegold", party("Gimmiegold")))
     }
@@ -172,12 +180,15 @@ class DocumentedSafariRulesTest {
         repeat(8) { run.birds.spawn("A Bluebird was attracted to the Birdfeeder!") }
         assertFalse(run.captureComplete("Macaw"))
         run.birds.spawn("Two Macaws were attracted to the Birdfeeder!")
+        run.inventoryEvidence(emptyList(), 10000)
+        run.scanBirdSources(0)
         assertTrue(run.captureComplete("Macaw"))
         assertFalse(run.captureComplete("Macaw", personalOnly = true))
         assertFalse(run.captureComplete("Bluebird"))
         run.recordBirdFood("FLOOR DROP! 10x Bag of Seeds")
         assertFalse(run.captureComplete("Macaw"))
-        run.birds.spawn("Two Macaws were attracted to the Birdfeeder!")
+        repeat(10) { run.birds.spawn("Two Macaws were attracted to the Birdfeeder!") }
+        run.scanBirdSources(0)
         assertTrue(run.captureComplete("Macaw"))
         assertEquals(1, run.count("Macaw"))
     }
@@ -232,15 +243,19 @@ class DocumentedSafariRulesTest {
 
     @Test fun `extra coin notice requires an additional checked spawn and a Full Clear catch`() {
         val run = SafariRun(0)
+        (1..3).forEach { run.gimmiegoldCheck.floor(it, false) }
+        run.inventoryEvidence(emptyList(), 10000)
         caught(run, "Gimmiegold", 3)
-        run.sparklingChecks.inventory(emptyList())
+        run.scanGimmiegolds(emptyList(), true)
         run.sparklingChecks.scan(SafariBiome.HAUNTED, -4.0, -64.0, emptyList(), hauntedDropsRemaining = 0)
         assertTrue(run.sparklingComplete("Gimmiegold", party("Gimmiegold")))
         run.resources.partyNotice("Party > Friend: [SM] Unused starting item: 1x Shining Coin -> Haunted")
         assertFalse(run.sparklingComplete("Gimmiegold", party("Gimmiegold")))
         run.resources.spawn(SafariBiome.HAUNTED)
         assertFalse(run.sparklingComplete("Gimmiegold", party("Gimmiegold")))
-        run.sparklingChecks.scan(SafariBiome.HAUNTED, -4.0, -64.0, listOf("Gimmiegold" to UUID.randomUUID()), hauntedDropsRemaining = 0)
+        val id = UUID.randomUUID()
+        run.scanGimmiegolds(listOf(id), true)
+        run.sparklingChecks.scan(SafariBiome.HAUNTED, -4.0, -64.0, listOf("Gimmiegold" to id), hauntedDropsRemaining = 0)
         assertTrue(run.sparklingComplete("Gimmiegold", party("Gimmiegold")))
         run.updateCaptureEvidence(SafariBiome.HAUNTED, emptySet(), false)
         assertFalse(run.captureComplete("Gimmiegold"))

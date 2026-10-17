@@ -43,16 +43,23 @@ class FloorColorsAndContestDowntimeTest {
     }
     @Test fun `contest downtime sends once on a fresh boundary with party and never on initial load`() {
         val state = ContestDowntimeState()
-        assertFalse(state.poll(1, 0, true, true, true))
-        assertTrue(state.poll(2, 0, true, true, true))
-        repeat(3) { assertFalse(state.poll(2, 1, true, true, true)) }
-        assertFalse(state.poll(3, 0, false, true, true))
-        assertFalse(state.poll(3, 1, true, true, true))
-        assertFalse(state.poll(4, 0, true, true, false))
-        assertFalse(state.poll(4, 1, true, true, true))
-        assertFalse(state.poll(5, 0, true, false, true))
-        assertFalse(state.poll(6, 100, true, true, true))
-        assertTrue(state.poll(7, 1, true, true, true))
+        assertFalse(state.poll(1, 0, true, true, true, true))
+        assertTrue(state.poll(2, 0, true, true, true, true))
+        repeat(3) { assertFalse(state.poll(2, 1, true, true, true, true)) }
+        assertFalse(state.poll(3, 0, false, true, true, true))
+        assertFalse(state.poll(3, 1, true, true, true, true))
+        assertFalse(state.poll(4, 0, true, true, false, true))
+        assertFalse(state.poll(4, 1, true, true, true, true))
+        assertFalse(state.poll(5, 0, true, false, true, true))
+        assertFalse(state.poll(6, 100, true, true, true, true))
+        assertTrue(state.poll(7, 1, true, true, true, true))
+    }
+    @Test fun `nonleaders cannot auto request and becoming leader midcontest does not catch up`() {
+        val state = ContestDowntimeState()
+        assertFalse(state.poll(1, 0, true, true, true, false))
+        assertFalse(state.poll(2, 0, true, true, true, false))
+        assertFalse(state.poll(2, 1, true, true, true, true))
+        assertTrue(state.poll(3, 0, true, true, true, true))
     }
     @Test fun `contest downtime switch defaults on and saved off remains off`() {
         ContestConfig.init(dir)

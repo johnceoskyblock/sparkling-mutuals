@@ -20,7 +20,7 @@ class NestCounterPanelTest {
             liveHoneybugs(2)
         }
         for (mode in SafariMode.entries)
-            assertFalse(rows(mode, run, 3).any { it.label == "Bee nests to punch" })
+            assertEquals(mode == SafariMode.FULL_CLEAR, rows(mode, run, 3).any { it.label == "Bee nests to punch" })
         run.updateNestEvidence(false, 0, 4, 1)
         for (mode in SafariMode.entries)
             assertTrue(rows(mode, run, 4).any { it.label == "Bee nests to punch" })
@@ -43,7 +43,7 @@ class NestCounterPanelTest {
                 "Load grey survey markers", "Check nest data: /sm debug") })
         }
     }
-    @Test fun `counter hides for actual three to six nest totals only after distinct bees match`() {
+    @Test fun `own punches resolve the counter while captures still require the actual bee total`() {
         for (total in 3..6) {
             val run = SafariRun(0).apply {
                 visitBiome(SafariBiome.FOREST)
@@ -51,7 +51,7 @@ class NestCounterPanelTest {
                 updateNestEvidence(true, total, total, 0)
             }
             repeat(total - 1) { run.observeCritter(it, "Honeybug", UUID(0, it.toLong())) }
-            assertTrue(rows(SafariMode.FULL_CLEAR, run, 0).any { it.label == "Bee nests to punch" })
+            assertFalse(rows(SafariMode.FULL_CLEAR, run, 0).any { it.label == "Bee nests to punch" })
             run.observeCritter(100, "Honeybug", UUID(0, (total - 1).toLong()))
             assertFalse(rows(SafariMode.FULL_CLEAR, run, 0).any { it.label == "Bee nests to punch" })
             assertFalse(run.captureComplete("Honeybug"))
@@ -59,22 +59,25 @@ class NestCounterPanelTest {
             assertTrue(run.captureComplete("Honeybug"))
         }
     }
-    @Test fun `repeated sightings and entity IDs do not stand in for unique Honeybug UUIDs`() {
-        val run = SafariRun(0).apply { visitBiome(SafariBiome.FOREST); updateNestEvidence(true, 3, 3, 0) }
+    @Test fun `neither historical nor current sightings retire Full Clear nest work`() {
+        val run = SafariRun(0).apply { visitBiome(SafariBiome.FOREST); updateNestEvidence(false, 0, 3, 0) }
         repeat(5) { run.observeCritter(it, "Honeybug", UUID(0, 1)) }
         assertTrue(rows(SafariMode.FULL_CLEAR, run, 0).any { it.label == "Bee nests to punch" })
         run.observeCritter(7, "Honeybug", UUID(0, 2)); run.observeCritter(8, "Honeybug", UUID(0, 3))
-        assertFalse(rows(SafariMode.FULL_CLEAR, run, 0).any { it.label == "Bee nests to punch" })
+        assertTrue(rows(SafariMode.FULL_CLEAR, run, 0).any { it.label == "Bee nests to punch" })
+        run.liveHoneybugs(3)
+        assertTrue(rows(SafariMode.FULL_CLEAR, run, 0).any { it.label == "Bee nests to punch" })
         run.observeCritter(9, "Honeybug", UUID(0, 4))
+        run.liveHoneybugs(4)
         assertTrue(rows(SafariMode.FULL_CLEAR, run, 0).any { it.label == "Bee nests to punch" })
     }
-    @Test fun `Unique and Sparkling counters wait for spawned bees after the last nest click`() {
+    @Test fun `Unique and Sparkling counters accept the mod users complete punch survey`() {
         for (mode in listOf(SafariMode.UNIQUE, SafariMode.SPARKLING)) {
             val run = SafariRun(0).apply {
                 visitBiome(SafariBiome.FOREST); record(SafariCatch(SafariRoster.named("Honeybug")!!))
                 updateNestEvidence(true, 3, 3, 0)
             }
-            assertTrue(rows(mode, run, 0).any { it.label == "Bee nests to punch" })
+            assertFalse(rows(mode, run, 0).any { it.label == "Bee nests to punch" })
             repeat(3) { run.observeCritter(it, "Honeybug", UUID(0, it.toLong())) }
             assertFalse(rows(mode, run, 0).any { it.label == "Bee nests to punch" })
         }
@@ -84,8 +87,17 @@ class NestCounterPanelTest {
         repeat(3) { run.observeCritter(it, "Honeybug", UUID(0, it.toLong())) }
         assertTrue(rows(SafariMode.FULL_CLEAR, run, 0).any { it.label == "Bee nests to punch" })
         run.partyFullClear("Party > Friend: fd")
-        for (mode in listOf(SafariMode.UNIQUE, SafariMode.SPARKLING))
-            assertFalse(rows(mode, run, 0).any { it.label == "Bee nests to punch" })
-        assertTrue(rows(SafariMode.FULL_CLEAR, run, 0).any { it.label == "Bee nests to punch" })
+        for (mode in SafariMode.entries)
+            assertEquals(mode == SafariMode.FULL_CLEAR, rows(mode, run, 0).any { it.label == "Bee nests to punch" }, "only checking modes trust fd for source helpers")
     }
+    @Test fun `Sparkling checklist is named Unchecked in every biome`() {
+        val before = net.johnceo.sparklingmutuals.config.ConfigManager.sparklingMode
+        try {
+            net.johnceo.sparklingmutuals.config.ConfigManager.sparklingMode = true
+            for (biome in SafariBiome.entries)
+                assertTrue(SafariPanels.missing(null, biome, true, 0).title.contains("Unchecked"))
+            assertEquals("Unchecked critters", net.johnceo.sparklingmutuals.hud.SafariHud.MISSING.label)
+        } finally { net.johnceo.sparklingmutuals.config.ConfigManager.sparklingMode = before }
+    }
+
 }

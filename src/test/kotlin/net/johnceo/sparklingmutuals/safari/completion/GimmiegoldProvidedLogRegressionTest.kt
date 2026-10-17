@@ -16,7 +16,12 @@ class GimmiegoldProvidedLogRegressionTest {
     private fun party() = PartySparklingState().apply {
         select(setOf("local")); accept(setOf("local"), mapOf("local" to SafariRoster.all.map { it.name }.toSet() - "Gimmiegold"))
     }
+    private val picked = mutableMapOf<SafariRun, Int>()
     private fun coins(run: SafariRun, amount: Int) = repeat(amount) {
+        if (run.gimmiegoldCheck.floorMinimum == 0) (1..3).forEach { run.gimmiegoldCheck.floor(it, true) }
+        val id = (picked[run] ?: 0) + 1
+        picked[run] = id
+        run.gimmiegoldCheck.floor(id, false)
         run.sparklingChecks.chat("FLOOR DROP! You found a Shining Coin!")
         run.sparklingChecks.chat("A Gimmiegold appeared out of nowhere and gobbled up your Shining Coin!")
     }
@@ -24,6 +29,7 @@ class GimmiegoldProvidedLogRegressionTest {
         run.inventoryEvidence(emptyList(), 10000)
         run.updateCaptureEvidence(SafariBiome.HAUNTED, seen.map { it.first }.toSet(), false, playerX = 0.0, playerZ = -64.0)
         run.sparklingChecks.scan(SafariBiome.HAUNTED, 0.0, -64.0, seen, hauntedCoinDropsRemaining = 11)
+        run.scanGimmiegolds(seen.map { it.second }, true)
     }
     @Test fun `provided log one capture two live three picked spent and eleven predictions completes checks`() {
         val run = SafariRun(0); coins(run, 3)
@@ -44,18 +50,17 @@ class GimmiegoldProvidedLogRegressionTest {
         repeat(8) { scan(run, listOf("Gimmiegold" to UUID.randomUUID())) }
         assertEquals(3, run.sparklingChecks.gimmiegoldMinimum)
         assertTrue(run.sparklingChecks.gimmiegoldDebug().contains("accounted=3 retainedChecks=8"))
-        run.sparklingChecks.chat("FLOOR DROP! You found a Shining Coin!")
-        assertEquals(4, run.sparklingChecks.gimmiegoldMinimum)
-        // Observe the new fourth critter before its delayed coin-use message.
-        val old = UUID.randomUUID()
-        scan(run, listOf("Gimmiegold" to old))
-        assertFalse(run.sparklingComplete("Gimmiegold", party()), "The fourth known coin still needs consumption")
-        run.sparklingChecks.chat("A Gimmiegold appeared out of nowhere and gobbled up your Shining Coin!")
-        scan(run, listOf("Gimmiegold" to old))
+        run.gimmiegoldCheck.floor(4, false)
+        coins(run, 1)
+        scan(run, listOf("Gimmiegold" to UUID.randomUUID()))
+        assertFalse(run.sparklingComplete("Gimmiegold", party()), "old UUID history cannot satisfy the new floor-derived total")
+        scan(run, List(4) { "Gimmiegold" to UUID.randomUUID() })
         assertTrue(run.sparklingComplete("Gimmiegold", party()))
     }
+
     @Test fun `starting coin held coin and extra party notices cannot be waived by the marker override`() {
         val run = SafariRun(0); coins(run, 2)
+        run.resources.headStart("HEAD START! You started with a Shining Coin!")
         run.sparklingChecks.startingCoins(1)
         run.sparklingChecks.chat("A Gimmiegold appeared out of nowhere and gobbled up your Shining Coin!")
         run.record(SafariCatch(SafariRoster.named("Gimmiegold")!!))
@@ -64,7 +69,7 @@ class GimmiegoldProvidedLogRegressionTest {
         coins(run, 1)
         scan(run, List(3) { "Gimmiegold" to UUID.randomUUID() })
         assertTrue(run.sparklingComplete("Gimmiegold", party()))
-        run.sparklingChecks.inventory(listOf("Shining Coin" to 1))
+        run.inventoryEvidence(listOf("Shining Coin" to 1), 20000)
         assertFalse(run.sparklingChecks.gimmiegoldReady())
         run.resources.scan(SafariBiome.HAUNTED, 4)
         assertTrue(run.resources.partyNotice("Party > Other: [SM] Unused starting item: 1x Shining Coin -> Haunted (Other)"))
@@ -76,11 +81,12 @@ class GimmiegoldProvidedLogRegressionTest {
         val oldIds = List(8) { "Gimmiegold" to UUID.randomUUID() }
         scan(run, oldIds)
         assertTrue(run.sparklingComplete("Gimmiegold", party()))
-        run.sparklingChecks.chat("FLOOR DROP! You found a Shining Coin!")
-        run.sparklingChecks.chat("A Gimmiegold appeared out of nowhere and gobbled up your Shining Coin!")
+        coins(run, 1)
         scan(run, oldIds.take(2))
         assertFalse(run.sparklingComplete("Gimmiegold", party()))
         scan(run, listOf("Gimmiegold" to UUID.randomUUID()))
+        assertFalse(run.sparklingComplete("Gimmiegold", party()), "one fresh sighting cannot stand in for four current-or-captured critters")
+        scan(run, oldIds.take(4))
         assertTrue(run.sparklingComplete("Gimmiegold", party()))
     }
 

@@ -40,6 +40,7 @@ object SafariLookup {
         PartyCommandKind.PB_HAUNTED -> ConfigManager.personalBests.response(localName, "Haunted")
         PartyCommandKind.PB_ICY -> ConfigManager.personalBests.response(localName, "Icy")
         PartyCommandKind.PB_CAVERN -> ConfigManager.personalBests.response(localName, "Cavern")
+        PartyCommandKind.SINCE_SPARKLING, PartyCommandKind.SINCE_UNIQUE -> SafariSinceReply.current(command)
         PartyCommandKind.HELP -> CommandHelp.partyReply()
         PartyCommandKind.MISSING_RUN -> SafariMissingReply.current(command.biome)
         PartyCommandKind.MUTUALS -> {

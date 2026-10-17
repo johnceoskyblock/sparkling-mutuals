@@ -13,14 +13,14 @@ import org.junit.jupiter.api.io.TempDir
 
 class SafariPanelSeparationTest {
     @TempDir lateinit var dir: Path
-    @Test fun `Unique missing panel retains plain checking rows after a capture`() {
+    @Test fun `Unique missing panel removes ordinary species after its first catch`() {
         ConfigManager.init(dir)
         val run = SafariRun(0)
         for (name in listOf("Scrappy", "Gemzie", "Troodon", "Gazer")) {
             val critter = SafariRoster.named(name)!!
             assertTrue(SafariPanels.missing(run, critter.biome, true, 0).rows.any { it.label == name && it.value == "0/${critter.quota} checked" })
             run.record(SafariCatch(critter))
-            assertTrue(SafariPanels.missing(run, critter.biome, true, 0).rows.any { it.label == name })
+            assertFalse(SafariPanels.missing(run, critter.biome, true, 0).rows.any { it.label == name })
             assertEquals(0, SafariPanels.missingCritters(run, critter.biome).count { it.name == name })
         }
     }
@@ -53,8 +53,11 @@ class SafariPanelSeparationTest {
         run.visitBiome(SafariBiome.FOREST)
         repeat(6) { run.record(SafariCatch(SafariRoster.named("Foxtrot")!!)) }
         assertEquals("0/9", SafariPanels.progress(run, false, 0).rows.first { it.label == "Forest" }.value)
+        run.visitBiome(SafariBiome.FOREST)
+        run.inventoryEvidence(emptyList(), 10000)
+        run.scanBirdSources(0)
         run.updateCaptureEvidence(SafariBiome.FOREST, emptySet(), false)
-        assertEquals("1/9", SafariPanels.progress(run, false, 0).rows.first { it.label == "Forest" }.value)
+        assertEquals("0/9", SafariPanels.progress(run, false, 0).rows.first { it.label == "Forest" }.value)
         assertEquals("0/9", SafariPanels.progress(run, false, 0).rows.first { it.label == "Cavern" }.value)
     }
     @Test fun `nest helper does not add extra species capture quotas to the missing panel`() {
@@ -66,7 +69,8 @@ class SafariPanelSeparationTest {
         assertNull(rows.first { it.label == "Honeybug" }.value)
         assertTrue(rows.any { it.label == "Bluebird" })
         repeat(6) { run.record(SafariCatch(SafariRoster.named("Foxtrot")!!)) }
-        run.updateCaptureEvidence(SafariBiome.FOREST, emptySet(), true)
+        run.updateCaptureEvidence(SafariBiome.FOREST, emptySet(), true, playerX = 3.0, playerZ = 47.0)
+        run.partyFullClear("Party > Friend: fd")
         assertFalse(SafariPanels.missing(run, SafariBiome.FOREST, false, 0).rows.any { it.label == "Foxtrot" })
     }
     @Test fun `zero minimum variable species require clear evidence before turning green`() {
@@ -135,15 +139,28 @@ class SafariPanelSeparationTest {
         repeat(8) { run.record(SafariCatch(SafariRoster.named("Bluebird")!!)) }
         repeat(8) { run.birds.spawn("A Bluebird was attracted to the Birdfeeder!") }
         run.birds.spawn("A Parakeet was attracted to the Birdfeeder!")
+        run.visitBiome(SafariBiome.FOREST)
+        run.inventoryEvidence(emptyList(), 10000)
+        run.scanBirdSources(0)
         run.updateCaptureEvidence(SafariBiome.FOREST, emptySet(), false)
+        run.partyFullClear("Party > Friend: fd")
         assertTrue(green())
         repeat(3) { run.recordBirdFood("FLOOR DROP! Yogi Berry") }
+        repeat(3) { run.birds.spawn("A Bluebird was attracted to the Birdfeeder!") }
+        repeat(3) { run.record(SafariCatch(SafariRoster.named("Bluebird")!!)) }
         run.birds.inventory(emptyList())
+        run.birds.scan(0)
+        run.partyFullClear("Party > Friend: fd")
         assertTrue(green())
         run.record(SafariCatch(SafariRoster.named("Parakeet")!!))
+        run.partyFullClear("Party > Friend: fd")
         assertTrue(green())
         run.updateCaptureEvidence(SafariBiome.FOREST, setOf("Bluebird"), false)
         assertFalse(green())
+        run.record(SafariCatch(SafariRoster.named("Bluebird")!!))
+        run.visitBiome(SafariBiome.FOREST)
+        run.inventoryEvidence(emptyList(), 10000)
+        run.scanBirdSources(0)
         run.updateCaptureEvidence(SafariBiome.FOREST, emptySet(), false)
         assertTrue(SafariPanels.captures(run, SafariBiome.FOREST).rows.filter { it.label in listOf("Bluebird", "Parakeet", "Macaw") }.all { it.valueColor == 0xFF55FF55.toInt() })
         assertFalse(SafariRun(0).birdFoodsComplete)
@@ -174,6 +191,9 @@ class SafariPanelSeparationTest {
 
         run.birds.inventory(emptyList())
 
+        run.birds.scan(0)
+
+        run.partyFullClear("Party > Friend: fd")
         val birds = setOf("Bluebird", "Parakeet", "Macaw")
 
         assertTrue(SafariPanels.captures(run, SafariBiome.FOREST).rows.filter { it.label in birds }.all { it.valueColor == 0xFF55FF55.toInt() })
@@ -196,6 +216,7 @@ class SafariPanelSeparationTest {
         run.updateCaptureEvidence(SafariBiome.CAVERN, setOf("Snoozle"), true)
         assertFalse(green("Snoozle"))
         run.updateCaptureEvidence(SafariBiome.CAVERN, emptySet(), true)
+        run.partyFullClear("Party > Friend: cd")
         assertTrue(green("Snoozle"))
         repeat(19) { run.recordMound("The mound falls apart, but nothing is inside") }
         run.recordMound("The mound fell apart, revealing a Rockmite hidden inside!")

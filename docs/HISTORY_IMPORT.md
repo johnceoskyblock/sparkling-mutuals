@@ -10,6 +10,14 @@ For another instance or a folder of old logs, use a quoted path:
 
 Imports read matching files directly inside that folder, without scanning subfolders. Parsing runs in the background; only one manual import can run at a time. Normal sessions continue recording history live. The old launch-import toggle and automatic startup scans have been removed. Manual import is intended mainly for play before installing the mod, or recovery from available logs.
 
+## Alpha server testing
+
+Live recording reads the scoreboard footer: `alpha.hypixel.net` excludes Alpha sessions; `www.hypixel.net` identifies main. Keep the last explicit address through temporary scoreboard loss within a connection, and reset address detection on a new connection. Once Alpha is detected during a run, that run remains excluded even after leaving Safari or changing the scoreboard.
+
+Alpha runs are not added to run history. Alpha Sparkling catches are not added to Sparkling history and do not reset its ticket streak; Alpha tickets do not increment saved history/achievement ticket counters. Live Safari capture tracking, detectors, HUDs and other testing features continue working. Existing saved history is retained. Other unrelated features, including personal-best tracking, keep their existing behavior.
+
+This is a live-recording filter. It does not retroactively classify/delete old records or infer server addresses from historical chat logs that lack scoreboard data.
+
 ## Inputs and run boundaries
 
 - Read `.log`, `.log.gz` and chat `.json` files, including `latest.log`, using modern or older Minecraft log prefixes. Formatting codes, optional Chat Heads and midnight rollover are supported. Compressed files are read directly.
@@ -58,5 +66,7 @@ Each import replaces these backups with the immediately preceding saved versions
 Automated parser, merge, settings and persistence tests accompany the implementation. The checks above require Minecraft and are separate from the automated build.
 
 ## Last updated
+
+2026-10-17 - Exclude live Alpha Safari run/Sparkling history and ticket counters using the scoreboard address, with sticky per-run exclusion.
 
 2026-10-15 - Implemented the two HTML backfillers as one manual native importer, with estimates, preserved existing entries, revised settings actions and recovery checks.

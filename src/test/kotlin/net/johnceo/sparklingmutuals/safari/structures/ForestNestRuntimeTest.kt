@@ -31,6 +31,7 @@ class ForestNestRuntimeTest {
         }
         repeat(9) { birds.spawn("A Bluebird was attracted to the Birdfeeder!") }
         birds.inventory(emptyList())
+        scanBirdSources(0)
         updateCaptureEvidence(SafariBiome.FOREST, emptySet(), false)
     }
     @Test fun `Full Clear uses punched nest totals even when released bees are outside entity range`() {
@@ -98,7 +99,7 @@ class ForestNestRuntimeTest {
         assertFalse(run.captureComplete("Honeybug"))
         assertFalse(run.sparklingComplete("Honeybug", party(), localOnly = true))
         assertTrue(SafariHelperRules.showNests(SafariMode.SPARKLING, run, party(true)))
-        assertFalse(run.uniqueComplete("Honeybug", party(true), localOnly = true))
+        assertTrue(run.uniqueComplete("Honeybug", party(true), localOnly = true))
         assertFalse(SafariBiome.FOREST in run.biomeClears)
         assertNull(run.completion.announcement(run, SafariBiome.FOREST, SafariMode.FULL_CLEAR, party()))
         assertNull(SafariFullClear.recordClear(run, SafariBiome.FOREST,

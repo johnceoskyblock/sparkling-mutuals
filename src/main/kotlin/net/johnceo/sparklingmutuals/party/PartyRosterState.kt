@@ -6,16 +6,24 @@ class PartyRosterState {
         private set
     var known = false
         private set
-    fun update(ids: List<String>) { members = ids.map(String::lowercase).distinct(); known = true }
-    fun invalidate() { known = false }
+    private var leader: String? = null
+    fun update(ids: List<String>, leaderId: String? = null) {
+        members = ids.map(String::lowercase).distinct()
+        leader = leaderId?.lowercase()?.takeIf { it in members }
+        known = true
+    }
+    fun isLeader(uuid: String) = known && leader == uuid.lowercase()
+    fun invalidate() { known = false; leader = null }
     fun withLocal(local: String): Set<String>? = if (known) (members + local.lowercase()).toSet() else null
-    fun reset() { members = emptyList(); known = false }
+    fun reset() { members = emptyList(); invalidate() }
 }
 
 /** Membership messages only: ordinary chat and invitations do not change the roster. */
 object PartyRosterSignals {
     private val name = "(?:\\[[^]\\r\\n]+]\\s*)*[A-Za-z0-9_]{1,16}"
     private val messages = listOf(
+        Regex("^$name has promoted $name to Party Leader[.!]?$"),
+        Regex("^The party was transferred to $name(?: by $name)?[.!]?$"),
         Regex("^$name was removed from your party because they disconnected[.!]?$"),
         Regex("^Kicked $name because they were offline[.!]?$"),
         Regex("^$name (?:joined the party[.!]|has left the party[.!]|has been removed from the party[.!]|has disbanded the party[.!])$"),

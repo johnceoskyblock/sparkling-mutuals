@@ -36,6 +36,7 @@ object SafariCompletion {
             run.inventoryEvidence((0 until inventory.containerSize).map { inventory.getItem(it) }
                 .filterNot { it.isEmpty }.map { it.hoverName.string to it.count }, now)
         }
+        if (run.completion.locallyComplete(run, biome, mode, party)) run.resourceReminders.afterBiomeClear(now)
         if (client.connection != null && now - sentAt >= 4000) {
             if (run.resourceReminders.dispatch(now, client.player?.name?.string ?: "Player", biome, party) { notice, reminder ->
                 client.gui.smSetTimes(5, 50, 15)

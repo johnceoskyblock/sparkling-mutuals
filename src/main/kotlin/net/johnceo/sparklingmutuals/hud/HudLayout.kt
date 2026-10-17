@@ -35,7 +35,7 @@ class HudLayout(private val defaultX: Float, private val defaultY: Float, privat
     fun reset() { x = defaultX; y = defaultY; scale = defaultScale }
 }
 
-enum class SafariHud(val label: String, val layout: HudLayout) {
+enum class SafariHud(private val defaultLabel: String, val layout: HudLayout) {
     PROGRESS("Safari progress", HudLayout(.015f, .22f)), MISSING("Missing critters", HudLayout(.72f, .22f)),
     CAPTURES("Biome captures", HudLayout(.39f, .22f)), SPARKLINGS("Nearby sparklings", HudLayout(.015f, .72f)),
     GEMS("All Gems alert", HudLayout(.36f, .10f, 1.5f)),
@@ -43,6 +43,8 @@ enum class SafariHud(val label: String, val layout: HudLayout) {
     INCENSE("All Incense alert", HudLayout(.34f, .26f, 1.5f)),
     RUN_COMPLETE("Run completion alert", HudLayout(.35f, .42f, 1.5f)),
     WARP("Warp reminder", HudLayout(.37f, .34f, 1.5f));
+    val label get() = if (this == MISSING && net.johnceo.sparklingmutuals.config.ConfigManager.sparklingMode)
+        "Unchecked critters" else defaultLabel
     companion object {
         fun load(properties: Properties) = entries.forEach { it.layout.load(properties, it.name.lowercase()) }
         fun save(properties: Properties) = entries.forEach { it.layout.save(properties, it.name.lowercase()) }

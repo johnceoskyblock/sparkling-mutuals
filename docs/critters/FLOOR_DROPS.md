@@ -17,19 +17,17 @@ Apply item selection alongside the existing mode/discovery/resource-need rules. 
 
 ### Haunted item-specific need rules
 
-- **Shining Coins:** if anyone needs Sparkling Gimmiegold, require every Shining Coin floor drop collected and keep its typed highlights while drops remain. The minimum Gimmiegold count does not excuse remaining coins. Coin use/spawn checks remain required afterward, including Unique's added Sparkling work.
+- **Shining Coins:** Full Clear keeps all remaining coin drops eligible regardless of discovery ownership or coins already picked up, held, spent, or Gimmiegolds captured. Unique and Sparkling keep all remaining coins eligible whenever anyone needs Sparkling Gimmiegold, and hide them when nobody needs that discovery. No first-coin cutoff applies. The minimum Gimmiegold count does not excuse remaining coins. Coin use/spawn checks remain required afterward, while ordinary Unique progress remains based on its first shared catch.
 - **Soothing Incense in Sparkling mode:** show typed Incense ESP only while someone needs Sparkling Doomspiral, fewer than **four incense floor pickups** are confirmed, and the inventory has never held **four Soothing Incense at once** in this run. Either cutoff hides Incense ESP for the rest of the run, including after consumption and biome reentry. Starting items count toward the inventory cutoff (including two starting incense), but not the floor-pickup counter. Hide it immediately if everyone owns the discovery.
 - Evaluate coins and incense independently: Gimmiegold need cannot keep incense highlighted when Doomspiral is shared, and four incense pickups cannot hide required coin drops. Uncertain drop typing is not proof that all needed drops were collected. Every mode hides incense after four confirmed incense floor pickups **or after holding four incense simultaneously at any point in the run**, regardless of Gimmiegold needs. Before that cutoff, retain its existing mode-specific eligibility.
 
-In Sparkling mode, hide all Shining Coin floor-drop ESP when nobody in the party needs Sparkling Gimmiegold, even before collecting any coins. Coin and incense visibility remain independent; these display cutoffs do not establish critter completion.
+In Unique and Sparkling modes, hide all Shining Coin floor-drop ESP when nobody in the party needs Sparkling Gimmiegold, even before collecting any coins. Coin and incense visibility remain independent; these display cutoffs do not establish critter completion.
 
-## Incense waypoint selection in every mode
+## Incense selection in every mode
 
-For **incense only**, rank known Haunted incense floor-drop locations by full 3D distance from **(4, 47, -27)**. With no starting incense, only the closest **four** locations are eligible for ESP. If initial inventory or a starting grant establishes **one starting incense**, the closest **three** locations are eligible; with **two starting incense**, the closest **two** are eligible. The limit is **four minus the starting incense count**, in **Unique, Full Clear and Sparkling**.
+Whenever incense ESP is needed, all **five** known Haunted Soothing Incense floor-drop spawns are eligible in Unique, Full Clear and Sparkling. Do not rank by distance to (4, 47, -27) or reduce the selection for starting incense. Collected drops no longer render; unloaded groups retain the existing normal loaded-entity behavior.
 
-Retain the starting amount after consumption and biome reentry. Later floor pickups do not become starting items or change this slot limit. Rank all known predicted incense locations, including collected/unloaded ones, so a farther fifth/third location does not replace a picked or unloaded selected location. Newly discovered closer locations can refine the ranking. Equal distances use numeric group ID for a stable tie break. A new run resets this evidence.
-
-This is an additional visibility filter. Existing mode/discovery needs still apply; hide collected drops, and hide all incense after four confirmed floor pickups or four held together at any point. It does not affect coin selection, prediction typing, source/completion evidence, or other drop types.
+Hide all remaining incense ESP after **four confirmed incense floor pickups**, or after holding four incense simultaneously at any point. Consumption, biome reentry and mode changes do not reset these cutoffs. Existing mode/discovery needs, colors, coin selection and completion evidence stay independent.
 
 ## Colors
 
@@ -72,11 +70,15 @@ The JAR derives biome from its centroid's X/Z within `x ∈ [-200,100]`, `z ∈ 
 - It records predicted item, actual reward and whether they match in `shinyhunter-floor-drops.json`; it does not simply treat a prediction as a confirmed pickup. Ground markers omit groups with a matched reward or marked absent.
 - The anchor is the first **recorded eligible** group in each phase. Joining late, missing early chunks/groups, or a teammate taking drops before observation can anchor it incorrectly. Missing later groups can be represented by ID gaps; missing the true first group is a different problem. Do not silently rebase an established anchor to the earliest remaining live drop.
 - Sorting/spawn-order assumptions, phase order, triplet spacing and item-description equality require validation in Minecraft. Numeric IDs are run/world scoped; do not carry them across servers. Unknown/unloaded groups and grouping collisions must remain distinguishable from verified generic rewards.
-- A hidden/unselected marker is not an absent resource. Prediction uncertainty must not close coin/food/gem work or mark a biome complete. Retain raw presence tracking independently of the typed visual filter.
+- A hidden/unselected marker is not an absent resource. The initial coin-slot registry is maintained separately from visual selection and counts one reward group, not its three display members. Prediction uncertainty must not close coin/food/gem work or mark a biome complete. Retain raw presence tracking independently of the typed visual filter.
 
-## Coin prediction cannot override confirmed collection
+## Gimmiegold Sparkling coin-slot registry
 
-The Haunted prediction branch has no upper coin bound. Its candidate count can include non-coin reward groups and is not a verified coin quota. Gimmiegold's confirmed baseline path uses three actual coin floor pickups, confirmed consumption of all acquired/starting coins, a fresh empty inventory and the required checked/captured population. That evidence outranks residual predicted coin/unknown markers. Additional actual resources and party notices still gate completion; when complete confirmed coin history is unavailable, keep the conservative marker-scan recovery rules. See [Gimmiegold evidence](gimmiegold.md#confirmed-coin-evidence-versus-predicted-markers).
+At run start register each validated Shining Coin **STRING reward triple** once by group ID, independently of highlight settings and the player's biome. Arbitrary identical model/decorative triples and the three members of one reward group must not inflate this count. Retain the registered slots after collection and unloading.
+
+Local Sparkling checking requires all coin slots collected, sampled inventory containing zero coins, and **shared captures + currently rendered uncaptured Gimmiegolds >= initial coin slots + known additional coins**. Three actual pickups cannot waive a remaining registered coin source. Own starting coins and deduplicated party unused-coin notices add opportunities without becoming floor pickups. An unloaded slot remains outstanding until pickup/observable collection evidence resolves it. A party hd can override ordinary checking outside Haunted; entering Haunted revalidates locally. Unique still needs its catch and Full Clear its actual capture minimum. See [Gimmiegold](gimmiegold.md).
+
+Full Clear keeps its separate conservative coin-use/source recovery; its old confirmed-three-source shortcut is not the local Sparkling completion rule.
 
 ## Live marker evidence
 
@@ -105,9 +107,15 @@ Current implementation: `FloorDropPredictor.kt` retains numeric-ID group history
 - Cavern: only the two Lime/Purple/Orange sets. Acquiring one gem of a color hides the other predicted marker of that color, including after the gem is placed.
 - Icy: all **five** predicted Icebreaker slots, in Full Clear while one is still needed. Acquiring one hides all remaining Icebreaker highlights. This matches the inspected JAR's five-slot prefix.
 - Haunted coin-source completion ignores complete currently loaded typed Incense groups, while raw unknown/partial/generic and coin markers continue to block it. Marker selection and the four-incense cutoff never remove a coin-source blocker; resource pickups/use and captures remain separately confirmed.
-- Haunted (**implemented; Minecraft verification pending**): in Sparkling mode, coin ESP requires someone missing Gimmiegold; incense ESP requires someone missing Doomspiral and stops after four confirmed floor pickups or four incense held simultaneously at any point in the run, including starting incense. Both cutoffs and the waypoint-based four/three/two-location selection apply in every mode.
+- Haunted (**implemented; Minecraft verification pending**): in Sparkling mode, coin ESP requires someone missing Gimmiegold; incense ESP requires someone missing Doomspiral and stops after four confirmed floor pickups or four incense held simultaneously at any point in the run, including starting incense. Both cutoffs apply in every mode; all five incense spawns are eligible while needed.
 - Generic/unknown predictions receive no quest-item ESP. Hidden markers remain independent raw presence evidence and cannot complete a critter/source check.
 
 ## Last updated
+
+2026-10-17 - Full Clear always retains remaining coin ESP; Unique/Sparkling gate only on party Gimmiegold discovery need, without pickup/holding cutoffs.
+
+2026-10-17 - Removed incense distance/starting-item slot limits; show all five spawns while needed and hide remaining ESP at four pickups or four held.
+
+2026-10-17 - Documented run-start validated coin slots as Gimmiegold Sparkling demand, independent of visibility and decorative triples.
 
 2026-10-15 - Corrected all-mode incense selection to four minus starting incense: 0/1/2 starting items show 4/3/2 nearest locations.

@@ -27,7 +27,7 @@ class SafariUniqueEspTest {
             run.visitBiome(critter.biome)
             assertTrue(SafariEspRules.neededForRun(critter.name, false, run, false, false))
             run.record(SafariCatch(critter))
-            assertFalse(SafariPanels.missing(run, critter.biome, true, 0, party = party).rows.any { it.label == critter.name })
+            assertEquals(critter.name in setOf("Rockmite", "Snoozle"), SafariPanels.missing(run, critter.biome, true, 0, party = party).rows.any { it.label == critter.name })
             assertFalse(SafariEspRules.neededForRun(critter.name, false, run, false, false))
             assertTrue(SafariEspRules.neededForRun(critter.name, false, run, true))
             assertTrue(SafariEspRules.neededForRun(critter.name, false, SafariRun(1000), false, false))

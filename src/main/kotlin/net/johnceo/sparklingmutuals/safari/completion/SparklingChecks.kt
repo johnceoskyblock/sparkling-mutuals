@@ -15,6 +15,10 @@ class SparklingChecks {
     private val partyCompleted = mutableSetOf<String>()
     fun locallyChecked(name: String) = if (requiresCapture(name)) (captured[name] ?: 0) > 0 else name in completed
     fun partyChecked(name: String) = name in partyCompleted
+    fun cavernSourceEvidence(moundsCleared: Boolean, wallsCleared: Boolean) {
+        if (moundsCleared) completed.add("Rockmite")
+        if (wallsCleared) completed.add("Snoozle")
+    }
     fun nestEvidence(checked: Boolean) {
         if (checked) completed.add("Honeybug") else completed.remove("Honeybug")
     }
@@ -65,7 +69,6 @@ class SparklingChecks {
         } ?: 0)
     }
     fun checkCount(name: String) = retainedCheckCount(name)
-    fun birdPopulation() = checkCount("Bluebird") + checkCount("Parakeet") + checkCount("Macaw") / 2
     fun localScan(biome: SafariBiome) { partyCompleted.removeAll(biome.critters.map { it.name }.toSet()) }
     fun reenter(biome: SafariBiome) {
         if (biome == SafariBiome.HAUNTED) { goldEnvironmentReady = false; confirmedCoinSource = false }
@@ -81,6 +84,8 @@ class SparklingChecks {
     fun goldComplete(catches: Int, absent: Boolean) = goldEnvironmentReady && absent &&
         catches >= gimmiegoldMinimum && (heldCoins ?: 0) == 0 && coinUseResolved(catches)
     val gimmiegoldMinimum get() = maxOf(3, coinsPicked + startingCoins, coinsSpent, validatedCoinDemand)
+    val knownCoinsUnresolved get() = (heldCoins ?: 0) > 0 ||
+        coinsPicked + startingCoins > coinsSpent && !gimmiegoldReady()
     fun gimmiegoldReady() = goldEnvironmentReady && heldCoins == 0 && coinUseResolved(checkCount("Gimmiegold")) && extraCoinChecksResolved()
     fun gimmiegoldDebug() = "coinSourcesVerified=$goldEnvironmentReady sourcePath=${if (confirmedCoinSource) "confirmed-coins" else if (goldEnvironmentReady) "marker-scan" else "pending"} " +
         "starting=$startingCoins picked=$coinsPicked spent=$coinsSpent held=$heldCoins required=$gimmiegoldMinimum " +
@@ -104,7 +109,7 @@ class SparklingChecks {
             val zone = SafariCompletionZones.forBiome(biome)[name]
             val qualifies = if (zone != null) zone.contains(x, z, sparkling = true)
                 else name != "Gimmiegold" || atCenter
-            if (qualifies) ids.forEach { uuid ->
+            if (qualifies && name !in birds) ids.forEach { uuid ->
                 seenAtCaptureCount.getOrPut(name) { mutableMapOf() }.putIfAbsent(uuid, captured[name] ?: 0)
             }
         }

@@ -83,6 +83,7 @@ object SparklingMutuals : ModInitializer {
         BeeNests.register()
         HoneyHives.register()
         SafariEsp.register()
+        SafariAssist.register()
         TeammateEsp.register()
         SafariIsland.register()
         SafariManagerGuard.register()

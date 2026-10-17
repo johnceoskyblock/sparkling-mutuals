@@ -18,6 +18,8 @@ class SafariStructuresTest {
     @Test fun `mounds require a centered low empty hitbox within 64 blocks`() {
         val mound = MoundShape(-100.5, 40.0, 30.5, .7, .5, 64.0 * 64)
         assertTrue(SafariMounds.detected(mound))
+        assertTrue(SafariMounds.detected(mound.copy(distanceSquared = 40000.0), limitRange = false))
+        assertFalse(SafariMounds.detected(mound.copy(distanceSquared = 40000.0, occupied = true), limitRange = false))
         assertTrue(SafariMounds.detected(mound.copy(width = .35, height = .25, y = 65.0)))
         assertTrue(SafariMounds.detected(mound.copy(width = 1.10, height = .95)))
         assertTrue(SafariMounds.detected(mound.copy(width = .5, height = .6)))

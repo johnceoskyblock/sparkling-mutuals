@@ -2,7 +2,9 @@ package net.johnceo.sparklingmutuals.safari.automation
 
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents
 import net.johnceo.sparklingmutuals.LocalChat
+import net.johnceo.sparklingmutuals.hud.SkyblockSidebar
 import net.johnceo.sparklingmutuals.commands.PartyChat
+import net.johnceo.sparklingmutuals.party.PartyManager
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.safari.SafariAssist
 import net.johnceo.sparklingmutuals.safari.SafariRules
@@ -10,7 +12,7 @@ import net.minecraft.client.Minecraft
 
 /**
  * `!dt [reason]` in party chat: someone wants a break after this run. The request waits until the run ends, then the
- * requester's own client posts "X has requested downtime" (one client, not every member's) and every client holds the
+ * clients coordinate one combined party announcement naming every requester and reason, and every client holds the
  * Safari Manager shut until the requester says `r`, earns their contest ticket, or someone sneak-clicks past it once. Asked outside the Safari,
  * it takes effect straight away. Requests leave with their requester: someone leaving or being removed from the party
  * drops theirs, and this client leaving, joining another party or the party disbanding drops them all. Turning the
@@ -37,12 +39,13 @@ object SafariDowntime {
     /** A hold only stands while the setting is on, so switching it off releases the manager at once. */
     val holding get() = active && ConfigManager.downtimeCommand
     private var wasInSafari = false
+    private val announcement = DowntimeAnnouncement()
 
     fun register() {
         ClientReceiveMessageEvents.GAME.register { message, overlay ->
             if (!overlay) Minecraft.getInstance().execute {
                 val client = Minecraft.getInstance()
-                chat(message.string, SafariAssist.inSafari, client.player?.name?.string.orEmpty())?.let(::send)
+                chat(message.string, SafariAssist.inSafari, client.player?.name?.string.orEmpty())?.let(::queueAnnouncement)
             }
         }
     }
@@ -52,11 +55,14 @@ object SafariDowntime {
         if (!ConfigManager.downtimeCommand) { clear(); return null }
         if (partyChanged(SafariRules.strip(text).trim())) return null
         val chat = PartyChat.parse(text) ?: return null
+        announcement.observe(chat.body)
         request.matchEntire(chat.body)?.let { match ->
             val reason = match.groupValues[1].trim()
+            if (requests.isEmpty()) announcement.clear()
+            requests.keys.firstOrNull { it.equals(chat.sender, true) }?.let(requests::remove)
             requests[chat.sender] = reason
             tell("[SM] ${chat.sender} wants downtime after this run" + if (reason.isEmpty()) "." else ": $reason")
-            return if (!inSafari) leftSafari(self) else null
+            return if (!inSafari) { if (active) summary() else leftSafari(self) } else null
         }
         if (chat.body.equals("Ticket earned!", ignoreCase = true)) {
             ticketEarned(chat.sender)
@@ -100,26 +106,39 @@ object SafariDowntime {
         return true
     }
 
-    /** The run is over: banked requests become a hold. Returns the requester's own announcement, if this is them. */
+    /** The run is over: banked requests become a hold and any client can report the whole list. */
+    @Suppress("UNUSED_PARAMETER")
     fun leftSafari(self: String): String? {
         if (!ConfigManager.downtimeCommand) { clear(); return null }
         if (requests.isEmpty() || active) return null
         active = true
         tell("[SM] Safari Manager held for downtime. Say r in party chat when ready (sneak-click to skip).")
-        val mine = requests.entries.firstOrNull { it.key.equals(self, true) } ?: return null
-        return "${mine.key} has requested downtime" + if (mine.value.isEmpty()) "" else " for reason: ${mine.value}"
+        return summary()
     }
 
     fun onClientTick(client: Minecraft) {
         if (!ConfigManager.downtimeCommand && (active || requests.isNotEmpty())) clear()
         val inSafari = SafariAssist.inSafari
-        if (wasInSafari && !inSafari) leftSafari(client.player?.name?.string.orEmpty())?.let(::send)
+        if (wasInSafari && !inSafari) leftSafari(client.player?.name?.string.orEmpty())?.let(::queueAnnouncement)
         wasInSafari = inSafari
+        val inCanyon = !inSafari && client.player != null && client.level != null &&
+            (SafariAssist.atEntrance || SkyblockSidebar.areaName(client).equals("Torrhus Canyon", true))
+        // Transfers may briefly clear Safari detection before the destination is available.
+        if (inCanyon || !holding)
+            announcement.poll(System.currentTimeMillis(), if (holding) summary() else null)?.let(::send)
+    }
+
+    private fun summary() = DowntimeAnnouncement.format(requests)
+    private fun queueAnnouncement(message: String) {
+        val client = Minecraft.getInstance()
+        val local = client.player?.uuid?.toString() ?: return
+        val rank = PartyManager.withLocal(local)?.sortedDescending()?.indexOf(local)?.coerceAtLeast(0) ?: 0
+        announcement.queue(message, System.currentTimeMillis(), rank)
     }
 
     fun holders() = requests.keys.joinToString(", ")
     /** The one-time bypass: a sneak-click on the manager ends the hold for good. */
-    fun clear() { active = false; requests.clear() }
+    fun clear() { active = false; requests.clear(); announcement.clear() }
     fun reset() { clear(); wasInSafari = false }
 
     private fun send(message: String) { Minecraft.getInstance().player?.connection?.sendCommand("pc $message") }

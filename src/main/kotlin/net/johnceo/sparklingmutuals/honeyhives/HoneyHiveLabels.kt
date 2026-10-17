@@ -17,6 +17,6 @@ object HoneyHiveLabels {
         }.sortedBy { it.second }
         val unambiguous = nearest.size < 2 || abs(nearest[0].second - nearest[1].second) > .01
         unambiguous && nearest.firstOrNull()?.first?.key == hive.key && abs(label.x - hive.x - .5) <= 1.5 &&
-            abs(label.z - hive.z - .5) <= 1.5 && label.y in hive.y.toDouble()..hive.y + 4.0
+            abs(label.z - hive.z - .5) <= 1.5 && label.y in (hive.y - 1.0)..hive.y + 4.0
     }.sortedBy { if (HoneyHiveTracker.countdownMillis(it.text) != null) 0 else 1 }.firstOrNull()?.text
 }

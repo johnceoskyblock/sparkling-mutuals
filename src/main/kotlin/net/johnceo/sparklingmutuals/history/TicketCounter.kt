@@ -16,7 +16,9 @@ object TicketCounter {
     fun register() {
         ClientReceiveMessageEvents.GAME.register { message, overlay ->
             if (!overlay && isTicket(SafariRules.strip(message.string))) Minecraft.getInstance().execute {
-                SparklingLog.onTicket(); RunHistory.onTicket(); Achievements.onTicket()
+                if (HistoryServerPolicy.allows()) {
+                    SparklingLog.onTicket(); RunHistory.onTicket(); Achievements.onTicket()
+                }
             }
         }
     }

@@ -29,7 +29,10 @@ object BeeNests {
     private var renderCallbacks = 0L
     private var lastRenderedMarkers = 0
     private val logger = LoggerFactory.getLogger("sparkling-mutuals/nests")
-    private val handledByParty get() = SafariTracking.ledger.current?.partyNestsHandled == true
+    private val handledByParty get() = SafariTracking.ledger.current?.let {
+        if (SafariFullClear.mode == net.johnceo.sparklingmutuals.safari.SafariMode.FULL_CLEAR) it.nestCaptureQuotaMet
+        else it.partyNestsHandled
+    } == true
     val unpunchedCount get() = if (handledByParty) 0 else survey.remaining.size
     val punchedCount get() = survey.punchedCount
     val nestCount get() = survey.nestCount
