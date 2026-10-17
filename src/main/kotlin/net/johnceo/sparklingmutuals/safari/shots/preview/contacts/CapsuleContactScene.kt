@@ -10,6 +10,7 @@ import net.minecraft.world.entity.Display
 import net.minecraft.world.entity.decoration.ArmorStand
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.level.ClipContext
+import net.minecraft.world.level.chunk.status.ChunkStatus
 import net.minecraft.world.phys.*
 
 data class ContactTerrainDetail(val fromParameter:Double,val toParameter:Double,val position:ShotVector?,val normal:ShotVector?,
@@ -25,6 +26,8 @@ object CapsuleContactScene {
     private var tick=0L
     private var identityAllowance=0
     private var unsupported=false
+    private var entityCount=-1
+    fun invalidateDiscovery() { if(world!=null) { slots=null;cache.invalidate() } }
     private val collectionRules=net.johnceo.sparklingmutuals.safari.shots.preview.CapsulePreviewRules()
     fun probeEligible(client:Minecraft)=collectionRules.evaluate(net.johnceo.sparklingmutuals.safari.shots.preview.CapsulePreview.collectionState(client))==net.johnceo.sparklingmutuals.safari.shots.preview.CapsulePreviewAvailability.AVAILABLE
     fun reset() { cache.reset();world=null;slots=null;identityAllowance=0;unsupported=false;collectionRules.reset() }
@@ -33,6 +36,7 @@ object CapsuleContactScene {
         if(!enabled || !SafariAssist.inSafari || level==null || client.player==null) { reset();return }
         if(world!==level) { reset();world=level }
         tick++;identityAllowance=16
+        if(entityCount!=level.entityCount) { invalidateDiscovery();entityCount=level.entityCount }
         collectionRules.tick(level,net.johnceo.sparklingmutuals.safari.shots.preview.CapsulePreview.collectionState(client))
         if(slots?.hasNext()!=true) {
             unsupported=false
@@ -46,6 +50,7 @@ object CapsuleContactScene {
             }
         }
         cache.tick(level,slots!!){inspect(client,it)}
+        if(cache.scanInterrupted) slots=null
     }
     private fun inspect(client:Minecraft,d:ContactDiscovery):ContactTarget? {
         val entity=client.level?.getEntity(d.key.toIntOrNull() ?: return null) ?: return null
@@ -62,6 +67,7 @@ object CapsuleContactScene {
         return ContactTarget(d.key,d.generation,species.name,body.first,body.second)
     }
     fun snapshot(client:Minecraft,eye:ShotVector,aim:ShotVector,pitch:Double):ContactSceneSnapshot {
+        if(client.level?.entityCount!=entityCount) invalidateDiscovery()
         val (targets,cachedCoverage)=cache.snapshot()
         var coverage=if(unsupported) ContactCoverage(false,cachedCoverage.reasons+"unsupported_proxy") else cachedCoverage
         val curve=ContactCurveSampler.sample(eye,aim,pitch)
@@ -83,31 +89,36 @@ object CapsuleContactScene {
     private fun vector(v:Vec3)=ShotVector(v.x,v.y,v.z)
     private fun segment(client:Minecraft,a:ContactNode,b:ContactNode,details:MutableList<ContactTerrainDetail>):ContactSegmentScene {
         val level=client.level ?: return ContactSegmentScene(null,ContactBoundary(0.0,ContactStop.UNLOADED))
-        val cells=ContactSceneBoundary.cells(a.position,b.position)
-        // Preflight all crossed cells before Minecraft's shape clip is invoked.
-        if(cells.isEmpty() || cells.any{!level.hasChunkAt(BlockPos(it.first,it.second,it.third))}) {
+        val cells=ContactSceneBoundary.collisionCells(a.position,b.position)
+        // ClientLevel.hasChunkAt always returns true in 26.1.2. Explicit false never creates chunks.
+        if(cells.isEmpty() || cells.any{level.chunkSource.getChunk(it.first shr 4,it.third shr 4,ChunkStatus.FULL,false)==null}) {
             details.add(ContactTerrainDetail(a.parameter,b.parameter,null,null,null,emptyList(),ContactStop.UNLOADED))
             return ContactSegmentScene(null,ContactBoundary(0.0,ContactStop.UNLOADED))
         }
-        val from=Vec3(a.position.x,a.position.y,a.position.z);val to=Vec3(b.position.x,b.position.y,b.position.z)
-        val hit=level.clip(ClipContext(from,to,ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,client.player!!))
-        val fluid=level.clip(ClipContext(from,to,ClipContext.Block.COLLIDER,ClipContext.Fluid.ANY,client.player!!))
-        val length=a.position.distanceSquared(b.position)
-        fun fraction(p:Vec3)=if(length==0.0) 0.0 else ((p.x-from.x)*(to.x-from.x)+(p.y-from.y)*(to.y-from.y)+(p.z-from.z)*(to.z-from.z))/length
-        val fluidHit=fluid.type!=HitResult.Type.MISS && !level.getFluidState(fluid.blockPos).isEmpty
-        val boundary=if(fluidHit) ContactBoundary(fraction(fluid.location).coerceIn(0.0,1.0),ContactStop.FLUID) else null
-        if(hit.type==HitResult.Type.MISS) {
-            if(boundary!=null) details.add(ContactTerrainDetail(a.parameter,b.parameter,vector(fluid.location),null,null,emptyList(),ContactStop.FLUID))
-            return ContactSegmentScene(null,boundary)
+        var best:ContactCandidate?=null;var first=Double.POSITIVE_INFINITY;var fluidFraction=Double.POSITIVE_INFINITY
+        var bestBlock:String?=null;var bestBoxes=emptyList<ShotBounds>()
+        fun boxes(shapes:List<AABB>,pos:BlockPos)=shapes.map{it.move(pos)}.map{ShotBounds(ShotVector(it.minX,it.minY,it.minZ),ShotVector(it.maxX,it.maxY,it.maxZ))}
+        for((x,y,z) in cells) {
+            val pos=BlockPos(x,y,z);val state=level.getBlockState(pos)
+            val shapes=state.getCollisionShape(level,pos,net.minecraft.world.phys.shapes.CollisionContext.of(client.player!!)).toAabbs()
+            val fluid=state.fluidState
+            val fluidShapes=if(fluid.isEmpty) emptyList() else fluid.getShape(level,pos).toAabbs()
+            if(shapes.size>32 || fluidShapes.size>32) return ContactSegmentScene(null,ContactBoundary(0.0,ContactStop.WORK_LIMIT))
+            val bodies=boxes(shapes,pos)
+            for(body in bodies) {
+                val f=ContactIntersections.entry(a.position,b.position,body) ?: continue
+                if(f>=first) continue
+                first=f;val p=a.position.lerp(b.position,f)
+                val faces=listOf(kotlin.math.abs(p.x-body.min.x) to ShotVector(-1.0,0.0,0.0),kotlin.math.abs(p.x-body.max.x) to ShotVector(1.0,0.0,0.0),
+                    kotlin.math.abs(p.y-body.min.y) to ShotVector(0.0,-1.0,0.0),kotlin.math.abs(p.y-body.max.y) to ShotVector(0.0,1.0,0.0),
+                    kotlin.math.abs(p.z-body.min.z) to ShotVector(0.0,0.0,-1.0),kotlin.math.abs(p.z-body.max.z) to ShotVector(0.0,0.0,1.0))
+                best=ContactCandidate(ContactKind.TERRAIN,a.parameter+(b.parameter-a.parameter)*f,p,faces.minBy{it.first}.second,null,null)
+                bestBlock=BuiltInRegistries.BLOCK.getKey(state.block).toString();bestBoxes=bodies
+            }
+            for(body in boxes(fluidShapes,pos)) ContactIntersections.entry(a.position,b.position,body)?.let{fluidFraction=minOf(fluidFraction,it)}
         }
-        val state=level.getBlockState(hit.blockPos)
-        val shapes=state.getCollisionShape(level,hit.blockPos).toAabbs()
-        if(shapes.size>32) return ContactSegmentScene(null,ContactBoundary(0.0,ContactStop.WORK_LIMIT))
-        val normal=ShotVector(hit.direction.stepX.toDouble(),hit.direction.stepY.toDouble(),hit.direction.stepZ.toDouble())
-        val boxes=shapes.map{it.move(hit.blockPos)}.map{ShotBounds(ShotVector(it.minX,it.minY,it.minZ),ShotVector(it.maxX,it.maxY,it.maxZ))}
-        val f=if(hit.isInside) 0.0 else fraction(hit.location).coerceIn(0.0,1.0)
-        val position=a.position.lerp(b.position,f)
-        details.add(ContactTerrainDetail(a.parameter,b.parameter,position,normal,BuiltInRegistries.BLOCK.getKey(state.block).toString(),boxes,boundary?.reason))
-        return ContactSegmentScene(ContactCandidate(ContactKind.TERRAIN,a.parameter+(b.parameter-a.parameter)*f,position,normal,null,null),boundary)
+        val boundary=if(fluidFraction.isFinite())ContactBoundary(fluidFraction,ContactStop.FLUID) else null
+        if(best!=null || boundary!=null) details.add(ContactTerrainDetail(a.parameter,b.parameter,best?.position ?: a.position.lerp(b.position,fluidFraction),best?.normal,bestBlock,bestBoxes,boundary?.reason))
+        return ContactSegmentScene(best,boundary)
     }
 }

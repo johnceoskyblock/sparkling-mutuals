@@ -246,8 +246,6 @@ Verify Full Clear report trust: capture a variable species' minimum and perform 
 - In the same controlled scene, place the preview line and an existing ESP outline behind one solid obstacle: the path is occluded, existing through-terrain ESP remains visible. Check normal unoccluded path continuity and finite geometry. Depth occlusion does not establish collision or target selection.
 - Compare visible ordinary capsule centers with the guide while stationary in the tested range; keep recorder exports separate if used. Offline startup, synthetic geometry tests and numeric observation residuals do not certify Hypixel appearance, interpolation, impact or capture success. Record live checks still pending.
 
-## Last updated
-
 ## Experimental terrain/critter contacts
 
 - Both toggles default off, width defaults 3 and saves/clamps 1–5. With uncalibrated mode off, retain old pitch/range and no marker. Expanded mode retains all stationary/item/view/hiding exclusions and two stable ticks.
@@ -256,4 +254,6 @@ Verify Full Clear report trust: capture a variable species' minimum and perform 
 - Check real-writer v2 plus strict v1 replay, local target aliases, UTF-8/finite/line bounds, omitted detail flags, one probe per ordinary input and unchanged raw packets/association. Both named populated workloads retain every capsule packet under unchanged caps.
 - Run target-only 26.1.2 verification, helper/Python/package tests, offline loaded fixtures and bounded scene profiling. Live Hypixel broader-angle launch, endpoint and proxy validation remain pending; use the six-throw sanity block before the fitting/validation matrix.
 
-2026-10-16 (America/New_York) - Added conservative preview controls, lifecycle, camera and terrain/ESP regression checks.
+## Last updated
+
+2026-10-17 (America/New_York) - Added experimental contact, probe and bounded-scene validation. Live field validation remains pending.

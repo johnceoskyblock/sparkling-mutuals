@@ -20,11 +20,11 @@ object CapsuleContactSolver {
             val boundary=environment.boundary?.takeIf { it.fraction.isFinite() && it.fraction in 0.0..1.0 }
             val unknownParameter=boundary?.let{a.parameter+(b.parameter-a.parameter)*it.fraction}
             if(boundary!=null && (best==null || unknownParameter!!<=best.parameter+TIE)) {
-                nodes.add(ContactNode(unknownParameter!!,a.position.lerp(b.position,boundary.fraction),a.observedRegion && b.observedRegion))
+                if(unknownParameter!!>nodes.last().parameter) nodes.add(ContactNode(unknownParameter,a.position.lerp(b.position,boundary.fraction),a.observedRegion && b.observedRegion))
                 return finish(null,boundary.reason)
             }
             if(best!=null) {
-                nodes.add(ContactNode(best.parameter,best.position,a.observedRegion && b.observedRegion))
+                if(best.parameter>nodes.last().parameter) nodes.add(ContactNode(best.parameter,best.position,a.observedRegion && b.observedRegion))
                 return finish(best,ContactStop.CONTACT)
             }
             nodes.add(b)

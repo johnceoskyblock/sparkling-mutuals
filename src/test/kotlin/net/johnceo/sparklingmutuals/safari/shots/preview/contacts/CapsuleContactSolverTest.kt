@@ -52,4 +52,10 @@ class CapsuleContactSolverTest {
         val t=CapsuleContactSolver.trace(curve,emptyList(),coverage){_,_->ContactSegmentScene(null,null)}
         assertNull(t.primary); assertEquals(curve.stop,t.stop)
     }
+    @Test fun `immediate contact and unknown boundary retain strictly increasing probe nodes`() {
+        val inside=ContactTarget("inside",1,"Foxtrot",ShotBounds(ShotVector(-1.0,-1.0,-1.0),ShotVector(1.0,1.0,1.0)),"client_body_v1")
+        val contact=CapsuleContactSolver.trace(curve,listOf(inside),coverage){_,_->ContactSegmentScene(null,null)}
+        val boundary=CapsuleContactSolver.trace(curve,emptyList(),coverage){_,_->ContactSegmentScene(null,ContactBoundary(0.0,ContactStop.UNLOADED))}
+        for(trace in listOf(contact,boundary)) assertTrue(trace.nodes.zipWithNext().all{(a,b)->b.parameter>a.parameter})
+    }
 }

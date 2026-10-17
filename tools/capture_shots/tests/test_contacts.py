@@ -10,6 +10,12 @@ from tools.capture_shots.replay import replay
 from tools.capture_shots.tests.test_protocol import FIXTURES,records,encoded
 
 class ContactsTest(unittest.TestCase):
+    def test_actual_writer_inside_contact_and_zero_boundary_probes_are_readable(self):
+        s=read_session(FIXTURES/'contact-boundaries-v2.jsonl')
+        self.assertTrue(s.complete);report=contacts.summarize(s)
+        self.assertEqual('critter',report['shots'][0]['predicted_contact']['kind'])
+        self.assertEqual('unloaded',report['shots'][1]['prediction_stop'])
+        self.assertTrue(all(shot['endpoint_error'] is None for shot in report['shots']))
     def read(self,items):
         self.path.write_bytes(encoded(items));return read_session(self.path)
     def setUp(self):
