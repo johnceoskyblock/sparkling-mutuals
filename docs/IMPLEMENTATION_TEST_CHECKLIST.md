@@ -197,6 +197,8 @@ Verify Full Clear report trust: capture a variable species' minimum and perform 
 
 ## Experimental capsule path
 
+- On 26.1.2, test Iris absent, installed with shaders disabled, two representative active packs, reloading a pack, switching packs and toggling shaders off/on in the same world. Check first/front/rear views and Freecam; both amber terrain rings and cyan critter diamonds retain the flat guide's width/outline. Compare through-terrain off/on with an intervening camera sight-line wall. The guide draws after shader composition; it must not inherit pack lighting, disappear behind that wall with visibility enabled, write depth, cast guide shadows or alter existing ESP. Hide HUD/open a screen/switch worlds: no stale late guide; ordinary capsule hiding and recorder eligibility remain independent. Keep exact tested pack/version receipts and do not treat those checks as validation of every pack or of Hypixel capture physics.
+
 - Fresh/missing/invalid configuration defaults off; settings save, reopen and restart retain deliberate choices. Toggling must not start recording or change capture/history/completion/ESP state.
 - With Allow uncalibrated estimates off, enable in Safari helpers, leave either capsule-hiding setting on or off, hold an ordinary main-hand capsule in first person or either normal third-person view and stand still on the ground. After two stable ticks, expect an amber path and **Experimental path**, with no impact marker. Its initial unseen launch segment is omitted and its nominal limit is 15 blocks.
 - Test pitch -10 through +1 degrees inclusive and immediately outside both limits. Walk, jump/fall, swim, fly, ride, sneak and sprint: suppress immediately; settle for two ticks before returning. Switch ordinary/Masterful/unsupported items and hands between ticks: no stale line. Cycle all normal perspectives: the eligible route stays anchored to player eye/aim, not the third-person camera.
@@ -232,6 +234,8 @@ Verify Full Clear report trust: capture a variable species' minimum and perform 
 - Give fixtures distinctive custom names, raw profile values and arbitrary item data; prefixed JSON must omit them. Preserve finite JSON with unavailable nonfinite fields and cap block-state text. General debug output remains separate. Live collection: three surfaced ordinary-Shyworm snapshots in one world, roughly one second apart, without throwing or recording.
 
 ## Last updated
+
+2026-10-17 (America/New_York) - Added Iris shader reload, view, marker, depth and optional-dependency checks for 26.1.2.
 
 2026-10-17 (America/New_York) - Added capsule-hiding/guide independence checks and strict recorder stability regressions.
 

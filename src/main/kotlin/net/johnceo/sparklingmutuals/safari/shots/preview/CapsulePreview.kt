@@ -16,7 +16,7 @@ object CapsulePreview {
     private var world: Any?=null
     private var registered=false
     private val frames=ContactGuideLifecycle()
-    fun beginFrame() { frames.reset() }
+    fun beginFrame() { frames.reset();CapsulePreviewRenderer.clearPending() }
     fun register() {
         if(registered) return
         registered=true
@@ -28,7 +28,7 @@ object CapsulePreview {
         CapsuleContactScene.tick(client,ConfigManager.experimentalCapsulePath && ConfigManager.allowUncalibratedCapsuleEstimates ||
             net.johnceo.sparklingmutuals.safari.shots.ShotRecorder.status().recording)
     }
-    fun reset() { world=null;rules.reset();frames.reset();CapsuleContactScene.reset() }
+    fun reset() { CapsulePreviewRenderer.clearPending();world=null;rules.reset();frames.reset();CapsuleContactScene.reset() }
     internal fun currentState(client: Minecraft): CapsulePreviewState? {
         if(!ConfigManager.experimentalCapsulePath || client.level==null) return null
         return collectionState(client)?.copy(enabled=ConfigManager.experimentalCapsulePath,allowUncalibratedEstimates=ConfigManager.allowUncalibratedCapsuleEstimates)
