@@ -9,6 +9,15 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 
 class ConfigTest {
+    @Test fun `contact opt in and finite width persist safely for old and invalid files`() {
+        ConfigManager.init(dir)
+        assertFalse(ConfigManager.allowUncalibratedCapsuleEstimates);assertEquals(3f,ConfigManager.capsulePathWidth)
+        val s=SafariSettings();s.safari.allowUncalibratedCapsuleEstimates=true;s.safari.capsulePathWidth=9f;s.apply()
+        ConfigManager.init(dir)
+        assertTrue(ConfigManager.allowUncalibratedCapsuleEstimates);assertEquals(5f,ConfigManager.capsulePathWidth)
+        Files.writeString(dir.resolve("sparkling-mutuals.properties"),"capsulePathWidth=NaN\n")
+        ConfigManager.init(dir);assertFalse(ConfigManager.allowUncalibratedCapsuleEstimates);assertEquals(3f,ConfigManager.capsulePathWidth)
+    }
     @TempDir lateinit var dir: Path
     @Test fun `capsule preview is opt in and survives settings application and reload`() {
         val old=ConfigManager.experimentalCapsulePath

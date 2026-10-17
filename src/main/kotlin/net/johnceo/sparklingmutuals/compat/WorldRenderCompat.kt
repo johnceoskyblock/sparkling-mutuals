@@ -29,6 +29,20 @@ import org.joml.Matrix4f
 enum class WorldDepthMode { THROUGH_TERRAIN, OCCLUDED }
 
 object WorldRenderCompat {
+    fun contactLines(context:LevelRenderContext,type:RenderType,worldLines:List<net.johnceo.sparklingmutuals.safari.shots.preview.contacts.ContactLine>) {
+        val client=Minecraft.getInstance();val world=client.level;val camera=client.gameRenderer.smCamera.position()
+        val lines=worldLines.toList().flatMap { line ->
+            if(!line.width.isFinite() || line.width<=0) emptyList() else WorldLineGeometry.segments(
+                listOf(Vec3(line.from.x,line.from.y,line.from.z),Vec3(line.to.x,line.to.y,line.to.z)),camera).map{Triple(it,line.color,line.width)}
+        }
+        if(lines.isEmpty()) return
+        geometry(context,type) { pose,vertices ->
+            if(client.level!==world) return@geometry
+            for((line,color,width) in lines) for(point in listOf(line.from,line.to))
+                vertices.addVertex(pose,point.x.toFloat(),point.y.toFloat(),point.z.toFloat()).setColor(color)
+                    .setNormal(pose,line.normal.x.toFloat(),line.normal.y.toFloat(),line.normal.z.toFloat()).setLineWidth(width)
+        }
+    }
     fun renderType(name: String, filled: Boolean = false, cull: Boolean? = false, depth: WorldDepthMode = WorldDepthMode.THROUGH_TERRAIN): RenderType {
         val builder = RenderPipeline.builder(
             if (filled) RenderPipelines.DEBUG_FILLED_SNIPPET else RenderPipelines.LINES_SNIPPET)

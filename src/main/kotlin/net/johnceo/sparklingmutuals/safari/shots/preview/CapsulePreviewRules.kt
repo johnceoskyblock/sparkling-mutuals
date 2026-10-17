@@ -10,6 +10,7 @@ data class CapsulePreviewState(
     val sprinting: Boolean, val swimming: Boolean, val flying: Boolean, val riding: Boolean,
     val hideFlying: Boolean, val hideGround: Boolean, val screenOpen: Boolean, val hudHidden: Boolean,
     val pitch: Double, val position: ShotVector, val velocity: ShotVector,
+    val allowUncalibratedEstimates: Boolean = false,
 )
 
 enum class CapsulePreviewAvailability { HIDDEN, STAND_STILL, TESTED_ANGLE_ONLY, VIEW_UNAVAILABLE, HIDING_UNAVAILABLE, AVAILABLE }
@@ -28,7 +29,9 @@ class CapsulePreviewRules {
         hypot(s.velocity.x, s.velocity.z) <= .001
     private fun within(a: ShotVector, b: ShotVector) = abs(a.x-b.x) <= .001 && abs(a.y-b.y) <= .001 && abs(a.z-b.z) <= .001
     private fun physicalEligibility(s: CapsulePreviewState) = s.enabled && s.inSafari && s.ordinaryMainHand &&
-        s.firstPerson && !s.hideFlying && !s.hideGround && stationary(s) && s.pitch.isFinite() && s.pitch in -10.0..1.0
+        s.firstPerson && !s.hideFlying && !s.hideGround && stationary(s) && angle(s)
+    private fun angle(s:CapsulePreviewState) = s.pitch.isFinite() && s.pitch in
+        (if(s.allowUncalibratedEstimates) -90.0..90.0 else -10.0..1.0)
 
     fun tick(worldIdentity: Any?, state: CapsulePreviewState?): CapsulePreviewAvailability {
         if (worldIdentity == null || state == null) { reset(); return CapsulePreviewAvailability.HIDDEN }
@@ -51,7 +54,7 @@ class CapsulePreviewRules {
             stableTicks = 0
             return CapsulePreviewAvailability.STAND_STILL
         }
-        if (!s.pitch.isFinite() || s.pitch !in -10.0..1.0) return CapsulePreviewAvailability.TESTED_ANGLE_ONLY
+        if (!angle(s)) return CapsulePreviewAvailability.TESTED_ANGLE_ONLY
         return if (stableTicks >= 2) CapsulePreviewAvailability.AVAILABLE else CapsulePreviewAvailability.STAND_STILL
     }
 }

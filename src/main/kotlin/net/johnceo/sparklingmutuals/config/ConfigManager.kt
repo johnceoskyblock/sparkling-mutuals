@@ -63,6 +63,8 @@ object ConfigManager {
     var hideGroundCapsules = true
     var hideFlyingCapsules = true
     var experimentalCapsulePath = false
+    var allowUncalibratedCapsuleEstimates = false
+    var capsulePathWidth = 3f
     var capsuleHideDistance = 2f
     var showWhere = 1
     val personalBests = SafariPersonalBests()
@@ -72,12 +74,13 @@ object ConfigManager {
         ::highlightBeeNests to true, ::removeDarkness to true, ::sparklingAlert to true,
         ::sparklingPartyAnnouncer to true, ::catchCountPanel to false, ::autoClicker to true, ::candleHitbox to true, ::holdManagerOnKick to true, ::downtimeCommand to true, ::honeyHives to true, ::runHistory to true, ::achievements to true, ::achievementSound to true, ::achievementsToParty to false, ::runCoinsInstaSell to false,
         ::hideCaptureChat to true, ::hideGroundCapsules to true, ::hideFlyingCapsules to true,
-        ::experimentalCapsulePath to false,
+        ::experimentalCapsulePath to false, ::allowUncalibratedCapsuleEstimates to false,
         ::highlightSnooperWalls to true, ::showBeeNests to true, ::showMoundCount to true,
         ::showSnooperWalls to true, ::showMoundStats to false,
         ::allGemsAlert to true, ::allBirdFoodAlert to true, ::allIncenseAlert to true, ::runCompleteAlert to true)
 
     fun validCapsuleDistance(value: Float?) = value?.takeIf { it.isFinite() }?.coerceIn(.5f, 6f) ?: 2f
+    fun validCapsulePathWidth(value: Float?) = value?.takeIf { it.isFinite() }?.coerceIn(1f,5f) ?: 3f
     fun validSparklingSound(value: String?) = value?.trim()?.let(Identifier::tryParse)?.toString() ?: "minecraft:block.amethyst_block.chime"
 
     fun init(configDirectory: Path) {
@@ -94,6 +97,7 @@ object ConfigManager {
         warpDelaySeconds = properties.getProperty("warpDelaySeconds", "25").toIntOrNull()?.coerceIn(1, 86400) ?: 25
         showWhere = properties.getProperty("showWhere")?.toIntOrNull()?.takeIf { it in 0..2 } ?: 1
         capsuleHideDistance = validCapsuleDistance(properties.getProperty("capsuleHideDistance")?.toFloatOrNull())
+        capsulePathWidth = validCapsulePathWidth(properties.getProperty("capsulePathWidth")?.toFloatOrNull())
         SafariHud.load(properties)
         personalBestConfig = PersonalBestConfig(configPath)
         personalBestConfig.load(properties, personalBests)
@@ -117,6 +121,7 @@ object ConfigManager {
             setProperty("warpDelaySeconds", warpDelaySeconds.toString())
             setProperty("showWhere", showWhere.coerceIn(0, 2).toString())
             setProperty("capsuleHideDistance", validCapsuleDistance(capsuleHideDistance).toString())
+            setProperty("capsulePathWidth", validCapsulePathWidth(capsulePathWidth).toString())
             SafariHud.save(this)
             SafariEspConfig.save(this)
             AppearanceConfig.save(this)

@@ -9,14 +9,11 @@ object CapsulePreviewRenderer {
     private val type by lazy { WorldRenderCompat.renderType("capsule_path_preview",depth=WorldDepthMode.OCCLUDED) }
     fun render(context: LevelRenderContext) {
         val client=Minecraft.getInstance()
-        val available=CapsulePreview.availability(CapsulePreview.currentState(client))
-        if(available!=CapsulePreviewAvailability.AVAILABLE) return
-        val player=client.player ?: return
-        val partial=client.deltaTracker.getGameTimeDeltaPartialTick(false)
-        val frame=CapsulePreviewFrameBuilder.build(available,ShotPacketCompat.vector(player.getEyePosition(partial)),
-            ShotPacketCompat.vector(player.getViewVector(partial)))
-        if(frame.points.isEmpty()) return
-        WorldRenderCompat.polyline(context,type,frame.points.map { Vec3(it.x,it.y,it.z) },0xFFFFB347.toInt(),2f)
+        val frame=CapsulePreview.frame(client) ?: return
+        val mesh=frame.mesh ?: return
+        WorldRenderCompat.contactLines(context,type,mesh.outline)
+        WorldRenderCompat.flush(context,type)
+        WorldRenderCompat.contactLines(context,type,mesh.core+mesh.marker)
         WorldRenderCompat.flush(context,type)
     }
 }
