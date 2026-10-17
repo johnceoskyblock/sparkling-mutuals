@@ -1,0 +1,43 @@
+package net.johnceo.sparklingmutuals.safari.shots.preview.contacts
+import net.johnceo.sparklingmutuals.safari.shots.*
+import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Test
+class ContactTargetCacheTest {
+    private fun target(d:ContactDiscovery)=ContactTarget(d.key,d.generation,"Foxtrot",ShotBounds(ShotVector(0.0,0.0,0.0),ShotVector(1.0,1.0,1.0)),"client_body_v1")
+    @Test fun `empty cache charges 240 discoveries and unfinished sweep is unknown`() {
+        val c=ContactTargetCache();var calls=0
+        c.tick(Any(),List(400){ContactDiscovery("local_$it",1)}.iterator()){calls++;null}
+        assertEquals(240,calls);assertFalse(c.snapshot().second.complete)
+    }
+    @Test fun `null slots and retained real fastutil map iterator share budget`() {
+        val map=it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap<ContactDiscovery>()
+        repeat(400){map.put(it,ContactDiscovery("local_$it",1))}
+        val iterator=map.values.iterator();val c=ContactTargetCache();val world=Any()
+        c.tick(world,iterator){null};map.clear()
+        var calls=0;c.tick(world,iterator){calls++;target(it)}
+        assertEquals(0,calls);assertTrue(c.snapshot().second.complete)
+    }
+    @Test fun `overflow and revalidation do not exceed shared tick allowance`() {
+        val c=ContactTargetCache();val world=Any()
+        c.tick(world,List(65){ContactDiscovery("local_$it",1)}.iterator(),::target)
+        assertEquals(64,c.snapshot().first.size);assertFalse(c.snapshot().second.complete)
+        var calls=0
+        c.tick(world,List(400){ContactDiscovery("new_$it",1)}.iterator()){calls++;target(it)}
+        assertEquals(240,calls)
+    }
+    @Test fun `stale entries release slots for entrants and reused generations replace old body`() {
+        val c=ContactTargetCache();val world=Any()
+        c.tick(world,listOf(ContactDiscovery("old",1)).iterator(),::target)
+        c.tick(world,listOf(ContactDiscovery("old",2),ContactDiscovery("entrant",1)).iterator()){if(it.generation==1 && it.key=="old")null else target(it)}
+        assertEquals(setOf("old","entrant"),c.snapshot().first.map{it.key}.toSet())
+        assertEquals(2,c.snapshot().first.first{it.key=="old"}.generation)
+        c.tick(Any(),emptyList<ContactDiscovery>().iterator(),::target)
+        assertTrue(c.snapshot().first.isEmpty());assertTrue(c.snapshot().second.complete)
+    }
+    @Test fun `overflow persists until entire retained sweep ends`() {
+        val c=ContactTargetCache();val w=Any();val slots=List(400){ContactDiscovery("local_$it",1)}.iterator()
+        c.tick(w,slots,::target)
+        c.tick(w,slots){if(it.key.substringAfter('_').toInt()<240)target(it) else null}
+        assertFalse(c.snapshot().second.complete)
+    }
+}
