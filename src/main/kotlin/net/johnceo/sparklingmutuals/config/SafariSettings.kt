@@ -154,10 +154,8 @@ class SafariSettings : Config() {
         @ConfigEditorButton(runnableId = 5, buttonText = "Reset to 25s") var reset = false
     }
     class Safari {
-        @JvmField @ConfigOption(name = "Experimental capsule path", desc = "Experimental visual guide. Terrain collision and capture targeting are unverified.")
+        @JvmField @ConfigOption(name = "Capture projections", desc = "Show capsule paths and estimated terrain/critter contacts, including Masterful, movement and water. Capture physics and target bounds remain unverified.")
         @ConfigEditorBoolean var experimentalCapsulePath = ConfigManager.experimentalCapsulePath
-        @JvmField @ConfigOption(name = "Allow uncalibrated estimates", desc = "Terrain and critter estimates, including Masterful capsules, movement and water. Launch, collision and target bounds are unverified. Requires Experimental capsule path.")
-        @ConfigEditorBoolean var allowUncalibratedCapsuleEstimates = ConfigManager.allowUncalibratedCapsuleEstimates
         @JvmField @ConfigOption(name = "Capsule path width", desc = "Line width from 1 to 5; default 3.")
         @ConfigEditorSlider(minValue = 1f, maxValue = 5f, minStep = 1f) var capsulePathWidth = ConfigManager.capsulePathWidth
         @JvmField @ConfigOption(name = "Show guide through terrain", desc = "See the capsule guide and contact marker behind terrain. The estimated route still stops at its first predicted collision.")
@@ -296,7 +294,6 @@ class SafariSettings : Config() {
             ConfigManager::shinyDetection to safari.shiny, ConfigManager::hideyhoQuestClicks to safari.hideyho, ConfigManager::hideyhoInsideOutside to safari.hideyhoInsideOutside,
             ConfigManager::progressHud to tracking.progress,
             ConfigManager::experimentalCapsulePath to safari.experimentalCapsulePath,
-            ConfigManager::allowUncalibratedCapsuleEstimates to safari.allowUncalibratedCapsuleEstimates,
             ConfigManager::showCapsuleGuideThroughTerrain to safari.showCapsuleGuideThroughTerrain,
             ConfigManager::missingPanel to tracking.missing,
             ConfigManager::removeDarkness to safari.darkness,

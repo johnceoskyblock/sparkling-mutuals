@@ -7,7 +7,6 @@ import net.johnceo.sparklingmutuals.safari.esp.SafariEsp
 import net.johnceo.sparklingmutuals.safari.shots.ShotVariant
 import net.johnceo.sparklingmutuals.safari.shots.preview.contacts.*
 import net.minecraft.client.Minecraft
-import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.core.component.DataComponents
 
 /** Passive view of the local player; never starts recording or changes a throw. */
@@ -25,13 +24,13 @@ object CapsulePreview {
     fun tick(client: Minecraft) {
         world=client.level
         rules.tick(world,currentState(client))
-        CapsuleContactScene.tick(client,ConfigManager.experimentalCapsulePath && ConfigManager.allowUncalibratedCapsuleEstimates ||
+        CapsuleContactScene.tick(client,ConfigManager.experimentalCapsulePath ||
             net.johnceo.sparklingmutuals.safari.shots.ShotRecorder.status().recording)
     }
     fun reset() { CapsulePreviewRenderer.clearPending();world=null;rules.reset();frames.reset();CapsuleContactScene.reset() }
     internal fun currentState(client: Minecraft): CapsulePreviewState? {
         if(!ConfigManager.experimentalCapsulePath || client.level==null) return null
-        return collectionState(client)?.copy(enabled=ConfigManager.experimentalCapsulePath,allowUncalibratedEstimates=ConfigManager.allowUncalibratedCapsuleEstimates)
+        return collectionState(client)?.copy(enabled=ConfigManager.experimentalCapsulePath,allowUncalibratedEstimates=true)
     }
     internal fun collectionState(client:Minecraft):CapsulePreviewState? {
         if(client.level==null) return null
@@ -70,11 +69,5 @@ object CapsulePreview {
     internal fun availability(state: CapsulePreviewState?): CapsulePreviewAvailability {
         if(Minecraft.getInstance().level !== world) { reset();return CapsulePreviewAvailability.HIDDEN }
         return rules.evaluate(state)
-    }
-    fun renderHud(graphics: GuiGraphicsExtractor) {
-        val client=Minecraft.getInstance()
-        val frame=frame(client) ?: return
-        val status=frame.status ?: return
-        CapsuleStatusHud.render(graphics,status)
     }
 }

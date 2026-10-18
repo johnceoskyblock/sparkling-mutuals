@@ -9,6 +9,23 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 
 class ConfigTest {
+    @Test fun `single projection switch preserves old master choice and drops the obsolete gate on save`() {
+        val file=dir.resolve("sparkling-mutuals.properties")
+        for(master in listOf(false,true)) for(oldGate in listOf(false,true)) {
+            Files.writeString(file,"experimentalCapsulePath=$master\nallowUncalibratedCapsuleEstimates=$oldGate\ncapsulePathWidth=4.0\nshowCapsuleGuideThroughTerrain=false\n")
+            ConfigManager.init(dir)
+            assertEquals(master,ConfigManager.experimentalCapsulePath)
+            val settings=SafariSettings()
+            settings.safari.experimentalCapsulePath=!master
+            settings.apply()
+            ConfigManager.init(dir)
+            assertEquals(!master,ConfigManager.experimentalCapsulePath)
+            assertEquals(4f,ConfigManager.capsulePathWidth)
+            assertFalse(ConfigManager.showCapsuleGuideThroughTerrain)
+            val saved=java.util.Properties().also { Files.newInputStream(file).use(it::load) }
+            assertFalse(saved.containsKey("allowUncalibratedCapsuleEstimates"),"Obsolete second gate must not survive a settings save")
+        }
+    }
     @Test fun `through terrain display preference loads from saved settings`() {
         Files.writeString(dir.resolve("sparkling-mutuals.properties"),"showCapsuleGuideThroughTerrain=false\n")
         ConfigManager.init(dir)
@@ -21,23 +38,12 @@ class ConfigTest {
         Files.writeString(dir.resolve("sparkling-mutuals.properties"),"showCapsuleGuideThroughTerrain=invalid\n")
         ConfigManager.init(dir);assertTrue(ConfigManager.showCapsuleGuideThroughTerrain)
     }
-    @Test fun `capsule status drag and scale survive saving and reset restores defaults`() {
-        val hud=net.johnceo.sparklingmutuals.safari.shots.preview.CapsuleStatusHud
-        ConfigManager.init(dir);val original=Triple(hud.layout.x,hud.layout.y,hud.layout.scale)
-        hud.layout.move(200.0,50.0,800,450,160,27);hud.layout.scale=1.4f
-        ConfigManager.save();hud.layout.reset();ConfigManager.init(dir)
-        assertEquals(.25f,hud.layout.x);assertEquals(50f/450,hud.layout.y);assertEquals(1.4f,hud.layout.scale)
-        hud.layout.reset();ConfigManager.save();ConfigManager.init(dir)
-        assertEquals(original,Triple(hud.layout.x,hud.layout.y,hud.layout.scale))
-    }
-    @Test fun `contact opt in and finite width persist safely for old and invalid files`() {
-        ConfigManager.init(dir)
-        assertFalse(ConfigManager.allowUncalibratedCapsuleEstimates);assertEquals(3f,ConfigManager.capsulePathWidth)
-        val s=SafariSettings();s.safari.allowUncalibratedCapsuleEstimates=true;s.safari.capsulePathWidth=9f;s.apply()
-        ConfigManager.init(dir)
-        assertTrue(ConfigManager.allowUncalibratedCapsuleEstimates);assertEquals(5f,ConfigManager.capsulePathWidth)
+    @Test fun `projection width persists and remains finite for old and invalid files`() {
+        ConfigManager.init(dir);assertEquals(3f,ConfigManager.capsulePathWidth)
+        val settings=SafariSettings();settings.safari.capsulePathWidth=9f;settings.apply()
+        ConfigManager.init(dir);assertEquals(5f,ConfigManager.capsulePathWidth)
         Files.writeString(dir.resolve("sparkling-mutuals.properties"),"capsulePathWidth=NaN\n")
-        ConfigManager.init(dir);assertFalse(ConfigManager.allowUncalibratedCapsuleEstimates);assertEquals(3f,ConfigManager.capsulePathWidth)
+        ConfigManager.init(dir);assertEquals(3f,ConfigManager.capsulePathWidth)
     }
     @TempDir lateinit var dir: Path
     @Test fun `capsule preview is opt in and survives settings application and reload`() {

@@ -29,7 +29,7 @@ Kotlin source lives under `src/main/kotlin/net/johnceo/sparklingmutuals/`. Packa
 | `safari/hideyho` | Quest prompts, acceptance and hiding-location observations |
 | `safari/resources` | Floor drops, starting supplies, bird feeding and inventory reminders |
 | `safari/shots` | Opt-in local capsule evidence, bounded export and lifecycle |
-| `safari/shots/preview` | Default-off experimental ordinary-capsule curve, conservative availability and passive rendering |
+| `safari/shots/preview` | Single-switch default-off capsule guide, terrain/critter estimates and passive rendering |
 | `safari/sparkling` | Sparkling detection, encounters and pending capture evidence |
 | `safari/structures` | Bee nests, nest surveys, mounds and Snooper walls |
 | `safari/ui` | Progress/missing panels, capture screen and panel visibility |
@@ -74,6 +74,8 @@ Gradle's `.gradle/`, `.kotlin/` and `build/`, IDE settings, the development clie
 See [Safari entry guard](SAFARI_ENTRY_GUARD.md) for stage-specific readiness, kick recovery, identity and presence evidence.
 
 ## Last updated
+
+2026-10-18 (America/New_York) - Updated the capture-preview package summary for its single switch and contact guide.
 
 2026-10-17 - Indexed the per-critter missing-panel implementation reference.
 

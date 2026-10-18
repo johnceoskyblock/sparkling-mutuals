@@ -7,10 +7,9 @@ Implemented defaults for fresh or missing settings. Enable all independently swi
 | Warp reminder (`warpAlertsEnabled`, `/alert`) | Off |
 | Coins at Insta Sell (`runCoinsInstaSell`) | Off |
 | Achievements to Party (`achievementsToParty`, including any equivalent achievement-to-party toggles) | Off |
-| Experimental capsule path (`experimentalCapsulePath`) | Off |
-| Allow uncalibrated estimates (`allowUncalibratedCapsuleEstimates`) | Off |
+| Capture projections (`experimentalCapsulePath`) | Off |
 
-Keep achievements themselves enabled; the exception is their party announcement. The experimental capsule path is separately opt-in under Safari helpers and does not start recording. Missing/invalid saved preview values default off; explicit choices persist. Capsule hiding and the visual preview work independently; either or both hiding options can stay on. See its [scope and controls](CAPTURE_SHOT_RECORDING.md#experimental-capsule-path). These are defaults for fresh/missing settings, not permission to overwrite existing saved user choices on every launch. Automatic unused starting-food/coin title alerts and party reminders have no config toggle, as documented in [tracking rules](critters/TRACKING.md#unused-starting-foodcoin-reminders).
+Keep achievements themselves enabled; the exception is their party announcement. Capture projections is separately opt-in under Safari helpers and does not start recording. Missing/invalid saved preview values default off; explicit choices persist. Capsule hiding and the visual preview work independently; either or both hiding options can stay on. See its [scope and controls](CAPTURE_SHOT_RECORDING.md#experimental-capsule-path). These are defaults for fresh/missing settings, not permission to overwrite existing saved user choices on every launch. Automatic unused starting-food/coin title alerts and party reminders have no config toggle, as documented in [tracking rules](critters/TRACKING.md#unused-starting-foodcoin-reminders).
 
 Mode selectors remain mutually exclusive; “all on” applies to independent feature toggles, not simultaneous Unique/Full Clear/Sparkling modes. Retain established numeric/text selections and explicit mode-preset behavior unless separately changed. Field initialization, config-load fallbacks and GUI defaults agree. Explicitly saved GUI choices remain in effect.
 
@@ -28,9 +27,11 @@ The existing `missingPanel` toggle and HUD layout are shared across modes. In Sp
 
 ## Experimental capsule path
 
-Capsule path width saves independently as `capsulePathWidth`, defaults to **3**, and clamps finite values to **1–5**. Invalid/non-finite values use 3. Uncalibrated estimates requires Experimental capsule path; enabling either option does not start recording. Expanded estimates add a terrain ring or possible-critter diamond, including close launch and broader angles. Either or both capsule-hiding settings may stay on; collision and target proxies remain unverified. Strict recorder calibration probes still require both off.
+**Capture projections** is the only enable switch. Its existing `experimentalCapsulePath` key preserves deliberate saved on/off choices; missing/invalid values default off. The obsolete `allowUncalibratedCapsuleEstimates` key is ignored and omitted on the next save. Enabling the switch gives the full terrain ring/possible-critter diamond guide, including close launch, broader angles, Masterful, movement and water support. It never starts recording. Collision and target proxies remain unverified; strict recorder probes retain their eligibility rules.
 
-**Show guide through terrain** (`showCapsuleGuideThroughTerrain`) defaults **on**, including for missing/invalid saved values; an explicit off choice persists. It only changes guide/marker visibility, with the experimental preview still separately default off and the same collision stops. **Capsule status** uses the standard HUD editor with saved normalized `hud.capsule_status.x` / `y` and `scale` (0.15–2). Its default top-left anchor is 35% across / 55% down at scale 1; Reset positions restores it.
+Capsule path width saves independently as `capsulePathWidth`, defaults to **3**, and clamps finite values to **1–5**. Invalid/non-finite values use 3. **Show guide through terrain** (`showCapsuleGuideThroughTerrain`) defaults **on**, including for missing/invalid saved values; an explicit off choice persists. These appearance controls do not add another enable gate or change collision stops.
+
+The projection status text and its HUD-editor entry are removed. Legacy `hud.capsule_status.*` properties are ignored and omitted on save; other HUD positions and settings remain unchanged.
 
 ## ESP label size
 
@@ -59,6 +60,8 @@ The History tab begins with the **History** button, followed immediately by **Im
 **Guard Safari entry** and **!dt downtime** retain their independent saved switches. Guard Safari entry uses Safari tab-list party presence, with a two-second pause after a party kick message; downtime controls Torrhus readiness holds until each requester says r or mentions ticket. Holding Shift overrides either for the current interaction without clearing the holds. See [entry guard](SAFARI_ENTRY_GUARD.md).
 
 ## Last updated
+
+2026-10-18 (America/New_York) - Consolidated Capture projections into one saved switch and removed the status-text HUD.
 
 2026-10-17 - Aligned entry guards with tab-first Safari presence, two-second kick pauses, ticket-message downtime release and Shift override.
 

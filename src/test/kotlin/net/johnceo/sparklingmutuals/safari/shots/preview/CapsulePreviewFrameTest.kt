@@ -23,7 +23,7 @@ class CapsulePreviewFrameTest {
         }
         assertTrue(trace.nodes.all{it.observedRegion})
     }
-    @Test fun `partial target coverage visibly labels both rendered contact shapes provisional`() {
+    @Test fun `partial target coverage retains diagnostic provenance for both contact shapes`() {
         for(kind in ContactKind.entries) {
             val hit=ContactCandidate(kind,1.0,ShotVector(0.0,0.0,1.0),ShotVector(0.0,1.0,0.0),null,null)
             val trace=ContactTrace(emptyList(),hit,ContactStop.CONTACT,setOf("target_limit"))

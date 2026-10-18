@@ -4,7 +4,6 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.util.Properties
 import net.johnceo.sparklingmutuals.hud.SafariHud
-import net.johnceo.sparklingmutuals.safari.shots.preview.CapsuleStatusHud
 import net.johnceo.sparklingmutuals.safari.completion.SafariFullClear
 import net.johnceo.sparklingmutuals.safari.completion.SafariPersonalBests
 import net.minecraft.resources.Identifier
@@ -64,7 +63,6 @@ object ConfigManager {
     var hideGroundCapsules = true
     var hideFlyingCapsules = true
     var experimentalCapsulePath = false
-    var allowUncalibratedCapsuleEstimates = false
     var capsulePathWidth = 3f
     var showCapsuleGuideThroughTerrain = true
     var capsuleHideDistance = 2f
@@ -76,7 +74,7 @@ object ConfigManager {
         ::highlightBeeNests to true, ::removeDarkness to true, ::sparklingAlert to true,
         ::sparklingPartyAnnouncer to true, ::catchCountPanel to false, ::autoClicker to true, ::candleHitbox to true, ::holdManagerOnKick to true, ::downtimeCommand to true, ::honeyHives to true, ::runHistory to true, ::achievements to true, ::achievementSound to true, ::achievementsToParty to false, ::runCoinsInstaSell to false,
         ::hideCaptureChat to true, ::hideGroundCapsules to true, ::hideFlyingCapsules to true,
-        ::experimentalCapsulePath to false, ::allowUncalibratedCapsuleEstimates to false, ::showCapsuleGuideThroughTerrain to true,
+        ::experimentalCapsulePath to false, ::showCapsuleGuideThroughTerrain to true,
         ::highlightSnooperWalls to true, ::showBeeNests to true, ::showMoundCount to true,
         ::showSnooperWalls to true, ::showMoundStats to false,
         ::allGemsAlert to true, ::allBirdFoodAlert to true, ::allIncenseAlert to true, ::runCompleteAlert to true)
@@ -101,7 +99,6 @@ object ConfigManager {
         capsuleHideDistance = validCapsuleDistance(properties.getProperty("capsuleHideDistance")?.toFloatOrNull())
         capsulePathWidth = validCapsulePathWidth(properties.getProperty("capsulePathWidth")?.toFloatOrNull())
         SafariHud.load(properties)
-        CapsuleStatusHud.layout.load(properties,"capsule_status")
         personalBestConfig = PersonalBestConfig(configPath)
         personalBestConfig.load(properties, personalBests)
         SafariFullClear.syncMode()
@@ -126,7 +123,6 @@ object ConfigManager {
             setProperty("capsuleHideDistance", validCapsuleDistance(capsuleHideDistance).toString())
             setProperty("capsulePathWidth", validCapsulePathWidth(capsulePathWidth).toString())
             SafariHud.save(this)
-            CapsuleStatusHud.layout.save(this,"capsule_status")
             SafariEspConfig.save(this)
             AppearanceConfig.save(this)
             PersonalBestConfig.write(configPath, this, "Sparkling Mutuals configuration")

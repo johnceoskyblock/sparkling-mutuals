@@ -105,7 +105,6 @@ object SparklingMutuals : ModInitializer {
             SafariTracking.render(graphics)
             SparklingEncounters.render(graphics)
             SmallAlerts.render(graphics)
-            CapsulePreview.renderHud(graphics)
         }
     }
 

@@ -49,7 +49,7 @@ class SafariFeatureIntegrationTest {
         }
         inspect(SafariSettings())
         assertTrue(switches.size >= 40, "Inspect nested GUI options, including panel borders")
-        val exceptions = setOf("history.instaSell", "history.toParty", "warp.enabled", "safari.experimentalCapsulePath", "safari.allowUncalibratedCapsuleEstimates")
+        val exceptions = setOf("history.instaSell", "history.toParty", "warp.enabled", "safari.experimentalCapsulePath")
         val modes = setOf("modes.unique.enabled", "modes.fullClear.enabled", "modes.sparkling.enabled")
         switches.filterKeys { it !in modes }.forEach { (name, value) -> assertEquals(name !in exceptions, value, name) }
         assertEquals(1, modes.count { switches[it] == true })
