@@ -84,11 +84,11 @@ class BirdCompletionPolicyTest {
         run.scanBirdSources(0, live(blue = 10)); assertFalse(run.sparklingComplete("Bluebird", state))
         run.scanBirdSources(0, live(blue = 11)); assertTrue(run.sparklingComplete("Bluebird", state))
     }
-    @Test fun `fd needs six personally collected foods initial Forest clearing and no held food`() {
+    @Test fun `fd requires local spawning and no held food rather than a personal pickup quota`() {
         val run = run(); val state = party()
         repeat(5) { run.recordBirdFood("FLOOR DROP! Yogi Berry", SafariBiome.FOREST, 20000) }
         run.scanBirdSources(0, live(blue = 9))
-        assertNull(run.completion.announcement(run, SafariBiome.FOREST, SafariMode.SPARKLING, state))
+        assertEquals("fd", run.completion.announcement(run, SafariBiome.FOREST, SafariMode.SPARKLING, state))
         run.recordBirdFood("FLOOR DROP! Wriggleworm", SafariBiome.FOREST, 20000)
         run.inventoryEvidence(listOf("Wriggleworm" to 1), 20000)
         assertNull(run.completion.announcement(run, SafariBiome.FOREST, SafariMode.SPARKLING, state))
@@ -101,8 +101,8 @@ class BirdCompletionPolicyTest {
         repeat(6) { late.recordBirdFood("FLOOR DROP! Yogi Berry", SafariBiome.FOREST, 20000) }
         late.scanBirdSources(0, live(blue = 9))
         assertTrue(late.sparklingComplete("Bluebird", state))
-        assertFalse(late.canReportBiome(SafariBiome.FOREST))
-        assertNull(late.completion.announcement(late, SafariBiome.FOREST, SafariMode.SPARKLING, state))
+        assertTrue(late.canReportBiome(SafariBiome.FOREST))
+        assertEquals("fd", late.completion.announcement(late, SafariBiome.FOREST, SafariMode.SPARKLING, state))
     }
     @Test fun `current captures and renders never accumulate escaped replacement UUIDs`() {
         val run = run()
@@ -110,6 +110,16 @@ class BirdCompletionPolicyTest {
         repeat(20) { run.scanBirdSources(0, live(blue = 3)) }
         assertFalse(run.birdSpawnsComplete())
         run.scanBirdSources(0, live(blue = 4)); assertTrue(run.birdSpawnsComplete())
+    }
+    @Test fun `late Forest visit can report live spawning even before any bird is caught`() {
+        val run = run(SafariBiome.CAVERN)
+        run.resources.partyNotice("Party > Friend: [SM] Starting items: 2x Bag of Seeds")
+        run.visitBiome(SafariBiome.FOREST)
+        run.updateCaptureEvidence(SafariBiome.FOREST, emptySet(), false)
+        run.scanBirdSources(0, live(blue = 10))
+        assertNull(run.completion.announcement(run, SafariBiome.FOREST, SafariMode.SPARKLING, party()))
+        run.scanBirdSources(0, live(blue = 11))
+        assertEquals("fd", run.completion.announcement(run, SafariBiome.FOREST, SafariMode.SPARKLING, party()))
     }
     @Test fun `outside captures can account for extra food after an older fd without treating fd as captures`() {
         val run = run(SafariBiome.CAVERN)
@@ -121,15 +131,20 @@ class BirdCompletionPolicyTest {
         assertTrue(run.sparklingComplete("Bluebird", party()))
         assertTrue(run.fullClearComplete("Bluebird"))
     }
-    @Test fun `a first Forest visit after bird catches is a late entrant even with six pickups`() {
+    @Test fun `late Forest entry can report from qualified captures and renders without six pickups`() {
         val run = SafariRun(0)
         catch(run, "Bluebird")
         run.visitBiome(SafariBiome.FOREST)
         run.inventoryEvidence(emptyList(), 10000)
-        repeat(6) { run.recordBirdFood("FLOOR DROP! Yogi Berry", SafariBiome.FOREST, 20000) }
+        run.updateCaptureEvidence(SafariBiome.FOREST, emptySet(), false)
+        run.scanBirdSources(0, live(blue = 7))
+        assertFalse(run.canReportBiome(SafariBiome.FOREST))
         run.scanBirdSources(0, live(blue = 8))
         assertTrue(run.birdSpawnsComplete())
-        assertFalse(run.canReportBiome(SafariBiome.FOREST))
+        assertTrue(run.canReportBiome(SafariBiome.FOREST))
+        assertEquals("fd", run.completion.announcement(run, SafariBiome.FOREST, SafariMode.SPARKLING, party()))
+        run.partyFullClear("Party > Friend: fd")
+        assertNull(run.completion.announcement(run, SafariBiome.FOREST, SafariMode.SPARKLING, party()), "do not echo fd")
     }
     @Test fun `Forest clearer can report after an Icy detour once all mode requirements pass`() {
         val forest = SafariBiome.FOREST

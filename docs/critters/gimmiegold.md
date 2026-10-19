@@ -53,7 +53,7 @@ Collect registered slots/use all known coins. Grants, pickups, held coins, use m
 
 ## Party reports and late entry
 
-Unused-item notices overlap by sender/maximum quantity; own notice overlaps starting coins. Extras increase demand without catches. Bird food belongs to Forest. hd trust outside Haunted is revalidated on entry. See [evidence/lifecycle](TRACKING.md).
+Early starting-item reports overlap by sender/maximum quantity; own report overlaps starting coins. Legacy unused-item notices remain accepted without doubling an early contribution. Extras increase demand without catches. Bird food belongs to Forest. Outside Haunted, hd records the current F + E target; increased demand invalidates that report until a fresh report or local check. Inside Haunted, local slot/inventory/population proof applies. A late entrant may send hd after this proof and the other local active-mode checks pass, without personally collecting every coin. Do not echo a received hd. See [evidence/lifecycle](TRACKING.md).
 
 ## Retention and reopening
 
@@ -81,4 +81,4 @@ Population guarantees and capsule success/escape claims from supplied notes were
 
 ## Last updated
 
-2026-10-19 (America/New_York) — Uniform species reference; audited evidence, modes, display and lifecycle. Reviewed source: `93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee`; no local runtime source changes reviewed. See [revision convention](../DOCUMENTATION_GUIDE.md).
+2026-10-19 (America/New_York) — Early coin quantities feed F + E; hd trust is target-scoped and late entrants can report local capture-plus-render proof. Reviewed source: working changes on `78885e0`; live validation pending.

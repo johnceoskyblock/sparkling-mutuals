@@ -22,7 +22,8 @@ class SafariCompletionEvents {
     fun announcement(run: SafariRun, biome: SafariBiome, mode: SafariMode, party: PartySparklingState): String? {
         if (!run.canReportBiome(biome)) { pending.remove(biome); return null }
         if (run.lastBiome != biome) { pending.remove(biome); return null }
-        if (mode == SafariMode.UNIQUE && run.uniqueReportReceived(biome)) { pending.remove(biome); return null }
+        if ((mode == SafariMode.UNIQUE || biome == SafariBiome.FOREST || biome == SafariBiome.HAUNTED) &&
+            run.uniqueReportReceived(biome)) { pending.remove(biome); return null }
         if (!locallyComplete(run, biome, mode, party)) {
             pending.remove(biome)
             return null

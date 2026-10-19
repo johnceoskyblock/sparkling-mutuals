@@ -26,9 +26,9 @@ Detected Sparkling identities impose **no additional capture gate in any mode**.
 
 ### Reports and run-complete alerts
 
-Automatic fd, cd, id and hd announcements require current presence in that biome, a capture-evidence scan and all active-mode targets complete under localOnly. Sparkling also requires ready party discoveries. Unique suppresses its own report after receiving that biome's report. [Forest reporting](docs/BIRD_COMPLETION.md#sending-fd) adds clearer/supply requirements.
+Automatic fd, cd, id and hd announcements require current presence in that biome, a capture-evidence scan and all active-mode targets complete under localOnly. Sparkling also requires ready party discoveries. Unique suppresses its own report after receiving that biome's report; Forest/Haunted suppress received-report echoes in every mode. [Forest reporting](docs/BIRD_COMPLETION.md#sending-fd) uses complete qualified local bird spawning and source evidence, without a personal pickup quota, for initial and late entrants alike. Haunted late entrants can report complete local coin/population checks with the biome's other requirements.
 
-Queued reports are rechecked against current mode, biome and local requirements before sending. Sends are spaced by at least three seconds; resource reminders share pacing and may delay them. Announcement memory prevents duplicates without adding catches.
+Queued reports are rechecked against current mode, biome and local requirements before sending. Biome sends are spaced by at least three seconds. Later unused-resource reminders display only local titles, with no party reminder message. Once per run, two seconds after leaving the observed boat, a compact party message shares only unused starting food/coins associated with missing party discoveries; unknown discovery data postpones it. See [resource timing](docs/critters/FLOOR_DROPS.md#early-starting-foodcoin-reports). Announcement memory prevents duplicates without adding catches.
 
 The configured run-complete alert requires all active-mode targets complete, a nonempty target set and, in Sparkling, ready party state. It can use remote progress; it does not certify a personal clear.
 
@@ -84,4 +84,4 @@ Numeric minima and whole-biome coverage are not certified by client predicates. 
 
 ## Last updated
 
-2026-10-19 (America/New_York) — Consolidated implemented mode, announcement and PB distinctions. Reviewed source: 93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee; static source/caller review, no live Minecraft validation.
+2026-10-19 (America/New_York) — Early discovery-gated quantities replace completion-time resource chat; late-entry fd/hd use local spawning proof and received-report suppression. Reviewed source: working changes on `78885e0`; live validation pending.

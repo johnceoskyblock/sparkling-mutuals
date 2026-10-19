@@ -1,7 +1,6 @@
 package net.johnceo.sparklingmutuals.safari.completion
 
 import net.johnceo.sparklingmutuals.compat.*
-import net.johnceo.sparklingmutuals.LocalChat
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.config.SafariTheme
 import net.johnceo.sparklingmutuals.hud.SafariHud
@@ -37,15 +36,11 @@ object SafariCompletion {
             area.critters.filter { mode != SafariMode.SPARKLING || party.needs(it.name) }, party, localOnly = true) !=
             area.critters.count { mode != SafariMode.SPARKLING || party.needs(it.name) } }
         if (run.completion.locallyComplete(run, biome, mode, party)) run.resourceReminders.afterBiomeClear(now)
-        if (client.connection != null && now - sentAt >= 4000) {
-            if (run.resourceReminders.dispatch(now, client.player?.name?.string ?: "Player", biome, party) { notice, reminder ->
-                client.gui.smSetTimes(5, 50, 15)
-                client.gui.smSetTitle(net.minecraft.network.chat.Component.literal(reminder.title)
-                    .withStyle { it.withColor(SafariTheme.ACCENT).withBold(true) })
-                client.gui.smSetSubtitle(net.minecraft.network.chat.Component.literal(reminder.detail))
-                client.player?.sendSystemMessage(LocalChat.component(notice))
-                client.connection!!.sendCommand("pc $notice")
-            }) sentAt = now
+        run.resourceReminders.dispatch(now, client.player?.name?.string ?: "Player", biome, party) { _, reminder ->
+            client.gui.smSetTimes(5, 50, 15)
+            client.gui.smSetTitle(net.minecraft.network.chat.Component.literal(reminder.title)
+                .withStyle { it.withColor(SafariTheme.ACCENT).withBold(true) })
+            client.gui.smSetSubtitle(net.minecraft.network.chat.Component.literal(reminder.detail))
         }
         if (client.connection != null && queue.isNotEmpty() && now - sentAt >= 3000) {
             val (area, word) = queue.removeFirst()

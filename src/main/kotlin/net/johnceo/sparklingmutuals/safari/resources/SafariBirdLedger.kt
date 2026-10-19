@@ -48,7 +48,7 @@ class SafariBirdLedger {
     val collected get() = picked.values.sum()
     val forestCollected get() = forest.values.sum()
     val foodsComplete get() = foods.all { (forest[it] ?: 0) >= 3 }
-    val reportSuppliesReady get() = forestPickupEvents >= 6 && floorDropsRemaining == 0 && heldFoods == 0
+    val reportSuppliesReady get() = floorDropsRemaining == 0 && heldFoods == 0
     private fun localExtra(food: String): Int {
         val early = startingPickups[food] ?: 0
         return maxOf(startingFoods[food] ?: 0, early) + (picked[food] ?: 0) - (forest[food] ?: 0) - early

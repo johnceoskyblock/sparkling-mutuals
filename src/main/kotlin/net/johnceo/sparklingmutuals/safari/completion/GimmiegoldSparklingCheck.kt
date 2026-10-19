@@ -8,10 +8,13 @@ class GimmiegoldSparklingCheck {
     private var held: Int? = null
     private var extras = 0
     private var validated = false
+    private var reportedTarget: Int? = null
     val floorMinimum get() = floors.size
     val remaining get() = floors.values.count { !it }
     val required get() = floorMinimum + extras
     val complete get() = floors.isNotEmpty() && remaining == 0 && held == 0 && validated
+    fun report() { reportedTarget = required }
+    val remoteReady get() = (reportedTarget ?: -1) >= required
     private var population = 0
 
     /** A disappeared marker is collected only when its location can still be observed. */
@@ -40,5 +43,5 @@ class GimmiegoldSparklingCheck {
         if (floors.isNotEmpty() && remaining == 0 && held == 0 && population >= required) validated = true
     }
     fun debug() = "floorMinimum=$floorMinimum remaining=$remaining extraCoins=$extras held=$held " +
-        "required=$required capturedPlusRendered=$population checked=$complete"
+        "required=$required capturedPlusRendered=$population reportTarget=$reportedTarget checked=$complete"
 }

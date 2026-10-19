@@ -12,6 +12,10 @@ An observed server message and an implemented parser are different evidence. Thi
 
 ## Implemented rules
 
+### Party starting-resource reports
+
+The mod sends `[SM] Starting items: 2x Bag of Seeds; 1x Shining Coin` as an example compact quantity report two seconds after leaving the observed boat. Only still-unused starting food/coins associated with missing party discoveries are included; ready discovery data is required. Parsing a real party message updates sender/type maxima, never catches or use. Legacy unused-item formats remain inbound-compatible. End-of-biome reminders now display local titles only. See [resource timing and gates](FLOOR_DROPS.md#early-starting-foodcoin-reports).
+
 ### Entry and starting items
 
 | Audience / event | Exact message | Meaning |
@@ -182,4 +186,4 @@ Exact mound terminal variants and server prerequisite-to-spawn relationships rem
 
 ## Last updated
 
-2026-10-19 (America/New_York) — Preserved exact message evidence and consolidated previously scattered mound/feeder quotations. Reviewed source: 93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee; static source/caller review, no live Minecraft validation.
+2026-10-19 (America/New_York) — Documented early party quantities and local-title reminders. Reviewed source: working changes on `78885e0`; live validation pending.

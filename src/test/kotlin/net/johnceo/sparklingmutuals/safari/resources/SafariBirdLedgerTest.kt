@@ -63,16 +63,13 @@ class SafariBirdLedgerTest {
         assertTrue(birds.capturesComplete { if (it == "Bluebird") 5 else if (it == "Macaw") 1 else 0 })
         assertFalse(birds.capturesComplete { if (it == "Bluebird") 4 else if (it == "Macaw") 8 else 0 })
     }
-    @Test fun `six local floor pickups and empty food inventory are required to report`() {
+    @Test fun `source readiness needs empty food observations rather than personal pickup history`() {
         val birds = ready()
-        repeat(5) { birds.pickup("FLOOR DROP! Yogi Berry", SafariBiome.FOREST) }
-        assertFalse(birds.reportSuppliesReady)
-        birds.pickup("FLOOR DROP! Bag of Seeds", SafariBiome.FOREST)
         assertTrue(birds.reportSuppliesReady)
         birds.inventory(listOf("Bag of Seeds" to 1)); assertFalse(birds.reportSuppliesReady)
-        val quantity = ready()
-        quantity.pickup("FLOOR DROP! 6x Yogi Berry", SafariBiome.FOREST)
-        assertFalse(quantity.reportSuppliesReady, "six items in one message are not six floor pickups")
+        birds.inventory(emptyList()); birds.floor(1)
+        assertFalse(birds.reportSuppliesReady)
+        assertFalse(SafariBirdLedger().reportSuppliesReady, "unknown source evidence is not empty")
     }
     @Test fun `self notice and initial inventory overlap by item type rather than counting twice`() {
         val birds = ready()

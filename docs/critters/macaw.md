@@ -48,7 +48,7 @@ Bag of Seeds, Wriggleworm and Yogi Berry create feeding opportunities. Starting 
 | Counters | None in the species row; capture panel shows actual shared catches. |
 | Ordinary ESP | Standard mode/discovery/model filters. Unique stops after its own first catch even if spawning remains pending. Sparkling normally has a per-UUID 10-second window. |
 | Source helpers | Food-drop highlights follow [FLOOR_DROPS](FLOOR_DROPS.md); hiding a marker does not use food. |
-| Automatic completion announcements | Shared local whole-biome/report-readiness gates in [mode rules](../../SAFARI_LOGIC.md). Forest also requires initial-clearer status and 6 separate local food pickups. |
+| Automatic completion announcements | Any Forest entrant may report complete qualified spawning/source proof without a personal pickup quota if no fd was received. All other local active-mode gates still apply; see [bird reporting](../BIRD_COMPLETION.md#sending-fd). |
 | PB eligibility | Personal Unique: own catch of every species. Full Clear: personal captures/local proof. Party Unique: separate shared-capture/absence predicate; progress alone is insufficient. |
 
 ## Party reports and late entry
@@ -77,4 +77,4 @@ Population guarantees and capsule success/escape claims from supplied notes were
 
 ## Last updated
 
-2026-10-19 (America/New_York) — Uniform species reference; audited evidence, modes, display and lifecycle. Reviewed source: `93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee`; no local runtime source changes reviewed. See [revision convention](../DOCUMENTATION_GUIDE.md).
+2026-10-19 (America/New_York) — Updated late-entry reporting and early shared starting-food totals. Reviewed source: working changes on `78885e0`; live validation pending.

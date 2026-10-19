@@ -38,6 +38,7 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
         gimmiegoldCheck.scan(count("Gimmiegold"), live, qualified)
     }
     val resourceReminders = net.johnceo.sparklingmutuals.safari.resources.StartingResourceDelivery(resources)
+    val startingAnnouncement = net.johnceo.sparklingmutuals.safari.resources.StartingResourceAnnouncement(resources)
     val sparklingParticles = net.johnceo.sparklingmutuals.safari.sparkling.SparklingParticleLocations()
     val sparklingCaptures = SparklingCaptureState()
     fun observeSparkling(id: java.util.UUID, name: String, aliases: Set<java.util.UUID> = emptySet()): java.util.UUID {
@@ -103,8 +104,6 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
         }
     }
     private val visited = mutableSetOf<SafariBiome>()
-    private var forestReporter = false
-    private var forestEntered = false
     private fun syncBirdContributions() { birds.contributions(localPlayerName, resources.foodContributions()) }
     fun birdSpawnsComplete(localOnly: Boolean = false): Boolean {
         syncBirdContributions()
@@ -112,13 +111,14 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
             (birds.feedingResolved || birds.remoteReady || birds.hasReport && birds.capturesComplete(::count))
     }
     fun canReportBiome(biome: SafariBiome): Boolean {
+        if (biome == SafariBiome.HAUNTED) return biome !in biomeReports
         if (biome != SafariBiome.FOREST) return true
-        return forestReporter && birds.reportSuppliesReady && birdSpawnsComplete(localOnly = true)
+        return biome !in biomeReports && birdSpawnsComplete(localOnly = true)
     }
     fun forestReportDebug(mode: SafariMode, party: PartySparklingState): String {
         val targets = SafariBiome.FOREST.critters.filter { mode != SafariMode.SPARKLING || party.needs(it.name) }
         val missing = targets.filter { completed(mode, listOf(it), party, localOnly = true) == 0 }.map { it.name }
-        return "mode=$mode initialClearer=$forestReporter suppliesReady=${birds.reportSuppliesReady} " +
+        return "mode=$mode reportReceived=${SafariBiome.FOREST in biomeReports} suppliesReady=${birds.reportSuppliesReady} " +
             "spawnProof=${birdSpawnsComplete(localOnly = true)} partyReady=${party.ready} " +
             "currentBiome=$lastBiome scanKnown=${hasCaptureEvidence(SafariBiome.FOREST)} missing=$missing"
     }
@@ -138,6 +138,9 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
             if (it == SafariBiome.FOREST) {
                 remoteForestReport = true
                 syncBirdContributions(); birds.report()
+            }
+            if (it == SafariBiome.HAUNTED) {
+                syncGimmiegoldContributions(); gimmiegoldCheck.report()
             }
             if (it == SafariBiome.CAVERN && lastBiome != SafariBiome.CAVERN) {
                 remainingMounds = false; remainingWalls = false
@@ -170,12 +173,6 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
     }
     private val inheritedBiomes = mutableSetOf<SafariBiome>()
     fun visitBiome(biome: SafariBiome) {
-        if (biome == SafariBiome.FOREST && !forestEntered) {
-            // A detour to another biome does not disqualify the eventual Forest clearer.
-            // Prior bird catches identify late arrivals; six local pickups are still required.
-            forestReporter = birdCount() == 0
-            forestEntered = true
-        }
         if (lastBiome != biome) {
             partyFullClears.remove(biome); communalClears.remove(biome)
             sparklingChecks.reenter(biome)
@@ -241,8 +238,9 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
         if (name == "Honeybug") return (!localOnly && honeybugRemoteComplete) || honeybugLocalCheck ||
             lastBiome == SafariBiome.FOREST && sparklingChecks.locallyChecked(name)
         if (name == "Gimmiegold") {
-            if (!localOnly && lastBiome != SafariBiome.HAUNTED) partyCompletion(name, party)?.let { return it }
             syncGimmiegoldContributions()
+            if (!localOnly && lastBiome != SafariBiome.HAUNTED && partyCompletion(name, party) == true &&
+                gimmiegoldCheck.remoteReady) return true
             return gimmiegoldCheck.complete
         }
         if (sourcePending(name)) return false

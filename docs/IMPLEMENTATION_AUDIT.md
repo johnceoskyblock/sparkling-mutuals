@@ -44,6 +44,8 @@ The audit follows owners through event registration/callers, mode/configuration 
 
 ### d3
 
+**2026-10-19 implementation follow-up:** this historical finding remains relevant to legacy-only late notices. New early starting reports update contribution maxima directly; local completion titles do not create outstanding notices. See [current resource protocol](critters/FLOOR_DROPS.md#early-starting-foodcoin-reports).
+
 **A larger repeated resource notice can affect consumers differently.** In [SafariResources.notice](../src/main/kotlin/net/johnceo/sparklingmutuals/safari/resources/SafariResources.kt), reported coin/food maxima update before the early return for an already resolved/outstanding sender/type. Its outstanding allocation and required population are not increased on that path. A notice of `1x` followed by `2x` from the same sender can therefore increase contributions consumed by the bird/Gimmiegold checking ledgers while leaving this resource obligation at its earlier quantity. Other capture targets may mask the difference. Reproduction should compare resource obligations and species checking separately; this audit changes neither ledger.
 
 ### d7

@@ -30,8 +30,9 @@ data class StartingResourceReminder(val type: FloorDropType, val quantity: Int, 
     }
 }
 
-/** One party message and one local title for every eligible item in the current inventory. */
+/** Shared item parser; new runs broadcast compact starting quantities, later reminders are local titles. */
 data class StartingResourceNotice(val items: List<StartingResourceReminder>) {
+    val startingText get() = "[SM] Starting items: " + items.joinToString("; ") { "${it.quantity}x ${it.type.label}" }
     val text get() = "[SM] Unused floor drops: " + items.groupBy { it.destination }.values.joinToString("; ") { group ->
         val drops = group.joinToString(" + ") { "${it.quantity}x ${it.type.label}" }
         val missing = group.flatMap { it.missing }.distinct().joinToString(", ")
@@ -43,6 +44,8 @@ data class StartingResourceNotice(val items: List<StartingResourceReminder>) {
         fun parse(text: String, party: PartySparklingState): StartingResourceNotice? {
             val trimmed = text.trim()
             val parts = when {
+                trimmed.startsWith("[SM] Starting items: ") -> trimmed.removePrefix("[SM] Starting items: ")
+                    .split("; ").map { "[SM] Use: $it" }
                 trimmed.startsWith("[SM] Unused floor drops: ") -> {
                     trimmed.removePrefix("[SM] Unused floor drops: ").split("; ").flatMap { group ->
                         val match = Regex("""^(.+) \(missing Sparkling ([^()]+)\)$""").matchEntire(group) ?: return null
@@ -79,6 +82,7 @@ class SafariResources {
     private val resolved = mutableSetOf<Pair<String, FloorDropType>>()
     private val reportedCoins = mutableMapOf<String, Int>()
     private val reportedFood = mutableMapOf<Pair<String, FloorDropType>, Int>()
+    private val earlyReports = mutableSetOf<Pair<String, FloorDropType>>()
     fun foodContributions(): Map<Pair<String, FloorDropType>, Int> = reportedFood.toMap()
     fun coinContributions(): Map<String, Int> = reportedCoins.toMap()
     private val populations = mutableMapOf<SafariBiome, Int>()
@@ -113,11 +117,27 @@ class SafariResources {
         FloorDropType.WORM, FloorDropType.BERRY, FloorDropType.SEEDS -> SafariBiome.FOREST
         else -> null
     }
+    /** Only still-unused starting items and confirmed party-missing discoveries are announced. */
+    fun startingNotice(party: PartySparklingState): StartingResourceNotice? {
+        if (!party.ready) return null
+        val items = starting.mapNotNull { (type, amount) ->
+            val remaining = minOf(amount, held[type] ?: 0)
+            if (remaining <= 0 || destination(type) == null) return@mapNotNull null
+            StartingResourceReminder.parse("[SM] Use: ${remaining}x ${type.label}", party)
+                ?.takeIf { it.missing.isNotEmpty() }
+        }
+        return items.takeIf { it.isNotEmpty() }?.let(::StartingResourceNotice)
+    }
+    /** A local title cannot create another party resource obligation. */
+    fun titleShown(notice: StartingResourceNotice) {
+        notice.items.forEach { notified[it.type] = maxOf(notified[it.type] ?: 0, it.quantity) }
+    }
     fun noticeStillRelevant(text: String, biome: SafariBiome, party: PartySparklingState): Boolean {
         val notice = StartingResourceNotice.parse(text, party) ?: return false
         return notice.items.any { it.missing.isNotEmpty() && it.destination != biome && (held[it.type] ?: 0) > 0 }
     }
     fun notices(player: String, biome: SafariBiome, party: PartySparklingState): List<String> = starting.mapNotNull { (type, amount) ->
+        if (!party.ready) return@mapNotNull null
         val destination = destination(type) ?: return@mapNotNull null
         val needed = if (destination == SafariBiome.HAUNTED) party.needs("Gimmiegold")
             else listOf("Bluebird", "Parakeet", "Macaw").any(party::needs)
@@ -136,14 +156,25 @@ class SafariResources {
     fun partyNotice(raw: String): Boolean {
         val chat = PartyChat.parse(SafariRules.strip(raw)) ?: return false
         val reminders = StartingResourceNotice.parse(chat.body, PartySparklingState()) ?: return false
-        reminders.items.forEach { notice(chat.sender, it.type, it.quantity) }
+        val early = chat.body.trim().startsWith("[SM] Starting items: ")
+        reminders.items.forEach {
+            val key = chat.sender.lowercase() to it.type
+            if (early || key in earlyReports) {
+                earlyReports.add(key)
+                contribution(chat.sender, it.type, it.quantity)
+            } else notice(chat.sender, it.type, it.quantity)
+        }
         return true
+    }
+    private fun contribution(player: String, type: FloorDropType, amount: Int) {
+        val key = player.lowercase() to type
+        if (type == FloorDropType.COIN) reportedCoins[key.first] = maxOf(reportedCoins[key.first] ?: 0, amount)
+        else reportedFood[key] = maxOf(reportedFood[key] ?: 0, amount)
     }
     private fun notice(player: String, type: FloorDropType, amount: Int) {
         val biome = destination(type) ?: return
         val key = player.lowercase() to type
-        if (type == FloorDropType.COIN) reportedCoins[key.first] = maxOf(reportedCoins[key.first] ?: 0, amount)
-        else reportedFood[key] = maxOf(reportedFood[key] ?: 0, amount)
+        contribution(player, type, amount)
         if (key in resolved || key in outstanding) return
         // Reserve partially observed evidence belonging to earlier notices, even
         // before their full quantities resolve. Later allocation cannot subtract it twice.
