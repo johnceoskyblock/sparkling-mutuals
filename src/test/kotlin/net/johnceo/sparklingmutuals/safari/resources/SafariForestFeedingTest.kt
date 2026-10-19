@@ -1,5 +1,7 @@
 package net.johnceo.sparklingmutuals.safari.resources
 
+import net.johnceo.sparklingmutuals.safari.resources.knownStartingEvidence
+
 import net.johnceo.sparklingmutuals.safari.resources.renderBird
 import net.johnceo.sparklingmutuals.safari.resources.scanRenderedBirds
 
@@ -14,7 +16,7 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class SafariForestFeedingTest {
-    private fun forest(): SafariRun = SafariRun(1000).apply {
+    private fun forest(): SafariRun = SafariRun(1000).knownStartingEvidence().apply {
         mapOf("Foxtrot" to 6, "Honeybug" to 3, "Treefrog" to 3, "Woodchucker" to 3,
             "Fluffling" to 1, "Hideonfloor" to 1).forEach { (name, amount) ->
             repeat(amount) { record(SafariCatch(SafariRoster.named(name)!!)) }

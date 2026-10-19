@@ -1,5 +1,7 @@
 package net.johnceo.sparklingmutuals.safari.resources
 
+import net.johnceo.sparklingmutuals.safari.resources.knownStartingEvidence
+
 import net.johnceo.sparklingmutuals.safari.*
 import net.johnceo.sparklingmutuals.safari.esp.EspDrop
 import org.junit.jupiter.api.Assertions.*
@@ -32,7 +34,7 @@ class ForestBirdFoodDropsTest {
         assertTrue(remaining.all { it.type == FloorDropType.GENERIC })
         val markers = remaining.map { it.marker() }
         assertEquals(0, ForestBirdFoodDrops.remaining(markers, remaining))
-        val run = SafariRun(0)
+        val run = SafariRun(0).knownStartingEvidence()
         run.visitBiome(SafariBiome.FOREST)
         run.inventoryEvidence(listOf("Shining Coin" to 1), 0)
         val state = PartySparklingState().apply {

@@ -4,6 +4,18 @@
 
 Exact quotations supplied by the user on 2026-10-14. Angle-bracket fields are placeholders. Square-bracket head fields represent optional Chat Heads text in logs, not a required vanilla prefix. Preserve the original text; strip Minecraft formatting for semantic matching. These messages define events, not automatic capture counts unless stated.
 
+## Mod-generated early starting report
+
+The exact server message `HOTSPOT! Your Hunting Hotspot is the <Biome> Biome!` is the maintainer-confirmed departure trigger. Two seconds later, send one concise absolute report of every witnessed starting Shining Coin, Bag of Seeds, Wriggleworm and Yogi Berry, independently of discovery loading, mode, HUD and ESP. Examples: `[SM] Starting items: 2x Bag of Seeds` and `[SM] Starting items: 1x Shining Coin; 1x Yogi Berry`; use `none` for a witnessed empty applicable grant set.
+
+The live protocol appends ` [run:<32-hex reward-display UUID>]`. A receiver must have witnessed that same real STRING reward marker in its current run, and must verify the parsed sender's UUID against the current party roster. Bind queued lookups to the run/world/connection and invalidate pending work on party changes. Guild/private/quoted/nonparty messages do not supply contributions. New unscoped Starting items messages are not admitted by the live inbox. Never broadcast on another player's behalf.
+
+Preserve early inventory/grant witnesses before use and close starting inference before the first post-HOTSPOT resource interaction/pickup or at the two-second deadline. Head Start supplies one overlapping lower bound; silent First Class inventory can show the second grant, including an identical item. Floor pickups stay separate. If both grants were never observed before consumption, or the first snapshot/marker context is late, do not invent the missing item or report an unwitnessed zero. Missing roster/reports and incomplete initial sources remain unknown. Context unavailable at the two-second boundary delays dispatch rather than fabricating provenance. Duplicate HOTSPOT/entry/polls, own echoes, repeats and legacy notices cannot add the same sender/item twice. Consumption never reduces known opportunity demand.
+
+Older/non-mod clients and late joiners may leave report coverage unknown. Legacy unused-item notices can provide conservative deduplicated quantities, but cannot establish a complete original inventory. Bare legacy notices and normal done words have no shared on-wire run token: only current live, roster-verified messages are admitted; stored history is never replayed. A previously unseen delayed legacy line cannot be intrinsically distinguished from a fresh identical one. New scoped starting reports reject other-run marker identities.
+
+End-of-clearing unused-resource reminders are local titles only; there is no outbound unused-item chat. Normal biome completion words remain.
+
 ## Entry and starting items
 
 | Audience / event | Exact message | Meaning |
@@ -120,5 +132,7 @@ The first line confirms a hit/attempt; a throw can miss without that confirmatio
 **Masterful Critter Capsules guarantee capture once hit**, regardless of rarity. No Masterful message variants are needed for escape tracking. Ordinary Common/Uncommon catches are also guaranteed once hit; only standard Rare/Epic/Legendary attempts can escape. A missed throw still is not a capture.
 
 ## Last updated
+
+2026-10-19 (America/New_York) — Early absolute starting-resource reports at HOTSPOT+2s, explicit unknown coverage and local-only later reminders (issue68).
 
 2026-10-15 - Added document revision tracking.

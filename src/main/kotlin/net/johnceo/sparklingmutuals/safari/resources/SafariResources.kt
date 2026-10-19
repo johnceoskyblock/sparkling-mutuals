@@ -30,7 +30,7 @@ data class StartingResourceReminder(val type: FloorDropType, val quantity: Int, 
     }
 }
 
-/** One party message and one local title for every eligible item in the current inventory. */
+/** Combined local title; text parsing/serialization remains for inbound legacy compatibility. */
 data class StartingResourceNotice(val items: List<StartingResourceReminder>) {
     val text get() = "[SM] Unused floor drops: " + items.groupBy { it.destination }.values.joinToString("; ") { group ->
         val drops = group.joinToString(" + ") { "${it.quantity}x ${it.type.label}" }
@@ -103,6 +103,15 @@ class SafariResources {
     }
     fun pickup(text: String) { FloorPickup.parse(text)?.let { pickups.merge(it.type, it.quantity, Int::plus) } }
     fun startingCount(type: FloorDropType) = starting[type] ?: 0
+    fun startingTotal() = starting.values.sum()
+    fun plausibleStartingInventory(stacks: List<Pair<String, Int>>): Boolean = FloorDropType.entries
+        .filter { it != FloorDropType.GENERIC }.sumOf { type ->
+            (stacks.filter { SafariRules.strip(it.first).trim() == type.label }.sumOf { it.second.coerceAtLeast(0) } -
+                (pickups[type] ?: 0)).coerceAtLeast(0)
+        } <= 2
+    fun startingQuantities() = StartingItemReport.order.mapNotNull { type ->
+        startingCount(type).takeIf { it > 0 }?.let { type to it }
+    }.toMap()
     fun headStart(text: String) {
         val name = Regex("^HEAD START! You started with a (.+)!$").matchEntire(text)?.groupValues?.get(1) ?: return
         FloorDropType.entries.firstOrNull { it.label == name }?.let { starting[it] = maxOf(starting[it] ?: 0, 1) }
@@ -133,13 +142,17 @@ class SafariResources {
     }
     fun partyNotice(raw: String): Boolean {
         val chat = PartyChat.parse(SafariRules.strip(raw)) ?: return false
-        val early = StartingItemReport.parse(chat.body)
+        return reportedBy(chat.sender, chat.body)
+    }
+    /** Pure admission boundary: the runtime caller already verified UUID membership and run scope. */
+    fun reportedBy(sender: String, body: String): Boolean {
+        val early = StartingItemReport.parse(body)
         if (early != null) {
-            contributions.report(chat.sender, early.quantities, complete = true)
+            contributions.report(sender, early.quantities, complete = true)
             return true
         }
-        val reminders = StartingResourceNotice.parse(chat.body, PartySparklingState()) ?: return false
-        reminders.items.forEach { notice(chat.sender, it.type, it.quantity) }
+        val reminders = StartingResourceNotice.parse(body, PartySparklingState()) ?: return false
+        reminders.items.forEach { notice(sender, it.type, it.quantity) }
         return true
     }
     private fun notice(player: String, type: FloorDropType, amount: Int) {

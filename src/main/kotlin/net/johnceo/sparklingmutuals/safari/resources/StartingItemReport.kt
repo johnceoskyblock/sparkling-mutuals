@@ -22,6 +22,7 @@ data class StartingItemReport(val quantities: Map<FloorDropType, Int>, val scope
                 val type = order.firstOrNull { it.label == item.groupValues[2] } ?: return null
                 if (amounts.put(type, amount) != null) return null
             }
+            if (amounts.values.sum() > 2) return null // Head Start + First Class: at most two original grants.
             return StartingItemReport(amounts.toMap(), scope)
         }
     }

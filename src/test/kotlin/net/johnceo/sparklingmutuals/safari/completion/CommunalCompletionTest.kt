@@ -1,5 +1,7 @@
 package net.johnceo.sparklingmutuals.safari.completion
 
+import net.johnceo.sparklingmutuals.safari.resources.knownStartingEvidence
+
 import java.nio.file.Path
 import java.util.Properties
 import java.util.UUID
@@ -23,7 +25,7 @@ class CommunalCompletionTest {
         select(setOf("me")); accept(setOf("me"), mapOf("me" to (SafariRoster.all.map { it.name }.toSet() - names.toSet())))
     }
     @Test fun `party done remains after an empty visit but remaining entities correct Full Clear`() {
-        val run = SafariRun(0)
+        val run = SafariRun(0).knownStartingEvidence()
         run.partyFullClear("Party > Friend: fd")
         run.visitBiome(SafariBiome.FOREST)
         run.updateCaptureEvidence(SafariBiome.FOREST, emptySet(), false)
@@ -35,7 +37,7 @@ class CommunalCompletionTest {
         assertEquals(0, run.personalCount("Foxtrot"))
     }
     @Test fun `Cavern party checks are corrected only by observed remaining structures`() {
-        val run = SafariRun(0)
+        val run = SafariRun(0).knownStartingEvidence()
         run.sparklingChecks.chat("Party > Friend: cd", true)
         run.reconcileStructures(SafariBiome.CAVERN, false, false)
         assertTrue(run.sparklingChecks.checked("Rockmite"))
@@ -47,7 +49,7 @@ class CommunalCompletionTest {
         assertTrue(run.sparklingChecks.checked("Gemzie"))
     }
     @Test fun `only prior loot share establishes inherited biomes and cannot fabricate a PB`() {
-        val run = SafariRun(0)
+        val run = SafariRun(0).knownStartingEvidence()
         run.record(SafariCatch(SafariRoster.named("Areita")!!, false))
         run.visitBiome(SafariBiome.HAUNTED)
         run.updateCaptureEvidence(SafariBiome.HAUNTED, emptySet(), false)
@@ -56,17 +58,17 @@ class CommunalCompletionTest {
         assertFalse(run.captureComplete("Gimmiegold", true))
         assertFalse(run.sparklingComplete("Gimmiegold", party("Gimmiegold")))
         assertEquals(0, run.count("Gimmiegold"))
-        val fresh = SafariRun(0)
+        val fresh = SafariRun(0).knownStartingEvidence()
         fresh.visitBiome(SafariBiome.HAUNTED)
         fresh.record(SafariCatch(SafariRoster.named("Areita")!!, false))
         assertFalse(fresh.inherited(SafariBiome.HAUNTED))
-        val own = SafariRun(0)
+        val own = SafariRun(0).knownStartingEvidence()
         own.record(SafariCatch(SafariRoster.named("Honeybug")!!))
         own.visitBiome(SafariBiome.FOREST)
         assertFalse(own.partyNestsHandled)
     }
     @Test fun `local Sparkling completion announces once without echoing party done`() {
-        val run = SafariRun(0); val state = party("Foxtrot")
+        val run = SafariRun(0).knownStartingEvidence(); val state = party("Foxtrot")
         run.visitBiome(SafariBiome.FOREST)
         run.updateCaptureEvidence(SafariBiome.FOREST, emptySet(), false)
         run.sparklingChecks.chat("Party > Friend: fd", true)
@@ -80,7 +82,7 @@ class CommunalCompletionTest {
         assertNull(run.completion.announcement(run, SafariBiome.FOREST, SafariMode.UNIQUE, state))
     }
     @Test fun `run alert is once per run and refuses empty or unknown discovery sets`() {
-        val run = SafariRun(0)
+        val run = SafariRun(0).knownStartingEvidence()
         assertFalse(run.completion.alert(run, SafariMode.SPARKLING, PartySparklingState(), true))
         assertFalse(run.completion.alert(run, SafariMode.SPARKLING, party(), true))
         SafariRoster.all.forEach { run.record(SafariCatch(it, false)) }
@@ -105,7 +107,7 @@ class CommunalCompletionTest {
     }
     @Test fun `inherited Cavern keeps mound statistic neutral while remaining structures block completion`() {
         ConfigManager.init(dir); ConfigManager.fullClearMode = true; ConfigManager.showMoundStats = true
-        val run = SafariRun(0)
+        val run = SafariRun(0).knownStartingEvidence()
         run.record(SafariCatch(SafariRoster.named("Driftling")!!, false))
         run.visitBiome(SafariBiome.CAVERN)
         run.updateCaptureEvidence(SafariBiome.CAVERN, setOf("Rockmite Mound"), false)

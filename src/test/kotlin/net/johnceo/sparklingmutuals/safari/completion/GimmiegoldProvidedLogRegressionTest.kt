@@ -1,5 +1,7 @@
 package net.johnceo.sparklingmutuals.safari.completion
 
+import net.johnceo.sparklingmutuals.safari.resources.knownStartingEvidence
+
 import java.util.UUID
 import net.johnceo.sparklingmutuals.safari.PartySparklingState
 import net.johnceo.sparklingmutuals.safari.SafariBiome
@@ -21,7 +23,7 @@ class GimmiegoldProvidedLogRegressionTest {
         if (run.gimmiegoldCheck.floorMinimum == 0) (1..3).forEach { run.gimmiegoldCheck.floor(it, true) }
         val id = (picked[run] ?: 0) + 1
         picked[run] = id
-        run.gimmiegoldCheck.floor(id, false)
+        run.gimmiegoldCheck.floor(id, false, collected = true)
         run.sparklingChecks.chat("FLOOR DROP! You found a Shining Coin!")
         run.sparklingChecks.chat("A Gimmiegold appeared out of nowhere and gobbled up your Shining Coin!")
     }
@@ -32,7 +34,7 @@ class GimmiegoldProvidedLogRegressionTest {
         run.scanGimmiegolds(seen.map { it.second }, true)
     }
     @Test fun `provided log one capture two live three picked spent and eleven predictions completes checks`() {
-        val run = SafariRun(0); coins(run, 3)
+        val run = SafariRun(0).knownStartingEvidence(); coins(run, 3)
         run.record(SafariCatch(SafariRoster.named("Gimmiegold")!!))
         scan(run)
         assertTrue(run.sparklingComplete("Gimmiegold", party()))
@@ -46,11 +48,11 @@ class GimmiegoldProvidedLogRegressionTest {
         assertTrue(run.captureComplete("Gimmiegold"))
     }
     @Test fun `retained UUID history is not treated as extra coin opportunities`() {
-        val run = SafariRun(0); coins(run, 3)
+        val run = SafariRun(0).knownStartingEvidence(); coins(run, 3)
         repeat(8) { scan(run, listOf("Gimmiegold" to UUID.randomUUID())) }
         assertEquals(3, run.sparklingChecks.gimmiegoldMinimum)
         assertTrue(run.sparklingChecks.gimmiegoldDebug().contains("accounted=3 retainedChecks=8"))
-        run.gimmiegoldCheck.floor(4, false)
+        run.gimmiegoldCheck.floor(4, false, collected = true)
         coins(run, 1)
         scan(run, listOf("Gimmiegold" to UUID.randomUUID()))
         assertFalse(run.sparklingComplete("Gimmiegold", party()), "old UUID history cannot satisfy the new floor-derived total")
@@ -59,7 +61,7 @@ class GimmiegoldProvidedLogRegressionTest {
     }
 
     @Test fun `starting coin held coin and extra party notices cannot be waived by the marker override`() {
-        val run = SafariRun(0); coins(run, 2)
+        val run = SafariRun(0).knownStartingEvidence(); coins(run, 2)
         run.resources.headStart("HEAD START! You started with a Shining Coin!")
         run.sparklingChecks.startingCoins(1)
         run.sparklingChecks.chat("A Gimmiegold appeared out of nowhere and gobbled up your Shining Coin!")
@@ -77,7 +79,7 @@ class GimmiegoldProvidedLogRegressionTest {
         assertFalse(run.sparklingComplete("Gimmiegold", party()))
     }
     @Test fun `a later coin cannot reuse surplus historical UUIDs as its new check`() {
-        val run = SafariRun(0); coins(run, 3)
+        val run = SafariRun(0).knownStartingEvidence(); coins(run, 3)
         val oldIds = List(8) { "Gimmiegold" to UUID.randomUUID() }
         scan(run, oldIds)
         assertTrue(run.sparklingComplete("Gimmiegold", party()))

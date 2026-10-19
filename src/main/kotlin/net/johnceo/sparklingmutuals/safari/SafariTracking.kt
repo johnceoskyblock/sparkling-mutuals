@@ -41,8 +41,25 @@ object SafariTracking {
     val visible get() = SafariVisibility.visible(ConfigManager.showWhere, SafariAssist.inSafari, SafariAssist.atEntrance)
     fun register() {
         ClientReceiveMessageEvents.GAME.register { message, overlay ->
-            if (!overlay) Minecraft.getInstance().execute {
-                SafariMessages.forRun(message.string, ledger.current, SafariAssist.inSafari).forEach(::receive)
+            val client = Minecraft.getInstance()
+            val receiptRun = ledger.current
+            val receiptWorld = client.level
+            if (!overlay) client.execute {
+                if (receiptWorld !== client.level) return@execute
+                if (receiptRun != null && receiptRun !== ledger.current) return@execute
+                if (receiptRun != null && receiptRun === ledger.current)
+                    net.johnceo.sparklingmutuals.safari.resources.StartingResourcePartyInput.receive(client, receiptRun, message.string)
+                // Player envelopes are filtered here; only the verified inbox may mutate party evidence.
+                SafariMessages.lines(message.string).forEach(::receive)
+            }
+        }
+        ClientReceiveMessageEvents.CHAT.register { message, _, _, _, _ ->
+            val client = Minecraft.getInstance()
+            val receiptRun = ledger.current
+            val receiptWorld = client.level
+            client.execute {
+                if (receiptRun != null && receiptRun === ledger.current && receiptWorld === client.level)
+                    net.johnceo.sparklingmutuals.safari.resources.StartingResourcePartyInput.receive(client, receiptRun, message.string)
             }
         }
     }
@@ -82,6 +99,8 @@ object SafariTracking {
         }
         if (SafariAssist.inSafari) {
             ensureRun(client)
+            if (text.startsWith("HEAD START!") || text.startsWith("HOTSPOT!")) captureInventory(client)
+            ledger.current?.startingMessage(text, now)
             ledger.current?.sparklingBroadcast(text, now)
             ledger.current?.entry?.chat(text)
             ledger.current?.resources?.headStart(text)
@@ -94,7 +113,8 @@ object SafariTracking {
             if (text == "A Gimmiegold appeared out of nowhere and gobbled up your Shining Coin!") ledger.current?.resources?.spawn(SafariBiome.HAUNTED)
         }
         if (text.startsWith("FLOOR DROP!") && SafariAssist.inSafari) {
-            ensureRun(client); ledger.current?.recordBirdFood(text, SafariAssist.biome)
+            ensureRun(client); ledger.current?.closeStartingInventory()
+            ledger.current?.recordBirdFood(text, SafariAssist.biome)
             ledger.current?.resources?.pickup(text)
             SafariEsp.floorPickup(text)
             SafariFloorDrops.state.record(text, SafariAssist.biome)
@@ -116,7 +136,25 @@ object SafariTracking {
             client.player?.sendSystemMessage(LocalChat.component(feedback.notice))
         }
     }
-    fun onClientTick(client: Minecraft) = ensureRun(client)
+    fun onClientTick(client: Minecraft) {
+        ensureRun(client)
+        captureInventory(client)
+        net.johnceo.sparklingmutuals.safari.resources.StartingResourcePartyInput.tick(client)
+    }
+    /** Capture original grants before a real use input can consume them, including on the boat. */
+    fun captureInventory(client: Minecraft) {
+        val run = ledger.current ?: return
+        if (!SafariAssist.inSafari || client.level == null || client.player == null) return
+        val player = client.player!!
+        run.localPlayer(player.name.string, player.uuid.toString())
+        val inventory = player.inventory
+        run.inventoryEvidence((0 until inventory.containerSize).map { inventory.getItem(it) }
+            .filterNot { it.isEmpty }.map { it.hoverName.string to it.count })
+    }
+    fun beforeResourceInteraction(client: Minecraft) {
+        captureInventory(client)
+        if (SafariAssist.inSafari) ledger.current?.closeStartingInventory()
+    }
     fun ensureRun(client: Minecraft) {
         syncWorld(client)
         val previous = ledger.current

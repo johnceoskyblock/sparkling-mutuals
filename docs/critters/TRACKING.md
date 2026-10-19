@@ -21,6 +21,16 @@ Based on the supplied Hypixel Safari observations, clarified on 2026-10-14. [Exa
 
 Nine possible starting items: **Icebreaker, Yogi Berry, Wriggleworm, Bag of Seeds, Shining Coin, Purple Gem, Lime Gem, Orange Gem, Soothing Incense**. Two grants need not be different. Initial inventory supplies the total; account separately for any subsequent floor pickups.
 
+## Early party starting-resource synchronization
+
+The exact server message `HOTSPOT! Your Hunting Hotspot is the <Biome> Biome!` is the maintainer-confirmed departure trigger. Two seconds later, send one concise absolute report of every witnessed starting Shining Coin, Bag of Seeds, Wriggleworm and Yogi Berry, independently of discovery loading, mode, HUD and ESP. Examples: `[SM] Starting items: 2x Bag of Seeds` and `[SM] Starting items: 1x Shining Coin; 1x Yogi Berry`; use `none` for a witnessed empty applicable grant set.
+
+The live protocol appends ` [run:<32-hex reward-display UUID>]`. A receiver must have witnessed that same real STRING reward marker in its current run, and must verify the parsed sender's UUID against the current party roster. Bind queued lookups to the run/world/connection and invalidate pending work on party changes. Guild/private/quoted/nonparty messages do not supply contributions. New unscoped Starting items messages are not admitted by the live inbox. Never broadcast on another player's behalf.
+
+Preserve early inventory/grant witnesses before use and close starting inference before the first post-HOTSPOT resource interaction/pickup or at the two-second deadline. Head Start supplies one overlapping lower bound; silent First Class inventory can show the second grant, including an identical item. Floor pickups stay separate. If both grants were never observed before consumption, or the first snapshot/marker context is late, do not invent the missing item or report an unwitnessed zero. Missing roster/reports and incomplete initial sources remain unknown. Context unavailable at the two-second boundary delays dispatch rather than fabricating provenance. Duplicate HOTSPOT/entry/polls, own echoes, repeats and legacy notices cannot add the same sender/item twice. Consumption never reduces known opportunity demand.
+
+Older/non-mod clients and late joiners may leave report coverage unknown. Legacy unused-item notices can provide conservative deduplicated quantities, but cannot establish a complete original inventory. Bare legacy notices and normal done words have no shared on-wire run token: only current live, roster-verified messages are admitted; stored history is never replayed. A previously unseen delayed legacy line cannot be intrinsically distinguished from a fresh identical one. New scoped starting reports reject other-run marker identities.
+
 ## Predicting unopened floor-drop types
 
 The supplied Shiny Hunter JAR predicts quest-drop types from loaded display groups and numeric entity spawn order; it does not read a literal reward name from each unopened marker. See [mapping, evidence and implementation handoff](FLOOR_DROPS.md). Requested filtering: Cavern gems; Forest bird food; Haunted incense/coins; Icy Icebreakers. This changes highlight selection only: all critter spawn/check/capture rules remain unchanged. Predictions never count as pickups, used resources or proof that no needed drops remain.
@@ -81,13 +91,13 @@ Keep resource grants, floor pickups, resource uses, spawns, sightings and catche
 
 ### Haunted mid-run: Gimmiegold
 
-- Gimmiegold Sparkling checking uses the retained initial Shining Coin floor-slot total: all slots collected, no held coins, and shared captures + current rendered uncaptured Gimmiegolds reaching the slot count plus known extra coins. Unknown catalog/inventory stays pending. A party hd overrides ordinary checking only while outside Haunted. Unique still needs one actual catch; Full Clear retains actual minimum captures and its source/absence rules.
+- Gimmiegold Sparkling checking uses the retained initial Shining Coin floor-slot total: known source/report coverage, no remaining coin markers or held coins, and shared captures + current rendered uncaptured Gimmiegolds reaching the slot count plus known extra coins. Unknown catalog/inventory stays pending. A demand-current, roster-verified hd supplies remote spawning proof only outside Haunted, without waiving known held/remaining resource blockers. Unique still needs one actual catch; Full Clear retains actual minimum captures and its source/absence rules.
 - If the minimum is not met, keep it pending. A teammate may still hold Shining Coins; this explains the empty world but is an inference, not confirmation of their inventory. Some earlier Gimmiegold catches below the minimum do not close this mid-run case.
 - The minimum without the absence evidence is insufficient. New floor drops or outstanding Gimmiegolds must be accounted for rather than hidden by the earlier deduction.
 
 ### Forest mid-run: birds
 
-Use [Forest bird completion](../BIRD_COMPLETION.md) for Bluebird, Parakeet and Macaw. Base demand is nine food/spawn opportunities plus known starting/party-notified food. Only qualified renders inside the X/Z 6/51, radius-15 bird circle establish spawning; shared captures + current birds account for it, with two Macaws per opportunity. Feeder attraction chat is ignored. Raw remaining Forest floor food is checked Safari-wide; locally held bird food also blocks completion.
+Use [Forest bird completion](../BIRD_COMPLETION.md) for Bluebird, Parakeet and Macaw. Base demand is nine food/spawn opportunities plus known absolute starting-food contributions. Only qualified renders inside the X/Z 6/51, radius-15 bird circle establish spawning; shared captures + current birds account for it, with two Macaws per opportunity. Feeder attraction chat is ignored. Raw remaining Forest floor food is checked Safari-wide; locally held bird food also blocks completion.
 
 Inside Forest, Sparkling requires all expected spawning; Unique adds a shared catch of each bird, except proven no-Macaw spawning. Outside, fd supplies spawning trust; Unique may waive only the last Macaw catch once Bluebird and Parakeet are caught. Full Clear always needs the real expected capture population, retaining one-Macaw credit; fd alone cannot complete birds. Other Forest species keep their own rules.
 
@@ -99,26 +109,11 @@ An earlier detour to another biome does not disqualify the Forest clearer: the l
 
 ## Unused starting food/coin reminders
 
-- Track Shining Coins and bird food granted at entry through Head Start/First Class, using the initial inventory evidence. Bird food means Bag of Seeds, Wriggleworm or Yogi Berry. Starting possession alone does not trigger a reminder.
-- When the player finishes the biome they are clearing, check for a tracked starting resource still held and unused. This is the end of their clearing work, not a requirement to wait until every biome is already complete. Recheck actual inventory; do not remind about items already used.
+Starting quantities are shared early as described above, not when a player clears a biome. End-of-clearing reminders are **local titles only**. Keep the existing four-second trigger/spacing, current held quantities, independent discovery gates and destination suppression: food only while a bird discovery is needed and outside Forest; coins only while Gimmiegold is needed and outside Haunted. There is no new setting.
 
-| Resource | Discovery gate | Destination |
-| --- | --- | --- |
-| Shining Coin | At least one party member needs Sparkling Gimmiegold | Haunted |
-| Any bird food | At least one party member needs Sparkling Bluebird, Parakeet or Macaw | Forest |
+Single-category titles remain **USE YOUR BIRD FOOD!** / **USE YOUR SHINING COIN!**. A mixed reminder uses **USE YOUR STARTING ITEMS!** with one combined item/quantity/destination subtitle, so one title does not immediately overwrite the other. Recheck eligibility at display time; a temporarily suppressed item remains eligible later. Mark only local presentation state after display.
 
-- Automatically send both a **local title alert** and a **party notice** when the discovery gate passes, the unused starting item remains held, and the player is **outside its destination biome** at the end-of-clearing check. **No config toggle or config-GUI option** controls either notification. If everyone has the relevant discoveries, suppress both. Do not apply this alert to unrelated starting items.
-- Send one combined party notice for all currently eligible items: `[SM] Unused floor drops: 1x Shining Coin (missing Sparkling Gimmiegold); 1x Yogi Berry (missing Sparkling Macaw)`. Include exact item names, quantities and the party-missing Sparkling species relevant to each resource. Group bird foods together under their shared missing-bird list; sender comes from party chat and destination comes from item type. Continue accepting older compact Use and verbose starting-item notices for resource accounting. Single-resource titles remain **USE YOUR SHINING COIN!** / **USE YOUR BIRD FOOD!**; a coin-and-food batch uses **USE YOUR STARTING ITEMS!**. The local detail lists items, quantities and destinations.
-- Do not alert a player currently clearing Haunted about their coin, or a player currently clearing Forest about their food. Their ordinary source work handles those items. Gate on actual current biome, not an assumed assignment.
-- Example: a Cavern clearer finishes with a starting coin still held and the party needs Gimmiegold: alert them to use it in Haunted and notify the party. A starting food held by a Cavern clearer similarly requires a Forest reminder only if a bird discovery is needed.
-- The party notice uses the **same automatic trigger, discovery gate and suppression rules as the title**, without a separate toggle. Filter each item independently before combining; an irrelevant or used coin must not suppress eligible food. One combined send marks every included item notified. Receivers parse each item into its own outstanding source requirement; old verbose single-item notices remain accepted. Reject malformed batches without partially reopening a biome. Suppress duplicate batches for already notified items.
-- A relevant coin notice reopens Gimmiegold/Haunted's required Sparkling work; a relevant food notice reopens the needed bird checks/Forest feeding work. Do not reset unrelated species or counts. This can invalidate an earlier biome-complete state; the empty-biome/minimum inference does not override explicit evidence of an unused extra resource.
-- An unused-resource notice is source evidence, not a catch. It retains its normal Full Clear/Sparkling source effects but cannot undo an ordinary Unique species already secured by its first shared catch.
-- Treat reminders as outstanding-resource status, not additive pickup events: repeat notices must not manufacture more food/coins. Resolve the pending source work through subsequent use/spawn/check/capture evidence under the active mode's rules.
-- **Do not mark the affected biome done again until the reported extra resource has been used and its critter has spawned.** Food requires the resulting bird spawn; a coin requires the resulting Gimmiegold spawn. A cleared inventory or repeated biome-done word alone does not release this pending-resource condition.
-- At the notice, new evidence must account for the additional bird/Gimmiegold. For birds, add deduplicated sender/type quantities to the nine-opportunity target and use qualified shared-capture/current-render population; never use feeder attraction chat. For Gimmiegold, retain its existing spawn-message or shared-capture/current-population reconciliation. Personal captures are already part of shared captures.
-- Resolve each reported resource/quantity once. For multiple food items/coins, account for every resulting feeding/coin spawn; do not treat one new entity as proof that all reported items were consumed. Repeated scans or escape replacement UUIDs do not supply additional spawns.
-- Only then reevaluate all active-mode checks and biome completion. The new spawn releases the extra-resource gate, not Full Clear's capture requirements: newly spawned uncaptured critters still block Full Clear, except additional Macaws after its one-catch requirement and all known food use are satisfied. Unique retains its shared catch plus applicable Sparkling checks, and its current-biome-only announcement guard.
+Do not send an automatic unused-item party message, local chat echo, replacement label, retry or fallback. A title never creates or appends a contribution/outstanding obligation. Existing legacy inbound formats remain accepted through the common sender/type maximum ledger. Normal `fd`/`cd`/`id`/`hd`, ticket readiness and unrelated party commands are unchanged. Additional known quantities reopen only their affected spawning requirements; they never add catches or floor pickups.
 
 ## Completion deductions
 
@@ -250,9 +245,9 @@ For the observed three-floor-coin baseline, confirmed pickup/use history outrank
 
 ### Gimmiegold Sparkling source total and party trust
 
-At run start retain each validated Shining Coin floor-drop slot once, independently of the player's current biome and display switches. Sparkling local checking requires every slot collected, sampled inventory empty of coins, and qualifying **shared captures + currently rendered uncaptured Gimmiegolds >= initial coin slots + known additional coins**. Historical UUID checks and a fixed three-pickup shortcut cannot satisfy this rule. Additional coins come from local starting inventory and accepted party unused-coin notices, deduplicated by sender; own notices overlap own starting coins.
+Retain validated source-group identities Safari-wide, independently of highlights. Local Sparkling requires complete initial catalog/report coverage, no known remaining coin markers, empty sampled coin inventory and a qualified **C + U >= F + S** proof (shared real captures + current uncaptured canonical models; distinct observed coin groups + known absolute starting coins). There is no three-coin Sparkling fallback. Disappearance alone neither confirms a pickup nor lowers F; positive population/source evidence may establish all opportunities without fabricating pickup events.
 
-A received `hd` can override ordinary checking outside Haunted. On entry, revalidate locally; an inside report cannot bypass local sources. Unique still needs one shared catch, Full Clear still needs the actual capture minimum, and detected Sparkling identities do not override those rules. See [Gimmiegold](gimmiegold.md).
+Outside Haunted, a fresh applicable `hd` can provide remote spawning proof without local renders. Known held/remaining resources still block it. New contributions or slots invalidate the old demand stamp and reopen announcements. Inside Haunted, local source/population evidence is authoritative. Unique and Full Clear retain actual capture requirements. See [Gimmiegold](gimmiegold.md).
 
 ## Evidence still to pin down
 
@@ -260,9 +255,11 @@ A received `hd` can override ordinary checking outside Haunted. On entry, revali
 - Confirm numeric species minima and total coin opportunities from Hypixel. The supplied bird example establishes nine Forest food pickups plus applicable starting food; party contributions can add more feeding demand. Other existing baselines remain in the critter index, not promoted to new server facts.
 - Preserve formatting, multiline entry banners and optional Chat Heads segments when testing the [supplied message variants](MESSAGES.md). The supplied coin message confirms the spelling **Gimmiegold**.
 
-After one local clearing-completion trigger, keep all unsent independently eligible starting-item reminders available for the run, even when an earlier party report suppresses this client's outgoing biome-done message. Repeated local-clear polls do not restart the delivery delay. Recompute quantity, destination and missing discoveries immediately before each delivery; only delivered notices mark notification/source state. Batch all currently eligible items into one title and party message; retain four-second spacing only if a previously suppressed item becomes eligible later. Suppression or cancellation does not consume an unsent reminder. Initial inventory sampling starts at the first available inventory sample, rather than world-arrival time; grants overlap it and separately recorded later floor pickups are subtracted.
+After one local clearing trigger, keep independently eligible **local title** candidates available; repeated polls do not restart the delay. Recompute held quantities, destination and discovery need before display. Showing a title marks presentation only. The HOTSPOT signal opens a bounded two-second initial grant window; sample before the first resource input, then freeze before use/pickup. Known ticket/grant minima and the two-grant cap prevent invented zero/oversized reports.
 
 ## Last updated
+
+2026-10-19 (America/New_York) — Early absolute starting-resource reports at HOTSPOT+2s, explicit unknown coverage and local-only later reminders (issue68).
 
 2026-10-18 - Applied qualified bird renders, mode-specific remote trust and initial-clearer fd eligibility.
 

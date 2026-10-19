@@ -12,7 +12,7 @@ class StartingResourceProtocolTest {
         assertEquals(mixed, StartingItemReport.parse(mixed.text))
         assertEquals(2, StartingItemReport.parse("[SM] Starting items: 2x Bag of Seeds")!!.quantities[FloorDropType.SEEDS])
         assertTrue(StartingItemReport.parse("[SM] Starting items: none")!!.quantities.isEmpty())
-        for (bad in listOf("", "0x Shining Coin", "65x Shining Coin", "1x Icebreaker", "1x Shining Coin; 2x Shining Coin", "none; 1x Shining Coin"))
+        for (bad in listOf("", "0x Shining Coin", "3x Shining Coin", "65x Shining Coin", "1x Icebreaker", "1x Shining Coin; 2x Shining Coin", "none; 1x Shining Coin"))
             assertNull(StartingItemReport.parse("[SM] Starting items: $bad"), bad)
     }
     @Test fun `missing report is not zero and duplicate legacy self reports overlap`() {

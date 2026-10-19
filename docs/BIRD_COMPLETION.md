@@ -4,14 +4,16 @@ These rules apply only to Bluebird, Parakeet and Macaw. Other Forest species ret
 
 ## Expected population and evidence
 
-- Start with nine food/spawn opportunities and nine Forest food floor drops. Add known local starting bird food and quantities in other mod users' unused-starting-food party notices. Deduplicate notices by sender and food type; a local notice overlaps local starting inventory rather than adding it twice.
+- Start with the verified nine-floor-food baseline/slot evidence, then add the common absolute per-player starting-food total learned at HOTSPOT+2s. Local grant witnesses, own echoes, repeats and legacy unused notices overlap by sender/type. An ordinary pickup is part of the floor baseline, regardless of the player’s biome; it is never another starting grant.
 - Birdfeeder attraction chat is ignored for spawning, species totals, food use and Macaw pairs. Actual capture/loot-share messages still count catches.
 - Observe current rendered birds only while inside the existing bird scan circle: X/Z **6/51**, radius **15 blocks**. Count shared captures plus current rendered birds, never accumulated UUID histories. One Macaw pair accounts for one food opportunity:
 
   `Bluebird captures + live Bluebirds + Parakeet captures + live Parakeets + floor((Macaw captures + live Macaws) / 2)`
 
-- Keep species population requirements established by qualified renders. Escape/replacement UUIDs do not increase the population when the current live count is unchanged. Once a qualified captures/current-render observation proves spawning with no remaining or held food, retain that proven population through unloading, travel and Forest reentry. Incomplete observations do not accumulate into a complete population. New food blockers still apply; newly reported extras must be covered by the retained population or fresh proof.
+- Keep species population requirements established by qualified renders. Escape/replacement UUIDs do not increase the population when the current live count is unchanged. Once a qualified captures/current-render observation proves spawning with no remaining or held food, retain that proven population through unloading, travel and Forest reentry. Incomplete observations do not accumulate into a complete population. New food blockers still apply; newly reported additional quantities revoke older local population proof and require fresh applicable proof; an older fd target cannot cover larger demand.
 - The user reports that Forest food floor drops remain rendered Safari-wide throughout the run. Inspect their markers from every biome and the central boat, independently of ESP selection. Count bird-food groups and untyped/partial markers as blockers; exclude complete active reward triples classified as non-food (including the generic XP/essence/shard tail). Match group members by entity IDs, including triples crossing block boundaries. Any remaining food marker or locally held bird food prevents bird completion. Travel cannot erase a known remaining drop; a subsequent complete zero-food-marker observation can establish collection. Raw Forest marker counts also contain unrelated rewards and must not be used directly.
+
+Missing party reports or incomplete initial source coverage are unknown, not zero. Local completion requires known source/report coverage; outside Forest, an applicable remote fd may provide source/spawning trust, with known held/remaining food still blocking. See [starting synchronization and mixed-client limits](critters/TRACKING.md#early-party-starting-resource-synchronization).
 
 ## Completion by mode
 
@@ -40,5 +42,7 @@ The 2026-10-18 run log confirmed a false blocker: nine personal food pickups, se
 `/sm debug` logs expected opportunities, qualified population, remaining floor markers, held food, local pickup events, the accepted report target and current `fd` eligibility. The `Forest report` line also shows clearer eligibility, supplies/spawn readiness, current biome, discovery readiness and the individual critters still blocking the active mode's local completion.
 
 ## Last updated
+
+2026-10-19 (America/New_York) — Early absolute starting-resource reports at HOTSPOT+2s, explicit unknown coverage and local-only later reminders (issue68).
 
 2026-10-18 - Replaced bird spawn-chat accounting with qualified render/capture evidence and restricted automatic Forest reports to qualified initial clearers.

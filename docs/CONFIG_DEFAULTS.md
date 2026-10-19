@@ -9,7 +9,7 @@ Implemented defaults for fresh or missing settings. Enable all independently swi
 | Achievements to Party (`achievementsToParty`, including any equivalent achievement-to-party toggles) | Off |
 | Capture projections (`experimentalCapsulePath`) | Off |
 
-Keep achievements themselves enabled; the exception is their party announcement. Capture projections is separately opt-in under Safari helpers and does not start recording. Missing/invalid saved preview values default off; explicit choices persist. Capsule hiding and the visual preview work independently; either or both hiding options can stay on. See its [scope and controls](CAPTURE_SHOT_RECORDING.md#experimental-capsule-path). These are defaults for fresh/missing settings, not permission to overwrite existing saved user choices on every launch. Automatic unused starting-food/coin title alerts and party reminders have no config toggle, as documented in [tracking rules](critters/TRACKING.md#unused-starting-foodcoin-reminders).
+Keep achievements themselves enabled; the exception is their party announcement. Capture projections is separately opt-in under Safari helpers and does not start recording. Missing/invalid saved preview values default off; explicit choices persist. Capsule hiding and the visual preview work independently; either or both hiding options can stay on. See its [scope and controls](CAPTURE_SHOT_RECORDING.md#experimental-capsule-path). These are defaults for fresh/missing settings, not permission to overwrite existing saved user choices on every launch. Early starting-resource synchronization and later local-only unused starting-food/coin title alerts have no config toggle, as documented in [tracking rules](critters/TRACKING.md#unused-starting-foodcoin-reminders).
 
 Mode selectors remain mutually exclusive; “all on” applies to independent feature toggles, not simultaneous Unique/Full Clear/Sparkling modes. Retain established numeric/text selections and explicit mode-preset behavior unless separately changed. Field initialization, config-load fallbacks and GUI defaults agree. Explicitly saved GUI choices remain in effect.
 
@@ -60,6 +60,8 @@ The History tab begins with the **History** button, followed immediately by **Im
 **Guard Safari entry** and **!dt downtime** retain their independent saved switches. Guard Safari entry uses Safari tab-list party presence, with a two-second pause after a party kick message; downtime controls Torrhus readiness holds until each requester says r or mentions ticket. Holding Shift overrides either for the current interaction without clearing the holds. See [entry guard](SAFARI_ENTRY_GUARD.md).
 
 ## Last updated
+
+2026-10-19 (America/New_York) — Early absolute starting-resource reports at HOTSPOT+2s, explicit unknown coverage and local-only later reminders (issue68).
 
 2026-10-18 (America/New_York) - Consolidated Capture projections into one saved switch and removed the status-text HUD.
 

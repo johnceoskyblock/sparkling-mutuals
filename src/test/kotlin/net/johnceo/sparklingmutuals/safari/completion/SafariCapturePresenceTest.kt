@@ -1,5 +1,7 @@
 package net.johnceo.sparklingmutuals.safari.completion
 
+import net.johnceo.sparklingmutuals.safari.resources.knownStartingEvidence
+
 import net.johnceo.sparklingmutuals.safari.resources.renderBird
 import net.johnceo.sparklingmutuals.safari.resources.scanRenderedBirds
 
@@ -14,7 +16,7 @@ class SafariCapturePresenceTest {
     @Test fun `minimum captures need a scan with no same species and turn red when it returns`() {
         for ((name, minimum) in listOf("Foxtrot" to 6, "Scrappy" to 3, "Troodon" to 3, "Doomspiral" to 1)) {
             val critter = SafariRoster.named(name)!!
-            val run = SafariRun(0)
+            val run = SafariRun(0).knownStartingEvidence()
             repeat(minimum - 1) { run.record(SafariCatch(critter)) }
             run.updateCaptureEvidence(critter.biome, emptySet(), false)
             assertFalse(run.captureComplete(name))
@@ -24,13 +26,13 @@ class SafariCapturePresenceTest {
             assertFalse(run.captureComplete(name))
             run.updateCaptureEvidence(critter.biome, setOf("Macaw"), false)
             assertTrue(run.captureComplete(name))
-            val unscanned = SafariRun(0)
+            val unscanned = SafariRun(0).knownStartingEvidence()
             repeat(minimum) { unscanned.record(SafariCatch(critter)) }
             assertFalse(unscanned.captureComplete(name))
         }
     }
     @Test fun `birds clear independently after feeding and every remaining species blocks itself`() {
-        val run = SafariRun(0)
+        val run = SafariRun(0).knownStartingEvidence()
         repeat(3) { for (food in listOf("Bag of Seeds", "Wriggleworm", "Yogi Berry")) run.recordBirdFood("FLOOR DROP! $food") }
         repeat(8) { run.record(SafariCatch(SafariRoster.named("Bluebird")!!)); run.birds.renderBird("Bluebird") }
         run.birds.renderBird("Macaw")

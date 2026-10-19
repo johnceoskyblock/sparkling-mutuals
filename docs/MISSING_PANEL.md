@@ -37,7 +37,7 @@ Full Clear's common positive-remainder rule applies to every Forest row except M
 
 ### Bird food and no-Macaw proof
 
-Use [Forest bird completion](BIRD_COMPLETION.md) for the three birds. Base demand is nine food opportunities plus known local starting and party-notified food. A qualified scan at X/Z 6/51 within 15 blocks uses shared captures + current renders, with two Macaws per opportunity. Attraction chat is ignored. Remaining Forest floor-food markers and held bird food block completion; floor markers are checked Safari-wide.
+Use [Forest bird completion](BIRD_COMPLETION.md) for the three birds. Base demand is nine food opportunities plus known absolute starting-food contributions. A qualified scan at X/Z 6/51 within 15 blocks uses shared captures + current renders, with two Macaws per opportunity. Attraction chat is ignored. Remaining Forest floor-food markers and held bird food block completion; floor markers are checked Safari-wide.
 
 Inside Forest, Sparkling requires the local population proof and Unique adds one catch per bird, with the proven no-Macaw exception. Outside Forest, fd supplies spawning trust and may waive only the last Macaw catch once the two other birds have shared catches. Full Clear needs actual expected captures everywhere, retaining one-Macaw credit. A report never supplies missing captures. Automatic fd additionally requires an initial Forest clearer with six separate local food pickups and no held/remaining food.
 
@@ -98,7 +98,7 @@ Until Wumpa is caught, when the party needs Sparkling Wumpa, **every uncaught Ic
 | [Hideyho](critters/hideyho.md) | 1 shared catch + qualified empty scan | 1 finding reward | 1 finding reward | 1 qualified check or shared finding reward |
 | [Doomspiral](critters/doomspiral.md) | 1 shared catch + qualified empty scan | 1 catch | 1 catch | 1 actual shared catch; ritual/spawn message/report alone is insufficient |
 
-Gimmiegold Sparkling proof uses the retained initial coin slots, all slots collected, empty inventory, and current captured-plus-rendered population, including extra coins from deduplicated party notices. The separate Full Clear source-recovery path can use empty markers or confirmed pickup/use history. The source survey is established near Haunted's scan center; check demand also incorporates spent coins and newly discovered extras. A mid-run visitor's empty inventory alone does not prove another player's coins were used. Remote Full Clear progress uses the report/minimum/remainder rule, increasing the minimum for actual extra/starting coins and never waiving known unused coins. Local progress and the missing row use the stricter coin checks when positional scan evidence is available.
+Gimmiegold Sparkling proof uses known initial source/report coverage, retained distinct coin slots, no remaining coin markers, empty inventory, and current captured-plus-rendered population, including deduplicated early starting-coin reports. The separate Full Clear source-recovery path can use empty markers or confirmed pickup/use history. The source survey is established near Haunted's scan center; check demand also incorporates spent coins and newly discovered extras. A mid-run visitor's empty inventory alone does not prove another player's coins were used. Remote Full Clear progress uses the report/minimum/remainder rule, increasing the minimum for actual extra/starting coins and never waiving known unused coins. Local progress and the missing row use the stricter coin checks when positional scan evidence is available.
 
 ## Scan zones and retained checks
 
@@ -160,6 +160,8 @@ There is currently no separate bird-food-remaining or Gazer-checked footer. Gaze
 
 The requested example separates Unique's missing row from its Sparkling progress check. **Current code uses the same first-catch completion for both**, so a needed Sparkling Billygoat does not hold Unique progress open for two checks. Full Clear removes Billygoat from the missing panel and advances local progress after at least two shared catches and an empty scan within 30 blocks of X/Z -121/-55, retaining that proof after leaving. Without local proof, remote progress waits for `id` plus its capture requirement. Sparkling uses two retained qualified checks rather than requiring both to be simultaneously rendered. Unique's separate Sparkling-progress gate in the proposed example remains a documented difference.
 
+Unknown starting reports/floor coverage cannot be treated as zero. New contributions/slots invalidate older applicable reports; outside Haunted a current-demand hd can provide remote spawning proof without local renders, while held/remaining blockers remain. See [shared protocol](critters/TRACKING.md#early-party-starting-resource-synchronization).
+
 ## Source owners
 
 - [SafariPanels](../src/main/kotlin/net/johnceo/sparklingmutuals/safari/ui/SafariPanels.kt): list inclusion, progress denominator, X/X suffixes and bottom reminders.
@@ -172,6 +174,8 @@ The requested example separates Unique's missing row from its Sparkling progress
 - [SafariHelperRules](../src/main/kotlin/net/johnceo/sparklingmutuals/safari/completion/SafariHelperRules.kt): source reminder eligibility.
 
 ## Last updated
+
+2026-10-19 (America/New_York) — Early absolute starting-resource reports at HOTSPOT+2s, explicit unknown coverage and local-only later reminders (issue68).
 
 2026-10-18 - Replaced bird announcement/source assumptions with qualified render/capture rules and restricted fd eligibility.
 

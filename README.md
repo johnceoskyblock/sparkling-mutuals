@@ -56,7 +56,7 @@ Use the [37 individual critter notes](docs/critters/README.md) for species rules
 - **All Bird Food alert:** notify after collecting three of each Forest bird food.
 - **All Incense alert:** notify when four Soothing Incense are in your inventory.
 - **Run completion alert:** notify when all biomes are complete in the active mode.
-- **Unused starting supplies:** automatic titles and party reminders identify starting bird food or Shining Coins still needed by the party.
+- **Starting supplies:** share witnessed starting food/coins two seconds after the HOTSPOT message; later unused-resource reminders are local titles only.
 - **Warp alerts (`/alert`, `/alertdelay <seconds>`):** disabled by default; when enabled, show the reminder and automatically run `/p warp` when the delay expires in the current run. [Timer behavior](docs/WARP_ALERTS.md).
 - **Miria contest HUD:** track contest time, score, and tier.
 - **Miria warnings:** warn below Uncommon at the selected 5-, 3-, and 1-minute marks.
@@ -119,6 +119,8 @@ Honeyhive state rules, data sources and debugging: [Torrhus Canyon Honeyhives](d
 Per-drop colors are configurable in **ESP → Floor-drop colors**. **Miria contest → Auto !dt contest** controls the automatic party downtime request at new contest starts, sent only by the confirmed party leader. Returning to Torrhus announces all downtime requesters and reasons together in party chat. See [contest request behavior](docs/CONTEST_DOWNTIME.md).
 
 ## Last updated
+
+2026-10-19 (America/New_York) — Early absolute starting-resource reports at HOTSPOT+2s, explicit unknown coverage and local-only later reminders (issue68).
 
 2026-10-19 (America/New_York) - Updated release and installation guidance for v3.4.0 across all three supported Minecraft versions.
 

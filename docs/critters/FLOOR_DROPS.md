@@ -78,9 +78,11 @@ The JAR derives biome from its centroid's X/Z within `x ∈ [-200,100]`, `z ∈ 
 
 At run start register each validated Shining Coin **STRING reward triple** once by group ID, independently of highlight settings and the player's biome. Arbitrary identical model/decorative triples and the three members of one reward group must not inflate this count. Retain the registered slots after collection and unloading.
 
-Local Sparkling checking requires all coin slots collected, sampled inventory containing zero coins, and **shared captures + currently rendered uncaptured Gimmiegolds >= initial coin slots + known additional coins**. Three actual pickups cannot waive a remaining registered coin source. Own starting coins and deduplicated party unused-coin notices add opportunities without becoming floor pickups. An unloaded slot remains outstanding until pickup/observable collection evidence resolves it. A party hd can override ordinary checking outside Haunted; entering Haunted revalidates locally. Unique still needs its catch and Full Clear its actual capture minimum. See [Gimmiegold](gimmiegold.md).
+Local Sparkling checking requires all coin slots collected, sampled inventory containing zero coins, and **shared captures + currently rendered uncaptured Gimmiegolds >= initial coin slots + known additional coins**. Three actual pickups cannot waive a remaining registered coin source. Own starting coins and deduplicated early starting-coin reports (legacy notices overlap) add opportunities without becoming floor pickups. An unloaded slot remains outstanding until pickup/observable collection evidence resolves it. A demand-current verified party hd can supply remote spawning proof outside Haunted, with known resource blockers retained; entering Haunted revalidates locally. Unique still needs its catch and Full Clear its actual capture minimum. See [Gimmiegold](gimmiegold.md).
 
 Full Clear keeps its separate conservative coin-use/source recovery; its old confirmed-three-source shortcut is not the local Sparkling completion rule.
+
+Initial catalog coverage remains unknown until the complete supported STRING phase prefix and its boundaries have no ID gap or partial group. Retain source identities after unloading; marker disappearance alone is not pickup evidence. F is derived from observed coin groups, with no fixed-three fallback. The structural order classifier still needs live validation; missed or inconsistent initial groups must not establish complete coverage.
 
 ## Live marker evidence
 
@@ -113,6 +115,8 @@ Current implementation: `FloorDropPredictor.kt` retains numeric-ID group history
 - Generic/unknown predictions receive no quest-item ESP. Hidden markers remain independent raw presence evidence and cannot complete a critter/source check.
 
 ## Last updated
+
+2026-10-19 (America/New_York) — Early absolute starting-resource reports at HOTSPOT+2s, explicit unknown coverage and local-only later reminders (issue68).
 
 2026-10-17 - Full Clear always retains remaining coin ESP; Unique/Sparkling gate only on party Gimmiegold discovery need, without pickup/holding cutoffs.
 

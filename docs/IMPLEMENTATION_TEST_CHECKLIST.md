@@ -51,9 +51,19 @@ Use the existing IntelliJ Minecraft Client/DevAuth configuration. These are manu
 - Scrappy, Gemzie, Troodon and Gazer are the only species with fixed X/X suffixes. Full Clear must say X/M captured using confirmed catches only; Sparkling and relevant Unique checks say X/M checked using catches plus current qualifying UUIDs. A caught Gazer plus three live Gazers must show 1/4 captured in Full Clear and 4/4 checked in Sparkling. In Unique these appear only for needed discoveries. Verify all modes show only colored critter names and gray applicable fixed counters: no survey warning, absence prose or duplicate Gazer row. Retain the separate Forest bee-nest and Cavern wall/mound footers for outstanding work: Full Clear regardless of discoveries, Unique before the first catch or while that species' needed Sparkling check is unfinished, Sparkling only for missing discoveries. Resolve sources and confirm their footers disappear. Source requirements/highlights still apply.
 - Break every Snooper wall and mound. Progress dialogue must not count as a catch or terminal outcome. Newly found intact sources must reopen needed checks even after an earlier completion report.
 
+## Early starting-resource synchronization (#68)
+
+- Start with two identical seeds, mixed coin/food, or no applicable grants. Only the exact server HOTSPOT message starts one +2-second report; login, arrival, entry banners, HUD, repeated HOTSPOT and boat reentry do not duplicate it. Test all modes with HUD/ESP off and discoveries loading.
+- Witness original inventory before departure, use it before dispatch, then acquire a same/different floor item: report original grants only. Test missing/late first sample as unknown, never invented none. New run/disconnect cancels old work.
+- Verify explicit none versus a missing party report, sender UUID/current-roster validation, GAME/CHAT duplicates, local echo and legacy maxima, Guild/private/quoted/nonparty rejection, old marker scope, delayed lookup after run/party replacement, and bounded pending work.
+- Inspect all initial phase groups before leaving: missing first/last/partial groups or a phase-boundary ID gap keep coverage unknown. Count one STRING triple per slot, exclude decorative/incense/generic rewards, keep F after unload, and do not equate disappearance with collection. A newly confirmed coin raises F and reopens old hd.
+- Before a Cavern/Icy clearer finishes, their starting food/coin report must already increase Forest/Haunted demand. Check F4+S1 against C1+U3 (pending) then C1+U4 (passes), known aliases/retired bodies and replacements, held/remaining blockers, all-zero reports and missing-client uncertainty.
+- Outside Haunted, an applicable fresh hd works without local renders; new demand invalidates the older hd. Inside Haunted, hd cannot waive local source/population evidence. Preserve real Unique/Full Clear catches, Macaw equivalents and six separate personal fd pickup events.
+- Perform a real multi-client Hypixel run when available. Offline synthetic/native clients verify integration, not universal server grant ordering, source classification, loading or older-client run provenance.
+
 ## Resources, captures and entry
 
-- Finish a different biome while holding unused starting bird food or a coin. If the relevant discovery is missing, receive an automatic title (USE YOUR BIRD FOOD! / USE YOUR SHINING COIN!) and one compact combined party notice such as `[SM] Unused floor drops: 1x Shining Coin (missing Sparkling Gimmiegold); 1x Yogi Berry (missing Sparkling Macaw)`. The mixed-resource title is USE YOUR STARTING ITEMS!; sender and item types provide player/destination information, while each group names its missing Sparkling targets. Test several bird foods together and verify only party-missing birds are listed. Verify each included item retains independent spawn obligations. Neither has a config toggle. Suppress duplicates, used resources, notices in the destination biome, and notices when everyone owns the relevant discoveries.
+- Finish a different biome holding relevant starting food/coins: show the applicable local title/subtitle only, with independent quantities/discovery/destination gates. Mixed coin/food is one readable combined title. Verify no unused-item party command, local chat echo, retry or fallback is emitted, and title delivery does not change contribution demand.
 - Receive an unused-resource notice after Forest/Haunted was complete. It must reopen the affected source work without adding a pickup or catch. Repeated notices and old population cannot resolve it. Require every extra feeding/coin spawn; Full Clear still needs its applicable captures, with the Macaw exception above.
 - Enter partially cleared Haunted with zero drops and no Gimmiegolds. Fewer than three shared catches stays pending. For local Sparkling completion, require the retained initial coin-slot registry to be resolved and enough captured/current population; absence alone cannot establish an unknown catalog. Remote hd can override ordinary checks while outside Haunted.
 - Check Basic and First Class, with and without Head Start. Initial inventory should account for zero/one/two starting resources, including two identical items. The Head Start message and inventory must overlap once. Queue retries, entry banners and hotspot messages must not manufacture grants or catches. Ticket type remains unknown if no identifiable selection was observed.
@@ -89,7 +99,7 @@ Use the existing IntelliJ Minecraft Client/DevAuth configuration. These are manu
 ## Supplied Gimmiegold debug-log regression
 
 - Reproduce three floor coins picked/used, none held, one Gimmiegold caught and two still in the water. Unique completes with its first catch. Sparkling completes only if all registered initial coin slots are collected, inventory is empty and the captured/current population reaches the slot-derived target; decorative predictions are not extra slots. Full Clear stays red until the remaining two are caught, then turns green.
-- `/sm debug` should show the new Sparkling record with `floorMinimum=3 remaining=0 required=3 capturedPlusRendered=3 checked=true` for a confirmed three-slot run. The separate Full Clear ledger can still show `sourcePath=confirmed-coins`. Retained UUID history can be larger; it must not become the required capture count or make a fourth coin require nine Gimmiegolds.
+- `/sm debug` should show the new Sparkling record with `floorMinimum=3 catalogKnown=true observedRemaining=0 required=3 capturedPlusRendered=3 checked=true` for a confirmed three-slot run. The separate Full Clear ledger can still show `sourcePath=confirmed-coins`. Retained UUID history can be larger; it must not become the required capture count or make a fourth coin require nine Gimmiegolds.
 - Repeat with only two actual floor coins plus a starting coin, a held coin, an unconsumed fourth actual coin and an unresolved party notice. Those cases must not bypass their applicable source requirements.
 
 ## Completed missing-panel wording
@@ -146,7 +156,7 @@ Use the existing IntelliJ Minecraft Client/DevAuth configuration. These are manu
 - Edit a rule and its Last updated section: the command must list that document, including when edited twice on the same date. A new document should appear as New; a removed one as Removed.
 - Read [SOURCE_SYNC.md](SOURCE_SYNC.md) before recording a new baseline. Record only after the corresponding source has been reviewed, implemented and tested.
 
-Issue #55: one clearing completion must deliver coin plus food, two foods and two-item stacks without another completion event. Recheck destinations, discovery needs and consumed quantities before one combined title/chat. Check one message contains every currently eligible item, duplicate sends are suppressed, and malformed received batches cause no partial progress changes. Old verbose notices must still parse. Suppress only the irrelevant item and retry unsent items if eligibility returns. Delay world loading beyond three seconds and verify initial inventory/HEAD START/floor pickups remain distinct. Confirm separate new-spawn obligations and clean state on new run.
+Issue #55 reminder regression (updated by #68): one clear trigger supports independently eligible items through a combined **local title only**. Recheck destinations, discovery and held quantities, suppress duplicates and preserve newly eligible later items. Legacy inbound batches still parse atomically, without adding duplicate contributions.
 
 ## Credited party Sparkling streak commands
 
@@ -236,6 +246,8 @@ Verify Full Clear report trust: capture a variable species' minimum and perform 
 - Give fixtures distinctive custom names, raw profile values and arbitrary item data; prefixed JSON must omit them. Preserve finite JSON with unavailable nonfinite fields and cap block-state text. General debug output remains separate. Live collection: three surfaced ordinary-Shyworm snapshots in one world, roughly one second apart, without throwing or recording.
 
 ## Last updated
+
+2026-10-19 (America/New_York) — Early absolute starting-resource reports at HOTSPOT+2s, explicit unknown coverage and local-only later reminders (issue68).
 
 2026-10-18 - Added qualified bird render/capture, Safari-wide remaining-food and six-pickup initial-clearer fd checks; see BIRD_COMPLETION.md.
 
