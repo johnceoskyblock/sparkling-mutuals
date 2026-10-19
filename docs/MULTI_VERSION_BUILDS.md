@@ -12,7 +12,7 @@ One shared Kotlin source tree builds three Fabric JARs. Install **one** JAR matc
 
 All targets require **Java 25**, **Fabric Loader 0.19.5+**, matching **Fabric API**, and **Fabric Language Kotlin 1.14.1+kotlin.2.4.20**. HM API and MoulConfig are bundled; DevAuth 1.2.2 is development-only. Do not install source, test or development JARs.
 
-The 26.1 line targets **26.1.2 only**. Other patches are not advertised. The migration retains internal version **3.3.0**; it does not publish or replace the existing single-target v3.3.0 release.
+The 26.1 line targets **26.1.2 only**. Other patches are not advertised. **v3.4.0** is the first published three-target release, with internal version **3.4.0** in every JAR. The older single-target v3.3.0 release remains unchanged.
 
 Upstream `modern-26.2:4.8.0` retains `Fabric-Minecraft-Version: 26.2-pre-2` in its build manifest. This exact pinned artifact passed 26.2 client startup and settings rendering. Packaging accepts that specific upstream label, rejects other target mismatches, and still requires the mod's Minecraft metadata to be exactly `26.2`.
 
@@ -59,11 +59,11 @@ The completed capture-shot feature uses the normal three-target matrix on every 
 
 World overlays use each target's native depth comparison without writing depth. On 26.3, line pipelines explicitly declare their translucent color attachment because the shared vanilla line snippet no longer supplies it; filled overlays retain the snippet's existing attachment. Pipeline contract tests and native client rendering cover this compatibility boundary.
 
-For a future release, choose a new `mod_version` and matching **`v<mod_version>`** tag. The tag workflow checks out the event's immutable commit, validates the tag, tests/builds all three targets and verifies the complete artifact set. Only the final publishing job has release write permission. It checks the tag still points at the tested commit and stages one draft before publishing.
+For a release, choose a new `mod_version` and matching **`v<mod_version>`** tag. The tag workflow checks out the event's immutable commit, validates the tag, tests/builds all three targets and verifies the complete artifact set. Only the final publishing job has release write permission. It checks the tag still points at the tested commit and stages one draft before publishing.
 
 Draft reruns retain maintainer-written release notes, generate notes only when blank, retain unrelated non-JAR assets, reuse matching uploads and replace only stale expected JAR assets. Unexpected or duplicate JAR assets stop publication. A failed upload leaves a draft; publication requires all three matching sizes/digests. Rerunning an identical published release does nothing; a different or unverifiable published asset set fails for manual attention. Tokens stay in the publishing environment and are never forwarded through redirects.
 
-Put version notes in the GitHub Release description. This migration does not create a real release or push a tag.
+Put version notes in the matching GitHub Release description; keep the complete change list there rather than duplicating it in this guide.
 
 ## Validation limits and adding a target
 
@@ -72,6 +72,8 @@ The migration preserved all 115 existing suites (652 tests per target). Local st
 Adding a target is a deliberate change: verify official Minecraft/Fabric/library availability, add its Stonecutter settings and properties, inspect actual mapped APIs/mixin signatures, update the verifier/release target set and both CI matrices, then run clean tests, packaging and client/in-game checks. Update this table and installation guidance only to the versions demonstrated by that evidence.
 
 ## Last updated
+
+2026-10-19 (America/New_York) - Documented v3.4.0 as the first published three-target release and retained exact target-qualified installation names.
 
 2026-10-18 (America/New_York) - Restored full three-target CI and required aggregate verification for the capture-shot master integration.
 

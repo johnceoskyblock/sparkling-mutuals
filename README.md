@@ -99,7 +99,7 @@ Use the [37 individual critter notes](docs/critters/README.md) for species rules
 - Development builds: download `jar-mc<version>` from a successful [Actions run](https://github.com/johnceoskyblock/sparkling-mutuals/actions). Install **only one matching JAR**; the 26.1 line supports **26.1.2 only**. See the [version and dependency table](docs/MULTI_VERSION_BUILDS.md).
 - Profile lookups use a [Hypixel API key](https://developer.hypixel.net) or the optional Shiny Hunter shared API.
 - Release notes are in the [release descriptions](https://github.com/johnceoskyblock/sparkling-mutuals/releases).
-- Current published release: **v3.3.0**, with the existing 26.1.2 file `sparkling-mutuals-3.3.0.jar`. The three-target workflow applies to future releases. Remove the older Sparkling Mutuals JAR before installing an update.
+- Current release: **[v3.4.0](https://github.com/johnceoskyblock/sparkling-mutuals/releases/tag/v3.4.0)**, with separate `sparkling-mutuals-3.4.0+mc26.1.2.jar`, `sparkling-mutuals-3.4.0+mc26.2.jar` and `sparkling-mutuals-3.4.0+mc26.3.jar` files. Install only the file matching your Minecraft version and remove the older Sparkling Mutuals JAR before updating.
 
 ## Contributing
 
@@ -120,6 +120,8 @@ Per-drop colors are configurable in **ESP → Floor-drop colors**. **Miria conte
 
 ## Last updated
 
+2026-10-19 (America/New_York) - Updated release and installation guidance for v3.4.0 across all three supported Minecraft versions.
+
 2026-10-17 - Aligned entry guards with tab-first Safari presence, two-second kick pauses, ticket-message downtime release and Shift override.
 
 2026-10-17 - Added per-interaction Shift entry override with local guidance and background missing-member name lookup.
@@ -137,4 +139,4 @@ Per-drop colors are configurable in **ESP → Floor-drop colors**. **Miria conte
 
 2026-10-16 (America/New_York) - Added the opt-in capture-shot collection kit; live aiming projections remain awaiting calibration.
 
-The 26.1.2 capture-shot development build adds opt-in uncalibrated terrain rings and possible-critter diamonds, broader dashed paths, saved width and local schema-v2 probes. See [enable and collect](docs/CAPTURE_SHOT_RECORDING.md#experimental-capsule-path). Live Hypixel contact accuracy remains pending.
+Capture projections is an opt-in, uncalibrated guide on all three supported versions, with terrain rings, possible-critter diamonds, saved width and local schema-v2 probes. See [enable and collect](docs/CAPTURE_SHOT_RECORDING.md#experimental-capsule-path). Live Hypixel contact accuracy remains pending.
