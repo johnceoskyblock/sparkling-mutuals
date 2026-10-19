@@ -1,7 +1,5 @@
 package net.johnceo.sparklingmutuals.safari.sparkling
 
-import net.johnceo.sparklingmutuals.safari.resources.knownStartingEvidence
-
 import java.nio.file.Path
 import java.util.UUID
 import net.johnceo.sparklingmutuals.config.ConfigManager
@@ -31,7 +29,7 @@ class SparklingCaptureRequirementTest {
         val state = needsAll()
         for (mode in listOf(SafariMode.UNIQUE, SafariMode.SPARKLING)) for (species in SafariRoster.all.filter { it.name !in setOf("Bluebird", "Parakeet", "Macaw") }) {
             SafariFullClear.select(mode)
-            val run = SafariRun(0).knownStartingEvidence()
+            val run = SafariRun(0)
             run.visitBiome(species.biome)
             run.observeSparkling(UUID.randomUUID(), species.name)
             assertEquals(0, run.completed(mode, listOf(species), state))
@@ -51,7 +49,7 @@ class SparklingCaptureRequirementTest {
         val state = needsAll()
         for (name in listOf("Gazer", "Honeybug", "Rockmite", "Macaw")) {
             val species = SafariRoster.named(name)!!
-            val run = SafariRun(0).knownStartingEvidence()
+            val run = SafariRun(0)
             run.visitBiome(species.biome)
             run.updateCaptureEvidence(species.biome, setOf(name), false)
             run.observeSparkling(UUID.randomUUID(), name)
@@ -65,7 +63,7 @@ class SparklingCaptureRequirementTest {
         ConfigManager.init(dir)
         SafariFullClear.select(SafariMode.FULL_CLEAR)
         for (broadcastFirst in listOf(false, true)) for (personal in listOf(false, true)) {
-            val run = SafariRun(0).knownStartingEvidence(); val state = needsAll()
+            val run = SafariRun(0); val state = needsAll()
             val species = SafariRoster.named("Gazer")!!
             val id = UUID.randomUUID()
             run.visitBiome(SafariBiome.HAUNTED)
@@ -97,7 +95,7 @@ class SparklingCaptureRequirementTest {
         for (mode in SafariMode.entries) for (biome in SafariBiome.entries) {
             SafariFullClear.select(mode)
             val species = biome.critters.first()
-            val run = SafariRun(0).knownStartingEvidence()
+            val run = SafariRun(0)
             biome.critters.forEach { run.record(SafariCatch(it)) }
             run.partyFullClear("Party > Friend: " + when(biome) {
                 SafariBiome.FOREST -> "fd"; SafariBiome.CAVERN -> "cd"; SafariBiome.ICY -> "id"; SafariBiome.HAUNTED -> "hd"
@@ -120,7 +118,7 @@ class SparklingCaptureRequirementTest {
     }
     @Test fun `paired capture messages resolve one detected identity but pending duplicates cannot block completion`() {
         for (broadcastFirst in listOf(true, false)) {
-            val run = SafariRun(0).knownStartingEvidence()
+            val run = SafariRun(0)
             repeat(2) { run.observeSparkling(UUID.randomUUID(), "Gazer") }
             val catch = SafariCatch.parse("CAPTURE! You caught a SPARKLING Gazer!")!!
             val broadcast = "SPARKLING! Me caught a SPARKLING Gazer!"
@@ -137,14 +135,14 @@ class SparklingCaptureRequirementTest {
         }
     }
     @Test fun `different players catching at once do not merge separate Sparkling captures`() {
-        val run = SafariRun(0).knownStartingEvidence()
+        val run = SafariRun(0)
         repeat(2) { run.observeSparkling(UUID.randomUUID(), "Gazer") }
         run.sparklingBroadcast("SPARKLING! Friend caught a SPARKLING Gazer!", 1000)
         run.record(SafariCatch.parse("CAPTURE! You caught a SPARKLING Gazer!")!!, 1100, "Me")
         assertFalse(run.sparklePending("Gazer"))
     }
     @Test fun `new Sparkling sightings cannot reopen an announced biome or cancel local completion`() {
-        val run = SafariRun(0).knownStartingEvidence(); val state = party()
+        val run = SafariRun(0); val state = party()
         run.visitBiome(SafariBiome.HAUNTED)
         run.updateCaptureEvidence(SafariBiome.HAUNTED, emptySet(), true)
         assertEquals("hd", run.completion.announcement(run, SafariBiome.HAUNTED, SafariMode.SPARKLING, state))
@@ -157,7 +155,7 @@ class SparklingCaptureRequirementTest {
     }
     @Test fun `pending duplicate sightings cannot block Unique PBs earned by real personal or shared catches`() {
         for (personal in listOf(true, false)) {
-            val run = SafariRun(0).knownStartingEvidence()
+            val run = SafariRun(0)
             val biome = SafariBiome.ICY
             biome.critters.forEach { run.record(SafariCatch(it, personal = personal), 1000) }
             repeat(20) { run.observeSparkling(UUID.randomUUID(), "Billygoat") }
@@ -168,7 +166,7 @@ class SparklingCaptureRequirementTest {
         }
     }
     @Test fun `duplicate sightings cannot block or retrigger a run complete alert`() {
-        val run = SafariRun(0).knownStartingEvidence()
+        val run = SafariRun(0)
         SafariRoster.all.forEach { run.record(SafariCatch(it, sparkling = true), 1000) }
         run.partyFullClear("Party > Friend: fd")
         repeat(20) { run.observeSparkling(UUID.randomUUID(), "Gazer") }

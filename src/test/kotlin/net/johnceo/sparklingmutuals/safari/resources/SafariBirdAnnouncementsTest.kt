@@ -1,7 +1,5 @@
 package net.johnceo.sparklingmutuals.safari.resources
 
-import net.johnceo.sparklingmutuals.safari.resources.knownStartingEvidence
-
 import net.johnceo.sparklingmutuals.safari.resources.renderBird
 import net.johnceo.sparklingmutuals.safari.resources.scanRenderedBirds
 
@@ -13,7 +11,7 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class SafariBirdAnnouncementsTest {
-    private fun run() = SafariRun(0).knownStartingEvidence().apply {
+    private fun run() = SafariRun(0).apply {
         visitBiome(SafariBiome.FOREST)
         repeat(3) { for (food in listOf("Bag of Seeds", "Wriggleworm", "Yogi Berry")) recordBirdFood("FLOOR DROP! $food") }
         repeat(3) { birds.renderBird("Bluebird") }
@@ -62,6 +60,6 @@ class SafariBirdAnnouncementsTest {
         assertTrue(run.birdsComplete(emptySet(), personalOnly = true))
         run.partyFullClear("Party > Friend: fd")
         assertFalse(run.missing(SafariRoster.named("Macaw")!!, true))
-        assertFalse(SafariRun(1).knownStartingEvidence().birds.allSpawned)
+        assertFalse(SafariRun(1).birds.allSpawned)
     }
 }

@@ -19,5 +19,5 @@ class SafariLedger {
             SafariLocation.UNKNOWN -> Unit
         }
     }
-    fun leave(now: Long) { current?.let { it.startingAnnouncement.cancel(); it.endedAt = now; last = it }; current = null; pendingArrival = null }
+    fun leave(now: Long) { current?.let { it.endedAt = now; last = it }; current = null; pendingArrival = null }
 }

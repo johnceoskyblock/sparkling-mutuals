@@ -1,7 +1,5 @@
 package net.johnceo.sparklingmutuals.safari.structures
 
-import net.johnceo.sparklingmutuals.safari.resources.knownStartingEvidence
-
 import net.johnceo.sparklingmutuals.safari.resources.renderBird
 import net.johnceo.sparklingmutuals.safari.resources.scanRenderedBirds
 
@@ -26,7 +24,7 @@ class ForestNestRuntimeTest {
         select(setOf("me")); accept(setOf("me"), mapOf("me" to (SafariRoster.all.map { it.name }.toSet() -
             if (needsHoneybug) setOf("Honeybug") else emptySet())))
     }
-    private fun forestRun(): SafariRun = SafariRun(0).knownStartingEvidence().apply {
+    private fun forestRun(): SafariRun = SafariRun(0).apply {
         visitBiome(SafariBiome.FOREST)
         SafariBiome.FOREST.critters.filter { it.name !in setOf("Honeybug", "Bluebird", "Parakeet", "Macaw") }
             .forEach { caught(this, it.name, SafariFullClear.minimum(it.name)) }

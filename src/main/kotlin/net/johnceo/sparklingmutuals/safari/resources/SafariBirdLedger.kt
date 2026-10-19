@@ -9,6 +9,7 @@ class SafariBirdLedger {
     private val picked = mutableMapOf<String, Int>()
     private val forest = mutableMapOf<String, Int>()
     private val startingFoods = mutableMapOf<String, Int>()
+    private val startingPickups = mutableMapOf<String, Int>()
     private val renderedTotals = mutableMapOf<String, Int>()
     private var floorDropsRemaining: Int? = null
     private var currentPopulation: Int? = null
@@ -49,18 +50,17 @@ class SafariBirdLedger {
     val foodsComplete get() = foods.all { (forest[it] ?: 0) >= 3 }
     val reportSuppliesReady get() = forestPickupEvents >= 6 && floorDropsRemaining == 0 && heldFoods == 0
     private fun localExtra(food: String): Int {
-        return startingFoods[food] ?: 0
+        val early = startingPickups[food] ?: 0
+        return maxOf(startingFoods[food] ?: 0, early) + (picked[food] ?: 0) - (forest[food] ?: 0) - early
     }
     private val localExtras get() = foods.sumOf(::localExtra)
     val feedingTarget get() = maxOf(9, forestCollected) + localExtras + reportedExtras
     val sparklingTarget get() = feedingTarget
     /** Sender/type maxima deduplicate repeated notices; local notices overlap starting inventory. */
     fun contributions(local: String?, notices: Map<Pair<String, FloorDropType>, Int>) {
-        val previous = feedingTarget
         reportedExtras = notices.entries.sumOf { (key, amount) ->
             if (local != null && key.first.equals(local, true)) (amount - localExtra(key.second.label)).coerceAtLeast(0) else amount
         }
-        if (feedingTarget > previous) { currentPopulation = null; verifiedPopulation = 0 }
     }
     fun report() { reportedTarget = feedingTarget }
     val hasReport get() = reportedTarget != null
@@ -72,7 +72,7 @@ class SafariBirdLedger {
         val held = stacks.groupBy { SafariRules.strip(it.first).trim() }
             .mapValues { (_, items) -> items.sumOf { it.second.coerceAtLeast(0) } }
         foods.forEach { food -> startingFoods[food] = maxOf(startingFoods[food] ?: 0,
-            (held[food] ?: 0) - (picked[food] ?: 0)) }
+            (held[food] ?: 0) - ((picked[food] ?: 0) - (startingPickups[food] ?: 0))) }
     }
     fun pickup(raw: String, biome: SafariBiome?, elapsed: Long? = null): Boolean {
         val text = SafariRules.strip(raw)
@@ -83,6 +83,7 @@ class SafariBirdLedger {
         verifiedPopulation = 0 // A newly found food contradicts the previous all-food-used proof.
         picked.merge(food, quantity, Int::plus)
         if (biome == SafariBiome.FOREST) { forest.merge(food, quantity, Int::plus); forestPickupEvents++ }
+        else if (elapsed == null || elapsed in 0L..3000L) startingPickups.merge(food, quantity, Int::plus)
         return true
     }
     /** Announcements cannot establish a spawn, usage, species count, or Macaw pair. */

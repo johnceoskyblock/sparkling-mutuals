@@ -16,7 +16,7 @@ A marker hidden by selection is not an absent resource. Unknown/partial markers 
 
 The supplied ticket observations describe zero ticket-specific items for Basic/Economy/Premium and one for First Class, plus one independent Head Start item when present. First Class has no grant message; inventory is authoritative for the total, including two identical items. The client records observed ticket/admission evidence but does not manufacture inventory from ticket type.
 
-The nine recognized quest types are Icebreaker, Yogi Berry, Wriggleworm, Bag of Seeds, Shining Coin, Purple Gem, Lime Gem, Orange Gem and Soothing Incense. Initial tracking runs before HOTSPOT and through its +2000 ms window, closing before resource input/pickup or dispatch. Head Start overlaps inventory and later floor pickups are subtracted. HOTSPOT starts the announcement timer, not a grant. See [early absolute reports and unknown-evidence limits](TRACKING.md#early-party-starting-resource-synchronization) and [exact messages](MESSAGES.md#entry-and-starting-items).
+The nine recognized quest types are Icebreaker, Yogi Berry, Wriggleworm, Bag of Seeds, Shining Coin, Purple Gem, Lime Gem, Orange Gem and Soothing Incense. The first available inventory sample opens a three-second starting window. Head Start overlaps that inventory; separately recorded pickups are subtracted rather than counted as grants twice. Entry banners, queue retries and hotspot messages add no resources. See [exact entry/resource messages](MESSAGES.md#entry-and-starting-items).
 
 ### Prediction algorithm
 
@@ -54,9 +54,7 @@ Completion presence uses active, visible STRING display markers independently of
 
 Forest excludes complete groups classified as nonfood, including generic rewards; food and unknown/partial groups remain blockers. Haunted coin presence excludes only complete typed incense groups; generic, coin and partial/unknown groups remain blockers. Thus hidden incense does not become a coin-source requirement, and hidden coins do not vanish from evidence.
 
-Gimmiegold's initial catalog validates active STRING triples and a full supported contiguous Cavern-six/Forest-nine/Haunted-five-incense-plus-variable-coins/Icy-five phase sequence, including phase-boundary ID continuity. Predicted type alone is insufficient. One validated group is one slot; a matched actual coin pickup is separate evidence. Missing/partial groups, unknown active markers, identity conflicts and contradictory matches withhold completeness. F is the observed coin-group count, never a fixed three. Acquisition runs Safari-wide independently of display selection.
-
-Retain group/member identities through collection/unloading. Marker disappearance never records a pickup or lowers F. A matched positive pickup or fresh complete loaded source evidence plus sufficient qualified population can account for opportunities. Unknown coverage stays unknown; new slots/remaining markers reopen validation. The structural order classifier is an implementation assumption requiring live verification, not a server reward field. [Tracking](TRACKING.md#source-evidence-and-retention) owns completion composition.
+Gimmiegold's dedicated Sparkling registry records coin groups only after three active STRING members or an actual matched coin pickup validate them. One group is one slot. Retain registered IDs through collection/unloading; a slot resolves from a matched pickup or disappearance while its chunk is loaded and the player is within 80 blocks. Unobservable absence stays unknown. Registry discovery continues through the run; the implementation does not freeze it at a single startup instant. [Tracking](TRACKING.md#source-evidence-and-retention) owns its completion/retention composition.
 
 ### Pickup matching
 
@@ -73,21 +71,23 @@ After the first locally completed biome, starting-resource delivery activates af
 | Shining Coin | Gimmiegold needed | Haunted / USE YOUR SHINING COIN! |
 | Bag of Seeds, Wriggleworm, Yogi Berry | Any bird needed | Forest / USE YOUR BIRD FOOD! |
 
-Before delivery, resample inventory and rebuild quantities/discovery needs. Remind only outside the destination while still holding tracked unused starting quantity. Filter every item independently; combine eligible items in one readable title/subtitle, with USE YOUR STARTING ITEMS! for mixed destinations. There is no independent title toggle. Suppressed items remain eligible for later local delivery.
+Before delivery, resample inventory and rebuild quantities/discovery needs. Remind only while outside the resource's destination and still holding the tracked unused starting quantity. Each item is filtered independently. There is no separate configuration toggle for the local title or party notice. Eligible items are combined; mixed destinations use USE YOUR STARTING ITEMS! Titles and party dispatch share the same gates. Unsent suppressed candidates remain eligible; only actual dispatch records notification/source state.
 
-**Delivery is local title only.** No unused-item party command, local chat echo, retry or compact fallback is sent. Presentation records notification state only and never creates contributions or outstanding source work. Normal biome completion words are unchanged. Initial quantities are shared by the separate [HOTSPOT+2s report](TRACKING.md#early-party-starting-resource-synchronization), including explicit none, independent of these reminder gates.
+Current example: [SM] Unused floor drops: 1x Shining Coin (missing Sparkling Gimmiegold); 1x Yogi Berry (missing Sparkling Macaw). Receivers also accept old compact Use and verbose starting-item formats. Malformed/duplicate-type batches are rejected as a whole.
 
-Legacy inbound `[SM] Use:`, verbose starting-item and combined unused-floor-drop formats remain compatible, rejecting malformed/duplicate-type batches. They merge absolute sender/type maxima with early/local evidence, never add a second grant or catch. Larger quantities reopen the dedicated bird/coin demand proof; an older population/report cannot discharge new demand. Fresh qualified coin F+S proof resolves overlapping legacy obligations against that verified quota, including F below/above three. Full Clear retains real captures and its separate conservative source-recovery path; see [audit D3](../IMPLEMENTATION_AUDIT.md#d3) for the historical bookkeeping distinction.
+Accepted notices add sender/type contribution maxima and outstanding source work, not pickups or catches. Repeated sender/type notices overlap. New relevant extra demand can reopen source checking; old population alone cannot supply the additional spawn. Gimmiegold can reconcile subsequent spawn events or captured/current population; bird demand uses qualified feeding equivalents, never attraction chat. Full Clear still needs its actual capture formula; ordinary Unique first-catch species do not gain a new source gate.
+
+**Known difference:** a later larger notice from an already outstanding/resolved sender/type increases contribution maxima but does not replace that existing outstanding record. Dedicated bird/coin population targets can therefore diverge from the generic pending-source ledger; see [audit D3](../IMPLEMENTATION_AUDIT.md#d3).
 
 ## Exceptions
 
-The separate Full Clear Gimmiegold source-recovery path can accept confirmed pickup/use history despite uncertain markers; local Sparkling still uses its registered slots/current-population validator. Bird Full Clear requires complete current starting reports plus known initial floor coverage or fd, then uses known blockers rather than the local Sparkling source survey. These are implemented completion distinctions, not highlight guarantees.
+The separate Full Clear Gimmiegold source-recovery path can accept confirmed pickup/use history despite uncertain markers; local Sparkling still uses its registered slots/current-population validator. Bird Full Clear uses known blockers rather than requiring a positively empty source survey. These are implemented completion distinctions, not highlight guarantees.
 
 ## Examples
 
 - Picking up Orange Gem hides both predicted Orange markers; placing it later does not restore them.
 - Four incense held together suppresses later incense ESP even after use. Needed coin ESP remains independent.
-- A hidden/unloaded registered coin slot remains in F; disappearing alone cannot create a pickup or fresh sufficient population.
+- A hidden/unloaded registered coin slot remains unresolved without pickup or observable collection evidence.
 - Repeating a teammate's one-coin notice adds no second contribution; another sender's coin does add demand.
 
 ## Source and validation references
@@ -111,4 +111,4 @@ Validate ordering, late entry, partial/unknown triples, teammate pickups, marker
 
 ## Last updated
 
-2026-10-19 (America/New_York) — Updated early starting-resource synchronization, verified coverage and local-only reminders for issue #68 while preserving the merged documentation template. Resource runtime reviewed at `76dd746`; prior audit provenance remains scoped to its stated revision. Automated all-target and offline native checks are separate from pending live Hypixel validation.
+2026-10-19 (America/New_York) — Consolidated resource accounting/reminders and implemented prediction/selection; preserved inspection provenance. Reviewed source: 93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee; static source/caller review.

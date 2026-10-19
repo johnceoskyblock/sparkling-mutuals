@@ -22,7 +22,7 @@ A **missing row** is an unfinished species entry, not an inventory/capture total
 
 Full Clear progress can use remote report/capture minima or fixed capture targets while a local missing row remains. A report alone cannot remove that row. Conversely, local capture/source/qualified absence proof can advance both without a report. Qualified absence proof is retained after travel until positive remaining evidence revokes it.
 
-Plain species names use their species colors. No checking prose, absence notes or duplicate Gazer footer is appended. When no species remain, Sparkling says **All checked!**; Unique/Full Clear say **All caught and checked!**. A separate source footer may still appear below that sentence. Bird and Gimmiegold Sparkling rows additionally respect known starting-report/source coverage and updated opportunity demand; missing evidence is not zero. A local unused-item title does not add demand or change capture counters; [resource protocol](critters/TRACKING.md#early-party-starting-resource-synchronization).
+Plain species names use their species colors. No checking prose, absence notes or duplicate Gazer footer is appended. When no species remain, Sparkling says **All checked!**; Unique/Full Clear say **All caught and checked!**. A separate source footer may still appear below that sentence.
 
 In Sparkling, title/editor label is **Unchecked** in every biome. Unique/Full Clear use the existing Missing setting/editor position; the panel title itself uses the biome and “Biome — N left”. Changing mode preserves saved position/settings.
 
@@ -96,4 +96,4 @@ The older Billygoat proposal expected Unique progress to wait for two checks aft
 
 ## Last updated
 
-2026-10-19 (America/New_York) — Updated early starting-resource synchronization, verified coverage and local-only reminders for issue #68 while preserving the merged documentation template. Resource runtime reviewed at `76dd746`; prior audit provenance remains scoped to its stated revision. Automated all-target and offline native checks are separate from pending live Hypixel validation.
+2026-10-19 (America/New_York) — Replaced duplicate species quotas with UI ownership and explicit row/progress/helper distinctions. Reviewed source: 93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee; static source/caller review, no live Minecraft validation.

@@ -30,7 +30,7 @@ data class StartingResourceReminder(val type: FloorDropType, val quantity: Int, 
     }
 }
 
-/** Combined local title; text parsing/serialization remains for inbound legacy compatibility. */
+/** One party message and one local title for every eligible item in the current inventory. */
 data class StartingResourceNotice(val items: List<StartingResourceReminder>) {
     val text get() = "[SM] Unused floor drops: " + items.groupBy { it.destination }.values.joinToString("; ") { group ->
         val drops = group.joinToString(" + ") { "${it.quantity}x ${it.type.label}" }
@@ -70,7 +70,6 @@ data class StartingResourceNotice(val items: List<StartingResourceReminder>) {
 
 /** Grants overlap inventory; pickups add resources. Neither is a catch or a spawn. */
 class SafariResources {
-    val contributions = StartingResourceLedger()
     private val starting = mutableMapOf<FloorDropType, Int>()
     private val pickups = mutableMapOf<FloorDropType, Int>()
     private val held = mutableMapOf<FloorDropType, Int>()
@@ -78,8 +77,10 @@ class SafariResources {
     private data class Outstanding(val amount: Int, val population: Int, val events: Int, val credits: Int)
     private val outstanding = linkedMapOf<Pair<String, FloorDropType>, Outstanding>()
     private val resolved = mutableSetOf<Pair<String, FloorDropType>>()
-    fun foodContributions(): Map<Pair<String, FloorDropType>, Int> = contributions.food()
-    fun coinContributions(): Map<String, Int> = contributions.coins()
+    private val reportedCoins = mutableMapOf<String, Int>()
+    private val reportedFood = mutableMapOf<Pair<String, FloorDropType>, Int>()
+    fun foodContributions(): Map<Pair<String, FloorDropType>, Int> = reportedFood.toMap()
+    fun coinContributions(): Map<String, Int> = reportedCoins.toMap()
     private val populations = mutableMapOf<SafariBiome, Int>()
     private val captured = mutableMapOf<String, Int>()
     private val required = mutableMapOf<SafariBiome, Int>()
@@ -103,15 +104,6 @@ class SafariResources {
     }
     fun pickup(text: String) { FloorPickup.parse(text)?.let { pickups.merge(it.type, it.quantity, Int::plus) } }
     fun startingCount(type: FloorDropType) = starting[type] ?: 0
-    fun startingTotal() = starting.values.sum()
-    fun plausibleStartingInventory(stacks: List<Pair<String, Int>>): Boolean = FloorDropType.entries
-        .filter { it != FloorDropType.GENERIC }.sumOf { type ->
-            (stacks.filter { SafariRules.strip(it.first).trim() == type.label }.sumOf { it.second.coerceAtLeast(0) } -
-                (pickups[type] ?: 0)).coerceAtLeast(0)
-        } <= 2
-    fun startingQuantities() = StartingItemReport.order.mapNotNull { type ->
-        startingCount(type).takeIf { it > 0 }?.let { type to it }
-    }.toMap()
     fun headStart(text: String) {
         val name = Regex("^HEAD START! You started with a (.+)!$").matchEntire(text)?.groupValues?.get(1) ?: return
         FloorDropType.entries.firstOrNull { it.label == name }?.let { starting[it] = maxOf(starting[it] ?: 0, 1) }
@@ -133,34 +125,25 @@ class SafariResources {
         if (!needed || destination == biome || remaining <= (notified[type] ?: 0)) return@mapNotNull null
         "[SM] Use: ${remaining}x ${type.label}"
     }
-    /** Presentation only. A title cannot create starting contributions or spawning obligations. */
+    /** Called only after local feedback and party chat were actually dispatched. */
     fun noticeSent(player: String, text: String) {
         val reminders = StartingResourceNotice.parse(text, PartySparklingState()) ?: return
         reminders.items.forEach { reminder ->
             notified[reminder.type] = maxOf(notified[reminder.type] ?: 0, reminder.quantity)
+            notice(player, reminder.type, reminder.quantity)
         }
     }
     fun partyNotice(raw: String): Boolean {
         val chat = PartyChat.parse(SafariRules.strip(raw)) ?: return false
-        return reportedBy(chat.sender, chat.body)
-    }
-    /** Pure admission boundary: the runtime caller already verified UUID membership and run scope. */
-    fun reportedBy(sender: String, body: String): Boolean {
-        val early = StartingItemReport.parse(body)
-        if (early != null) {
-            contributions.report(sender, early.quantities, complete = true)
-            return true
-        }
-        val reminders = StartingResourceNotice.parse(body, PartySparklingState()) ?: return false
-        reminders.items.forEach { notice(sender, it.type, it.quantity) }
+        val reminders = StartingResourceNotice.parse(chat.body, PartySparklingState()) ?: return false
+        reminders.items.forEach { notice(chat.sender, it.type, it.quantity) }
         return true
     }
     private fun notice(player: String, type: FloorDropType, amount: Int) {
         val biome = destination(type) ?: return
         val key = player.lowercase() to type
-        val alreadyKnown = if (type == FloorDropType.COIN) coinContributions()[key.first] ?: 0 else foodContributions()[key] ?: 0
-        contributions.report(player, mapOf(type to amount), complete = false)
-        if (alreadyKnown >= amount) return
+        if (type == FloorDropType.COIN) reportedCoins[key.first] = maxOf(reportedCoins[key.first] ?: 0, amount)
+        else reportedFood[key] = maxOf(reportedFood[key] ?: 0, amount)
         if (key in resolved || key in outstanding) return
         // Reserve partially observed evidence belonging to earlier notices, even
         // before their full quantities resolve. Later allocation cannot subtract it twice.
@@ -168,24 +151,11 @@ class SafariResources {
             .values.maxOfOrNull { previous -> previous.credits + maxOf(0,
                 (populations[biome] ?: 0) - previous.population, (events[biome] ?: 0) - previous.events) } ?: 0)
         // A first visit must not use the biome's ordinary baseline as the extra spawn.
-        val populationBaseline = if (biome == SafariBiome.FOREST) 9 else 3
+        val populationBaseline = maxOf(populations[biome] ?: 0, if (biome == SafariBiome.FOREST) 9 else 3)
         outstanding[key] = Outstanding(amount, populationBaseline, events[biome] ?: 0, creditBaseline)
-        required[biome] = populationBaseline + if (biome == SafariBiome.FOREST) contributions.foodTotal else contributions.total(FloorDropType.COIN)
+        required[biome] = maxOf(required[biome] ?: 0, populationBaseline) + amount
     }
     fun pending(biome: SafariBiome) = outstanding.keys.any { destination(it.second) == biome }
-    /** The qualified coin owner has accounted for every verified floor and starting opportunity.
-     * Its F+S proof supersedes legacy fixed-baseline bookkeeping, without inventing catches. */
-    fun verifiedCoinPopulation(requiredPopulation: Int) {
-        required[SafariBiome.HAUNTED] = requiredPopulation
-        val iterator = outstanding.iterator()
-        while (iterator.hasNext()) {
-            val (key, value) = iterator.next()
-            if (key.second != FloorDropType.COIN) continue
-            credits.merge(SafariBiome.HAUNTED, value.amount, Int::plus)
-            resolved.add(key)
-            iterator.remove()
-        }
-    }
     fun spawn(biome: SafariBiome) { events.merge(biome, 1, Int::plus); reconcile(biome) }
     fun scan(biome: SafariBiome, population: Int) { populations[biome] = population; reconcile(biome) }
     private fun reconcile(biome: SafariBiome) {

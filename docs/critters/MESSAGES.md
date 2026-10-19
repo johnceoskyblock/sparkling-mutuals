@@ -22,7 +22,7 @@ An observed server message and an implemented parser are different evidence. Thi
 | Server transfer | `Sending to server mini<4 character server name>...` | Transfer destination |
 | Leader admission | `[NPC] Safari Manager: I already saw your ticket, so you're free to go.` | Manager admission acknowledgement |
 | Member admission | `[NPC] Safari Manager: Looks good to me. Have fun out there!` | Manager admission acknowledgement |
-| Hotspot | `HOTSPOT! Your Hunting Hotspot is the <Biome Name> Biome!` | Maintainer-confirmed start signal for one run-owned starting-resource announcement at +2000 ms; does not itself grant an item |
+| Hotspot | `HOTSPOT! Your Hunting Hotspot is the <Biome Name> Biome!` | Run's hunting hotspot |
 
 Global entry example, including its separate lines:
 
@@ -41,10 +41,6 @@ Chat Heads log variant:
 ```
 
 Rank and IGN above are examples. A head decoration may occur between rank and IGN; it must not become part of the IGN. Entry, queue and transfer are distinct events, not multiple tickets/grants. First Class starting inventory includes the Head Start item when that perk applies: do not count the message's item a second time on top of the snapshot. Without a Head Start message, use initial run inventory rather than waiting for a nonexistent First Class message.
-
-### Client resource reports
-
-The separate current-roster Party path accepts one absolute `[SM] Starting items: <quantity>x <food/coin>; ... [run:<witnessed marker UUID>]`, or explicit `none`, from each player. Original grants, local echoes and supported legacy notices overlap by sender/type maxima. It is not server grant/spawn/capture text. Missing reports stay unknown. Later unused-item reminders are local titles only; normal `fd`/`cd`/`id`/`hd` remain. See [protocol and provenance limits](TRACKING.md#early-party-starting-resource-synchronization).
 
 ### Feeder and resource events
 
@@ -186,4 +182,4 @@ Exact mound terminal variants and server prerequisite-to-spawn relationships rem
 
 ## Last updated
 
-2026-10-19 (America/New_York) — Updated early starting-resource synchronization, verified coverage and local-only reminders for issue #68 while preserving the merged documentation template. Resource runtime reviewed at `76dd746`; prior audit provenance remains scoped to its stated revision. Automated all-target and offline native checks are separate from pending live Hypixel validation.
+2026-10-19 (America/New_York) — Preserved exact message evidence and consolidated previously scattered mound/feeder quotations. Reviewed source: 93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee; static source/caller review, no live Minecraft validation.

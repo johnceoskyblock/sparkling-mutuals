@@ -12,18 +12,6 @@ A personal capture increments both personal and shared counts. Party loot share 
 
 ## Implemented rules
 
-### Early party starting-resource synchronization
-
-The exact server `HOTSPOT! Your Hunting Hotspot is the <Biome> Biome!` message starts one run-owned **+2000 ms** announcement. Arrival, Manager admission, first HUD render and area polling do not start it. Repeated triggers cannot restart/duplicate it; disconnect, world change and run replacement cancel old work, including queued callbacks.
-
-Sample genuine initial inventory before HOTSPOT and for at most two seconds afterward, closing before first resource input/pickup or dispatch. Head Start is an overlapping lower bound; known First Class plus Head Start requires both grants to be witnessed. Preserve identical/mixed original grants through use; later floor pickups are subtracted. New initial evidence/reports support at most two random grants; oversized, missing or late evidence remains unknown rather than invented empty inventory.
-
-Send one concise absolute message, independently of mode, discovery loading and HUD/ESP: `[SM] Starting items: 2x Bag of Seeds [run:<marker UUID without hyphens>]`, or mixed `1x Shining Coin; 1x Yogi Berry`, or explicit `none`. The marker is a witnessed display UUID shared by this run's source catalog. Missing marker evidence keeps dispatch/admission pending. Roster loading does not delay this client's own report; confirmed solo records locally without a pointless party command. Reports are quantities, never catches/spawns/completion.
-
-The live inbox admits only anchored Party envelopes, resolves the sender to a current-roster UUID and rechecks owner/world/connection/roster epoch plus current marker provenance. Guild/private/quoted/nonparty and stale-marker text is rejected. GAME/CHAT echoes and repeated formats merge sender/type **maxima**, including local snapshot overlap and legacy inbound notices. Demand persists after consumption. Every current roster member, including self, must have a complete report; explicit none is received zero, absence/old-client/late-join evidence is unknown. Do not broadcast another player's inventory.
-
-Legacy bare unused-item notices and normal `fd`/`cd`/`id`/`hd` remain accepted with current receipt-time identity checks, but carry no on-wire run marker; an unobservable old legacy message cannot be proven new. They cannot falsely mark a missing complete starting report as received. New resource/source demand invalidates older proof and remote report stamps. Known held/remaining resources still block; inside Haunted local evidence is authoritative. Late unused-resource reminders are [local titles only](FLOOR_DROPS.md#unused-starting-foodcoin-reminders), with no party/local-chat fallback or new contribution.
-
 ### Capture and event evidence
 
 | Evidence | Establishes | Does not establish |
@@ -86,7 +74,7 @@ Scrappy 3, Gemzie 3, Troodon 3 and Gazer 4 can complete progress from their fixe
 | Honeybug Full Clear | Known nest population plus actual captures can complete from any biome without another scan/report, also respecting known population targets. Unknown coverage uses the fallback/species capture path |
 | Rockmite mounds | Retained mound sites, loaded-world absence and terminal source outcomes. An unobservable site remains unknown; an empty outside-Cavern scan with no known sites invents no survey |
 | Snoozle walls | Five fixed block sites retain loaded observations. Air means broken; a loaded nonair site means intact. Unloaded sites retain their previous state |
-| Gimmiegold Sparkling | Known initial source/report coverage, no remaining coin sources, sampled zero held coins and qualified real captures + current uncaptured models reaching F + S. Marker disappearance is not a pickup. Earned proof retains through unloading; new demand/positive source contradictions revoke it and Haunted reentry resets population validation |
+| Gimmiegold Sparkling | Registered validated coin slots must all resolve, sampled held coins must be zero, and a qualified captured + current uncaptured population must reach slots + deduplicated extras. Proof retains through unloading, but reentry resets its population validation |
 | Gimmiegold Full Clear | Separate source recovery can use no remaining coin markers or at least three actual floor pickups, sufficient coin use and sampled empty inventory in the qualifying environment. Additional coins/notices and capture/absence requirements still apply |
 
 Loaded Cavern mound/wall observations run from **any Safari biome** without a player-distance cutoff, independently of HUD/ESP. Positive intact sources can reopen their own species even if its discovery is owned. Observed source completion can resolve a contradiction without entering Cavern. Source proof does not manufacture a catch. Bird source retention belongs to [BIRD_COMPLETION](../BIRD_COMPLETION.md); slot registration and resource reminders belong to [FLOOR_DROPS](FLOOR_DROPS.md).
@@ -104,7 +92,7 @@ Loaded Cavern mound/wall observations run from **any Safari biome** without a pl
 | Full Clear progress | Report plus real capture targets, unless local/fixed/Honeybug path already qualifies | Positive remaining entities, intact sources and applicable resources still block; a report alone does not remove local missing rows |
 | Wumpa/Doomspiral Sparkling | Spawn/slain text and biome reports cannot substitute for capture | Shared catch or accepted global Sparkling-catch override completes that boss; only a shared Wumpa counter increment checks all Icy species |
 
-Reports are recognized case-insensitively from verified current-roster Party message bodies, with an optional trailing period. The live inbox owns admission and queued owner checks; pure parser helpers alone are not a runtime trust boundary. Current-demand hd can supply outside-Haunted checking without local renders, but cannot waive known held/remaining or outstanding resource blockers.
+Reports are recognized from parsed party message bodies, case-insensitively, with an optional trailing period. The implementation does not cross-check the sender against a separate current-party roster here. Server delivery in the Party channel is the trust boundary; arbitrary quoted nonparty text does not become a report.
 
 ### Capsule escape and replacement identity
 
@@ -125,7 +113,7 @@ A confirmed Sparkling catch overrides ordinary Unique/Sparkling checks before or
 - Two catches before the first qualified sighting plus one new UUID yield three reconciled checks. Seeing that UUID again adds none; its later catch is not blindly added to the earlier sighting.
 - A teammate sends cd while a loaded wall is intact: Snoozle remains incomplete until contrary local source evidence resolves it.
 - A trusted fd followed by incomplete Forest rendering does not revoke Honeybug checking; it does not add a Honeybug catch.
-- An unloaded coin slot remains in F; disappearance alone never records collection. A matched pickup or fresh applicable complete source/population proof must account for its opportunity.
+- An unloaded coin slot remains unresolved unless observable disappearance or matched pickup evidence resolves it.
 - Seven Foxtrots observed before fd establish a local target of seven. Six later catches followed by fd after disappearance can complete remote progress while the local missing row/PB still needs seven, because the remote target did not record that earlier population ([D17](../IMPLEMENTATION_AUDIT.md#d17)).
 
 ## Source and validation references
@@ -140,8 +128,8 @@ Reviewed source: 93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee.
 
 ## Open questions
 
-Initial complete STRING phase classification, universal startup loading/shared UUID fidelity and real grant timing need live multi-client confirmation. Missing source/report coverage stays unknown. Hypixel population guarantees, precise server render coverage and replacement UUID behavior remain unverified. Exact prerequisite-to-boss-spawn relationships require live evidence; inventory alone is not proof of a spawn. [The audit report](../IMPLEMENTATION_AUDIT.md) separates these uncertainties from documentation mismatches.
+Hypixel population guarantees, precise server render coverage and replacement UUID behavior remain unverified. Exact prerequisite-to-boss-spawn relationships require live evidence; inventory alone is not proof of a spawn. [The audit report](../IMPLEMENTATION_AUDIT.md) separates these uncertainties from documentation mismatches.
 
 ## Last updated
 
-2026-10-19 (America/New_York) — Updated early starting-resource synchronization, verified coverage and local-only reminders for issue #68 while preserving the merged documentation template. Resource runtime reviewed at `76dd746`; prior audit provenance remains scoped to its stated revision. Automated all-target and offline native checks are separate from pending live Hypixel validation.
+2026-10-19 (America/New_York) — Consolidated evidence, retention and party reconciliation; removed duplicated mode/UI/resource narratives. Reviewed source: 93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee; static source/caller review, no live Minecraft validation.

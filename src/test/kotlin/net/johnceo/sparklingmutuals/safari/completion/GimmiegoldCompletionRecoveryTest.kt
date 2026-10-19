@@ -1,7 +1,5 @@
 package net.johnceo.sparklingmutuals.safari.completion
 
-import net.johnceo.sparklingmutuals.safari.resources.knownStartingEvidence
-
 import java.nio.file.Path
 import java.util.UUID
 import net.johnceo.sparklingmutuals.config.ConfigManager
@@ -24,19 +22,17 @@ class GimmiegoldCompletionRecoveryTest {
     private fun party() = PartySparklingState().apply {
         select(setOf("local")); accept(setOf("local"), mapOf("local" to SafariRoster.all.map { it.name }.toSet() - "Gimmiegold"))
     }
-    private fun run(coins: Int = 3) = SafariRun(0).knownStartingEvidence().apply {
-        (1..coins).forEach { gimmiegoldCheck.floor(it, false, collected = true) }
+    private fun run(coins: Int = 3) = SafariRun(0).apply {
+        (1..coins).forEach { gimmiegoldCheck.floor(it, false) }
         repeat(coins) { sparklingChecks.chat("FLOOR DROP! You found a Shining Coin!") }
         inventoryEvidence(emptyList(), 10000)
-        startingMessage("HOTSPOT! Your Hunting Hotspot is the Haunted Biome!", 10000)
     }
     private fun scan(run: SafariRun, live: List<Pair<String, UUID>>, drops: Int = 0, x: Double = -4.0) {
-        if (run.gimmiegoldCheck.floorMinimum == 0) (1..3).forEach { run.gimmiegoldCheck.floor(it, false, collected = true) }
+        if (run.gimmiegoldCheck.floorMinimum == 0) (1..3).forEach { run.gimmiegoldCheck.floor(it, false) }
         run.gimmiegoldCheck.floor(1, if (drops < 0) null else drops > 0)
         run.observePopulation(live)
         run.updateCaptureEvidence(SafariBiome.HAUNTED, live.map { it.first }.toSet(), false, playerX = x, playerZ = -64.0)
         run.sparklingChecks.scan(SafariBiome.HAUNTED, x, -64.0, live, hauntedCoinDropsRemaining = drops)
-        run.gimmiegoldCheck.sourceEvidence(true, drops.takeIf { it >= 0 })
         run.scanGimmiegolds(live.map { it.second }, (x + 4) * (x + 4) <= 225)
     }
     @Test fun `sewer shared catch plus current live population completes Unique and Sparkling without every spawn message`() {
@@ -84,7 +80,7 @@ class GimmiegoldCompletionRecoveryTest {
         val firstThree = List(3) { "Gimmiegold" to UUID.randomUUID() }
         scan(run, firstThree)
         assertTrue(run.sparklingComplete("Gimmiegold", party()))
-        run.gimmiegoldCheck.floor(4, false, collected = true)
+        run.gimmiegoldCheck.floor(4, false)
         run.sparklingChecks.chat("FLOOR DROP! You found a Shining Coin!")
         run.inventoryEvidence(emptyList(), 10000)
         scan(run, firstThree)
@@ -107,12 +103,12 @@ class GimmiegoldCompletionRecoveryTest {
         assertEquals(3, HauntedCoinDrops.remaining(raw, emptyList()), "Unclassified/partial groups still block")
     }
     @Test fun `extra coin after mid run completion requires another Gimmiegold rather than reusing the old three`() {
-        val run = SafariRun(0).knownStartingEvidence()
+        val run = SafariRun(0)
         repeat(3) { run.record(SafariCatch(SafariRoster.named("Gimmiegold")!!)) }
         run.inventoryEvidence(emptyList(), 10000)
         scan(run, emptyList())
         assertTrue(run.sparklingComplete("Gimmiegold", party()))
-        run.gimmiegoldCheck.floor(4, false, collected = true)
+        run.gimmiegoldCheck.floor(4, false)
         run.sparklingChecks.chat("FLOOR DROP! You found a Shining Coin!")
         run.inventoryEvidence(emptyList(), 10000)
         scan(run, emptyList())
