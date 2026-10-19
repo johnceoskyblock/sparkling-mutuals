@@ -1,10 +1,18 @@
 # Hypixel Safari message reference
 
-[Tracking rules](TRACKING.md) · [Critters](README.md)
+## Scope
 
-Exact quotations supplied by the user on 2026-10-14. Angle-bracket fields are placeholders. Square-bracket head fields represent optional Chat Heads text in logs, not a required vanilla prefix. Preserve the original text; strip Minecraft formatting for semantic matching. These messages define events, not automatic capture counts unless stated.
+Authoritative owner of exact supplied server messages, audience qualifiers and message provenance. Quotations supplied on 2026-10-14 are preserved verbatim, including formatting examples. [Tracking](TRACKING.md) owns evidence semantics and [mode completion](../../SAFARI_LOGIC.md) owns completion policy.
 
-## Entry and starting items
+## Definitions
+
+Angle-bracket fields are placeholders. Square-bracket head fields represent optional Chat Heads log text, not a required vanilla prefix. Formatting-stripped equivalents support semantic matching; quoted original messages must not be rewritten to match a naming/style convention.
+
+An observed server message and an implemented parser are different evidence. This reference preserves supplied messages even where they only provide context or the client deliberately ignores them. A source/spawn/activity transition is not a catch.
+
+## Implemented rules
+
+### Entry and starting items
 
 | Audience / event | Exact message | Meaning |
 | --- | --- | --- |
@@ -34,9 +42,9 @@ Chat Heads log variant:
 
 Rank and IGN above are examples. A head decoration may occur between rank and IGN; it must not become part of the IGN. Entry, queue and transfer are distinct events, not multiple tickets/grants. First Class starting inventory includes the Head Start item when that perk applies: do not count the message's item a second time on top of the snapshot. Without a Head Start message, use initial run inventory rather than waiting for a nonexistent First Class message.
 
-## Feeder and resource events
+### Feeder and resource events
 
-**Bird food placement:** no chat message, including when food is added to an active feeder. Inventory changes and later bird spawn announcements must be correlated; do not wait for placement dialogue. Other players' inventory/placement remains unobserved.
+**Bird food placement:** no chat message, including when food is added to an active feeder. No placement confirmation is inferred from attraction chat; implemented bird spawning uses qualified captures/current population. Inventory loss alone is not confirmed placement. Other players' inventory/placement remains unobserved.
 
 | Event / audience | Exact message | Meaning |
 | --- | --- | --- |
@@ -44,9 +52,9 @@ Rank and IGN above are examples. A head decoration may occur between rank and IG
 | Global Gemzie spawning | `A rumbling sound can be heard, and the door at the back of the chamber opens...` | Checks Gemzie five seconds after this exact server message, including the needed Sparkling check in Unique; does not supply a capture |
 | Coin consumption/spawn | `A Gimmiegold appeared out of nowhere and gobbled up your Shining Coin!` | One coin used and one Gimmiegold spawned |
 
-The canonical spelling is **Gimmiegold**. Existing bird-announcement and mound patterns are retained in the tracking/species notes; they were not newly quoted in this batch.
+The canonical spelling is **Gimmiegold**. Additional previously recorded bird and mound quotations are preserved below; their terminal outcome variants remain incomplete.
 
-## Boss events
+### Boss events
 
 | Boss / audience | Exact message | Meaning |
 | --- | --- | --- |
@@ -59,7 +67,7 @@ The canonical spelling is **Gimmiegold**. Existing bird-announcement and mound p
 
 Record these transitions separately. Spawn/awoken signals do not mean caught. Slain signals confirm the global post-capture state; personal/shared catch attribution and reward counts come from capture/loot-share confirmations. `The cave is collapsing...` is not the supplied Wumpa slain message.
 
-## Snooper walls
+### Snooper walls
 
 For each wall, three collisions produce these stages:
 
@@ -69,7 +77,7 @@ For each wall, three collisions produce these stages:
 
 Only stage 3 establishes wall destruction. It does not itself confirm a Snoozle spawn/catch. Associate progress with the wall; identical text alone does not identify which of the five walls was hit.
 
-## Shyworm
+### Shyworm
 
 | Event | Exact message |
 | --- | --- |
@@ -80,7 +88,7 @@ Only stage 3 establishes wall destruction. It does not itself confirm a Snoozle 
 
 These are activity states, not catches. A missed throw/startle is not a capsule escape; Shyworm is Common.
 
-## Captures, loot shares and rewards
+### Captures, loot shares and rewards
 
 ```text
 CAPTURE! You caught a <Critter> and gained <# of shards>x <Critter> Shard!
@@ -108,7 +116,7 @@ CAPTURE! You caught a SPARKLING <Critter> and received a Rainbow Feather and <# 
 
 This is one personal and shared capture. `SPARKLING` is a modifier, not part of the canonical species name.
 
-## Capsule outcomes
+### Capsule outcomes
 
 ```text
 You threw a Critter Capsule at the <Critter>!
@@ -117,8 +125,61 @@ The <Critter> escaped your Critter Capsule!
 
 The first line confirms a hit/attempt; a throw can miss without that confirmation. The second confirms the attempt failed. Retries repeat these events until a capture confirmation. Neither attempt nor escape increments catches.
 
-**Masterful Critter Capsules guarantee capture once hit**, regardless of rarity. No Masterful message variants are needed for escape tracking. Ordinary Common/Uncommon catches are also guaranteed once hit; only standard Rare/Epic/Legendary attempts can escape. A missed throw still is not a capture.
+**Supplied server observation: Masterful Critter Capsules guarantee capture once hit**, regardless of rarity. No Masterful message variants are needed for escape tracking. Ordinary Common/Uncommon catches are also guaranteed once hit; only standard Rare/Epic/Legendary attempts can escape. A missed throw still is not a capture.
+### Previously recorded mound and feeder text
+
+The existing observations preserve these exact progress lines:
+
+- Small cracks begin to form in the mound...
+- The cracks seem to be getting larger, keep hitting it!
+- Chunks of the mound begin falling away...
+- The mound is about to fall to pieces! Keep going!
+- Two Macaws were attracted to the Birdfeeder!
+
+Implemented terminal-prefix matchers, taken from source rather than asserted as complete supplied server quotations:
+
+| Outcome | Matched prefix |
+| --- | --- |
+| Empty mound | The mound falls apart, but nothing is inside |
+| Released Rockmite | The mound fell apart, revealing a Rockmite hidden inside |
+
+Mound progress is not a terminal reveal/empty result. Exact terminal variants need separate evidence. The supplied explanation associated the last progress line with an empty outcome; the implemented terminal matcher is still the source of the recorded outcome. Bird attraction text is informational and ignored for spawn/feeding/capture accounting.
+
+### Honeyhive observations
+
+| Event/status | Preserved exact text | Qualification |
+| --- | --- | --- |
+| Queen Bee proc | QUEEN BEE! The Honeyhive instantly refilled with loot! | Supplied exact observation; parser recognizes the QUEEN BEE! prefix |
+| Ready label | Click to loot! | Status label; case-insensitive matching |
+| Refill countdown | Refill in: ... | The ellipsis denotes the variable countdown suffix |
+| Reward line | HIVE! | Recognized prefix; reward suffix varies |
+
+[Honeyhive rules](../HONEYHIVES.md) own cooldown, profile and refill semantics.
+## Exceptions
+
+- First Class adds no grant message; initial inventory supplies its resource evidence.
+- Hideyho uses finding/reward text instead of ordinary catching text.
+- Global boss slain messages establish an activity transition; Sparkling boss checks still require actual catch evidence, with the accepted global Sparkling-catch override documented in the mode owner.
+- Player quotations must not become server confirmations. Party completion words are a separate trusted party-report path.
+- A Sparkling reward/global announcement pair describes one confirmed Sparkling catch, not two ordinary capture increments.
+
+## Examples
+
+A loot-share line awarding several shards records one shared capture. A MACAW bonus feather line adds no capture. A hit followed by escape records an unsuccessful attempt; only later successful capture text increments the ledger.
+
+## Source and validation references
+
+Reviewed source: 93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee.
+
+- [SafariMessages](../../src/main/kotlin/net/johnceo/sparklingmutuals/safari/SafariMessages.kt): server/player-chat separation, multiline entry and party-report routing.
+- [SafariCatch](../../src/main/kotlin/net/johnceo/sparklingmutuals/safari/SafariCatch.kt): personal/shared catch parsing and optional head text; [SafariTracking](../../src/main/kotlin/net/johnceo/sparklingmutuals/safari/SafariTracking.kt): registered GAME callback and event consumers.
+- [SafariEspRules](../../src/main/kotlin/net/johnceo/sparklingmutuals/safari/esp/SafariEspRules.kt), [SparklingChecks](../../src/main/kotlin/net/johnceo/sparklingmutuals/safari/completion/SparklingChecks.kt), [SafariBirdLedger](../../src/main/kotlin/net/johnceo/sparklingmutuals/safari/resources/SafariBirdLedger.kt): hit/escape, exact timer text and ignored feeder text.
+- Existing [SafariCatchTest](../../src/test/kotlin/net/johnceo/sparklingmutuals/safari/SafariCatchTest.kt) and [SafariPartyCheckRoutingTest](../../src/test/kotlin/net/johnceo/sparklingmutuals/safari/SafariPartyCheckRoutingTest.kt) are validation references, not fresh test receipts. No tests/live server checks were run for this audit.
+
+## Open questions
+
+Exact mound terminal variants and server prerequisite-to-spawn relationships remain incompletely supplied. Capsule guarantees are reported server observations, not guarantees created by the client's parser. Parser differences and unverified mechanics belong to [the consolidated audit](../IMPLEMENTATION_AUDIT.md).
 
 ## Last updated
 
-2026-10-15 - Added document revision tracking.
+2026-10-19 (America/New_York) — Preserved exact message evidence and consolidated previously scattered mound/feeder quotations. Reviewed source: 93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee; static source/caller review, no live Minecraft validation.

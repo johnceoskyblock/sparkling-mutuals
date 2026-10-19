@@ -1,83 +1,87 @@
-# Config GUI defaults
+# Configuration defaults and storage
 
-Implemented defaults for fresh or missing settings. Enable all independently switchable GUI features by default **except**:
+## Purpose
 
-| Setting | Default |
+Describe settings actually loaded and saved by the reviewed implementation. Defaults apply to fresh/missing settings; mode presets and migrations can also change derived settings. This page owns configuration behavior, while each feature guide owns its gameplay effect.
+
+## Controls and defaults
+
+Open `/sm` for settings. Independent feature switches shown in the current GUI default on except these:
+
+| Setting | Saved key | Default |
+| --- | --- | --- |
+| Warp reminder | `warpAlertsEnabled` | Off |
+| Coins at insta-sell | `runCoinsInstaSell` | Off (sell-offer valuation) |
+| Achievements to party | `achievementsToParty` | Off |
+| Capture projections | `experimentalCapsulePath` | Off |
+
+Achievements themselves and achievement sound default on. A button's backing field is not an enable switch. Mode selectors are mutually exclusive: fresh configuration selects **Unique** (`fullClearMode=false`, `sparklingMode=false`); they are not an all-on feature group.
+
+| Numeric/text control | Default | Implemented load validation |
+| --- | --- | --- |
+| Warp delay | 25 seconds | Parsed integer clamps to 1–86400; missing/unparseable → 25. |
+| Capsule path width | 3 | Finite values clamp to 1–5; missing/unparseable/non-finite → 3. |
+| Show guide through terrain | On | Strict saved boolean; invalid/missing → on. |
+| Flying capsule distance | 2 blocks | Finite values clamp to 0.5–6; missing/unparseable/non-finite → 2. |
+| ESP text scale | 2 | Finite values clamp to 0.5–4; missing/unparseable/non-finite → 2; GUI step 0.25. |
+| Progress HUD location | Safari and entrance | `showWhere=1`; accepts 0–2. |
+| Sparkling alert sound/volume | `minecraft:block.amethyst_block.chime`, 100 | Valid sound identifier; volume 0–100. |
+| Run-completion title/sound/volume | `Run Complete`, `minecraft:block.bell.use`, 100 | Nonblank title ≤120 characters; valid identifier; volume 0–100. |
+| Contest warnings | 5, 3, 1 minutes | Only these three thresholds are used. |
+
+General boolean loading uses strict `true`/`false` with a field-specific fallback. Contest's automatic downtime switch does likewise; older contest tracking/warning/title boolean readers use `toBoolean()` (an invalid value becomes false). Do not assume every malformed property has the same fallback.
+
+## Implemented behavior
+
+### Mode presets and saved choices
+
+Ordinary saved GUI choices are loaded, but presets are explicit exceptions. Mode selection sets timesave filtering/PB category and panel presentation: Full Clear enables the capture panel/mound statistics and disables unique-only counts; Unique/Sparkling do the opposite. Full Clear/Sparkling also enable source counters. These panel flags are mode-owned, not extra independently switchable current-GUI defaults.
+
+Startup and mode changes apply an ESP preset enabling all groups, species and Rockmite mounds, even when older saved `enabled=false` properties exist. Per-biome visibility restrictions and colors remain separate. Startup `syncMode` does not itself reapply every panel preset. See [audit D5](IMPLEMENTATION_AUDIT.md#d5) for the former overbroad saved-choice claim.
+
+### Feature bindings
+
+- [Capture projections](CAPTURE_SHOT_RECORDING.md#experimental-capsule-path) has one enable switch, independent of recording and capsule hiding. Missing/invalid saved enable values are off. The obsolete `allowUncalibratedCapsuleEstimates` and `hud.capsule_status.*` keys are ignored and omitted on save; no projection status HUD is offered.
+- [Warp reminder](WARP_ALERTS.md) controls both the alert and automatic `/p warp`; changing its switch/delay cancels pending work.
+- [Automatic contest downtime](CONTEST_DOWNTIME.md) defaults on independently of HUD/tracking. [Guard Safari entry](SAFARI_ENTRY_GUARD.md) and **!dt downtime** retain independent saved switches and stage-specific behavior.
+- History's **History** button precedes **Import History from Logs**. There is no startup-import scan/toggle; old auto-import keys are ignored. See [history, import and achievements](HISTORY_IMPORT.md).
+- **Missing / Unchecked panel** shares `missingPanel` and its HUD layout across modes. Sparkling labels it **Unchecked** for every biome; Unique and Full Clear use Missing.
+- Automatic unused starting-food/coin reminders have no independent toggle; see [tracking](critters/TRACKING.md).
+
+### ESP appearance
+
+ESP text scale applies to floor-drop names, critter timers, nest labels and teammate names; teammate names also retain distance scaling. Scale 1 restores original label size.
+
+**ESP → Floor-drop colors** offers Lime Gem, Purple Gem, Orange Gem, Wriggleworm, Yogi Berry, Bag of Seeds, Soothing Incense, Shining Coin and Icebreaker. Each changes outline, fill and label. Per-type `esp.floor.<type>.color` values fall back to the saved shared color (fresh green). **Customization → All floor-drop colors** deliberately changes every type; merely applying an unchanged shared value preserves individual choices. Generic drops remain unhighlighted and colors do not change eligibility.
+
+## Lifecycle and persistence
+
+| File under `config/` | Owner/data |
 | --- | --- |
-| Warp reminder (`warpAlertsEnabled`, `/alert`) | Off |
-| Coins at Insta Sell (`runCoinsInstaSell`) | Off |
-| Achievements to Party (`achievementsToParty`, including any equivalent achievement-to-party toggles) | Off |
-| Capture projections (`experimentalCapsulePath`) | Off |
+| `sparkling-mutuals.properties` | General settings, API preference/key, ESP appearance and HUD layouts. |
+| `sparkling-mutuals-contest.properties` | Contest HUD, warnings and automatic downtime. |
+| `sparkling-mutuals-pbs.properties` | Boss solo/duo, biome Full Clear/Unique, party Unique, observed-member records and selected biome category. |
 
-Keep achievements themselves enabled; the exception is their party announcement. Capture projections is separately opt-in under Safari helpers and does not start recording. Missing/invalid saved preview values default off; explicit choices persist. Capsule hiding and the visual preview work independently; either or both hiding options can stay on. See its [scope and controls](CAPTURE_SHOT_RECORDING.md#experimental-capsule-path). These are defaults for fresh/missing settings, not permission to overwrite existing saved user choices on every launch. Automatic unused starting-food/coin title alerts and party reminders have no config toggle, as documented in [tracking rules](critters/TRACKING.md#unused-starting-foodcoin-reminders).
+General/PB writes use temporary replacement and atomic moves where supported. Contest saves use their own properties writer. Settings controls apply booleans/presets and save text fields through the settings screen lifecycle; independent feature state such as running timers or recording is not restored by setting persistence.
 
-Mode selectors remain mutually exclusive; “all on” applies to independent feature toggles, not simultaneous Unique/Full Clear/Sparkling modes. Retain established numeric/text selections and explicit mode-preset behavior unless separately changed. Field initialization, config-load fallbacks and GUI defaults agree. Explicitly saved GUI choices remain in effect.
+### Personal best storage and migration
 
-## Personal best storage and migration
+Startup normalizes legacy `pb.*` keys from the general file and the earlier `Sparkling Mutual's PBs.properties` filename into the dedicated PB file. Older unrestricted boss keys retain Duo meaning. Valid duplicate times keep the faster result; dedicated-file metadata takes precedence. The destination is written before legacy PB keys or the earlier filename are removed. Failed writes preserve legacy sources for retry; unrelated general properties survive migration. Repeated startup does not reset PBs.
 
-Save personal bests separately in `config/sparkling-mutuals-pbs.properties`. This includes solo/duo boss times, biome Full Clear/Unique times, party Unique times, observed party-member records and the selected biome PB category. General settings and HUD layouts remain in `config/sparkling-mutuals.properties`.
+## Edge cases
 
-Also migrate an existing `Sparkling Mutual's PBs.properties` file to the corrected filename, retaining faster records if both exist and removing the former file only after saving successfully.
+- A missing default does not authorize overwriting an ordinary explicit saved choice; the documented presets are exceptions.
+- Mutually exclusive mode flags, derived panel flags, GUI buttons and independent feature switches have different meanings.
+- Appearance clamps do not calibrate capture physics or alter mode completion.
+- Do not treat a successful settings save as live gameplay validation.
 
-On startup, automatically migrate legacy `pb.*` entries from the general config. Normalize older boss keys through the existing PB loader so unrestricted legacy times remain Duo records. If both files contain PBs, merge records and retain the faster valid time for each key; existing dedicated-file metadata takes precedence. Write the dedicated file before removing legacy PB entries, preserving unrelated general settings. Replace files through temporary files and atomic moves when supported. A failed destination write leaves the legacy file intact for retry. Repeated startups must not duplicate or reset migrated PBs.
+## Source and validation references
 
-## Missing and Unchecked panels
-
-The existing `missingPanel` toggle and HUD layout are shared across modes. In Sparkling mode, every biome's checklist is named **Unchecked**, including the HUD editor label. Unique and Full Clear retain their Missing behavior. The config option names both uses; renaming does not reset saved positions or visibility preferences.
-
-## Experimental capsule path
-
-**Capture projections** is the only enable switch. Its existing `experimentalCapsulePath` key preserves deliberate saved on/off choices; missing/invalid values default off. The obsolete `allowUncalibratedCapsuleEstimates` key is ignored and omitted on the next save. Enabling the switch gives the full terrain ring/possible-critter diamond guide, including close launch, broader angles, Masterful, movement and water support. It never starts recording. Collision and target proxies remain unverified; strict recorder probes retain their eligibility rules.
-
-Capsule path width saves independently as `capsulePathWidth`, defaults to **3**, and clamps finite values to **1–5**. Invalid/non-finite values use 3. **Show guide through terrain** (`showCapsuleGuideThroughTerrain`) defaults **on**, including for missing/invalid saved values; an explicit off choice persists. These appearance controls do not add another enable gate or change collision stops.
-
-The projection status text and its HUD-editor entry are removed. Legacy `hud.capsule_status.*` properties are ignored and omitted on save; other HUD positions and settings remain unchanged.
-
-## ESP label size
-
-The ESP tab offers **ESP text scale**, from **0.5 to 4** in **0.25** steps. The new default is **2** (twice the original label size); **1** restores the original size. It controls floor-drop names, critter timers, nest labels and teammate names. Teammate names retain their existing distance scaling. Labels stay centered and retain their colors and visibility settings. Changes apply through the GUI and persist across restarts as `esp.textScale`; invalid/non-finite values use the default, and finite values are clamped to the allowed range.
-
-## Floor-drop colors
-
-The ESP tab has a **Floor-drop colors** accordion with separate color pickers for Lime Gem, Purple Gem, Orange Gem, Wriggleworm, Yogi Berry, Bag of Seeds, Soothing Incense, Shining Coin and Icebreaker. Each color controls that drop's outline, translucent fill and name label. The existing **Customization → All floor-drop colors** control changes every type together; applying unchanged shared settings does not overwrite individual choices.
-
-All types initially inherit the old saved floor-drop color (green on a fresh configuration). Per-type choices persist as `esp.floor.<type>.color`; missing/invalid choices fall back to the shared saved color. Generic/unknown drops remain unhighlighted, and changing colors does not alter mode/biome/resource eligibility.
-
-## Automatic contest downtime
-
-**Miria contest → Auto !dt contest** defaults **on**, consistent with the independent-feature default policy, and explicit saved off choices persist. It sends the literal `!dt contest` to party chat once when a new contest window starts while online in SkyBlock with a known party and the confirmed Party Leader role. Members, moderators and unknown leadership do not send automatic requests. It works independently of the contest HUD/tracking toggle. Joining/loading settings, switching profiles, repeated scans and enabling it mid-contest must not send a duplicate or stale request. See [contest downtime](CONTEST_DOWNTIME.md).
-
-## Warp alert action
-
-The **Warp reminder** / `/alert` setting defaults **off** for fresh or missing settings. When enabled, it shows the timer alert **and sends `/p warp`** at expiry in the current Safari run. Explicit saved on/off choices, the default 25-second delay and 1–86400-second range remain unchanged. Disabling the feature or changing the delay cancels a pending timer. See [warp alerts](WARP_ALERTS.md).
-
-## History actions
-
-The History tab begins with the **History** button, followed immediately by **Import History from Logs**. Import is an explicit action that backfills both histories from existing logs. There is no **Import logs on launch** toggle or automatic startup scan: normal sessions already record history live. Older saved auto-import settings are ignored. See [history import](HISTORY_IMPORT.md) for supported files, estimates and merge rules.
-
-## Safari entry protection
-
-**Guard Safari entry** and **!dt downtime** retain their independent saved switches. Guard Safari entry uses Safari tab-list party presence, with a two-second pause after a party kick message; downtime controls Torrhus readiness holds until each requester says r or mentions ticket. Holding Shift overrides either for the current interaction without clearing the holds. See [entry guard](SAFARI_ENTRY_GUARD.md).
+- Load/save/defaults and initialization: [ConfigManager](../src/main/kotlin/net/johnceo/sparklingmutuals/config/ConfigManager.kt), [ContestConfig](../src/main/kotlin/net/johnceo/sparklingmutuals/config/ContestConfig.kt), [SparklingMutuals](../src/main/kotlin/net/johnceo/sparklingmutuals/SparklingMutuals.kt).
+- GUI/apply/lifecycle: [SafariSettings](../src/main/kotlin/net/johnceo/sparklingmutuals/config/SafariSettings.kt), [SafariConfigScreen](../src/main/kotlin/net/johnceo/sparklingmutuals/config/SafariConfigScreen.kt); presets: [SafariFullClear](../src/main/kotlin/net/johnceo/sparklingmutuals/safari/completion/SafariFullClear.kt); migration: [PersonalBestConfig](../src/main/kotlin/net/johnceo/sparklingmutuals/config/PersonalBestConfig.kt).
+- Appearance: [SafariEspConfig](../src/main/kotlin/net/johnceo/sparklingmutuals/config/SafariEspConfig.kt), [SafariEspSettings](../src/main/kotlin/net/johnceo/sparklingmutuals/config/SafariEspSettings.kt); HUD: [SafariHud](../src/main/kotlin/net/johnceo/sparklingmutuals/hud/HudLayout.kt).
+- Existing secondary coverage: [ConfigTest](../src/test/kotlin/net/johnceo/sparklingmutuals/config/ConfigTest.kt), [SafariSettingsTest](../src/test/kotlin/net/johnceo/sparklingmutuals/config/SafariSettingsTest.kt), [SafariCustomizationTest](../src/test/kotlin/net/johnceo/sparklingmutuals/config/SafariCustomizationTest.kt), [SafariFeatureDefaultsTest](../src/test/kotlin/net/johnceo/sparklingmutuals/config/SafariFeatureDefaultsTest.kt). No tests or live settings session ran in this audit. Reopen/restart, migration failure recovery and preset transitions require their appropriate runtime checks.
 
 ## Last updated
 
-2026-10-18 (America/New_York) - Consolidated Capture projections into one saved switch and removed the status-text HUD.
-
-2026-10-17 - Aligned entry guards with tab-first Safari presence, two-second kick pauses, ticket-message downtime release and Shift override.
-
-2026-10-17 (America/New_York) - Separated visual capsule-guide availability from capsule hiding; preserved saved options and recorder calibration restrictions.
-
-2026-10-17 - Corrected PB filename to sparkling-mutuals-pbs.properties; also migrate the briefly used display-name filename safely.
-
-2026-10-17 - Moved personal bests to a dedicated file with automatic legacy migration and faster-time merging.
-
-2026-10-17 - Named the Sparkling checklist Unchecked across every biome while retaining shared panel settings.
-
-2026-10-17 - Default warp alerts off for fresh and missing settings while preserving saved choices.
-
-2026-10-16 - Restricted automatic contest downtime requests to the confirmed party leader; retained existing defaults.
-2026-10-16 - Clarified independent Safari entry settings and removed the sneak override.
-
-2026-10-16 (America/New_York) - Added the explicit default-off experimental capsule path exception.
-
-2026-10-17 - Documented guide-through-terrain defaults and the independent capsule-status HUD layout.
+2026-10-19 (America/New_York) — Audited loaded defaults, saved choices, presets, appearance and PB migration against source `93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee`. See [documentation conventions](DOCUMENTATION_GUIDE.md).

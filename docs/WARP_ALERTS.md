@@ -1,28 +1,41 @@
-# Warp alert and automatic party warp
+# Warp reminder and automatic party warp
 
-Warp alerts default **off** for fresh configurations and missing settings; explicit saved on/off choices remain unchanged.
+## Purpose
 
-When **`/alert` is enabled**, the real Safari Hunting Hotspot message starts the configured delay. At expiry, show the existing Warp alert and send **`/p warp` once** to bring the party into the run. The default remains **25 seconds**, adjustable with `/alertdelay <seconds>` or **Warp reminders** settings, from 1 to 86400 seconds.
+An enabled warp reminder shows a local **Warp** alert and sends `/p warp` once after a Safari Hunting Hotspot. Sending the command does not establish that the server accepted or completed a warp.
 
-The existing `/alert` switch controls both the visible alert and automatic warp. Settings text and command feedback describe both actions. No extra enable step is required.
+## Controls and defaults
 
-## Timer lifecycle
+| Control | Default | Effect |
+| --- | --- | --- |
+| `/alert` or **Warp reminders** switch | Off | Enables both the alert and automatic command. |
+| `/alertdelay <seconds>` or settings delay | 25 seconds | Accepts 1–86400 seconds; changing it cancels the pending timer. |
 
-- Accept an exact trusted system Hotspot line for Forest, Cavern, Icy or Haunted. Player-chat quotes and overlay messages never start the timer.
-- The latest Hotspot replaces an earlier pending timer. A timer's expiry can act only once; stale callbacks cannot trigger a newer timer's warp.
-- At expiry, require the feature still enabled, a player in the same active Safari run, and the same client connection and world/instance as scheduling. A later run in the same world cannot inherit the timer. Leaving the run, changing instances or disconnecting must not warp into a later location.
-- Disabling `/alert`, changing the delay or disconnecting cancels the pending timer and clears its alert. Enabling it later does not resurrect that timer; wait for the next real Hotspot.
-- Send the standard command through the current Minecraft connection. The server processes its usual party-command permissions; the mod does not claim a successful warp merely because the command was sent.
+Explicit saved choices use the general [configuration file](CONFIG_DEFAULTS.md). Enabling the switch waits for the next Hotspot; it does not revive a cancelled timer.
 
-## Minecraft checks
+## Implemented behavior
 
-1. Enable `/alert`, use a short `/alertdelay`, and enter a real run as party leader. At expiry expect the Warp alert and one `/p warp`, with party members brought into that run.
-2. Disable the feature before expiry: no alert or warp. Repeat after changing the delay, leaving the Safari, switching instances and disconnecting/reconnecting; none may fire an old timer.
-3. Trigger a replacement Hotspot/new run before an older timer expires: only the newest valid timer may act. Quoting a Hotspot in party chat must not schedule or replace a timer.
-4. Restart to verify the enabled choice and configured delay persist. Test both command and settings controls.
+The non-overlay Fabric GAME-message listener accepts an exact Hunting Hotspot system line for Forest, Cavern, Icy or Haunted, after the shared trusted-message filtering. Player-chat quotes cannot schedule it; exact text belongs to [Messages](critters/MESSAGES.md).
+
+Scheduling ensures a run exists and binds the timer to that run object, client connection and client world. The latest accepted Hotspot cancels and replaces any pending timer. At expiry, the client must still have a player, the feature enabled, Safari detection active and the same unended run, connection and world. A generation token makes the expiry action single-use. The alert and command share this decision; there is no separate leadership check. Normal server party permissions apply.
+
+## Lifecycle and persistence
+
+The switch and delay persist; timers do not. Toggling the switch, changing the delay or disconnecting cancels the timer and clears the Warp alert. A changed world, connection, ended run or replacement run fails the expiry check, including a new run in the same world. No new timer is inherited from an earlier run.
+
+## Edge cases
+
+- A nonleader may send the command; success depends on the server.
+- Overlay text and quoted Hotspots do not start or replace timers.
+- A stale scheduled callback cannot consume a newer timer.
+- A visible alert proves the local expiry action, not successful party transport.
+
+## Source and validation references
+
+- Registration/reset: [SparklingMutuals](../src/main/kotlin/net/johnceo/sparklingmutuals/SparklingMutuals.kt), `registerFeatures` and `resetSession`.
+- Trigger, context checks and output: [AlertManager](../src/main/kotlin/net/johnceo/sparklingmutuals/alerts/AlertManager.kt); single-use generation: [WarpAlertTimer](../src/main/kotlin/net/johnceo/sparklingmutuals/alerts/WarpAlertTimer.kt); commands: [AlertCommand](../src/main/kotlin/net/johnceo/sparklingmutuals/commands/AlertCommand.kt).
+- Existing secondary coverage: [AlertDefaultsTest](../src/test/kotlin/net/johnceo/sparklingmutuals/config/AlertDefaultsTest.kt), [SafariAlertGhostTest](../src/test/kotlin/net/johnceo/sparklingmutuals/safari/integration/SafariAlertGhostTest.kt). No test or Minecraft session was run for this documentation audit. Live checks should cover expiry/replacement, every cancellation route, both settings controls, quoted triggers and server warp permissions.
 
 ## Last updated
 
-2026-10-17 - Disabled warp alerts by default, preserving saved settings and the 25-second delay.
-
-2026-10-15 - Added automatic /p warp with trusted triggers, cancellation and binding to the exact active run, including same-world run replacement.
+2026-10-19 (America/New_York) — Audited trigger registration, timer context, cancellation and command output against source `93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee`. See [documentation conventions](DOCUMENTATION_GUIDE.md) and [audit limitations](IMPLEMENTATION_AUDIT.md).

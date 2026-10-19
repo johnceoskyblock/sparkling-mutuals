@@ -1,57 +1,84 @@
 # Gimmiegold
 
-[Index](README.md) · [Shared evidence rules](TRACKING.md)
+[Index](README.md) · [Terminology](../DOCUMENTATION_GUIDE.md) · [Shared evidence](TRACKING.md)
 
-**Biome:** Haunted. **Rarity:** Rare; standard capsules can fail and the returning model can use a replacement UUID. **Recorded Full Clear fallback:** 3 catches while a larger source/population target is not known. This fallback is not the Sparkling coin-floor quota.
+## Overview
 
-## Sparkling coin-floor check
+| Property | Value | Status |
+| --- | --- | --- |
+| Biome | Haunted | Implemented roster |
+| Rarity | Rare | Supplied server notes; not live revalidated |
+| Spawn source | Shining Coin slots plus starting/party coins | Implemented evidence path; mechanics unverified |
+| Population model | Variable; Sparkling target F registered floor slots + E extra coins | Implemented rule, not server guarantee |
+| Full Clear minimum | 3 shared captures before species adjustments | Implemented fallback/minimum |
+| Local scan coverage | Sparkling population radius 15 blocks around X/Z (-4, -64); slots learned Safari-wide | Implemented coverage |
 
-Floor drops are established at the start of the run. Register each known **Shining Coin floor-drop slot once**, retaining its numeric group identity through collection, unloading and biome changes. Let **F** be that initial coin-slot total, **E** known additional starting/party coins, **C** confirmed shared Gimmiegold captures, and **U** distinct currently rendered uncaptured Gimmiegolds.
+## What makes this critter different
 
-The local Sparkling check requires all three:
+- Sparkling requires all registered slots resolved, sampled zero held coins, and current captured-plus-rendered population F + E. Historical UUID totals cannot substitute.
+- Full Clear retains a separate conservative recovery ledger: fallback minimum 3 plus larger known targets.
 
-1. Every registered Shining Coin floor drop has been collected.
-2. A sampled inventory contains **zero Shining Coins**; unknown inventory is not empty.
-3. In the existing Haunted source-check radius (15 horizontal blocks around X/Z **-4/-64**), **C + U >= F + E**.
+## Spawn prerequisites
 
-Do not replace F with a fixed three-coin shortcut. Three local pickups/coin-use messages cannot excuse a registered remaining coin drop. Do not count all three STRING display members as three coin slots. Complete Soothing Incense groups and arbitrary decorative/model triples are not coins. A registered unloaded coin slot remains outstanding until a matched pickup or a local observation establishes its collection; unloading alone does not lower F. Newly identified coin slots increase F and reopen validation.
+Collect registered slots/use all known coins. Grants, pickups, held coins, use messages and contributions remain separate evidence; see [FLOOR_DROPS](FLOOR_DROPS.md).
 
-Population is shared captures plus **currently rendered** uncaptured models. Repeated scans of different historical UUIDs do not supply missing current population. Escape replacement history cannot inflate the target or discharge a newly reported extra coin. A qualifying completed check persists during ordinary travel/unloading; entering Haunted again requires a fresh local check. New slots, positive remaining markers, held coins and new contribution quantities revoke the validated result.
+## Evidence
 
-## Additional party coins
+| Evidence | What it establishes | What it does not establish |
+| --- | --- | --- |
+| Personal capture / party loot share ([exact messages](MESSAGES.md)) | Own capture adds personal + shared evidence; attributed loot share adds shared evidence | Local checks, source resolution or personal PB from another player's catch |
+| Live textured item display / qualified check | Current sighting; qualified evidence contributes under mode rule | Capture or absence inferred from missing outline |
+| Supplied capsule notes | Supplied notes say standard capsules can fail, replacement UUIDs may follow escape, and Masterful catches are guaranteed once hit. | Server mechanics revalidated by this source audit; see [D2](../IMPLEMENTATION_AUDIT.md#d2) |
+| Coin registry, inventory and qualified current population | Slot collection and C + U against F + E | Fixed three-slot guarantee, capture from resource use, or replacement UUID history as current population |
 
-Accept the existing compact unused-item message, including mixed batches: `[SM] Unused floor drops: 2x Shining Coin (missing Sparkling Gimmiegold); 1x Yogi Berry (missing Sparkling Macaw)`. Continue accepting both the old compact `[SM] Use:` message and verbose unused-item notice. Displayed missing species are explanatory; the receiver retains its own party discovery requirements. Each sender's reported Shining Coin quantity adds to E once; repeated notices/echoes are not additional coins, and larger quantities update that sender's contribution. Bird food affects only its own Forest ledger.
+## Completion by mode
 
-Known local starting coins also add to E. The local player's own notice overlaps those coins: use the larger known quantity for that player rather than adding both. Keep extra demand for the remainder of the run after consumption. A new run resets slots, contributions and validation. Source notices never manufacture captures.
+| Mode | Capture requirement | Checking or source requirement | Party-report effect |
+| --- | --- | --- | --- |
+| Sparkling | None for ordinary models; confirmed Sparkling capture override applies. | All registered slots resolved, sampled 0 held coins, qualified C + U >= F + E; at least one registered slot required. | Outside Haunted, hd can supply checking trust. Inside Haunted local coin conditions apply. |
+| Unique | One shared capture, or the confirmed-Sparkling capture override. | None beyond capture; ordinary coin checks do not gate Unique. | Does not supply a capture. |
+| Full Clear | At least 3 shared captures, raised by source/contribution and observed-population targets. | Local recovery resolved, no known held coins/no remaining critters; resource/source contradictions may still block progress. | Without local proof, report plus capture minimum can complete progress; row still needs local proof. |
 
-## Party completion reports and other modes
+## Display and highlights
 
-- **Sparkling, outside Haunted:** a received party `hd` can override ordinary coin-source, inventory and population checking. No local coin history is required for that remote trust. Entering Haunted retires inherited checking and revalidates local sources. A report received inside Haunted cannot waive them. Detected Sparkling entities do not override normal completion.
-- **Unique:** require one actual shared catch, with the shared confirmed-Sparkling exception. A report alone cannot invent that catch. Ordinary local coin checking does not separately gate Unique.
-- **Full Clear:** require actual captures of the minimum population, raised by known coin slots/contributions and positive additional critters. A remote report may supply ordinary checking trust but never these captures. Local clear proof still needs resolved sources, no held coins and no remaining critters. Personal PBs retain personal capture evidence. Existing conservative Full Clear source recovery is separate from the new Sparkling slot rule.
+| Outcome | Implemented behavior |
+| --- | --- |
+| Progress | Mode-specific predicate above; see [shared modes](../../SAFARI_LOGIC.md). |
+| Missing/unchecked row | Unique uses its capture/source predicate. Sparkling lists needed unresolved checks. Full Clear needs local capture/absence proof, separately from report-based progress. See [panel rules](../MISSING_PANEL.md). |
+| Counters | None in the species row; capture panel shows actual shared catches. |
+| Ordinary ESP | Unique: until first shared capture. Full Clear: eligible uncaught models. Sparkling: discovery-gated, normally up to 10 seconds per UUID. Settings and model validity still apply. |
+| Source helpers | Remaining eligible coin markers are independent of incense cutoffs; Sparkling requires needed Gimmiegold discovery. |
+| Automatic completion announcements | Shared local whole-biome/report-readiness gates in [mode rules](../../SAFARI_LOGIC.md). |
+| PB eligibility | Personal Unique: own catch of every species. Full Clear: personal captures/local proof. Party Unique: separate shared-capture/absence predicate; progress alone is insufficient. |
 
-The confirmed-Sparkling catch override still completes Unique/Sparkling immediately. Pending detected identities add no separate capture requirement; normal catches, reports and source/check evidence retain their usual meaning.
+## Party reports and late entry
 
-## Runtime evidence and diagnostics
+Unused-item notices overlap by sender/maximum quantity; own notice overlaps starting coins. Extras increase demand without catches. Bird food belongs to Forest. hd trust outside Haunted is revalidated on entry. See [evidence/lifecycle](TRACKING.md).
 
-The source registry runs with the entity scan, independently of HUD/ESP settings and the current biome, so initial coin slots are learned before visiting Haunted. Only validated live STRING reward triples establish predicted coin slots; a nearest-group pickup correlation is recorded separately. Collection by another player can be inferred when every marker of a registered slot is gone while its loaded location remains within local observation range. Partial surviving markers keep the slot outstanding. Chunks/entities outside coverage remain unknown.
+## Retention and reopening
 
-`/sm debug` includes **Gimmiegold Sparkling check** with `floorMinimum`, `remaining`, `extraCoins`, `held`, `required`, `capturedPlusRendered` and `checked`. Older `sourcePath`, coin-use and retained-UUID fields describe the separate source-recovery ledger used by Full Clear; retained history is not the Sparkling population counter.
+Retain slot IDs/contribution demand through collection/unloading. Unobservable missing markers stay unresolved. Travel retains completed validation; Haunted reentry, new slots, remaining markers, held coins or changed contributions revoke it. New run resets all. Pending detection identities add no separate completion gate; see [audit D1](../IMPLEMENTATION_AUDIT.md#d1).
 
-In Sparkling mode, coin ESP requires someone needing Sparkling Gimmiegold. All remaining coin slots stay eligible while needed; incense selection/cutoffs are independent. Hiding a marker never collects it.
+## Examples
 
-## Minecraft checks
+F = 4 and E = 1 require C + U >= 5. Even with zero held coins, one remaining slot blocks checking. After collection, qualifying current population can finish; historical UUIDs cannot supply U.
 
-- Start a run outside Haunted and inspect the logged initial coin-slot count. Collect all but one: checking stays pending despite sufficient Gimmiegolds and empty inventory. Unload the last marker: it must remain pending. Collect it and verify the final qualifying C + U check completes.
-- Compare 1 catch + the remaining rendered Gimmiegolds with the full slot count. Unload models one at a time before the initial check passes: historical UUID totals cannot substitute for the required current population.
-- Receive repeated one-/two-coin unused-item notices from multiple players. Verify the required total increases once per sender/quantity, own starting coins are not counted twice, and enough additional current-or-captured Gimmiegolds are needed.
-- Receive `hd` outside Haunted: Sparkling checking can complete, Unique still needs a shared catch, and Full Clear still needs its capture minimum. Enter Haunted and confirm local revalidation. Detected Sparkling identities must not override otherwise valid completion.
+## Implementation and validation
+
+[Shared source/caller map](TRACKING.md#source-and-validation-references) covers capture/event registration, scanner, mode predicates, UI/report consumers, PBs and resets. Species entry: `Gimmiegold` in `SafariRun` and `SafariEspRules.mobs`; dedicated owners below.
+
+[GimmiegoldSparklingCheck](../../src/main/kotlin/net/johnceo/sparklingmutuals/safari/completion/GimmiegoldSparklingCheck.kt)
+
+[SafariResources / contribution notices](../../src/main/kotlin/net/johnceo/sparklingmutuals/safari/resources/SafariResources.kt)
+
+Existing coverage: [GimmiegoldCoinFloorCheckTest](../../src/test/kotlin/net/johnceo/sparklingmutuals/safari/completion/GimmiegoldCoinFloorCheckTest.kt). Source inspection only; no local runtime suite or live Minecraft validation was performed for this documentation audit. CI results are separate.
+
+## Open questions
+
+Larger repeated resource notices can diverge between Sparkling maxima and conservative Full Clear recovery; see [audit D3](../IMPLEMENTATION_AUDIT.md#d3).
+
+Population guarantees and capsule success/escape claims from supplied notes were not live revalidated; see [audit D2](../IMPLEMENTATION_AUDIT.md#d2).
 
 ## Last updated
 
-2026-10-17 - Removed detected-Sparkling sightings as a separate completion requirement; normal species rules remain.
-
-
-2026-10-17 - Clarified unused floor-drop notices with resource quantities and relevant missing Sparkling discoveries; retained legacy parsing.
-
-2026-10-17 - Replaced Sparkling's fixed-three/retained-UUID completion path with the initial coin-slot total, all slots collected, empty inventory and current captured-plus-rendered population. Added deduplicated party coin contributions and outside-Haunted report trust without waiving capture requirements.
+2026-10-19 (America/New_York) — Uniform species reference; audited evidence, modes, display and lifecycle. Reviewed source: `93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee`; no local runtime source changes reviewed. See [revision convention](../DOCUMENTATION_GUIDE.md).

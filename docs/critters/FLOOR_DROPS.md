@@ -1,123 +1,114 @@
-# Typed floor-drop highlights
+# Resources and typed floor drops
 
-[Tracking rules](TRACKING.md) · [Critters](README.md)
+## Scope
 
-**Order-based predictions are now implemented in the mod; in-game validation is still required.** Static inspection of the supplied Shiny Hunter Private 2.25 JAR found an entity-order predictor for unopened drops. This is evidence of that mod's algorithm, not a live verification of every Hypixel drop or a direct server field containing its reward.
+Authoritative reference for starting grants, floor pickups, held resources, unused-resource reminders, drop prediction and resource highlight selection. [Tracking](TRACKING.md) owns evidence retention, [bird completion](../BIRD_COMPLETION.md) owns feeding/capture formulas, and [species pages](README.md) own completion prerequisites. Predicted contents are not confirmed resources.
 
-## Requested behavior
+## Definitions
 
-| Biome | Highlight these predicted contents |
-| --- | --- |
-| Cavern | Lime Gem, Purple Gem, Orange Gem |
-| Forest | Wriggleworm, Yogi Berry, Bag of Seeds |
-| Haunted | Soothing Incense, Shining Coin |
-| Icy | Icebreaker |
+A **starting grant** is entry-time resource evidence from Head Start or initial inventory. A **floor pickup** is an actual reward message; a **held resource** is sampled inventory. **Resource use** and **confirmed placement** require their own evidence. A **predicted floor drop** is a label inferred from display grouping and entity order.
 
-Apply item selection alongside the existing mode/discovery/resource-need rules. **All critter spawn, capture, check and completion requirements remain unchanged.** A predicted unopened drop is not a pickup, inventory item, consumed resource or spawned critter. Starting grants remain the separate inventory/message-based evidence already documented.
+A marker hidden by selection is not an absent resource. Unknown/partial markers and unobserved coverage remain distinct from a complete known nonresource reward group.
 
-Forest bird completion filters the raw marker list through complete active reward triples: generic/non-food groups do not count as bird food, while food, untyped and incomplete groups remain blockers. This filtering is independent of ESP visibility and never supplies a capture or a spawned bird. The user's 2026-10-18 run confirmed that counting all raw Forest markers wrongly blocked birds on eight unrelated reward groups after all nine food pickups.
+## Implemented rules
 
-### Haunted item-specific need rules
+### Starting resources
 
-- **Shining Coins:** Full Clear keeps all remaining coin drops eligible regardless of discovery ownership or coins already picked up, held, spent, or Gimmiegolds captured. Unique and Sparkling keep all remaining coins eligible whenever anyone needs Sparkling Gimmiegold, and hide them when nobody needs that discovery. No first-coin cutoff applies. The minimum Gimmiegold count does not excuse remaining coins. Coin use/spawn checks remain required afterward, while ordinary Unique progress remains based on its first shared catch.
-- **Soothing Incense in Sparkling mode:** show typed Incense ESP only while someone needs Sparkling Doomspiral, fewer than **four incense floor pickups** are confirmed, and the inventory has never held **four Soothing Incense at once** in this run. Either cutoff hides Incense ESP for the rest of the run, including after consumption and biome reentry. Starting items count toward the inventory cutoff (including two starting incense), but not the floor-pickup counter. Hide it immediately if everyone owns the discovery.
-- Evaluate coins and incense independently: Gimmiegold need cannot keep incense highlighted when Doomspiral is shared, and four incense pickups cannot hide required coin drops. Uncertain drop typing is not proof that all needed drops were collected. Every mode hides incense after four confirmed incense floor pickups **or after holding four incense simultaneously at any point in the run**, regardless of Gimmiegold needs. Before that cutoff, retain its existing mode-specific eligibility.
+The supplied ticket observations describe zero ticket-specific items for Basic/Economy/Premium and one for First Class, plus one independent Head Start item when present. First Class has no grant message; inventory is authoritative for the total, including two identical items. The client records observed ticket/admission evidence but does not manufacture inventory from ticket type.
 
-In Unique and Sparkling modes, hide all Shining Coin floor-drop ESP when nobody in the party needs Sparkling Gimmiegold, even before collecting any coins. Coin and incense visibility remain independent; these display cutoffs do not establish critter completion.
+The nine recognized quest types are Icebreaker, Yogi Berry, Wriggleworm, Bag of Seeds, Shining Coin, Purple Gem, Lime Gem, Orange Gem and Soothing Incense. The first available inventory sample opens a three-second starting window. Head Start overlaps that inventory; separately recorded pickups are subtracted rather than counted as grants twice. Entry banners, queue retries and hotspot messages add no resources. See [exact entry/resource messages](MESSAGES.md#entry-and-starting-items).
 
-## Incense selection in every mode
+### Prediction algorithm
 
-Whenever incense ESP is needed, all **five** known Haunted Soothing Incense floor-drop spawns are eligible in Unique, Full Clear and Sparkling. Do not rank by distance to (4, 47, -27) or reduce the selection for starting incense. Collected drops no longer render; unloaded groups retain the existing normal loaded-entity behavior.
+Every five ticks in Safari, SafariEsp supplies currently loaded display descriptions to FloorDropPredictor. It forms nonoverlapping numeric-ID triples k, k+1, k+2 with pairwise distance at most 1.5 blocks and identical item-ID/stripped-name descriptions. Centroids round to two decimals. Numeric IDs, not UUIDs or distance order, determine prediction.
 
-Hide all remaining incense ESP after **four confirmed incense floor pickups**, or after holding four incense simultaneously at any point. Consumption, biome reentry and mode changes do not reset these cutoffs. Existing mode/discovery needs, colors, coin selection and completion evidence stay independent.
+Retain recorded groups through unload/pickup. Walk recorded groups in numeric order through Cavern → Forest → Haunted → Icy; the first recorded eligible group in each phase supplies anchor a. Index i is integer division of (k − a) by 3, so ID gaps matter.
 
-## Colors
-
-In **ESP → Floor-drop colors**, independently customize every named quest-drop type: the three gems, three bird foods, Soothing Incense, Shining Coin and Icebreaker. Use that type's chosen color for its outline, fill and name. Older shared floor colors become defaults for each type, and per-item colors persist across restarts. **Customization → All floor-drop colors** applies one color to all types. These choices never bypass drop eligibility; unknown/generic predictions still receive no ESP.
-
-## What the inspected JAR does
-
-1. During an active run, scan loaded, nonremoved `ItemDisplay` entities every five ticks and sort them by **numeric entity ID**, not UUID or distance.
-2. Form nonoverlapping triples with IDs `k`, `k+1`, `k+2` and pairwise distances at most **1.5 blocks**. Record their mean X/Y/Z, rounded to two decimals, and item descriptions (item registry ID plus formatting-stripped hover name).
-3. Prediction uses only triples whose three descriptions are identical. Sort those candidates by their first ID `k`.
-4. Walk biome phases in this fixed order: **Cavern → Forest → Haunted → Icy**. On advancing a phase, reset its ID anchor. The first eligible recorded triple in that phase supplies anchor **a**.
-5. Compute zero-based position **i = integer division of (k − a) by 3**. Gaps in IDs matter: this is not just the candidate's rank in the visible list. Apply the table below.
-6. Retain seen groups through the run, even after a pickup/unload; repredict when new groups are discovered. Expose a ground marker only while its group is present, predicted, and not already matched to a pickup. A new run clears live groups.
-
-### Encoded prediction sequence
-
-| Phase | Zero-based i | Predicted item |
+| Phase | Zero-based index | Prediction |
 | --- | --- | --- |
 | Cavern | 0–5 | Lime, Purple, Orange, Lime, Purple, Orange Gem |
-| Forest | 0–2 | Wriggleworm |
-| Forest | 3–5 | Yogi Berry |
-| Forest | 6–8 | Bag of Seeds |
-| Haunted | 0–4 | Soothing Incense |
-| Haunted | 5 onward within that phase | Shining Coin; no upper coin count is encoded in this branch |
+| Forest | 0–2 / 3–5 / 6–8 | Wriggleworm / Yogi Berry / Bag of Seeds |
+| Haunted | 0–4 / 5 onward | Soothing Incense / Shining Coin |
 | Icy | 0–4 | Icebreaker |
 
-Beyond a supported prefix (Cavern i ≥ 6, Forest i ≥ 9, Icy i ≥ 5), or when phase matching fails, the predictor labels the candidate **XP / Essence / Shard** and enters a generic tail for the rest of that prediction pass. It does not identify the exact generic reward. A later reprediction can change labels if earlier groups become known.
+Unsupported prefixes or phase mismatch enter an XP / Essence / Shard tail for that pass. Later discovery can revise labels. These constants describe the predictor, not server-confirmed quantities or capture quotas. Biome quadrants use X/Z inside x [-200,100], z [-150,150], split at x = -50 and z = 0; there is no fixed coordinate-to-reward table.
 
-These constants describe the inspected predictor. **Five predicted incense/icebreaker drops do not change the existing four-incense/other resource requirements**, and six predicted gem drops do not mean six Gemzie captures. Do not promote prediction layout constants into new critter quotas.
+### Highlight selection
 
-### Position and classification details
+| Type | Implemented eligibility, in addition to rendering/config gates |
+| --- | --- |
+| Gems | Cavern Full Clear, needed Gemzie discovery, or uncaught Unique Gemzie; each acquired/starting gem color hides all remaining predicted markers of that color, including after placement |
+| Bird food | Configured floor group; Full Clear, or any needed bird discovery/uncaught Unique bird. Only predicted food groups are selected |
+| Shining Coin | Every remaining coin in Full Clear; in Unique/Sparkling only when Gimmiegold discovery is needed. No pickup/holding/capture cutoff |
+| Soothing Incense | All five predicted slots eligible, with no distance ranking or reduction for starting incense. Hide after four pickup units or a peak inventory of four. Sparkling additionally needs Doomspiral discovery; Unique/Full Clear additionally require Gimmiegold discovery needed or acquired units + known starting quantity (at least peak held inventory) below four |
+| Icebreaker | Automatic selection only in Full Clear, until one acquired/starting Icebreaker |
+| Generic/unknown | No quest-item ESP |
 
-The JAR derives biome from its centroid's X/Z within `x ∈ [-200,100]`, `z ∈ [-150,150]`: east of/equal to x = -50 is Forest for z ≥ 0 and Haunted otherwise; west is Cavern for z ≥ 0 and Icy otherwise. Outside that rectangle it returns unknown. Coordinates locate the actual observed group; the JAR has no fixed coordinate-to-reward map in this predictor.
+Coin and incense selection are independent. Incense peak inventory includes starting items and stays recorded after consumption/travel/mode change. A pickup quantity contributes units to the typed cutoff; it is distinct from Forest's six **events** reporting gate. Cavern/Icy manual overrides last for the current biome visit and affect the group gate; per-type acquisition/need selection still applies. Floor-group controls are not a universal gate for every automatic Cavern/Icy path.
 
-`FloorDropType` maps predicted labels to display icons: dye colors for gems, string for Wriggleworm, sweet berries, wheat seeds, blaze powder, gold nugget and iron pickaxe for the corresponding quest items. These are **rendered representations of a prediction**, not proof those items were exposed as the unopened reward. The view can filter/color/label per type and optionally draw fake item icons; those icons must never enter real inventory/entity accounting.
+Per-type colors cover nine quest types and apply to outline/fill/name. Older shared color supplies defaults; All floor-drop colors assigns all types. These choices never create resources or override per-type eligibility.
 
-## Pickup confirmation and limits
+### Presence and coin-slot registration
 
-- The JAR parses `FLOOR DROP! You found ... on the ground!`, including quantities before/after the item name, then tries to match the reward to a group: recent click within three seconds and three blocks, otherwise nearest within five blocks. Recently disappeared groups have three seconds of matching grace. This correlation is heuristic, not a server-supplied group-to-reward identifier.
-- It records predicted item, actual reward and whether they match in `shinyhunter-floor-drops.json`; it does not simply treat a prediction as a confirmed pickup. Ground markers omit groups with a matched reward or marked absent.
-- The anchor is the first **recorded eligible** group in each phase. Joining late, missing early chunks/groups, or a teammate taking drops before observation can anchor it incorrectly. Missing later groups can be represented by ID gaps; missing the true first group is a different problem. Do not silently rebase an established anchor to the earliest remaining live drop.
-- Sorting/spawn-order assumptions, phase order, triplet spacing and item-description equality require validation in Minecraft. Numeric IDs are run/world scoped; do not carry them across servers. Unknown/unloaded groups and grouping collisions must remain distinguishable from verified generic rewards.
-- A hidden/unselected marker is not an absent resource. The initial coin-slot registry is maintained separately from visual selection and counts one reward group, not its three display members. Prediction uncertainty must not close coin/food/gem work or mark a biome complete. Retain raw presence tracking independently of the typed visual filter.
+Completion presence uses active, visible STRING display markers independently of selected ESP. Complete active triples bind members by IDs, including across block boundaries.
 
-## Gimmiegold Sparkling coin-slot registry
+Forest excludes complete groups classified as nonfood, including generic rewards; food and unknown/partial groups remain blockers. Haunted coin presence excludes only complete typed incense groups; generic, coin and partial/unknown groups remain blockers. Thus hidden incense does not become a coin-source requirement, and hidden coins do not vanish from evidence.
 
-At run start register each validated Shining Coin **STRING reward triple** once by group ID, independently of highlight settings and the player's biome. Arbitrary identical model/decorative triples and the three members of one reward group must not inflate this count. Retain the registered slots after collection and unloading.
+Gimmiegold's dedicated Sparkling registry records coin groups only after three active STRING members or an actual matched coin pickup validate them. One group is one slot. Retain registered IDs through collection/unloading; a slot resolves from a matched pickup or disappearance while its chunk is loaded and the player is within 80 blocks. Unobservable absence stays unknown. Registry discovery continues through the run; the implementation does not freeze it at a single startup instant. [Tracking](TRACKING.md#source-evidence-and-retention) owns its completion/retention composition.
 
-Local Sparkling checking requires all coin slots collected, sampled inventory containing zero coins, and **shared captures + currently rendered uncaptured Gimmiegolds >= initial coin slots + known additional coins**. Three actual pickups cannot waive a remaining registered coin source. Own starting coins and deduplicated party unused-coin notices add opportunities without becoming floor pickups. An unloaded slot remains outstanding until pickup/observable collection evidence resolves it. A party hd can override ordinary checking outside Haunted; entering Haunted revalidates locally. Unique still needs its catch and Full Clear its actual capture minimum. See [Gimmiegold](gimmiegold.md).
+### Pickup matching
 
-Full Clear keeps its separate conservative coin-use/source recovery; its old confirmed-three-source shortcut is not the local Sparkling completion rule.
+Actual FLOOR DROP text increments resource evidence independently of predicted labels. The current predictor heuristically matches a pickup to the nearest unassigned group seen within three seconds and five blocks; a near-equal distance tie is rejected. A match records actual reward separately and retires visual availability. It is not a server group-to-reward identifier.
 
-## Live marker evidence
+Late entry or missing the earliest groups can establish the wrong anchor. Group equality, ID order and phase assumptions need live confirmation. Do not silently claim absent/unloaded data was collected, or label prediction consistency as server verification.
 
-Completion presence tracking includes only active, visible STRING item displays; a surviving invisible/empty/decorative display ID is not a floor reward. Include partial/unknown live markers as blockers. Resolve a complete triple's members by IDs rather than requiring each member's floored position to equal the centroid's floored position. A triple can cross block boundaries. Predictions remain visual/type hints; actual pickups, coin possession/use and spawned/captured populations are recorded separately.
+### Unused starting food/coin reminders
 
-## Implementation and validation
+After the first locally completed biome, starting-resource delivery activates after four seconds. It continues checking unsent eligible resources for the run, even if a teammate's report suppressed this client's biome announcement. Repeated polls do not restart the delay.
 
-- Replace/extend the current untyped three-string marker detection with a per-run group/order classifier; keep collection independent of highlight switches and biome visibility. Preserve early anchors/seen groups through biome changes and pickups.
-- Keep **predicted type**, **actual pickup**, **live presence** and **confidence/coverage** separate. Only sufficiently supported classifications receive the selected quest-item highlights; uncertain candidates must not masquerade as confirmed contents or completed source coverage.
-- Validate predictions against actual pickup messages in every biome, especially incomplete loading, late entry, teammate pickups, ID gaps, unrelated displays and new-run resets. Check boundary positions, partial triples, repeated scans, group disappearance and prediction revision.
-- Confirm that selective highlighting changes no mode completion, starting-resource reminders, inventory counts, personal/shared captures or extra-resource reopening rules. Test in IntelliJ/DevAuth before committing/pushing a later code change.
+| Resource | Discovery gate | Destination/title |
+| --- | --- | --- |
+| Shining Coin | Gimmiegold needed | Haunted / USE YOUR SHINING COIN! |
+| Bag of Seeds, Wriggleworm, Yogi Berry | Any bird needed | Forest / USE YOUR BIRD FOOD! |
 
-## Inspection provenance
+Before delivery, resample inventory and rebuild quantities/discovery needs. Remind only while outside the resource's destination and still holding the tracked unused starting quantity. Each item is filtered independently. There is no separate configuration toggle for the local title or party notice. Eligible items are combined; mixed destinations use USE YOUR STARTING ITEMS! Titles and party dispatch share the same gates. Unsent suppressed candidates remain eligible; only actual dispatch records notification/source state.
 
-- Supplied file: `ShinyHunterPrivate v2.25 26.1.2.jar` (1,004,176 bytes). Metadata identifies `shinyhunter`, version `2.25`, name `Shiny Hunter Private`, license `MIT`.
-- SHA-256: `61678BC859A7E84447051155A395A6D9B65680F7162A6788AD12B233C30323B3`.
-- Inspected with `jar tf` and JDK `javap -p -c -constants` / `-v`; the JAR was **not executed**. No JAR or disassembled source was added to this repository.
-- Primary methods: `com.shinyhunter.FloorDropLog.scan`, `predict`, `repredict`, `onGround`, `handle`, `nearest`, `biomeAt`; `FloorDropType`; `FloorDropView.onClientTick`. `FloorDropHighlighter` also provides generic clustering; the reward prediction itself is in `FloorDropLog.predict`.
-- Auditable bytecode landmarks in `predict`: eligibility/sort offsets 34–95; phase walk 157–205; anchor/index 215–240; mapping 243–379; generic fallback 381–410. `PHASE_BIOMES` and gem order are in the static initializer. These are reproducibility references, not runtime test results.
+Current example: [SM] Unused floor drops: 1x Shining Coin (missing Sparkling Gimmiegold); 1x Yogi Berry (missing Sparkling Macaw). Receivers also accept old compact Use and verbose starting-item formats. Malformed/duplicate-type batches are rejected as a whole.
 
-Current implementation: `FloorDropPredictor.kt` retains numeric-ID group history and predicts labels; `SafariEsp.kt` renders selected markers and names; `SafariFloorDrops.kt` applies resource/mode gates. Raw presence is tracked independently of selected highlights. Nearby pickup correlation is logged as a heuristic, with predicted and actual rewards kept distinct.
+Accepted notices add sender/type contribution maxima and outstanding source work, not pickups or catches. Repeated sender/type notices overlap. New relevant extra demand can reopen source checking; old population alone cannot supply the additional spawn. Gimmiegold can reconcile subsequent spawn events or captured/current population; bird demand uses qualified feeding equivalents, never attraction chat. Full Clear still needs its actual capture formula; ordinary Unique first-catch species do not gain a new source gate.
 
-### Active highlight cutoffs (2026-10-15)
+**Known difference:** a later larger notice from an already outstanding/resolved sender/type increases contribution maxima but does not replace that existing outstanding record. Dedicated bird/coin population targets can therefore diverge from the generic pending-source ledger; see [audit D3](../IMPLEMENTATION_AUDIT.md#d3).
 
-- Forest: only the nine predicted Wriggleworm/Yogi Berry/Bag of Seeds markers, subject to mode and discovery need.
-- Cavern: only the two Lime/Purple/Orange sets. Acquiring one gem of a color hides the other predicted marker of that color, including after the gem is placed.
-- Icy: all **five** predicted Icebreaker slots, in Full Clear while one is still needed. Acquiring one hides all remaining Icebreaker highlights. This matches the inspected JAR's five-slot prefix.
-- Haunted coin-source completion ignores complete currently loaded typed Incense groups, while raw unknown/partial/generic and coin markers continue to block it. Marker selection and the four-incense cutoff never remove a coin-source blocker; resource pickups/use and captures remain separately confirmed.
-- Haunted (**implemented; Minecraft verification pending**): in Sparkling mode, coin ESP requires someone missing Gimmiegold; incense ESP requires someone missing Doomspiral and stops after four confirmed floor pickups or four incense held simultaneously at any point in the run, including starting incense. Both cutoffs apply in every mode; all five incense spawns are eligible while needed.
-- Generic/unknown predictions receive no quest-item ESP. Hidden markers remain independent raw presence evidence and cannot complete a critter/source check.
+## Exceptions
+
+The separate Full Clear Gimmiegold source-recovery path can accept confirmed pickup/use history despite uncertain markers; local Sparkling still uses its registered slots/current-population validator. Bird Full Clear uses known blockers rather than requiring a positively empty source survey. These are implemented completion distinctions, not highlight guarantees.
+
+## Examples
+
+- Picking up Orange Gem hides both predicted Orange markers; placing it later does not restore them.
+- Four incense held together suppresses later incense ESP even after use. Needed coin ESP remains independent.
+- A hidden/unloaded registered coin slot remains unresolved without pickup or observable collection evidence.
+- Repeating a teammate's one-coin notice adds no second contribution; another sender's coin does add demand.
+
+## Source and validation references
+
+Reviewed source: 93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee.
+
+- [FloorDropPredictor](../../src/main/kotlin/net/johnceo/sparklingmutuals/safari/resources/FloorDropPredictor.kt), [SafariFloorDrops](../../src/main/kotlin/net/johnceo/sparklingmutuals/safari/resources/SafariFloorDrops.kt): grouping, prediction, pickup parse and selection.
+- [SafariEsp](../../src/main/kotlin/net/johnceo/sparklingmutuals/safari/esp/SafariEsp.kt): five-tick caller, active marker/coin registration, observations and rendering; [ForestBirdFoodDrops](../../src/main/kotlin/net/johnceo/sparklingmutuals/safari/resources/ForestBirdFoodDrops.kt), [HauntedCoinDrops](../../src/main/kotlin/net/johnceo/sparklingmutuals/safari/resources/HauntedCoinDrops.kt): presence filtering.
+- [SafariResources](../../src/main/kotlin/net/johnceo/sparklingmutuals/safari/resources/SafariResources.kt), [StartingResourceDelivery](../../src/main/kotlin/net/johnceo/sparklingmutuals/safari/resources/StartingResourceDelivery.kt), [SafariCompletion](../../src/main/kotlin/net/johnceo/sparklingmutuals/safari/completion/SafariCompletion.kt), [SafariTracking](../../src/main/kotlin/net/johnceo/sparklingmutuals/safari/SafariTracking.kt): chat/inventory, trigger, dispatch and receipt paths.
+- Existing checks: [SafariFloorDropsTest](../../src/test/kotlin/net/johnceo/sparklingmutuals/safari/resources/SafariFloorDropsTest.kt), [StartingResourceDeliveryTest](../../src/test/kotlin/net/johnceo/sparklingmutuals/safari/resources/StartingResourceDeliveryTest.kt), [GimmiegoldCoinFloorCheckTest](../../src/test/kotlin/net/johnceo/sparklingmutuals/safari/completion/GimmiegoldCoinFloorCheckTest.kt). Not run during this audit.
+
+### Inspection provenance
+
+The supplied ShinyHunterPrivate v2.25 26.1.2.jar (1,004,176 bytes) identifies shinyhunter 2.25, Shiny Hunter Private, license MIT. SHA-256: 61678BC859A7E84447051155A395A6D9B65680F7162A6788AD12B233C30323B3. Earlier inspection used jar tf and JDK javap -p -c -constants / -v; the JAR was not executed or added to this repository.
+
+Primary methods: com.shinyhunter.FloorDropLog.scan, predict, repredict, onGround, handle, nearest, biomeAt; FloorDropType; FloorDropView.onClientTick. FloorDropHighlighter also clusters; prediction resides in FloorDropLog.predict. Bytecode landmarks: eligibility/sort 34–95; phase walk 157–205; anchor/index 215–240; mapping 243–379; generic fallback 381–410; PHASE_BIOMES/gem order in static initializer. The inspected JAR's recent-click matching and JSON log are provenance of that external algorithm, not features claimed for the current client's simpler pickup matcher.
+
+## Open questions
+
+Validate ordering, late entry, partial/unknown triples, teammate pickups, marker disappearance and prediction revisions against actual server rewards. Client filtering cannot establish whole-world coverage. No live Minecraft validation was performed in this audit.
 
 ## Last updated
 
-2026-10-17 - Full Clear always retains remaining coin ESP; Unique/Sparkling gate only on party Gimmiegold discovery need, without pickup/holding cutoffs.
-
-2026-10-17 - Removed incense distance/starting-item slot limits; show all five spawns while needed and hide remaining ESP at four pickups or four held.
-
-2026-10-17 - Documented run-start validated coin slots as Gimmiegold Sparkling demand, independent of visibility and decorative triples.
-
-2026-10-15 - Corrected all-mode incense selection to four minus starting incense: 0/1/2 starting items show 4/3/2 nearest locations.
+2026-10-19 (America/New_York) — Consolidated resource accounting/reminders and implemented prediction/selection; preserved inspection provenance. Reviewed source: 93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee; static source/caller review.

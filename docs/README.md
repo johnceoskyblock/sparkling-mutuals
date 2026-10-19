@@ -1,8 +1,30 @@
-# Repository guide
+# Documentation index
 
-Start with the [project overview](../README.md) for installation and features, or [contributing](../CONTRIBUTING.md) for Java 25 setup and build commands.
+## Purpose and audience
 
-## Source code
+Players: start with [installation and controls](../README.md). Contributors: read [contributing](../CONTRIBUTING.md), then the relevant rule owner. This is a current-implementation reference at the [audited revision](IMPLEMENTATION_AUDIT.md), with live uncertainties stated separately.
+
+## Categorized links
+
+| Audience / topic | Reference |
+| --- | --- |
+| Common language | [Vocabulary, templates and ownership](DOCUMENTATION_GUIDE.md) |
+| Gameplay overview | [Modes and completion](../SAFARI_LOGIC.md), [37 species](critters/README.md) |
+| Evidence | [Tracking](critters/TRACKING.md), [exact messages](critters/MESSAGES.md), [floor drops](critters/FLOOR_DROPS.md) |
+| Gameplay display | [Bird completion](BIRD_COMPLETION.md), [missing panel](MISSING_PANEL.md), [Sparkling detection](SPARKLING_DETECTION.md) |
+| Controls | [Configuration](CONFIG_DEFAULTS.md), [entry guard](SAFARI_ENTRY_GUARD.md), [warp alerts](WARP_ALERTS.md) |
+| Contest and Canyon | [Contest/downtime](CONTEST_DOWNTIME.md), [Honeyhives](HONEYHIVES.md) |
+| History | [History, imports, achievements and profit](HISTORY_IMPORT.md), [credited party streaks](SINCE_COMMAND.md) |
+| Capsule guide and evidence | [Capture projections and recording](CAPTURE_SHOT_RECORDING.md), [standalone tools](../tools/capture_shots/README.md) |
+| Development | [Contribution workflow](../CONTRIBUTING.md), [multi-version builds](MULTI_VERSION_BUILDS.md), [source synchronization](SOURCE_SYNC.md) |
+| Validation | [Manual scenarios](IMPLEMENTATION_TEST_CHECKLIST.md), [audit discrepancies](IMPLEMENTATION_AUDIT.md) |
+| Requests and release notes | [GitHub Issues](https://github.com/johnceoskyblock/sparkling-mutuals/issues), [GitHub Releases](https://github.com/johnceoskyblock/sparkling-mutuals/releases) |
+
+## Rule ownership and navigation
+
+The [ownership table](DOCUMENTATION_GUIDE.md#rule-ownership-and-navigation) assigns one current owner per rule. Species pages summarize their exceptions and link there. Current requests, unresolved proposals and approval discussions stay in GitHub Issues; superseded specifications and plans stay in Git history.
+
+### Source and test map
 
 Kotlin source lives under `src/main/kotlin/net/johnceo/sparklingmutuals/`. Packages follow feature responsibilities; file paths match package declarations.
 
@@ -36,7 +58,7 @@ Kotlin source lives under `src/main/kotlin/net/johnceo/sparklingmutuals/`. Packa
 
 Keep shared run evidence in `SafariRun`; Minecraft event handling belongs in the relevant feature integration. Small related data types can stay beside their owner. Separate independent responsibilities when a file becomes difficult to navigate.
 
-## Tests and resources
+### Tests and resources
 
 Tests under `src/test/kotlin/net/johnceo/sparklingmutuals/` follow the same feature packages. `safari/integration` contains tests spanning multiple Safari features. Name suites after the behavior they protect, rather than an issue number or release. Keep regression tests after implementing a feature.
 
@@ -44,50 +66,8 @@ Run `./gradlew.bat clean buildAllTargets` on Windows; use `./gradlew` on other p
 
 Runtime assets, mod metadata and mixin registration remain under `src/main/resources/`. Recorded API responses used by tests belong in `src/test/resources/`. Keep resource names stable when reorganizing code.
 
-## Documentation
-
-| Document | Purpose |
-| --- | --- |
-| [Safari logic](../SAFARI_LOGIC.md) | Mode goals and gameplay evidence |
-| [Critter index](critters/README.md) | Species rules and links to shared tracking/message evidence |
-| [Missing panel](MISSING_PANEL.md) | Current missing/progress behavior for all 37 critters in every mode |
-| [Config defaults](CONFIG_DEFAULTS.md) | Default settings and migration expectations |
-| [Honeyhives](HONEYHIVES.md) | Hive observation and state rules |
-| [Sparkling detection](SPARKLING_DETECTION.md) | Detection evidence and bundled skin registry |
-| [History import](HISTORY_IMPORT.md) | Import controls, data sources and estimates |
-| [Credited party Sparkling streaks](SINCE_COMMAND.md) | !since sparkling / !since unique, participation credit and critter/catcher replies |
-| [Capture-shot recording](CAPTURE_SHOT_RECORDING.md) | Opt-in terrain/critter estimates, local v1/v2 replay, privacy and staged collection |
-| [Warp alerts](WARP_ALERTS.md) | Reminder timing and controls |
-| [Contest downtime](CONTEST_DOWNTIME.md) | Ticket events and downtime coordination |
-| [Manual checklist](IMPLEMENTATION_TEST_CHECKLIST.md) | In-game checks that unit tests cannot establish |
-| [Documentation sync](SOURCE_SYNC.md) | Reviewing document revisions against the source baseline |
-| [Issue implementation handoff](AI_ISSUE_HANDOFF.md) | Required documentation onboarding, source context and revision checks for issue implementation |
-| [Multi-version builds](MULTI_VERSION_BUILDS.md) | Exact targets, dependencies, installation, Stonecutter commands and draft release publication |
-| [GitHub Releases](https://github.com/johnceoskyblock/sparkling-mutuals/releases) | Release notes, upgrade guidance and validation for each published version |
-
-Track implementation requests and progress directly in [GitHub Issues](https://github.com/johnceoskyblock/sparkling-mutuals/issues). Read the current issue, relevant comments and reference attachments before implementation. Keep lasting behavior and contributor guidance in the maintained docs above; do not duplicate issue briefs in the repository. Attach issue-specific reference files on GitHub or use immutable links to files already committed in Git history.
-
-## Local and generated files
-
-Bird spawning, mode completion and automatic Forest report eligibility: [Forest bird completion](BIRD_COMPLETION.md).
-
-Gradle's `.gradle/`, `.kotlin/` and `build/`, IDE settings, the development client's `run/`, and local `logs/` are ignored working files. They are not source folders. Keep local authentication files and development profiles in place when doing routine repository cleanup.
-
-See [Safari entry guard](SAFARI_ENTRY_GUARD.md) for stage-specific readiness, kick recovery, identity and presence evidence.
+Generated `.gradle/`, `.kotlin/`, `build/`, `versions/<target>/build/`, IDE files, `run/` and logs are not maintained source. Do not commit authentication files or raw player recordings.
 
 ## Last updated
 
-2026-10-18 (America/New_York) - Updated the capture-preview package summary for its single switch and contact guide.
-
-2026-10-18 - Indexed the concrete render-based bird completion and fd eligibility rules.
-
-2026-10-17 - Indexed the per-critter missing-panel implementation reference.
-
-2026-10-16 - Indexed credited party Sparkling streaks and their participation/history rules.
-
-2026-10-16 - Retained GitHub Issues and handoff guidance alongside compatibility owners, per-target tests and the multi-version build guide.
-2026-10-16 - Indexed stage-specific Safari entry protection.
-
-2026-10-16 (America/New_York) - Added recorder ownership and the local collection/replay guide. Python tools live in `tools/capture_shots/`.
-
-2026-10-16 (America/New_York) - Added the experimental capsule preview package and guide. Python tools remain in `tools/capture_shots/`.
+2026-10-19 (America/New_York) — Consolidated navigation and audited contributor guidance. Reviewed source: `93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee`; documentation-only changes, no local runtime differences or new live validation.

@@ -1,46 +1,82 @@
 # Honeybug
 
-[Index](README.md) · [Shared evidence rules](TRACKING.md)
+[Index](README.md) · [Terminology](../DOCUMENTATION_GUIDE.md) · [Shared evidence](TRACKING.md)
 
-**Biome:** Forest. **Rarity:** Uncommon. Use the actual bee-producing nest count from the initial boat-exit survey. Keep that count and each classified site for the whole run; unloaded or later empty blocks cannot erase it. Beehives are not bee-producing nests. A new run resets the survey.
+## Overview
 
-## Captures and source evidence
-
-Let **N** be the verified initial actual nest count, **C** shared Honeybug captures, and **U** currently rendered uncaptured bees. Personal captures add one personal and shared catch; loot shares add one shared catch. Keep catches received outside Forest. Historical bee UUIDs are not additional captures.
-
-All nests are accounted for once every actual nest was personally punched or **C + U >= N**. In particular, **C >= N** accounts for the entire known nest population without needing to render those caught bees again. A punch or sighting does not itself add a catch. Once classified, retain the initial nests/sites after disappearance and unloading. Newly identified real nests can increase N; an incomplete initial survey cannot invent a verified total.
-
-## Mode behavior
-
-| Mode | Progress | Species row |
+| Property | Value | Status |
 | --- | --- | --- |
-| Full Clear | Capture N Honeybugs, using shared capture messages from any biome. No local empty scan, personal punch history or party report is needed once N is known. Known extra population remains a blocker; detected Sparkling identities add no separate requirement. | Clears when the actual capture requirement passes. A report alone cannot supply captures. |
-| Unique, Sparkling Honeybug already owned by everyone | One shared Honeybug catch. | Disappears after one shared catch. |
-| Unique, someone needs Sparkling Honeybug | One shared catch **plus** local nest checking or a trusted party Forest-done (`fd`) report. Outside Forest, trust the party report for Sparkling confirmation. | Still disappears after one shared catch, even while progress awaits checking/report confirmation. |
-| Sparkling, someone needs Honeybug | Local nest checking or a trusted `fd`; no ordinary capture requirement. | Disappears when checking is complete. The panel is **Unchecked**. |
+| Biome | Forest | Implemented roster |
+| Rarity | Uncommon | Supplied server notes; not live revalidated |
+| Spawn source | Actual bee nests; beehives excluded | Implemented evidence path; mechanics unverified |
+| Population model | Retained classified nest population; fallback minimum 3 if total is unverified | Implemented rule, not server guarantee |
+| Full Clear minimum | 3 shared captures before species adjustments | Implemented fallback/minimum |
+| Local scan coverage | 13 configured potential nest sites; loaded block classification rather than a circular check | Implemented coverage |
 
-A trusted `fd` remains valid for Honeybug after entering Forest later, leaving again, or changing modes. Missing bees in render range, incomplete later scans and unpunched local history cannot disprove the party member's completed check. Reports supply checking trust only: Unique still needs a real shared catch, and Full Clear still needs the retained capture total. Detected Sparkling identities do not override report trust. The confirmed-Sparkling catch override remains available in Unique/Sparkling.
+## What makes this critter different
 
-## Highlights and helpers
+- Known nest count N is covered by shared captures C plus current bees U. C >= N can complete Full Clear from any biome, subject to larger known population.
+- Unique row disappears after one capture; progress additionally needs checking if anyone needs Sparkling Honeybug. Trusted fd survives Forest entry.
 
-In Full Clear, retain highlights on unpunched actual nests until shared Honeybug captures reach the retained verified nest count. Neither fd nor captures plus currently rendered bees can hide those remaining nests. Punching an individual nest immediately removes its waypoint; when every nest is punched there are no nest waypoints even if bees still need catching. Unique/Sparkling retain their existing local-check and trusted-fd behavior.
+## Spawn prerequisites
 
-Keep nest work separate from the species row. In Unique, needed nest helpers may remain after the first catch until local sources are resolved or a trusted `fd` is received. When no party member needs Sparkling Honeybug, the first catch also hides its Unique helper. Sparkling shows nest helpers only for a needed discovery. Full Clear still tracks its actual captures after source work is resolved/reported.
+Classify actual nests/hives in the initial loaded survey. Punching records source work, not a capture.
 
-Ordinary Honeybug ESP: Full Clear keeps uncaught bees highlighted, Unique stops after one shared catch, and Sparkling shows no ordinary bee ESP. Positive Sparkling detection/capture tracking is independent of those switches.
+## Evidence
 
-## Minecraft checks
+| Evidence | What it establishes | What it does not establish |
+| --- | --- | --- |
+| Personal capture / party loot share ([exact messages](MESSAGES.md)) | Own capture adds personal + shared evidence; attributed loot share adds shared evidence | Local checks, source resolution or personal PB from another player's catch |
+| Live bee / qualified check | Current sighting; qualified evidence contributes under mode rule | Capture or absence inferred from missing outline |
+| Supplied capsule notes | Common/Uncommon: supplied notes say no capsule escape; Masterful catches guaranteed once hit. | Server mechanics revalidated by this source audit; see [D2](../IMPLEMENTATION_AUDIT.md#d2) |
+| Retained nest/hive classification and punches | Actual nest count and source work; C + U can account for N | A catch; unclassified/unloaded sites do not prove no nest |
 
-- On first boat exit, confirm N is recorded from actual nests. Move to another biome, unload Forest and collect loot shares: N stays fixed, and C reaching N completes Full Clear Honeybug without returning for a render scan.
-- In Unique with a needed discovery, capture one bee outside Forest: its missing row clears but progress waits for fd. Receive fd and verify progress; enter Forest with incomplete rendering and retain that checking trust. Without a needed discovery, one catch is sufficient.
-- In Sparkling, inspect/punch all nests locally or receive fd: no ordinary catch is required. An unconfirmed check keeps Honeybug listed under Unchecked. Repeat Forest entry after fd and retain completion.
-- Start a new run and confirm no prior nest/report history carries over. A positively detected uncaught Sparkling must still block all modes.
+## Completion by mode
+
+| Mode | Capture requirement | Checking or source requirement | Party-report effect |
+| --- | --- | --- | --- |
+| Sparkling | None for ordinary bees; confirmed Sparkling capture override applies. | Every actual nest punched, or known nest population covered by shared captures plus current bees. | Trusted fd supplies checking and survives Forest reentry. |
+| Unique | One shared capture, or the confirmed-Sparkling capture override. | Progress also needs checking if discovery is needed; row uses the capture condition. | fd supplies needed checking, never the capture. |
+| Full Clear | Capture verified N, raised by known extra population; otherwise use conservative fallback/source proof. | Known N needs no local empty scan or personal punch history. | fd supplies no captures and cannot retire Full Clear nest work before quota. |
+
+## Display and highlights
+
+| Outcome | Implemented behavior |
+| --- | --- |
+| Progress | Mode-specific predicate above; see [shared modes](../../SAFARI_LOGIC.md). |
+| Missing/unchecked row | Unique removes row after first capture even while checking blocks progress. Full Clear known-N capture proof needs no local empty scan; Sparkling uses needed checking. See [panel rules](../MISSING_PANEL.md). |
+| Counters | No species-row ratio; separate nest footer, known/unknown survey waypoints and shared capture count. |
+| Ordinary ESP | Unique stops after one shared catch. Full Clear keeps eligible uncaught bees. Sparkling shows no ordinary bee ESP. |
+| Source helpers | Full Clear retains unpunched nest helpers until shared verified capture quota or individual punches. Unique/Sparkling use local nest proof/trusted fd and discovery gates, separately from the row. |
+| Automatic completion announcements | Shared local whole-biome/report-readiness gates in [mode rules](../../SAFARI_LOGIC.md). Forest also requires initial-clearer status and 6 separate local food pickups. |
+| PB eligibility | Personal Unique: own catch of every species. Full Clear: personal captures/local proof. Party Unique: separate shared-capture/absence predicate; progress alone is insufficient. |
+
+## Party reports and late entry
+
+Keep catches received outside Forest. Trusted fd survives Forest entry/mode changes; it supplies neither Unique catch nor Full Clear captures. Incomplete later rendering does not erase it. See [evidence/lifecycle](TRACKING.md).
+
+## Retention and reopening
+
+Classification, maximum known count, captures and trusted fd persist for the run. New actual nests can raise N and reopen local checking. Visibility loss preserves classification; new run resets it. Pending detection identities add no separate completion gate; see [audit D1](../IMPLEMENTATION_AUDIT.md#d1).
+
+## Examples
+
+With verified N = 4, four shared captures can finish Full Clear outside Forest. In Unique, one capture removes its row while needed checking still blocks progress until local proof/fd.
+
+## Implementation and validation
+
+[Shared source/caller map](TRACKING.md#source-and-validation-references) covers capture/event registration, scanner, mode predicates, UI/report consumers, PBs and resets. Species entry: `Honeybug` in `SafariRun` and `SafariEspRules.mobs`; dedicated owners below.
+
+[BeeNests.tick / clicked / render](../../src/main/kotlin/net/johnceo/sparklingmutuals/safari/structures/BeeNests.kt)
+
+[BeeNestSurvey](../../src/main/kotlin/net/johnceo/sparklingmutuals/safari/structures/BeeNestSurvey.kt)
+
+Existing coverage: [HoneybugModeEvidenceTest](../../src/test/kotlin/net/johnceo/sparklingmutuals/safari/structures/HoneybugModeEvidenceTest.kt). Source inspection only; no local runtime suite or live Minecraft validation was performed for this documentation audit. CI results are separate.
+
+## Open questions
+
+Population guarantees and capsule success/escape claims from supplied notes were not live revalidated; see [audit D2](../IMPLEMENTATION_AUDIT.md#d2).
 
 ## Last updated
 
-2026-10-17 - Removed detected-Sparkling sightings as a separate completion requirement; normal species rules remain.
-
-
-2026-10-17 - Full Clear retains unpunched nest highlights until the known nest population is captured; fd and rendered bees cannot hide them. Unique/Sparkling report trust is unchanged.
-
-2026-10-17 - Retained the initial nest count for run-wide capture-based Full Clear, separated Unique Honeybug progress from its first-catch missing row, and retained party fd checking trust through Forest entry. Sparkling uses Unchecked across every biome.
+2026-10-19 (America/New_York) — Uniform species reference; audited evidence, modes, display and lifecycle. Reviewed source: `93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee`; no local runtime source changes reviewed. See [revision convention](../DOCUMENTATION_GUIDE.md).

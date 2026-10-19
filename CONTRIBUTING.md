@@ -1,111 +1,56 @@
 # Contributing to Sparkling Mutuals
 
-Contributions are welcome: bug fixes, features, clearer documentation, screenshots, testing and useful bug reports. You do not need to be an experienced mod developer to help.
+## Purpose
 
-This guide takes inspiration from [SkyHanni's contributor guide](https://github.com/hannibal002/SkyHanni/blob/beta/CONTRIBUTING.md), with a smaller workflow suited to this project. Small fixes can go straight to a pull request. For a larger feature or a change to Safari behavior, an issue explaining the idea first can help avoid duplicated work.
+Contribute focused bug fixes, features, documentation, screenshots, testing or useful reports. This guide takes inspiration from [SkyHanni's contributor guide](https://github.com/hannibal002/SkyHanni/blob/beta/CONTRIBUTING.md). Contributors remain responsible for understanding and verifying AI-assisted work.
 
-## Report a bug or suggest a feature
+## Prerequisites
 
-Check the existing [issues](https://github.com/johnceoskyblock/sparkling-mutuals/issues) before opening a new one. A useful report includes:
+Use Git, a Java **25** JDK, an editor and the included Gradle wrapper. IntelliJ IDEA is recommended; set both project SDK and Gradle JVM to Java 25. Clone/fork the repository and create a branch describing the change. See [multi-version dependencies and setup](docs/MULTI_VERSION_BUILDS.md).
 
-- What you expected and what actually happened.
-- Steps to reproduce, the mod version and any relevant other mods.
-- For Safari issues: the mode, biome, party discovery needs, starting items, and whether you entered after someone had already cleared part of the biome.
-- Relevant server messages, screenshots or `/sm debug` output. Share the useful log excerpt rather than an entire unrelated session, and remove API keys, tokens and other private information.
+Read applicable repository instructions and the current issue/comments. Initial implementation onboarding reads the maintained Markdown set, including all 37 species and linked evidence. For later issues, inventory actual root/docs files, run the read-only [documentation-sync check](docs/SOURCE_SYNC.md), and read changed/new documents plus the relevant dependencies. Record the actual branch/source revision and preserve unrelated work.
 
-For a feature suggestion, explain the player-facing behavior and a situation where it would help. A working implementation is not required to propose an idea.
+## Procedure
 
-## Set up the project
+### Report or choose work
 
-You will need **Git**, a **Java 25 JDK**, and an editor. IntelliJ IDEA is recommended, but not required. Use the included Gradle wrapper; you do not need a separate Gradle installation.
+Check [existing issues](https://github.com/johnceoskyblock/sparkling-mutuals/issues). Describe expected/actual behavior, reproduction steps, mod/client version and relevant mods. Safari reports benefit from mode, biome, discovery needs, starting resources, late entry and relevant messages or `/sm debug` excerpts. Share useful evidence rather than entire unrelated sessions; remove secrets and personal data.
 
-1. Fork [Sparkling Mutuals](https://github.com/johnceoskyblock/sparkling-mutuals) and clone your fork.
-2. Open the repository folder as a Gradle project in IntelliJ.
-3. Set both the project SDK and Gradle JVM to **Java 25**, then let Gradle finish importing dependencies.
-4. Create a branch with a short name describing your change.
+### Make a focused change
 
-Shared versions are in [gradle.properties](gradle.properties); Minecraft and target dependencies are in `versions/<target>/gradle.properties`. The [shared build](build.gradle.kts), [settings](settings.gradle.kts) and [Stonecutter controller](stonecutter.gradle.kts) build the same source for three targets. See the [multi-version guide](docs/MULTI_VERSION_BUILDS.md) before changing dependencies.
+Locate current owners through the [source/test map](docs/README.md#source-and-test-map), not an old issue path. Trace event registration, callers, configuration gates, modes, state transitions and display/report consumers. Existing tests are evidence, not the only description of a live path.
 
-## Build and run
+Keep personal/shared captures, sightings, checks, resources and source resolution distinct. [Safari logic](SAFARI_LOGIC.md) owns mode composition; [tracking](docs/critters/TRACKING.md) and species pages supply the exceptions. A new approved requirement can deliberately change that baseline. Explain conflicts; do not silently preserve a bug because an old test expects it, or treat an unverified numeric assumption as a server guarantee.
 
-Run commands from the repository root.
+Follow nearby Kotlin style and package layout. Isolate pure decisions where useful, preserve saved keys, and avoid unrelated formatting/dependency/version changes. Behavior-changing code changes update their owning docs and species exceptions with concise **Last updated** metadata. Keep current requests in GitHub rather than duplicate issue briefs.
 
-| Task | Windows PowerShell | macOS / Linux |
-| --- | --- | --- |
-| Test/build/verify all targets and build helpers | `./gradlew.bat clean buildAllTargets` | `./gradlew clean buildAllTargets` |
-| Test one target | `./gradlew.bat :26.1.2:test` | `./gradlew :26.1.2:test` |
-| Launch one development client | `./gradlew.bat :26.1.2:runClient` | `./gradlew :26.1.2:runClient` |
+### Validate
 
-If the Unix wrapper is not executable, run `chmod +x gradlew` first. Make sure your terminal also uses Java 25; `java -version` can help check this.
-
-IntelliJ can launch the Gradle `runClient` task or the client run configuration generated by Fabric Loom. DevAuth is included for development authentication; use your own local account setup when testing on Hypixel. Keep authentication files and account credentials out of commits.
-
-Installable output is collected under `build/distributions/<mod-version>/`; install only the JAR matching Minecraft. Intermediate outputs and test reports stay under `versions/<target>/build/`. GitHub Actions tests and validates every target for pushes and pull requests.
-
-## Find the relevant code
-
-The [repository guide](docs/README.md) maps each source and test package to its responsibility and indexes the maintained documentation.
-
-| Location | What belongs here |
+| Scope | Validation |
 | --- | --- |
-| `src/main/kotlin/net/johnceo/sparklingmutuals/` | Mod logic, configuration, HUDs and features |
-| `src/main/kotlin/net/johnceo/sparklingmutuals/mixin/` | Minecraft behavior hooks and accessors |
-| `src/main/resources/` | Assets, metadata and bundled data |
-| `src/test/kotlin/` | Unit tests for tracking rules and other behavior |
-| `SAFARI_LOGIC.md` and `docs/` | Gameplay evidence, feature rules and manual test guidance |
+| Code/build changes | `./gradlew.bat clean buildAllTargets` (Windows) or `./gradlew clean buildAllTargets`; meaningful relevant regression tests |
+| Focused investigation | Target-qualified suites, e.g. `:26.1.2:test --tests '*BeeNestSurveyTest'` |
+| HUD/rendering/server behavior | Applicable [manual scenarios](docs/IMPLEMENTATION_TEST_CHECKLIST.md); state any live checks not performed |
+| Documentation-only change | Source/owner review, links, inventory, consistency and scope checks; a build is not proof of documentation accuracy |
 
-Follow the style of nearby code. Keep a pull request focused on its purpose; avoid unrelated formatting, dependency updates or version bumps. Prefer small, readable functions and keep game-independent decisions separate from Minecraft rendering and event handlers when practical.
+The shared source is under `src/`; per-target output and reports are under `versions/<target>/build/`; verified installable JARs are collected under `build/distributions/<mod-version>/`. Use the wrapper from the repository root; on Unix make it executable if necessary. Development clients use `:<target>:runClient`. Keep your local authentication setup private.
 
-Match Kotlin packages to their directories. Put tests alongside their feature's package under `src/test/kotlin/`, using `safari/integration` for suites that cover several features. Name tests after behavior rather than an issue number or release; retain them to catch regressions after implementation.
+For relevant changes, cover party loot shares, partial entry, starting resources, unloading/reentry, mode/new-run transitions and settings reload. Do not claim a live test from unit-test or native offline evidence. Reconcile current source/docs/issue revisions again before delivery. [Source synchronization](docs/SOURCE_SYNC.md) explains when recording the all-document manifest is justified.
 
-AI-assisted contributions are welcome. Read, understand and verify what you submit, including any claimed test results or APIs. You remain responsible for the change and for addressing review feedback.
+### Submit
 
-## Changing tracking or mode behavior
+Push your branch and open a focused pull request when authorized by your working arrangement. Describe the problem, resulting behavior, issue/evidence links, checks actually performed and remaining limits. Drafts are welcome; no arbitrary prefix or length is required. Respond constructively to review.
 
-Read [SAFARI_LOGIC.md](SAFARI_LOGIC.md), the relevant [critter page](docs/critters/README.md), and the [shared tracking rules](docs/critters/TRACKING.md) before changing Safari logic. [Honeyhive behavior](docs/HONEYHIVES.md) has its own evidence and state rules.
+Do not commit generated build output, local IDE files, authentication data or raw personal recordings/logs. Preserve [LICENSE](LICENSE), [third-party notices](licenses) and attribution. Version notes belong in the matching [GitHub Release](https://github.com/johnceoskyblock/sparkling-mutuals/releases), including upgrade guidance and validation limits; feature pages describe current behavior rather than accumulating patch histories. Publishing or merging is a separate maintainer action.
 
-Keep these mode goals consistent:
+## Expected results
 
-- **Sparkling:** check critters whose Sparkling variant someone in the party needs, including their necessary spawn prerequisites.
-- **Unique:** capture every species at least once and finish the required checks for any party-missing Sparkling variants.
-- **Full Clear:** capture every possible critter and resolve its spawn sources. Macaw is the exception: one shared catch is enough once its food/source work is resolved.
+A reviewer can trace the requested change to its implementation, current documentation and actual validation. Source review, static checks, automated builds and live Minecraft observations are reported separately. An unresolved proposed correction remains a proposal.
 
-Keep captures, checked UUIDs, resource pickups and resource use distinct. Retain qualified UUID checks for the run without double counting later captures. Keep personal and shared catches separate. HUD or ESP settings should not stop background tracking.
+## Troubleshooting
 
-When correcting a rule, include the server message or observation supporting it. Label predictions and assumptions clearly; a visual floor-drop prediction is not an actual pickup.
-
-Update affected documentation and its **Last updated** section with the date and a short explanation. The [documentation synchronization guide](docs/SOURCE_SYNC.md) explains how to find changed documents and record a reviewed source baseline. Its PowerShell script is optional tooling for contributors; do not record a baseline just to hide unresolved changes.
-
-## Test your change
-
-Run `clean buildAllTargets` for code changes. Add or update regression tests when changing tracking, parsing, state transitions or another behavior that can be checked meaningfully. A wording-only change does not need a new test just to assert the new string.
-
-For HUDs, rendering, entity detection and server-specific behavior, also test the affected feature in Minecraft when possible. Use the relevant parts of the [implementation test checklist](docs/IMPLEMENTATION_TEST_CHECKLIST.md), rather than treating every contribution as a requirement to retest the entire mod.
-
-For tracking changes, consider the cases your change affects: party loot shares, late biome entry, starting items, unloading/reloading entities, changing modes and starting a new run. For GUI changes, check that settings save and still work after reopening the screen or restarting.
-
-State what you actually tested. Passing unit tests does not establish that a live Hypixel entity layout or rendered effect is correct. If you could not perform an in-game check, say so in the pull request.
-
-## Open a pull request
-
-Push your branch and open a pull request against this repository's default branch. Draft pull requests are welcome if you want early feedback.
-
-Use a clear title and a short description covering:
-
-- The problem or feature and the resulting behavior.
-- Relevant issue links, screenshots or evidence.
-- Tests performed and any remaining in-game checks.
-
-There is no required title prefix, commit-message format, PR-description template or arbitrary line limit. A small fix usually needs only a few sentences. Larger changes benefit from a little more explanation. Keep related changes together and split unrelated work when it makes review easier.
-
-Respond to review feedback and keep the discussion constructive. Do not commit generated build output, local IDE files, authentication data or personal logs. Preserve applicable license notices and credit adapted work; see [LICENSE](LICENSE) and [third-party notices](licenses).
-
-## Release notes
-
-Keep release notes in the matching [GitHub Release](https://github.com/johnceoskyblock/sparkling-mutuals/releases), rather than a cumulative version-notes file in the repository. Prepare the upcoming version's notes in its draft release, then publish them with that version. Include the changes since the previous release, upgrade guidance, validation performed and any remaining in-game checks.
-
-Each published release retains its own notes. Update the README's current release and installation details, and update affected feature docs to describe current behavior. Do not append old release summaries to those documents.
+Use Java 25 for the terminal and Gradle. Read [multi-version troubleshooting](docs/MULTI_VERSION_BUILDS.md#troubleshooting) for distribution/CI problems. Read [revision guidance](docs/SOURCE_SYNC.md#troubleshooting) for changed documents. Do not run `DocumentationSync.ps1 -Record` merely to hide warnings, or let a timestamp stand in for source review.
 
 ## Last updated
 
-2026-10-15 - Documented shared Stonecutter setup, target-qualified tasks, verified distributions and all-target checks.
+2026-10-19 (America/New_York) — Reorganized the current implementation reference. Reviewed source: `93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee`; documentation-only changes, no local runtime differences or new live validation.
