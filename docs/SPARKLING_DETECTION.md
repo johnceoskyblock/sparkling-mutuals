@@ -18,7 +18,7 @@ There is no current-biome or player-distance filter on received Safari particle 
 
 A packet alone identifies a **location**, not a species, entity UUID, or distinct critter count. After the next name/skin scan, alert only for still-unidentified locations: the title shows **SPARKLING!** with **Critter Unknown**, and the optional party message is **SPARKLING Critter Unknown!** with coordinates. Never put particle-source wording such as wax-on in the title or party message. Keep the last-seen world waypoint and Detected sparklings row with coordinates. Waypoint visibility follows the existing Sparkling detection toggle and ESP text scale/color. `/sm debug` reports `source=wax_on`, coordinates, biome and last-seen time.
 
-Coalesce origins within three blocks to avoid alerting on every burst. Retain the last observed location for the run, including after unloading or changing biomes, and reset it with a new run. These are approximate last-seen locations, not tracked moving entities. Spatial clustering can combine nearby critters or leave multiple locations for one moving critter; never use these markers to infer population totals or fabricate species checks/catches. Unknown markers remain until an independent name/skin positive matches within three blocks or the run ends. Unrelated catches/reports cannot reliably identify which anonymous marker was caught.
+Coalesce origins within three blocks for waypoint tracking. Particle-only detections share one GUI/sound alert and one party announcement per run, independently gated by their existing toggles. New bursts, new location UUIDs, movement and different biomes must not repeat these unknown notifications. Keep tracking and displaying their waypoints. A later positively identified species can still alert and announce once under the named-species rule; further anonymous particles remain silent until the next run. Retain the last observed location for the run, including after unloading or changing biomes, and reset it with a new run. These are approximate last-seen locations, not tracked moving entities. Spatial clustering can combine nearby critters or leave multiple locations for one moving critter; never use these markers to infer population totals or fabricate species checks/catches. Unknown markers remain until an independent name/skin positive matches within three blocks or the run ends. Unrelated catches/reports cannot reliably identify which anonymous marker was caught.
 
 When a name/skin positive independently identifies a nearby body or label, retire the matching anonymous waypoint, cancel its still-queued unknown party message and unknown banner, and use the identified alert/HUD/capture ledger. If the unknown party message was already sent, a later identified species may still send its named announcement. Known detections take priority over same-tick particle packets. Particle-only evidence does not assign a guessed species or add an ordinary UUID check; species-specific completion still uses identified evidence and the documented source/check rules.
 
@@ -26,7 +26,7 @@ When a name/skin positive independently identifies a nearby body or label, retir
 
 For an identified critter, show the Sparkling GUI/sound alert at most once per species per run, and queue its party announcement at most once per species per run. These two notification channels retain their independent toggles. Capsule transitions, escapes, replacement UUIDs, unloading/reentry and mode changes must not repeat the species notification. A new run resets both notification histories. Other species can still alert independently.
 
-This is notification memory only: keep confirmed catches, live identities and positions separate. A new detection neither repeats a species announcement nor blocks completion. Unknown particle-only waypoints retain location-based deduplication because their species is not known.
+This is notification memory only: keep confirmed catches, live identities and positions separate. A new detection neither repeats a species announcement nor blocks completion. Unknown particle-only waypoints retain location-based tracking, but share one run-wide unknown notification key because their species is not known.
 
 ## Ordinary checking remains separate
 
@@ -71,6 +71,8 @@ User observation, 2026-10-15: Duplico at **(-4, 71, -72)** unloaded when the pla
 After a confirmed Sparkling capture, Unique and Sparkling mark an ordinary species complete even if other detected identities remain. Birds additionally retain their shared spawning/source rules in [Forest bird completion](BIRD_COMPLETION.md). Full Clear still checks its normal captures/sources. New or lingering detection identities never reopen completion.
 
 ## Last updated
+
+2026-10-19 - Limited particle-only notifications to once per run across all locations, retaining named-species follow-up alerts and waypoint tracking.
 
 2026-10-18 - Retained the birds' shared spawning/source requirement after confirmed Sparkling captures.
 
