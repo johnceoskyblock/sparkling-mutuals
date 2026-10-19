@@ -78,6 +78,8 @@ class SafariResources {
     private val outstanding = linkedMapOf<Pair<String, FloorDropType>, Outstanding>()
     private val resolved = mutableSetOf<Pair<String, FloorDropType>>()
     private val reportedCoins = mutableMapOf<String, Int>()
+    private val reportedFood = mutableMapOf<Pair<String, FloorDropType>, Int>()
+    fun foodContributions(): Map<Pair<String, FloorDropType>, Int> = reportedFood.toMap()
     fun coinContributions(): Map<String, Int> = reportedCoins.toMap()
     private val populations = mutableMapOf<SafariBiome, Int>()
     private val captured = mutableMapOf<String, Int>()
@@ -141,6 +143,7 @@ class SafariResources {
         val biome = destination(type) ?: return
         val key = player.lowercase() to type
         if (type == FloorDropType.COIN) reportedCoins[key.first] = maxOf(reportedCoins[key.first] ?: 0, amount)
+        else reportedFood[key] = maxOf(reportedFood[key] ?: 0, amount)
         if (key in resolved || key in outstanding) return
         // Reserve partially observed evidence belonging to earlier notices, even
         // before their full quantities resolve. Later allocation cannot subtract it twice.

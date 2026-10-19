@@ -1,5 +1,8 @@
 package net.johnceo.sparklingmutuals.safari.integration
 
+import net.johnceo.sparklingmutuals.safari.resources.renderBird
+import net.johnceo.sparklingmutuals.safari.resources.scanRenderedBirds
+
 import net.johnceo.sparklingmutuals.safari.completion.SafariFullClear
 
 import java.util.UUID
@@ -112,7 +115,7 @@ class DocumentedSafariRulesTest {
             val run = SafariRun(0)
             SafariMessages.forRun("Party > Friend: $word", run, true)
             assertEquals(0, run.completed(SafariMode.UNIQUE, biome.critters, party()))
-            assertEquals(biome.critters.count { SafariFullClear.minimum(it.name) == 0 && it.name != "Macaw" }, run.completed(SafariMode.FULL_CLEAR, biome.critters, party()))
+            assertEquals(biome.critters.count { SafariFullClear.minimum(it.name) == 0 && it.name !in setOf("Bluebird", "Parakeet", "Macaw") }, run.completed(SafariMode.FULL_CLEAR, biome.critters, party()))
             run.visitBiome(biome)
             assertEquals(if (biome == SafariBiome.FOREST) 1 else 0, run.completed(SafariMode.SPARKLING, biome.critters, party()),
                 "Honeybug retains its trusted Forest report on entry")
@@ -177,18 +180,19 @@ class DocumentedSafariRulesTest {
         run.observePopulation(live)
         run.updateCaptureEvidence(SafariBiome.FOREST, setOf("Macaw"), false, macawsInRange = 20)
         caught(run, "Macaw")
-        repeat(8) { run.birds.spawn("A Bluebird was attracted to the Birdfeeder!") }
+        repeat(8) { run.birds.renderBird("Bluebird") }
         assertFalse(run.captureComplete("Macaw"))
-        run.birds.spawn("Two Macaws were attracted to the Birdfeeder!")
+        run.birds.renderBird("Macaw")
         run.inventoryEvidence(emptyList(), 10000)
-        run.scanBirdSources(0)
+        run.scanRenderedBirds()
+        repeat(8) { caught(run, "Bluebird") }
         assertTrue(run.captureComplete("Macaw"))
         assertFalse(run.captureComplete("Macaw", personalOnly = true))
-        assertFalse(run.captureComplete("Bluebird"))
+        assertTrue(run.captureComplete("Bluebird"))
         run.recordBirdFood("FLOOR DROP! 10x Bag of Seeds")
         assertFalse(run.captureComplete("Macaw"))
-        repeat(10) { run.birds.spawn("Two Macaws were attracted to the Birdfeeder!") }
-        run.scanBirdSources(0)
+        repeat(10) { run.birds.renderBird("Macaw") }
+        run.scanRenderedBirds()
         assertTrue(run.captureComplete("Macaw"))
         assertEquals(1, run.count("Macaw"))
     }

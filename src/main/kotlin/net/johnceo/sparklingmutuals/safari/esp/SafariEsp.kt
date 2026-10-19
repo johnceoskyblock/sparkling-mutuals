@@ -24,6 +24,7 @@ import net.johnceo.sparklingmutuals.safari.resources.FloorDisplay
 import net.johnceo.sparklingmutuals.safari.resources.FloorDropPredictor
 import net.johnceo.sparklingmutuals.safari.resources.FloorPickup
 import net.johnceo.sparklingmutuals.safari.resources.HauntedCoinDrops
+import net.johnceo.sparklingmutuals.safari.resources.ForestBirdFoodDrops
 import net.johnceo.sparklingmutuals.safari.resources.PredictedFloorDrop
 import net.johnceo.sparklingmutuals.safari.resources.SafariFloorDrops
 import net.johnceo.sparklingmutuals.safari.structures.SafariStructures
@@ -47,7 +48,7 @@ import org.slf4j.LoggerFactory
 
 data class EspCritterObservation(val id: Int, val species: String, val biome: SafariBiome, val x: Double, val y: Double, val z: Double, val mound: Boolean, val uuid: UUID)
 data class SafariEspObservations(val critters: List<EspCritterObservation>, val floorDrops: List<EspDrop>,
-    val scanned: Boolean = false, val hauntedCoinDropsRemaining: Int = -1)
+    val scanned: Boolean = false, val hauntedCoinDropsRemaining: Int = -1, val forestBirdFoodDropsRemaining: Int = -1)
 
 /** Nebulune SafariESP identification and box offsets, adapted to our Fabric renderer without Athen. */
 object SafariEsp {
@@ -250,6 +251,9 @@ object SafariEsp {
             ConfigManager.fullClearMode, SafariRoster.all.associate { it.name to (SafariTracking.run?.count(it.name) ?: 0) })
         SafariTracking.run?.let { logger.info("Gimmiegold completion: {} coinDropMarkers={}", it.sparklingChecks.gimmiegoldDebug(), observations().hauntedCoinDropsRemaining) }
         SafariTracking.run?.let { logger.info("Gimmiegold Sparkling check: {}", it.gimmiegoldCheck.debug()) }
+        SafariTracking.run?.let { logger.info("Forest birds: {} canReportFd={}", it.birds.debug(), it.canReportBiome(SafariBiome.FOREST)) }
+        SafariTracking.run?.let { logger.info("Forest report: {}", it.forestReportDebug(
+            net.johnceo.sparklingmutuals.safari.completion.SafariFullClear.mode, SafariSparklingMode.state)) }
         val incenseIds = SafariFloorDrops.state.incenseDropIds(dropPredictor.knownDrops)
         predictedDrops.forEach { logger.info("Floor prediction: id={} biome={} pos={},{},{} predicted={} actual={} selected={}",
             it.id, it.biome, it.x, it.y, it.z, it.type?.label, it.actual, SafariFloorDrops.selected(it, incenseIds)) }
@@ -278,7 +282,7 @@ object SafariEsp {
             (0..2).all { activeFloorDisplay(client.level?.getEntity(drop.id + it)) }
         }
         return SafariEspObservations(critters, rawDrops, scanned,
-            HauntedCoinDrops.remaining(rawDrops, completeGroups))
+            HauntedCoinDrops.remaining(rawDrops, completeGroups), ForestBirdFoodDrops.remaining(rawDrops, completeGroups))
     }
     private fun activeFloorDisplay(entity: Entity?) = entity is Display.ItemDisplay && !entity.isRemoved &&
         !entity.isInvisible && entity.itemStack.`is`(Items.STRING)

@@ -1,5 +1,8 @@
 package net.johnceo.sparklingmutuals.safari.completion
 
+import net.johnceo.sparklingmutuals.safari.resources.renderBird
+import net.johnceo.sparklingmutuals.safari.resources.scanRenderedBirds
+
 import java.nio.file.Path
 import java.util.UUID
 import net.johnceo.sparklingmutuals.config.ConfigManager
@@ -20,6 +23,32 @@ class SparklingChecksTest {
     private fun seen(name: String, count: Int) = List(count) { name to UUID.randomUUID() }
     private fun party(needs: Set<String>) = PartySparklingState().apply {
         select(setOf("one")); accept(setOf("one"), mapOf("one" to SafariRoster.all.map { it.name }.toSet() - needs))
+    }
+    @Test fun `any Wumpa capture checks all Icy species only in Sparkling mode`() {
+        ConfigManager.init(dir)
+        SafariFullClear.select(SafariMode.SPARKLING)
+        val icy = SafariBiome.ICY
+        val state = party(icy.critters.map { it.name }.toSet())
+        for (personal in listOf(true, false)) {
+            val run = SafariRun(0)
+            run.visitBiome(icy)
+            run.updateCaptureEvidence(icy, emptySet(), false)
+            run.sparklingChecks.chat("The Wumpa has awoken.")
+            assertFalse(run.sparklingComplete("Wumpa", state))
+            run.record(SafariCatch(SafariRoster.named("Wumpa")!!, personal = personal), 1000)
+            for (localOnly in listOf(true, false)) {
+                assertEquals(icy.critters.size, run.completed(SafariMode.SPARKLING, icy.critters, state, localOnly))
+            }
+            assertTrue(SafariPanels.missingCritters(run, icy, state).isEmpty())
+            assertEquals("id", run.completion.announcement(run, icy, SafariMode.SPARKLING, state))
+            assertEquals(1, run.completed(SafariMode.UNIQUE, icy.critters, state))
+            assertFalse(run.captureComplete("Billygoat"))
+            assertFalse(run.sparklingComplete("Gazer", state))
+            run.visitBiome(SafariBiome.FOREST)
+            run.visitBiome(icy)
+            assertEquals(icy.critters.size, run.completed(SafariMode.SPARKLING, icy.critters, state))
+            assertTrue(SafariPanels.missingCritters(run, icy, state).isEmpty())
+        }
     }
     @Test fun `Forest UUID zone checks do not check manually spawned species`() {
         val checks = SparklingChecks()
@@ -118,10 +147,10 @@ class SparklingChecksTest {
         }
         birds.inventory(emptyList())
         birds.scan(0)
-        repeat(8) { birds.spawn("A Bluebird was attracted to the Birdfeeder!") }
+        repeat(8) { birds.renderBird("Bluebird") }
         checks.scan(SafariBiome.FOREST, 6.0, 51.0, emptyList(), birdsSpawned = birds.allSpawned)
         assertFalse(checks.checked("Macaw"))
-        birds.spawn("Two Macaws were attracted to the Birdfeeder!")
+        birds.renderBird("Macaw")
         checks.scan(SafariBiome.FOREST, 6.0, 51.0, emptyList(), birdsSpawned = birds.allSpawned)
         assertTrue(listOf("Bluebird", "Parakeet", "Macaw").all(checks::checked))
     }

@@ -16,8 +16,21 @@ import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.resources.Identifier
 
 object SparklingAlert {
+    const val UNKNOWN = "Critter Unknown"
     fun panel(name: String, where: String, color: Int = HudRow.GOLD) =
         HudPanel("SPARKLING!", color, listOf(HudRow(name), HudRow(where)))
+}
+
+data class SparklingNotice(val id: UUID, val name: String, val where: String, val unknown: Boolean = false) {
+    fun message() = "SPARKLING $name! ($where)"
+}
+
+class SparklingNotices {
+    private val queue = ArrayDeque<SparklingNotice>()
+    fun add(notice: SparklingNotice) { queue.addLast(notice) }
+    fun identify(ids: Collection<UUID>) { queue.removeAll { it.unknown && it.id in ids } }
+    fun next() = queue.removeFirstOrNull()
+    fun clear() = queue.clear()
 }
 
 class SparklingMemory {
@@ -33,26 +46,35 @@ class SparklingMemory {
 /** CritterMod v0.9.0 SparklingWatch behaviour, with paced announcements and per-run deduplication. */
 object SparklingEncounters {
     private val memory = SparklingMemory()
-    private val queue = ArrayDeque<String>()
-    private var banner: Pair<String, String>? = null
+    private val queue = SparklingNotices()
+    private var banner: SparklingNotice? = null
     private var shownAt = 0L
     private var sentAt = 0L
 
-    fun observe(id: UUID, name: String, biome: SafariBiome, pos: BlockPos) {
+    fun observeUnknown(id: UUID, biome: SafariBiome, pos: BlockPos) =
+        observe(id, SparklingAlert.UNKNOWN, biome, pos, unknown = true)
+    fun identify(ids: Collection<UUID>) {
+        queue.identify(ids)
+        if (banner?.let { it.unknown && it.id in ids } == true) banner = null
+    }
+    fun observe(id: UUID, name: String, biome: SafariBiome, pos: BlockPos, unknown: Boolean = false) {
         val where = "${biome.label} ${pos.x} ${pos.y} ${pos.z}"
+        val notice = SparklingNotice(id, name, where, unknown)
         if (memory.alert(id, ConfigManager.sparklingAlert, name)) {
-            banner = name to where; shownAt = System.currentTimeMillis(); playSound(Minecraft.getInstance())
+            banner = notice; shownAt = System.currentTimeMillis(); playSound(Minecraft.getInstance())
         }
-        if (memory.announce(id, ConfigManager.sparklingPartyAnnouncer, name)) queue.addLast("SPARKLING $name! ($where)")
+        if (memory.announce(id, ConfigManager.sparklingPartyAnnouncer, name)) queue.add(notice)
     }
     fun tick(client: Minecraft) {
         if (!ConfigManager.sparklingPartyAnnouncer || !SafariAssist.inSafari || client.connection == null) { queue.clear(); return }
         val now = System.currentTimeMillis()
-        if (queue.isNotEmpty() && now - sentAt >= 1500) { client.connection!!.sendCommand("pc ${queue.removeFirst()}"); sentAt = now }
+        if (now - sentAt >= 1500) queue.next()?.let { client.connection!!.sendCommand("pc ${it.message()}"); sentAt = now }
     }
     fun render(graphics: GuiGraphicsExtractor) {
         if (!ConfigManager.sparklingAlert || !SafariAssist.inSafari) return
-        val (name, where) = banner ?: return
+        val notice = banner ?: return
+        val name = notice.name
+        val where = notice.where
         val remaining = 7000 - (System.currentTimeMillis() - shownAt)
         if (remaining <= 0) { banner = null; return }
         val client = Minecraft.getInstance()

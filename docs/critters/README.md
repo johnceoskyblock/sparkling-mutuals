@@ -73,11 +73,16 @@ Species checks combine into [biome completion](TRACKING.md#biome-completion-and-
 
 Edit the relevant page when new server evidence establishes a rule. State what was observed, what follows from it, and what remains unknown. Shared evidence belongs in [TRACKING.md](TRACKING.md).
 
-Global exception for every critter page: detecting a Sparkling blocks all modes until caught. Once all detected Sparklings of that species are caught, Unique and Sparkling complete it immediately, overriding their ordinary checks. Full Clear retains normal capture/source requirements. See [shared capture rules](TRACKING.md#sparkling-captures-block-biome-completion-in-every-mode).
+Global rule for every critter page: detecting a Sparkling adds no separate capture requirement in any mode. A confirmed Sparkling catch still completes ordinary Unique/Sparkling species immediately, even with duplicate detected identities. The three birds retain their [shared spawning requirement](../BIRD_COMPLETION.md). Full Clear retains normal capture/source requirements. See [shared capture rules](TRACKING.md#sparkling-detection-does-not-gate-completion).
 
 Full Clear local capture/source proof and a qualified empty scan advance progress without a report and remain valid after travel. Other biomes without local proof require the biome report plus each variable species' actual capture minimum. Fixed Scrappy/Gemzie/Troodon/Gazer counts can complete early; only positive remaining-critter/source evidence reopens reported completion. Exhaustive UUID render coverage is not required. Macaw retains its explicit exception.
 
 ## Last updated
+
+2026-10-18 - Distinguished shared bird spawning requirements from ordinary first-catch and Sparkling-catch completion.
+
+2026-10-17 - Removed detected-Sparkling sightings as a separate completion requirement; normal species rules remain.
+
 
 2026-10-17 - Reconciled local Full Clear progress with remote report rules and the reviewed source baseline.
 

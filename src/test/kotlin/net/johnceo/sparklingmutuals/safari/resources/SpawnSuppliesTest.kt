@@ -1,5 +1,8 @@
 package net.johnceo.sparklingmutuals.safari.resources
 
+import net.johnceo.sparklingmutuals.safari.resources.renderBird
+import net.johnceo.sparklingmutuals.safari.resources.scanRenderedBirds
+
 import net.johnceo.sparklingmutuals.safari.PartySparklingState
 import net.johnceo.sparklingmutuals.safari.SafariBiome
 import net.johnceo.sparklingmutuals.safari.SafariMode
@@ -17,13 +20,14 @@ class SpawnSuppliesTest {
             birds.startingInventory(listOf("Yogi Berry" to extra), 2000)
             birds.startingInventory(listOf("Yogi Berry" to 30), 3001)
             assertEquals(9 + extra, birds.sparklingTarget)
-            repeat(8 + extra) { birds.spawn("Two Macaws were attracted to the Birdfeeder!") }
+            repeat(8 + extra) { birds.renderBird("Macaw") }
             assertFalse(birds.sparklingSpawned)
-            birds.spawn("A Bluebird was attracted to the Birdfeeder!")
+            birds.renderBird("Bluebird")
             birds.inventory(emptyList())
             birds.scan(0)
             assertTrue(birds.sparklingSpawned)
-            assertFalse(birds.allSpawned) // Full Clear still needs pickup/capture evidence.
+            assertTrue(birds.allSpawned)
+            assertFalse(birds.capturesComplete { 0 }) // Rendering is not Full Clear capture evidence.
         }
     }
     @Test fun `early floor pickups and repeated inventory scans do not inflate starting food`() {

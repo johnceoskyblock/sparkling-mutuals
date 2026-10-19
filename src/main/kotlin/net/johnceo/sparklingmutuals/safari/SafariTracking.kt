@@ -92,7 +92,6 @@ object SafariTracking {
             }
             ledger.current?.sparklingChecks?.chat(text, manualAllowed = SafariFullClear.mode == SafariMode.SPARKLING)
             if (text == "A Gimmiegold appeared out of nowhere and gobbled up your Shining Coin!") ledger.current?.resources?.spawn(SafariBiome.HAUNTED)
-            if (ledger.current?.birds?.spawn(text) == true) { ledger.current?.resources?.spawn(SafariBiome.FOREST); return }
         }
         if (text.startsWith("FLOOR DROP!") && SafariAssist.inSafari) {
             ensureRun(client); ledger.current?.recordBirdFood(text, SafariAssist.biome)

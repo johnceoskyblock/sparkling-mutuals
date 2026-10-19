@@ -38,7 +38,7 @@ Haunted typed need checks are independent: missing Sparkling Gimmiegold requires
 | Party loot-share confirmation | One shared catch; preserve catcher identity when supplied; no personal catch |
 | Floor-drop pickup confirmation | Resource acquired from the floor; keep biome/item/quantity when supplied |
 | Starting-item grant | Starting resource, distinct from a floor pickup |
-| Birdfeeder spawn announcement | Stated species/quantity spawned; one feeding event |
+| Birdfeeder spawn announcement | Informational only; never establishes bird spawning or food use |
 | Mound terminal reveal / empty message | One mound resolved with one Rockmite / no Rockmite |
 | Wall destroyed message | One wall resolved; does not by itself prove a Snoozle spawned |
 | Coin gobbled / critter appeared message | One coin consumed and one Gimmiegold spawned |
@@ -87,24 +87,15 @@ Keep resource grants, floor pickups, resource uses, spawns, sightings and catche
 
 ### Forest mid-run: birds
 
-- Bird spawning is accounted for by shared captures plus the total currently scanned birds nearby, without distinct UUID checking or accumulated scan history. Combine species in feeding equivalents: Bluebirds + Parakeets + floor(Macaws / 2). Personal captures are already included in shared captures.
-- Add shared Macaw captures and current nearby Macaws before dividing by two: one captured plus one scanned is one food used. A lone half-pair cannot establish another feeding opportunity.
-- Require at least nine accounted-for feeding opportunities plus known starting/extra food, no remaining raw Forest floor drops and no held bird food. An unknown floor scan or inventory is not empty. Each announcement uses one food; `Two Macaws` records two spawned Macaws but only one feeding.
-- Retain announcements throughout the run, including before entering Forest. If earlier announcements were missed, shared captures plus the current nearby bird counts can establish the baseline. Announcements overlap that evidence: use the larger feeding-equivalent total, never their sum. There is no central bird UUID-count radius requirement.
-- A verified result persists when leaving Forest; an outside scan cannot first establish no-Macaw completion. A fresh scan is required on Forest reentry. New food, remaining drops, held food and pending party food notices reopen source work. A newly discovered food after completion requires a new feeding beyond the already accounted-for announcements.
-- If no Macaw has spawned or been seen, locally resolved food while in Forest completes Macaw in Full Clear, Unique (with or without a needed Sparkling discovery) and Sparkling, without adding any catches. Other Forest species still need their normal requirements.
-- If Macaws spawned: Full Clear needs one shared Macaw catch, Unique needs only one shared catch, and Sparkling needs only resolved food. A positively detected Sparkling Macaw must still be caught in every mode.
+Use [Forest bird completion](../BIRD_COMPLETION.md) for Bluebird, Parakeet and Macaw. Base demand is nine food/spawn opportunities plus known starting/party-notified food. Only qualified renders inside the X/Z 6/51, radius-15 bird circle establish spawning; shared captures + current birds account for it, with two Macaws per opportunity. Feeder attraction chat is ignored. Raw remaining Forest floor food is checked Safari-wide; locally held bird food also blocks completion.
 
-### Forest birds: shared feeder, independent completion
+Inside Forest, Sparkling requires all expected spawning; Unique adds a shared catch of each bird, except proven no-Macaw spawning. Outside, fd supplies spawning trust; Unique may waive only the last Macaw catch once Bluebird and Parakeet are caught. Full Clear always needs the real expected capture population, retaining one-Macaw credit; fd alone cannot complete birds. Other Forest species keep their own rules.
 
-- Personal food comes from starting grants and Forest pickups. Other party members can also bring starting food, collect Forest food or add food to an already active feeder. Local pickups are a minimum known contribution, not the feeder's total input or an upper limit on spawns.
-- Hypixel sends **no food placement/stacking message**. Infer food progress from initial inventory, pickups, later inventory and spawn announcements; do not require a placement confirmation or assume another player's food is visible in local inventory.
-- Example: one starting food + nine personal Forest pickups = ten personal foods. More than ten feeding/spawn announcements implies another contribution; **more than ten bird entities alone does not**, because one Macaw announcement produces two birds. Record feeding events and stated bird quantities separately.
-- Account for birds with shared captures plus current nearby counts; feeder announcements provide overlapping spawn evidence, not an additional population. Keep actual captures separate. Distinct UUID histories never increase spawning totals. Current bird presence still blocks Full Clear for Bluebird and Parakeet.
-- Correlate that evidence with the minimum known feeding demand, including starting food. Use announcements to account for queued food being consumed. Merely putting food in the feeder does not prove that it has finished producing birds; local inventory alone cannot show a teammate's remaining food.
-- **Full Clear baseline:** all personally acquired starting/floor food must have been used, with known outstanding feeder food resolved. Before this, all three bird rows stay red. Having captured current birds does not waive this baseline while food remains unused.
-- After that baseline, evaluate **Bluebird and Parakeet independently** with a qualifying bird-area scan: no remaining live birds of that species means its capture row turns green; birds of that species still present keep only its row red. **Macaw Full Clear exception:** one confirmed shared Macaw catch completes its row even if additional Macaws remain in the scan. Those remaining Macaws do not block Forest Full Clear or its completion message. Personal Full Clear PBs retain personal-catch evidence when Macaws spawned. If none spawned or were seen, locally resolved food in Forest completes Macaw with zero catches in the progress, capture and missing panels. Proven no-spawn outcomes remain separate from catches; the one-catch exception never fabricates a catch.
-- Further food contributions or new spawn messages reopen feeding/species evaluation; do not freeze green rows or discard announcements beyond the local food count. Sparkling and Unique-with-missing-discovery also keep the shared feeding opportunities required, without requiring every ordinary bird captured for a Sparkling check.
+### Forest birds: shared feeder, qualified reports
+
+An initial Forest clearer needs six separate local bird-food floor pickups, empty bird-food inventory, no remaining food markers and local mode completion to send fd. Late entrants cannot send it. Local starting food counts even without a party notice. Extra-food notices increase demand once per sender/type; old reports cannot waive the new demand. Revalidate queued reports after the current inventory sample. See the linked bird policy for examples and validation.
+
+An earlier detour to another biome does not disqualify the Forest clearer: the late-arrival check uses bird captures already received before their first Forest entry, alongside the six local pickup requirement. Retain earned bird spawning proof and completion through travel and reentry without requiring fd, including a qualified no-Macaw finding. New food or increased expected demand still blocks insufficient retained proof.
 
 ## Unused starting food/coin reminders
 
@@ -125,7 +116,7 @@ Keep resource grants, floor pickups, resource uses, spawns, sightings and catche
 - An unused-resource notice is source evidence, not a catch. It retains its normal Full Clear/Sparkling source effects but cannot undo an ordinary Unique species already secured by its first shared catch.
 - Treat reminders as outstanding-resource status, not additive pickup events: repeat notices must not manufacture more food/coins. Resolve the pending source work through subsequent use/spawn/check/capture evidence under the active mode's rules.
 - **Do not mark the affected biome done again until the reported extra resource has been used and its critter has spawned.** Food requires the resulting bird spawn; a coin requires the resulting Gimmiegold spawn. A cleared inventory or repeated biome-done word alone does not release this pending-resource condition.
-- At the notice, retain the already-accounted-for population. New spawn evidence must account for the **additional** bird/Gimmiegold, not reuse catches/UUIDs that satisfied the old minimum. For birds, require a new feeder announcement or an increase in shared captures plus current nearby birds above the notice baseline; do not reuse old population or distinct UUID history. For Gimmiegold, use its spawn message or a reconciled increase in **shared captures + current live uncaptured critters**, without adding personal catches twice.
+- At the notice, new evidence must account for the additional bird/Gimmiegold. For birds, add deduplicated sender/type quantities to the nine-opportunity target and use qualified shared-capture/current-render population; never use feeder attraction chat. For Gimmiegold, retain its existing spawn-message or shared-capture/current-population reconciliation. Personal captures are already part of shared captures.
 - Resolve each reported resource/quantity once. For multiple food items/coins, account for every resulting feeding/coin spawn; do not treat one new entity as proof that all reported items were consumed. Repeated scans or escape replacement UUIDs do not supply additional spawns.
 - Only then reevaluate all active-mode checks and biome completion. The new spawn releases the extra-resource gate, not Full Clear's capture requirements: newly spawned uncaptured critters still block Full Clear, except additional Macaws after its one-catch requirement and all known food use are satisfied. Unique retains its shared catch plus applicable Sparkling checks, and its current-biome-only announcement guard.
 
@@ -164,10 +155,10 @@ Keep resource grants, floor pickups, resource uses, spawns, sightings and catche
 | Mode | Species rows |
 | --- | --- |
 | Full Clear | Local capture/source proof and a qualified empty scan advance progress and remove the missing row without a report; retain that proof after leaving. Other biomes without local proof use party report plus minimum captures, with existing fixed-count exceptions. Positive remaining critters reopen local completion. See the [per-critter panel reference](../MISSING_PANEL.md). |
-| Unique | One confirmed shared catch immediately completes Unique and removes the missing row, without a local Sparkling scan/radius requirement. Detected uncaptured Sparklings still block completion. |
+| Unique | One confirmed shared catch immediately completes Unique and removes the missing row, without a local Sparkling scan/radius requirement. Detected Sparkling entities do not add a separate capture requirement. |
 | Sparkling | Show a **needs checking** checklist for required discoveries. Remove a species after all its Sparkling requirements pass; reopen it if later qualifying evidence invalidates completion. This is a check list, not a capture-only missing list. |
 
-- In every mode, list only plain critter names in their species colors. The only gray text on a critter row is the applicable fixed `X/M captured` or `X/M checked` suffix. Do not append checking prose or duplicate species counters. Rockmite/Snoozle awaiting source resolution or cd confirmation of no spawn remain listed, apart from actual uncaptured Sparkling obligations.
+- In every mode, list only plain critter names in their species colors. The only gray text on a critter row is the applicable fixed `X/M captured` or `X/M checked` suffix. Do not append checking prose or duplicate species counters. Rockmite/Snoozle awaiting source resolution or cd confirmation of no spawn remain listed.
 - Only **Scrappy 3, Gemzie 3, Troodon 3 and Gazer 4** have the confirmed fixed-spawn **X/X** suffix. Label the quantity explicitly by mode; never show a bare `1/4`.
 - **Full Clear:** local capture/source and qualified empty-scan completion advances progress without a report; variable species in other biomes without local proof require a party biome report and real minimum captures. Fixed-count species can complete early. Positive remaining critters or known unfinished sources reopen only their species; personal PBs retain strict local/personal evidence.
 - **Unique:** ordinary species complete from one shared catch; Honeybug additionally needs checking/report confirmation in progress when its discovery is needed, while its missing row still clears on the first catch. Rockmite/Snoozle need one shared catch plus resolved safari-wide sources; `cd` can confirm an unseen zero-spawn case after all sources resolve; confirmed Sparkling capture overrides and the no-Macaw exception remain independent.
@@ -188,16 +179,15 @@ Forest retains **Bee nests to punch** while nest work is unresolved. Cavern reta
 
 **Wumpa and Doomspiral are capture-required exceptions in Sparkling mode.** A needed boss remains unchecked until this run receives a personal capture or party loot-share confirmation. Seeing or retaining its UUID, a spawn/awoken/slain message, and a party biome-completion report cannot substitute for that capture. The confirmed catch completes its check immediately and remains valid across unloading, biome reentry and mode changes. Other species keep their existing checking rules.
 
-Positive Sparkling names and skin matches now use [one detector path](../SPARKLING_DETECTION.md) for alerts and capture requirements. Ordinary scan circles remain unchanged; delayed post-start skin updates are reread, and every currently loaded positive can be detected beyond the former 80-block display cap.
+Positive Sparkling names and skin matches use [one detector path](../SPARKLING_DETECTION.md) for alerts and the detected list. Ordinary scan circles remain unchanged; delayed post-start skin updates are reread, and every currently loaded positive can be detected beyond the former 80-block display cap. Detection does not add a capture requirement.
 
-## Sparkling captures block biome completion in every mode
+## Sparkling detection does not gate completion
 
-Any positively detected **Sparkling critter** creates a capture requirement for its species and biome in the current run, even if everybody already owns that discovery. This rule applies in Unique, Full Clear and Sparkling modes, including a Sparkling Macaw after the ordinary one-Macaw requirement is met.
+The user reports repeated entities for the same Sparkling during capsule capture. A detected name/skin identity therefore does not add a mandatory capture requirement in Unique, Full Clear or Sparkling mode. Keep detection, alerts and confirmed catches separate from completion policy.
 
-- Record distinct Sparkling name/skin detections as their entities load, aliasing each model and its name tag into one identity, independently of alert/ESP toggles, the player's current biome and the ordinary 80-block display radius. Retain unresolved sightings through unloading, biome reentry and mode switches; a new run starts with a fresh ledger.
-- Keep the affected species in the missing panel and out of completed progress while any detected Sparkling of that species remains unresolved. In Sparkling mode this adds a temporary capture target even when the party does not need its discovery. Party biome reports, normal population checks and ordinary catches cannot resolve it.
-- Require a confirmed Sparkling personal capture, Sparkling loot share or trusted global `SPARKLING! <player> caught/found a SPARKLING <species>!` message. Reconcile the global announcement and its capture/loot-share reward as one catch, in either order. Each confirmed catch resolves one outstanding sighting of the same species; multiple detected Sparklings require multiple catches.
-- Reopen a previously completed biome when a new Sparkling is detected. Suppress queued biome reports and run-complete alerts while capture obligations remain. Once all detected Sparklings of that species are confirmed caught, mark that species complete immediately in Unique (including Unique + Sparkling checks) and Sparkling modes, even when ordinary UUID/source requirements remain unfinished. Remove its missing/check row and update progress. In Full Clear, clearing the Sparkling obligation resumes the normal capture/source requirements; when those pass, mark progress and capture panels complete and remove the missing row. A lingering captured identity or duplicate announcement/reward must not restore the obligation. Do not manufacture ordinary catch totals or PB evidence from a global Sparkling announcement.
+- Retain model/name-tag aliases for alerts and the detected list. Known resolved aliases stay excluded from the detected HUD and live-population accounting. New or lingering detections cannot reopen completed species or add missing-panel targets.
+- Apply the normal capture, source, party-report and qualifying-check rules. Pending detected identities cannot block species/biome progress, queued biome reports, run-complete alerts or Unique PBs.
+- Confirmed Sparkling personal catches, loot shares and trusted global catch announcements still complete ordinary Unique/Sparkling species immediately, even if duplicate detected identities remain. The three birds also require their shared spawning/source evidence. Full Clear retains its normal capture/source requirements. Reconcile paired announcement/reward messages without manufacturing ordinary catches or PB evidence from a global announcement.
 
 ## Full Clear report trust and positive revalidation
 
@@ -207,7 +197,7 @@ Any positively detected **Sparkling critter** creates a capture requirement for 
 - **Known fixed counts:** Scrappy 3, Gemzie 3, Troodon 3 and Gazer 4 can complete progress from their confirmed shared capture totals without waiting for a report or an exhaustive UUID survey. Their Full Clear missing rows still need local empty-scan proof. Checked UUIDs never increment their captured counters.
 - Each species is evaluated independently. A report never adds captures or personal PB evidence. Numeric minima retain the existing baseline caveat; dynamic bird/mound quantities use their confirmed source evidence. Macaw retains its one-catch/no-spawn exception.
 - Reports persist across entry, unloading and incomplete scan coverage. Only **positive remaining-critter evidence** reopens that species, including loaded critters observed from a different biome. Retain the number of additional captures evidenced by the current population; do not accumulate historical UUIDs or count escape replacements repeatedly. Later capture confirmations resolve this work without seeing the old identities again.
-- Known unbroken Rockmite mounds/Snoozle walls, explicit outstanding extra-resource notices and detected uncaptured Sparklings remain positive blockers. Unknown unloaded space is not an unbroken source or an uncaptured critter. Additional ordinary Macaws do not defeat the one-catch exception. A report alone cannot establish the zero-catch no-Macaw outcome: require local resolved-food/no-spawn proof, or one real catch. Known held food, held coins, new required coin spawns and unresolved food delivery remain blockers even after a report.
+- Known unbroken Rockmite mounds/Snoozle walls, and explicit outstanding extra-resource notices remain positive blockers. Unknown unloaded space is not an unbroken source or an uncaptured critter. Additional ordinary Macaws do not defeat the one-catch exception. A report alone cannot establish the zero-catch no-Macaw outcome: require local resolved-food/no-spawn proof, or one real catch. Known held food, held coins, new required coin spawns and unresolved food delivery remain blockers even after a report.
 - Strict local capture/source evidence remains separate for the mod's own completion reports and personal PBs. Trusted remote progress is not proof of a personal clear. Unique and Sparkling use their separate rules.
 
 ## Biome completion and party synchronization
@@ -228,21 +218,22 @@ Any positively detected **Sparkling critter** creates a capture requirement for 
 | Rockmite | Shared catch plus all mounds resolved, or report-confirmed unseen zero spawn; intact sources reopen completion | Loaded mound-site evidence may resolve it from another biome |
 | Snoozle | Shared catch plus all five walls resolved, or report-confirmed unseen zero spawn; intact sources reopen completion | Loaded wall-block evidence may resolve it from another biome |
 | Honeybug | First catch removes its species row; progress also needs checking/report trust if its discovery is needed | Retain party fd through later entry, or finish local nests |
+| Bluebird / Parakeet / Macaw | Shared catch plus bird spawning proof; retain the documented no-Macaw exceptions | Qualified renders inside Forest; fd trust outside, with known food blockers |
 | Every other species | Complete and remove the row after the first shared catch | Trust party checking; local Sparkling scan/source work does not gate Unique progress |
 
-Sparkling mode retains its actual per-species source/scan rules. Positive detections create capture obligations in all modes. Source highlights can remain independent of progress; no ordinary species needs a local scan before its Unique catch is counted.
+Sparkling mode retains its actual per-species source/scan rules. Positive detections add no separate capture obligation in any mode. Source highlights can remain independent of progress; no ordinary species needs a local scan before its Unique catch is counted.
 
 ### Delayed spawn evidence: Gemzie
 
-- A spawn announcement can precede entity arrival. It starts a pending Sparkling check, not immediate completion. Inside Gemzie's Sparkling scan radius, retain distinct qualified Gemzie UUIDs across scans and reconcile shared captures to establish at least three checked spawns. With zero catches, all three must have been seen, but they need not be rendered simultaneously. The door-opening announcement alone remains insufficient.
-- Do not complete/announce Cavern just because the Gemzie spawn message was its last expected event. Wait for the actual three-Gemzie evidence and the remaining mode checks; use evidence rather than a fixed delay.
-- Outside Cavern, a received `cd` may fill Full Clear/Sparkling progress. On entry, revalidate the three-Gemzie count and reopen incomplete critter/biome checks; Full Clear also needs its catches/absence rules. Unique Gemzie completes from its first shared catch without cd or local three-spawn checking. The three-spawn requirement remains for Sparkling mode.
+- The exact Hypixel message `A rumbling sound can be heard, and the door at the back of the chamber opens...` checks Gemzie after five seconds, without entity sightings. Duplicate messages do not restart the delay; player quotations do not start it. The proof lasts for the run, including Cavern reentry.
+- The timer supplies 3/3 checked in Sparkling mode and the needed Sparkling check in Unique mode. Qualified retained UUID/capture evidence remains an alternative. Cavern may complete once Gemzie's delay and the remaining active mode checks pass.
+- This proof supplies no captures. Unique Gemzie still needs its first shared catch. Full Clear retains its capture/absence requirements, including after a remote `cd`.
 
 ## Variable spawn and activity events
 
 | Source | Observed progression | Deduction / limit |
 | --- | --- | --- |
-| Birdfeeder | Bluebird / Parakeet attracted; known plural `Two Macaws were attracted to the Birdfeeder!` | Count the stated spawn quantity, once per announcement; feeding is not capture |
+| Birdfeeder | Bluebird / Parakeet attracted; known plural `Two Macaws were attracted to the Birdfeeder!` | Informational only; use qualified render/capture evidence instead |
 | Rockmite mound | Four cracking/progress lines, then terminal reveal or terminal empty | Progress is not a spawn; terminal outcome resolves that mound |
 | Snooper wall | Ran headfirst / some cracks → keep running / more cracks → destroyed / maybe something hiding | Third line confirms destruction; use resulting UUIDs/catches to establish Snoozles |
 | Shyworm | Surfaced nearby / don't let it see you → eight rotations → hid back into ground | Activity cycle; not a catch and not assumed eight seconds |
@@ -261,7 +252,7 @@ For the observed three-floor-coin baseline, confirmed pickup/use history outrank
 
 At run start retain each validated Shining Coin floor-drop slot once, independently of the player's current biome and display switches. Sparkling local checking requires every slot collected, sampled inventory empty of coins, and qualifying **shared captures + currently rendered uncaptured Gimmiegolds >= initial coin slots + known additional coins**. Historical UUID checks and a fixed three-pickup shortcut cannot satisfy this rule. Additional coins come from local starting inventory and accepted party unused-coin notices, deduplicated by sender; own notices overlap own starting coins.
 
-A received `hd` can override ordinary checking outside Haunted. On entry, revalidate locally; an inside report cannot bypass local sources. Unique still needs one shared catch, Full Clear still needs the actual capture minimum, and an unresolved detected Sparkling blocks every mode. See [Gimmiegold](gimmiegold.md).
+A received `hd` can override ordinary checking outside Haunted. On entry, revalidate locally; an inside report cannot bypass local sources. Unique still needs one shared catch, Full Clear still needs the actual capture minimum, and detected Sparkling identities do not override those rules. See [Gimmiegold](gimmiegold.md).
 
 ## Evidence still to pin down
 
@@ -272,6 +263,11 @@ A received `hd` can override ordinary checking outside Haunted. On entry, revali
 After one local clearing-completion trigger, keep all unsent independently eligible starting-item reminders available for the run, even when an earlier party report suppresses this client's outgoing biome-done message. Repeated local-clear polls do not restart the delivery delay. Recompute quantity, destination and missing discoveries immediately before each delivery; only delivered notices mark notification/source state. Batch all currently eligible items into one title and party message; retain four-second spacing only if a previously suppressed item becomes eligible later. Suppression or cancellation does not consume an unsent reminder. Initial inventory sampling starts at the first available inventory sample, rather than world-arrival time; grants overlap it and separately recorded later floor pickups are subtracted.
 
 ## Last updated
+
+2026-10-18 - Applied qualified bird renders, mode-specific remote trust and initial-clearer fd eligibility.
+
+
+2026-10-17 - Removed detected-Sparkling completion gates in all modes while retaining alerts and confirmed-catch completion.
 
 2026-10-17 - Aligned entry guards with tab-first Safari presence, two-second kick pauses, ticket-message downtime release and Shift override.
 

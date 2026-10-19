@@ -33,7 +33,7 @@ class SparklingDetectorTest {
         }
         val fresh = model(10)
         run.observeSparkling(fresh.uuid, "Duplico")
-        assertTrue(run.sparklePending("Duplico"), "a genuinely new Sparkling still blocks completion")
+        assertTrue(run.sparklePending("Duplico"), "a new identity remains available to detection tracking")
     }
     @Test fun `sheet covers 36 distinct skins with Areita spelling normalized and Tepid left unknown`() {
         assertEquals(36, SparklingSkins.textures.size)
@@ -95,14 +95,14 @@ class SparklingDetectorTest {
         val renamed = model().copy(name = "Sparkling Tepid")
         assertEquals("Tepid", SparklingDetector.detect(listOf(renamed)).single().species)
     }
-    @Test fun `positive detector evidence blocks each mode without replacing ordinary scan circles`() {
+    @Test fun `positive detections cannot undo a normal Unique catch or replace ordinary scan circles`() {
         val run = SafariRun(0); val body = model(); val found = SparklingDetector.detect(listOf(body)).single()
         val party = PartySparklingState().apply {
             select(setOf("me")); accept(setOf("me"), mapOf("me" to SafariRoster.all.map { it.name }.toSet()))
         }
         run.record(SafariCatch(SafariRoster.named("Duplico")!!))
         run.observeSparkling(body.uuid, found.species, found.aliases)
-        SafariMode.entries.forEach { assertEquals(0, run.completed(it, listOf(SafariRoster.named("Duplico")!!), party)) }
+        assertEquals(1, run.completed(SafariMode.UNIQUE, listOf(SafariRoster.named("Duplico")!!), party))
         val checks = SparklingChecks()
         checks.scan(SafariBiome.HAUNTED, 500.0, 500.0, List(2) { "Duplico" to UUID.randomUUID() })
         assertFalse(checks.locallyChecked("Duplico"))

@@ -14,12 +14,12 @@ All nests are accounted for once every actual nest was personally punched or **C
 
 | Mode | Progress | Species row |
 | --- | --- | --- |
-| Full Clear | Capture N Honeybugs, using shared capture messages from any biome. No local empty scan, personal punch history or party report is needed once N is known. Known extra population and actual pending Sparklings remain blockers. | Clears when the actual capture requirement passes. A report alone cannot supply captures. |
+| Full Clear | Capture N Honeybugs, using shared capture messages from any biome. No local empty scan, personal punch history or party report is needed once N is known. Known extra population remains a blocker; detected Sparkling identities add no separate requirement. | Clears when the actual capture requirement passes. A report alone cannot supply captures. |
 | Unique, Sparkling Honeybug already owned by everyone | One shared Honeybug catch. | Disappears after one shared catch. |
 | Unique, someone needs Sparkling Honeybug | One shared catch **plus** local nest checking or a trusted party Forest-done (`fd`) report. Outside Forest, trust the party report for Sparkling confirmation. | Still disappears after one shared catch, even while progress awaits checking/report confirmation. |
 | Sparkling, someone needs Honeybug | Local nest checking or a trusted `fd`; no ordinary capture requirement. | Disappears when checking is complete. The panel is **Unchecked**. |
 
-A trusted `fd` remains valid for Honeybug after entering Forest later, leaving again, or changing modes. Missing bees in render range, incomplete later scans and unpunched local history cannot disprove the party member's completed check. Reports supply checking trust only: Unique still needs a real shared catch, and Full Clear still needs the retained capture total. A detected uncaught Sparkling overrides report trust in every mode; retain that capture obligation through unloading. The shared confirmed-Sparkling capture override remains available in Unique/Sparkling.
+A trusted `fd` remains valid for Honeybug after entering Forest later, leaving again, or changing modes. Missing bees in render range, incomplete later scans and unpunched local history cannot disprove the party member's completed check. Reports supply checking trust only: Unique still needs a real shared catch, and Full Clear still needs the retained capture total. Detected Sparkling identities do not override report trust. The confirmed-Sparkling catch override remains available in Unique/Sparkling.
 
 ## Highlights and helpers
 
@@ -37,6 +37,9 @@ Ordinary Honeybug ESP: Full Clear keeps uncaught bees highlighted, Unique stops 
 - Start a new run and confirm no prior nest/report history carries over. A positively detected uncaught Sparkling must still block all modes.
 
 ## Last updated
+
+2026-10-17 - Removed detected-Sparkling sightings as a separate completion requirement; normal species rules remain.
+
 
 2026-10-17 - Full Clear retains unpunched nest highlights until the known nest population is captured; fd and rendered bees cannot hide them. Unique/Sparkling report trust is unchanged.
 

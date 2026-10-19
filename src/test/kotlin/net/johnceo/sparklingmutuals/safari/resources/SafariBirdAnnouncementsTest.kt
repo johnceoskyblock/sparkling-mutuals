@@ -1,5 +1,8 @@
 package net.johnceo.sparklingmutuals.safari.resources
 
+import net.johnceo.sparklingmutuals.safari.resources.renderBird
+import net.johnceo.sparklingmutuals.safari.resources.scanRenderedBirds
+
 import net.johnceo.sparklingmutuals.safari.SafariBiome
 import net.johnceo.sparklingmutuals.safari.SafariCatch
 import net.johnceo.sparklingmutuals.safari.SafariRoster
@@ -9,21 +12,22 @@ import org.junit.jupiter.api.Test
 
 class SafariBirdAnnouncementsTest {
     private fun run() = SafariRun(0).apply {
+        visitBiome(SafariBiome.FOREST)
         repeat(3) { for (food in listOf("Bag of Seeds", "Wriggleworm", "Yogi Berry")) recordBirdFood("FLOOR DROP! $food") }
-        repeat(3) { birds.spawn("A Bluebird was attracted to the Birdfeeder!") }
-        repeat(3) { birds.spawn("A Parakeet was attracted to the Birdfeeder!") }
-        repeat(3) { birds.spawn("Two Macaws were attracted to the Birdfeeder!") }
+        repeat(3) { birds.renderBird("Bluebird") }
+        repeat(3) { birds.renderBird("Parakeet") }
+        repeat(3) { birds.renderBird("Macaw") }
         updateCaptureEvidence(SafariBiome.FOREST, emptySet(), false)
         birds.inventory(emptyList())
-        birds.scan(0)
+        scanRenderedBirds()
     }
     private fun SafariRun.catch(name: String, amount: Int, personal: Boolean = true) {
         repeat(amount) { record(SafariCatch(SafariRoster.named(name)!!, personal)) }
     }
-    @Test fun `spawn announcements count food but held inventory blocks completion`() {
+    @Test fun `qualified rendered spawns count food opportunities but held inventory blocks completion`() {
         val run = run()
         run.birds.inventory(listOf("Bag of Seeds" to 3, "Wriggleworm" to 3, "Yogi Berry" to 3))
-        assertEquals(9, run.birds.used)
+        assertEquals(9, run.birds.accountedFeedings)
         assertFalse(run.birds.allSpawned)
         run.birds.inventory(emptyList())
         assertTrue(run.birds.allSpawned)
@@ -31,7 +35,7 @@ class SafariBirdAnnouncementsTest {
         assertTrue(run.birdsComplete(emptySet()))
         run.recordBirdFood("FLOOR DROP! Bag of Seeds")
         assertFalse(run.birds.allSpawned)
-        run.birds.spawn("A Bluebird was attracted to the Birdfeeder!")
+        run.birds.renderBird("Bluebird")
         run.birds.scan(0)
         assertFalse(run.birdsComplete(emptySet()))
         run.catch("Bluebird", 1)
@@ -44,6 +48,7 @@ class SafariBirdAnnouncementsTest {
         run.catch("Bluebird", 1)
         assertTrue(run.birdsComplete(emptySet()))
         run.updateCaptureEvidence(SafariBiome.FOREST, setOf("Bluebird"), false)
+        run.scanBirdSources(0, listOf("Bluebird"))
         assertFalse(run.birdsComplete(setOf("Bluebird")))
     }
     @Test fun `one Macaw completes Full Clear despite unloaded extra pairs but not personal PB from party catches`() {

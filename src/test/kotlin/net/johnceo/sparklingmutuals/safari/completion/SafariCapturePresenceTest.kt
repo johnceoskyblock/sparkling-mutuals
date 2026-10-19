@@ -1,5 +1,8 @@
 package net.johnceo.sparklingmutuals.safari.completion
 
+import net.johnceo.sparklingmutuals.safari.resources.renderBird
+import net.johnceo.sparklingmutuals.safari.resources.scanRenderedBirds
+
 import net.johnceo.sparklingmutuals.safari.SafariBiome
 import net.johnceo.sparklingmutuals.safari.SafariCatch
 import net.johnceo.sparklingmutuals.safari.SafariRoster
@@ -29,19 +32,20 @@ class SafariCapturePresenceTest {
     @Test fun `birds clear independently after feeding and every remaining species blocks itself`() {
         val run = SafariRun(0)
         repeat(3) { for (food in listOf("Bag of Seeds", "Wriggleworm", "Yogi Berry")) run.recordBirdFood("FLOOR DROP! $food") }
-        repeat(8) { run.record(SafariCatch(SafariRoster.named("Bluebird")!!)); run.birds.spawn("A Bluebird was attracted to the Birdfeeder!") }
-        run.birds.spawn("Two Macaws were attracted to the Birdfeeder!")
+        repeat(8) { run.record(SafariCatch(SafariRoster.named("Bluebird")!!)); run.birds.renderBird("Bluebird") }
+        run.birds.renderBird("Macaw")
         run.inventoryEvidence(emptyList(), 10000)
-        run.scanBirdSources(0)
+        run.scanRenderedBirds()
         run.updateCaptureEvidence(SafariBiome.FOREST, setOf("Macaw"), false)
-        assertTrue(run.captureComplete("Bluebird"))
-        assertTrue(run.captureComplete("Parakeet")) // No Parakeet was announced or remains.
+        assertFalse(run.captureComplete("Bluebird"))
+        assertFalse(run.captureComplete("Parakeet")) // Expected birds are not all captured yet.
         assertFalse(run.captureComplete("Macaw"))
         run.record(SafariCatch(SafariRoster.named("Macaw")!!))
         assertTrue(run.captureComplete("Macaw")) // One shared catch suffices despite the remaining Macaw.
         run.updateCaptureEvidence(SafariBiome.FOREST, emptySet(), false)
         assertTrue(run.birdsComplete(emptySet(), personalOnly = true))
         run.recordBirdFood("FLOOR DROP! Bag of Seeds")
+        run.birds.inventory(listOf("Bag of Seeds" to 1))
         assertFalse(run.captureComplete("Bluebird")) // Extra food reopens every feeder row.
     }
 }

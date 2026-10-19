@@ -72,9 +72,12 @@ class FullClearReportRulesTest {
         run.partyFullClear("Party > Friend: fd"); run.visitBiome(SafariBiome.FOREST)
         run.observePopulation(List(12) { "Macaw" to UUID.randomUUID() })
         run.updateCaptureEvidence(SafariBiome.FOREST, setOf("Macaw"), false, macawsInRange = 12)
+        run.inventoryEvidence(emptyList(), 10000)
+        caught(run, "Bluebird", 3)
+        run.scanBirdSources(0, List(11) { "Macaw" })
         assertTrue(run.fullClearComplete("Macaw"))
         run.observeSparkling(UUID.randomUUID(), "Macaw")
-        assertFalse(run.fullClearComplete("Macaw"), "an actual Sparkling still needs capture")
+        assertTrue(run.fullClearComplete("Macaw"), "detection cannot override the normal one-Macaw exception")
     }
     @Test fun `report trust does not waive positively observed unbroken spawn sources`() {
         val run = SafariRun(0)
@@ -93,6 +96,7 @@ class FullClearReportRulesTest {
         run.partyFullClear("Party > Friend: fd")
         assertFalse(run.fullClearComplete("Macaw"))
         caught(run, "Macaw", 1)
+        caught(run, "Bluebird", 8)
         assertTrue(run.fullClearComplete("Macaw"))
     }
     @Test fun `positive remainder seen from another biome reopens reported species until captured`() {
@@ -114,6 +118,7 @@ class FullClearReportRulesTest {
     @Test fun `known held food and extra coins cannot be waived by an old completion report`() {
         val birds = SafariRun(0)
         caught(birds, "Macaw", 1)
+        caught(birds, "Bluebird", 8)
         birds.partyFullClear("Party > Friend: fd")
         assertTrue(birds.fullClearComplete("Macaw"))
         birds.inventoryEvidence(listOf("Yogi Berry" to 1), 10000)

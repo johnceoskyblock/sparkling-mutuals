@@ -30,12 +30,12 @@ class SparklingBossCheckIsolationTest {
         assertEquals("1/1", row(run, setOf("Troodon")))
         assertEquals(0, run.personalCount("Troodon"))
     }
-    @Test fun `Wumpa capture only completes its own check after scanning`() {
+    @Test fun `Wumpa capture completes all Icy checks after scanning`() {
         ConfigManager.init(dir); ConfigManager.sparklingMode = true
         val run = SafariRun(0)
         run.record(SafariCatch(SafariRoster.named("Wumpa")!!, personal = false))
         run.sparklingChecks.scan(SafariBiome.ICY, -110.0, -78.0, emptyList())
-        assertEquals("1/3", row(run, setOf("Wumpa", "Troodon", "Polaris")))
+        assertEquals("3/3", row(run, setOf("Wumpa", "Troodon", "Polaris")))
         assertFalse(run.sparklingChecks.checked("Gemzie"))
         assertTrue(run.biomeClears.isEmpty()); assertTrue(run.uniqueBiomeClears.isEmpty())
         assertEquals("0/2", row(SafariRun(0), setOf("Wumpa", "Troodon")))

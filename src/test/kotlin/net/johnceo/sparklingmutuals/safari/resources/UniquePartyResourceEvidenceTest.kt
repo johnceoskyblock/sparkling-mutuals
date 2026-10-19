@@ -1,5 +1,8 @@
 package net.johnceo.sparklingmutuals.safari.resources
 
+import net.johnceo.sparklingmutuals.safari.resources.renderBird
+import net.johnceo.sparklingmutuals.safari.resources.scanRenderedBirds
+
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.safari.PartySparklingState
 import net.johnceo.sparklingmutuals.safari.SafariBiome
@@ -30,7 +33,7 @@ class UniquePartyResourceEvidenceTest {
             if (!inventoryFirst) birds.startingInventory(listOf("Yogi Berry" to 2), 500)
             repeat(3) { for (food in listOf("Bag of Seeds", "Wriggleworm", "Yogi Berry")) birds.pickup("FLOOR DROP! $food", SafariBiome.FOREST) }
             assertEquals(11, birds.feedingTarget)
-            repeat(11) { birds.spawn("A Bluebird was attracted to the Birdfeeder!") }
+            repeat(11) { birds.renderBird("Bluebird") }
             birds.inventory(emptyList())
             birds.scan(0)
             assertTrue(birds.allSpawned)
@@ -42,6 +45,7 @@ class UniquePartyResourceEvidenceTest {
     }
     private fun forest() = SafariRun(0).apply {
         visitBiome(SafariBiome.FOREST)
+        repeat(6) { recordBirdFood("FLOOR DROP! Wriggleworm", SafariBiome.FOREST, 10000) }
         SafariBiome.FOREST.critters.forEach { record(SafariCatch(it)) }
         updateCaptureEvidence(SafariBiome.FOREST, emptySet(), false)
     }
@@ -56,23 +60,23 @@ class UniquePartyResourceEvidenceTest {
         run.visitBiome(SafariBiome.CAVERN)
         assertEquals(0, run.completed(SafariMode.UNIQUE, SafariBiome.CAVERN.critters, state))
     }
-    @Test fun `owned bird discoveries waive extra Unique feeding work`() {
+    @Test fun `owned bird discoveries do not waive Unique spawning requirements`() {
         val run = forest(); val state = party()
-        assertEquals(9, run.completed(SafariMode.UNIQUE, SafariBiome.FOREST.critters, state))
-        assertEquals("fd", run.completion.announcement(run, SafariBiome.FOREST, SafariMode.UNIQUE, state))
+        assertEquals(6, run.completed(SafariMode.UNIQUE, SafariBiome.FOREST.critters, state))
+        assertNull(run.completion.announcement(run, SafariBiome.FOREST, SafariMode.UNIQUE, state))
     }
     @Test fun `random starting food adds feedings and Macaw pairs consume one food each`() {
         val run = forest(); val state = party("Bluebird")
         run.inventoryEvidence(listOf("Bag of Seeds" to 2), 0)
-        repeat(8) { run.birds.spawn("A Bluebird was attracted to the Birdfeeder!") }
-        run.birds.spawn("Two Macaws were attracted to the Birdfeeder!")
-        assertEquals(9, run.birds.used)
+        repeat(8) { run.birds.renderBird("Bluebird") }
+        run.birds.renderBird("Macaw")
+        assertEquals(9, run.birds.accountedFeedings)
         assertFalse(run.sparklingComplete("Bluebird", state))
-        run.birds.spawn("A Parakeet was attracted to the Birdfeeder!")
+        run.birds.renderBird("Parakeet")
         assertFalse(run.sparklingComplete("Bluebird", state))
-        run.birds.spawn("Two Macaws were attracted to the Birdfeeder!")
+        run.birds.renderBird("Macaw")
         run.inventoryEvidence(emptyList(), 10000)
-        run.scanBirdSources(0)
+        run.scanRenderedBirds()
         run.sparklingChecks.scan(SafariBiome.FOREST, 3.0, 47.0, emptyList(), birdsSpawned = run.birds.sparklingSpawned)
         assertEquals("fd", run.completion.announcement(run, SafariBiome.FOREST, SafariMode.UNIQUE, state))
     }
@@ -80,18 +84,18 @@ class UniquePartyResourceEvidenceTest {
         ConfigManager.fullClearMode = false; ConfigManager.sparklingMode = false
         val run = forest(); val state = party("Bluebird", "Parakeet", "Macaw")
         SafariMessages.forRun("Party > Friend: fd", run, true)
-        assertEquals(9, run.completed(SafariMode.UNIQUE, SafariBiome.FOREST.critters, state))
-        assertEquals("9/9", SafariPanels.progress(run, true, 0, state).rows.single { it.label == "Forest" }.value)
+        assertEquals(6, run.completed(SafariMode.UNIQUE, SafariBiome.FOREST.critters, state))
+        assertEquals("6/9", SafariPanels.progress(run, true, 0, state).rows.single { it.label == "Forest" }.value)
         assertFalse(run.sparklingComplete("Bluebird", state))
     }
     @Test fun `Full Clear feeding and capture demand include extra starting inventory`() {
         val birds = SafariBirdLedger()
         birds.startingInventory(listOf("Yogi Berry" to 2), 0)
         repeat(3) { for (food in listOf("Bag of Seeds", "Wriggleworm", "Yogi Berry")) birds.pickup("FLOOR DROP! $food", SafariBiome.FOREST) }
-        repeat(9) { birds.spawn("A Bluebird was attracted to the Birdfeeder!") }
+        repeat(9) { birds.renderBird("Bluebird") }
         assertFalse(birds.allSpawned)
         assertFalse(birds.sufficient(9, 0, 0))
-        repeat(2) { birds.spawn("A Bluebird was attracted to the Birdfeeder!") }
+        repeat(2) { birds.renderBird("Bluebird") }
         birds.inventory(emptyList())
             birds.scan(0)
             assertTrue(birds.allSpawned)

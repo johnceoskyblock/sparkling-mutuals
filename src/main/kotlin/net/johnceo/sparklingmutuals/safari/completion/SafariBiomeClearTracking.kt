@@ -22,7 +22,7 @@ object SafariBiomeClearTracking {
         val run = SafariTracking.ledger.current ?: return
         if (client.level == null) return
         val player = client.player ?: return
-        val biome = SafariAssist.biome ?: return
+        val currentBiome = SafariAssist.biome
         if (SafariAssist.location != SafariLocation.INSIDE) return
         val snapshot = SafariEsp.observations()
         if (!snapshot.scanned) return
@@ -30,6 +30,12 @@ object SafariBiomeClearTracking {
         run.inventoryEvidence((0 until inventory.containerSize).map { inventory.getItem(it) }
             .filterNot { it.isEmpty }.map { it.hoverName.string to it.count })
         run.localPlayer(player.name.string)
+        // Forest food markers are visible Safari-wide, including the central boat and other biomes.
+        run.scanBirdSources(
+            snapshot.forestBirdFoodDropsRemaining,
+            snapshot.critters.filter { it.biome == SafariBiome.FOREST && !it.mound }.distinctBy { it.uuid }.map { it.species },
+            qualified = currentBiome == SafariBiome.FOREST && ForestCompletionZones.inBirdScanRadius(player.x, player.z))
+        val biome = currentBiome ?: return
         run.observePopulation(snapshot.critters.filterNot { it.mound }.map { it.species to it.uuid })
         snapshot.critters.filterNot { it.mound }.forEach { run.observeCritter(it.id, it.species, it.uuid) }
         run.updateCaptureEvidence(biome, snapshot.critters.filter {
@@ -45,10 +51,6 @@ object SafariBiomeClearTracking {
             fun population(name: String) = run.count(name) + snapshot.critters.filter { it.species == name && !it.mound }.map { it.uuid }.distinct().size
             run.resources.scan(biome, population("Gimmiegold"))
         }
-        if (biome == SafariBiome.FOREST) run.scanBirdSources(
-            // Include unselected and uncertain markers: predicted type is not absence evidence.
-            snapshot.floorDrops.count { SafariEspRules.biomeAt(it.x.toDouble(), it.z.toDouble()) == biome },
-            snapshot.critters.filter { it.biome == biome && !it.mound }.map { it.species })
         run.sparklingChecks.scan(biome, player.x, player.z,
             snapshot.critters.filterNot { it.mound }.map { it.species to it.uuid },
             nestsChecked = run.nestsResolved,

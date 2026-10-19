@@ -1,5 +1,8 @@
 package net.johnceo.sparklingmutuals.safari.resources
 
+import net.johnceo.sparklingmutuals.safari.resources.renderBird
+import net.johnceo.sparklingmutuals.safari.resources.scanRenderedBirds
+
 import net.johnceo.sparklingmutuals.safari.SafariBiome
 import net.johnceo.sparklingmutuals.safari.SafariCatch
 import net.johnceo.sparklingmutuals.safari.SafariRoster
@@ -17,8 +20,8 @@ class SafariForestFeedingTest {
             repeat(amount) { record(SafariCatch(SafariRoster.named(name)!!)) }
         }
         repeat(3) { for (food in listOf("Bag of Seeds", "Wriggleworm", "Yogi Berry")) recordBirdFood("FLOOR DROP! $food") }
-        repeat(5) { birds.spawn("A Bluebird was attracted to the Birdfeeder!") }
-        repeat(4) { birds.spawn("Two Macaws were attracted to the Birdfeeder!") }
+        repeat(5) { birds.renderBird("Bluebird") }
+        repeat(4) { birds.renderBird("Macaw") }
         birds.inventory(emptyList())
         birds.scan(0)
     }

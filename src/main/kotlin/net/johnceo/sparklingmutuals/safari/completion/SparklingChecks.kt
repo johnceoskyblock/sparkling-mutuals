@@ -10,10 +10,13 @@ import net.johnceo.sparklingmutuals.safari.SafariRules
 import net.johnceo.sparklingmutuals.safari.resources.FloorPickup
 
 /** Run-owned check evidence, independent of captures and personal bests. */
-class SparklingChecks {
+class SparklingChecks(private val clock: () -> Long = System::currentTimeMillis) {
+    private var gemzieChamberOpenedAt: Long? = null
+    private fun gemzieChamberChecked() = gemzieChamberOpenedAt?.let { clock() - it >= 5000L } == true
     private val completed = mutableSetOf<String>()
     private val partyCompleted = mutableSetOf<String>()
-    fun locallyChecked(name: String) = if (requiresCapture(name)) (captured[name] ?: 0) > 0 else name in completed
+    fun locallyChecked(name: String) = if (requiresCapture(name)) (captured[name] ?: 0) > 0
+        else name in completed || name == "Gemzie" && gemzieChamberChecked()
     fun partyChecked(name: String) = name in partyCompleted
     fun cavernSourceEvidence(moundsCleared: Boolean, wallsCleared: Boolean) {
         if (moundsCleared) completed.add("Rockmite")
@@ -68,7 +71,8 @@ class SparklingChecks {
             baseline + firstSeen.count { it >= baseline }
         } ?: 0)
     }
-    fun checkCount(name: String) = retainedCheckCount(name)
+    fun checkCount(name: String) = if (name == "Gemzie" && gemzieChamberChecked()) maxOf(3, retainedCheckCount(name))
+        else retainedCheckCount(name)
     fun localScan(biome: SafariBiome) { partyCompleted.removeAll(biome.critters.map { it.name }.toSet()) }
     fun reenter(biome: SafariBiome) {
         if (biome == SafariBiome.HAUNTED) { goldEnvironmentReady = false; confirmedCoinSource = false }
@@ -153,6 +157,8 @@ class SparklingChecks {
     }
     fun chat(raw: String, manualAllowed: Boolean = false) {
         val text = SafariRules.strip(raw)
+        if (text == "A rumbling sound can be heard, and the door at the back of the chamber opens..." &&
+            gemzieChamberOpenedAt == null) gemzieChamberOpenedAt = clock()
         if (text.startsWith("FLOOR DROP!") && Regex("\\bShining Coin\\b(?! Shard)").containsMatchIn(text)) {
             val quantity = FloorPickup.parse(text)?.quantity ?: 1
             if (locallyChecked("Gimmiegold") || extraCoinUuidBaseline != null) addExtraCoinChecks(quantity)

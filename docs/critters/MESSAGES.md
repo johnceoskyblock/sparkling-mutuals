@@ -41,7 +41,7 @@ Rank and IGN above are examples. A head decoration may occur between rank and IG
 | Event / audience | Exact message | Meaning |
 | --- | --- | --- |
 | Gem placer only | `You placed the <Gem color> Gem on its podium!` | That color was placed, not a capture |
-| Global Gemzie spawning | `A rumbling sound can be heard, and the door at the back of the chamber opens...` | Starts pending spawn check; wait for three accounted-for Gemzies (shared captures + reconciled live uncaptured scans); does not supply a capture |
+| Global Gemzie spawning | `A rumbling sound can be heard, and the door at the back of the chamber opens...` | Checks Gemzie five seconds after this exact server message, including the needed Sparkling check in Unique; does not supply a capture |
 | Coin consumption/spawn | `A Gimmiegold appeared out of nowhere and gobbled up your Shining Coin!` | One coin used and one Gimmiegold spawned |
 
 The canonical spelling is **Gimmiegold**. Existing bird-announcement and mound patterns are retained in the tracking/species notes; they were not newly quoted in this batch.

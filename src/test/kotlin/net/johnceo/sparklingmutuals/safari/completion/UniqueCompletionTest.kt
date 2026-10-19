@@ -1,5 +1,8 @@
 package net.johnceo.sparklingmutuals.safari.completion
 
+import net.johnceo.sparklingmutuals.safari.resources.renderBird
+import net.johnceo.sparklingmutuals.safari.resources.scanRenderedBirds
+
 import net.johnceo.sparklingmutuals.safari.PartySparklingState
 import net.johnceo.sparklingmutuals.safari.SafariBiome
 import net.johnceo.sparklingmutuals.safari.SafariCatch
@@ -38,15 +41,15 @@ class UniqueCompletionTest {
         assertFalse(complete(run, "Honeybug", state), "needed Sparkling confirmation is separate from the first-catch missing row")
         run.updateNestEvidence(true, 3, 3, 0)
         assertTrue(complete(run, "Honeybug", state))
-        assertTrue(complete(run, "Bluebird", state)); assertTrue(complete(run, "Parakeet", state))
-        repeat(9) { run.birds.spawn("A Bluebird was attracted to the Birdfeeder!") }
+        assertFalse(complete(run, "Bluebird", state)); assertFalse(complete(run, "Parakeet", state))
+        repeat(9) { run.birds.renderBird("Bluebird") }
         run.inventoryEvidence(emptyList(), 10000)
-        run.scanBirdSources(0)
+        run.scanRenderedBirds()
         run.sparklingChecks.scan(SafariBiome.FOREST, 3.0, 47.0, emptyList(), nestsChecked = true, birdsSpawned = run.birds.sparklingSpawned)
         assertTrue(complete(run, "Bluebird", state))
         repeat(10) { run.birds.pickup("FLOOR DROP! Bag of Seeds", SafariBiome.FOREST) }
-        run.sparklingChecks.scan(SafariBiome.FOREST, 3.0, 47.0, emptyList(), nestsChecked = true, birdsSpawned = run.birds.used >= run.birds.feedingTarget)
-        assertTrue(complete(run, "Bluebird", state))
+        run.sparklingChecks.scan(SafariBiome.FOREST, 3.0, 47.0, emptyList(), nestsChecked = true, birdsSpawned = run.birds.accountedFeedings >= run.birds.feedingTarget)
+        assertFalse(complete(run, "Bluebird", state), "new food needs fresh population evidence")
     }
     @Test fun `Unique local completion announces once and never echoes remote completion`() {
         val run = SafariRun(0); val state = party()
@@ -84,7 +87,7 @@ class UniqueCompletionTest {
         run.partyFullClear("Party > Friend: fd")
         run.visitBiome(SafariBiome.FOREST)
         assertTrue(complete(run, "Honeybug", state))
-        assertTrue(complete(run, "Bluebird", state))
+        assertFalse(complete(run, "Bluebird", state))
         assertFalse(complete(run, "Macaw", state))
         assertTrue(run.uniqueComplete("Honeybug", state, localOnly = true))
         val starting = SafariRun(0)
@@ -92,7 +95,7 @@ class UniqueCompletionTest {
         caught(starting, "Honeybug", "Bluebird")
         starting.partyFullClear("Party > Friend: fd")
         assertTrue(complete(starting, "Honeybug", state))
-        assertTrue(complete(starting, "Bluebird", state))
+        assertFalse(complete(starting, "Bluebird", state), "inside Forest fd does not replace local bird evidence")
         assertTrue(starting.uniqueComplete("Honeybug", state, localOnly = true))
     }
     @Test fun `inherited Cavern trusts done until remaining structures contradict it`() {
