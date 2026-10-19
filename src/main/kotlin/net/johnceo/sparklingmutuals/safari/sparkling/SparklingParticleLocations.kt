@@ -25,8 +25,7 @@ class SparklingParticleLocations {
         return Location(UUID.randomUUID(), x, y, z, biome, now).also(locations::add)
     }
     /** Only independently identified name/skin positives retire anonymous waypoints. */
-    fun identify(x: Double, y: Double, z: Double) {
-        locations.filter { it.distanceSquared(x, y, z) <= 9.0 }.forEach { it.identified = true }
-    }
+    fun identify(x: Double, y: Double, z: Double): List<UUID> =
+        locations.filter { it.distanceSquared(x, y, z) <= 9.0 }.onEach { it.identified = true }.map { it.id }
     fun unknown() = locations.filterNot { it.identified }
 }

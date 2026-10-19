@@ -62,6 +62,6 @@ class FullClearMissingPanelTest {
         run.updateCaptureEvidence(SafariBiome.ICY, emptySet(), false, playerX = -121.0, playerZ = -55.0)
         assertTrue(run.fullClearMissingComplete("Billygoat"))
         run.observeSparkling(UUID.randomUUID(), "Billygoat")
-        assertFalse(run.fullClearMissingComplete("Billygoat"), "pending Sparkling still overrides local proof")
+        assertTrue(run.fullClearMissingComplete("Billygoat"), "detected Sparkling entities cannot override local proof")
     }
 }

@@ -1,5 +1,8 @@
 package net.johnceo.sparklingmutuals.safari.completion
 
+import net.johnceo.sparklingmutuals.safari.resources.renderBird
+import net.johnceo.sparklingmutuals.safari.resources.scanRenderedBirds
+
 import java.util.UUID
 import net.johnceo.sparklingmutuals.safari.SafariBiome
 import net.johnceo.sparklingmutuals.safari.SafariCatch
@@ -88,13 +91,13 @@ class RetainedSparklingChecksTest {
     @Test fun `Forest announcements persist without UUID evidence but never waive new food`() {
         val run = SafariRun(0)
         run.inventoryEvidence(emptyList(), 10000)
-        repeat(9) { run.birds.spawn("A Bluebird was attracted to the Birdfeeder!") }
-        run.scanBirdSources(0)
+        repeat(9) { run.birds.renderBird("Bluebird") }
+        run.scanRenderedBirds()
         assertTrue(run.birds.sparklingSpawned)
-        run.scanBirdSources(0)
+        run.scanRenderedBirds()
         assertTrue(run.birds.sparklingSpawned)
         run.recordBirdFood("FLOOR DROP! Yogi Berry", SafariBiome.FOREST, 10000)
-        run.scanBirdSources(0)
+        run.scanRenderedBirds()
         assertFalse(run.birds.sparklingSpawned)
     }
 

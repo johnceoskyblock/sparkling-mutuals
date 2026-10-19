@@ -1,5 +1,8 @@
 package net.johnceo.sparklingmutuals.safari.ui
 
+import net.johnceo.sparklingmutuals.safari.resources.renderBird
+import net.johnceo.sparklingmutuals.safari.resources.scanRenderedBirds
+
 import java.nio.file.Path
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.safari.SafariBiome
@@ -55,7 +58,7 @@ class SafariPanelSeparationTest {
         assertEquals("0/9", SafariPanels.progress(run, false, 0).rows.first { it.label == "Forest" }.value)
         run.visitBiome(SafariBiome.FOREST)
         run.inventoryEvidence(emptyList(), 10000)
-        run.scanBirdSources(0)
+        run.scanRenderedBirds()
         run.updateCaptureEvidence(SafariBiome.FOREST, emptySet(), false)
         assertEquals("0/9", SafariPanels.progress(run, false, 0).rows.first { it.label == "Forest" }.value)
         assertEquals("0/9", SafariPanels.progress(run, false, 0).rows.first { it.label == "Cavern" }.value)
@@ -137,30 +140,31 @@ class SafariPanelSeparationTest {
         assertFalse(run.recordBirdFood("FLOOR DROP! Something else"))
         repeat(3) { assertTrue(run.recordBirdFood("§aFLOOR DROP! Bag of Seeds")); run.recordBirdFood("FLOOR DROP! Wriggleworm") }
         repeat(8) { run.record(SafariCatch(SafariRoster.named("Bluebird")!!)) }
-        repeat(8) { run.birds.spawn("A Bluebird was attracted to the Birdfeeder!") }
-        run.birds.spawn("A Parakeet was attracted to the Birdfeeder!")
+        repeat(8) { run.birds.renderBird("Bluebird") }
+        run.birds.renderBird("Parakeet")
         run.visitBiome(SafariBiome.FOREST)
         run.inventoryEvidence(emptyList(), 10000)
-        run.scanBirdSources(0)
+        run.scanRenderedBirds()
         run.updateCaptureEvidence(SafariBiome.FOREST, emptySet(), false)
         run.partyFullClear("Party > Friend: fd")
-        assertTrue(green())
+        assertFalse(green(), "the rendered Parakeet has not been caught")
         repeat(3) { run.recordBirdFood("FLOOR DROP! Yogi Berry") }
-        repeat(3) { run.birds.spawn("A Bluebird was attracted to the Birdfeeder!") }
+        repeat(3) { run.birds.renderBird("Bluebird") }
         repeat(3) { run.record(SafariCatch(SafariRoster.named("Bluebird")!!)) }
         run.birds.inventory(emptyList())
         run.birds.scan(0)
         run.partyFullClear("Party > Friend: fd")
-        assertTrue(green())
+        assertFalse(green(), "fd cannot replace the remaining Parakeet capture")
         run.record(SafariCatch(SafariRoster.named("Parakeet")!!))
         run.partyFullClear("Party > Friend: fd")
         assertTrue(green())
         run.updateCaptureEvidence(SafariBiome.FOREST, setOf("Bluebird"), false)
+        run.scanBirdSources(0, listOf("Bluebird"))
         assertFalse(green())
         run.record(SafariCatch(SafariRoster.named("Bluebird")!!))
         run.visitBiome(SafariBiome.FOREST)
         run.inventoryEvidence(emptyList(), 10000)
-        run.scanBirdSources(0)
+        run.scanRenderedBirds()
         run.updateCaptureEvidence(SafariBiome.FOREST, emptySet(), false)
         assertTrue(SafariPanels.captures(run, SafariBiome.FOREST).rows.filter { it.label in listOf("Bluebird", "Parakeet", "Macaw") }.all { it.valueColor == 0xFF55FF55.toInt() })
         assertFalse(SafariRun(0).birdFoodsComplete)
@@ -181,13 +185,13 @@ class SafariPanelSeparationTest {
 
         run.record(SafariCatch(SafariRoster.named("Macaw")!!))
 
-        assertFalse(run.captureComplete("Macaw"))
+        assertTrue(run.captureComplete("Macaw"), "eight normal catches plus one Macaw satisfy the base opportunities")
 
         repeat(3) { for (food in listOf("Bag of Seeds", "Wriggleworm", "Yogi Berry")) run.recordBirdFood("FLOOR DROP! $food") }
 
-        repeat(8) { run.birds.spawn("A Bluebird was attracted to the Birdfeeder!") }
+        repeat(8) { run.birds.renderBird("Bluebird") }
 
-        run.birds.spawn("Two Macaws were attracted to the Birdfeeder!")
+        run.birds.renderBird("Macaw")
 
         run.birds.inventory(emptyList())
 

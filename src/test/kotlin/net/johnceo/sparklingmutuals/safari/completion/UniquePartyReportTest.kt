@@ -20,7 +20,7 @@ class UniquePartyReportTest {
     @Test fun `each ordinary Unique capture advances remote progress immediately without any report or scan`() {
         ConfigManager.fullClearMode = false; ConfigManager.sparklingMode = false
         val state = party()
-        for (species in SafariRoster.all.filter { it.name !in setOf("Honeybug", "Rockmite", "Snoozle") }) {
+        for (species in SafariRoster.all.filter { it.name !in setOf("Honeybug", "Rockmite", "Snoozle", "Bluebird", "Parakeet", "Macaw") }) {
             val run = SafariRun(0)
             run.visitBiome(SafariBiome.entries.first { it != species.biome })
             assertFalse(run.uniqueComplete(species.name, state))
@@ -80,7 +80,7 @@ class UniquePartyReportTest {
         run.observeCritter(12, "Rockmite")
         assertFalse(run.uniqueComplete("Rockmite", state), "seen ordinary critters still need the Unique catch")
         run.observeSparkling(UUID.randomUUID(), "Snoozle")
-        assertFalse(run.sparklingComplete("Snoozle", state), "resolved sources cannot hide an uncaptured Sparkling")
+        assertTrue(run.sparklingComplete("Snoozle", state), "detection cannot invalidate resolved sources")
         run.visitBiome(SafariBiome.CAVERN)
         assertTrue(run.sparklingComplete("Rockmite", state), "entry preserves source proof")
     }
@@ -93,7 +93,7 @@ class UniquePartyReportTest {
             val last = biome.critters.last()
             report(run, biome)
             caught(run, biome, last.name)
-            assertFalse(run.uniqueComplete(last.name, state), biome.label)
+            assertEquals(biome == SafariBiome.FOREST, run.uniqueComplete(last.name, state), "fd waives only the last Macaw catch outside Forest")
             run.record(SafariCatch(last, false))
             assertEquals(biome.critters.size, run.completed(SafariMode.UNIQUE, biome.critters, state), biome.label)
             assertFalse(SafariPanels.missing(run, biome, true, 3, party = state).rows.any { row -> biome.critters.any { it.name == row.label } })
@@ -110,9 +110,10 @@ class UniquePartyReportTest {
                 run.updateCaptureEvidence(biome, biome.critters.map { it.name }.toSet(), false)
                 run.inventoryEvidence(listOf("Shining Coin" to 2, "Yogi Berry" to 2), 10000)
                 run.sparklingChecks.scan(biome, 0.0, 0.0, emptyList())
-                assertEquals(biome.critters.size, run.completed(SafariMode.UNIQUE, biome.critters, state), biome.label)
+                assertEquals(biome.critters.size - if (biome == SafariBiome.FOREST) 3 else 0,
+                    run.completed(SafariMode.UNIQUE, biome.critters, state), biome.label)
             }
-            assertEquals(biome.critters.size - if (biome == SafariBiome.FOREST) 1 else 0,
+            assertEquals(biome.critters.size - if (biome == SafariBiome.FOREST) 4 else 0,
                 run.completed(SafariMode.UNIQUE, biome.critters, state, localOnly = true))
             assertNull(run.completion.announcement(run, biome, SafariMode.UNIQUE, state), "do not echo another player's checking evidence")
         }
@@ -138,13 +139,13 @@ class UniquePartyReportTest {
         run.sparklingChecks.scan(SafariBiome.CAVERN, -114.0, 49.0, emptyList(), moundsCleared = true, wallsCleared = true)
         assertEquals(9, run.completed(SafariMode.UNIQUE, SafariBiome.CAVERN.critters, state))
     }
-    @Test fun `trusted Unique reports never hide a positively detected uncaptured Sparkling`() {
+    @Test fun `trusted Unique completion is not revoked by a detected Sparkling`() {
         val run = SafariRun(0); val state = party()
         caught(run, SafariBiome.HAUNTED); report(run, SafariBiome.HAUNTED)
         run.observeSparkling(UUID.randomUUID(), "Gazer")
-        assertFalse(run.uniqueComplete("Gazer", state))
+        assertTrue(run.uniqueComplete("Gazer", state))
         report(run, SafariBiome.HAUNTED)
-        assertFalse(run.uniqueComplete("Gazer", state))
+        assertTrue(run.uniqueComplete("Gazer", state))
         run.sparklingBroadcast("SPARKLING! Friend caught a SPARKLING Gazer!", 1000)
         assertTrue(run.uniqueComplete("Gazer", state))
     }

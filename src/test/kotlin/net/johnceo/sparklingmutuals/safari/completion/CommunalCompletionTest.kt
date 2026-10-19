@@ -27,7 +27,7 @@ class CommunalCompletionTest {
         run.partyFullClear("Party > Friend: fd")
         run.visitBiome(SafariBiome.FOREST)
         run.updateCaptureEvidence(SafariBiome.FOREST, emptySet(), false)
-        assertEquals(2, run.fullClearProgress(SafariBiome.FOREST.critters), "a report cannot establish no-Macaw without local food evidence")
+        assertEquals(0, run.fullClearProgress(SafariBiome.FOREST.critters), "fd supplies no Full Clear bird captures")
         assertEquals(0, run.completed(SafariMode.UNIQUE, SafariBiome.FOREST.critters, party()))
         assertNull(run.completion.announcement(run, SafariBiome.FOREST, SafariMode.FULL_CLEAR, party()))
         run.updateCaptureEvidence(SafariBiome.FOREST, setOf("Foxtrot"), false)
@@ -72,6 +72,9 @@ class CommunalCompletionTest {
         run.sparklingChecks.chat("Party > Friend: fd", true)
         assertNull(run.completion.announcement(run, SafariBiome.FOREST, SafariMode.SPARKLING, state))
         run.sparklingChecks.scan(SafariBiome.FOREST, 3.0, 47.0, List(6) { "Foxtrot" to UUID.randomUUID() })
+        repeat(6) { run.recordBirdFood("FLOOR DROP! Yogi Berry", SafariBiome.FOREST, 10000) }
+        run.inventoryEvidence(emptyList(), 10000)
+        run.scanBirdSources(0, List(9) { "Bluebird" })
         assertEquals("fd", run.completion.announcement(run, SafariBiome.FOREST, SafariMode.SPARKLING, state))
         assertNull(run.completion.announcement(run, SafariBiome.FOREST, SafariMode.SPARKLING, state))
         assertNull(run.completion.announcement(run, SafariBiome.FOREST, SafariMode.UNIQUE, state))

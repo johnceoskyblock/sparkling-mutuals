@@ -14,7 +14,7 @@
 
 | Mode | Rule |
 | --- | --- |
-| Unique | One confirmed shared catch immediately completes Unique and removes the missing row, without a local Sparkling scan/radius requirement. Detected uncaptured Sparklings still block completion. |
+| Unique | One confirmed shared catch immediately completes Unique and removes the missing row, without a local Sparkling scan/radius requirement. Detected Sparkling entities do not add a separate capture requirement. |
 | Full Clear | At least 2 shared catches and no remaining Billygoat during a scan within 30 blocks of X/Z -121/-55 advances local progress and removes the missing row without a report. Keep that proof after leaving. Without local proof, remote progress uses the Icy-done report plus the capture minimum. Positive remaining Billygoats reopen local completion until caught and locally cleared. |
 | Sparkling | Record distinct UUIDs seen inside this species' qualifying scan area and retain their checked progress for the run, including after unloading and biome reentry. Reconcile shared captures without counting a later catch of a seen UUID twice; source requirements remain separate. |
 
@@ -28,6 +28,9 @@
 - Keep this species separate from Wumpa: a Wumpa world event or catch does not replace this species' own capture evidence.
 
 ## Last updated
+
+2026-10-17 - Removed detected-Sparkling sightings as a separate completion requirement; normal species rules remain.
+
 
 2026-10-17 - Local Billygoat completion advances Full Clear progress without a party report and persists after travel.
 

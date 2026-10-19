@@ -1,5 +1,8 @@
 package net.johnceo.sparklingmutuals.safari.completion
 
+import net.johnceo.sparklingmutuals.safari.resources.renderBird
+import net.johnceo.sparklingmutuals.safari.resources.scanRenderedBirds
+
 import net.johnceo.sparklingmutuals.safari.SafariBiome
 import net.johnceo.sparklingmutuals.safari.SafariCatch
 import net.johnceo.sparklingmutuals.safari.SafariRoster
@@ -39,8 +42,8 @@ class SafariClearConsistencyTest {
             repeat(amount) { record(SafariCatch(SafariRoster.named(name)!!)) }
         }
         repeat(3) { for (food in listOf("Bag of Seeds", "Wriggleworm", "Yogi Berry")) recordBirdFood("FLOOR DROP! $food") }
-        repeat(7) { birds.spawn("A Bluebird was attracted to the Birdfeeder!") }
-        repeat(2) { birds.spawn("Two Macaws were attracted to the Birdfeeder!") }
+        repeat(7) { birds.renderBird("Bluebird") }
+        repeat(2) { birds.renderBird("Macaw") }
         birds.inventory(emptyList())
         birds.scan(0)
     }

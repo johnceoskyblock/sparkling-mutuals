@@ -21,7 +21,7 @@ import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.entity.decoration.ArmorStand
 import net.minecraft.world.entity.player.Player
 
-/** Positive name/skin scan of loaded entities; alerts and progress share the same run-owned evidence. */
+/** Positive name/skin scan of loaded entities for run-owned alerts and detection presentation. */
 object SafariAssist {
     private data class Shiny(val label: Entity, val body: Entity, val name: String, val biome: SafariBiome)
     private var shinies = emptyList<Shiny>()
@@ -45,11 +45,8 @@ object SafariAssist {
     fun observeParticle(packet: net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket) {
         if (!inSafari || packet.particle.type != net.minecraft.core.particles.ParticleTypes.WAX_ON) return
         val run = SafariTracking.ledger.current ?: return
-        val point = run.sparklingParticles.observe(true, true, packet.x, packet.y, packet.z, System.currentTimeMillis()) ?: return
-        // Do not duplicate an already named/skinned positive at the particle origin.
-        shinies.filter { !it.body.isRemoved }.forEach { run.sparklingParticles.identify(it.body.x, it.body.y, it.body.z) }
-        if (!point.identified) SparklingEncounters.observe(point.id, "Unknown Sparkling (wax on)", point.biome,
-            net.minecraft.core.BlockPos.containing(point.x, point.y, point.z))
+        run.sparklingParticles.observe(true, true, packet.x, packet.y, packet.z, System.currentTimeMillis())
+        // Alert after the next name/skin scan so known critters take priority over packets.
     }
 
     private fun renderParticleLocations(context: net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext) {
@@ -105,11 +102,18 @@ object SafariAssist {
             val label = byId[match.label] ?: return@mapNotNull null
             val biome = SafariRoster.named(match.species)?.biome ?: return@mapNotNull null
             val identity = SafariTracking.ledger.current?.observeSparkling(body.uuid, match.species, match.aliases) ?: body.uuid
-            SafariTracking.ledger.current?.sparklingParticles?.identify(body.x, body.y, body.z)
+            SafariTracking.ledger.current?.sparklingParticles?.let { particles ->
+                SparklingEncounters.identify(particles.identify(body.x, body.y, body.z) +
+                    particles.identify(label.x, label.y, label.z))
+            }
             if (SafariTracking.ledger.current?.sparklingCaptures?.resolved(identity) == true) return@mapNotNull null
             SparklingEncounters.observe(identity, match.species, biome, body.blockPosition())
             Shiny(label, body, match.species, biome)
         }.sortedBy { player.distanceToSqr(it.body) }
+        SafariTracking.ledger.current?.sparklingParticles?.unknown()?.forEach { point ->
+            SparklingEncounters.observeUnknown(point.id, point.biome,
+                net.minecraft.core.BlockPos.containing(point.x, point.y, point.z))
+        }
         SparklingEncounters.tick(client)
     }
 

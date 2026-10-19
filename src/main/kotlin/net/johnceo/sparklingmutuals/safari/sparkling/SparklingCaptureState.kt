@@ -4,7 +4,7 @@ import java.util.UUID
 import net.johnceo.sparklingmutuals.safari.SafariBiome
 import net.johnceo.sparklingmutuals.safari.SafariRoster
 
-/** A seen Sparkling remains a capture obligation even after unloading or owning its discovery. */
+/** Detection identities and confirmed captures for presentation; sightings never gate completion. */
 class SparklingCaptureState {
     private val identities = mutableMapOf<UUID, UUID>()
     fun identity(id: UUID) = identities[id] ?: id

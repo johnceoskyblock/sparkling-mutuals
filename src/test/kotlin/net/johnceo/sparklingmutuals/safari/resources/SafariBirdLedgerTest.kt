@@ -5,105 +5,86 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class SafariBirdLedgerTest {
-    private fun foods(birds: SafariBirdLedger) {
-        repeat(3) { for (food in listOf("Bag of Seeds", "Wriggleworm", "Yogi Berry"))
-            birds.pickup("FLOOR DROP! $food", SafariBiome.FOREST) }
+    private fun ready() = SafariBirdLedger().apply { inventory(emptyList()); floor(0) }
+    @Test fun `spawn chat never establishes population or Macaw pairs`() {
+        val birds = ready()
+        repeat(20) {
+            assertFalse(birds.spawn("A Bluebird was attracted to the Birdfeeder!"))
+            assertFalse(birds.spawn("Two Macaws were attracted to the Birdfeeder!"))
+        }
+        assertEquals(9, birds.feedingTarget)
+        assertEquals(0, birds.spawnedCount("Macaw"))
+        assertFalse(birds.feedingResolved)
     }
-    private fun feed(birds: SafariBirdLedger, normal: Int, pairs: Int) {
-        repeat(normal) { assertTrue(birds.spawn("A Bluebird was attracted to the Birdfeeder!")) }
-        repeat(pairs) { assertTrue(birds.spawn("Two Macaws were attracted to the Birdfeeder!")) }
-        birds.inventory(emptyList())
-        birds.scan(0)
+    @Test fun `current render and shared captures account for nine food opportunities`() {
+        val birds = ready()
+        birds.render({ if (it == "Bluebird") 5 else 0 }, listOf("Bluebird", "Parakeet", "Macaw", "Macaw"))
+        assertEquals(8, birds.accountedFeedings); assertFalse(birds.feedingResolved)
+        birds.render({ if (it == "Bluebird") 5 else 0 }, listOf("Bluebird", "Parakeet", "Parakeet", "Macaw", "Macaw"))
+        assertTrue(birds.feedingResolved)
+        birds.render({ 0 }, emptyList())
+        assertTrue(birds.feedingResolved, "a completed qualified population check survives unloading")
     }
-    @Test fun `starting food adds to run demand without replacing Forest pickups`() {
-        val birds = SafariBirdLedger()
-        birds.pickup("FLOOR DROP! Bag of Seeds", null)
-        birds.pickup("FLOOR DROP! Bag of Seeds", null)
-        repeat(2) { birds.pickup("FLOOR DROP! Bag of Seeds", SafariBiome.FOREST) }
-        repeat(3) { birds.pickup("FLOOR DROP! Wriggleworm", SafariBiome.FOREST); birds.pickup("FLOOR DROP! Yogi Berry", SafariBiome.FOREST) }
-        assertFalse(birds.foodsComplete)
+    @Test fun `food still held or on the floor blocks local and remote proof`() {
+        val birds = ready(); birds.scan(0, 9); birds.report()
+        assertTrue(birds.feedingResolved); assertTrue(birds.remoteReady)
+        birds.floor(1)
+        assertFalse(birds.feedingResolved); assertFalse(birds.remoteReady)
+        birds.floor(-1)
+        assertFalse(birds.remoteReady, "an unknown scan cannot erase a known remaining food drop")
+        birds.reenter(); assertFalse(birds.remoteReady, "travel must not forget remaining floor food")
+        birds.floor(0); birds.inventory(listOf("Yogi Berry" to 1))
+        assertFalse(birds.remoteReady)
+        birds.inventory(emptyList()); assertTrue(birds.remoteReady)
+        birds.floor(-1); assertFalse(birds.feedingResolved, "unknown markers are not an empty floor")
+    }
+    @Test fun `party notices add quantities once and invalidate older reports`() {
+        val birds = ready(); birds.report()
+        val notices = mapOf(("friend" to FloorDropType.BERRY) to 2, ("friend" to FloorDropType.SEEDS) to 1)
+        repeat(5) { birds.contributions("me", notices) }
+        assertEquals(12, birds.feedingTarget); assertFalse(birds.remoteReady)
+        birds.scan(0, 11); assertFalse(birds.feedingResolved)
+        birds.scan(0, 12); assertTrue(birds.feedingResolved)
+        birds.report(); assertTrue(birds.remoteReady)
+    }
+    @Test fun `starting inventory overlaps grants but adds to the nine floor foods`() {
+        val birds = ready(); birds.startingGrant("Yogi Berry")
+        birds.startingInventory(listOf("Yogi Berry" to 1), 0)
+        repeat(3) { for (food in listOf("Yogi Berry", "Wriggleworm", "Bag of Seeds")) birds.pickup("FLOOR DROP! $food", SafariBiome.FOREST) }
+        assertEquals(10, birds.feedingTarget); assertTrue(birds.foodsComplete)
+        birds.scan(0, 9); assertFalse(birds.feedingResolved)
+        birds.scan(0, 10); assertTrue(birds.feedingResolved)
+    }
+    @Test fun `Full Clear uses observed species and one Macaw rather than all remaining Macaws`() {
+        val birds = ready()
+        birds.render({ 0 }, List(5) { "Bluebird" } + List(8) { "Macaw" })
+        assertTrue(birds.feedingResolved)
+        assertFalse(birds.capturesComplete { if (it == "Bluebird") 5 else 0 })
+        assertTrue(birds.capturesComplete { if (it == "Bluebird") 5 else if (it == "Macaw") 1 else 0 })
+        assertFalse(birds.capturesComplete { if (it == "Bluebird") 4 else if (it == "Macaw") 8 else 0 })
+    }
+    @Test fun `six local floor pickups and empty food inventory are required to report`() {
+        val birds = ready()
+        repeat(5) { birds.pickup("FLOOR DROP! Yogi Berry", SafariBiome.FOREST) }
+        assertFalse(birds.reportSuppliesReady)
         birds.pickup("FLOOR DROP! Bag of Seeds", SafariBiome.FOREST)
-        assertTrue(birds.foodsComplete)
-        assertEquals(11, birds.collected)
-        feed(birds, 9, 2)
-        assertEquals(10, birds.requiredCaptures(1, 3))
-        assertFalse(birds.sufficient(8, 1, 3))
-        assertTrue(birds.sufficient(10, 1, 3))
+        assertTrue(birds.reportSuppliesReady)
+        birds.inventory(listOf("Bag of Seeds" to 1)); assertFalse(birds.reportSuppliesReady)
+        val quantity = ready()
+        quantity.pickup("FLOOR DROP! 6x Yogi Berry", SafariBiome.FOREST)
+        assertFalse(quantity.reportSuppliesReady, "six items in one message are not six floor pickups")
     }
-    @Test fun `nine foods two Macaw pairs and three remaining Macaws require eight catches`() {
-        val birds = SafariBirdLedger(); foods(birds); feed(birds, 7, 2)
-        assertEquals(9, birds.used)
-        assertEquals(8, birds.requiredCaptures(1, 3))
-        assertFalse(birds.sufficient(7, 1, 3))
-        assertTrue(birds.sufficient(8, 1, 3))
+    @Test fun `self notice and initial inventory overlap by item type rather than counting twice`() {
+        val birds = ready()
+        birds.startingInventory(listOf("Yogi Berry" to 2), 0)
+        birds.contributions("me", mapOf(("ME" to FloorDropType.BERRY) to 2, ("other" to FloorDropType.SEEDS) to 1))
+        assertEquals(12, birds.feedingTarget)
     }
-    @Test fun `four Macaw pairs allow six personal catches instead of the old seven minimum`() {
-        val birds = SafariBirdLedger(); foods(birds); feed(birds, 5, 4)
-        assertEquals(6, birds.requiredCaptures(1, 7))
-        assertTrue(birds.sufficient(6, 1, 7))
-        assertFalse(birds.sufficient(5, 1, 7))
-        assertTrue(birds.hasMacaws(0, 8))
-    }
-    @Test fun `feeding during collection works without holding all nine food at once`() {
-        val birds = SafariBirdLedger()
-        repeat(3) { for (food in listOf("Bag of Seeds", "Wriggleworm", "Yogi Berry")) {
-            birds.pickup("FLOOR DROP! $food", SafariBiome.FOREST)
-            birds.inventory(listOf(food to 1))
-            birds.spawn("A Parakeet was attracted to the Birdfeeder!")
-            birds.inventory(emptyList())
-            birds.scan(0)
-        } }
-        assertTrue(birds.foodsComplete)
-        assertEquals(9, birds.used)
-        assertTrue(birds.sufficient(9, 0, 0))
-        assertFalse(birds.sufficient(8, 0, 0))
-    }
-    @Test fun `feeder announcements confirm usage even before inventory removal`() {
-        val birds = SafariBirdLedger(); foods(birds)
-        birds.inventory(emptyList())
-        birds.scan(0)
-        assertEquals(0, birds.used)
-        assertFalse(birds.sufficient(9, 0, 0))
-        repeat(9) { birds.spawn("A Bluebird was attracted to the Birdfeeder!") }
-        assertEquals(9, birds.used)
-        val stillHeld = SafariBirdLedger(); foods(stillHeld)
-        repeat(9) { stillHeld.spawn("A Bluebird was attracted to the Birdfeeder!") }
-        stillHeld.inventory(listOf("Yogi Berry" to 3, "Wriggleworm" to 3, "Bag of Seeds" to 3))
-        assertEquals(9, stillHeld.used)
-        assertFalse(stillHeld.sufficient(9, 0, 0))
-        stillHeld.inventory(emptyList())
-        stillHeld.scan(0)
-        assertTrue(stillHeld.sufficient(9, 0, 0))
-    }
-    @Test fun `packet order does not double count food use and held extra food does not erase usage`() {
-        val birds = SafariBirdLedger(); foods(birds)
-        birds.inventory(emptyList())
-        birds.scan(0)
-        feed(birds, 9, 0)
-        repeat(3) { birds.inventory(listOf("§aBag of Seeds" to 1)) }
-        assertEquals(9, birds.used)
-        assertFalse(birds.sufficient(9, 0, 0))
-    }
-    @Test fun `only exact server bird messages and food pickups contribute`() {
-        val birds = SafariBirdLedger()
-        assertFalse(birds.pickup("Party > Friend: FLOOR DROP! Bag of Seeds", SafariBiome.FOREST))
-        assertFalse(birds.pickup("FLOOR DROP! Bag of Seeds Shard", SafariBiome.FOREST))
-        assertFalse(birds.spawn("Party > Friend: Two Macaws were attracted to the Birdfeeder!"))
-        assertFalse(birds.spawn("A Rockmite was attracted to the Birdfeeder!"))
-        assertEquals(0, birds.collected)
-        assertTrue(birds.spawn("§6Two Macaws were attracted to the Birdfeeder!"))
-        assertFalse(birds.sufficient(99, 1, 1))
-        assertFalse(SafariBirdLedger().foodsComplete)
-    }
-    @Test fun `food alert uses Forest pickups even if food was already fed and fires once per run`() {
-        val birds = SafariBirdLedger(); foods(birds); feed(birds, 9, 0)
+    @Test fun `all foods alert still needs three of each local floor pickup and fires once`() {
+        val birds = ready()
+        repeat(3) { for (food in listOf("Yogi Berry", "Wriggleworm", "Bag of Seeds")) birds.pickup("FLOOR DROP! $food", SafariBiome.FOREST) }
         assertFalse(birds.alert(SafariBiome.FOREST, false))
-        assertFalse(birds.alert(SafariBiome.CAVERN, true))
         assertTrue(birds.alert(SafariBiome.FOREST, true))
-        assertFalse(birds.alert(null, true))
         assertFalse(birds.alert(SafariBiome.FOREST, true))
-        assertFalse(birds.alert(SafariBiome.FOREST, false))
-        assertFalse(birds.alert(SafariBiome.FOREST, true))
-        assertFalse(SafariBirdLedger().alert(SafariBiome.FOREST, true))
     }
 }

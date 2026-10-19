@@ -24,7 +24,7 @@ data class SparklingEntity(val id: Int, val uuid: UUID, val x: Double, val y: Do
     val skinCarrier: Boolean = false, val body: Boolean = false)
 data class SparklingDetection(val species: String, val body: Int, val label: Int, val aliases: Set<UUID>)
 
-/** One positive-identification path feeds alerts, glow, nearby HUD and capture requirements. */
+/** Positive identification feeds alerts, glow and the nearby HUD without gating completion. */
 object SparklingDetector {
     fun detect(entities: List<SparklingEntity>): List<SparklingDetection> {
         fun skin(e: SparklingEntity): String? {

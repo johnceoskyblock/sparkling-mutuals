@@ -9,7 +9,7 @@ Each Full Clear table cell states when the critter **leaves the local missing pa
 - **Catch** means a confirmed shared catch: your capture or a party member's loot-share capture. A capsule hit, escape, spawn announcement or ordinary sighting is not a catch. Hideyho finding rewards count.
 - **Report** means a received biome completion message: Forest `fd`, Cavern `cd`, Icy `id`, Haunted `hd`. Reports do not create catches.
 - **Full Clear progress:** your current biome advances per species as its local capture/source and qualified empty-scan requirements pass, without a party report. Retain that earned local progress after leaving. Other biomes without local proof wait for a report and their capture minimum. Scrappy, Gemzie, Troodon and Gazer retain fixed-total early completion; Honeybug uses its retained initial nest count and actual shared captures, without a report or render scan. After a report (or for those fixed species), positively scanned remaining critters raise the required capture total. Empty scans, unloading and repeated reports do not erase a known remainder. Macaw keeps its one-catch exception.
-- **Full Clear missing panel:** no party report is required. Meet the capture minimum and known remaining-population target, resolve species-specific sources, and confirm no ordinary critter remains during a qualified local scan. Macaw keeps its one-catch exception. Retain qualified coverage after leaving the radius or biome; a positive remaining sighting revokes it. New supplies, unfinished sources and pending Sparklings can reopen the row. Fixed-count species also need local missing-panel proof.
+- **Full Clear missing panel:** no party report is required. Meet the capture minimum and known remaining-population target, resolve species-specific sources, and confirm no ordinary critter remains during a qualified local scan. Macaw keeps its one-catch exception. Retain qualified coverage after leaving the radius or biome; a positive remaining sighting revokes it. New supplies and unfinished sources can reopen the row; Sparkling detections cannot. Fixed-count species also need local missing-panel proof.
 - **Unique:** most species leave the panel and advance progress on their first shared catch, even if a party member needs the Sparkling discovery. There is currently no separate ordinary-species Sparkling scan gate for Unique progress. Rockmite/Snoozle additionally need resolved safari-wide sources or trusted cd checking evidence, and Honeybug progress additionally needs checking/report trust when its discovery is needed; its missing row still clears on the first catch.
 - **Sparkling:** normally only species whose Sparkling discovery a party member needs appear in the checklist/progress denominator. Qualified checks use retained UUID sightings reconciled against shared catches; all critters do not have to remain rendered simultaneously. Catches also contribute to the check count. Bird checks use food/population evidence instead of distinct bird UUIDs. Gimmiegold uses captured + current rendered population against the initial coin-slot total, rather than historical checked UUIDs.
 - **Detected Sparkling:** an unresolved Sparkling sighting keeps that species incomplete in every mode, even if its ordinary requirement was met. Confirmed Sparkling capture resolves the sighting; when none remain pending, Unique and Sparkling complete that species immediately. Full Clear still requires its normal captures and sources, using local proof or the remote report rules. Multiple pending Sparklings must all be resolved.
@@ -19,31 +19,27 @@ Numeric minima below are values in the code, not a claim that Hypixel guarantees
 
 ## Forest
 
+The three birds are exceptions to the general per-species first-catch/report summaries above. Their progress and missing rows use [the shared bird spawning/capture policy](BIRD_COMPLETION.md) inside and outside Forest. Other Forest species retain their individual rules.
+
 | Critter | Full Clear | Unique | Unique + needed Sparkling | Sparkling: local check |
 | --- | --- | --- | --- | --- |
 | [Foxtrot](critters/foxtrot.md) | 6 shared catches + qualified empty scan | 1 catch | 1 catch | 6 qualified checks in its zone |
-| [Bluebird](critters/bluebird.md) | All food resolved + announced Bluebirds caught + no live Bluebirds | 1 catch | 1 catch | All bird food resolved; no ordinary catch required |
+| [Bluebird](critters/bluebird.md) | Expected bird opportunities captured, including known rendered normal birds; one-Macaw exception retained | Spawning proof + 1 catch | Same as Unique | Local qualified spawning inside Forest; fd outside; no catch required |
 | [Honeybug](critters/honeybug.md) | Initial known nest population captured, from any biome, without a local empty scan or report | 1 catch removes row and completes progress when no discovery is needed | 1 catch removes row; progress additionally needs local nest checking or trusted fd | Local nests checked/accounted for, or trusted fd; no ordinary catch required |
 | [Treefrog](critters/treefrog.md) | 3 shared catches + qualified empty scan | 1 catch | 1 catch | 3 qualified checks in its zone |
 | [Woodchucker](critters/woodchucker.md) | 3 shared catches + qualified empty scan | 1 catch | 1 catch | 3 qualified checks in its zone |
 | [Fluffling](critters/fluffling.md) | 1 shared catch + qualified empty scan | 1 catch | 1 catch | 1 qualified check in its zone |
 | [Hideonfloor](critters/hideonfloor.md) | 1 shared catch + qualified empty scan | 1 catch | 1 catch | 1 qualified check in its zone |
-| [Parakeet](critters/parakeet.md) | All food resolved + announced Parakeets caught + no live Parakeets | 1 catch | 1 catch | All bird food resolved; no ordinary catch required |
-| [Macaw](critters/macaw.md) | All food resolved + 1 catch if Macaws spawned; additional ordinary Macaws may remain. Proven no-spawn case also completes | 1 catch, or proven no-spawn case | Same as Unique | All bird food resolved, including a proven no-spawn case if no Macaws appeared |
+| [Parakeet](critters/parakeet.md) | Same shared bird population requirement as Bluebird | Spawning proof + 1 catch | Same as Unique | Local qualified spawning inside Forest; fd outside; no catch required |
+| [Macaw](critters/macaw.md) | Same expected bird population, with one catch crediting established Macaw pairs; zero catches allowed if none spawned | Spawning + 1 catch, local no-Macaw proof, or fd outside when both other birds are caught | Same as Unique | Same spawning requirement as the other birds |
 
-Full Clear's common positive-remainder rule applies to every Forest row except Macaw. Honeybug uses the verified actual nest count as its local capture target instead of the fixed three-catch fallback. Like other species, its local completion advances progress without a report. Positively known uncaught bees and detected Sparklings remain blockers.
+Full Clear's common positive-remainder rule applies to every Forest row except Macaw. Honeybug uses the verified actual nest count as its local capture target instead of the fixed three-catch fallback. Like other species, its local completion advances progress without a report. Positively known uncaught bees still count toward the normal capture requirement; detected Sparkling identities add no separate gate.
 
 ### Bird food and no-Macaw proof
 
-For Sparkling bird checks, the current Forest survey must find **zero raw floor-drop markers**, sampled inventory must contain no bird food, and accounted feedings must meet both the bird ledger's demand and the resource ledger's demand. Hidden/unselected/uncertain markers still count as remaining floor drops.
+Use [Forest bird completion](BIRD_COMPLETION.md) for the three birds. Base demand is nine food opportunities plus known local starting and party-notified food. A qualified scan at X/Z 6/51 within 15 blocks uses shared captures + current renders, with two Macaws per opportunity. Attraction chat is ignored. Remaining Forest floor-food markers and held bird food block completion; floor markers are checked Safari-wide.
 
-The food baseline is 9, increased by known starting/extra food and later delivery requirements. Accounted feedings are the larger of feeder announcements and this capture-plus-current-scan population:
-
-`Bluebird catches + live Bluebirds + Parakeet catches + live Parakeets + floor((Macaw catches + live Macaws) / 2)`
-
-A caught Macaw plus one live Macaw therefore represents one food. Announcements and scanned birds overlap and are not added together. New food can reopen the check.
-
-The no-Macaw exception requires a verified local Forest survey, resolved food, no Macaw ever encountered/announced/caught, no current Macaw, and no pending food delivery. It cannot first be established from outside Forest. A later Macaw sighting revokes the no-spawn conclusion. Ordinary Unique can complete a spawned Macaw on one catch before food is resolved. Without local proof, the report plus a real catch can establish remote progress, but known held food, remaining surveyed drops and pending delivery still block it. Its missing row always requires local food resolution. A report without a catch cannot establish no-Macaw.
+Inside Forest, Sparkling requires the local population proof and Unique adds one catch per bird, with the proven no-Macaw exception. Outside Forest, fd supplies spawning trust and may waive only the last Macaw catch once the two other birds have shared catches. Full Clear needs actual expected captures everywhere, retaining one-Macaw credit. A report never supplies missing captures. Automatic fd additionally requires an initial Forest clearer with six separate local food pickups and no held/remaining food.
 
 ### Honeybug sources
 
@@ -51,7 +47,7 @@ Let **C** be shared Honeybug catches, **U** currently rendered uncaptured Honeyb
 
 Unique always removes the Honeybug species row at one catch. If someone needs Sparkling Honeybug, unfinished nest work stays as a separate reminder/highlight after that catch. If everyone owns the discovery, the first catch also removes the Unique nest helper. Sparkling shows nest work only when the party needs the discovery. Full Clear still needs the bees captured, even after nests stop highlighting.
 
-A received fd supplies trusted Honeybug checking in Unique/Sparkling and remains valid after later Forest entry; render absence or incomplete later scans cannot revoke it. Unique progress additionally needs its first shared catch when the discovery is needed, and its species row clears on that catch independently. Full Clear uses the retained initial N and actual captures, not the report. Detected uncaptured Sparklings override reports in every mode.
+A received fd supplies trusted Honeybug checking in Unique/Sparkling and remains valid after later Forest entry; render absence or incomplete later scans cannot revoke it. Unique progress additionally needs its first shared catch when the discovery is needed, and its species row clears on that catch independently. Full Clear uses the retained initial N and actual captures, not the report. Detected Sparkling entities do not override reports in any mode.
 
 ## Cavern
 
@@ -65,7 +61,7 @@ A received fd supplies trusted Honeybug checking in Unique/Sparkling and remains
 | [Rockmite](critters/rockmite.md) | All mounds broken + known Rockmite population caught + no live Rockmites | 1 catch + all mounds resolved; cd may supply unknown checks or confirm unseen zero spawn | Same source rule; intact mounds reopen completion | All mounds confirmed broken; no ordinary Rockmite catch required |
 | [Scrappy](critters/scrappy.md) | 3 shared catches + qualified empty scan | 1 catch | 1 catch | 3 qualified checks |
 | [Snoozle](critters/snoozle.md) | All 5 walls broken + known Snoozle population caught + no live Snoozles | 1 catch + all 5 walls resolved; cd may supply unknown checks or confirm unseen zero spawn | Same source rule; intact walls reopen completion | All 5 Snooper walls confirmed broken; no ordinary Snoozle catch required |
-| [Gemzie](critters/gemzie.md) | 3 shared catches + qualified empty scan | 1 catch | 1 catch | 3 qualified checks in its zone; spawn message alone is insufficient |
+| [Gemzie](critters/gemzie.md) | 3 shared catches + qualified empty scan | 1 catch | 1 catch | Five seconds after Hypixel's chamber-opening message, or 3 qualified checks in its zone; timer proof also supplies the needed Sparkling check in Unique |
 
 Known remaining populations must still be caught. A zero minimum does not fabricate a catch; Rockmite and Snoozle can locally clear without catches only when their sources are resolved and no uncaught population is known. In Unique, all sources resolved plus party cd can confirm unseen zero-spawn Rockmite/Snoozle; a positively encountered critter still needs its first catch.
 
@@ -85,7 +81,7 @@ For Unique, source contradictions reopen Rockmite/Snoozle regardless of discover
 | [Troodon](critters/troodon.md) | 3 shared catches + qualified empty scan | 1 catch | 1 catch | 3 qualified checks |
 | [Wumpa](critters/wumpa.md) | 1 shared catch + qualified empty scan | 1 catch | 1 catch | 1 actual shared catch; sighting/spawn message/report alone is insufficient |
 
-When the party needs Sparkling Wumpa, **every uncaught Icy species also appears in the Sparkling missing panel as a Wumpa prerequisite**, even if everyone owns that species' discovery. These prerequisite-only species are not added to the Sparkling progress denominator. Consequently, a species can have passed its own Sparkling check but remain listed until one is caught for Wumpa. This exception applies to every Icy row above.
+Until Wumpa is caught, when the party needs Sparkling Wumpa, **every uncaught Icy species also appears in the Sparkling missing panel as a Wumpa prerequisite**, even if everyone owns that species' discovery. These prerequisite-only species are not added to the Sparkling progress denominator. Any confirmed personal or shared Wumpa capture marks every Icy species checked and clears all Icy missing rows in Sparkling mode for the rest of the run, regardless of scans or other catches. Unique and Full Clear retain their normal requirements.
 
 ## Haunted
 
@@ -176,6 +172,11 @@ The requested example separates Unique's missing row from its Sparkling progress
 - [SafariHelperRules](../src/main/kotlin/net/johnceo/sparklingmutuals/safari/completion/SafariHelperRules.kt): source reminder eligibility.
 
 ## Last updated
+
+2026-10-18 - Replaced bird announcement/source assumptions with qualified render/capture rules and restricted fd eligibility.
+
+2026-10-17 - Removed detected-Sparkling sightings as a separate completion requirement; normal species rules remain.
+
 
 2026-10-17 - Full Clear retains unpunched nest highlights until the known nest population is captured; fd and rendered bees cannot hide them. Unique/Sparkling report trust is unchanged.
 

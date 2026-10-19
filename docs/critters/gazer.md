@@ -14,7 +14,7 @@
 
 | Mode | Rule |
 | --- | --- |
-| Unique | One confirmed shared catch immediately completes Unique and removes the missing row, without a local Sparkling scan/radius requirement. Detected uncaptured Sparklings still block completion. |
+| Unique | One confirmed shared catch immediately completes Unique and removes the missing row, without a local Sparkling scan/radius requirement. Detected Sparkling entities do not add a separate capture requirement. |
 | Full Clear | Its fixed capture total completes progress before a report. The missing row also requires local empty-scan proof (Gemzie inside its zone; Scrappy/Troodon/Gazer in their biome), retained after leaving the radius. Positive remaining population reopens local completion until caught. See the [panel reference](../MISSING_PANEL.md). |
 | Sparkling | Retain distinct Gazer UUIDs seen anywhere in the run. Once four Gazers have been checked, retain 4/4 even when they leave render distance or the player leaves/reenters Haunted. Shared captures can also establish checked spawns, without double counting previously seen Gazers. |
 
@@ -30,6 +30,9 @@
 - Show Gazer exactly once in the missing/check panel: its colored name and gray mode-specific counter. Remove duplicate Gazers captured/Gazers checked footer rows in every mode. Unique removes the Gazer row after its first shared catch; only an actual pending Sparkling capture can retain it.
 
 ## Last updated
+
+2026-10-17 - Removed detected-Sparkling sightings as a separate completion requirement; normal species rules remain.
+
 
 2026-10-17 - Removed superseded Unique post-catch checking wording; retained Sparkling counters and Full Clear capture rules.
 

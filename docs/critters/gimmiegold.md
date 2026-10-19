@@ -26,11 +26,11 @@ Known local starting coins also add to E. The local player's own notice overlaps
 
 ## Party completion reports and other modes
 
-- **Sparkling, outside Haunted:** a received party `hd` can override ordinary coin-source, inventory and population checking. No local coin history is required for that remote trust. Entering Haunted retires inherited checking and revalidates local sources. A report received inside Haunted cannot waive them. Actual detected uncaptured Sparklings remain blockers everywhere.
+- **Sparkling, outside Haunted:** a received party `hd` can override ordinary coin-source, inventory and population checking. No local coin history is required for that remote trust. Entering Haunted retires inherited checking and revalidates local sources. A report received inside Haunted cannot waive them. Detected Sparkling entities do not override normal completion.
 - **Unique:** require one actual shared catch, with the shared confirmed-Sparkling exception. A report alone cannot invent that catch. Ordinary local coin checking does not separately gate Unique.
 - **Full Clear:** require actual captures of the minimum population, raised by known coin slots/contributions and positive additional critters. A remote report may supply ordinary checking trust but never these captures. Local clear proof still needs resolved sources, no held coins and no remaining critters. Personal PBs retain personal capture evidence. Existing conservative Full Clear source recovery is separate from the new Sparkling slot rule.
 
-The shared confirmed-Sparkling completion override for Unique/Sparkling remains in force after all detected Sparklings of this species are caught. Normal catches, reports and sightings cannot resolve a pending Sparkling.
+The confirmed-Sparkling catch override still completes Unique/Sparkling immediately. Pending detected identities add no separate capture requirement; normal catches, reports and source/check evidence retain their usual meaning.
 
 ## Runtime evidence and diagnostics
 
@@ -45,9 +45,12 @@ In Sparkling mode, coin ESP requires someone needing Sparkling Gimmiegold. All r
 - Start a run outside Haunted and inspect the logged initial coin-slot count. Collect all but one: checking stays pending despite sufficient Gimmiegolds and empty inventory. Unload the last marker: it must remain pending. Collect it and verify the final qualifying C + U check completes.
 - Compare 1 catch + the remaining rendered Gimmiegolds with the full slot count. Unload models one at a time before the initial check passes: historical UUID totals cannot substitute for the required current population.
 - Receive repeated one-/two-coin unused-item notices from multiple players. Verify the required total increases once per sender/quantity, own starting coins are not counted twice, and enough additional current-or-captured Gimmiegolds are needed.
-- Receive `hd` outside Haunted: Sparkling checking can complete, Unique still needs a shared catch, and Full Clear still needs its capture minimum. Enter Haunted and confirm local revalidation. Repeat with an actual pending Sparkling: every mode stays pending until caught.
+- Receive `hd` outside Haunted: Sparkling checking can complete, Unique still needs a shared catch, and Full Clear still needs its capture minimum. Enter Haunted and confirm local revalidation. Detected Sparkling identities must not override otherwise valid completion.
 
 ## Last updated
+
+2026-10-17 - Removed detected-Sparkling sightings as a separate completion requirement; normal species rules remain.
+
 
 2026-10-17 - Clarified unused floor-drop notices with resource quantities and relevant missing Sparkling discoveries; retained legacy parsing.
 

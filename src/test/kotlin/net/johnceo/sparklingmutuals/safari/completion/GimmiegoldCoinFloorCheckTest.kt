@@ -116,7 +116,7 @@ class GimmiegoldCoinFloorCheckTest {
         run.partyFullClear("Party > Friend: hd")
         assertTrue(run.sparklingComplete("Gimmiegold", party()))
         run.observeSparkling(UUID.randomUUID(), "Gimmiegold")
-        assertFalse(run.sparklingComplete("Gimmiegold", party()), "actual Sparkling capture obligations still override reports")
+        assertTrue(run.sparklingComplete("Gimmiegold", party()), "detected entities cannot override trusted completion")
     }
 
     @Test fun `outside report keeps the floor-derived Full Clear minimum while Unique needs one catch`() {

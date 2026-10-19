@@ -23,19 +23,19 @@ object SafariCompletion {
         if (owner !== run) { owner = run; queue.clear(); sentAt = 0 }
         val mode = SafariFullClear.mode
         val party = SafariSparklingMode.state
-        SafariBiome.entries.forEach { area ->
-            run.completion.announcement(run, area, mode, party)?.let { queue.addLast(area to it) }
-        }
-        // Revalidate queued completions after contradictory local evidence or a mode change.
-        queue.removeAll { (area, _) -> run.sparklingCaptures.pending(area) || area != biome || mode == SafariMode.SPARKLING && !party.ready || run.completed(mode,
-            area.critters.filter { mode != SafariMode.SPARKLING || party.needs(it.name) }, party, localOnly = true) !=
-            area.critters.count { mode != SafariMode.SPARKLING || party.needs(it.name) } }
         val now = System.currentTimeMillis()
-        // Sample the actual inventory at completion, rather than a prior HUD poll.
+        // Sample held food before deciding whether any Forest report may be queued or sent.
         client.player?.inventory?.let { inventory ->
             run.inventoryEvidence((0 until inventory.containerSize).map { inventory.getItem(it) }
                 .filterNot { it.isEmpty }.map { it.hoverName.string to it.count }, now)
         }
+        SafariBiome.entries.forEach { area ->
+            run.completion.announcement(run, area, mode, party)?.let { queue.addLast(area to it) }
+        }
+        // Revalidate queued completions after contradictory local evidence or a mode change.
+        queue.removeAll { (area, _) -> !run.canReportBiome(area) || area != biome || mode == SafariMode.SPARKLING && !party.ready || run.completed(mode,
+            area.critters.filter { mode != SafariMode.SPARKLING || party.needs(it.name) }, party, localOnly = true) !=
+            area.critters.count { mode != SafariMode.SPARKLING || party.needs(it.name) } }
         if (run.completion.locallyComplete(run, biome, mode, party)) run.resourceReminders.afterBiomeClear(now)
         if (client.connection != null && now - sentAt >= 4000) {
             if (run.resourceReminders.dispatch(now, client.player?.name?.string ?: "Player", biome, party) { notice, reminder ->

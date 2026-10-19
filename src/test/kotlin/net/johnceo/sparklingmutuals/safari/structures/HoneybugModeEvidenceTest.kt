@@ -71,7 +71,7 @@ class HoneybugModeEvidenceTest {
             catch(run, 3)
             assertEquals(1, run.completed(mode, listOf(honeybug), party(true)))
             run.observeSparkling(UUID.randomUUID(), "Honeybug")
-            assertEquals(0, run.completed(mode, listOf(honeybug), party(true)), "actual Sparkling obligations still block reports")
+            assertEquals(1, run.completed(mode, listOf(honeybug), party(true)), "detected Sparkling entities cannot override completed nest evidence")
         }
     }
 

@@ -16,7 +16,7 @@ import net.johnceo.sparklingmutuals.safari.structures.MoundSurvey
 import net.johnceo.sparklingmutuals.safari.structures.SafariMounds
 
 /** Capture, source and completion evidence owned by a single Safari run. */
-class SafariRun(val startedAt: Long) {
+class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTimeMillis) {
     var historyExcluded = false
         private set
     fun excludeFromHistory() { historyExcluded = true }
@@ -41,9 +41,10 @@ class SafariRun(val startedAt: Long) {
     val sparklingParticles = net.johnceo.sparklingmutuals.safari.sparkling.SparklingParticleLocations()
     val sparklingCaptures = SparklingCaptureState()
     fun observeSparkling(id: java.util.UUID, name: String, aliases: Set<java.util.UUID> = emptySet()): java.util.UUID {
-        if (sparklingCaptures.observe(id, name, aliases)) SafariRoster.named(name)?.biome?.let(completion::reopen)
+        sparklingCaptures.observe(id, name, aliases)
         return sparklingCaptures.identity(id)
     }
+    /** Unresolved detection identities are diagnostic state, never a completion requirement. */
     fun sparklePending(name: String) = sparklingCaptures.pending(name)
     fun sparklingBroadcast(raw: String, now: Long = System.currentTimeMillis()) {
         val match = RunTally.sparkling.matchEntire(raw) ?: return
@@ -102,12 +103,30 @@ class SafariRun(val startedAt: Long) {
         }
     }
     private val visited = mutableSetOf<SafariBiome>()
-    private var startingBiome: SafariBiome? = null
+    private var forestReporter = false
+    private var forestEntered = false
+    private fun syncBirdContributions() { birds.contributions(localPlayerName, resources.foodContributions()) }
+    fun birdSpawnsComplete(localOnly: Boolean = false): Boolean {
+        syncBirdContributions()
+        return if (lastBiome == SafariBiome.FOREST) birds.feedingResolved else !localOnly &&
+            (birds.feedingResolved || birds.remoteReady || birds.hasReport && birds.capturesComplete(::count))
+    }
+    fun canReportBiome(biome: SafariBiome): Boolean {
+        if (biome != SafariBiome.FOREST) return true
+        return forestReporter && birds.reportSuppliesReady && birdSpawnsComplete(localOnly = true)
+    }
+    fun forestReportDebug(mode: SafariMode, party: PartySparklingState): String {
+        val targets = SafariBiome.FOREST.critters.filter { mode != SafariMode.SPARKLING || party.needs(it.name) }
+        val missing = targets.filter { completed(mode, listOf(it), party, localOnly = true) == 0 }.map { it.name }
+        return "mode=$mode initialClearer=$forestReporter suppliesReady=${birds.reportSuppliesReady} " +
+            "spawnProof=${birdSpawnsComplete(localOnly = true)} partyReady=${party.ready} " +
+            "currentBiome=$lastBiome scanKnown=${hasCaptureEvidence(SafariBiome.FOREST)} missing=$missing"
+    }
     private val partyFullClears = mutableSetOf<SafariBiome>()
     private val communalClears = mutableSetOf<SafariBiome>()
     private val biomeReports = mutableSetOf<SafariBiome>()
     private var remoteForestReport = false
-    val honeybugRemoteComplete get() = remoteForestReport && !sparklePending("Honeybug")
+    val honeybugRemoteComplete get() = remoteForestReport
     private val fullClearObservedTargets = mutableMapOf<String, Int>()
     fun uniqueReportReceived(biome: SafariBiome) = biome in biomeReports
     fun fullClearReportReceived(biome: SafariBiome) = biome in biomeReports
@@ -116,7 +135,10 @@ class SafariRun(val startedAt: Long) {
         SparklingChecks.doneBiome(raw)?.let {
             partyFullClears.add(it); communalClears.add(it)
             biomeReports.add(it)
-            if (it == SafariBiome.FOREST) remoteForestReport = true
+            if (it == SafariBiome.FOREST) {
+                remoteForestReport = true
+                syncBirdContributions(); birds.report()
+            }
             if (it == SafariBiome.CAVERN && lastBiome != SafariBiome.CAVERN) {
                 remainingMounds = false; remainingWalls = false
             }
@@ -126,9 +148,9 @@ class SafariRun(val startedAt: Long) {
     /** Local proof advances progress directly; remote reports use capture minima. PBs remain personal. */
     fun fullClearComplete(name: String): Boolean {
         val critter = SafariRoster.named(name) ?: return false
-        if (sparklePending(name) || sourcePending(name)) return false
-        if (name in birdSpecies && birds.knownFoodUnresolved ||
-            name == "Gimmiegold" && sparklingChecks.knownCoinsUnresolved) return false
+        if (name in birdSpecies) return birdComplete(name, nearby[SafariBiome.FOREST])
+        if (sourcePending(name)) return false
+        if (name == "Gimmiegold" && sparklingChecks.knownCoinsUnresolved) return false
         if (name == "Honeybug") {
             return fullClearMissingComplete(name)
         }
@@ -136,12 +158,9 @@ class SafariRun(val startedAt: Long) {
         // The local checklist already requires qualified coverage, captures and resolved sources.
         // Its retained proof remains valid after leaving the scan radius or biome.
         if (fullClearMissingComplete(name)) return true
-        if (name == "Macaw" && uniqueUnavailable(name)) return true
         val fixed = SafariFullClear.fixedCaptureTargets[name]
         if (fixed == null && critter.biome !in biomeReports) return false
         val minimum = when (name) {
-            "Macaw" -> 1
-            "Bluebird", "Parakeet" -> birds.spawnedCount(name)
             "Rockmite" -> maxOf(rockmiteMounds, if (encountered(name)) 1 else 0)
             "Snoozle" -> if (encountered(name)) 1 else 0
             "Gimmiegold" -> maxOf(SafariFullClear.minimum(name), gimmiegoldCaptureMinimum())
@@ -151,12 +170,17 @@ class SafariRun(val startedAt: Long) {
     }
     private val inheritedBiomes = mutableSetOf<SafariBiome>()
     fun visitBiome(biome: SafariBiome) {
-        if (startingBiome == null) startingBiome = biome
+        if (biome == SafariBiome.FOREST && !forestEntered) {
+            // A detour to another biome does not disqualify the eventual Forest clearer.
+            // Prior bird catches identify late arrivals; six local pickups are still required.
+            forestReporter = birdCount() == 0
+            forestEntered = true
+        }
         if (lastBiome != biome) {
             partyFullClears.remove(biome); communalClears.remove(biome)
             sparklingChecks.reenter(biome)
             if (biome == SafariBiome.HAUNTED) gimmiegoldCheck.reenter()
-            if (biome == SafariBiome.FOREST) { birds.reenter(); forestBirdsSurveyed = false }
+            if (biome == SafariBiome.FOREST) birds.reenter()
             zoneScanConfirmed.removeAll(biome.critters.map { it.name }.toSet())
         }
         lastBiome = biome
@@ -205,7 +229,8 @@ class SafariRun(val startedAt: Long) {
     }
     fun sparklingComplete(name: String, party: PartySparklingState, localOnly: Boolean = false): Boolean {
         val critter = SafariRoster.named(name) ?: return false
-        if (sparklePending(name)) return false
+        if (critter.biome == SafariBiome.ICY && count("Wumpa") > 0) return true
+        if (name in birdSpecies) return birdSpawnsComplete(localOnly)
         if (sparklingCaptures.captured(name)) return true
         if (SparklingChecks.requiresCapture(name)) return count(name) > 0
         if (name == "Rockmite" || name == "Snoozle") {
@@ -221,14 +246,11 @@ class SafariRun(val startedAt: Long) {
             return gimmiegoldCheck.complete
         }
         if (sourcePending(name)) return false
-        if (name in birdSpecies && !birds.sparklingSpawned) return false
-        if (name == "Macaw" && !encountered(name) && !birds.hasMacaws(count(name), nearbyMacaws) && !uniqueUnavailable(name)) return false
-        if (name in birdSpecies && birds.accountedFeedings < resources.requiredPopulation(SafariBiome.FOREST)) return false
         if (!localOnly) partyCompletion(name, party)?.let { return it }
         return sparklingChecks.locallyChecked(name)
     }
     fun completed(mode: SafariMode, critters: List<SafariCritter>, party: PartySparklingState, localOnly: Boolean = false): Int =
-        critters.count { !sparklePending(it.name) && when (mode) {
+        critters.count { when (mode) {
             SafariMode.UNIQUE -> uniqueComplete(it.name, party, localOnly) &&
                 (it.name != "Honeybug" || !party.needs(it.name) || sparklingComplete(it.name, party, localOnly))
             SafariMode.FULL_CLEAR -> if (localOnly) captureComplete(it.name) else fullClearComplete(it.name)
@@ -241,9 +263,10 @@ class SafariRun(val startedAt: Long) {
     }
     /** Cavern species can combine one shared catch with safari-wide source proof; cd can confirm no spawn. */
     fun uniqueComplete(name: String, party: PartySparklingState, localOnly: Boolean = false): Boolean {
-        if (sparklePending(name)) return false
+        if (name in birdSpecies) return birdSpawnsComplete(localOnly) &&
+            (count(name) > 0 || name == "Macaw" && (uniqueUnavailable(name) ||
+                lastBiome != SafariBiome.FOREST && !localOnly && count("Bluebird") > 0 && count("Parakeet") > 0 && birds.remoteReady))
         if (sparklingCaptures.captured(name)) return true
-        if (name == "Macaw" && uniqueUnavailable(name)) return true
         if (name == "Rockmite" || name == "Snoozle") {
             if (name in uniqueSourceContradictions && !sparklingChecks.locallyChecked(name)) return false
             val checked = cavernSourcesChecked(name) || sparklingChecks.locallyChecked(name)
@@ -256,10 +279,8 @@ class SafariRun(val startedAt: Long) {
     /** A completed local survey can prove a variable critter never spawned; a sighting revokes it. */
     fun uniqueUnavailable(name: String): Boolean {
         if (name == "Macaw") {
-            if (!forestBirdsSurveyed) return false
-            val remaining = nearby[SafariBiome.FOREST] ?: return false
-            return !encountered(name) && name !in remaining && !birds.hasMacaws(count(name), nearbyMacaws) &&
-                birds.feedingResolved && birds.accountedFeedings >= resources.requiredPopulation(SafariBiome.FOREST) && !sourcePending(name)
+            syncBirdContributions()
+            return forestBirdsSurveyed && !birds.hasMacaws(count(name), nearbyMacaws) && birds.feedingResolved
         }
         val remaining = nearby[SafariBiome.CAVERN] ?: return false
         if (encountered(name) || name in remaining) return false
@@ -277,7 +298,7 @@ class SafariRun(val startedAt: Long) {
     private val missingScanConfirmed = mutableSetOf<String>()
     private val zonesRequired = mutableSetOf<SafariBiome>()
     val birds = SafariBirdLedger()
-    val sparklingChecks = SparklingChecks()
+    val sparklingChecks = SparklingChecks(checkClock)
     private val nearby = mutableMapOf<SafariBiome, Set<String>>()
     private var wallsChecked = false
     private var nestsChecked = false
@@ -349,19 +370,21 @@ class SafariRun(val startedAt: Long) {
         }
     }
     /** Shared captures + current nearby bird counts, never a history of distinct UUIDs. */
-    fun scanBirdSources(dropsRemaining: Int, live: List<String> = emptyList()) {
-        if (lastBiome == SafariBiome.FOREST) forestBirdsSurveyed = true
+    fun scanBirdSources(dropsRemaining: Int, live: List<String> = emptyList(), qualified: Boolean = lastBiome == SafariBiome.FOREST) {
+        syncBirdContributions()
+        birds.floor(dropsRemaining)
+        if (!qualified || lastBiome != SafariBiome.FOREST) return
+        forestBirdsSurveyed = true
         nearbyMacaws = live.count { it == "Macaw" }
         sightings.addAll(live.filter { it in birdSpecies })
-        fun population(name: String) = count(name) + live.count { it == name }
-        val population = population("Bluebird") + population("Parakeet") + population("Macaw") / 2
-        birds.scan(dropsRemaining, population)
+        birds.render(::count, live)
         resources.scan(SafariBiome.FOREST, birds.accountedFeedings)
     }
     fun hasCaptureEvidence(biome: SafariBiome) = biome in nearby
     /** Local checklist proof can advance progress without a party report. */
     fun fullClearMissingComplete(name: String): Boolean {
         val critter = SafariRoster.named(name) ?: return false
+        if (name in birdSpecies) return birdComplete(name, nearby[SafariBiome.FOREST])
         if ((name in SafariCompletionZones.forBiome(critter.biome) || name in SafariCompletionZones.uuidMinimums) &&
             name !in missingScanConfirmed) return false
         return captureCompleteWithZones(name, false, nearby[critter.biome], null, missingScanConfirmed)
@@ -370,15 +393,13 @@ class SafariRun(val startedAt: Long) {
         !fullClearMissingComplete(critter.name) else count(critter.name) == 0
     fun birdCount(personalOnly: Boolean = false) = birdSpecies.sumOf { if (personalOnly) personalCount(it) else count(it) }
     private fun birdComplete(species: String, speciesInRange: Set<String>?, personalOnly: Boolean = false): Boolean {
-        if (speciesInRange == null || !birds.feedingResolved || birds.accountedFeedings < resources.requiredPopulation(SafariBiome.FOREST) || sourcePending(species)) return false
-        val captured = if (personalOnly) personalCount(species) else count(species)
-        return if (species == "Macaw") captured >= 1 || uniqueUnavailable(species)
-            else species !in speciesInRange && captured >= birds.spawnedCount(species)
+        syncBirdContributions()
+        return birds.capturesComplete { if (personalOnly) personalCount(it) else count(it) }
     }
     fun birdsComplete(speciesInRange: Set<String>?, personalOnly: Boolean = false) =
         birdSpecies.all { birdComplete(it, speciesInRange, personalOnly) }
     fun sourcePending(name: String) = when (name) {
-        "Bluebird", "Parakeet", "Macaw" -> resources.pending(SafariBiome.FOREST)
+        "Bluebird", "Parakeet", "Macaw" -> birds.knownFoodUnresolved
         "Gimmiegold" -> resources.pending(SafariBiome.HAUNTED)
         else -> false
     }
@@ -388,7 +409,8 @@ class SafariRun(val startedAt: Long) {
 
     private fun captureCompleteWithZones(species: String, personalOnly: Boolean,
         speciesInRange: Set<String>?, structures: BiomeClearEvidence?, confirmedZones: Set<String>): Boolean {
-        if (sourcePending(species) || sparklePending(species)) return false
+        if (species in birdSpecies) return birdComplete(species, speciesInRange, personalOnly)
+        if (sourcePending(species)) return false
         val captured = if (personalOnly) personalCount(species) else count(species)
         // The initial known nest total and actual catch messages suffice from any biome.
         if (species == "Honeybug" && beeNestCountKnown)

@@ -69,6 +69,8 @@ Track implementation requests and progress directly in [GitHub Issues](https://g
 
 ## Local and generated files
 
+Bird spawning, mode completion and automatic Forest report eligibility: [Forest bird completion](BIRD_COMPLETION.md).
+
 Gradle's `.gradle/`, `.kotlin/` and `build/`, IDE settings, the development client's `run/`, and local `logs/` are ignored working files. They are not source folders. Keep local authentication files and development profiles in place when doing routine repository cleanup.
 
 See [Safari entry guard](SAFARI_ENTRY_GUARD.md) for stage-specific readiness, kick recovery, identity and presence evidence.
@@ -76,6 +78,8 @@ See [Safari entry guard](SAFARI_ENTRY_GUARD.md) for stage-specific readiness, ki
 ## Last updated
 
 2026-10-18 (America/New_York) - Updated the capture-preview package summary for its single switch and contact guide.
+
+2026-10-18 - Indexed the concrete render-based bird completion and fd eligibility rules.
 
 2026-10-17 - Indexed the per-critter missing-panel implementation reference.
 

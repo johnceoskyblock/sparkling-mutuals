@@ -15,6 +15,8 @@
 
 Apply item selection alongside the existing mode/discovery/resource-need rules. **All critter spawn, capture, check and completion requirements remain unchanged.** A predicted unopened drop is not a pickup, inventory item, consumed resource or spawned critter. Starting grants remain the separate inventory/message-based evidence already documented.
 
+Forest bird completion filters the raw marker list through complete active reward triples: generic/non-food groups do not count as bird food, while food, untyped and incomplete groups remain blockers. This filtering is independent of ESP visibility and never supplies a capture or a spawned bird. The user's 2026-10-18 run confirmed that counting all raw Forest markers wrongly blocked birds on eight unrelated reward groups after all nine food pickups.
+
 ### Haunted item-specific need rules
 
 - **Shining Coins:** Full Clear keeps all remaining coin drops eligible regardless of discovery ownership or coins already picked up, held, spent, or Gimmiegolds captured. Unique and Sparkling keep all remaining coins eligible whenever anyone needs Sparkling Gimmiegold, and hide them when nobody needs that discovery. No first-coin cutoff applies. The minimum Gimmiegold count does not excuse remaining coins. Coin use/spawn checks remain required afterward, while ordinary Unique progress remains based on its first shared catch.

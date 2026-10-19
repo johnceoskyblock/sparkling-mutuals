@@ -1,5 +1,8 @@
 package net.johnceo.sparklingmutuals.safari.structures
 
+import net.johnceo.sparklingmutuals.safari.resources.renderBird
+import net.johnceo.sparklingmutuals.safari.resources.scanRenderedBirds
+
 import net.johnceo.sparklingmutuals.safari.PartySparklingState
 import net.johnceo.sparklingmutuals.safari.SafariBiome
 import net.johnceo.sparklingmutuals.safari.SafariCatch
@@ -29,9 +32,9 @@ class ForestNestRuntimeTest {
         for (food in listOf("Bag of Seeds", "Wriggleworm", "Yogi Berry")) repeat(3) {
             birds.pickup("FLOOR DROP! $food", SafariBiome.FOREST)
         }
-        repeat(9) { birds.spawn("A Bluebird was attracted to the Birdfeeder!") }
+        repeat(9) { birds.renderBird("Bluebird") }
         birds.inventory(emptyList())
-        scanBirdSources(0)
+        scanRenderedBirds()
         updateCaptureEvidence(SafariBiome.FOREST, emptySet(), false)
     }
     @Test fun `Full Clear uses punched nest totals even when released bees are outside entity range`() {

@@ -1,5 +1,8 @@
 package net.johnceo.sparklingmutuals.safari.completion
 
+import net.johnceo.sparklingmutuals.safari.resources.renderBird
+import net.johnceo.sparklingmutuals.safari.resources.scanRenderedBirds
+
 import java.util.UUID
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.safari.PartySparklingState
@@ -120,13 +123,14 @@ class SafariCompletionAnnouncementsTest {
         run.visitBiome(SafariBiome.FOREST)
         SafariBiome.FOREST.critters.filter { it.name != "Macaw" }.forEach { caught(run, it.name) }
         run.updateCaptureEvidence(SafariBiome.FOREST, emptySet(), false)
-        repeat(8) { run.birds.spawn("A Bluebird was attracted to the Birdfeeder!") }
+        repeat(8) { run.birds.renderBird("Bluebird") }
         assertFalse(run.uniqueUnavailable("Macaw"))
         assertFalse(run.uniqueComplete("Macaw", state))
         assertTrue(SafariPanels.missing(run, SafariBiome.FOREST, true, 0, party = state).rows.any { it.label == "Macaw" })
-        run.birds.spawn("A Parakeet was attracted to the Birdfeeder!")
+        run.birds.renderBird("Parakeet")
+        repeat(6) { run.recordBirdFood("FLOOR DROP! Yogi Berry", SafariBiome.FOREST, 10000) }
         run.inventoryEvidence(emptyList(), 10000)
-        run.scanBirdSources(0)
+        run.scanRenderedBirds()
         assertTrue(run.uniqueUnavailable("Macaw"))
         assertTrue(run.uniqueComplete("Macaw", state))
         val rows = SafariPanels.missing(run, SafariBiome.FOREST, true, 0, party = state).rows
@@ -137,6 +141,7 @@ class SafariCompletionAnnouncementsTest {
         assertEquals(0, run.count("Macaw"))
         assertEquals(0, run.personalCount("Macaw"))
         run.updateCaptureEvidence(SafariBiome.FOREST, setOf("Macaw"), false)
+        run.scanBirdSources(0, listOf("Macaw"))
         assertFalse(run.uniqueUnavailable("Macaw"))
         assertFalse(run.uniqueComplete("Macaw", state))
         assertTrue(SafariPanels.missing(run, SafariBiome.FOREST, true, 0, party = state).rows.any { it.label == "Macaw" })
@@ -146,21 +151,21 @@ class SafariCompletionAnnouncementsTest {
         run.visitBiome(SafariBiome.FOREST)
         run.inventoryEvidence(listOf("Bag of Seeds" to 2), 0)
         run.updateCaptureEvidence(SafariBiome.FOREST, emptySet(), false)
-        repeat(9) { run.birds.spawn("A Bluebird was attracted to the Birdfeeder!") }
+        repeat(9) { run.birds.renderBird("Bluebird") }
         assertFalse(run.uniqueUnavailable("Macaw"))
-        repeat(2) { run.birds.spawn("A Bluebird was attracted to the Birdfeeder!") }
+        repeat(2) { run.birds.renderBird("Bluebird") }
         assertFalse(run.uniqueUnavailable("Macaw"), "party feedings cannot resolve food still held locally")
         run.inventoryEvidence(emptyList(), 10000)
-        run.scanBirdSources(0)
+        run.scanRenderedBirds()
         assertTrue(run.uniqueUnavailable("Macaw"))
         repeat(12) { run.birds.pickup("FLOOR DROP! Bag of Seeds", SafariBiome.FOREST) }
         assertFalse(run.uniqueUnavailable("Macaw"))
-        run.birds.spawn("A Bluebird was attracted to the Birdfeeder!")
+        run.birds.renderBird("Bluebird")
         assertFalse(run.uniqueUnavailable("Macaw"), "two starting foods remain in addition to twelve pickups")
-        repeat(11) { run.birds.spawn("A Bluebird was attracted to the Birdfeeder!") }
-        run.scanBirdSources(0)
+        repeat(11) { run.birds.renderBird("Bluebird") }
+        run.scanRenderedBirds()
         assertTrue(run.uniqueUnavailable("Macaw"))
-        run.birds.spawn("Two Macaws were attracted to the Birdfeeder!")
+        run.birds.renderBird("Macaw")
         assertFalse(run.uniqueUnavailable("Macaw"), "spawn announcement is evidence even before the entity scan")
         assertFalse(run.uniqueComplete("Macaw", party("Macaw")))
     }

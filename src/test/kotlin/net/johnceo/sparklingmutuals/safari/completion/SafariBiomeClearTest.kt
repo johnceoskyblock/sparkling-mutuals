@@ -1,5 +1,8 @@
 package net.johnceo.sparklingmutuals.safari.completion
 
+import net.johnceo.sparklingmutuals.safari.resources.renderBird
+import net.johnceo.sparklingmutuals.safari.resources.scanRenderedBirds
+
 import net.johnceo.sparklingmutuals.safari.SafariBiome
 import net.johnceo.sparklingmutuals.safari.SafariCatch
 import net.johnceo.sparklingmutuals.safari.SafariRoster
@@ -55,10 +58,10 @@ class SafariBiomeClearTest {
         repeat(8) { run.record(SafariCatch(SafariRoster.named("Bluebird")!!)) }
         assertFalse(SafariFullClear.eligible(run, SafariBiome.FOREST, ready))
         repeat(2) { run.record(SafariCatch(SafariRoster.named("Macaw")!!)) }
-        assertFalse(SafariFullClear.eligible(run, SafariBiome.FOREST, ready))
+        assertTrue(SafariFullClear.eligible(run, SafariBiome.FOREST, ready), "capture totals can establish base spawning without chat")
         repeat(3) { for (food in listOf("Bag of Seeds", "Wriggleworm", "Yogi Berry")) run.recordBirdFood("FLOOR DROP! $food") }
-        repeat(8) { run.birds.spawn("A Bluebird was attracted to the Birdfeeder!") }
-        run.birds.spawn("Two Macaws were attracted to the Birdfeeder!")
+        repeat(8) { run.birds.renderBird("Bluebird") }
+        run.birds.renderBird("Macaw")
         run.birds.inventory(emptyList())
         run.birds.scan(0)
         assertTrue(SafariFullClear.eligible(run, SafariBiome.FOREST, ready))
@@ -85,11 +88,11 @@ class SafariBiomeClearTest {
             repeat(amount) { record(SafariCatch(SafariRoster.named(name)!!, personal)) }
         }
         repeat(3) { for (food in listOf("Bag of Seeds", "Wriggleworm", "Yogi Berry")) recordBirdFood("FLOOR DROP! $food") }
-        repeat(8 - pairs) { birds.spawn("A Bluebird was attracted to the Birdfeeder!") }
-        birds.spawn("A Parakeet was attracted to the Birdfeeder!")
-        repeat(pairs) { birds.spawn("Two Macaws were attracted to the Birdfeeder!") }
+        repeat(8 - pairs) { birds.renderBird("Bluebird") }
+        birds.renderBird("Parakeet")
+        repeat(pairs) { birds.renderBird("Macaw") }
         birds.inventory(emptyList())
-        scanBirdSources(0)
+        scanRenderedBirds()
     }
     @Test fun `Forest PB accepts personally completed birds with all food collected`() {
         val ready = BiomeClearEvidence(observed = true, nestsChecked = true)

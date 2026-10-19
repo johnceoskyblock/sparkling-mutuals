@@ -14,9 +14,9 @@
 
 | Mode | Rule |
 | --- | --- |
-| Unique | One confirmed shared catch immediately completes Unique and removes the missing row, without a local Sparkling scan/radius requirement. Detected uncaptured Sparklings still block completion. |
+| Unique | One confirmed shared catch immediately completes Unique and removes the missing row, without a local Sparkling scan/radius requirement. Detected Sparkling entities do not add a separate capture requirement. |
 | Full Clear | Its fixed capture total completes progress before a report. The missing row also requires local empty-scan proof (Gemzie inside its zone; Scrappy/Troodon/Gazer in their biome), retained after leaving the radius. Positive remaining population reopens local completion until caught. See the [panel reference](../MISSING_PANEL.md). |
-| Sparkling | Spawn message starts a pending check. Retain distinct qualified Gemzie UUID checks for the run and reconcile shared catches to reach three; the message alone is insufficient. |
+| Sparkling | Hypixel's exact chamber-opening message checks Gemzie after five seconds without rendered entities. Retained qualified UUID/capture evidence reaching three remains an alternative. The timer also supplies the needed Sparkling check in Unique mode. |
 
 ## Specific deductions
 
@@ -27,14 +27,17 @@
 - Partial-clear entry: minimum shared captures + qualifying UUID-check radius + no remaining critters/spawns establishes Full Clear without seeing captured UUIDs again. Apply species-specific source checks and [shared radius rules](TRACKING.md#partially-cleared-biome).
 - Cavern floor pickups can supply Purple, Lime and Orange Gems; starting grants can also supply them. Keep the two sources separate.
 - Picking up or holding the gems proves resources available, not that Gemzie spawned or was caught.
-- Placer-only: `You placed the <Gem color> Gem on its podium!`. Global spawning: `A rumbling sound can be heard, and the door at the back of the chamber opens...`. Allow time for the entities to appear; complete from evidence, not an arbitrary delay. See [exact resource events](MESSAGES.md#feeder-and-resource-events).
-- Require three retained qualified Gemzie checks reconciled with shared captures for Sparkling mode. With no catches, all three distinct UUIDs must have been seen inside the scan radius, but they need not remain rendered simultaneously. Record the capture baseline at first sighting to avoid double counting a later catch. The spawn message adds no check; Unique progress still needs only its first shared catch.
-- If Gemzie is Cavern's last pending Sparkling check, the spawn message alone must not finish Cavern or send `cd`. Wait for the three-Gemzie evidence and all other active checks.
-- A party `cd` can mark Sparkling/Full Clear progress complete while outside Cavern. On entry, revalidate retained qualified checks and sources; reopen Gemzie/Cavern checks otherwise. Full Clear additionally requires its capture/absence conditions; Unique Gemzie advances immediately on its own first shared capture; no cd or local three-spawn scan is required.
+- Placer-only: `You placed the <Gem color> Gem on its podium!`. Global spawning: `A rumbling sound can be heard, and the door at the back of the chamber opens...`. This exact server message starts the five-second check timer; duplicate messages cannot restart it, and player quotations cannot start it. See [exact resource events](MESSAGES.md#feeder-and-resource-events).
+- After five seconds, supply 3/3 checked without sightings or captures. This proof lasts for the run, including Cavern reentry, and applies to Sparkling checking in both Sparkling and Unique modes. Retained qualified UUID checks reconciled with shared captures remain an alternative.
+- If Gemzie is Cavern's last pending Sparkling check, the chamber timer can finish Cavern and permit `cd` once five seconds and all other active checks pass.
+- The timer supplies no catches. Full Clear retains its capture/absence conditions; Unique Gemzie advances on its first shared capture. A party `cd` still follows the existing remote-report rules.
 
 ## Last updated
 
-2026-10-17 - Aligned Gemzie with retained qualified UUID checks; simultaneous rendering is not required.
+2026-10-17 - Removed detected-Sparkling sightings as a separate completion requirement; normal species rules remain.
+
+
+2026-10-18 - Added the five-second chamber-opening Sparkling check, shared with relevant Unique checking and retained for the run.
 
 2026-10-17 - Distinguished local Full Clear missing rows from progress completion.
 

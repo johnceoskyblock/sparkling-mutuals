@@ -62,7 +62,7 @@ Use `docs/README.md` to locate owners. Kotlin lives under `src/main/kotlin/net/j
 
 The source/test packages were reorganized in the repository cleanup. Older issue prompts may point to files directly under `safari/` that now live in subpackages, or tests that have moved or been renamed. Locate current files with `rg --files` and symbol searches; do not recreate an old path or duplicate an implementation just because an issue mentions it.
 
-Important examples of why the full documentation matters: caught, checked and seen are different; personal and shared catches are different; source resolution is separate from entity absence; a minimum does not prove every opportunity was observed; UUID replacements after capsule escape do not prove an increased population. Macaw has a specific Full Clear exception, bosses have specific Sparkling capture requirements, and detected Sparklings can block completion in every mode. Read the live documents for the exact conditions rather than treating these examples as a complete specification.
+Important examples of why the full documentation matters: caught, checked and seen are different; personal and shared catches are different; source resolution is separate from entity absence; a minimum does not prove every opportunity was observed; UUID replacements after capsule escape do not prove an increased population. Macaw has a specific Full Clear exception and bosses have specific Sparkling-mode capture requirements. Detected Sparkling identities add no separate completion requirement. Read the live documents for the exact conditions rather than treating these examples as a complete specification.
 
 ## Detect documentation changes before every issue
 
@@ -121,5 +121,7 @@ Only after all revisions covered by a source-baseline update have been reviewed,
 On initial onboarding, return a concise reading summary, current commit, sync findings and unresolved conflicts before proceeding to the assigned issue. Do not claim to have read files that were truncated, missing or unavailable. Thereafter, repeat revision review for every new issue and after rebases or merges that change the baseline.
 
 ## Last updated
+
+2026-10-17 - Removed the obsolete detected-Sparkling completion blocker from handoff examples.
 
 2026-10-16 - Kept complete-document onboarding and revision safeguards; moved issue requirements, progress and reference-asset review to GitHub Issues.
