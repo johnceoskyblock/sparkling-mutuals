@@ -24,6 +24,8 @@ Use the early absolute `[SM] Starting items:` report as the primary contribution
 
 Known local starting coins overlap the local player's own report. Repeat messages and legacy `[SM] Use:`, verbose and combined unused-item notices merge sender/type maxima rather than add pickups or another contribution. Keep demand after consumption. Larger amounts/new slots reopen applicable validation. No title creates demand. Unknown old/non-mod/late-join reports cannot be assumed zero.
 
+A fresh qualified local F+S proof also resolves overlapping legacy outstanding-coin bookkeeping against that same verified demand. The legacy three-catch fallback cannot add a second Sparkling quota. Unknown source/report coverage, held coins and positively remaining sources cannot discharge it.
+
 ## Party completion reports and other modes
 
 - **Sparkling, outside Haunted:** a verified, current-demand `hd` supplies remote spawning proof without requiring local Haunted renders. It does not waive known held coins, remaining sources or outstanding resource blockers. A report predating new starting contributions/slots must be updated. Entering Haunted retires inherited checking and revalidates local sources. A report received inside Haunted cannot waive them. Detected Sparkling entities do not override normal completion.
@@ -34,7 +36,7 @@ The confirmed-Sparkling catch override still completes Unique/Sparkling immediat
 
 ## Runtime evidence and diagnostics
 
-The source registry runs with the entity scan, independently of HUD/ESP settings and the current biome, so initial coin slots are learned before visiting Haunted. Only validated live STRING reward triples establish predicted coin slots; a nearest-group pickup correlation is recorded separately. Collection by another player can be inferred when every marker of a registered slot is gone while its loaded location remains within local observation range. Partial surviving markers keep the slot outstanding. Chunks/entities outside coverage remain unknown.
+The source registry runs with the entity scan, independently of HUD/ESP settings and the current biome, so initial coin slots are learned before visiting Haunted. Only validated live STRING reward triples establish predicted coin slots; a nearest-group pickup correlation is recorded separately. Marker disappearance alone never records a pickup by another player. Complete loaded coverage with no remaining sources and sufficient fresh population can account for their spawning opportunities. Partial surviving markers keep the slot outstanding. Chunks/entities outside coverage remain unknown.
 
 `/sm debug` includes **Gimmiegold Sparkling check** with `floorMinimum`, `remaining`, `extraCoins`, `held`, `required`, `capturedPlusRendered` and `checked`. Older `sourcePath`, coin-use and retained-UUID fields describe the separate source-recovery ledger used by Full Clear; retained history is not the Sparkling population counter.
 

@@ -58,6 +58,8 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
         val current = live.filterNot(sparklingCaptures::resolved).map(sparklingCaptures::identity).distinct()
         gimmiegoldCheck.scan(count("Gimmiegold"), current, qualified)
         if (qualified) resources.scan(SafariBiome.HAUNTED, count("Gimmiegold") + current.size)
+        if (qualified && resources.contributions.complete && gimmiegoldCheck.complete)
+            resources.verifiedCoinPopulation(gimmiegoldCheck.required)
     }
     val resourceReminders = net.johnceo.sparklingmutuals.safari.resources.StartingResourceDelivery(resources)
     val sparklingParticles = net.johnceo.sparklingmutuals.safari.sparkling.SparklingParticleLocations()

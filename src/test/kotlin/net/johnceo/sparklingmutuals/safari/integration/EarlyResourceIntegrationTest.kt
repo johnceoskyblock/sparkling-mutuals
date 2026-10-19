@@ -12,18 +12,18 @@ class EarlyResourceIntegrationTest {
     private fun party(vararg missing: String) = PartySparklingState().apply {
         select(setOf("me")); accept(setOf("me"), mapOf("me" to SafariRoster.all.map { it.name }.toSet() - missing.toSet()))
     }
-    private fun sources(run: SafariRun, salt: Long = 1) {
+    private fun sources(run: SafariRun, salt: Long = 1, coins: Int = 4) {
         val displays = mutableListOf<FloorDisplay>()
         var id = 100
         for ((count, point) in listOf(6 to (-100.0 to 50.0), 9 to (-20.0 to 50.0),
-                9 to (-20.0 to -50.0), 5 to (-100.0 to -50.0))) {
+                (5 + coins) to (-20.0 to -50.0), 5 to (-100.0 to -50.0))) {
             repeat(count * 3) { displays.add(FloorDisplay(id++, point.first, 65.0, point.second, "minecraft:string:String")) }
         }
         val predictor = FloorDropPredictor()
         val groups = predictor.scan(displays, 0)
         run.floorCatalog.observe(groups, displays.associate { it.id to UUID(salt, it.id.toLong()) })
         assertTrue(run.floorCatalog.complete)
-        assertEquals(4, run.floorCatalog.coinIds.size)
+        assertEquals(coins, run.floorCatalog.coinIds.size)
         run.resourceCoverage(run.floorCatalog.complete)
         run.floorCatalog.coinIds.forEach { run.gimmiegoldCheck.floor(it, true) }
     }
@@ -34,6 +34,33 @@ class EarlyResourceIntegrationTest {
         resources.contributions.roster(setOf(self, friend))
         ownStartingReport()
         visitBiome(biome)
+    }
+    @Test fun `larger overlapping legacy coins reconcile against verified variable floor demand`() {
+        for (floorCount in listOf(2, 5)) {
+            val run = receiver(SafariBiome.HAUNTED)
+            sources(run, coins = floorCount)
+            run.resources.reportedBy(friend, "[SM] Starting items: 1x Shining Coin")
+            run.resources.reportedBy(friend, "[SM] Use: 2x Shining Coin")
+            run.gimmiegoldCheck.sourceEvidence(true, 0)
+            run.scanGimmiegolds(List(floorCount + 1) { UUID.randomUUID() }, true)
+            assertFalse(run.sparklingComplete("Gimmiegold", party("Gimmiegold")), "one below F+S cannot resolve legacy demand")
+            run.gimmiegoldCheck.sourceEvidence(true, 1)
+            run.scanGimmiegolds(List(floorCount + 2) { UUID.randomUUID() }, true)
+            assertFalse(run.sparklingComplete("Gimmiegold", party("Gimmiegold")), "a remaining source still blocks")
+            run.gimmiegoldCheck.sourceEvidence(true, 0)
+            run.inventoryEvidence(listOf("Shining Coin" to 1), 10000)
+            run.scanGimmiegolds(List(floorCount + 2) { UUID.randomUUID() }, true)
+            assertFalse(run.sparklingComplete("Gimmiegold", party("Gimmiegold")), "held coins still block")
+            run.inventoryEvidence(emptyList(), 11000)
+            run.gimmiegoldCheck.sourceEvidence(false, 0)
+            run.scanGimmiegolds(List(floorCount + 2) { UUID.randomUUID() }, true)
+            assertFalse(run.sparklingComplete("Gimmiegold", party("Gimmiegold")), "unknown coverage cannot certify F")
+            run.gimmiegoldCheck.sourceEvidence(true, 0)
+            run.scanGimmiegolds(List(floorCount + 2) { UUID.randomUUID() }, true)
+            assertTrue(run.sparklingComplete("Gimmiegold", party("Gimmiegold")), "fresh F+S must resolve overlapping legacy demand for F=$floorCount")
+            assertEquals(0, run.count("Gimmiegold"), "population proof never supplies actual catches")
+            assertFalse(run.fullClearComplete("Gimmiegold"))
+        }
     }
     @Test fun `two clients share original duplicate food before sender clears and deduplicate legacy echoes`() {
         val sender = SafariRun(0).apply {

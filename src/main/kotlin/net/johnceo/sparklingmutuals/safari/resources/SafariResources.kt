@@ -173,6 +173,19 @@ class SafariResources {
         required[biome] = populationBaseline + if (biome == SafariBiome.FOREST) contributions.foodTotal else contributions.total(FloorDropType.COIN)
     }
     fun pending(biome: SafariBiome) = outstanding.keys.any { destination(it.second) == biome }
+    /** The qualified coin owner has accounted for every verified floor and starting opportunity.
+     * Its F+S proof supersedes legacy fixed-baseline bookkeeping, without inventing catches. */
+    fun verifiedCoinPopulation(requiredPopulation: Int) {
+        required[SafariBiome.HAUNTED] = requiredPopulation
+        val iterator = outstanding.iterator()
+        while (iterator.hasNext()) {
+            val (key, value) = iterator.next()
+            if (key.second != FloorDropType.COIN) continue
+            credits.merge(SafariBiome.HAUNTED, value.amount, Int::plus)
+            resolved.add(key)
+            iterator.remove()
+        }
+    }
     fun spawn(biome: SafariBiome) { events.merge(biome, 1, Int::plus); reconcile(biome) }
     fun scan(biome: SafariBiome, population: Int) { populations[biome] = population; reconcile(biome) }
     private fun reconcile(biome: SafariBiome) {
