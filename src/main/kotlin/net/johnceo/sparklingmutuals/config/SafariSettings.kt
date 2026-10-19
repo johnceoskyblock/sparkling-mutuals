@@ -154,6 +154,8 @@ class SafariSettings : Config() {
         @ConfigEditorButton(runnableId = 5, buttonText = "Reset to 25s") var reset = false
     }
     class Safari {
+        @JvmField @ConfigOption(name = "Gemzie gem auto-select", desc = "On a fresh click on a Cavern gem podium's top, select its whole gem from your hotbar and attempt that same placement once.")
+        @ConfigEditorBoolean var gemzieGemAutoSelect = ConfigManager.gemzieGemAutoSelect
         @JvmField @ConfigOption(name = "Capture projections", desc = "Show capsule paths and estimated terrain/critter contacts, including Masterful, movement and water. Capture physics and target bounds remain unverified.")
         @ConfigEditorBoolean var experimentalCapsulePath = ConfigManager.experimentalCapsulePath
         @JvmField @ConfigOption(name = "Capsule path width", desc = "Line width from 1 to 5; default 3.")
@@ -294,6 +296,7 @@ class SafariSettings : Config() {
             ConfigManager::shinyDetection to safari.shiny, ConfigManager::hideyhoQuestClicks to safari.hideyho, ConfigManager::hideyhoInsideOutside to safari.hideyhoInsideOutside,
             ConfigManager::progressHud to tracking.progress,
             ConfigManager::experimentalCapsulePath to safari.experimentalCapsulePath,
+            ConfigManager::gemzieGemAutoSelect to safari.gemzieGemAutoSelect,
             ConfigManager::showCapsuleGuideThroughTerrain to safari.showCapsuleGuideThroughTerrain,
             ConfigManager::missingPanel to tracking.missing,
             ConfigManager::removeDarkness to safari.darkness,

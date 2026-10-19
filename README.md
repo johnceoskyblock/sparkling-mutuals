@@ -24,6 +24,7 @@ HM API and MoulConfig are bundled. Player profile lookups use a Hypixel API key 
 | Species and resources | [All 37 critters](docs/critters/README.md), [captures/checks/reports](docs/critters/TRACKING.md), [floor drops](docs/critters/FLOOR_DROPS.md) |
 | Progress and helpers | [Missing/Unchecked panels and highlights](docs/MISSING_PANEL.md), [Forest birds](docs/BIRD_COMPLETION.md), [Sparkling detection](docs/SPARKLING_DETECTION.md) |
 | Capsule aiming guide | One **Capture projections** switch, terrain rings and possible-critter diamonds; [controls, limits and optional recorder](docs/CAPTURE_SHOT_RECORDING.md) |
+| Gemzie gem selection | Select the matching whole hotbar gem on a fresh podium click; [helper controls and limits](docs/critters/gemzie.md#whole-gem-selection-helper) |
 | Settings | `/sm`; [defaults, mode presets and saved-setting caveats](docs/CONFIG_DEFAULTS.md) |
 | HUD layout | `/sm gui`; drag and scroll to move/resize supported HUDs. Projection status text has been removed. |
 | Capture review | `/captures` for current/last-run captures |
@@ -64,5 +65,8 @@ The guide is a visual estimate, not guaranteed flight, impact or capture physics
 - Licensing and attribution: [LICENSE](LICENSE) and [third-party notices](licenses).
 
 ## Last updated
+
+2026-10-19 (America/New_York) — Integrated the Gemzie whole-gem selection helper from `c4908de` onto master `a1f98be`. Reviewed helper input, item identity, settings and mixin registration; live podium placement remains unverified.
+
 
 2026-10-19 (America/New_York) — Reorganized the current implementation reference and retained v3.4.0 release/installation guidance during the master rebase. Reviewed runtime source: `93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee`; documentation-only changes, no local runtime differences or new live validation.

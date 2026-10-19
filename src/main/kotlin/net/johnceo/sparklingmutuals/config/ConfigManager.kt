@@ -50,6 +50,7 @@ object ConfigManager {
     var sparklingPartyAnnouncer = true
     var catchCountPanel = false
     var autoClicker = true
+    var gemzieGemAutoSelect = true
     var candleHitbox = true
     var holdManagerOnKick = true
     var downtimeCommand = true
@@ -74,7 +75,7 @@ object ConfigManager {
         ::highlightBeeNests to true, ::removeDarkness to true, ::sparklingAlert to true,
         ::sparklingPartyAnnouncer to true, ::catchCountPanel to false, ::autoClicker to true, ::candleHitbox to true, ::holdManagerOnKick to true, ::downtimeCommand to true, ::honeyHives to true, ::runHistory to true, ::achievements to true, ::achievementSound to true, ::achievementsToParty to false, ::runCoinsInstaSell to false,
         ::hideCaptureChat to true, ::hideGroundCapsules to true, ::hideFlyingCapsules to true,
-        ::experimentalCapsulePath to false, ::showCapsuleGuideThroughTerrain to true,
+        ::experimentalCapsulePath to false, ::showCapsuleGuideThroughTerrain to true, ::gemzieGemAutoSelect to true,
         ::highlightSnooperWalls to true, ::showBeeNests to true, ::showMoundCount to true,
         ::showSnooperWalls to true, ::showMoundStats to false,
         ::allGemsAlert to true, ::allBirdFoodAlert to true, ::allIncenseAlert to true, ::runCompleteAlert to true)

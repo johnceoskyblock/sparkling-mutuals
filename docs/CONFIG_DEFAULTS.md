@@ -41,6 +41,8 @@ Startup and mode changes apply an ESP preset enabling all groups, species and Ro
 
 ### Feature bindings
 
+**Safari helpers → Gemzie gem auto-select** uses the independent saved key `gemzieGemAutoSelect`. It defaults on for missing/malformed values, preserves an explicit off choice, and is not changed by mode presets. It selects a whole hotbar gem for one fresh top-face Gemzie podium interaction; see [Gemzie](critters/gemzie.md#whole-gem-selection-helper). It does not move inventory/offhand items or add completion evidence.
+
 - [Capture projections](CAPTURE_SHOT_RECORDING.md#experimental-capsule-path) has one enable switch, independent of recording and capsule hiding. Missing/invalid saved enable values are off. The obsolete `allowUncalibratedCapsuleEstimates` and `hud.capsule_status.*` keys are ignored and omitted on save; no projection status HUD is offered.
 - [Warp reminder](WARP_ALERTS.md) controls both the alert and automatic `/p warp`; changing its switch/delay cancels pending work.
 - [Automatic contest downtime](CONTEST_DOWNTIME.md) defaults on independently of HUD/tracking. [Guard Safari entry](SAFARI_ENTRY_GUARD.md) and **!dt downtime** retain independent saved switches and stage-specific behavior.
@@ -83,5 +85,8 @@ Startup normalizes legacy `pb.*` keys from the general file and the earlier `Spa
 - Existing secondary coverage: [ConfigTest](../src/test/kotlin/net/johnceo/sparklingmutuals/config/ConfigTest.kt), [SafariSettingsTest](../src/test/kotlin/net/johnceo/sparklingmutuals/config/SafariSettingsTest.kt), [SafariCustomizationTest](../src/test/kotlin/net/johnceo/sparklingmutuals/config/SafariCustomizationTest.kt), [SafariFeatureDefaultsTest](../src/test/kotlin/net/johnceo/sparklingmutuals/config/SafariFeatureDefaultsTest.kt). No tests or live settings session ran in this audit. Reopen/restart, migration failure recovery and preset transitions require their appropriate runtime checks.
 
 ## Last updated
+
+2026-10-19 (America/New_York) — Integrated the Gemzie whole-gem selection helper from `c4908de` onto master `a1f98be`. Reviewed helper input, item identity, settings and mixin registration; live podium placement remains unverified.
+
 
 2026-10-19 (America/New_York) — Audited loaded defaults, saved choices, presets, appearance and PB migration against source `93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee`. See [documentation conventions](DOCUMENTATION_GUIDE.md).
