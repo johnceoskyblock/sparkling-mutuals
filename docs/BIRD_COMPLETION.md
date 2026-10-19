@@ -14,7 +14,9 @@ A **feeding opportunity** is the ledger's unit of expected bird population: one 
 
 ### Expected population
 
-Expected opportunities are **max(9, personally collected Forest food quantity) + local extra food + reported extra food**. Nine is the implemented baseline. Local extras include starting inventory/grants and pickups outside Forest, avoiding overlap with early pickup messages. Accepted party notices use sender/type maxima; the local sender's notice overlaps local extras. The first available inventory sample starts the three-second starting-inventory window.
+Expected opportunities are **max(9, personally collected Forest food quantity) + known local starting food + known other-party starting food**. Nine is the implemented verified floor-food baseline. Original grant evidence overlaps the local sender's report; ordinary floor pickups remain floor baseline even outside Forest. [Early absolute reports](critters/TRACKING.md#early-party-starting-resource-synchronization) use sender/type maxima and retain quantities after use; repeated/legacy notices do not add them again.
+
+Complete current-roster starting reports are required; explicit none differs from missing. Local spawning proof additionally requires known initial source coverage, sampled zero remaining floor food and held food. An applicable outside fd can supply remote source/spawn trust without local renders, retaining known blockers. Unknown partial/late source/report evidence never becomes zero.
 
 Qualified population is:
 
@@ -22,7 +24,7 @@ Bluebird catches + live Bluebirds + Parakeet catches + live Parakeets + floor((M
 
 Attraction chat establishes no food use, bird spawn, species total or Macaw pair. Complete active non-food reward triples are excluded from remaining food markers; food and partial/unknown groups still block. This marker scan operates Safari-wide, including the boat and other biomes, independently of selected ESP.
 
-The ledger retains maximum qualified species populations (captures + current renders). It retains a qualified total only when no floor food or held food remains. Incomplete scans do not accumulate separate UUID populations. New food pickup clears retained total proof; known remaining/held food blocks it, and increased demand can exceed it. Forest reentry clears the current total while retaining previously verified proof and species requirements.
+The ledger retains maximum qualified species populations (captures + current renders). It retains a qualified total only when no floor food or held food remains. Incomplete scans do not accumulate separate UUID populations. New food pickup clears retained total proof; a larger starting contribution clears old current/retained population proof. Known remaining/held food blocks it, and older reports must cover current demand. Forest reentry clears the current total while retaining previously verified proof and species requirements.
 
 ### Completion by mode
 
@@ -34,7 +36,7 @@ The ledger retains maximum qualified species populations (captures + current ren
 
 Full Clear's formula requires Bluebird and Parakeet catches each reaching that species' greatest qualified population. If Macaws are known, at least one Macaw catch is required. Macaw credit is zero before a catch, otherwise max(floor(known qualified Macaw population / 2), ceil(Macaw catches / 2)). Bluebird catches + Parakeet catches + Macaw credit must reach expected opportunities.
 
-This preserves one-catch credit for all established Macaw pairs. Additional ordinary Macaws alone do not block it. However, Full Clear's capturesComplete checks **known** food blockers; unlike feedingResolved, it does not demand a positive empty-food/inventory survey or local spawning proof. Sufficient catches can satisfy it with unknown source observations. This implementation difference is recorded in [audit D9](IMPLEMENTATION_AUDIT.md#d9).
+This preserves one-catch credit for all established Macaw pairs. Additional ordinary Macaws alone do not block it. However, Full Clear's capturesComplete checks **known** food blockers; unlike feedingResolved, it does not demand a positive empty-food/inventory survey or local spawning proof. Run composition requires complete current starting reports plus known initial floor coverage or an fd; after that, sufficient catches can satisfy it with unknown current source observations. This local-source distinction remains recorded in [audit D9](IMPLEMENTATION_AUDIT.md#d9); missing starting reports no longer qualify.
 
 All three birds share the Full Clear capture result. Confirmed Sparkling bird catches are real catches, but do not bypass spawning requirements in Unique/Sparkling. Forest reports do not waive other Forest species' requirements. Personal Full Clear PBs substitute personal captures into the same bird formula.
 
@@ -77,4 +79,4 @@ Live-server confirmation remains pending for baseline population, Safari-wide ma
 
 ## Last updated
 
-2026-10-19 (America/New_York) — Audited bird population/capture formulas, retained proof and fd eligibility. Reviewed source: 93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee; static source/caller review, no live Minecraft validation.
+2026-10-19 (America/New_York) — Updated early starting-resource synchronization, verified coverage and local-only reminders for issue #68 while preserving the merged documentation template. Resource runtime reviewed at `76dd746`; prior audit provenance remains scoped to its stated revision. Automated all-target and offline native checks are separate from pending live Hypixel validation.

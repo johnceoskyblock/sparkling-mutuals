@@ -28,7 +28,7 @@ Detected Sparkling identities impose **no additional capture gate in any mode**.
 
 Automatic fd, cd, id and hd announcements require current presence in that biome, a capture-evidence scan and all active-mode targets complete under localOnly. Sparkling also requires ready party discoveries. Unique suppresses its own report after receiving that biome's report. [Forest reporting](docs/BIRD_COMPLETION.md#sending-fd) adds clearer/supply requirements.
 
-Queued reports are rechecked against current mode, biome and local requirements before sending. Sends are spaced by at least three seconds; resource reminders share pacing and may delay them. Announcement memory prevents duplicates without adding catches.
+Queued reports are rechecked against current mode, biome and local requirements before sending. Completion sends are spaced by at least three seconds; the later local unused-resource title shares this pacing and may delay a completion word. Starting quantities use their own once-only HOTSPOT+2s party report, independent of discovery/mode/HUD; later unused-resource reminders are combined local titles with no party command or contribution side effect. See [resource protocol](docs/critters/TRACKING.md#early-party-starting-resource-synchronization). Announcement memory prevents duplicates without adding catches.
 
 The configured run-complete alert requires all active-mode targets complete, a nonempty target set and, in Sparkling, ready party state. It can use remote progress; it does not certify a personal clear.
 
@@ -57,7 +57,7 @@ Changing mode selects presentation presets and PB category without clearing run 
 | Wumpa, Doomspiral | Needed Sparkling checks require actual catch evidence: a shared catch or accepted global Sparkling-catch override; sightings, spawn/slain text and reports cannot replace it |
 | Icy after Wumpa capture | Any shared Wumpa catch completes every Icy Sparkling check for the run, without adding other species' catches |
 | Gemzie | Exact chamber-opening server text gives retained checking proof after five seconds, never catches |
-| Gimmiegold | Sparkling uses registered coin slots plus extras and qualified current population; hd may substitute outside Haunted |
+| Gimmiegold | Sparkling uses known initial F + known starting S and qualified captures/current uncaptured models; current-demand hd may substitute outside Haunted, retaining blockers. Missing reports/source coverage stay unknown |
 | Scrappy, Gemzie, Troodon, Gazer | Fixed capture targets allow Full Clear progress before local missing-row absence proof |
 
 Species pages and [source evidence](docs/critters/TRACKING.md#source-evidence-and-retention) detail these exceptions. Source helpers and ordinary ESP are separate presentation decisions.
@@ -84,4 +84,4 @@ Numeric minima and whole-biome coverage are not certified by client predicates. 
 
 ## Last updated
 
-2026-10-19 (America/New_York) — Consolidated implemented mode, announcement and PB distinctions. Reviewed source: 93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee; static source/caller review, no live Minecraft validation.
+2026-10-19 (America/New_York) — Updated early starting-resource synchronization, verified coverage and local-only reminders for issue #68 while preserving the merged documentation template. Resource runtime reviewed at `76dd746`; prior audit provenance remains scoped to its stated revision. Automated all-target and offline native checks are separate from pending live Hypixel validation.

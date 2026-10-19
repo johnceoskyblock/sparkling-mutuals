@@ -204,21 +204,27 @@ object SafariEsp {
         targets = targets.filter { live(it, client) }
         SafariTracking.ledger.current?.let { run ->
             run.localPlayer(client.player!!.name.string)
-            dropPredictor.knownDrops.filter { it.biome == SafariBiome.HAUNTED &&
-                (it.actual?.type ?: it.type) == net.johnceo.sparklingmutuals.safari.resources.FloorDropType.COIN }.forEach { drop ->
+            run.floorCatalog.observe(dropPredictor.knownDrops, entities.filter(::activeFloorDisplay).associate { it.id to it.uuid })
+            run.resourceCoverage(run.floorCatalog.complete)
+            dropPredictor.knownDrops.filter { it.id in run.floorCatalog.coinIds }.forEach { drop ->
                 val members = (0..2).map { client.level!!.getEntity(drop.id + it) }
                 val active = members.count(::activeFloorDisplay)
                 // Only real STRING reward triples establish slots, not decorative/model triples.
                 if (active == 3 || drop.actual?.type == net.johnceo.sparklingmutuals.safari.resources.FloorDropType.COIN)
                     coinFloorIds.add(drop.id)
                 if (drop.id in coinFloorIds) {
-                    val observable = client.level!!.hasChunkAt(net.minecraft.core.BlockPos.containing(drop.x, drop.y, drop.z)) &&
-                        client.player!!.distanceToSqr(drop.x, drop.y, drop.z) <= 80.0 * 80
                     run.gimmiegoldCheck.floor(drop.id,
-                        if (active > 0) true else if (observable) false else null,
+                        if (active > 0) true else null,
                         collected = drop.actual?.type == net.johnceo.sparklingmutuals.safari.resources.FloorDropType.COIN)
                 }
             }
+            val groups = predictedDrops.filter { drop -> (0..2).all { activeFloorDisplay(client.level!!.getEntity(drop.id + it)) } }
+            val coinSourcesObservable = dropPredictor.knownDrops.filter { it.id in run.floorCatalog.coinIds }.all { drop ->
+                drop.actual?.type == net.johnceo.sparklingmutuals.safari.resources.FloorDropType.COIN ||
+                    client.level!!.hasChunkAt(net.minecraft.core.BlockPos.containing(drop.x, drop.y, drop.z))
+            }
+            run.gimmiegoldCheck.sourceEvidence(run.floorCatalog.complete,
+                if (coinSourcesObservable) HauntedCoinDrops.remaining(strings, groups) else null)
         }
         stringDisplays = strings.toList()
         drops = SafariEspRules.floorDrops(strings)

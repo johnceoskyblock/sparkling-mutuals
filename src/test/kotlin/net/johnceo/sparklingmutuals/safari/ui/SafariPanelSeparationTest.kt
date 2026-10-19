@@ -1,5 +1,7 @@
 package net.johnceo.sparklingmutuals.safari.ui
 
+import net.johnceo.sparklingmutuals.safari.resources.knownStartingEvidence
+
 import net.johnceo.sparklingmutuals.safari.resources.renderBird
 import net.johnceo.sparklingmutuals.safari.resources.scanRenderedBirds
 
@@ -18,7 +20,7 @@ class SafariPanelSeparationTest {
     @TempDir lateinit var dir: Path
     @Test fun `Unique missing panel removes ordinary species after its first catch`() {
         ConfigManager.init(dir)
-        val run = SafariRun(0)
+        val run = SafariRun(0).knownStartingEvidence()
         for (name in listOf("Scrappy", "Gemzie", "Troodon", "Gazer")) {
             val critter = SafariRoster.named(name)!!
             assertTrue(SafariPanels.missing(run, critter.biome, true, 0).rows.any { it.label == name && it.value == "0/${critter.quota} checked" })
@@ -29,7 +31,7 @@ class SafariPanelSeparationTest {
     }
     @Test fun `scanned empty mounds complete Rockmite only after revealed critters are caught`() {
         ConfigManager.init(dir); SafariFullClear.toggle()
-        val run = SafariRun(0)
+        val run = SafariRun(0).knownStartingEvidence()
         run.updateCaptureEvidence(SafariBiome.CAVERN, emptySet(), true)
         repeat(9) { run.recordMound("The mound falls apart, but nothing is inside") }
         run.recordMound("The mound fell apart, revealing a Rockmite hidden inside!")
@@ -42,7 +44,7 @@ class SafariPanelSeparationTest {
         run.updateCaptureEvidence(SafariBiome.CAVERN, setOf("Rockmite"), true)
         assertFalse(run.captureComplete("Rockmite"))
         val sites = (0..9).map { Triple(it, 0, 0) }.toSet()
-        val surveyed = SafariRun(0)
+        val surveyed = SafariRun(0).knownStartingEvidence()
         surveyed.updateCaptureEvidence(SafariBiome.CAVERN, emptySet(), true)
         surveyed.moundSurvey.scan(sites) { true }
         assertFalse(surveyed.captureComplete("Rockmite"))
@@ -51,7 +53,7 @@ class SafariPanelSeparationTest {
     }
     @Test fun `full clear progress waits for minimum captures and absence evidence`() {
         ConfigManager.init(dir); SafariFullClear.toggle()
-        val run = SafariRun(0)
+        val run = SafariRun(0).knownStartingEvidence()
         assertEquals("0/9", SafariPanels.progress(run, false, 0).rows.first { it.label == "Forest" }.value)
         run.visitBiome(SafariBiome.FOREST)
         repeat(6) { run.record(SafariCatch(SafariRoster.named("Foxtrot")!!)) }
@@ -65,7 +67,7 @@ class SafariPanelSeparationTest {
     }
     @Test fun `nest helper does not add extra species capture quotas to the missing panel`() {
         ConfigManager.init(dir); SafariFullClear.toggle()
-        val run = SafariRun(0)
+        val run = SafariRun(0).knownStartingEvidence()
         val rows = SafariBiome.entries.flatMap { SafariPanels.missing(run, it, false, 0).rows }
         assertEquals(setOf("Scrappy", "Gemzie", "Troodon", "Gazer"),
             rows.filter { it.value?.contains('/') == true }.map { it.label }.toSet())
@@ -78,7 +80,7 @@ class SafariPanelSeparationTest {
     }
     @Test fun `zero minimum variable species require clear evidence before turning green`() {
         ConfigManager.init(dir); SafariFullClear.toggle()
-        val run = SafariRun(0)
+        val run = SafariRun(0).knownStartingEvidence()
         for ((biome, names) in listOf(SafariBiome.FOREST to listOf("Bluebird", "Parakeet", "Macaw"),
             SafariBiome.CAVERN to listOf("Rockmite", "Snoozle"))) {
             val rows = SafariPanels.captures(run, biome).rows
@@ -87,7 +89,7 @@ class SafariPanelSeparationTest {
     }
     @Test fun `Rockmite capture and two mound rows are separated below the total`() {
         ConfigManager.init(dir); SafariFullClear.toggle()
-        val rows = SafariPanels.captures(SafariRun(0), SafariBiome.CAVERN).rows
+        val rows = SafariPanels.captures(SafariRun(0).knownStartingEvidence(), SafariBiome.CAVERN).rows
         assertEquals(3, rows.count { it.label.contains("Rockmite", true) })
         assertTrue(rows.any { it.label == "Rockmite" })
         val total = rows.indexOfFirst { it.label == "Total captures" }
@@ -97,7 +99,7 @@ class SafariPanelSeparationTest {
     }
     @Test fun `sixteen broken mounds cannot make mound counter green while a mound remains loaded`() {
         ConfigManager.init(dir); SafariFullClear.toggle()
-        val run = SafariRun(0)
+        val run = SafariRun(0).knownStartingEvidence()
         repeat(16) { run.recordMound("The mound falls apart, but nothing is inside") }
         run.updateCaptureEvidence(SafariBiome.CAVERN, setOf("Rockmite Mound"), true)
         val row = SafariPanels.captures(run, SafariBiome.CAVERN).rows.first { it.label == "Rockmite Mounds" }
@@ -109,7 +111,7 @@ class SafariPanelSeparationTest {
     }
     @Test fun `mound counter stays red for unobservable known mound even after empty nearby scan`() {
         ConfigManager.init(dir); SafariFullClear.toggle()
-        val run = SafariRun(0)
+        val run = SafariRun(0).knownStartingEvidence()
         repeat(16) { run.recordMound("The mound falls apart, but nothing is inside") }
         run.updateCaptureEvidence(SafariBiome.CAVERN, emptySet(), true)
         val site = Triple(-100, 40, 30)
@@ -121,7 +123,7 @@ class SafariPanelSeparationTest {
     }
     @Test fun `mound counter needs scan evidence but not the captures of spawned Rockmites`() {
         ConfigManager.init(dir); SafariFullClear.toggle()
-        val run = SafariRun(0)
+        val run = SafariRun(0).knownStartingEvidence()
         repeat(16) { run.recordMound("The mound fell apart, revealing a Rockmite hidden inside!") }
         assertEquals(-1, SafariPanels.captures(run, SafariBiome.CAVERN).rows.first { it.label == "Rockmite Mounds" }.valueColor)
         run.moundSurvey.scan(emptySet()) { true }
@@ -134,7 +136,7 @@ class SafariPanelSeparationTest {
     }
     @Test fun `bird colors become independent once known food demand is consumed`() {
         ConfigManager.init(dir); SafariFullClear.toggle()
-        val run = SafariRun(0)
+        val run = SafariRun(0).knownStartingEvidence()
         fun green() = SafariPanels.captures(run, SafariBiome.FOREST).rows.first { it.label == "Bluebird" }.valueColor == 0xFF55FF55.toInt()
         assertFalse(run.recordBirdFood("Party > Friend: FLOOR DROP! Bag of Seeds"))
         assertFalse(run.recordBirdFood("FLOOR DROP! Something else"))
@@ -167,13 +169,13 @@ class SafariPanelSeparationTest {
         run.scanRenderedBirds()
         run.updateCaptureEvidence(SafariBiome.FOREST, emptySet(), false)
         assertTrue(SafariPanels.captures(run, SafariBiome.FOREST).rows.filter { it.label in listOf("Bluebird", "Parakeet", "Macaw") }.all { it.valueColor == 0xFF55FF55.toInt() })
-        assertFalse(SafariRun(0).birdFoodsComplete)
+        assertFalse(SafariRun(0).knownStartingEvidence().birdFoodsComplete)
     }
     @Test fun `caught Macaw stays green with remaining critters after food and capture requirements`() {
 
         ConfigManager.init(dir); SafariFullClear.toggle()
 
-        val run = SafariRun(0)
+        val run = SafariRun(0).knownStartingEvidence()
 
         run.updateCaptureEvidence(SafariBiome.FOREST, setOf("Macaw"), false)
 
@@ -213,7 +215,7 @@ class SafariPanelSeparationTest {
     }
     @Test fun `Cavern colors require checked structures collected rockmites and no nearby entities`() {
         ConfigManager.init(dir); SafariFullClear.toggle()
-        val run = SafariRun(0)
+        val run = SafariRun(0).knownStartingEvidence()
         fun green(name: String) = SafariPanels.captures(run, SafariBiome.CAVERN).rows.first { it.label == name }.valueColor == 0xFF55FF55.toInt()
         run.updateCaptureEvidence(SafariBiome.CAVERN, emptySet(), false)
         assertFalse(green("Snoozle")); assertFalse(green("Rockmite"))

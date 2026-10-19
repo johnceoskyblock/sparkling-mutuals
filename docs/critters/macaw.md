@@ -37,7 +37,7 @@ Bag of Seeds, Wriggleworm and Yogi Berry create feeding opportunities. Starting 
 | --- | --- | --- | --- |
 | Sparkling | None for ordinary birds. | Inside Forest: qualified shared captures plus current birds cover food opportunities, with no held or known floor food remaining. | Outside Forest: valid fd supplies spawning trust; retained local proof or sufficient captures with a report can also apply. |
 | Unique | One shared capture. Waived only for implemented no-Macaw cases. | Spawning ledger resolved; owned discoveries do not waive spawning. | Outside Forest, fd can supply spawning trust; never adds captures. |
-| Full Clear | Bird captures cover feeding target and known Bluebird/Parakeet totals, with one-Macaw credit. | No known held/uncollected floor food. The capture predicate does not additionally require local spawning proof or a positive empty-inventory sample. | fd never supplies missing captures. |
+| Full Clear | Bird captures cover feeding target and known Bluebird/Parakeet totals, with one-Macaw credit. | Complete current starting reports and either known initial floor coverage or a received fd, plus no known held/uncollected food. The capture formula does not additionally require local spawning proof or a positive current-empty inventory sample. | fd never supplies missing captures. |
 
 ## Display and highlights
 
@@ -57,7 +57,7 @@ An fd records the target at receipt; new contributions can outgrow it. Local hel
 
 ## Retention and reopening
 
-Completed qualified population proof survives unloading; a new pickup clears it. Known floor food survives unknown scans/travel. Starting/party extras remain run-owned; repeated notices overlap by sender/type. New run resets the ledger. Pending detection identities add no separate completion gate; see [audit D1](../IMPLEMENTATION_AUDIT.md#d1).
+Completed qualified population proof survives unloading; a new pickup clears it. Known floor food survives unknown scans/travel. Starting/party extras remain run-owned; early reports and legacy notices overlap by sender/type maxima. Additional contribution quantities invalidate old current/retained spawning proof; missing reports remain unknown. New run resets the ledger. Pending detection identities add no separate completion gate; see [audit D1](../IMPLEMENTATION_AUDIT.md#d1).
 
 ## Examples
 
@@ -77,4 +77,4 @@ Population guarantees and capsule success/escape claims from supplied notes were
 
 ## Last updated
 
-2026-10-19 (America/New_York) — Uniform species reference; audited evidence, modes, display and lifecycle. Reviewed source: `93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee`; no local runtime source changes reviewed. See [revision convention](../DOCUMENTATION_GUIDE.md).
+2026-10-19 (America/New_York) — Added issue #68 early-report/initial-coverage gates and changed-demand reopening to the uniform species reference. Runtime reviewed at `76dd746`; automated/offline results do not certify live Hypixel coverage.

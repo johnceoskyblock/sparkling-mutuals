@@ -1,5 +1,7 @@
 package net.johnceo.sparklingmutuals.safari.completion
 
+import net.johnceo.sparklingmutuals.safari.resources.knownStartingEvidence
+
 import java.util.UUID
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.safari.*
@@ -21,7 +23,7 @@ class UniquePartyReportTest {
         ConfigManager.fullClearMode = false; ConfigManager.sparklingMode = false
         val state = party()
         for (species in SafariRoster.all.filter { it.name !in setOf("Honeybug", "Rockmite", "Snoozle", "Bluebird", "Parakeet", "Macaw") }) {
-            val run = SafariRun(0)
+            val run = SafariRun(0).knownStartingEvidence()
             run.visitBiome(SafariBiome.entries.first { it != species.biome })
             assertFalse(run.uniqueComplete(species.name, state))
             run.record(SafariCatch(species, false))
@@ -33,7 +35,7 @@ class UniquePartyReportTest {
     @Test fun `Rockmite and Snoozle need their own catch and cd but not every Cavern catch`() {
         ConfigManager.fullClearMode = false; ConfigManager.sparklingMode = false
         for (reportFirst in listOf(false, true)) {
-            val run = SafariRun(0); val state = party(emptySet())
+            val run = SafariRun(0).knownStartingEvidence(); val state = party(emptySet())
             if (reportFirst) report(run, SafariBiome.CAVERN)
             for (name in listOf("Rockmite", "Snoozle")) {
                 assertFalse(run.uniqueComplete(name, state))
@@ -46,7 +48,7 @@ class UniquePartyReportTest {
         }
     }
     @Test fun `loaded Cavern sources can reopen and complete checks while standing in Forest`() {
-        val run = SafariRun(0); val state = party()
+        val run = SafariRun(0).knownStartingEvidence(); val state = party()
         run.visitBiome(SafariBiome.FOREST)
         for (name in listOf("Rockmite", "Snoozle")) run.record(SafariCatch(SafariRoster.named(name)!!, false))
         val site = Triple(-100, 40, 50)
@@ -63,7 +65,7 @@ class UniquePartyReportTest {
     }
 
     @Test fun `global source proof checks without catches and cd confirms only an unseen zero spawn`() {
-        val run = SafariRun(0); val state = party()
+        val run = SafariRun(0).knownStartingEvidence(); val state = party()
         run.visitBiome(SafariBiome.HAUNTED)
         run.moundSurvey.scan(setOf(Triple(-100, 40, 50))) { true }
         run.moundSurvey.scan(emptySet()) { true }
@@ -89,7 +91,7 @@ class UniquePartyReportTest {
         ConfigManager.fullClearMode = false; ConfigManager.sparklingMode = false
         val state = party()
         for (biome in SafariBiome.entries) {
-            val run = SafariRun(0)
+            val run = SafariRun(0).knownStartingEvidence()
             val last = biome.critters.last()
             report(run, biome)
             caught(run, biome, last.name)
@@ -104,7 +106,7 @@ class UniquePartyReportTest {
     @Test fun `Forest Icy and Haunted stay complete on entry despite unfinished local discovery checks`() {
         val state = party()
         for (biome in listOf(SafariBiome.FOREST, SafariBiome.ICY, SafariBiome.HAUNTED)) {
-            val run = SafariRun(0); caught(run, biome); report(run, biome)
+            val run = SafariRun(0).knownStartingEvidence(); caught(run, biome); report(run, biome)
             repeat(2) {
                 run.visitBiome(SafariBiome.entries.first { it != biome }); run.visitBiome(biome)
                 run.updateCaptureEvidence(biome, biome.critters.map { it.name }.toSet(), false)
@@ -120,7 +122,7 @@ class UniquePartyReportTest {
     }
     @Test fun `intact Cavern sources contradict completion regardless of discovery ownership`() {
         ConfigManager.fullClearMode = false; ConfigManager.sparklingMode = false
-        val run = SafariRun(0); caught(run, SafariBiome.CAVERN); report(run, SafariBiome.CAVERN)
+        val run = SafariRun(0).knownStartingEvidence(); caught(run, SafariBiome.CAVERN); report(run, SafariBiome.CAVERN)
         val state = party()
         assertEquals(9, run.completed(SafariMode.UNIQUE, SafariBiome.CAVERN.critters, state))
         run.visitBiome(SafariBiome.CAVERN)
@@ -140,7 +142,7 @@ class UniquePartyReportTest {
         assertEquals(9, run.completed(SafariMode.UNIQUE, SafariBiome.CAVERN.critters, state))
     }
     @Test fun `trusted Unique completion is not revoked by a detected Sparkling`() {
-        val run = SafariRun(0); val state = party()
+        val run = SafariRun(0).knownStartingEvidence(); val state = party()
         caught(run, SafariBiome.HAUNTED); report(run, SafariBiome.HAUNTED)
         run.observeSparkling(UUID.randomUUID(), "Gazer")
         assertTrue(run.uniqueComplete("Gazer", state))

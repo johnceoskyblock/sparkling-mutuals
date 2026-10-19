@@ -1,5 +1,7 @@
 package net.johnceo.sparklingmutuals.safari.completion
 
+import net.johnceo.sparklingmutuals.safari.resources.knownStartingEvidence
+
 import net.johnceo.sparklingmutuals.safari.resources.renderBird
 import net.johnceo.sparklingmutuals.safari.resources.scanRenderedBirds
 
@@ -28,7 +30,7 @@ class SafariCompletionAnnouncementsTest {
 
     @Test fun `Unique announces Haunted and Icy completion instead of suppressing it`() {
         for ((biome, word) in listOf(SafariBiome.HAUNTED to "hd", SafariBiome.ICY to "id")) {
-            val run = SafariRun(0)
+            val run = SafariRun(0).knownStartingEvidence()
             run.visitBiome(biome)
             biome.critters.forEach { caught(run, it.name) }
             run.updateCaptureEvidence(biome, emptySet(), true)
@@ -39,7 +41,7 @@ class SafariCompletionAnnouncementsTest {
     @Test fun `party done overrides no Unique requirement even in the starting biome`() {
         val state = party(*SafariRoster.all.map { it.name }.toTypedArray())
         for ((biome, word) in listOf(SafariBiome.FOREST to "fd", SafariBiome.HAUNTED to "hd", SafariBiome.ICY to "id")) {
-            val run = SafariRun(0); run.visitBiome(biome)
+            val run = SafariRun(0).knownStartingEvidence(); run.visitBiome(biome)
             run.partyFullClear("Party > Friend: $word")
             run.updateCaptureEvidence(biome, biome.critters.map { it.name }.toSet(), false)
             assertEquals(0, run.completed(SafariMode.UNIQUE, biome.critters, state))
@@ -49,7 +51,7 @@ class SafariCompletionAnnouncementsTest {
     }
     @Test fun `party done preserves uncaptured Unique rows`() {
         unique()
-        val run = SafariRun(0); val state = party("Honeybug", "Macaw")
+        val run = SafariRun(0).knownStartingEvidence(); val state = party("Honeybug", "Macaw")
         run.visitBiome(SafariBiome.FOREST)
         SafariMessages.forRun("Party > Friend: fd", run, true)
         assertEquals(9, SafariPanels.missingCritters(run, SafariBiome.FOREST, state).size)
@@ -59,7 +61,7 @@ class SafariCompletionAnnouncementsTest {
         unique()
     }
     @Test fun `cd requires source proof for Unique no spawn and never adds catches`() {
-        val run = SafariRun(0); val needed = party("Snoozle")
+        val run = SafariRun(0).knownStartingEvidence(); val needed = party("Snoozle")
         SafariMessages.forRun("Party > Friend: cd", run, true)
         assertEquals(0, run.completed(SafariMode.UNIQUE, SafariBiome.CAVERN.critters, needed))
         assertEquals(9, run.completed(SafariMode.SPARKLING, SafariBiome.CAVERN.critters, needed))
@@ -72,7 +74,7 @@ class SafariCompletionAnnouncementsTest {
         assertEquals(0, run.count("Snoozle"))
     }
     @Test fun `fresh local evidence invalidates a received cd without adding catches`() {
-        val run = SafariRun(0); val needed = party("Rockmite")
+        val run = SafariRun(0).knownStartingEvidence(); val needed = party("Rockmite")
         run.visitBiome(SafariBiome.CAVERN)
         run.reconcileStructures(SafariBiome.CAVERN, true, true)
         SafariMessages.forRun("Party > Friend: cd", run, true)
@@ -83,7 +85,7 @@ class SafariCompletionAnnouncementsTest {
     }
     @Test fun `party cd cannot hide required Unique Cavern helpers`() {
         unique()
-        val run = SafariRun(0); val needed = party("Snoozle")
+        val run = SafariRun(0).knownStartingEvidence(); val needed = party("Snoozle")
         run.visitBiome(SafariBiome.CAVERN)
         run.reconcileStructures(SafariBiome.CAVERN, true, true)
         SafariMessages.forRun("Party > Friend: cd", run, true)
@@ -94,7 +96,7 @@ class SafariCompletionAnnouncementsTest {
         assertTrue(rows.any { it.label == "Snoozle" })
     }
     @Test fun `late cd cannot hide needed Sparkling structure helpers or mound ESP`() {
-        val run = SafariRun(0); val needed = party("Rockmite", "Snoozle")
+        val run = SafariRun(0).knownStartingEvidence(); val needed = party("Rockmite", "Snoozle")
         run.visitBiome(SafariBiome.CAVERN)
         run.reconcileStructures(SafariBiome.CAVERN, true, true)
         SafariMessages.forRun("Party > Friend: cd", run, true)
@@ -103,7 +105,7 @@ class SafariCompletionAnnouncementsTest {
         assertTrue(SafariEspRules.neededForSparkling("Rockmite", true, needed, false, run))
     }
     @Test fun `Unique Gazer completes from its first shared catch without a UUID radius check`() {
-        val run = SafariRun(0); val state = party("Gazer")
+        val run = SafariRun(0).knownStartingEvidence(); val state = party("Gazer")
         run.visitBiome(SafariBiome.HAUNTED); caught(run, "Gazer")
         val id = UUID.randomUUID()
         repeat(4) { run.observeCritter(it, "Gazer", id) }
@@ -113,13 +115,13 @@ class SafariCompletionAnnouncementsTest {
         run.observeCritter(12, "Gazer", UUID.randomUUID())
         run.sparklingChecks.scan(SafariBiome.HAUNTED, -4.0, -64.0, List(3) { "Gazer" to UUID.randomUUID() })
         assertTrue(run.uniqueComplete("Gazer", state))
-        val unneeded = SafariRun(0).apply { caught(this, "Gazer") }
+        val unneeded = SafariRun(0).knownStartingEvidence().apply { caught(this, "Gazer") }
         assertTrue(unneeded.uniqueComplete("Gazer", party()))
-        assertFalse(SafariRun(0).uniqueComplete("Gazer", state))
+        assertFalse(SafariRun(0).knownStartingEvidence().uniqueComplete("Gazer", state))
     }
     @Test fun `all food used without any Macaw completes Unique Forest without inventing a catch`() {
         unique()
-        val run = SafariRun(0); val state = party("Macaw")
+        val run = SafariRun(0).knownStartingEvidence(); val state = party("Macaw")
         run.visitBiome(SafariBiome.FOREST)
         SafariBiome.FOREST.critters.filter { it.name != "Macaw" }.forEach { caught(run, it.name) }
         run.updateCaptureEvidence(SafariBiome.FOREST, emptySet(), false)
@@ -147,7 +149,7 @@ class SafariCompletionAnnouncementsTest {
         assertTrue(SafariPanels.missing(run, SafariBiome.FOREST, true, 0, party = state).rows.any { it.label == "Macaw" })
     }
     @Test fun `starting food and extra pickups prevent premature Macaw absence`() {
-        val run = SafariRun(0)
+        val run = SafariRun(0).knownStartingEvidence()
         run.visitBiome(SafariBiome.FOREST)
         run.inventoryEvidence(listOf("Bag of Seeds" to 2), 0)
         run.updateCaptureEvidence(SafariBiome.FOREST, emptySet(), false)
@@ -171,7 +173,7 @@ class SafariCompletionAnnouncementsTest {
     }
     @Test fun `completed Cavern absence keeps plain species without explanatory rows`() {
         unique()
-        val run = SafariRun(0); val state = party("Rockmite", "Snoozle")
+        val run = SafariRun(0).knownStartingEvidence(); val state = party("Rockmite", "Snoozle")
         run.visitBiome(SafariBiome.CAVERN)
         run.moundSurvey.scan(emptySet()) { true }
         run.updateCaptureEvidence(SafariBiome.CAVERN, emptySet(), true)
@@ -181,7 +183,7 @@ class SafariCompletionAnnouncementsTest {
         assertTrue(run.uniqueUnavailable("Rockmite")); assertTrue(run.uniqueUnavailable("Snoozle"))
     }
     @Test fun `completion announcement is once per biome across mode switches`() {
-        val run = SafariRun(0); val state = party("Wumpa")
+        val run = SafariRun(0).knownStartingEvidence(); val state = party("Wumpa")
         run.visitBiome(SafariBiome.ICY)
         SafariBiome.ICY.critters.forEach { caught(run, it.name) }
         run.updateCaptureEvidence(SafariBiome.ICY, emptySet(), false)
@@ -190,7 +192,7 @@ class SafariCompletionAnnouncementsTest {
         assertNull(run.completion.announcement(run, SafariBiome.ICY, SafariMode.SPARKLING, state))
     }
     @Test fun `remote cd cannot erase globally observed intact sources`() {
-        val run = SafariRun(0); val state = party("Rockmite", "Snoozle")
+        val run = SafariRun(0).knownStartingEvidence(); val state = party("Rockmite", "Snoozle")
         run.visitBiome(SafariBiome.CAVERN)
         run.reconcileStructures(SafariBiome.CAVERN, true, true)
         run.visitBiome(SafariBiome.FOREST)
@@ -201,7 +203,7 @@ class SafariCompletionAnnouncementsTest {
         assertEquals(0, run.completed(SafariMode.SPARKLING, SafariBiome.CAVERN.critters, state))
     }
     @Test fun `an unsent completion can retry after a mode switch cancels it`() {
-        val run = SafariRun(0); val state = party()
+        val run = SafariRun(0).knownStartingEvidence(); val state = party()
         run.visitBiome(SafariBiome.ICY)
         SafariBiome.ICY.critters.forEach { caught(run, it.name) }
         run.updateCaptureEvidence(SafariBiome.ICY, emptySet(), false)
@@ -211,7 +213,7 @@ class SafariCompletionAnnouncementsTest {
         assertEquals("id", run.completion.announcement(run, SafariBiome.ICY, SafariMode.UNIQUE, state), "the canceled queue reservation must not count as a sent announcement")
     }
     @Test fun `an actually sent completion is not repeated after later contradictions`() {
-        val run = SafariRun(0); val state = party()
+        val run = SafariRun(0).knownStartingEvidence(); val state = party()
         run.visitBiome(SafariBiome.ICY)
         SafariBiome.ICY.critters.forEach { caught(run, it.name) }
         run.updateCaptureEvidence(SafariBiome.ICY, emptySet(), false)
@@ -222,13 +224,13 @@ class SafariCompletionAnnouncementsTest {
         assertNull(run.completion.announcement(run, SafariBiome.ICY, SafariMode.UNIQUE, state))
     }
     @Test fun `Sparkling biome with no remaining discovery needs can announce after a local survey`() {
-        val run = SafariRun(0)
+        val run = SafariRun(0).knownStartingEvidence()
         assertNull(run.completion.announcement(run, SafariBiome.ICY, SafariMode.SPARKLING, party()))
         run.visitBiome(SafariBiome.ICY)
         run.updateCaptureEvidence(SafariBiome.ICY, emptySet(), false)
         run.sparklingChecks.scan(SafariBiome.ICY, -110.0, -78.0, emptyList())
         assertEquals("id", run.completion.announcement(run, SafariBiome.ICY, SafariMode.SPARKLING, party()))
-        val unknown = SafariRun(0).apply { updateCaptureEvidence(SafariBiome.ICY, emptySet(), false) }
+        val unknown = SafariRun(0).knownStartingEvidence().apply { updateCaptureEvidence(SafariBiome.ICY, emptySet(), false) }
         assertNull(unknown.completion.announcement(unknown, SafariBiome.ICY, SafariMode.SPARKLING, PartySparklingState()))
     }
 }

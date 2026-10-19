@@ -1,5 +1,7 @@
 package net.johnceo.sparklingmutuals.safari.completion
 
+import net.johnceo.sparklingmutuals.safari.resources.knownStartingEvidence
+
 import net.johnceo.sparklingmutuals.safari.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -9,8 +11,9 @@ class BirdCompletionPolicyTest {
     private fun party() = PartySparklingState().apply {
         select(setOf("me")); accept(setOf("me"), mapOf("me" to SafariRoster.all.map { it.name }.toSet() - names.toSet()))
     }
-    private fun run(biome: SafariBiome = SafariBiome.FOREST) = SafariRun(0).apply {
+    private fun run(biome: SafariBiome = SafariBiome.FOREST) = SafariRun(0).knownStartingEvidence().apply {
         visitBiome(biome); inventoryEvidence(emptyList(), 10000); localPlayer("me")
+        startingMessage("HOTSPOT! Your Hunting Hotspot is the ${biome.label} Biome!", 10000)
         updateCaptureEvidence(biome, emptySet(), false)
     }
     private fun catch(run: SafariRun, name: String, n: Int = 1) {
@@ -122,7 +125,7 @@ class BirdCompletionPolicyTest {
         assertTrue(run.fullClearComplete("Bluebird"))
     }
     @Test fun `a first Forest visit after bird catches is a late entrant even with six pickups`() {
-        val run = SafariRun(0)
+        val run = SafariRun(0).knownStartingEvidence()
         catch(run, "Bluebird")
         run.visitBiome(SafariBiome.FOREST)
         run.inventoryEvidence(emptyList(), 10000)

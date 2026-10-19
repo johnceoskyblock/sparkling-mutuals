@@ -48,8 +48,6 @@ object SafariBiomeClearTracking {
         if (biome == SafariBiome.HAUNTED) {
             run.scanGimmiegolds(snapshot.critters.filter { it.species == "Gimmiegold" && !it.mound }.map { it.uuid },
                 (player.x + 4) * (player.x + 4) + (player.z + 64) * (player.z + 64) <= 225)
-            fun population(name: String) = run.count(name) + snapshot.critters.filter { it.species == name && !it.mound }.map { it.uuid }.distinct().size
-            run.resources.scan(biome, population("Gimmiegold"))
         }
         run.sparklingChecks.scan(biome, player.x, player.z,
             snapshot.critters.filterNot { it.mound }.map { it.species to it.uuid },

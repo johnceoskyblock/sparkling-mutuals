@@ -1,5 +1,7 @@
 package net.johnceo.sparklingmutuals.safari.integration
 
+import net.johnceo.sparklingmutuals.safari.resources.knownStartingEvidence
+
 import io.github.notenoughupdates.moulconfig.annotations.Accordion
 import io.github.notenoughupdates.moulconfig.annotations.Category
 import io.github.notenoughupdates.moulconfig.annotations.ConfigEditorBoolean
@@ -89,7 +91,7 @@ class SafariFeatureIntegrationTest {
 
     @Test fun `fixed counters explicitly distinguish caught totals from currently checked population`() {
         for ((name, total) in mapOf("Scrappy" to 3, "Gemzie" to 3, "Troodon" to 3, "Gazer" to 4)) {
-            val run = SafariRun(0)
+            val run = SafariRun(0).knownStartingEvidence()
             val critter = SafariRoster.named(name)!!
             run.record(SafariCatch(critter, false))
             val (x, z) = if (name == "Gemzie") -141.0 to 51.0 else 0.0 to 0.0
@@ -102,12 +104,12 @@ class SafariFeatureIntegrationTest {
             repeat(total + 2) { run.record(SafariCatch(critter, false)) }
             assertEquals("$total/$total captured", SafariPanels.fixedCounter(name, run, SafariMode.FULL_CLEAR, missing))
         }
-        assertNull(SafariPanels.fixedCounter("Foxtrot", SafariRun(0), SafariMode.FULL_CLEAR, party()))
+        assertNull(SafariPanels.fixedCounter("Foxtrot", SafariRun(0).knownStartingEvidence(), SafariMode.FULL_CLEAR, party()))
     }
 
     @Test fun `Unique Gemzie catch completes independently of the three-spawn Sparkling check`() {
         ConfigManager.init(dir)
-        val run = SafariRun(0)
+        val run = SafariRun(0).knownStartingEvidence()
         run.record(SafariCatch(SafariRoster.named("Gemzie")!!, false))
         run.sparklingChecks.scan(SafariBiome.CAVERN, -141.0, 51.0, listOf("Gemzie" to UUID.randomUUID()))
         val panel = SafariPanels.missing(run, SafariBiome.CAVERN, true, 0, party = party("Gemzie"))
@@ -160,7 +162,7 @@ class SafariFeatureIntegrationTest {
     }
 
     @Test fun `remaining Haunted drops block Gimmiegold checks despite the minimum captured population`() {
-        val run = SafariRun(0)
+        val run = SafariRun(0).knownStartingEvidence()
         (1..3).forEach { run.gimmiegoldCheck.floor(it, true) }
         run.inventoryEvidence(emptyList(), 10000)
         repeat(3) { run.record(SafariCatch(SafariRoster.named("Gimmiegold")!!, false)) }
@@ -173,7 +175,7 @@ class SafariFeatureIntegrationTest {
         run.sparklingChecks.scan(SafariBiome.HAUNTED, -4.0, -64.0, emptyList(), hauntedDropsRemaining = -1)
         assertFalse(run.sparklingComplete("Gimmiegold", party("Gimmiegold")))
         run.scanGimmiegolds(emptyList(), true)
-        (1..3).forEach { run.gimmiegoldCheck.floor(it, false) }
+        (1..3).forEach { run.gimmiegoldCheck.floor(it, false, collected = true) }
         run.scanGimmiegolds(emptyList(), true)
         run.sparklingChecks.scan(SafariBiome.HAUNTED, -4.0, -64.0, emptyList(), hauntedDropsRemaining = 0)
         assertTrue(run.sparklingComplete("Gimmiegold", party("Gimmiegold")))

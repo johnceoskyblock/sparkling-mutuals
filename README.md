@@ -32,6 +32,8 @@ HM API and MoulConfig are bundled. Player profile lookups use a Hypixel API key 
 | Contest and readiness | [Miria/downtime](docs/CONTEST_DOWNTIME.md), [Safari entry guard and Shift override](docs/SAFARI_ENTRY_GUARD.md) |
 | Canyon and warp | [Honeyhives](docs/HONEYHIVES.md), [warp reminders and automatic warp](docs/WARP_ALERTS.md) |
 
+Starting food/coin quantities are shared once at the HOTSPOT message + two seconds, independently of mode and display settings. Later unused-resource reminders are local titles only; [resource accounting and mixed-client limits](docs/critters/TRACKING.md#early-party-starting-resource-synchronization).
+
 The guide is a visual estimate, not guaranteed flight, impact or capture physics. HUD/ESP controls and underlying tracking have separate gates. Read each owner for exceptions rather than interpreting a green row or a highlight as proof of every completion outcome.
 
 ### Party commands
@@ -65,4 +67,4 @@ The guide is a visual estimate, not guaranteed flight, impact or capture physics
 
 ## Last updated
 
-2026-10-19 (America/New_York) — Reorganized the current implementation reference and retained v3.4.0 release/installation guidance during the master rebase. Reviewed runtime source: `93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee`; documentation-only changes, no local runtime differences or new live validation.
+2026-10-19 (America/New_York) — Updated early starting-resource synchronization, verified coverage and local-only reminders for issue #68 while preserving the merged documentation template. Resource runtime reviewed at `76dd746`; prior audit provenance remains scoped to its stated revision. Automated all-target and offline native checks are separate from pending live Hypixel validation.

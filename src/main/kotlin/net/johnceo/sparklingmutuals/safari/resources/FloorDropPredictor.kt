@@ -22,7 +22,8 @@ data class PredictedFloorDrop(val id: Int, val x: Double, val y: Double, val z: 
 }
 
 /** Order prediction documented in FLOOR_DROPS.md. History anchors survive unloads and pickups.
- * Labels are predictions only; this class never supplies resource or completion evidence. */
+ * Labels alone are insufficient evidence; StartingFloorCatalog validates the complete structure
+ * before using them for resource-source coverage and completion. */
 class FloorDropPredictor {
     private val groups = sortedMapOf<Int, PredictedFloorDrop>()
     val knownDrops: List<PredictedFloorDrop> get() = groups.values.toList()

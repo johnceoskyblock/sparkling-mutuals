@@ -1,5 +1,7 @@
 package net.johnceo.sparklingmutuals.safari.completion
 
+import net.johnceo.sparklingmutuals.safari.resources.knownStartingEvidence
+
 import net.johnceo.sparklingmutuals.safari.resources.renderBird
 import net.johnceo.sparklingmutuals.safari.resources.scanRenderedBirds
 
@@ -12,7 +14,7 @@ import org.junit.jupiter.api.Test
 
 class SafariClearConsistencyTest {
     @Test fun `Rockmite needs no captures after empty mounds but requires every revealed critter`() {
-        val run = SafariRun(0)
+        val run = SafariRun(0).knownStartingEvidence()
         run.updateCaptureEvidence(SafariBiome.CAVERN, emptySet(), true)
         repeat(9) { run.recordMound("The mound falls apart, but nothing is inside...") }
         assertFalse(run.captureComplete("Rockmite"))
@@ -27,7 +29,7 @@ class SafariClearConsistencyTest {
         assertTrue(run.captureComplete("Rockmite"))
     }
     @Test fun `Strongarm turns green at four captures only after nearby entities clear`() {
-        val run = SafariRun(0)
+        val run = SafariRun(0).knownStartingEvidence()
         run.updateCaptureEvidence(SafariBiome.ICY, emptySet(), false)
         repeat(3) { run.record(SafariCatch(SafariRoster.named("Strongarm")!!)) }
         assertFalse(run.captureComplete("Strongarm"))
@@ -36,7 +38,7 @@ class SafariClearConsistencyTest {
         run.updateCaptureEvidence(SafariBiome.ICY, setOf("Strongarm"), false)
         assertFalse(run.captureComplete("Strongarm"))
     }
-    private fun forest() = SafariRun(1000).apply {
+    private fun forest() = SafariRun(1000).knownStartingEvidence().apply {
         mapOf("Foxtrot" to 6, "Honeybug" to 3, "Treefrog" to 3, "Woodchucker" to 3,
             "Fluffling" to 1, "Hideonfloor" to 1, "Bluebird" to 7, "Macaw" to 1).forEach { (name, amount) ->
             repeat(amount) { record(SafariCatch(SafariRoster.named(name)!!)) }
@@ -66,7 +68,7 @@ class SafariClearConsistencyTest {
         assertFalse(SafariFullClear.eligible(run, SafariBiome.FOREST, ready.copy(observed = false)))
     }
     @Test fun `Cavern requires all structures but old Snoozle sightings do not block an empty scan`() {
-        val run = SafariRun(0)
+        val run = SafariRun(0).knownStartingEvidence()
         mapOf("Cavernfish" to 4, "Flitter" to 6, "Shyworm" to 4, "Driftling" to 3,
             "Chuckwalla" to 2, "Scrappy" to 3, "Gemzie" to 3).forEach { (name, amount) ->
             repeat(amount) { run.record(SafariCatch(SafariRoster.named(name)!!)) }
@@ -101,7 +103,7 @@ class SafariClearConsistencyTest {
             SafariBiome.HAUNTED to mapOf("Areita" to 3, "Bloodbat" to 3, "Duplico" to 2, "Gazer" to 4,
                 "Litterbug" to 4, "Solsnatcher" to 4, "Gimmiegold" to 3, "Hideonwall" to 2, "Hideyho" to 1, "Doomspiral" to 1))
         for ((biome, minimums) in captures) {
-            val run = SafariRun(1000)
+            val run = SafariRun(1000).knownStartingEvidence()
             val bests = SafariPersonalBests()
             val ready = BiomeClearEvidence(observed = true)
             minimums.forEach { (name, amount) -> repeat(amount) { run.record(SafariCatch(SafariRoster.named(name)!!)) } }

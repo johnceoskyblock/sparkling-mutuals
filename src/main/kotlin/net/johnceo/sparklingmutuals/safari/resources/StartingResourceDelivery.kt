@@ -3,7 +3,7 @@ package net.johnceo.sparklingmutuals.safari.resources
 import net.johnceo.sparklingmutuals.safari.PartySparklingState
 import net.johnceo.sparklingmutuals.safari.SafariBiome
 
-/** Run-owned end-of-clearing trigger; candidates stay live until actually sent. */
+/** Run-owned local-title trigger; candidates stay live until actually shown. Never sends chat. */
 class StartingResourceDelivery(private val resources: SafariResources) {
     private var active = false
     private var nextAt = 0L
