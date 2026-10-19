@@ -1,22 +1,18 @@
 # Hypixel Safari message reference
 
-[Tracking rules](TRACKING.md) · [Critters](README.md)
+## Scope
 
-Exact quotations supplied by the user on 2026-10-14. Angle-bracket fields are placeholders. Square-bracket head fields represent optional Chat Heads text in logs, not a required vanilla prefix. Preserve the original text; strip Minecraft formatting for semantic matching. These messages define events, not automatic capture counts unless stated.
+Authoritative owner of exact supplied server messages, audience qualifiers and message provenance. Quotations supplied on 2026-10-14 are preserved verbatim, including formatting examples. [Tracking](TRACKING.md) owns evidence semantics and [mode completion](../../SAFARI_LOGIC.md) owns completion policy.
 
-## Mod-generated early starting report
+## Definitions
 
-The exact server message `HOTSPOT! Your Hunting Hotspot is the <Biome> Biome!` is the maintainer-confirmed departure trigger. Two seconds later, send one concise absolute report of every witnessed starting Shining Coin, Bag of Seeds, Wriggleworm and Yogi Berry, independently of discovery loading, mode, HUD and ESP. Examples: `[SM] Starting items: 2x Bag of Seeds` and `[SM] Starting items: 1x Shining Coin; 1x Yogi Berry`; use `none` for a witnessed empty applicable grant set.
+Angle-bracket fields are placeholders. Square-bracket head fields represent optional Chat Heads log text, not a required vanilla prefix. Formatting-stripped equivalents support semantic matching; quoted original messages must not be rewritten to match a naming/style convention.
 
-The live protocol appends ` [run:<32-hex reward-display UUID>]`. A receiver must have witnessed that same real STRING reward marker in its current run, and must verify the parsed sender's UUID against the current party roster. Bind queued lookups to the run/world/connection and invalidate pending work on party changes. Guild/private/quoted/nonparty messages do not supply contributions. New unscoped Starting items messages are not admitted by the live inbox. Never broadcast on another player's behalf.
+An observed server message and an implemented parser are different evidence. This reference preserves supplied messages even where they only provide context or the client deliberately ignores them. A source/spawn/activity transition is not a catch.
 
-Preserve early inventory/grant witnesses before use and close starting inference before the first post-HOTSPOT resource interaction/pickup or at the two-second deadline. Head Start supplies one overlapping lower bound; silent First Class inventory can show the second grant, including an identical item. Floor pickups stay separate. If both grants were never observed before consumption, or the first snapshot/marker context is late, do not invent the missing item or report an unwitnessed zero. Missing roster/reports and incomplete initial sources remain unknown. Context unavailable at the two-second boundary delays dispatch rather than fabricating provenance. Duplicate HOTSPOT/entry/polls, own echoes, repeats and legacy notices cannot add the same sender/item twice. Consumption never reduces known opportunity demand.
+## Implemented rules
 
-Older/non-mod clients and late joiners may leave report coverage unknown. Legacy unused-item notices can provide conservative deduplicated quantities, but cannot establish a complete original inventory. Bare legacy notices and normal done words have no shared on-wire run token: only current live, roster-verified messages are admitted; stored history is never replayed. A previously unseen delayed legacy line cannot be intrinsically distinguished from a fresh identical one. New scoped starting reports reject other-run marker identities.
-
-End-of-clearing unused-resource reminders are local titles only; there is no outbound unused-item chat. Normal biome completion words remain.
-
-## Entry and starting items
+### Entry and starting items
 
 | Audience / event | Exact message | Meaning |
 | --- | --- | --- |
@@ -26,7 +22,7 @@ End-of-clearing unused-resource reminders are local titles only; there is no out
 | Server transfer | `Sending to server mini<4 character server name>...` | Transfer destination |
 | Leader admission | `[NPC] Safari Manager: I already saw your ticket, so you're free to go.` | Manager admission acknowledgement |
 | Member admission | `[NPC] Safari Manager: Looks good to me. Have fun out there!` | Manager admission acknowledgement |
-| Hotspot | `HOTSPOT! Your Hunting Hotspot is the <Biome Name> Biome!` | Run's hunting hotspot |
+| Hotspot | `HOTSPOT! Your Hunting Hotspot is the <Biome Name> Biome!` | Maintainer-confirmed start signal for one run-owned starting-resource announcement at +2000 ms; does not itself grant an item |
 
 Global entry example, including its separate lines:
 
@@ -46,9 +42,13 @@ Chat Heads log variant:
 
 Rank and IGN above are examples. A head decoration may occur between rank and IGN; it must not become part of the IGN. Entry, queue and transfer are distinct events, not multiple tickets/grants. First Class starting inventory includes the Head Start item when that perk applies: do not count the message's item a second time on top of the snapshot. Without a Head Start message, use initial run inventory rather than waiting for a nonexistent First Class message.
 
-## Feeder and resource events
+### Client resource reports
 
-**Bird food placement:** no chat message, including when food is added to an active feeder. Inventory changes and later bird spawn announcements must be correlated; do not wait for placement dialogue. Other players' inventory/placement remains unobserved.
+The separate current-roster Party path accepts one absolute `[SM] Starting items: <quantity>x <food/coin>; ... [run:<witnessed marker UUID>]`, or explicit `none`, from each player. Original grants, local echoes and supported legacy notices overlap by sender/type maxima. It is not server grant/spawn/capture text. Missing reports stay unknown. Later unused-item reminders are local titles only; normal `fd`/`cd`/`id`/`hd` remain. See [protocol and provenance limits](TRACKING.md#early-party-starting-resource-synchronization).
+
+### Feeder and resource events
+
+**Bird food placement:** no chat message, including when food is added to an active feeder. No placement confirmation is inferred from attraction chat; implemented bird spawning uses qualified captures/current population. Inventory loss alone is not confirmed placement. Other players' inventory/placement remains unobserved.
 
 | Event / audience | Exact message | Meaning |
 | --- | --- | --- |
@@ -56,9 +56,9 @@ Rank and IGN above are examples. A head decoration may occur between rank and IG
 | Global Gemzie spawning | `A rumbling sound can be heard, and the door at the back of the chamber opens...` | Checks Gemzie five seconds after this exact server message, including the needed Sparkling check in Unique; does not supply a capture |
 | Coin consumption/spawn | `A Gimmiegold appeared out of nowhere and gobbled up your Shining Coin!` | One coin used and one Gimmiegold spawned |
 
-The canonical spelling is **Gimmiegold**. Existing bird-announcement and mound patterns are retained in the tracking/species notes; they were not newly quoted in this batch.
+The canonical spelling is **Gimmiegold**. Additional previously recorded bird and mound quotations are preserved below; their terminal outcome variants remain incomplete.
 
-## Boss events
+### Boss events
 
 | Boss / audience | Exact message | Meaning |
 | --- | --- | --- |
@@ -71,7 +71,7 @@ The canonical spelling is **Gimmiegold**. Existing bird-announcement and mound p
 
 Record these transitions separately. Spawn/awoken signals do not mean caught. Slain signals confirm the global post-capture state; personal/shared catch attribution and reward counts come from capture/loot-share confirmations. `The cave is collapsing...` is not the supplied Wumpa slain message.
 
-## Snooper walls
+### Snooper walls
 
 For each wall, three collisions produce these stages:
 
@@ -81,7 +81,7 @@ For each wall, three collisions produce these stages:
 
 Only stage 3 establishes wall destruction. It does not itself confirm a Snoozle spawn/catch. Associate progress with the wall; identical text alone does not identify which of the five walls was hit.
 
-## Shyworm
+### Shyworm
 
 | Event | Exact message |
 | --- | --- |
@@ -92,7 +92,7 @@ Only stage 3 establishes wall destruction. It does not itself confirm a Snoozle 
 
 These are activity states, not catches. A missed throw/startle is not a capsule escape; Shyworm is Common.
 
-## Captures, loot shares and rewards
+### Captures, loot shares and rewards
 
 ```text
 CAPTURE! You caught a <Critter> and gained <# of shards>x <Critter> Shard!
@@ -120,7 +120,7 @@ CAPTURE! You caught a SPARKLING <Critter> and received a Rainbow Feather and <# 
 
 This is one personal and shared capture. `SPARKLING` is a modifier, not part of the canonical species name.
 
-## Capsule outcomes
+### Capsule outcomes
 
 ```text
 You threw a Critter Capsule at the <Critter>!
@@ -129,10 +129,61 @@ The <Critter> escaped your Critter Capsule!
 
 The first line confirms a hit/attempt; a throw can miss without that confirmation. The second confirms the attempt failed. Retries repeat these events until a capture confirmation. Neither attempt nor escape increments catches.
 
-**Masterful Critter Capsules guarantee capture once hit**, regardless of rarity. No Masterful message variants are needed for escape tracking. Ordinary Common/Uncommon catches are also guaranteed once hit; only standard Rare/Epic/Legendary attempts can escape. A missed throw still is not a capture.
+**Supplied server observation: Masterful Critter Capsules guarantee capture once hit**, regardless of rarity. No Masterful message variants are needed for escape tracking. Ordinary Common/Uncommon catches are also guaranteed once hit; only standard Rare/Epic/Legendary attempts can escape. A missed throw still is not a capture.
+### Previously recorded mound and feeder text
+
+The existing observations preserve these exact progress lines:
+
+- Small cracks begin to form in the mound...
+- The cracks seem to be getting larger, keep hitting it!
+- Chunks of the mound begin falling away...
+- The mound is about to fall to pieces! Keep going!
+- Two Macaws were attracted to the Birdfeeder!
+
+Implemented terminal-prefix matchers, taken from source rather than asserted as complete supplied server quotations:
+
+| Outcome | Matched prefix |
+| --- | --- |
+| Empty mound | The mound falls apart, but nothing is inside |
+| Released Rockmite | The mound fell apart, revealing a Rockmite hidden inside |
+
+Mound progress is not a terminal reveal/empty result. Exact terminal variants need separate evidence. The supplied explanation associated the last progress line with an empty outcome; the implemented terminal matcher is still the source of the recorded outcome. Bird attraction text is informational and ignored for spawn/feeding/capture accounting.
+
+### Honeyhive observations
+
+| Event/status | Preserved exact text | Qualification |
+| --- | --- | --- |
+| Queen Bee proc | QUEEN BEE! The Honeyhive instantly refilled with loot! | Supplied exact observation; parser recognizes the QUEEN BEE! prefix |
+| Ready label | Click to loot! | Status label; case-insensitive matching |
+| Refill countdown | Refill in: ... | The ellipsis denotes the variable countdown suffix |
+| Reward line | HIVE! | Recognized prefix; reward suffix varies |
+
+[Honeyhive rules](../HONEYHIVES.md) own cooldown, profile and refill semantics.
+## Exceptions
+
+- First Class adds no grant message; initial inventory supplies its resource evidence.
+- Hideyho uses finding/reward text instead of ordinary catching text.
+- Global boss slain messages establish an activity transition; Sparkling boss checks still require actual catch evidence, with the accepted global Sparkling-catch override documented in the mode owner.
+- Player quotations must not become server confirmations. Party completion words are a separate trusted party-report path.
+- A Sparkling reward/global announcement pair describes one confirmed Sparkling catch, not two ordinary capture increments.
+
+## Examples
+
+A loot-share line awarding several shards records one shared capture. A MACAW bonus feather line adds no capture. A hit followed by escape records an unsuccessful attempt; only later successful capture text increments the ledger.
+
+## Source and validation references
+
+Reviewed source: 93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee.
+
+- [SafariMessages](../../src/main/kotlin/net/johnceo/sparklingmutuals/safari/SafariMessages.kt): server/player-chat separation, multiline entry and party-report routing.
+- [SafariCatch](../../src/main/kotlin/net/johnceo/sparklingmutuals/safari/SafariCatch.kt): personal/shared catch parsing and optional head text; [SafariTracking](../../src/main/kotlin/net/johnceo/sparklingmutuals/safari/SafariTracking.kt): registered GAME callback and event consumers.
+- [SafariEspRules](../../src/main/kotlin/net/johnceo/sparklingmutuals/safari/esp/SafariEspRules.kt), [SparklingChecks](../../src/main/kotlin/net/johnceo/sparklingmutuals/safari/completion/SparklingChecks.kt), [SafariBirdLedger](../../src/main/kotlin/net/johnceo/sparklingmutuals/safari/resources/SafariBirdLedger.kt): hit/escape, exact timer text and ignored feeder text.
+- Existing [SafariCatchTest](../../src/test/kotlin/net/johnceo/sparklingmutuals/safari/SafariCatchTest.kt) and [SafariPartyCheckRoutingTest](../../src/test/kotlin/net/johnceo/sparklingmutuals/safari/SafariPartyCheckRoutingTest.kt) are validation references, not fresh test receipts. No tests/live server checks were run for this audit.
+
+## Open questions
+
+Exact mound terminal variants and server prerequisite-to-spawn relationships remain incompletely supplied. Capsule guarantees are reported server observations, not guarantees created by the client's parser. Parser differences and unverified mechanics belong to [the consolidated audit](../IMPLEMENTATION_AUDIT.md).
 
 ## Last updated
 
-2026-10-19 (America/New_York) — Early absolute starting-resource reports at HOTSPOT+2s, explicit unknown coverage and local-only later reminders (issue68).
-
-2026-10-15 - Added document revision tracking.
+2026-10-19 (America/New_York) — Updated early starting-resource synchronization, verified coverage and local-only reminders for issue #68 while preserving the merged documentation template. Resource runtime reviewed at `76dd746`; prior audit provenance remains scoped to its stated revision. Automated all-target and offline native checks are separate from pending live Hypixel validation.

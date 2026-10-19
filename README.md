@@ -1,144 +1,70 @@
 # Sparkling Mutuals
 
-A Fabric mod for Hypixel SkyBlock Safari, sparkling discoveries, and Miria contests.
+## Purpose and audience
 
-## Safari tracking
+A Fabric client mod for Hypixel SkyBlock Safari, Sparkling discoveries, party coordination, Miria contests, history and achievements. This overview covers setup and entry points; the [documentation index](docs/README.md) leads to the current implementation reference.
 
-The [Safari logic notes](SAFARI_LOGIC.md) summarize Hypixel evidence and the deductions used for tracking. The [repository guide](docs/README.md) maps the code, tests and documentation for development.
+## Categorized links
 
-Use the [37 individual critter notes](docs/critters/README.md) for species rules and the [shared evidence notes](docs/critters/TRACKING.md) for tickets, starting resources, messages, UUIDs, and late biome entry.
+### Install
 
-- **Full Clear mode (`/fc`):** track all required captures and highlight remaining critters.
-- **Unique mode (`/unique`):** track one capture per species and highlight missing uniques.
-- **Sparkling mode (`/sparkle`):** target sparkling discoveries missing for you or your party.
-- **Profitable shard ESP:** optionally keep profitable critters highlighted in Unique and Sparkling modes.
-- **Progress HUD:** show elapsed time and overall/per-biome completion.
-- **Missing / Unchecked panel:** list remaining captures in Unique/Full Clear, or unchecked critters in Sparkling mode, with nest/mound/wall helpers.
-- **Biome captures HUD:** show species counts and Rockmite mound statistics.
-- **Capture review (`/captures`):** view the current or last run's captures.
-- **Biome personal bests:** save separate Full Clear and Unique clear times.
-- **Party Unique PBs:** save party biome clear times alongside personal Unique records.
-- **Boss personal bests:** save solo/duo Doomspiral and Wumpa times, plus observed party records.
-- **Boss capture feedback:** show elapsed capture time and the difference from the previous PB.
-- **Biome announcements:** send `fd`, `cd`, `id`, or `hd` when eligible biomes are complete.
+1. Use Java **25**, Fabric Loader **0.19.5+**, the Fabric API matching your Minecraft version, and Fabric Language Kotlin. Supported targets are **26.1.2**, **26.2** and **26.3**; the 26.1 line supports exactly 26.1.2.
+2. Download an appropriate published build from [Releases](https://github.com/johnceoskyblock/sparkling-mutuals/releases), or `jar-mc<version>` from a successful [Actions run](https://github.com/johnceoskyblock/sparkling-mutuals/actions).
+3. Install **one** matching Sparkling Mutuals JAR in `mods`, replacing the older mod JAR. Do not install source/test/development JARs. [Exact dependencies and filenames](docs/MULTI_VERSION_BUILDS.md#prerequisites).
 
-## Highlights and helpers
+Current release: **[v3.4.0](https://github.com/johnceoskyblock/sparkling-mutuals/releases/tag/v3.4.0)**, with `sparkling-mutuals-3.4.0+mc26.1.2.jar`, `sparkling-mutuals-3.4.0+mc26.2.jar` and `sparkling-mutuals-3.4.0+mc26.3.jar`. Install only the file matching your Minecraft version and remove the older Sparkling Mutuals JAR before updating.
 
-- **Critter ESP:** draw colored outlines around critters; retain enlarged outlines for Hideonwalls.
-- **Floor drop ESP:** label predicted Safari supplies by type and highlight needed drops until their requirements are met.
-- **Bee nest waypoints:** check 13 Forest locations, ignore beehives, and remove each nest after a left- or right-click.
-- **Nest survey guidance:** grey markers guide loading; coverage stays internal and Full Clear uses the actual bee total.
-- **Rockmite highlights:** distinguish mounds from spawned silverfish.
-- **Snooper wall waypoints:** locate walls to break for Snoozles.
-- **Hidden Litterbugs:** show projected positions and countdowns while they are underground.
-- **Shyworm helpers:** show projected positions, movement paths, and rest countdowns.
-- **Bird food tracking:** track Forest food collection and feeding progress.
-- **Wumpa prerequisites:** retain uncaught Icy prerequisite critter highlights in every mode while the party needs Sparkling Wumpa.
-- **Detected sparklings HUD:** list loaded detected sparklings across Safari biomes, with biome and distance.
-- **Sparkling detection:** identify loaded Sparkling names and 36 known skins across Safari biomes, with shared alert/progress evidence. [Detection and range limits](docs/SPARKLING_DETECTION.md).
-- **Teammate outlines:** highlight loaded party members throughout SkyBlock.
-- **Teammate names:** show party member names through walls.
-- **Hideyho quest clicks:** accept Hideyho's offer by clicking with chat open.
-- **Mound Auto Clicker:** hold the attack button on Rockmite mounds for 12 CPS.
-- **Candle hitboxes:** make Haunted candle clicks easier while holding Soothing Incense.
-- **Painting removal:** hide paintings in the Haunted biome.
-- **Darkness removal:** remove the darkness effect in Safari.
-- **Chat filtering:** hide repetitive Safari messages while keeping tracking active.
-- **Ground capsule hiding:** hide ordinary dropped capsules in Safari.
-- **Flying capsule hiding:** hide capsules near the camera at a configurable distance.
-- **Local shot recorder (`/sm shots`):** opt in to bounded capsule/input observations and local replay tools. Live aiming projections await gameplay calibration. [Controls and collection guide](docs/CAPTURE_SHOT_RECORDING.md).
+HM API and MoulConfig are bundled. Player profile lookups use a Hypixel API key or the optional Shiny Hunter shared API. Keep keys and local authentication files private. Release notes and the availability of published assets belong to their [release descriptions](https://github.com/johnceoskyblock/sparkling-mutuals/releases).
 
-## Alerts and contests
+### Play
 
-- **Sparkling alerts:** show and sound an alert for each detected sparkling critter.
-- **Party sparkling announcements:** share the critter, biome, and coordinates in party chat.
-- **All Gems alert:** notify when all three Cavern gem colors are in your inventory.
-- **All Bird Food alert:** notify after collecting three of each Forest bird food.
-- **All Incense alert:** notify when four Soothing Incense are in your inventory.
-- **Run completion alert:** notify when all biomes are complete in the active mode.
-- **Starting supplies:** share witnessed starting food/coins two seconds after the HOTSPOT message; later unused-resource reminders are local titles only.
-- **Warp alerts (`/alert`, `/alertdelay <seconds>`):** disabled by default; when enabled, show the reminder and automatically run `/p warp` when the delay expires in the current run. [Timer behavior](docs/WARP_ALERTS.md).
-- **Miria contest HUD:** track contest time, score, and tier.
-- **Miria warnings:** warn below Uncommon at the selected 5-, 3-, and 1-minute marks.
-- **Honeyhive beacons:** mark full Torrhus Canyon hives during an incomplete Miria contest.
+| Feature | Start here |
+| --- | --- |
+| Modes | `/sparkle`, `/unique`, `/fc`; [mode goals and separate completion outcomes](SAFARI_LOGIC.md) |
+| Species and resources | [All 37 critters](docs/critters/README.md), [captures/checks/reports](docs/critters/TRACKING.md), [floor drops](docs/critters/FLOOR_DROPS.md) |
+| Progress and helpers | [Missing/Unchecked panels and highlights](docs/MISSING_PANEL.md), [Forest birds](docs/BIRD_COMPLETION.md), [Sparkling detection](docs/SPARKLING_DETECTION.md) |
+| Capsule aiming guide | One **Capture projections** switch, terrain rings and possible-critter diamonds; [controls, limits and optional recorder](docs/CAPTURE_SHOT_RECORDING.md) |
+| Settings | `/sm`; [defaults, mode presets and saved-setting caveats](docs/CONFIG_DEFAULTS.md) |
+| HUD layout | `/sm gui`; drag and scroll to move/resize supported HUDs. Projection status text has been removed. |
+| Capture review | `/captures` for current/last-run captures |
+| History and achievements | `/sm history`, `/sm history import`, `/sm achievements`; [history/import/profit rules](docs/HISTORY_IMPORT.md) |
+| Party streaks | `!since sparkling`, `!since unique`; [credit and participation](docs/SINCE_COMMAND.md) |
+| Contest and readiness | [Miria/downtime](docs/CONTEST_DOWNTIME.md), [Safari entry guard and Shift override](docs/SAFARI_ENTRY_GUARD.md) |
+| Canyon and warp | [Honeyhives](docs/HONEYHIVES.md), [warp reminders and automatic warp](docs/WARP_ALERTS.md) |
 
-## History and achievements
+Starting food/coin quantities are shared once at the HOTSPOT message + two seconds, independently of mode and display settings. Later unused-resource reminders are local titles only; [resource accounting and mixed-client limits](docs/critters/TRACKING.md#early-party-starting-resource-synchronization).
 
-- **Run history (`/sm history`):** browse saved captures, loot shares, splits, bests and run statistics.
-- **Sparkling history:** record personal and party finds with ticket counts and dry streaks.
-- **Log import (`/sm history import`):** rebuild both run and Sparkling history from Minecraft logs. Also available as **Import History from Logs** beneath the History button in settings. [Import details and estimates](docs/HISTORY_IMPORT.md).
-- **Achievements (`/sm achievements`):** track Safari milestones, collection progress and playtime.
-- **Profit history:** estimate shard and feather values from Bazaar prices, with a Profit tab and coin milestones.
+The guide is a visual estimate, not guaranteed flight, impact or capture physics. HUD/ESP controls and underlying tracking have separate gates. Read each owner for exceptions rather than interpreting a green row or a highlight as proof of every completion outcome.
 
-## Party commands and settings
+### Party commands
 
-- **`!mutual` / `!mutuals`:** list shared sparkling discoveries that save Safari time.
-- **`!missing <IGN>`:** list a player's missing sparkling discoveries that save time.
-- **`!tickets <IGN>`:** show a player's Safari ticket counts.
-- **`!since sparkling` / `!since unique`:** post runs since your last credited party Sparkling or flagged unique Sparkling, naming the critter and catcher. [Streak rules](docs/SINCE_COMMAND.md).
-- **`!m [biome]`:** report what remains in the current Safari run.
-- **`!dt [reason]` / `r`:** request downtime after the run and release your hold when ready. Earning an Uncommon contest ticket announces **Ticket earned!** and clears your contest hold.
-- **Safari entry guard:** hold Torrhus entry for downtime until each requester says r or mentions ticket; in Safari use party tab presence plus a two-second kick pause; hold Shift to bypass a blocked entry interaction.
-- **`/sparkling [IGN|party|IGNs]`:** show Safari player cards or compare sparkling collections.
-- **`!pb <biome>`:** share Forest, Cavern, Icy, or Haunted PBs for the active mode.
-- **`!pb doom` / `!pb wumpa`:** share solo boss PBs; add `duo` or an IGN for other records.
-- **`!commands`:** show the party commands available in the active mode.
-- **Settings (`/sm`):** toggle features and open command help.
-- **HUD editor (`/sm gui`):** drag HUDs and alerts to move them; scroll to resize.
-- **Appearance:** customize critter/waypoint colors, panel borders, backgrounds, and transparency.
-- **ESP visibility:** independently restrict each biome and floor drops to your current biome.
-- **ESP text scale:** resize floor-drop names, timers, nest labels and teammate names from 0.5× to 4×; default 2×.
-- **Alert customization:** choose sounds, volumes, and run completion text.
-- **Player lookups:** use your Hypixel key (`/apikey <key>`) or the optional Shiny Hunter shared API.
-- **Diagnostics (`/sm debug`):** save entity tracking, nest block data, survey coverage and rendering gates to `latest.log`.
+| Command | Purpose |
+| --- | --- |
+| `!mutual` / `!mutuals`, `!missing <IGN>` | Shared time-saving discoveries or missing discoveries |
+| `!tickets <IGN>` | Safari ticket counts |
+| `!m [biome]` | Current-run remaining work |
+| `!dt [reason]`, `r` | Request downtime or release your own readiness hold |
+| `!pb <biome>`, `!pb doom`, `!pb wumpa` | Active-mode biome or boss bests; supported duo/player variants are in command help |
+| `!commands` | Available party commands in the active mode |
+| `/sparkling [IGN\|party\|IGNs]` | Player cards and discovery comparison |
+| `/alert`, `/alertdelay <seconds>` | Optional warp reminder controls |
+| `/sm shots`, `/sm debug` | Explicit local recording controls or tracking diagnostics; review logs/exports before sharing |
 
-## Installation
+### Contribute and verify
 
-- Development builds support Minecraft **26.1.2**, **26.2** and **26.3**. Use Java **25**, Fabric Loader **0.19.5+**, matching Fabric API, and Fabric Language Kotlin.
-- Download the JAR from [Releases](https://github.com/johnceoskyblock/sparkling-mutuals/releases) and place it in your `mods` folder.
-- Development builds: download `jar-mc<version>` from a successful [Actions run](https://github.com/johnceoskyblock/sparkling-mutuals/actions). Install **only one matching JAR**; the 26.1 line supports **26.1.2 only**. See the [version and dependency table](docs/MULTI_VERSION_BUILDS.md).
-- Profile lookups use a [Hypixel API key](https://developer.hypixel.net) or the optional Shiny Hunter shared API.
-- Release notes are in the [release descriptions](https://github.com/johnceoskyblock/sparkling-mutuals/releases).
-- Current release: **[v3.4.0](https://github.com/johnceoskyblock/sparkling-mutuals/releases/tag/v3.4.0)**, with separate `sparkling-mutuals-3.4.0+mc26.1.2.jar`, `sparkling-mutuals-3.4.0+mc26.2.jar` and `sparkling-mutuals-3.4.0+mc26.3.jar` files. Install only the file matching your Minecraft version and remove the older Sparkling Mutuals JAR before updating.
+[Contributing](CONTRIBUTING.md) covers setup, focused changes and pull requests. [Multi-version builds](docs/MULTI_VERSION_BUILDS.md), [source synchronization](docs/SOURCE_SYNC.md), [manual scenarios](docs/IMPLEMENTATION_TEST_CHECKLIST.md), and the [implementation audit](docs/IMPLEMENTATION_AUDIT.md) distinguish static checks from live Minecraft evidence.
 
-## Contributing
+## Rule ownership and navigation
 
-Bug reports, testing, documentation improvements and code contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) for setup, testing and pull-request guidance.
+[Common vocabulary and ownership](docs/DOCUMENTATION_GUIDE.md) define the shared terms. Species pages describe exceptions and link to authoritative rule owners. Proposals and pending work live in [GitHub Issues](https://github.com/johnceoskyblock/sparkling-mutuals/issues); superseded implementation plans remain in Git history.
 
-## Credits
+### Credits
 
 - JavaBetter contributed player cards, cloud lookups, party helpers, honeyhives, history, achievements and profit tracking; GamingLegend123 contributed the Shiny Hunter icon.
 - Adapted work: [CritterMod v0.9.0](https://github.com/MrCloudy2/critterMod/tree/v0.9.0), [ShinyHunter](https://github.com/javabetter/ShinyHunter), [Nebulune](https://github.com/Gaeritag/Nebulune), and [SkyHanni 9.1.0](https://github.com/hannibal002/SkyHanni/tree/9.1.0).
 - Settings: [MoulConfig](https://github.com/NotEnoughUpdates/MoulConfig).
 - Licensing and attribution: [LICENSE](LICENSE) and [third-party notices](licenses).
 
-Documentation revision workflow: [Source synchronization](docs/SOURCE_SYNC.md). Run `./scripts/DocumentationSync.ps1` to find documents changed since the last SRC update.
-
-Honeyhive state rules, data sources and debugging: [Torrhus Canyon Honeyhives](docs/HONEYHIVES.md).
-
-Per-drop colors are configurable in **ESP → Floor-drop colors**. **Miria contest → Auto !dt contest** controls the automatic party downtime request at new contest starts, sent only by the confirmed party leader. Returning to Torrhus announces all downtime requesters and reasons together in party chat. See [contest request behavior](docs/CONTEST_DOWNTIME.md).
-
 ## Last updated
 
-2026-10-19 (America/New_York) — Early absolute starting-resource reports at HOTSPOT+2s, explicit unknown coverage and local-only later reminders (issue68).
-
-2026-10-19 (America/New_York) - Updated release and installation guidance for v3.4.0 across all three supported Minecraft versions.
-
-2026-10-17 - Aligned entry guards with tab-first Safari presence, two-second kick pauses, ticket-message downtime release and Shift override.
-
-2026-10-17 - Added per-interaction Shift entry override with local guidance and background missing-member name lookup.
-
-2026-10-17 - Named Sparkling checklists Unchecked and retained initial Honeybug source counts and party checking trust.
-
-2026-10-17 - Synchronized source with current mode/resource documentation and recorded the reviewed baseline; warp alerts default off.
-
-2026-10-16 - Added leader-only automatic contest requests and a combined party downtime reminder naming all requesters and reasons.
-
-2026-10-16 - Added !since sparkling / !since unique for credited party catches, with critter/catcher details.
-
-2026-10-15 - Added exact three-target development installation guidance; distinguished future multi-version releases from the existing published release.
-2026-10-16 - Summarized stage-specific Safari entry protection without a Shift override.
-
-2026-10-16 (America/New_York) - Added the opt-in capture-shot collection kit; live aiming projections remain awaiting calibration.
-
-Capture projections is an opt-in, uncalibrated guide on all three supported versions, with terrain rings, possible-critter diamonds, saved width and local schema-v2 probes. See [enable and collect](docs/CAPTURE_SHOT_RECORDING.md#experimental-capsule-path). Live Hypixel contact accuracy remains pending.
+2026-10-19 (America/New_York) — Updated early starting-resource synchronization, verified coverage and local-only reminders for issue #68 while preserving the merged documentation template. Resource runtime reviewed at `76dd746`; prior audit provenance remains scoped to its stated revision. Automated all-target and offline native checks are separate from pending live Hypixel validation.

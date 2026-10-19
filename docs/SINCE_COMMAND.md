@@ -1,43 +1,51 @@
 # Credited party Sparkling streak commands
 
-Type either command in party chat (`/pc` or `/p chat`):
+## Purpose
+
+Report runs since a Sparkling credited to the requesting player's saved or current run. This is a history-based streak, not an account lifetime statistic.
+
+## Controls and defaults
+
+Type either command in party chat with `/pc` or `/p chat`:
 
 | Command | Reply |
 | --- | --- |
-| `!since sparkling` | Runs since anyone's most recent Sparkling credited while you were in that Safari run, including critter and catcher |
-| `!since unique` | Runs since the most recent credited party Sparkling flagged unique in history, including critter and catcher |
+| `!since sparkling` | Latest credited Sparkling, its species/catcher, and later saved runs. |
+| `!since unique` | The same calculation restricted to entries whose saved unique flag is true. |
 
-Examples:
+**Respond to party commands** defaults on. These commands require the requester's own mod client, a known current party and available local history; no API key is required. They work outside Safari and in every mode. `!commands` and settings help list them.
 
-- `Farmer: 1 run since last sparkling: Foxtrot caught by OtherPlayer.`
-- `Farmer: 3 runs since last unique sparkling: Wumpa caught by Friend.`
+## Implemented behavior
 
-## Credit and counting
+### Credit and counting
 
-Use **any party member's qualifying find**, not only the requester as catcher. The requester receives Sparkling credit while participating in that run, so a teammate's find resets the appropriate streak. Do not filter historical catches to the current party roster: earlier parties' credited finds remain part of the requester's history.
+Any catcher's eligible Sparkling can reset the requester's streak. Historical credit is not filtered to the current party roster. An entry qualifies inside the active run's start/end bounds, or inside the most recent saved run beginning no later than that entry. For a saved run with positive duration, the catch must fall within its duration. For an imported run with unknown duration, its Sparkling list must explicitly contain the same `catcher:critter`; a date alone is insufficient.
 
-Qualify an entry when its timestamp lies inside a saved run's start/duration or the current run's start/end bounds. A catch in an unfinished current run can immediately reset the streak; finds outside the requester's runs do not count. When an imported run has no known duration, require that run's Sparkling list to match `catcher:critter` rather than inferring credit from a date alone.
+The latest qualifying entry supplies the result. Count saved runs whose start is later than that catch; exclude the catch's run and do not add the unfinished active run. `unique` uses the entry's stored flag, including [estimated import flags](HISTORY_IMPORT.md#estimates); it does not perform a new discovery lookup.
 
-For `unique`, use the saved Sparkling entry's **unique flag**, including imported estimated flags, across all eligible catchers. Do not treat every Sparkling as unique or perform a new historical discovery lookup. This command reports the history's flagged unique events; it does not recalculate which account first unlocked a discovery.
+Examples: `Farmer: 1 run since last sparkling: Foxtrot caught by OtherPlayer.` and `Farmer: 3 runs since last unique sparkling: Wumpa caught by Friend.` With no eligible entry, report `No sparkling in history (N runs tracked).` or its unique equivalent.
 
-Find the latest qualifying entry and count saved run records whose **start is later than its catch**. Exclude the run containing the catch. The unfinished current run is not an additional saved run. A party Sparkling repeat resets `sparkling`, while `unique` continues from the most recent eligible unique entry.
+### Reply ownership
 
-The message omits the word **recorded** and includes the exact critter and catcher from that last entry. The underlying count still depends on available saved history. Missing logs, disabled recording and incorrect import dates can leave incomplete totals. With no qualifying entry, say `No sparkling in history (N runs tracked).` or the unique equivalent instead of inventing a lifetime streak.
+Only the requester answers from their own history, with case-insensitive name matching. The normal pipeline applies a ten-second request-token cooldown, party/context checks and result deduplication. It snapshots the result on the client thread before the asynchronous reply task. Matching includes requester and command kind, so another player's result or a normal streak cannot cancel a unique-streak result. Pending replies are also cancelled by mode or party changes.
 
-## Reply ownership
+## Lifecycle and persistence
 
-The requesting player's own mod client answers from its history, because other clients may have joined different runs. Other mod users must not answer with their own unrelated histories. Requester matching is case-insensitive. No API lookup/key is required. Both commands work in every mode and outside Safari, and appear in `!commands` and settings help. The party-command toggle, cooldown and response deduplication remain active.
+Commands do not modify history. Results use [persisted histories](HISTORY_IMPORT.md), including earlier parties and imported records. Disconnect clears pending replies, recent requests and response history. Imports can change subsequent results; missing logs or dates can leave incomplete totals.
 
-Snapshot the reply on the client thread before the async reply pipeline. Match response bodies by requester and command kind so another player's result, or the normal streak, cannot cancel a unique-streak response.
+## Edge cases
 
-## Minecraft checks
+- A teammate's repeat resets `sparkling` while `unique` continues from its latest flagged event.
+- A catch outside an eligible run cannot reset either streak.
+- An active-run catch can reset the count immediately; the active run itself adds no saved run.
+- The `unique` streak describes stored flags, which differ from a freshly verified account discovery history.
 
-1. Have a teammate catch a Sparkling while you are in the run. `!since sparkling` should reset to zero and name their critter/IGN. A later saved run without a Sparkling increments it.
-2. Use an eligible unique entry caught by a teammate: `!since unique` must use that event and name its critter/catcher. A later repeat resets only the normal streak. Compare both against history's unique flags.
-3. Observe a catch outside your run, or query after changing party members: outside-run entries must not reset you, and your earlier parties' valid credit must remain.
-4. Query during an active run and outside Safari, in every mode, with no API key. With multiple mod users, only the requester replies. Disable party commands and verify silence.
-5. Check messages contain no `recorded` wording and do contain critter/catcher for a successful result. With no qualifying history, expect the explicit history-missing message. Restart/import and verify the merged saved records produce the expected count.
+## Source and validation references
+
+- Calculation and matching: [SafariSinceReply](../src/main/kotlin/net/johnceo/sparklingmutuals/commands/SafariSinceReply.kt), `format`, `current` and `matches`.
+- Parsing/ownership: [PartyCommand](../src/main/kotlin/net/johnceo/sparklingmutuals/commands/PartyCommand.kt); registration, snapshot and sending: [PartyCommands](../src/main/kotlin/net/johnceo/sparklingmutuals/commands/PartyCommands.kt); result history: [PartyReplies](../src/main/kotlin/net/johnceo/sparklingmutuals/commands/PartyReplies.kt).
+- Existing secondary coverage: [SafariSinceReplyTest](../src/test/kotlin/net/johnceo/sparklingmutuals/commands/SafariSinceReplyTest.kt), [PartyCommandTest](../src/test/kotlin/net/johnceo/sparklingmutuals/commands/PartyCommandTest.kt). No tests or live Minecraft validation were run in this audit. Live checks should compare both replies with own/party catches, active and imported unknown-duration runs, changed parties, disabled commands and multiple mod users.
 
 ## Last updated
 
-2026-10-16 - Corrected streaks to include any credited party catch during the requester's runs; omitted recorded in replies and added critter/catcher details.
+2026-10-19 (America/New_York) — Audited historical credit, saved-flag semantics and reply ownership against source `93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee`. See [documentation conventions](DOCUMENTATION_GUIDE.md).

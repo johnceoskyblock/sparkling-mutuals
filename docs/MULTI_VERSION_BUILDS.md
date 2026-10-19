@@ -1,8 +1,10 @@
 # Multi-version builds
 
-One shared Kotlin source tree builds three Fabric JARs. Install **one** JAR matching your Minecraft version; remove previous Sparkling Mutuals JARs first. The internal mod version stays the same across the three builds.
+## Purpose
 
-## Versions and installation
+Build one shared Kotlin source tree into exactly three matching Fabric JARs. Installation uses one matching JAR. [Contributing](../CONTRIBUTING.md) owns the general contribution workflow.
+
+## Prerequisites
 
 | Exact Minecraft requirement | Filename for mod version V | Fabric API | Bundled HM API | Bundled MoulConfig |
 | --- | --- | --- | --- | --- |
@@ -16,7 +18,9 @@ The 26.1 line targets **26.1.2 only**. Other patches are not advertised. **v3.4.
 
 Upstream `modern-26.2:4.8.0` retains `Fabric-Minecraft-Version: 26.2-pre-2` in its build manifest. This exact pinned artifact passed 26.2 client startup and settings rendering. Packaging accepts that specific upstream label, rejects other target mismatches, and still requires the mod's Minecraft metadata to be exactly `26.2`.
 
-## Build and test
+## Procedure
+
+### Build and test
 
 Use the repository wrapper with Java 25. These examples use Windows; replace `./gradlew.bat` with `./gradlew` on Linux/macOS.
 
@@ -33,7 +37,7 @@ Use the repository wrapper with Java 25. These examples use Windows; replace `./
 
 `verifyDistributions -PdistributionDir=incoming` validates downloaded artifacts without rebuilding them. It rejects wrong names, internal versions, Minecraft requirements, missing runtime resources, incompatible nested libraries and development dependencies. Per-target intermediates, source JARs and test reports remain under `versions/<target>/build/`; helper tests report under `buildSrc/build/reports/tests/test/`.
 
-## Develop and launch
+### Develop and launch
 
 26.1.2 is the active editor version. Shared sources/resources/tests stay under root `src/`; generated target sources are ignored. Use small Stonecutter conditionals or `compat` adapters for demonstrated API changes. Preserve required mixins, gameplay rules and saved configuration/history keys.
 
@@ -49,7 +53,7 @@ IntelliJ also exposes the Stonecutter switching and Loom client configurations. 
 
 Build tools are pinned to Gradle 9.7.1, Stonecutter 0.9.8, Loom 1.17.21 and Kotlin 2.4.20. Shared properties live in `gradle.properties`; each `versions/<target>/gradle.properties` supplies its exact dependency matrix.
 
-## CI and releases
+### CI and releases
 
 Branch pushes and pull requests run read-only CI: helper tests, three target test/build/packaging jobs, and an aggregate verification job. Download the matching `jar-mc<target>` Actions artifact. No PR or branch job publishes a release.
 
@@ -63,18 +67,22 @@ For a release, choose a new `mod_version` and matching **`v<mod_version>`** tag.
 
 Draft reruns retain maintainer-written release notes, generate notes only when blank, retain unrelated non-JAR assets, reuse matching uploads and replace only stale expected JAR assets. Unexpected or duplicate JAR assets stop publication. A failed upload leaves a draft; publication requires all three matching sizes/digests. Rerunning an identical published release does nothing; a different or unverifiable published asset set fails for manual attention. Tokens stay in the publishing environment and are never forwarded through redirects.
 
-Put version notes in the matching GitHub Release description; keep the complete change list there rather than duplicating it in this guide.
+Put version notes and the complete change list in the matching GitHub Release description rather than duplicating them in this guide. Release publication is a separate authorized maintainer action.
 
-## Validation limits and adding a target
-
-The migration preserved all 115 existing suites (652 tests per target). Local startup checks loaded required mixin owners and rendered settings, history and capture screens on all three clients. These checks do **not** establish live Hypixel Safari tracking, world HUD/ESP appearance or server commands; those still need a suitable in-game session.
+### Add a target
 
 Adding a target is a deliberate change: verify official Minecraft/Fabric/library availability, add its Stonecutter settings and properties, inspect actual mapped APIs/mixin signatures, update the verifier/release target set and both CI matrices, then run clean tests, packaging and client/in-game checks. Update this table and installation guidance only to the versions demonstrated by that evidence.
 
+## Expected results
+
+Target-qualified tests/builds, checked JAR metadata and three-file distribution verification are separate checks. Read the actual run's reports before asserting a pass. Native startup/rendering verifies only the exercised client scenarios; live Hypixel tracking and capture physics remain separate. Optional Iris composition has historical native validation on 26.1.2 only, not a certification of every shader pack.
+
+Source owners: [settings](../settings.gradle.kts), [controller and verification tasks](../stonecutter.gradle.kts), [shared build](../build.gradle.kts), [target properties](../versions), [packaging helpers](../buildSrc/src), [build workflow](../.github/workflows/build.yml), [release workflow](../.github/workflows/release.yml). These files were inspected at the audited baseline; no new build was required for this Markdown-only change.
+
+## Troubleshooting
+
+Use Java 25 and the repository wrapper. A valid single-target JAR does not form a complete distribution. Do not substitute a development/source JAR or another Minecraft patch. Failed/skipped prerequisite jobs cannot satisfy the aggregate build gate. Release publication failures retain a draft for inspection; never claim a release from a branch build.
+
 ## Last updated
 
-2026-10-19 (America/New_York) - Documented v3.4.0 as the first published three-target release and retained exact target-qualified installation names.
-
-2026-10-18 (America/New_York) - Restored full three-target CI and required aggregate verification for the capture-shot master integration.
-
-2026-10-16 - Preserved the required build gate across all target/helper/distribution jobs while rebasing the three-target implementation onto master.
+2026-10-19 (America/New_York) — Consolidated build guidance and retained v3.4.0 as the first published three-target release during the master rebase. Reviewed runtime source: `93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee`; documentation-only changes, no local runtime differences or new live validation.

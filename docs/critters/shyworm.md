@@ -1,64 +1,90 @@
 # Shyworm
 
-[Index](README.md) · [Shared evidence rules](TRACKING.md)
+[Index](README.md) · [Terminology](../DOCUMENTATION_GUIDE.md) · [Shared evidence](TRACKING.md)
 
-**Biome:** Cavern. **Recorded Full Clear baseline:** 4. Baseline counts are carried from earlier notes, not newly verified server guarantees.
+## Overview
+
+| Property | Value | Status |
+| --- | --- | --- |
+| Biome | Cavern | Implemented roster |
+| Rarity | Common | Supplied server notes; not live revalidated |
+| Spawn source | Ordinary biome population; no dedicated spawn-event gate | Implemented evidence path; mechanics unverified |
+| Population model | Implemented minimum; actual population can exceed it | Implemented rule, not server guarantee |
+| Full Clear minimum | 4 shared captures before species adjustments | Implemented fallback/minimum |
+| Local scan coverage | X/Z (-119, 43); Full Clear radius 30 blocks; Sparkling radius 40 blocks | Implemented coverage |
+
+## What makes this critter different
+
+- Supplied activity note describes an eight-cycle rotation, not eight seconds. The implemented post-hide rest display separately counts down 8 seconds; see [audit D4](../IMPLEMENTATION_AUDIT.md#d4).
+
+## Spawn prerequisites
+
+None. No species-specific resource or structure gate is used.
 
 ## Evidence
 
-- **Common: guaranteed catch; no capsule escape.** A UUID identifies an observed entity; repeated sightings do not add another Shyworm.
-- Your capture confirmation adds one personal and one shared catch. A party loot-share confirmation adds one shared catch, attributed to its catcher.
-- Keep any captures received before visiting Cavern; subtract them from the remaining requirement once, as described in the shared rules.
+| Evidence | What it establishes | What it does not establish |
+| --- | --- | --- |
+| Personal capture / party loot share ([exact messages](MESSAGES.md)) | Own capture adds personal + shared evidence; attributed loot share adds shared evidence | Local checks, source resolution or personal PB from another player's catch |
+| Live textured armor-stand head / qualified check | Current sighting; qualified evidence contributes under mode rule | Capture or absence inferred from missing outline |
+| Supplied capsule notes | Common/Uncommon: supplied notes say no capsule escape; Masterful catches guaranteed once hit. | Server mechanics revalidated by this source audit; see [D2](../IMPLEMENTATION_AUDIT.md#d2) |
+| Surfaced / hid / fled / startled lines ([exact text](MESSAGES.md)) | Activity/rest signal; missed-throw interruption differs from capsule escape | Capture, new worm or verified server hitbox |
+| Retained qualified UUID check ([rules](TRACKING.md)) | Distinct checks reconciled with earlier captures | Historical sighting and its later catch counted twice |
 
-## Completion
+## Completion by mode
 
-| Mode | Rule |
+| Mode | Capture requirement | Checking or source requirement | Party-report effect |
+| --- | --- | --- | --- |
+| Sparkling | None for ordinary critters; a confirmed Sparkling capture also completes the check. | 4 reconciled checks from qualified UUID sightings/shared captures; retain checks for the run. | Party cd can supply inherited checking; local scans retire it. |
+| Unique | One shared capture, or the confirmed-Sparkling capture override. | None. | Does not supply a capture. |
+| Full Clear | At least 4 shared captures. Local proof and report-based progress have [separate raised-target scopes](TRACKING.md#full-clear-evidence-and-late-entry). | Qualified empty local scan for row removal/local progress. | Without local proof, report plus capture minimum can complete progress; row still needs local proof. |
+
+## Display and highlights
+
+| Outcome | Implemented behavior |
 | --- | --- |
-| Unique | One confirmed shared catch immediately completes Unique and removes the missing row, without a local Sparkling scan/radius requirement. Detected Sparkling entities do not add a separate capture requirement. |
-| Full Clear | Local capture/source proof and a qualified empty scan advance progress and remove the missing row without a report; retain that proof after leaving. Other biomes without local proof use party report plus minimum captures, with existing fixed-count exceptions. Positive remaining critters reopen local completion. See the [per-critter panel reference](../MISSING_PANEL.md). |
-| Sparkling | Record distinct UUIDs seen inside this species' qualifying scan area and retain their checked progress for the run, including after unloading and biome reentry. Reconcile shared captures without counting a later catch of a seen UUID twice; source requirements remain separate. |
+| Progress | Mode-specific predicate above; see [shared modes](../../SAFARI_LOGIC.md). |
+| Missing/unchecked row | Unique uses its capture/source predicate. Sparkling lists needed unresolved checks. Full Clear needs local capture/absence proof, separately from report-based progress. See [panel rules](../MISSING_PANEL.md). |
+| Counters | None in the species row; capture panel shows actual shared catches. |
+| Ordinary ESP | Unique: until first shared capture. Full Clear: eligible uncaught models. Sparkling: discovery-gated, normally up to 10 seconds per UUID. Settings and model validity still apply. |
+| Source helpers | Hidden height/path/rest timer are estimates. Connected body-piece contact estimates stay separate from critter identity; see [capture guide](../CAPTURE_SHOT_RECORDING.md). |
+| Automatic completion announcements | Shared local whole-biome/report-readiness gates in [mode rules](../../SAFARI_LOGIC.md). |
+| PB eligibility | Personal Unique: own catch of every species. Full Clear: personal captures/local proof. Party Unique: separate shared-capture/absence predicate; progress alone is insufficient. |
 
-## Specific deductions
+## Party reports and late entry
 
-- Local Full Clear checks advance progress and remove the missing row without a report. Remote progress without local proof retains its report gate and existing fixed-count exceptions.
+Captures received before visiting this biome remain in the run. Reports supply checking trust, never missing capture events. For late entry, use retained shared captures plus qualified local coverage; absence alone is insufficient. See [evidence/lifecycle](TRACKING.md).
 
-- Partial-clear entry: minimum shared captures + qualifying UUID-check radius + no remaining critters/spawns establishes Full Clear without seeing captured UUIDs again. Apply species-specific source checks and [shared radius rules](TRACKING.md#partially-cleared-biome).
-- `The Shyworm surfaced nearby! Don't let it see you!` starts its eight-cycle rotation; do not assume eight seconds. [Exact end/interrupt messages](MESSAGES.md#shyworm) distinguish normal hiding, player obstruction and a missed capsule startling it.
-- Hid-back-into-the-ground marks the normal end. Startled means an interrupted attempt after a missed capsule; saw-a-player-and-fled means a player blocked its path.
-- Shyworm is Common and cannot escape a capsule. Fleeing after a missed throw is an interrupted activity cycle, not an escape from a capsule. Hiding/resurfacing alone is neither a capture nor proof of another worm.
-- Full Clear still requires catches; seeing a complete movement cycle does not supply one.
+## Retention and reopening
+
+Captures and qualified UUID checks persist through unloading/travel. Retained local Full Clear row proof survives leaving its radius; positive remaining population revokes local proof. A new run resets evidence; the ended run can remain displayed. Pending detection identities add no separate completion gate; see [audit D1](../IMPLEMENTATION_AUDIT.md#d1).
+
+## Examples
+
+A surfaced worm hides after an interrupted attempt: its rest display can count down, while captures stay unchanged. Connected body pieces are not additional worms.
+
+## Implementation and validation
+
+[Shared source/caller map](TRACKING.md#source-and-validation-references) covers capture/event registration, scanner, mode predicates, UI/report consumers, PBs and resets. Species entries: `Shyworm` in `SafariFullClear.minimum` and `SafariEspRules.mobs`; [CavernCompletionZones.zones](../../src/main/kotlin/net/johnceo/sparklingmutuals/safari/completion/CavernCompletionZones.kt).
+
+[ShywormProjection](../../src/main/kotlin/net/johnceo/sparklingmutuals/safari/esp/ShywormProjection.kt)
+
+[ShywormBodyDiagnostics](../../src/main/kotlin/net/johnceo/sparklingmutuals/safari/esp/ShywormBodyDiagnostics.kt)
+
+[ShywormContactParts](../../src/main/kotlin/net/johnceo/sparklingmutuals/safari/shots/preview/contacts/ShywormContactParts.kt)
+
+Local body diagnostics: within roughly 8 blocks of an ordinary surfaced worm, leave capsule hiding off and run `/sm debug` three times about 1 second apart in one world. Inspect/share only `SM_SHYWORM_BODY` lines in `logs/latest.log`; no throw or recording is required and nothing uploads automatically. Selection inspects at most 4,096 entries, chooses two nearest heads within 24 blocks and up to 64 nearby/linked candidates; visual candidates are within 8 blocks of a head. Limits are reported, and candidate membership is unverified. The `contact_scene` row contains cached readiness counts. Positions/bounds are eye-relative; rows include numeric relationships, texture hashes, registry IDs, poses/transforms, but omit players, names, UUIDs, raw profiles, arbitrary item data and text content.
+
+Supplied fitting evidence: the clip shows body pieces beyond the head proxy; its recorder export had no native head bounds. Four focused snapshots supported seven separate textured armor-stand head-items, including raised trailing pieces. Provisional contact support requires bounded, unambiguous connection to a current head; it does not use allocation IDs as ownership, bridge visual gaps, predict motion or register extra worms. Stale/ambiguous/unsupported geometry remains unavailable. These observations do not establish a server capture hitbox; independent gameplay confirmation remains pending.
+
+Existing coverage: [ShywormProjectionTest](../../src/test/kotlin/net/johnceo/sparklingmutuals/safari/esp/ShywormProjectionTest.kt). Source inspection only; no local runtime suite or live Minecraft validation was performed for this documentation audit. CI results are separate.
+
+## Open questions
+
+Independent live body-contact validation remains pending; supplied clip/focused snapshots are fitting evidence, not server hitbox confirmation.
+
+Population guarantees and capsule success/escape claims from supplied notes were not live revalidated; see [audit D2](../IMPLEMENTATION_AUDIT.md#d2).
 
 ## Last updated
 
-2026-10-17 - Removed detected-Sparkling sightings as a separate completion requirement; normal species rules remain.
-
-
-2026-10-17 - Local Full Clear completion also advances progress; other biomes without local proof retain report requirements.
-
-2026-10-17 - Separated local Full Clear missing-panel proof from report-based progress.
-
-2026-10-16 - Full Clear progress uses report plus minimum captures, with early fixed-count completion and positive-evidence reopening.
-
-2026-10-16 - Unique advances per shared species capture; Rockmite/Snoozle additionally require cd with loaded-source revalidation.
-
-2026-10-15 - Retained qualified distinct UUID checks for every critter throughout Unique/Sparkling runs, with capture reconciliation and independent source gates. Full Clear remains capture-based.
-
-2026-10-17 - Added focused body diagnostics for capsule-contact investigation; tracking and completion rules are unchanged.
-
-2026-10-17 - Added provisional separate body-piece contact estimates from focused live snapshots; tracking and completion rules remain unchanged.
-
-2026-10-17 - Corrected body-contact readiness under unrelated target crowding and added cached readiness counts to explicit diagnostics; tracking and completion rules remain unchanged.
-
-2026-10-17 - Added bounded changed-stand checks to prevent repeated unrelated metadata from starving body readiness; independent live retry remains pending.
-
-## Capsule body investigation
-
-The human reported that a surfaced Shyworm can be caught by hitting its visible body, while the contact diamond appeared only near its head. The supplied clip shows green body pieces extending beyond that head-area proxy. The selected recorder export contains zero native head bounds and does not identify the other pieces or their relationship to the head; it does not establish the server's capture hitbox.
-
-In Safari, `/sm debug` now appends local `SM_SHYWORM_BODY` JSON lines to `logs/latest.log`. Stand within roughly 8 blocks of one ordinary surfaced Shyworm, leave capsule hiding off, and run the command three times while its green body is visible and moving, about one second apart. No throw or shot recording is required. Stay in the same world for those snapshots. A later hidden snapshot can help distinguish the states if convenient, but no absence in a limited scan proves the worm has gone.
-
-The capture considers at most 4,096 entries from the existing diagnostic list, selects the nearest two identified heads within 24 blocks, and retains at most 64 candidate parts. Visual/interaction entities within 8 blocks of a selected head and directly linked carriers/passengers are candidates. Heads and explicit links are prioritised; scan, head, candidate and passenger limits are reported. Candidates remain unverified membership, not new contact bounds.
-
-The additional `contact_scene` row reports cached counts and readiness flags only. It distinguishes an unfinished association sweep from incomplete global target coverage. Crowding by unrelated critters no longer leaves body support pending forever; a separate bounded connection map preserves heads and body connectors that the contact target ranking omits. An over-budget or ambiguous connection map still withholds body estimates. The initial live clip and nineteen debug snapshots exposed global target crowding. After that repair, two new snapshots still showed body discovery pending despite 54 recognised connection nodes, five heads and no connection overflow. Replaying their focused geometry supported 21 pieces in each snapshot. An offline populated scene reproduced readiness starvation from repeated unrelated stand metadata during multi-tick discovery. Changed equipped stands now receive bounded direct checks; pending checks still suppress body markers immediately, and overflow requires a fresh sweep. Added cached counters distinguish metadata work from structural restarts. The exact live trigger was not identifiable from the earlier snapshot fields, so independent gameplay confirmation remains pending; neither repair establishes server capture bounds.
-
-Rows contain player-eye-relative positions/bounds, rotation, velocity, visibility, numeric runtime relationships, registry item/block IDs, texture hashes, armour-stand poses and display transforms when observed. Missing/nonfinite geometry stays unavailable. They omit player entities, names, UUIDs, raw profiles, arbitrary item data and text-display content. The existing general debug output is unchanged; share or inspect only the `SM_SHYWORM_BODY` lines for this investigation. Nothing uploads automatically. Four local snapshots now support a provisional contact-only extension: the repeated body texture occurs on seven separate marker armour-stand head-items, with a raised trailing section even while the head is low. The guide checks those pieces separately using the existing head-item visual box, requiring a bounded unambiguous connection to a current identified head. It does not use allocation IDs as ownership evidence, bridge gaps between parts, predict their motion, or register the pieces as extra worms. Missing/ambiguous connections and stale/unsupported geometry remain unavailable. These snapshots are fitting evidence; neither the visual proxy nor its connection thresholds establish the server capture hitbox. See the [contact guide](../CAPTURE_SHOT_RECORDING.md#experimental-capsule-path) for bounds and independent live validation limitations.
+2026-10-19 (America/New_York) — Uniform species reference; audited evidence, modes, display and lifecycle. Reviewed source: `93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee`; no local runtime source changes reviewed. See [revision convention](../DOCUMENTATION_GUIDE.md).

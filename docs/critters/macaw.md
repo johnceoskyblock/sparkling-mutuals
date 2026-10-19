@@ -1,49 +1,80 @@
 # Macaw
 
-[Index](README.md) · [Shared evidence rules](TRACKING.md)
+[Index](README.md) · [Terminology](../DOCUMENTATION_GUIDE.md) · [Shared evidence](TRACKING.md)
 
-**Biome:** Forest. **Recorded Full Clear baseline:** Variable; determine from actual spawns. Baseline counts are carried from earlier notes, not newly verified server guarantees.
+## Overview
+
+| Property | Value | Status |
+| --- | --- | --- |
+| Biome | Forest | Implemented roster |
+| Rarity | Legendary | Supplied server notes; not live revalidated |
+| Spawn source | Birdfeeder food opportunities | Implemented evidence path; mechanics unverified |
+| Population model | Variable population; 9 implemented baseline feeding equivalents plus known extras | Implemented rule, not server guarantee |
+| Full Clear minimum | 0 shared captures before species adjustments | Implemented fallback/minimum |
+| Local scan coverage | Forest local spawning scan: radius 15 blocks around X/Z (6, 51) | Implemented coverage |
+
+## What makes this critter different
+
+- All three birds share spawning proof; a Macaw pair counts as one feeding equivalent. Historical UUIDs and attraction chat do not establish spawning.
+- Unique waives the catch for locally proven no-Macaw spawning, or outside Forest with valid fd and captures of both other birds. Full Clear retains one-Macaw credit.
+
+## Spawn prerequisites
+
+Bag of Seeds, Wriggleworm and Yogi Berry create feeding opportunities. Starting grants, floor pickups, held food and party contributions are separate evidence; [bird completion](../BIRD_COMPLETION.md) owns the formula.
 
 ## Evidence
 
-- **Legendary: can escape a standard capsule; Masterful catches are guaranteed once hit.** An escaped critter may return with a replacement UUID; that alone does not prove an additional Macaw spawn.
-- Your capture confirmation adds one personal and one shared catch. A party loot-share confirmation adds one shared catch, attributed to its catcher.
-- Keep any captures received before visiting Forest; subtract them from the remaining requirement once, as described in the shared rules.
+| Evidence | What it establishes | What it does not establish |
+| --- | --- | --- |
+| Personal capture / party loot share ([exact messages](MESSAGES.md)) | Own capture adds personal + shared evidence; attributed loot share adds shared evidence | Local checks, source resolution or personal PB from another player's catch |
+| Live red/blue parrot / qualified check | Current sighting; qualified evidence contributes under mode rule | Capture or absence inferred from missing outline |
+| Supplied capsule notes | Supplied notes say standard capsules can fail, replacement UUIDs may follow escape, and Masterful catches are guaranteed once hit. | Server mechanics revalidated by this source audit; see [D2](../IMPLEMENTATION_AUDIT.md#d2) |
+| Qualified Forest capture-plus-current-bird scan | Feeding equivalents and known species totals | Extra population from historical UUIDs or attraction chat |
 
-## Completion
+## Completion by mode
 
-| Mode | Rule |
+| Mode | Capture requirement | Checking or source requirement | Party-report effect |
+| --- | --- | --- | --- |
+| Sparkling | None for ordinary birds. | Inside Forest: qualified shared captures plus current birds cover food opportunities, with no held or known floor food remaining. | Outside Forest: valid fd supplies spawning trust; retained local proof or sufficient captures with a report can also apply. |
+| Unique | One shared capture. Waived only for implemented no-Macaw cases. | Spawning ledger resolved; owned discoveries do not waive spawning. | Outside Forest, fd can supply spawning trust; never adds captures. |
+| Full Clear | Bird captures cover feeding target and known Bluebird/Parakeet totals, with one-Macaw credit. | Complete current starting reports and either known initial floor coverage or a received fd, plus no known held/uncollected food. The capture formula does not additionally require local spawning proof or a positive current-empty inventory sample. | fd never supplies missing captures. |
+
+## Display and highlights
+
+| Outcome | Implemented behavior |
 | --- | --- |
-| Unique | Qualified spawning plus one shared catch; waive this catch for proven no-Macaw spawning inside Forest, or fd outside Forest once both other birds have shared catches. |
-| Full Clear | Real captures must cover expected food opportunities and known normal-bird populations, inside or outside Forest. Retain the one-Macaw exception; fd never supplies missing captures. |
-| Sparkling | Inside Forest: qualified shared captures + current rendered birds reach expected spawning. Outside: fd supplies spawning trust. No ordinary catch is needed. |
+| Progress | Mode-specific predicate above; see [shared modes](../../SAFARI_LOGIC.md). |
+| Missing/unchecked row | Unique uses spawning plus own capture/no-Macaw rule. Sparkling lists needed unresolved spawning checks. Full Clear uses the shared bird capture predicate; no additional local empty scan. See [panel rules](../MISSING_PANEL.md). |
+| Counters | None in the species row; capture panel shows actual shared catches. |
+| Ordinary ESP | Standard mode/discovery/model filters. Unique stops after its own first catch even if spawning remains pending. Sparkling normally has a per-UUID 10-second window. |
+| Source helpers | Food-drop highlights follow [FLOOR_DROPS](FLOOR_DROPS.md); hiding a marker does not use food. |
+| Automatic completion announcements | Shared local whole-biome/report-readiness gates in [mode rules](../../SAFARI_LOGIC.md). Forest also requires initial-clearer status and 6 separate local food pickups. |
+| PB eligibility | Personal Unique: own catch of every species. Full Clear: personal captures/local proof. Party Unique: separate shared-capture/absence predicate; progress alone is insufficient. |
 
-## Specific deductions
+## Party reports and late entry
 
-Use [Forest bird completion](../BIRD_COMPLETION.md) for the authoritative nine-opportunity baseline, known starting/party food, Macaw-pair accounting, Safari-wide remaining-food blockers and report eligibility. Feeder attraction chat is ignored. Any locally held bird food or known uncollected Forest floor drop blocks completion. Only initial Forest clearers with at least six separate local food pickups may send fd, after local spawning and the other Forest requirements pass.
+An fd records the target at receipt; new contributions can outgrow it. Local held food or known Forest floor food blocks remote trust. Inside Forest the local spawning path applies; see [bird rules](../BIRD_COMPLETION.md). See [evidence/lifecycle](TRACKING.md).
 
-These rules apply only to the three birds. They do not waive Honeybug nest requirements or another Forest species' normal checks. Detected Sparkling entities add no separate capture requirement.
+## Retention and reopening
+
+Completed qualified population proof survives unloading; a new pickup clears it. Known floor food survives unknown scans/travel. Starting/party extras remain run-owned; early reports and legacy notices overlap by sender/type maxima. Additional contribution quantities invalidate old current/retained spawning proof; missing reports remain unknown. New run resets the ledger. Pending detection identities add no separate completion gate; see [audit D1](../IMPLEMENTATION_AUDIT.md#d1).
+
+## Examples
+
+Nine feeding equivalents with no held or remaining floor food can finish Sparkling checking. New extra food increases the target; fd cannot create Full Clear captures.
+
+## Implementation and validation
+
+[Shared source/caller map](TRACKING.md#source-and-validation-references) covers capture/event registration, scanner, mode predicates, UI/report consumers, PBs and resets. Species entry: `Macaw` in `SafariRun` and `SafariEspRules.mobs`; dedicated owners below.
+
+[SafariBirdLedger; called by SafariRun.scanBirdSources / birdComplete](../../src/main/kotlin/net/johnceo/sparklingmutuals/safari/resources/SafariBirdLedger.kt)
+
+Existing coverage: [SafariBirdLedgerTest](../../src/test/kotlin/net/johnceo/sparklingmutuals/safari/resources/SafariBirdLedgerTest.kt). Source inspection only; no local runtime suite or live Minecraft validation was performed for this documentation audit. CI results are separate.
+
+## Open questions
+
+Population guarantees and capsule success/escape claims from supplied notes were not live revalidated; see [audit D2](../IMPLEMENTATION_AUDIT.md#d2).
 
 ## Last updated
 
-2026-10-18 - Replaced feeder chat with qualified render/capture spawning and the new mode-specific bird and fd rules.
-
-
-2026-10-17 - Removed detected-Sparkling sightings as a separate completion requirement; normal species rules remain.
-
-
-2026-10-17 - Prevented reports from inventing the zero-catch outcome and clarified local versus remote completion.
-
-2026-10-17 - Distinguished local Full Clear missing rows from progress completion.
-
-2026-10-16 - Full Clear progress uses report plus minimum captures, with early fixed-count completion and positive-evidence reopening.
-
-2026-10-16 - Unique advances per shared species capture; Rockmite/Snoozle additionally require cd with loaded-source revalidation.
-
-2026-10-16 - A confirmed Sparkling Macaw completes Unique/Sparkling immediately; Full Clear retains its normal capture/food requirements.
-
-2026-10-16 - Bird completion uses shared captures plus current nearby bird counts, feeder evidence, ground drops and inventory; no distinct UUID accounting.
-
-2026-10-16 - Unique accepts resolved no-Macaw runs for Forest progress and removes Macaw from the missing panel without creating a catch.
-
-2026-10-15 - Added mid-run Forest feeding recovery; retained independent species completion and the one-catch Macaw exception.
+2026-10-19 (America/New_York) — Added issue #68 early-report/initial-coverage gates and changed-demand reopening to the uniform species reference. Runtime reviewed at `76dd746`; automated/offline results do not certify live Hypixel coverage.
