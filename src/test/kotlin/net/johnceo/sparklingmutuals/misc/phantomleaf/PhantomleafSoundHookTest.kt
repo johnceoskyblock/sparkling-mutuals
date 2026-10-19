@@ -44,8 +44,10 @@ class PhantomleafSoundHookTest {
                     }
                 }
             }, 0)
-        assertTrue(calls.indexOf("resolve") >= 0)
-        assertTrue(calls.indexOf("getVolume") > calls.indexOf("resolve"),
+        // Minecraft 26.3 renamed resolve to getOrResolve; both initialize the sound first.
+        val resolution = calls.indexOfFirst { it == "resolve" || it == "getOrResolve" }
+        assertTrue(resolution >= 0, "The actual Minecraft play method must resolve the sound")
+        assertTrue(calls.indexOf("getVolume") > resolution,
             "The actual Minecraft hook target must occur after sound resolution")
     }
 }
