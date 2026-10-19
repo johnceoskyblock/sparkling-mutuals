@@ -118,8 +118,8 @@ class StartingResourceDeliveryTest {
             assertEquals(expected.toSet(), output.map { it.type }.toSet())
             assertEquals(expected.size, output.size)
             assertTrue(output.all { it.quantity == 1 && it.missing.size == 1 })
-            assertEquals(FloorDropType.COIN in expected, run.resources.pending(SafariBiome.HAUNTED))
-            assertEquals(FloorDropType.SEEDS in expected, run.resources.pending(SafariBiome.FOREST))
+            assertFalse(run.resources.pending(SafariBiome.HAUNTED), "local title delivery creates no shared obligation")
+            assertFalse(run.resources.pending(SafariBiome.FOREST), "local title delivery creates no shared obligation")
         }
     }
     @Test fun `temporary destination or discovery suppression does not lose an unsent reminder`() {
