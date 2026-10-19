@@ -1,42 +1,79 @@
 # Woodchucker
 
-[Index](README.md) · [Shared evidence rules](TRACKING.md)
+[Index](README.md) · [Terminology](../DOCUMENTATION_GUIDE.md) · [Shared evidence](TRACKING.md)
 
-**Biome:** Forest. **Recorded Full Clear baseline:** 3. Baseline counts are carried from earlier notes, not newly verified server guarantees.
+## Overview
+
+| Property | Value | Status |
+| --- | --- | --- |
+| Biome | Forest | Implemented roster |
+| Rarity | Uncommon | Supplied server notes; not live revalidated |
+| Spawn source | Ordinary biome population; no dedicated spawn-event gate | Implemented evidence path; mechanics unverified |
+| Population model | Implemented minimum; actual population can exceed it | Implemented rule, not server guarantee |
+| Full Clear minimum | 3 shared captures before species adjustments | Implemented fallback/minimum |
+| Local scan coverage | X/Z (3, 47); Full Clear radius 50 blocks; Sparkling radius 55 blocks | Implemented coverage |
+
+## What makes this critter different
+
+- Implemented Forest coverage is 50 Full Clear / 55 Sparkling blocks around X/Z (3, 47). Earlier approximate notes did not verify a server boundary.
+
+## Spawn prerequisites
+
+None. No species-specific resource or structure gate is used.
 
 ## Evidence
 
-- **Uncommon: guaranteed catch; no capsule escape.** A UUID identifies an observed entity; repeated sightings do not add another Woodchucker.
-- Your capture confirmation adds one personal and one shared catch. A party loot-share confirmation adds one shared catch, attributed to its catcher.
-- Keep any captures received before visiting Forest; subtract them from the remaining requirement once, as described in the shared rules.
+| Evidence | What it establishes | What it does not establish |
+| --- | --- | --- |
+| Personal capture / party loot share ([exact messages](MESSAGES.md)) | Own capture adds personal + shared evidence; attributed loot share adds shared evidence | Local checks, source resolution or personal PB from another player's catch |
+| Live creaking / qualified check | Current sighting; qualified evidence contributes under mode rule | Capture or absence inferred from missing outline |
+| Supplied capsule notes | Common/Uncommon: supplied notes say no capsule escape; Masterful catches guaranteed once hit. | Server mechanics revalidated by this source audit; see [D2](../IMPLEMENTATION_AUDIT.md#d2) |
+| Retained qualified UUID check ([rules](TRACKING.md)) | Distinct checks reconciled with earlier captures | Historical sighting and its later catch counted twice |
 
-## Completion
+## Completion by mode
 
-| Mode | Rule |
+| Mode | Capture requirement | Checking or source requirement | Party-report effect |
+| --- | --- | --- | --- |
+| Sparkling | None for ordinary critters; a confirmed Sparkling capture also completes the check. | 3 reconciled checks from qualified UUID sightings/shared captures; retain checks for the run. | Party fd can supply inherited checking; local scans retire it. |
+| Unique | One shared capture, or the confirmed-Sparkling capture override. | None. | Does not supply a capture. |
+| Full Clear | At least 3 shared captures. Local proof and report-based progress have [separate raised-target scopes](TRACKING.md#full-clear-evidence-and-late-entry). | Qualified empty local scan for row removal/local progress. | Without local proof, report plus capture minimum can complete progress; row still needs local proof. |
+
+## Display and highlights
+
+| Outcome | Implemented behavior |
 | --- | --- |
-| Unique | One confirmed shared catch immediately completes Unique and removes the missing row, without a local Sparkling scan/radius requirement. Detected Sparkling entities do not add a separate capture requirement. |
-| Full Clear | Local capture/source proof and a qualified empty scan advance progress and remove the missing row without a report; retain that proof after leaving. Other biomes without local proof use party report plus minimum captures, with existing fixed-count exceptions. Positive remaining critters reopen local completion. See the [per-critter panel reference](../MISSING_PANEL.md). |
-| Sparkling | Record distinct UUIDs seen inside this species' qualifying scan area and retain their checked progress for the run, including after unloading and biome reentry. Reconcile shared captures without counting a later catch of a seen UUID twice; source requirements remain separate. |
+| Progress | Mode-specific predicate above; see [shared modes](../../SAFARI_LOGIC.md). |
+| Missing/unchecked row | Unique uses its capture/source predicate. Sparkling lists needed unresolved checks. Full Clear needs local capture/absence proof, separately from report-based progress. See [panel rules](../MISSING_PANEL.md). |
+| Counters | None in the species row; capture panel shows actual shared catches. |
+| Ordinary ESP | Unique: until first shared capture. Full Clear: eligible uncaught models. Sparkling: discovery-gated, normally up to 10 seconds per UUID. Settings and model validity still apply. |
+| Source helpers | None. |
+| Automatic completion announcements | Shared local whole-biome/report-readiness gates in [mode rules](../../SAFARI_LOGIC.md). Forest also requires initial-clearer status and 6 separate local food pickups. |
+| PB eligibility | Personal Unique: own catch of every species. Full Clear: personal captures/local proof. Party Unique: separate shared-capture/absence predicate; progress alone is insufficient. |
 
-## Specific deductions
+## Party reports and late entry
 
-- Local Full Clear checks advance progress and remove the missing row without a report. Remote progress without local proof retains its report gate and existing fixed-count exceptions.
+Captures received before visiting this biome remain in the run. Reports supply checking trust, never missing capture events. For late entry, use retained shared captures plus qualified local coverage; absence alone is insufficient. See [evidence/lifecycle](TRACKING.md).
 
-- Partial-clear entry: minimum shared captures + qualifying UUID-check radius + no remaining critters/spawns establishes Full Clear without seeing captured UUIDs again. Apply species-specific source checks and [shared radius rules](TRACKING.md#partially-cleared-biome).
-- Reported scan coverage is approximately **50–55 blocks from the Forest center**. Use center-based coverage; the exact boundary remains to be pinned down.
-- Observed in testing: some rendered Woodchuckers had no ESP outline. Mode, capture state and settings were not specified, so the cause remains unconfirmed. A missing outline is not absence or capture evidence.
+## Retention and reopening
+
+Captures and qualified UUID checks persist through unloading/travel. Retained local Full Clear row proof survives leaving its radius; positive remaining population revokes local proof. A new run resets evidence; the ended run can remain displayed. Pending detection identities add no separate completion gate; see [audit D1](../IMPLEMENTATION_AUDIT.md#d1).
+
+## Examples
+
+One party loot share completes Unique Woodchucker. Full Clear still needs its implemented minimum and local empty coverage, or report-based progress under the shared rule.
+
+## Implementation and validation
+
+[Shared source/caller map](TRACKING.md#source-and-validation-references) covers capture/event registration, scanner, mode predicates, UI/report consumers, PBs and resets. Species entries: `Woodchucker` in `SafariFullClear.minimum` and `SafariEspRules.mobs`; [ForestCompletionZones.zones](../../src/main/kotlin/net/johnceo/sparklingmutuals/safari/completion/ForestCompletionZones.kt).
+
+Existing coverage: [SafariFullClearProgressTest](../../src/test/kotlin/net/johnceo/sparklingmutuals/safari/completion/SafariFullClearProgressTest.kt). Source inspection only; no local runtime suite or live Minecraft validation was performed for this documentation audit. CI results are separate.
+
+## Open questions
+
+Earlier observation reported rendered Woodchuckers without outlines; mode, captures and settings were unspecified. Cause remains unconfirmed.
+
+Population guarantees and capsule success/escape claims from supplied notes were not live revalidated; see [audit D2](../IMPLEMENTATION_AUDIT.md#d2).
 
 ## Last updated
 
-2026-10-17 - Removed detected-Sparkling sightings as a separate completion requirement; normal species rules remain.
-
-
-2026-10-17 - Local Full Clear completion also advances progress; other biomes without local proof retain report requirements.
-
-2026-10-17 - Separated local Full Clear missing-panel proof from report-based progress.
-
-2026-10-16 - Full Clear progress uses report plus minimum captures, with early fixed-count completion and positive-evidence reopening.
-
-2026-10-16 - Unique advances per shared species capture; Rockmite/Snoozle additionally require cd with loaded-source revalidation.
-
-2026-10-15 - Retained qualified distinct UUID checks for every critter throughout Unique/Sparkling runs, with capture reconciliation and independent source gates. Full Clear remains capture-based.
+2026-10-19 (America/New_York) — Uniform species reference; audited evidence, modes, display and lifecycle. Reviewed source: `93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee`; no local runtime source changes reviewed. See [revision convention](../DOCUMENTATION_GUIDE.md).
