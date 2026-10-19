@@ -35,7 +35,7 @@ class SafariFeatureIntegrationTest {
         accept(setOf("local"), mapOf("local" to SafariRoster.all.map { it.name }.toSet() - missing.toSet()))
     }
 
-    @Test fun `fresh GUI independently switchable features are on except the two requested exceptions`() {
+    @Test fun `fresh GUI retains defaults with experimental preview explicitly opt in`() {
         ConfigManager.init(dir); ContestConfig.init(dir)
         val switches = linkedMapOf<String, Boolean>()
         fun inspect(view: Any, path: String = "") {
@@ -49,7 +49,7 @@ class SafariFeatureIntegrationTest {
         }
         inspect(SafariSettings())
         assertTrue(switches.size >= 40, "Inspect nested GUI options, including panel borders")
-        val exceptions = setOf("history.instaSell", "history.toParty", "warp.enabled")
+        val exceptions = setOf("history.instaSell", "history.toParty", "warp.enabled", "safari.experimentalCapsulePath")
         val modes = setOf("modes.unique.enabled", "modes.fullClear.enabled", "modes.sparkling.enabled")
         switches.filterKeys { it !in modes }.forEach { (name, value) -> assertEquals(name !in exceptions, value, name) }
         assertEquals(1, modes.count { switches[it] == true })

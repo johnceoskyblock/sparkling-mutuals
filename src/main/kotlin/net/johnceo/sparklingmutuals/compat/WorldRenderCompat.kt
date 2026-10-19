@@ -4,6 +4,8 @@ package net.johnceo.sparklingmutuals.compat
 /*import com.mojang.renderpearl.api.pipeline.DepthStencilState
 import com.mojang.renderpearl.api.pipeline.RenderPipeline
 import com.mojang.renderpearl.api.pipeline.CompareOp
+import com.mojang.renderpearl.api.pipeline.ColorTargetState
+import com.mojang.renderpearl.api.pipeline.BlendFunction
 *///? } else {
 import com.mojang.blaze3d.pipeline.DepthStencilState
 import com.mojang.blaze3d.pipeline.RenderPipeline
@@ -22,21 +24,42 @@ import net.minecraft.client.renderer.rendertype.*
 import net.minecraft.network.chat.Component
 import net.minecraft.util.LightCoordsUtil
 import net.minecraft.world.phys.AABB
+import net.minecraft.world.phys.Vec3
 import org.joml.Matrix4f
 
 /** API changes only: all callers retain their world coordinates, colors and visibility rules. */
+enum class WorldDepthMode { THROUGH_TERRAIN, OCCLUDED }
+
 object WorldRenderCompat {
-    fun renderType(name: String, filled: Boolean = false, cull: Boolean? = false): RenderType {
+    fun contactLines(context:LevelRenderContext,type:RenderType,worldLines:List<net.johnceo.sparklingmutuals.safari.shots.preview.contacts.ContactLine>) {
+        val client=Minecraft.getInstance();val world=client.level;val camera=client.gameRenderer.smCamera.position()
+        val lines=worldLines.toList().flatMap { line ->
+            if(!line.width.isFinite() || line.width<=0) emptyList() else WorldLineGeometry.segments(
+                listOf(Vec3(line.from.x,line.from.y,line.from.z),Vec3(line.to.x,line.to.y,line.to.z)),camera).map{Triple(it,line.color,line.width)}
+        }
+        if(lines.isEmpty()) return
+        geometry(context,type) { pose,vertices ->
+            if(client.level!==world) return@geometry
+            for((line,color,width) in lines) for(point in listOf(line.from,line.to))
+                vertices.addVertex(pose,point.x.toFloat(),point.y.toFloat(),point.z.toFloat()).setColor(color)
+                    .setNormal(pose,line.normal.x.toFloat(),line.normal.y.toFloat(),line.normal.z.toFloat()).setLineWidth(width)
+        }
+    }
+    fun renderType(name: String, filled: Boolean = false, cull: Boolean? = false, depth: WorldDepthMode = WorldDepthMode.THROUGH_TERRAIN, afterShaders: Boolean = false): RenderType {
         val builder = RenderPipeline.builder(
             if (filled) RenderPipelines.DEBUG_FILLED_SNIPPET else RenderPipelines.LINES_SNIPPET)
             .withLocation(SparklingMutuals.id("pipeline/$name"))
-            .withDepthStencilState(DepthStencilState(CompareOp.ALWAYS_PASS, false))
+            .withDepthStencilState(DepthStencilState(if(depth==WorldDepthMode.OCCLUDED) DepthStencilState.DEFAULT.depthTest() else CompareOp.ALWAYS_PASS, false))
+        // 26.3's line snippet leaves color targets to its caller; filled geometry already supplies one.
+        //? if >=26.3 {
+        /*if (!filled) builder.withColorTargetState(ColorTargetState(BlendFunction.TRANSLUCENT))
+        *///? }
         cull?.let { builder.withCull(it) }
         val pipeline = RenderPipelines.register(builder.build())
         val setup = RenderSetup.builder(pipeline).setLayeringTransform(LayeringTransform.VIEW_OFFSET_Z_LAYERING)
         // 26.3 routes feature geometry through the frame's render passes; output targets no longer exist.
         //? if <26.3 {
-        setup.setOutputTarget(OutputTarget.ITEM_ENTITY_TARGET)
+        setup.setOutputTarget(if (afterShaders) OutputTarget.MAIN_TARGET else OutputTarget.ITEM_ENTITY_TARGET)
         //? }
         return RenderType.create("sparkling-mutuals:$name", setup.createRenderSetup())
     }
@@ -72,6 +95,21 @@ object WorldRenderCompat {
                 val nx = if (axis == 0) 1f else 0f; val ny = if (axis == 1) 1f else 0f; val nz = if (axis == 2) 1f else 0f
                 vertices.addVertex(pose, x, y, z).setColor(color).setNormal(pose, nx, ny, nz).setLineWidth(width)
                 vertices.addVertex(pose, ex, ey, ez).setColor(color).setNormal(pose, nx, ny, nz).setLineWidth(width)
+            }
+        }
+    }
+
+    fun polyline(context: LevelRenderContext, type: RenderType, worldPoints: List<Vec3>, color: Int, width: Float = 2f) {
+        if(!width.isFinite() || width<=0f) return
+        val client=Minecraft.getInstance()
+        val world=client.level
+        val lines=WorldLineGeometry.segments(worldPoints,client.gameRenderer.smCamera.position())
+        if(lines.isEmpty()) return
+        geometry(context,type) { pose,vertices ->
+            if(client.level !== world) return@geometry
+            for(line in lines) for(point in listOf(line.from,line.to)) {
+                vertices.addVertex(pose,point.x.toFloat(),point.y.toFloat(),point.z.toFloat()).setColor(color)
+                    .setNormal(pose,line.normal.x.toFloat(),line.normal.y.toFloat(),line.normal.z.toFloat()).setLineWidth(width)
             }
         }
     }

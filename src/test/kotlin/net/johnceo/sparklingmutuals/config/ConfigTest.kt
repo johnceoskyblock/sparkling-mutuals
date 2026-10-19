@@ -9,7 +9,60 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 
 class ConfigTest {
+    @Test fun `single projection switch preserves old master choice and drops the obsolete gate on save`() {
+        val file=dir.resolve("sparkling-mutuals.properties")
+        for(master in listOf(false,true)) for(oldGate in listOf(false,true)) {
+            Files.writeString(file,"experimentalCapsulePath=$master\nallowUncalibratedCapsuleEstimates=$oldGate\ncapsulePathWidth=4.0\nshowCapsuleGuideThroughTerrain=false\n")
+            ConfigManager.init(dir)
+            assertEquals(master,ConfigManager.experimentalCapsulePath)
+            val settings=SafariSettings()
+            settings.safari.experimentalCapsulePath=!master
+            settings.apply()
+            ConfigManager.init(dir)
+            assertEquals(!master,ConfigManager.experimentalCapsulePath)
+            assertEquals(4f,ConfigManager.capsulePathWidth)
+            assertFalse(ConfigManager.showCapsuleGuideThroughTerrain)
+            val saved=java.util.Properties().also { Files.newInputStream(file).use(it::load) }
+            assertFalse(saved.containsKey("allowUncalibratedCapsuleEstimates"),"Obsolete second gate must not survive a settings save")
+        }
+    }
+    @Test fun `through terrain display preference loads from saved settings`() {
+        Files.writeString(dir.resolve("sparkling-mutuals.properties"),"showCapsuleGuideThroughTerrain=false\n")
+        ConfigManager.init(dir)
+        assertFalse(ConfigManager.showCapsuleGuideThroughTerrain)
+    }
+    @Test fun `through terrain toggle saves through the settings screen and defaults on for old files`() {
+        ConfigManager.init(dir);assertTrue(ConfigManager.showCapsuleGuideThroughTerrain)
+        val settings=SafariSettings();settings.safari.showCapsuleGuideThroughTerrain=false;settings.apply()
+        ConfigManager.init(dir);assertFalse(ConfigManager.showCapsuleGuideThroughTerrain)
+        Files.writeString(dir.resolve("sparkling-mutuals.properties"),"showCapsuleGuideThroughTerrain=invalid\n")
+        ConfigManager.init(dir);assertTrue(ConfigManager.showCapsuleGuideThroughTerrain)
+    }
+    @Test fun `projection width persists and remains finite for old and invalid files`() {
+        ConfigManager.init(dir);assertEquals(3f,ConfigManager.capsulePathWidth)
+        val settings=SafariSettings();settings.safari.capsulePathWidth=9f;settings.apply()
+        ConfigManager.init(dir);assertEquals(5f,ConfigManager.capsulePathWidth)
+        Files.writeString(dir.resolve("sparkling-mutuals.properties"),"capsulePathWidth=NaN\n")
+        ConfigManager.init(dir);assertEquals(3f,ConfigManager.capsulePathWidth)
+    }
     @TempDir lateinit var dir: Path
+    @Test fun `capsule preview is opt in and survives settings application and reload`() {
+        val old=ConfigManager.experimentalCapsulePath
+        try {
+            ConfigManager.init(dir)
+            assertFalse(ConfigManager.experimentalCapsulePath)
+            Files.writeString(dir.resolve("sparkling-mutuals.properties"),"experimentalCapsulePath=invalid\n")
+            ConfigManager.init(dir)
+            assertFalse(ConfigManager.experimentalCapsulePath)
+            val settings=SafariSettings()
+            settings.safari.experimentalCapsulePath=true
+            settings.apply()
+            ConfigManager.experimentalCapsulePath=false
+            ConfigManager.init(dir)
+            assertTrue(ConfigManager.experimentalCapsulePath)
+            assertTrue(SafariSettings().safari.experimentalCapsulePath)
+        } finally { ConfigManager.experimentalCapsulePath=old }
+    }
     @Test fun `HUD layouts and personal bests survive actual configuration saving`() {
         ConfigManager.init(dir)
         ConfigManager.personalBests.record("CAPTURE! You caught a Doomspiral!", SafariRun(1000), 62000)
