@@ -1,0 +1,21 @@
+Phantomleaf Solver attribution
+
+Adapted from SkyHanni by SkyHanni contributors, licensed under LGPL-2.1.
+Repository: https://github.com/SkyHanniStudios/SkyHanni
+Revision: b3543887dfb80d95ff9880b3f610167ac2c104f2
+Source: src/main/java/at/hannibal2/skyhanni/features/garden/greenhouse/PhantomleafSolver.kt
+https://github.com/SkyHanniStudios/SkyHanni/blob/b3543887dfb80d95ff9880b3f610167ac2c104f2/src/main/java/at/hannibal2/skyhanni/features/garden/greenhouse/PhantomleafSolver.kt
+
+Adaptation date: 2026-10-19.
+Adapted files: misc/phantomleaf/PhantomleafState.kt and
+misc/phantomleaf/PhantomleafSolver.kt under src/main/kotlin/net/johnceo/sparklingmutuals/.
+These derived files retain LGPL-2.1 rather than the CC0 license for the
+original portions of Sparkling Mutuals. The LGPL license is included alongside
+this notice in SkyHanni-LGPL-2.1.txt.
+
+Changes: separated client-independent calculation/state, replaced SkyHanni
+event/config/render utilities with Sparkling Mutuals' Fabric integration,
+added finite-input guards and resets on disable/leave, and added focused tests.
+The pitch range, distance formula, horizontal stationarity rule, search range,
+0.001 tolerance, mutation Y level, chat triggers and candidate colors follow
+upstream. No SkyHanni runtime dependency or automatic gameplay input is added.

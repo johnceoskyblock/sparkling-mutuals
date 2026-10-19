@@ -3,6 +3,7 @@ package net.johnceo.sparklingmutuals.history
 import java.util.concurrent.Executors
 import net.johnceo.sparklingmutuals.LocalChat
 import net.johnceo.sparklingmutuals.api.HypixelApi
+import net.johnceo.sparklingmutuals.api.ApiRetryWindow
 import net.johnceo.sparklingmutuals.hud.SkyblockSidebar
 import net.minecraft.client.Minecraft
 import org.slf4j.LoggerFactory
@@ -25,20 +26,27 @@ object OwnStats {
         private set
     private var fetchedAt = 0L
     private var fetching = false
+    private val retry = ApiRetryWindow()
 
     /** Read again soon, e.g. after a run ends. */
     fun refreshSoon() { fetchedAt = 0 }
 
     fun tick(client: Minecraft) {
         val now = System.currentTimeMillis()
-        if (fetching || now - fetchedAt < REFRESH_MILLIS || !HypixelApi.provider.enabled || !SkyblockSidebar.inSkyblock(client)) return
+        val provider = HypixelApi.provider
+        if (fetching || (if (retry.pending) !retry.due(now, provider) else now - fetchedAt < REFRESH_MILLIS) ||
+            !provider.enabled || !SkyblockSidebar.inSkyblock(client)) return
         val uuid = client.player?.uuid?.toString() ?: return
+        retry.reset()
         fetching = true; fetchedAt = now
         executor.submit {
             val result = runCatching { HypixelApi.getSafariProfile(uuid) }
             client.execute {
                 fetching = false
-                result.onFailure { logger.info("Own Safari stats lookup failed: {}", it.message) }.onSuccess { profile ->
+                result.onFailure {
+                    retry.failed(System.currentTimeMillis(), provider)
+                    logger.info("Own Safari stats lookup failed: {}", it.message)
+                }.onSuccess { profile ->
                     dex = profile.caught.toSet()
                     profile.runs?.let { runs = it }
                     profile.catches?.let { caught = it }
@@ -50,5 +58,5 @@ object OwnStats {
         }
     }
 
-    fun reset() { fetchedAt = 0; dex = emptySet(); runs = 0; caught = 0 }
+    fun reset() { fetchedAt = 0; dex = emptySet(); runs = 0; caught = 0; retry.reset() }
 }

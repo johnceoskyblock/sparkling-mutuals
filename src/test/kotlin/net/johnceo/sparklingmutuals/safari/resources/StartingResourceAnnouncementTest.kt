@@ -6,6 +6,35 @@ import org.junit.jupiter.api.Test
 import java.util.UUID
 
 class StartingResourceAnnouncementTest {
+    @Test fun `member without API profile data makes every mod user report their own unused food and coins`() {
+        val all = SafariRoster.all.map { it.name }.toSet()
+        val roster = setOf("ModA", "ModB", "NewPlayer")
+        val state = PartySparklingState().apply { select(roster) }
+        val runs = listOf(SafariRun(0), SafariRun(0))
+        runs.forEach { run ->
+            run.inventoryEvidence(listOf("Bag of Seeds" to 2, "Shining Coin" to 1), 0)
+            run.startingAnnouncement.observeArea(0, 0)
+            run.startingAnnouncement.observeArea(2, 100)
+            assertFalse(run.startingAnnouncement.dispatch(2100, state) { fail("still loading") })
+        }
+        val noData = net.johnceo.sparklingmutuals.commands.SafariLookup.discoveriesOrEmpty {
+            throw net.johnceo.sparklingmutuals.api.ApiFailure.dataUnavailable()
+        }
+        assertTrue(state.accept(roster, mapOf("ModA" to all, "ModB" to all, "NewPlayer" to noData)))
+        assertTrue(state.ready)
+        assertTrue(state.needs("Gimmiegold"))
+        assertTrue(listOf("Bluebird", "Parakeet", "Macaw").all(state::needs))
+        val sent = mutableListOf<String>()
+        assertTrue(runs[0].startingAnnouncement.dispatch(2100, state) { message ->
+            sent += message
+            SafariMessages.forRun("Party > ModA: $message", runs[1], true)
+        })
+        assertTrue(runs[1].startingAnnouncement.dispatch(2100, state, sent::add),
+            "Another mod user's report must not suppress this client's own starting resources")
+        assertEquals(listOf("[SM] Starting items: 2x Bag of Seeds; 1x Shining Coin",
+            "[SM] Starting items: 2x Bag of Seeds; 1x Shining Coin"), sent)
+        runs.forEach { assertFalse(it.startingAnnouncement.dispatch(4000, state, sent::add)) }
+    }
     private fun party(vararg needed: String) = PartySparklingState().apply {
         select(setOf("me"))
         accept(setOf("me"), mapOf("me" to (SafariRoster.all.map { it.name }.toSet() - needed.toSet())))

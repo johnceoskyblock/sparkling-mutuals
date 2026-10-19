@@ -24,6 +24,7 @@ import net.johnceo.sparklingmutuals.history.SparklingLog
 import net.johnceo.sparklingmutuals.history.TicketCounter
 import net.johnceo.sparklingmutuals.history.importing.LogImporter
 import net.johnceo.sparklingmutuals.honeyhives.HoneyHives
+import net.johnceo.sparklingmutuals.misc.phantomleaf.PhantomleafSolver
 import net.johnceo.sparklingmutuals.hud.SmallAlerts
 import net.johnceo.sparklingmutuals.party.PartyManager
 import net.johnceo.sparklingmutuals.safari.SafariAssist
@@ -83,6 +84,7 @@ object SparklingMutuals : ModInitializer {
         PlaytimeReader.register()
         BeeNests.register()
         HoneyHives.register()
+        PhantomleafSolver.register()
         SafariEsp.register()
         SafariAssist.register()
         TeammateEsp.register()
@@ -113,6 +115,7 @@ object SparklingMutuals : ModInitializer {
         PartyCommands.onClientTick(client)
         ContestTracker.onClientTick(client)
         HoneyHives.tick(client)
+        PhantomleafSolver.tick(client)
         SafariAssist.onClientTick(client)
         SafariTracking.onClientTick(client)
         RunHistory.tick(client)
@@ -135,6 +138,7 @@ object SparklingMutuals : ModInitializer {
     }
 
     private fun resetSession() {
+        PhantomleafSolver.reset()
         CapsulePreview.reset()
         net.johnceo.sparklingmutuals.safari.shots.ShotRecorder.disconnect()
         PartyCommands.reset()

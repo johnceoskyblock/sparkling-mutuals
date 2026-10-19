@@ -169,14 +169,14 @@ class SafariCompletionAnnouncementsTest {
         assertFalse(run.uniqueUnavailable("Macaw"), "spawn announcement is evidence even before the entity scan")
         assertFalse(run.uniqueComplete("Macaw", party("Macaw")))
     }
-    @Test fun `completed Cavern absence keeps plain species without explanatory rows`() {
+    @Test fun `completed Cavern absence removes Unique species without explanatory rows`() {
         unique()
         val run = SafariRun(0); val state = party("Rockmite", "Snoozle")
         run.visitBiome(SafariBiome.CAVERN)
         run.moundSurvey.scan(emptySet()) { true }
         run.updateCaptureEvidence(SafariBiome.CAVERN, emptySet(), true)
         val rows = SafariPanels.missing(run, SafariBiome.CAVERN, true, 0, walls = WallSummary(List(5) { WallState.BROKEN }), party = state).rows
-        assertTrue(rows.any { it.label == "Rockmite" || it.label == "Snoozle" })
+        assertFalse(rows.any { it.label == "Rockmite" || it.label == "Snoozle" })
         assertFalse(rows.any { it.label.startsWith("No ") })
         assertTrue(run.uniqueUnavailable("Rockmite")); assertTrue(run.uniqueUnavailable("Snoozle"))
     }

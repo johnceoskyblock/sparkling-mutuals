@@ -34,6 +34,12 @@ class SafariSettings : Config() {
 
     @JvmField @Category(name = "Customization", desc = "") val customization = CustomizationSettings(esp.floorColors)
 
+    @JvmField @Category(name = "Misc Endgame Features", desc = "") val miscEndgame = MiscEndgame()
+
+    class MiscEndgame {
+        @JvmField @ConfigOption(name = "Phantomleaf Solver", desc = "Find Phantomleaf hiding spots in the Garden from its sound. Stand still for two notes. Green: one candidate; yellow: move to narrow it down. Adapted from SkyHanni.")
+        @ConfigEditorBoolean var phantomleafSolver = ConfigManager.phantomleafSolver
+    }
     class General {
         @JvmField @ConfigOption(name = "Command help", desc = "Close settings and show commands in chat.")
         @ConfigEditorButton(runnableId = 3, buttonText = "Show help") var help = false
@@ -292,7 +298,7 @@ class SafariSettings : Config() {
     }
     fun apply(notifyMode: Boolean = false) {
         if (warp.enabled != ConfigManager.warpAlertsEnabled) AlertManager.toggleAlert()
-        val changes = listOf(ConfigManager::highlightTeammates to safari.highlightTeammates, ConfigManager::showTeammateNames to safari.showTeammateNames, ConfigManager::profitableShardEsp to modes.unique.profitable, ConfigManager::sparklingProfitableShardEsp to modes.sparkling.profitable, ConfigManager::partyCommandsEnabled to party.enabled, ConfigManager::downtimeCommand to party.downtime, ConfigManager::useCloudApi to api.cloud, ConfigManager::hideHauntedPaintings to safari.paintings,
+        val changes = listOf(ConfigManager::phantomleafSolver to miscEndgame.phantomleafSolver, ConfigManager::highlightTeammates to safari.highlightTeammates, ConfigManager::showTeammateNames to safari.showTeammateNames, ConfigManager::profitableShardEsp to modes.unique.profitable, ConfigManager::sparklingProfitableShardEsp to modes.sparkling.profitable, ConfigManager::partyCommandsEnabled to party.enabled, ConfigManager::downtimeCommand to party.downtime, ConfigManager::useCloudApi to api.cloud, ConfigManager::hideHauntedPaintings to safari.paintings,
             ConfigManager::shinyDetection to safari.shiny, ConfigManager::hideyhoQuestClicks to safari.hideyho, ConfigManager::hideyhoInsideOutside to safari.hideyhoInsideOutside,
             ConfigManager::progressHud to tracking.progress,
             ConfigManager::experimentalCapsulePath to safari.experimentalCapsulePath,

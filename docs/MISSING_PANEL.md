@@ -22,6 +22,8 @@ A **missing row** is an unfinished species entry, not an inventory/capture total
 
 Full Clear progress can use remote report/capture minima or fixed capture targets while a local missing row remains. A report alone cannot remove that row. Conversely, local capture/source/qualified absence proof can advance both without a report. Qualified absence proof is retained after travel until positive remaining evidence revokes it.
 
+In Unique mode, locally proven zero-spawn Macaw, Rockmite and Snoozle are removed from the species list. Macaw requires resolved bird feeding including known party extras and no encounter. Rockmite/Snoozle require fully resolved mounds/walls and a local Cavern absence scan with no encounter. Their absence also counts toward progress and local biome announcements; actual capture counts remain zero.
+
 Plain species names use their species colors. No checking prose, absence notes or duplicate Gazer footer is appended. When no species remain, Sparkling says **All checked!**; Unique/Full Clear say **All caught and checked!**. A separate source footer may still appear below that sentence.
 
 In Sparkling, title/editor label is **Unchecked** in every biome. Unique/Full Clear use the existing Missing setting/editor position; the panel title itself uses the biome and “Biome — N left”. Changing mode preserves saved position/settings.
@@ -95,5 +97,7 @@ Reviewed source: 93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee.
 The older Billygoat proposal expected Unique progress to wait for two checks after its first catch. Current uniqueComplete uses the same ordinary first-catch result for row/progress. This proposal/code distinction is recorded in [audit D13](IMPLEMENTATION_AUDIT.md#d13), not presented as implemented. Live layout/entity validation remains pending.
 
 ## Last updated
+
+2026-10-19 - Documented local Unique zero-spawn row removal, progress and biome reports for Macaw, Rockmite and Snoozle.
 
 2026-10-19 (America/New_York) — Replaced duplicate species quotas with UI ownership and explicit row/progress/helper distinctions. Reviewed source: 93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee; static source/caller review, no live Minecraft validation.

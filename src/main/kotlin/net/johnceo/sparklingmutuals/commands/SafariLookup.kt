@@ -17,6 +17,12 @@ object SafariLookup {
     private val birds = setOf("BLUEBIRD", "PARAKEET", "MACAW")
 
     @Synchronized fun clearCache() = cache.clear()
+    /** No profile/Safari history means no discoveries for party requirements, not an unfinished lookup. */
+    internal fun discoveriesOrEmpty(lookup: () -> Set<String>): Set<String> = try {
+        lookup()
+    } catch (failure: ApiFailure) {
+        if (failure.kind == ApiFailureKind.DATA_UNAVAILABLE) emptySet() else throw failure
+    }
     /** Both party commands and mode refreshes share a provider-scoped, serialized 60-second cache. */
     @Synchronized fun discoveries(uuid: String, key: String = ConfigManager.apiKey): Set<String> =
         discoveries(uuid, ApiProvider.capture(key))
@@ -26,7 +32,9 @@ object SafariLookup {
         val id = CacheKey(provider, uuid)
         val now = System.currentTimeMillis()
         cache[id]?.takeIf { now - it.timestamp < 60_000 }?.let { return it.discoveries }
-        val result = HypixelApi.getSparklingCritters(uuid, HypixelApi.getCurrentProfileUuid(uuid))
+        val result = discoveriesOrEmpty {
+            HypixelApi.getSparklingCritters(uuid, HypixelApi.getCurrentProfileUuid(uuid))
+        }
         check(provider == HypixelApi.provider) { "API provider changed during lookup" }
         cache[id] = Cached(result, System.currentTimeMillis())
         cache.entries.removeIf { System.currentTimeMillis() - it.value.timestamp > 60_000 }

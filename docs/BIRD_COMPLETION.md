@@ -53,6 +53,10 @@ Inventory is sampled before queuing and before dispatch decisions. Queued report
 - Additional food changes demand without adding captures. An old report whose recorded target is too small cannot alone waive that new demand.
 - Disabling bird ESP does not disable evidence collection. Capsule replacement UUIDs are not accumulated as feeding opportunities; current-population observations still depend on correct loaded entity identity.
 
+For a local Unique Forest clearer, no Macaw catch is required if no Macaw has ever been seen or caught and qualified population/source evidence resolves all food opportunities. This includes party-reported unused starting food. Remaining food markers, held food or insufficient accounted population block the waiver. The Macaw row then disappears and fd may send when every other Forest requirement is complete. A later Macaw sighting revokes the zero-spawn waiver.
+
+For a local Unique Forest clearer, no Macaw catch is required if no Macaw has ever been seen or caught and qualified population/source evidence resolves all food opportunities. This includes party-reported unused starting food. Remaining food markers, held food or insufficient accounted population block the waiver. The Macaw row then disappears and fd may send when every other Forest requirement is complete. A later Macaw sighting revokes the zero-spawn waiver.
+
 ## Examples
 
 - Seven Bluebird catches and two live Parakeets, zero floor/held food, and a qualified nine-opportunity observation can satisfy Sparkling without a Parakeet catch. Unique still needs one; Full Clear needs the required Parakeet catches.
@@ -76,5 +80,9 @@ Reviewed source: 93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee.
 Live-server confirmation remains pending for baseline population, Safari-wide marker delivery, late-entry coverage and escape/replacement behavior. See [audit D9](IMPLEMENTATION_AUDIT.md#d9) for Full Clear's weaker source-observation requirement.
 
 ## Last updated
+
+2026-10-19 - Verified local zero-Macaw fd and row removal include all reported starting food; any Macaw encounter retains the catch requirement.
+
+2026-10-19 - Verified local zero-Macaw fd and row removal include all reported starting food; any Macaw encounter retains the catch requirement.
 
 2026-10-19 (America/New_York) — Early starting-food reports feed sender/type maxima; late entrants can report qualified local spawning without six personal pickups. Reviewed source: working changes on `78885e0`; live validation pending.

@@ -16,7 +16,7 @@ class UniqueAbsentCritterTest {
     private fun party() = PartySparklingState().apply {
         select(setOf("me")); accept(setOf("me"), mapOf("me" to emptySet()))
     }
-    @Test fun `checked zero-spawn Cavern species still require Unique catches`() {
+    @Test fun `local zero-spawn Cavern survey completes Unique rows and reports without fabricating catches`() {
         ConfigManager.fullClearMode = false; ConfigManager.sparklingMode = false
         val run = SafariRun(0); val state = party()
         run.visitBiome(SafariBiome.CAVERN)
@@ -25,21 +25,49 @@ class UniqueAbsentCritterTest {
         run.moundSurvey.scan(emptySet()) { true }
         run.updateCaptureEvidence(SafariBiome.CAVERN, emptySet(), true)
         run.reconcileStructures(SafariBiome.CAVERN, false, false)
-        assertFalse(run.uniqueComplete("Rockmite", state)); assertFalse(run.uniqueComplete("Snoozle", state))
-        assertEquals(7, run.completed(SafariMode.UNIQUE, SafariBiome.CAVERN.critters, state))
-        assertNull(run.completion.announcement(run, SafariBiome.CAVERN, SafariMode.UNIQUE, state))
-        assertTrue(SafariPanels.missing(run, SafariBiome.CAVERN, true, 0, party = state).rows.any { it.label in setOf("Rockmite", "Snoozle") })
+        assertTrue(run.uniqueComplete("Rockmite", state, localOnly = true))
+        assertTrue(run.uniqueComplete("Snoozle", state, localOnly = true))
+        assertEquals(9, run.completed(SafariMode.UNIQUE, SafariBiome.CAVERN.critters, state))
+        assertEquals("cd", run.completion.announcement(run, SafariBiome.CAVERN, SafariMode.UNIQUE, state))
+        assertFalse(SafariPanels.missing(run, SafariBiome.CAVERN, true, 0, party = state).rows.any { it.label in setOf("Rockmite", "Snoozle") })
         run.reconcileStructures(SafariBiome.CAVERN, true, true)
         assertFalse(run.uniqueComplete("Rockmite", state)); assertFalse(run.uniqueComplete("Snoozle", state))
         run.reconcileStructures(SafariBiome.CAVERN, false, false)
         run.updateCaptureEvidence(SafariBiome.FOREST, emptySet(), false)
-        assertFalse(run.uniqueComplete("Snoozle", state))
+        assertTrue(run.uniqueComplete("Snoozle", state), "completed local absence proof survives leaving the biome")
         run.observeCritter(12, "Rockmite"); run.observeCritter(13, "Snoozle")
         assertFalse(run.uniqueComplete("Rockmite", state)); assertFalse(run.uniqueComplete("Snoozle", state))
         assertEquals(0, run.personalCount("Rockmite")); assertEquals(0, run.personalCount("Snoozle"))
         val unknown = SafariRun(1)
         unknown.reconcileStructures(SafariBiome.CAVERN, false, false)
         assertFalse(unknown.uniqueComplete("Rockmite", state)); assertFalse(unknown.uniqueComplete("Snoozle", state))
+    }
+    @Test fun `no Macaw local Forest completion includes all reported starting food before fd or row removal`() {
+        ConfigManager.fullClearMode = false; ConfigManager.sparklingMode = false
+        val run = SafariRun(0); val state = party()
+        run.visitBiome(SafariBiome.FOREST)
+        run.localPlayer("Me")
+        run.inventoryEvidence(emptyList(), 10000)
+        run.updateCaptureEvidence(SafariBiome.FOREST, emptySet(), false, allNestsChecked = true)
+        SafariBiome.FOREST.critters.filter { it.name != "Macaw" }.forEach { run.record(SafariCatch(it)) }
+        run.resources.partyNotice("Party > Other: [SM] Starting items: 2x Bag of Seeds")
+        run.scanBirdSources(0, List(7) { "Bluebird" })
+        assertEquals(11, run.birds.feedingTarget)
+        assertFalse(run.uniqueComplete("Macaw", state))
+        assertNull(run.completion.announcement(run, SafariBiome.FOREST, SafariMode.UNIQUE, state))
+        run.inventoryEvidence(listOf("Bag of Seeds" to 1), 20000)
+        run.scanBirdSources(0, List(9) { "Bluebird" })
+        assertFalse(run.uniqueComplete("Macaw", state), "held food must be used even when population is sufficient")
+        run.inventoryEvidence(emptyList(), 21000)
+        run.scanBirdSources(1, List(9) { "Bluebird" })
+        assertFalse(run.uniqueComplete("Macaw", state), "remaining floor food must also be used")
+        run.scanBirdSources(0, List(9) { "Bluebird" })
+        assertTrue(run.uniqueComplete("Macaw", state, localOnly = true))
+        assertEquals(0, run.count("Macaw"))
+        assertFalse(SafariPanels.missing(run, SafariBiome.FOREST, true, 0, party = state).rows.any { it.label == "Macaw" })
+        assertEquals("fd", run.completion.announcement(run, SafariBiome.FOREST, SafariMode.UNIQUE, state))
+        run.observeCritter(42, "Macaw")
+        assertFalse(run.uniqueComplete("Macaw", state), "a newly seen Macaw revokes zero-spawn completion")
     }
     @Test fun `party fd cannot complete Unique Forest without catches`() {
         val run = SafariRun(0); val state = party()

@@ -36,7 +36,7 @@ Resolve all five Snooper walls. Only third-stage wall dialogue confirms destruct
 | Mode | Capture requirement | Checking or source requirement | Party-report effect |
 | --- | --- | --- | --- |
 | Sparkling | None for ordinary released critters; confirmed Sparkling capture override applies. | Resolve all five Snooper walls; no local critter-radius requirement. | cd can supply inherited checking for unknown sources; positive intact sources contradict it. |
-| Unique | One shared capture if encountered; confirmed Sparkling capture overrides the combined check. | Resolve all five Snooper walls; zero captures additionally require no encounter and cd. | cd can supplement checking; cannot erase positive intact sources or supply a catch. |
+| Unique | One shared capture if encountered; confirmed Sparkling capture overrides the combined check. | Resolve all five Snooper walls; zero captures can complete from a local Cavern absence scan after all sources resolve, with no encounter. Outside local proof, resolved sources plus cd retain the zero-spawn fallback. | cd can supplement checking; cannot erase positive intact sources or supply a catch. |
 | Full Clear | Fallback minimum 0 rises with encounters; local proof and report-based progress have [separate raised-target scopes](TRACKING.md#full-clear-evidence-and-late-entry). | Local empty scan and all five Snooper walls resolved. | Without local proof, report plus capture minimum can complete progress; row still needs local proof. |
 
 ## Display and highlights
@@ -78,5 +78,7 @@ Existing coverage: [UniquePartyReportTest](../../src/test/kotlin/net/johnceo/spa
 Population guarantees and capsule success/escape claims from supplied notes were not live revalidated; see [audit D2](../IMPLEMENTATION_AUDIT.md#d2).
 
 ## Last updated
+
+2026-10-19 - Unique local zero-spawn proof now completes the species and removes its missing row without waiting for cd; intact sources and any encounter still block the waiver.
 
 2026-10-19 (America/New_York) — Uniform species reference; audited evidence, modes, display and lifecycle. Reviewed source: `93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee`; no local runtime source changes reviewed. See [revision convention](../DOCUMENTATION_GUIDE.md).

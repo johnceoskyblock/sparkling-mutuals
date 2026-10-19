@@ -64,7 +64,7 @@ Late entry or missing the earliest groups can establish the wrong anchor. Group 
 
 ### Early starting food/coin reports
 
-After observing the boat/center (mapped area 0), the first transition to a biome (areas 1–4) starts a two-second delay. Sample inventory on the boat as well as during clearing. With known multi-player party membership and ready party discovery data, send one compact party report containing only still-held starting food/coins whose related Sparkling discovery is missing. Example: `[SM] Starting items: 2x Bag of Seeds; 1x Shining Coin`. If only a bird is needed, send only the food. If neither category is needed, send nothing. Unknown discovery data postpones the decision instead of assuming every discovery is missing. There is no empty/zero announcement.
+After observing the boat/center (mapped area 0), the first transition to a biome (areas 1–4) starts a two-second delay. Sample inventory on the boat as well as during clearing. With known multi-player party membership and ready party discovery data, send one compact party report containing only still-held starting food/coins whose related Sparkling discovery is missing. Example: `[SM] Starting items: 2x Bag of Seeds; 1x Shining Coin`. If only a bird is needed, send only the food. If neither category is needed, send nothing. A member with no profile/Safari discovery data counts as zero discoveries and needs both Gimmiegold and all birds. Every mod user independently reports their own unused starting resources once; another user's report does not suppress it. Actual loading/network errors still postpone the decision. There is no empty/zero announcement. See [API fallback and retries](../API_LOOKUPS.md).
 
 Each sender/type quantity is a retained maximum, overlapping the local grant/inventory and its own echo. Early reports update the bird/coin contribution totals directly, not the old delayed-notice outstanding ledger. Repeating an early report, or a later legacy notice for that same sender/type, does not add the quantity again. Floor pickups are separate from starting inventory. An unknown area is not boat departure; a new run owns a fresh schedule. A client that never observes the boat cannot infer the departure time.
 
@@ -116,5 +116,7 @@ Primary methods: com.shinyhunter.FloorDropLog.scan, predict, repredict, onGround
 Validate ordering, late entry, partial/unknown triples, teammate pickups, marker disappearance and prediction revisions against actual server rewards. Client filtering cannot establish whole-world coverage. No live Minecraft validation was performed in this audit.
 
 ## Last updated
+
+2026-10-19 - Clarified that no-data party members need all Sparklings and allow each mod user's independent unused starting food/coin report.
 
 2026-10-19 (America/New_York) — Added discovery-gated early party quantities and local-title-only completion reminders. Reviewed source: working changes on `78885e0`; automated validation reported with the implementation, live multi-client validation pending.

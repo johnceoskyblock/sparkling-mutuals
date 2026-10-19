@@ -2,12 +2,14 @@ package net.johnceo.sparklingmutuals.api
 
 import com.google.gson.JsonParser
 
-enum class ApiFailureKind { MISSING_KEY, INVALID_KEY, RATE_LIMIT, DATA_UNAVAILABLE, PLAYER_NOT_FOUND, UNAVAILABLE }
+enum class ApiFailureKind { MISSING_KEY, INVALID_KEY, RATE_LIMIT, DATA_UNAVAILABLE, MALFORMED_DATA, PLAYER_NOT_FOUND, UNAVAILABLE }
 
 class ApiFailure(val kind: ApiFailureKind, message: String) : RuntimeException(message) {
     companion object {
         fun dataUnavailable() = ApiFailure(ApiFailureKind.DATA_UNAVAILABLE,
             "SkyBlock profile or Safari data unavailable.")
+        fun malformedData() = ApiFailure(ApiFailureKind.MALFORMED_DATA,
+            "SkyBlock profile or Safari data malformed. Try again shortly.")
         fun unavailable() = ApiFailure(ApiFailureKind.UNAVAILABLE,
             "API unavailable. Try again shortly.")
         private fun invalidKey() = ApiFailure(ApiFailureKind.INVALID_KEY,

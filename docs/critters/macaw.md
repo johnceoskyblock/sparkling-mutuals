@@ -51,6 +51,10 @@ Bag of Seeds, Wriggleworm and Yogi Berry create feeding opportunities. Starting 
 | Automatic completion announcements | Any Forest entrant may report complete qualified spawning/source proof without a personal pickup quota if no fd was received. All other local active-mode gates still apply; see [bird reporting](../BIRD_COMPLETION.md#sending-fd). |
 | PB eligibility | Personal Unique: own catch of every species. Full Clear: personal captures/local proof. Party Unique: separate shared-capture/absence predicate; progress alone is insufficient. |
 
+Local Unique zero-Macaw completion requires every known food opportunity, including party starting-food contributions, to be resolved. A Macaw ever seen in the run prevents the no-spawn waiver; captured Macaws use the normal catch rule. Proven absence removes the row and can finish local fd once the other Forest requirements pass.
+
+Local Unique zero-Macaw completion requires every known food opportunity, including party starting-food contributions, to be resolved. A Macaw ever seen in the run prevents the no-spawn waiver; captured Macaws use the normal catch rule. Proven absence removes the row and can finish local fd once the other Forest requirements pass.
+
 ## Party reports and late entry
 
 An fd records the target at receipt; new contributions can outgrow it. Local held food or known Forest floor food blocks remote trust. Inside Forest the local spawning path applies; see [bird rules](../BIRD_COMPLETION.md). See [evidence/lifecycle](TRACKING.md).
@@ -76,5 +80,9 @@ Existing coverage: [SafariBirdLedgerTest](../../src/test/kotlin/net/johnceo/spar
 Population guarantees and capsule success/escape claims from supplied notes were not live revalidated; see [audit D2](../IMPLEMENTATION_AUDIT.md#d2).
 
 ## Last updated
+
+2026-10-19 - Clarified local no-Macaw completion/row removal and fd after all known food, including party extras, is used; any sighting revokes the waiver.
+
+2026-10-19 - Clarified local no-Macaw completion/row removal and fd after all known food, including party extras, is used; any sighting revokes the waiver.
 
 2026-10-19 (America/New_York) — Updated late-entry reporting and early shared starting-food totals. Reviewed source: working changes on `78885e0`; live validation pending.
