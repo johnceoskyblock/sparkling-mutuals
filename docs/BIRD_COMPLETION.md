@@ -14,7 +14,7 @@ A **feeding opportunity** is the ledger's unit of expected bird population: one 
 
 ### Expected population
 
-Expected opportunities are **max(9, personally collected Forest food quantity) + local extra food + reported extra food**. Nine is the implemented baseline. Local extras include starting inventory/grants and pickups outside Forest, avoiding overlap with early pickup messages. Accepted party notices use sender/type maxima; the local sender's notice overlaps local extras. The first available inventory sample starts the three-second starting-inventory window.
+Expected opportunities are **max(9, personally collected Forest food quantity) + local extra food + reported extra food**. Early discovery-gated starting-item reports supply remote contributions before clearing completes; later unused-resource reminders are local titles only. Nine is the implemented baseline. Local extras include starting inventory/grants and pickups outside Forest, avoiding overlap with early pickup messages. Accepted party notices use sender/type maxima; the local sender's notice overlaps local extras. The first available inventory sample starts the three-second starting-inventory window.
 
 Qualified population is:
 
@@ -40,11 +40,11 @@ All three birds share the Full Clear capture result. Confirmed Sparkling bird ca
 
 ### Sending fd
 
-Only an initial Forest clearer can automatically report. On the first Forest entry, **no bird captures previously received** establishes clearer eligibility; a detour to another biome does not disqualify the player. Prior bird captures make the entrant ineligible for automatic fd even if their progress later completes.
+Any Forest entrant can automatically send fd once qualified shared captures plus currently rendered birds establish the expected spawning, sampled held/remaining food is zero, and every other selected-mode Forest requirement passes. No personal pickup quota or initial-clearer classification is required. This allows a late entrant to report even when somebody else collected and used all the food before that entrant arrived, including before any birds were caught. An already received fd suppresses an automatic echo.
 
-The clearer additionally needs at least **six separate personal Forest bird-food pickup events**, sampled zero held food, zero remaining food markers, local spawning proof and all selected-mode Forest completion requirements. Six items in one pickup message are one event. The independent All Bird Food alert needs three of each food, not six events.
+The independent All Bird Food alert still requires three of each food; it is not a reporting gate.
 
-Inventory is sampled before queuing and before dispatch decisions. Queued reports are revalidated; owning every bird discovery does not bypass supply/clearer gates. A new run resets eligibility, pickup events and report state.
+Inventory is sampled before queuing and before dispatch decisions. Queued reports are revalidated; owning every bird discovery does not bypass local source/population gates. A new run resets population, pickup and report state.
 
 ## Exceptions
 
@@ -57,7 +57,7 @@ Inventory is sampled before queuing and before dispatch decisions. Queued report
 
 - Seven Bluebird catches and two live Parakeets, zero floor/held food, and a qualified nine-opportunity observation can satisfy Sparkling without a Parakeet catch. Unique still needs one; Full Clear needs the required Parakeet catches.
 - A qualified population of six Bluebirds, two Parakeets and two Macaws represents nine opportunities. Six Bluebird catches, two Parakeet catches and one Macaw catch can satisfy Full Clear while the second Macaw remains.
-- A late entrant who already received bird loot shares can complete valid progress but cannot automatically send fd.
+- A late entrant with bird loot shares can send fd after local population/source proof and the other active-mode requirements pass, provided no fd was received.
 - One reported extra food raises the baseline target from nine to ten. Repeating the same sender/type notice does not add another opportunity.
 
 ## Source and validation references
@@ -77,4 +77,4 @@ Live-server confirmation remains pending for baseline population, Safari-wide ma
 
 ## Last updated
 
-2026-10-19 (America/New_York) — Audited bird population/capture formulas, retained proof and fd eligibility. Reviewed source: 93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee; static source/caller review, no live Minecraft validation.
+2026-10-19 (America/New_York) — Early starting-food reports feed sender/type maxima; late entrants can report qualified local spawning without six personal pickups. Reviewed source: working changes on `78885e0`; live validation pending.

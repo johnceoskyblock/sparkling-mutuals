@@ -87,12 +87,16 @@ Loaded Cavern mound/wall observations run from **any Safari biome** without a pl
 | Unique Rockmite/Snoozle | cd may supply unknown checking after a catch; resolved sources + cd can confirm unseen zero spawn | Known intact sources cannot be erased by another report; encountered uncaught species cannot use zero-spawn trust |
 | Honeybug Unique/Sparkling | fd supplies checking, never captures | Trust survives Forest entry and incomplete later renders |
 | Ordinary Sparkling | Report substitutes checking | Entry/local scan clears inherited ordinary checking; retained local UUID evidence remains |
-| Gimmiegold Sparkling | hd may substitute outside Haunted | Inside Haunted requires dedicated local slot/inventory/population validation |
+| Gimmiegold Sparkling | hd may substitute outside Haunted up to its recorded floor-plus-extra target | Inside Haunted requires dedicated local slot/inventory/population validation; newly learned extra demand requires fresh proof/report |
 | Birds | Mode/location-specific trust | [Bird report policy](../BIRD_COMPLETION.md#completion-by-mode) |
 | Full Clear progress | Report plus real capture targets, unless local/fixed/Honeybug path already qualifies | Positive remaining entities, intact sources and applicable resources still block; a report alone does not remove local missing rows |
 | Wumpa/Doomspiral Sparkling | Spawn/slain text and biome reports cannot substitute for capture | Shared catch or accepted global Sparkling-catch override completes that boss; only a shared Wumpa counter increment checks all Icy species |
 
 Reports are recognized from parsed party message bodies, case-insensitively, with an optional trailing period. The implementation does not cross-check the sender against a separate current-party roster here. Server delivery in the Party channel is the trust boundary; arbitrary quoted nonparty text does not become a report.
+
+Early `[SM] Starting items: ...` party reports establish sender/type food/coin contribution maxima before clearing completes; they never add captures or resource use. Send only unused starting items tied to a missing party discovery, after two seconds off the observed boat and ready discovery data. End-of-biome unused-item reminders are local titles only. See [resource timing](FLOOR_DROPS.md#early-starting-foodcoin-reports).
+
+A late Forest entrant may report fd from qualified capture-plus-current-render/source proof without six personal pickups if no fd was received. Late Haunted entrants can likewise report hd after local Gimmiegold and the biome's other active-mode requirements pass. Forest/Haunted reports already received suppress automatic echoes in every mode; Unique retains its report suppression for all biomes.
 
 ### Capsule escape and replacement identity
 
@@ -132,4 +136,4 @@ Hypixel population guarantees, precise server render coverage and replacement UU
 
 ## Last updated
 
-2026-10-19 (America/New_York) — Consolidated evidence, retention and party reconciliation; removed duplicated mode/UI/resource narratives. Reviewed source: 93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee; static source/caller review, no live Minecraft validation.
+2026-10-19 (America/New_York) — Added early contribution routing, local-title reminders, target-scoped hd trust and late-entry reporting. Reviewed source: working changes on `78885e0`; live validation pending.

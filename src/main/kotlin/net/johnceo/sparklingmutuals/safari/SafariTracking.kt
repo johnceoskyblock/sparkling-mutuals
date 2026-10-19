@@ -3,6 +3,7 @@ package net.johnceo.sparklingmutuals.safari
 import net.johnceo.sparklingmutuals.compat.*
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents
 import net.johnceo.sparklingmutuals.LocalChat
+import net.johnceo.sparklingmutuals.party.PartyManager
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.contest.ContestGui
 import net.johnceo.sparklingmutuals.history.TicketCounter
@@ -116,7 +117,26 @@ object SafariTracking {
             client.player?.sendSystemMessage(LocalChat.component(feedback.notice))
         }
     }
-    fun onClientTick(client: Minecraft) = ensureRun(client)
+    fun onClientTick(client: Minecraft) {
+        ensureRun(client)
+        val run = ledger.current ?: return
+        val player = client.player ?: return
+        val connection = client.connection ?: return
+        if (SafariAssist.location != SafariLocation.INSIDE) return
+        val now = System.currentTimeMillis()
+        run.localPlayer(player.name.string)
+        // Sample on the boat too, before anyone can use starting supplies or collect floor drops.
+        run.inventoryEvidence((0 until player.inventory.containerSize).map { player.inventory.getItem(it) }
+            .filterNot { it.isEmpty }.map { it.hoverName.string to it.count }, now)
+        run.startingAnnouncement.observeArea(SafariAreaMap.areaAt(player.x, player.y, player.z), now)
+        if (PartyManager.hasInfo && PartyManager.getMembers().size > 1) {
+            run.startingAnnouncement.dispatch(now, SafariSparklingMode.state) { message ->
+                connection.sendCommand("pc $message")
+                // Apply our own contribution now; the server's party echo is deduplicated.
+                run.resources.partyNotice("Party > ${player.name.string}: $message")
+            }
+        }
+    }
     fun ensureRun(client: Minecraft) {
         syncWorld(client)
         val previous = ledger.current

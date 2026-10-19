@@ -3,7 +3,7 @@ package net.johnceo.sparklingmutuals.safari.resources
 import net.johnceo.sparklingmutuals.safari.PartySparklingState
 import net.johnceo.sparklingmutuals.safari.SafariBiome
 
-/** Run-owned end-of-clearing trigger; candidates stay live until actually sent. */
+/** Run-owned local title trigger; candidates stay live until actually displayed. No party broadcast. */
 class StartingResourceDelivery(private val resources: SafariResources) {
     private var active = false
     private var nextAt = 0L
@@ -19,7 +19,7 @@ class StartingResourceDelivery(private val resources: SafariResources) {
         if (items.isEmpty()) return false
         val reminder = StartingResourceNotice(items)
         send(reminder.text, reminder)
-        resources.noticeSent(player, reminder.text)
+        resources.titleShown(reminder)
         nextAt = now + 4000 // Keep a later newly eligible reminder from overwriting this title.
         return true
     }

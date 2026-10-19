@@ -179,7 +179,7 @@ Verify Full Clear report trust: capture a variable species' minimum and perform 
 - Outside Forest, receive fd with Bluebird and Parakeet caught but no Macaw: Unique may complete Macaw without inventing a catch. Enter Forest and require qualified local spawning/no-Macaw proof. Full Clear must still satisfy actual expected captures.
 - In Full Clear after `cd`, observe an uncaught Cavern species while standing in Forest. Only that species reopens; unloading and another report do not resolve it, but its additional catch does.
 - After `fd`/`hd`, acquire unused food/coins. The affected Full Clear rows reopen; a fourth actual coin requires a fourth capture. Existing Sparkling and Unique policies remain separate.
-- Receive a teammate's biome-done report before finishing your own Unique clearing work, with an eligible starting coin/food held. Once local clearing passes, the starting-item reminder still sends once; repeated scans cannot keep restarting its delay.
+- Receive a teammate's biome-done report before finishing your own Unique clearing work, with an eligible starting coin/food held. Once local clearing passes, the local starting-item title still displays once, without an unused-item party message; repeated scans cannot keep restarting its delay.
 
 ### Gimmiegold initial coin slots
 
@@ -195,7 +195,7 @@ Verify Full Clear report trust: capture a variable species' minimum and perform 
 - Receive fd, then enter/reenter Forest with incomplete rendering: Honeybug checking remains trusted. Detect another Sparkling identity and verify it does not revoke normal completion in any mode.
 - Switch to Sparkling in each biome: the checklist header and HUD editor use Unchecked. Unique/Full Clear retain Missing behavior and saved panel positions/settings survive mode changes.
 
-- Initial Forest clearer: collect five food drops, complete local checks and verify no fd. Collect the sixth separately and verify fd can send only with empty bird-food inventory and no remaining food markers. Repeat after entering Forest from another biome without earlier bird catches: automatic fd remains eligible once all gates pass. Enter Forest after already receiving bird catches: no automatic fd, even if local progress completes. Test food acquired while a report is queued.
+- Forest reporter: regardless of personal pickups or prior bird catches, require qualified capture-plus-current-render spawning proof and no held/remaining food before fd. Test late entry both before any bird catch and after loot shares, including known extra starting food. All other active-mode gates still apply; a received fd suppresses an echo. Test new food arriving while a report is queued.
 
 ### Capture-shot collection
 
@@ -259,6 +259,15 @@ Record observed versus expected outcomes for each selected scenario, including u
 
 If a scenario fails, preserve a minimal reproduction and compare the current owner/caller path. Consult [known discrepancies](IMPLEMENTATION_AUDIT.md) before interpreting a historical expectation as implemented behavior. A recording marked incomplete stays incomplete; absence, removal or a final sample is not automatically a miss/impact. Do not broaden a focused fix to unrelated pending work.
 
+### Early starting contributions and late reports
+
+- Observe the central boat, leave into a biome and verify one early party announcement after two seconds. With coin + food held, test needs for both, birds only, Gimmiegold only, and neither. Expect exactly the eligible items/quantities and no zero report. With discovery API loading, wait for readiness instead of announcing every item.
+- Start with two identical foods/coins and with a silent second grant; verify quantities. Consume one before dispatch, and separately pick up floor food before dispatch: only the unused starting quantity is announced. Check repeated boat transitions, new runs, reconnects and failed-send retry.
+- Two clients receive the early report and its echo. Verify Forest and Haunted targets increase once per sender/type, own reports overlap inventory, and legacy notices do not duplicate early contributions.
+- Receive hd, then a newly learned starting coin: the stale target must not waive it. Outside Haunted, a fresh hd can supply trust; inside Haunted, use F + S versus captured + current uncaptured renders and local source proof.
+- Enter Forest late with existing bird catches and no fd: insufficient qualified population blocks; enough population plus empty held/floor food permits fd once the other active-mode checks pass, without six personal pickups. Repeat Haunted with hd and the registered coin target. Received fd/hd must not be echoed.
+- Finish a biome with eligible starting food/coins still held. Expect a readable local title only, no unused-item party/local chat message. Normal fd/cd/id/hd still work. Multi-client Hypixel validation is pending; offline tests cannot establish server delivery or live marker completeness.
+
 ## Last updated
 
-2026-10-19 (America/New_York) — Reorganized the current implementation reference. Reviewed source: `93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee`; documentation-only changes, no local runtime differences or new live validation.
+2026-10-19 (America/New_York) — Added early resource, local-title and late-entry report scenarios. Reviewed source: working changes on `78885e0`; live validation pending.

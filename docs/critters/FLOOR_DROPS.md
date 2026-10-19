@@ -44,7 +44,7 @@ Unsupported prefixes or phase mismatch enter an XP / Essence / Shard tail for th
 | Icebreaker | Automatic selection only in Full Clear, until one acquired/starting Icebreaker |
 | Generic/unknown | No quest-item ESP |
 
-Coin and incense selection are independent. Incense peak inventory includes starting items and stays recorded after consumption/travel/mode change. A pickup quantity contributes units to the typed cutoff; it is distinct from Forest's six **events** reporting gate. Cavern/Icy manual overrides last for the current biome visit and affect the group gate; per-type acquisition/need selection still applies. Floor-group controls are not a universal gate for every automatic Cavern/Icy path.
+Coin and incense selection are independent. Incense peak inventory includes starting items and stays recorded after consumption/travel/mode change. A pickup quantity contributes units to the typed cutoff; Forest reporting uses qualified population/source proof rather than personal pickup counts. Cavern/Icy manual overrides last for the current biome visit and affect the group gate; per-type acquisition/need selection still applies. Floor-group controls are not a universal gate for every automatic Cavern/Icy path.
 
 Per-type colors cover nine quest types and apply to outline/fill/name. Older shared color supplies defaults; All floor-drop colors assigns all types. These choices never create resources or override per-type eligibility.
 
@@ -62,6 +62,12 @@ Actual FLOOR DROP text increments resource evidence independently of predicted l
 
 Late entry or missing the earliest groups can establish the wrong anchor. Group equality, ID order and phase assumptions need live confirmation. Do not silently claim absent/unloaded data was collected, or label prediction consistency as server verification.
 
+### Early starting food/coin reports
+
+After observing the boat/center (mapped area 0), the first transition to a biome (areas 1–4) starts a two-second delay. Sample inventory on the boat as well as during clearing. With known multi-player party membership and ready party discovery data, send one compact party report containing only still-held starting food/coins whose related Sparkling discovery is missing. Example: `[SM] Starting items: 2x Bag of Seeds; 1x Shining Coin`. If only a bird is needed, send only the food. If neither category is needed, send nothing. Unknown discovery data postpones the decision instead of assuming every discovery is missing. There is no empty/zero announcement.
+
+Each sender/type quantity is a retained maximum, overlapping the local grant/inventory and its own echo. Early reports update the bird/coin contribution totals directly, not the old delayed-notice outstanding ledger. Repeating an early report, or a later legacy notice for that same sender/type, does not add the quantity again. Floor pickups are separate from starting inventory. An unknown area is not boat departure; a new run owns a fresh schedule. A client that never observes the boat cannot infer the departure time.
+
 ### Unused starting food/coin reminders
 
 After the first locally completed biome, starting-resource delivery activates after four seconds. It continues checking unsent eligible resources for the run, even if a teammate's report suppressed this client's biome announcement. Repeated polls do not restart the delay.
@@ -71,11 +77,11 @@ After the first locally completed biome, starting-resource delivery activates af
 | Shining Coin | Gimmiegold needed | Haunted / USE YOUR SHINING COIN! |
 | Bag of Seeds, Wriggleworm, Yogi Berry | Any bird needed | Forest / USE YOUR BIRD FOOD! |
 
-Before delivery, resample inventory and rebuild quantities/discovery needs. Remind only while outside the resource's destination and still holding the tracked unused starting quantity. Each item is filtered independently. There is no separate configuration toggle for the local title or party notice. Eligible items are combined; mixed destinations use USE YOUR STARTING ITEMS! Titles and party dispatch share the same gates. Unsent suppressed candidates remain eligible; only actual dispatch records notification/source state.
+Before delivery, resample inventory and rebuild quantities/discovery needs. Remind only with ready party discovery data, while outside the resource's destination and still holding the tracked unused starting quantity. Each item is filtered independently. There is no separate configuration toggle. Eligible items are combined; mixed destinations use USE YOUR STARTING ITEMS! This is a **local title/subtitle only**: no end-of-biome unused-item party message or local chat line is sent. Displaying the title records notification state only; it creates no new source obligation. Unsent suppressed candidates remain eligible.
 
-Current example: [SM] Unused floor drops: 1x Shining Coin (missing Sparkling Gimmiegold); 1x Yogi Berry (missing Sparkling Macaw). Receivers also accept old compact Use and verbose starting-item formats. Malformed/duplicate-type batches are rejected as a whole.
+For mixed-version parties, receivers still accept `[SM] Unused floor drops: ...`, compact `[SM] Use: ...` and verbose unused-starting-item formats. New clients no longer broadcast those end-of-biome messages. Malformed/duplicate-type batches are rejected as a whole.
 
-Accepted notices add sender/type contribution maxima and outstanding source work, not pickups or catches. Repeated sender/type notices overlap. New relevant extra demand can reopen source checking; old population alone cannot supply the additional spawn. Gimmiegold can reconcile subsequent spawn events or captured/current population; bird demand uses qualified feeding equivalents, never attraction chat. Full Clear still needs its actual capture formula; ordinary Unique first-catch species do not gain a new source gate.
+Legacy-only sender/type notices add contribution maxima and outstanding source work, not pickups or catches. Repeated sender/type notices overlap. New relevant extra demand can reopen source checking; old population alone cannot supply the additional spawn. Early reports instead feed the population targets directly. Full Clear still needs its actual capture formula; ordinary Unique first-catch species do not gain a new source gate.
 
 **Known difference:** a later larger notice from an already outstanding/resolved sender/type increases contribution maxima but does not replace that existing outstanding record. Dedicated bird/coin population targets can therefore diverge from the generic pending-source ledger; see [audit D3](../IMPLEMENTATION_AUDIT.md#d3).
 
@@ -111,4 +117,4 @@ Validate ordering, late entry, partial/unknown triples, teammate pickups, marker
 
 ## Last updated
 
-2026-10-19 (America/New_York) — Consolidated resource accounting/reminders and implemented prediction/selection; preserved inspection provenance. Reviewed source: 93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee; static source/caller review.
+2026-10-19 (America/New_York) — Added discovery-gated early party quantities and local-title-only completion reminders. Reviewed source: working changes on `78885e0`; automated validation reported with the implementation, live multi-client validation pending.
