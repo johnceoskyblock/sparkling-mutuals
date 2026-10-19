@@ -20,6 +20,22 @@
 
 ## Specific deductions
 
+### Whole-gem selection helper
+
+**Safari helpers → Gemzie gem auto-select** defaults on and preserves a saved off choice. In Safari's Cavern, a fresh use press on the top face of these exact podium support blocks selects a matching whole gem from your hotbar before attempting that same block interaction once:
+
+| Gem | Support block (X, Y, Z) | Item ID |
+| --- | --- | --- |
+| Orange Gem | -140, 61, 46 | `ORANGE_GEM` |
+| Lime Gem | -137, 61, 51 | `LIME_GEM` |
+| Purple Gem | -140, 61, 56 | `PURPLE_GEM` |
+
+The currently selected matching slot wins; otherwise the first matching hotbar slot wins. The selected slot stays selected afterward. When an item has no custom ID, its exact formatting-normalized whole-gem name is accepted; shards and conflicting custom IDs are rejected. Inventory-only and offhand-only gems are not moved or used. A missing hotbar gem cancels this supported click and shows a short, rate-limited hotbar reminder.
+
+The helper retains the original hit position, face and reach checks. It does not aim, forge a top-face hit, repeat held input, fall through to air/offhand use, or replay the click later. Other blocks, side faces, misses and contexts retain normal input behavior. Turning the helper off restores normal use. Selection and the attempted use are not placement, chamber-opening, checking, spawning or capture evidence; the exact server-message timer below remains unchanged.
+
+### Tracking rules
+
 - Local Full Clear capture/source and empty-scan proof advances progress and removes the missing row without a report. Remote progress without local proof uses report rules.
 
 - Cavern highlights may select predicted Lime/Purple/Orange Gem drops via the inspected [floor-drop predictor](FLOOR_DROPS.md). This selects unopened markers; placement, spawning and catch requirements do not change.
@@ -33,6 +49,8 @@
 - The timer supplies no catches. Full Clear retains its capture/absence conditions; Unique Gemzie advances on its first shared capture. A party `cd` still follows the existing remote-report rules.
 
 ## Last updated
+
+2026-10-19 (America/New_York) - Added the independent whole-gem hotbar selection helper and its same-click, top-face and evidence boundaries.
 
 2026-10-17 - Removed detected-Sparkling sightings as a separate completion requirement; normal species rules remain.
 

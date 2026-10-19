@@ -32,6 +32,7 @@ Use the [37 individual critter notes](docs/critters/README.md) for species rules
 - **Snooper wall waypoints:** locate walls to break for Snoozles.
 - **Hidden Litterbugs:** show projected positions and countdowns while they are underground.
 - **Shyworm helpers:** show projected positions, movement paths, and rest countdowns.
+- **Gemzie gem auto-select:** select the matching whole gem from your hotbar for one fresh top-face podium click; toggle it in Safari helpers. See [Gemzie](docs/critters/gemzie.md#whole-gem-selection-helper).
 - **Bird food tracking:** track Forest food collection and feeding progress.
 - **Wumpa prerequisites:** retain uncaught Icy prerequisite critter highlights in every mode while the party needs Sparkling Wumpa.
 - **Detected sparklings HUD:** list loaded detected sparklings across Safari biomes, with biome and distance.
@@ -119,6 +120,8 @@ Honeyhive state rules, data sources and debugging: [Torrhus Canyon Honeyhives](d
 Per-drop colors are configurable in **ESP → Floor-drop colors**. **Miria contest → Auto !dt contest** controls the automatic party downtime request at new contest starts, sent only by the confirmed party leader. Returning to Torrhus announces all downtime requesters and reasons together in party chat. See [contest request behavior](docs/CONTEST_DOWNTIME.md).
 
 ## Last updated
+
+2026-10-19 (America/New_York) - Added the independent Gemzie whole-gem podium helper.
 
 2026-10-17 - Aligned entry guards with tab-first Safari presence, two-second kick pauses, ticket-message downtime release and Shift override.
 

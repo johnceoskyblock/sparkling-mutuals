@@ -13,6 +13,10 @@ Keep achievements themselves enabled; the exception is their party announcement.
 
 Mode selectors remain mutually exclusive; “all on” applies to independent feature toggles, not simultaneous Unique/Full Clear/Sparkling modes. Retain established numeric/text selections and explicit mode-preset behavior unless separately changed. Field initialization, config-load fallbacks and GUI defaults agree. Explicitly saved GUI choices remain in effect.
 
+## Gemzie gem auto-select
+
+**Safari helpers → Gemzie gem auto-select** (`gemzieGemAutoSelect`) is an independent switch, defaulting **on** for fresh, missing or invalid settings. A deliberate saved off choice persists across restarts and mode changes. It selects a matching whole gem from the hotbar for a fresh top-face click on a mapped Cavern podium, then attempts that original interaction once. See [Gemzie's helper rules](critters/gemzie.md#whole-gem-selection-helper).
+
 ## Personal best storage and migration
 
 Save personal bests separately in `config/sparkling-mutuals-pbs.properties`. This includes solo/duo boss times, biome Full Clear/Unique times, party Unique times, observed party-member records and the selected biome PB category. General settings and HUD layouts remain in `config/sparkling-mutuals.properties`.
@@ -60,6 +64,8 @@ The History tab begins with the **History** button, followed immediately by **Im
 **Guard Safari entry** and **!dt downtime** retain their independent saved switches. Guard Safari entry uses Safari tab-list party presence, with a two-second pause after a party kick message; downtime controls Torrhus readiness holds until each requester says r or mentions ticket. Holding Shift overrides either for the current interaction without clearing the holds. See [entry guard](SAFARI_ENTRY_GUARD.md).
 
 ## Last updated
+
+2026-10-19 (America/New_York) - Added default-on Gemzie gem auto-select with persistent independent saved choices.
 
 2026-10-18 (America/New_York) - Consolidated Capture projections into one saved switch and removed the status-text HUD.
 
