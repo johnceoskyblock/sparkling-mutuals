@@ -22,6 +22,26 @@ class SparklingNoticeTest {
         assertNull(queue.next())
     }
 
+    @Test fun `new particle locations stay silent after first unknown notice but named discovery can notify`() {
+        val memory = SparklingMemory()
+        val points = SparklingParticleLocations()
+        repeat(5) { index ->
+            val point = points.observe(true, true, index * 10.0, 50.0, -60.0, index.toLong())!!
+            assertEquals(index == 0, memory.alert(point.id, true, SparklingAlert.UNKNOWN))
+            assertEquals(index == 0, memory.announce(point.id, true, SparklingAlert.UNKNOWN))
+        }
+        assertEquals(5, points.unknown().size, "Notification suppression must not discard waypoints")
+        assertTrue(memory.alert(UUID.randomUUID(), true, "Gazer"))
+        assertTrue(memory.announce(UUID.randomUUID(), true, "Gazer"))
+        assertFalse(memory.alert(UUID.randomUUID(), true, SparklingAlert.UNKNOWN))
+        assertFalse(memory.announce(UUID.randomUUID(), true, SparklingAlert.UNKNOWN))
+        assertFalse(memory.alert(UUID.randomUUID(), true, "Gazer"))
+        assertFalse(memory.announce(UUID.randomUUID(), true, "Gazer"))
+        memory.reset()
+        assertTrue(memory.alert(UUID.randomUUID(), true, SparklingAlert.UNKNOWN))
+        assertTrue(memory.announce(UUID.randomUUID(), true, SparklingAlert.UNKNOWN))
+    }
+
     @Test fun `identification cancels only matching unsent unknown notices`() {
         val points = SparklingParticleLocations()
         val first = points.observe(true, true, 0.0, 50.0, -60.0, 0)!!

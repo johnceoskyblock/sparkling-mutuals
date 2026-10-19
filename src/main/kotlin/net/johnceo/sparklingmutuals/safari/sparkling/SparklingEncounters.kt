@@ -36,8 +36,11 @@ class SparklingNotices {
 class SparklingMemory {
     private val alerted = mutableSetOf<String>()
     private val announced = mutableSetOf<String>()
-    private fun key(id: UUID, name: String?) = name?.let(net.johnceo.sparklingmutuals.safari.SafariRoster::named)
-        ?.name ?: id.toString() // Unidentified particle locations still have independent waypoint identities.
+    private fun key(id: UUID, name: String?) = when (name) {
+        // Moving particles can create new location UUIDs; they share one notification per run.
+        SparklingAlert.UNKNOWN -> "particle:unknown"
+        else -> name?.let(net.johnceo.sparklingmutuals.safari.SafariRoster::named)?.name ?: id.toString()
+    }
     fun alert(id: UUID, enabled: Boolean, name: String? = null) = enabled && alerted.add(key(id, name))
     fun announce(id: UUID, enabled: Boolean, name: String? = null) = enabled && announced.add(key(id, name))
     fun reset() { alerted.clear(); announced.clear() }
