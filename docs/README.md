@@ -11,9 +11,11 @@ Players: start with [installation and controls](../README.md). Contributors: rea
 | Common language | [Vocabulary, templates and ownership](DOCUMENTATION_GUIDE.md) |
 | Gameplay overview | [Modes and completion](../SAFARI_LOGIC.md), [37 species](critters/README.md) |
 | Evidence | [Tracking](critters/TRACKING.md), [exact messages](critters/MESSAGES.md), [floor drops](critters/FLOOR_DROPS.md) |
+| API data and recovery | [Safari API lookups, new players and one-minute retries](API_LOOKUPS.md) |
 | Gameplay display | [Bird completion](BIRD_COMPLETION.md), [missing panel](MISSING_PANEL.md), [Sparkling detection](SPARKLING_DETECTION.md) |
 | Controls | [Configuration](CONFIG_DEFAULTS.md), [entry guard](SAFARI_ENTRY_GUARD.md), [warp alerts](WARP_ALERTS.md) |
 | Contest and Canyon | [Contest/downtime](CONTEST_DOWNTIME.md), [Honeyhives](HONEYHIVES.md) |
+| Misc Endgame Features | [Garden Phantomleaf Solver](PHANTOMLEAF_SOLVER.md) |
 | History | [History, imports, achievements and profit](HISTORY_IMPORT.md), [credited party streaks](SINCE_COMMAND.md) |
 | Capsule guide and evidence | [Capture projections and recording](CAPTURE_SHOT_RECORDING.md), [standalone tools](../tools/capture_shots/README.md) |
 | Development | [Contribution workflow](../CONTRIBUTING.md), [multi-version builds](MULTI_VERSION_BUILDS.md), [source synchronization](SOURCE_SYNC.md) |
@@ -43,6 +45,7 @@ Kotlin source lives under `src/main/kotlin/net/johnceo/sparklingmutuals/`. Packa
 | `honeyhives` | Honeyhive labels, observations, tracking and rendering |
 | `hud` | Shared panel drawing, layout and short notices |
 | `mixin` | Minecraft hooks; names are registered in `sparkling-mutuals.mixins.json` |
+| `misc/phantomleaf` | Garden Phantomleaf sound-distance solver, lifecycle and candidate rendering |
 | `party` | Party membership and roster state |
 | `safari` | Shared roster, catch parsing, run state, session lifecycle, chat routing and area detection |
 | `safari/automation` | Mound clicking, candle targeting, downtime and entry guards |
@@ -69,5 +72,9 @@ Runtime assets, mod metadata and mixin registration remain under `src/main/resou
 Generated `.gradle/`, `.kotlin/`, `build/`, `versions/<target>/build/`, IDE files, `run/` and logs are not maintained source. Do not commit authentication files or raw player recordings.
 
 ## Last updated
+
+2026-10-19 - Indexed API empty-discovery handling and automatic one-minute failure recovery.
+
+2026-10-19 - Indexed the Phantomleaf Solver feature and its package; five focused 26.1.2 tests passed, live Garden validation pending.
 
 2026-10-19 (America/New_York) — Consolidated navigation and audited contributor guidance. Reviewed source: `93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee`; documentation-only changes, no local runtime differences or new live validation.

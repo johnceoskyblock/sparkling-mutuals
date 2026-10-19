@@ -259,7 +259,7 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
         if (name !in setOf("Rockmite", "Snoozle") || SafariBiome.CAVERN !in biomeReports) return false
         return name !in uniqueSourceContradictions || cavernSourcesChecked(name)
     }
-    /** Cavern species can combine one shared catch with safari-wide source proof; cd can confirm no spawn. */
+    /** A completed local source/absence survey can waive a variable species that never spawned. */
     fun uniqueComplete(name: String, party: PartySparklingState, localOnly: Boolean = false): Boolean {
         if (name in birdSpecies) return birdSpawnsComplete(localOnly) &&
             (count(name) > 0 || name == "Macaw" && (uniqueUnavailable(name) ||
@@ -269,8 +269,8 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
             if (name in uniqueSourceContradictions && !sparklingChecks.locallyChecked(name)) return false
             val checked = cavernSourcesChecked(name) || sparklingChecks.locallyChecked(name)
             if (count(name) > 0) return checked || !localOnly && uniqueReportedComplete(name)
-            // Empty sources do not fabricate a catch or prove no spawn without the party report.
-            return !localOnly && checked && !encountered(name) && uniqueReportReceived(SafariBiome.CAVERN)
+            return uniqueUnavailable(name) ||
+                !localOnly && checked && !encountered(name) && uniqueReportReceived(SafariBiome.CAVERN)
         }
         return count(name) > 0
     }
@@ -278,7 +278,8 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
     fun uniqueUnavailable(name: String): Boolean {
         if (name == "Macaw") {
             syncBirdContributions()
-            return forestBirdsSurveyed && !birds.hasMacaws(count(name), nearbyMacaws) && birds.feedingResolved
+            return forestBirdsSurveyed && !encountered(name) &&
+                !birds.hasMacaws(count(name), nearbyMacaws) && birds.feedingResolved
         }
         val remaining = nearby[SafariBiome.CAVERN] ?: return false
         if (encountered(name) || name in remaining) return false

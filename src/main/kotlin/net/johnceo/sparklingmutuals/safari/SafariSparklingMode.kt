@@ -71,11 +71,17 @@ object SafariSparklingMode {
         task = executor.submit {
             val result = runCatching { members.associateWith { SafariLookup.discoveries(it, currentProvider) } }
             client.execute {
-                if (revision != generation || client.connection !== connection || HypixelApi.provider != currentProvider ||
-                    client.player?.uuid?.toString()?.let(PartyManager::withLocal) != members) return@execute
+                if (revision != generation) return@execute
+                // This worker is finished even if a transient roster refresh makes its result unusable.
                 task = null
+                if (client.connection !== connection || HypixelApi.provider != currentProvider) return@execute
+                if (client.player?.uuid?.toString()?.let(PartyManager::withLocal) != members) {
+                    retry.failed(System.currentTimeMillis(), currentProvider); refresh = true
+                    return@execute
+                }
                 result.fold({ discoveries ->
                     if (state.accept(members, discoveries, currentProvider)) { loadedRun = run; warning = null }
+                    else { retry.failed(System.currentTimeMillis(), currentProvider); refresh = true }
                 }, { failure ->
                     retry.failed(System.currentTimeMillis(), currentProvider); refresh = true
                     local(client, (failure as? ApiFailure)?.message ?: ApiFailure.unavailable().message!!)

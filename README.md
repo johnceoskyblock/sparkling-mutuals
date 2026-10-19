@@ -62,9 +62,12 @@ The guide is a visual estimate, not guaranteed flight, impact or capture physics
 - JavaBetter contributed player cards, cloud lookups, party helpers, honeyhives, history, achievements and profit tracking; GamingLegend123 contributed the Shiny Hunter icon.
 - Adapted work: [CritterMod v0.9.0](https://github.com/MrCloudy2/critterMod/tree/v0.9.0), [ShinyHunter](https://github.com/javabetter/ShinyHunter), [Nebulune](https://github.com/Gaeritag/Nebulune), and [SkyHanni 9.1.0](https://github.com/hannibal002/SkyHanni/tree/9.1.0).
 - Settings: [MoulConfig](https://github.com/NotEnoughUpdates/MoulConfig).
+- Phantomleaf Solver: adapted from [SkyHanni](https://github.com/SkyHanniStudios/SkyHanni/blob/b3543887dfb80d95ff9880b3f610167ac2c104f2/src/main/java/at/hannibal2/skyhanni/features/garden/greenhouse/PhantomleafSolver.kt) under LGPL-2.1; open `/sm` → Misc Endgame Features. See [feature guide](docs/PHANTOMLEAF_SOLVER.md).
 - Licensing and attribution: [LICENSE](LICENSE) and [third-party notices](licenses).
 
 ## Last updated
+
+2026-10-19 - Added the Garden Phantomleaf Solver and Misc Endgame Features tab with SkyHanni attribution.
 
 2026-10-19 (America/New_York) — Integrated the Gemzie whole-gem selection helper from `c4908de` onto master `a1f98be`. Reviewed helper input, item identity, settings and mixin registration; live podium placement remains unverified.
 

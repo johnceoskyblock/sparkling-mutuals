@@ -84,7 +84,7 @@ Loaded Cavern mound/wall observations run from **any Safari biome** without a pl
 | Outcome | Accepted report effect | Revalidation |
 | --- | --- | --- |
 | Ordinary Unique | None needed after its shared first catch | No ordinary discovery scan gate |
-| Unique Rockmite/Snoozle | cd may supply unknown checking after a catch; resolved sources + cd can confirm unseen zero spawn | Known intact sources cannot be erased by another report; encountered uncaught species cannot use zero-spawn trust |
+| Unique Rockmite/Snoozle | Local Cavern absence plus fully resolved sources confirms unseen zero spawn without cd; cd may supply unknown checking after a catch or retain remote zero-spawn trust | Known intact sources cannot be erased by another report; encountered uncaught species cannot use zero-spawn trust |
 | Honeybug Unique/Sparkling | fd supplies checking, never captures | Trust survives Forest entry and incomplete later renders |
 | Ordinary Sparkling | Report substitutes checking | Entry/local scan clears inherited ordinary checking; retained local UUID evidence remains |
 | Gimmiegold Sparkling | hd may substitute outside Haunted up to its recorded floor-plus-extra target | Inside Haunted requires dedicated local slot/inventory/population validation; newly learned extra demand requires fresh proof/report |
@@ -135,5 +135,7 @@ Reviewed source: 93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee.
 Hypixel population guarantees, precise server render coverage and replacement UUID behavior remain unverified. Exact prerequisite-to-boss-spawn relationships require live evidence; inventory alone is not proof of a spawn. [The audit report](../IMPLEMENTATION_AUDIT.md) separates these uncertainties from documentation mismatches.
 
 ## Last updated
+
+2026-10-19 - Added local Unique zero-spawn Cavern completion from resolved sources and absence, without a circular cd requirement.
 
 2026-10-19 (America/New_York) — Added early contribution routing, local-title reminders, target-scoped hd trust and late-entry reporting. Reviewed source: working changes on `78885e0`; live validation pending.

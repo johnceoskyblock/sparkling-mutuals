@@ -31,6 +31,8 @@ Achievements themselves and achievement sound default on. A button's backing fie
 
 General boolean loading uses strict `true`/`false` with a field-specific fallback. Contest's automatic downtime switch does likewise; older contest tracking/warning/title boolean readers use `toBoolean()` (an invalid value becomes false). Do not assume every malformed property has the same fallback.
 
+The **Misc Endgame Features** tab includes **Phantomleaf Solver**, default on and saved as `phantomleafSolver`. It is active only in Garden during a Phantomleaf search. See [Phantomleaf Solver](PHANTOMLEAF_SOLVER.md).
+
 ## Implemented behavior
 
 ### Mode presets and saved choices
@@ -85,6 +87,8 @@ Startup normalizes legacy `pb.*` keys from the general file and the earlier `Spa
 - Existing secondary coverage: [ConfigTest](../src/test/kotlin/net/johnceo/sparklingmutuals/config/ConfigTest.kt), [SafariSettingsTest](../src/test/kotlin/net/johnceo/sparklingmutuals/config/SafariSettingsTest.kt), [SafariCustomizationTest](../src/test/kotlin/net/johnceo/sparklingmutuals/config/SafariCustomizationTest.kt), [SafariFeatureDefaultsTest](../src/test/kotlin/net/johnceo/sparklingmutuals/config/SafariFeatureDefaultsTest.kt). No tests or live settings session ran in this audit. Reopen/restart, migration failure recovery and preset transitions require their appropriate runtime checks.
 
 ## Last updated
+
+2026-10-19 - Added Misc Endgame Features and the persisted Phantomleaf Solver switch (default on).
 
 2026-10-19 (America/New_York) — Integrated the Gemzie whole-gem selection helper from `c4908de` onto master `a1f98be`. Reviewed helper input, item identity, settings and mixin registration; live podium placement remains unverified.
 

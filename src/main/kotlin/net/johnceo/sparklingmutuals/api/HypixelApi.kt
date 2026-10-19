@@ -25,11 +25,7 @@ object HypixelApi {
     }
 
     fun getSparklingCritters(playerUuid: String, profileUuid: String): Set<String> = data {
-        val safari = getMember(playerUuid, profileUuid).getAsJsonObject("safari")
-            ?: throw ApiFailure.dataUnavailable()
-        val discoveries = safari.getAsJsonArray("discovered_sparkling_critters")
-            ?: throw ApiFailure.dataUnavailable()
-        discoveries.map { it.asString }.toSet()
+        SafariProfile.discoveriesFrom(getMember(playerUuid, profileUuid))
     }
 
     fun getPlayerUuid(username: String): String {
@@ -88,5 +84,5 @@ object HypixelApi {
 
     private fun <T> data(read: () -> T): T = try { read() }
         catch (failure: ApiFailure) { throw failure }
-        catch (_: Exception) { throw ApiFailure.dataUnavailable() }
+        catch (_: Exception) { throw ApiFailure.malformedData() }
 }

@@ -20,7 +20,11 @@ Authoritative reference for implemented mode outcomes, announcement eligibility 
 | Unique | One shared catch per ordinary species, with exceptions below | uniqueComplete; Honeybug's first catch removes its row even when progress still needs checking |
 | Full Clear | Local capture/source proof, or report-backed capture minima; fixed-target species can complete progress early | Local capture/source proof and qualified absence coverage; a report alone cannot remove the row |
 
+Unique can waive an uncaught Macaw after complete local bird feeding (including known party starting food) with no Macaw encounter. It can also waive an uncaught Rockmite/Snoozle after complete local source resolution and a Cavern absence scan with no encounter. These species disappear from Missing and may complete fd/cd once all other local requirements pass. No catch is fabricated.
+
 Ordinary Sparkling checks use retained qualified UUID evidence reconciled with shared catches. Ordinary Unique completion adds no discovery scan/radius requirement. Full Clear uses actual catches, known population targets, source conditions and qualified empty scans; [tracking](docs/critters/TRACKING.md) explains those evidence paths.
+
+Valid selected profile members with no Safari/Sparkling discovery fields have zero discoveries and need every species checked. Actual failed background discovery lookups retry after one minute in the same mode; temporary roster changes cannot leave a finished lookup marked busy. See [API data and recovery](docs/API_LOOKUPS.md).
 
 Detected Sparkling identities impose **no additional capture gate in any mode**. Confirmed Sparkling catch evidence, including accepted global announcements, overrides ordinary Unique/Sparkling species completion. A global announcement alone supplies no ordinary capture count or personal PB evidence. Birds are evaluated before this override and retain their shared spawning rules. Full Clear retains its normal rules. [Detection](docs/SPARKLING_DETECTION.md) owns identification and notifications.
 
@@ -83,5 +87,9 @@ Reviewed source: 93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee; documentation-only wo
 Numeric minima and whole-biome coverage are not certified by client predicates. [The consolidated audit](docs/IMPLEMENTATION_AUDIT.md) records documentation mismatches, PB differences and server uncertainties.
 
 ## Last updated
+
+2026-10-19 - Added local Unique zero-spawn Cavern completion and confirmed no-Macaw Forest reporting after all food obligations resolve.
+
+2026-10-19 - Documented zero-discovery new players and automatic one-minute recovery of Sparkling-mode API failures.
 
 2026-10-19 (America/New_York) — Early discovery-gated quantities replace completion-time resource chat; late-entry fd/hd use local spawning proof and received-report suppression. Reviewed source: working changes on `78885e0`; live validation pending.

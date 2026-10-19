@@ -34,18 +34,18 @@ class ApiRetryWindowTest {
         val tickets = ApiRetryWindow(); val discoveries = ApiRetryWindow()
         tickets.failed(0, "key"); discoveries.failed(1000, "key")
         tickets.reset()
-        assertFalse(tickets.due(181000, "key"))
-        assertTrue(discoveries.due(181000, "key"))
+        assertFalse(tickets.due(61000, "key"))
+        assertTrue(discoveries.due(61000, "key"))
     }
-    @Test fun `failure retries at three minutes and reschedules from the latest failure`() {
+    @Test fun `failure retries at one minute and reschedules from the latest failure without mode changes`() {
         val retry = ApiRetryWindow()
         assertFalse(retry.pending)
         retry.failed(1000, "old")
-        assertFalse(retry.due(180999, "old"))
-        assertTrue(retry.due(181000, "old"))
-        retry.failed(181500, "old")
-        assertFalse(retry.due(361499, "old"))
-        assertTrue(retry.due(361500, "old"))
+        assertFalse(retry.due(60999, "old"))
+        assertTrue(retry.due(61000, "old"))
+        retry.failed(61500, "old")
+        assertFalse(retry.due(121499, "old"))
+        assertTrue(retry.due(121500, "old"))
     }
     @Test fun `key updates wake only failed operations and reset cancels retries`() {
         val retry = ApiRetryWindow()

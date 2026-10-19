@@ -20,19 +20,30 @@ data class SafariProfile(val discoveries: Set<String>, val tickets: Map<String, 
         /** One of each per run, so the highest of their bestiary kills is the number of runs. */
         private val ONCE_A_RUN = listOf("Doomspiral", "Wumpa", "Hideyho")
 
+        /** Hypixel omits these fields before the first Sparkling. A valid member is still required by the caller. */
+        fun discoveriesFrom(member: JsonObject): Set<String> {
+            val safari = member.get("safari")?.takeUnless { it.isJsonNull } ?: return emptySet()
+            if (!safari.isJsonObject) throw ApiFailure.malformedData()
+            val discoveries = safari.asJsonObject.get("discovered_sparkling_critters")
+                ?.takeUnless { it.isJsonNull } ?: return emptySet()
+            if (!discoveries.isJsonArray || discoveries.asJsonArray.any {
+                !it.isJsonPrimitive || !it.asJsonPrimitive.isString
+            }) throw ApiFailure.malformedData()
+            return discoveries.asJsonArray.map { it.asString }.toSet()
+        }
+
         fun from(member: JsonObject): SafariProfile {
             fun at(path: String): JsonElement? = path.split('.').fold(member as JsonElement?) { node, step ->
                 node?.takeIf { it.isJsonObject }?.asJsonObject?.get(step) }
             fun number(path: String) = at(path)?.takeIf { it.isJsonPrimitive && it.asJsonPrimitive.isNumber }
-            val safari = at("safari")?.takeIf { it.isJsonObject }?.asJsonObject ?: throw ApiFailure.dataUnavailable()
-            val discoveries = safari.getAsJsonArray("discovered_sparkling_critters")?.map { it.asString }?.toSet()
-                ?: throw ApiFailure.dataUnavailable()
+            val discoveries = discoveriesFrom(member)
             val tickets = TICKET_TIERS.associateWith { number("safari.tickets.$it")?.asLong ?: 0L }
             // Bestiary kills of the Safari critters are your own catches.
             val kills = at("bestiary.kills")?.takeIf { it.isJsonObject }?.asJsonObject
             fun kills(name: String) = kills?.get(bestiaryId(name))?.takeIf { it.isJsonPrimitive && it.asJsonPrimitive.isNumber }?.asLong ?: 0L
             return SafariProfile(discoveries, tickets, number("player_data.experience.SKILL_HUNTING")?.asDouble,
-                number("currencies.essence.SAFARI.current")?.asLong, number("safari.total_captured_sparkling_critters")?.asLong,
+                number("currencies.essence.SAFARI.current")?.asLong,
+                number("safari.total_captured_sparkling_critters")?.asLong ?: 0L.takeIf { discoveries.isEmpty() },
                 kills?.let { ONCE_A_RUN.maxOf(::kills) }, kills?.let { SafariRoster.all.sumOf { kills(it.name) } })
         }
 
