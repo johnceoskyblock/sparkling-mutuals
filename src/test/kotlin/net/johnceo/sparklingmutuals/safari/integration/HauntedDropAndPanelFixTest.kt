@@ -1,7 +1,5 @@
 package net.johnceo.sparklingmutuals.safari.integration
 
-import net.johnceo.sparklingmutuals.safari.resources.knownStartingEvidence
-
 import java.nio.file.Path
 import java.util.UUID
 import net.johnceo.sparklingmutuals.config.ConfigManager
@@ -41,7 +39,7 @@ class HauntedDropAndPanelFixTest {
         run.sparklingChecks.scan(SafariBiome.HAUNTED, -4.0, -64.0, seen,
             hauntedDropsRemaining = 1, hauntedCoinDropsRemaining = coins)
     }
-    private fun spentRun(coins: Int = 3) = SafariRun(0).knownStartingEvidence().apply {
+    private fun spentRun(coins: Int = 3) = SafariRun(0).apply {
         (1..coins).forEach { gimmiegoldCheck.floor(it, false) }
         repeat(coins) {
             sparklingChecks.chat("FLOOR DROP! You found a Shining Coin!")
@@ -120,7 +118,7 @@ class HauntedDropAndPanelFixTest {
         for (mode in SafariMode.entries) {
             ConfigManager.fullClearMode = mode == SafariMode.FULL_CLEAR
             ConfigManager.sparklingMode = mode == SafariMode.SPARKLING
-            val run = SafariRun(0).knownStartingEvidence()
+            val run = SafariRun(0)
             val missing = party(*SafariRoster.all.map { it.name }.toTypedArray())
             for (biome in SafariBiome.entries) {
                 val rows = SafariPanels.missing(run, biome, mode == SafariMode.UNIQUE, 8, 9,
@@ -141,7 +139,7 @@ class HauntedDropAndPanelFixTest {
     }
     @Test fun `Unique Gazer row disappears after its first catch despite unfinished Sparkling checks`() {
         ConfigManager.init(dir)
-        val run = SafariRun(0).knownStartingEvidence()
+        val run = SafariRun(0)
         run.record(SafariCatch(SafariRoster.named("Gazer")!!))
         run.sparklingChecks.scan(SafariBiome.HAUNTED, -4.0, -64.0, listOf("Gazer" to UUID.randomUUID()))
         val rows = SafariPanels.missing(run, SafariBiome.HAUNTED, true, 0, party = party("Gazer")).rows

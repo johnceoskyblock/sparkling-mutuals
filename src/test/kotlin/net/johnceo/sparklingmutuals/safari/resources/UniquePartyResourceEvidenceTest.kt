@@ -1,7 +1,5 @@
 package net.johnceo.sparklingmutuals.safari.resources
 
-import net.johnceo.sparklingmutuals.safari.resources.knownStartingEvidence
-
 import net.johnceo.sparklingmutuals.safari.resources.renderBird
 import net.johnceo.sparklingmutuals.safari.resources.scanRenderedBirds
 
@@ -18,42 +16,41 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class UniquePartyResourceEvidenceTest {
-    @Test fun `later same-type floor food stays in the baseline rather than becoming another starting grant`() {
-        val run = SafariRun(1000).knownStartingEvidence()
+    @Test fun `later same-type food is additional demand rather than overlapping starting inventory`() {
+        val run = SafariRun(1000)
         run.inventoryEvidence(listOf("Bag of Seeds" to 2), 1000)
         repeat(2) { run.recordBirdFood("FLOOR DROP! Bag of Seeds", null, 1100) }
         assertEquals(11, run.birds.feedingTarget)
         run.recordBirdFood("FLOOR DROP! Bag of Seeds", null, 5000)
-        assertEquals(11, run.birds.feedingTarget)
-        assertEquals(11, run.birds.sparklingTarget)
+        assertEquals(12, run.birds.feedingTarget)
+        assertEquals(12, run.birds.sparklingTarget)
     }
-    @Test fun `only inventory witnessed before a floor pickup establishes original starting food`() {
+    @Test fun `starting pickup and inventory evidence count the same food once in either order`() {
         for (inventoryFirst in listOf(false, true)) {
             val birds = SafariBirdLedger()
             if (inventoryFirst) birds.startingInventory(listOf("Yogi Berry" to 2), 0)
             repeat(2) { birds.pickup("FLOOR DROP! Yogi Berry", null) }
             if (!inventoryFirst) birds.startingInventory(listOf("Yogi Berry" to 2), 500)
             repeat(3) { for (food in listOf("Bag of Seeds", "Wriggleworm", "Yogi Berry")) birds.pickup("FLOOR DROP! $food", SafariBiome.FOREST) }
-            val expected = if (inventoryFirst) 11 else 9
-            assertEquals(expected, birds.feedingTarget)
-            repeat(expected) { birds.renderBird("Bluebird") }
+            assertEquals(11, birds.feedingTarget)
+            repeat(11) { birds.renderBird("Bluebird") }
             birds.inventory(emptyList())
             birds.scan(0)
             assertTrue(birds.allSpawned)
-            assertEquals(expected, birds.requiredCaptures(0, 0))
+            assertEquals(11, birds.requiredCaptures(0, 0))
         }
     }
     private fun party(vararg needed: String) = PartySparklingState().apply {
         select(setOf("me")); accept(setOf("me"), mapOf("me" to (SafariRoster.all.map { it.name }.toSet() - needed.toSet())))
     }
-    private fun forest() = SafariRun(0).knownStartingEvidence().apply {
+    private fun forest() = SafariRun(0).apply {
         visitBiome(SafariBiome.FOREST)
         repeat(6) { recordBirdFood("FLOOR DROP! Wriggleworm", SafariBiome.FOREST, 10000) }
         SafariBiome.FOREST.critters.forEach { record(SafariCatch(it)) }
         updateCaptureEvidence(SafariBiome.FOREST, emptySet(), false)
     }
     @Test fun `Unique party cd has no effect before or after visiting Cavern`() {
-        val run = SafariRun(0).knownStartingEvidence(); val state = party("Rockmite", "Snoozle")
+        val run = SafariRun(0); val state = party("Rockmite", "Snoozle")
         run.visitBiome(SafariBiome.CAVERN)
         run.reconcileStructures(SafariBiome.CAVERN, true, true)
         SafariMessages.forRun("Party > Friend: cd", run, true)

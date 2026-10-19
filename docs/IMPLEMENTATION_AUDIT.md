@@ -44,9 +44,7 @@ The audit follows owners through event registration/callers, mode/configuration 
 
 ### d3
 
-**A larger repeated resource notice can affect consumers differently.** In [SafariResources.notice](../src/main/kotlin/net/johnceo/sparklingmutuals/safari/resources/SafariResources.kt), reported coin/food maxima update before the early return for an already resolved/outstanding sender/type. Its outstanding allocation and required population are not increased on that path. A notice of `1x` followed by `2x` from the same sender can therefore increase contributions consumed by the bird/Gimmiegold checking ledgers while leaving this resource obligation at its earlier quantity. Other capture targets may mask the difference. Reproduction should compare resource obligations and species checking separately; this audit changed neither ledger.
-
-**Issue #68 follow-up (runtime `76dd746`):** early/legacy/local quantities now share absolute sender/type maxima, new quantities invalidate dedicated bird/coin proof, and fresh qualified complete F+S coin proof reconciles legacy outstanding records against the verified variable demand. The former fixed-three veto on this Sparkling path is corrected. Generic outstanding allocations for an already outstanding/resolved sender/type still keep their earlier record; do not infer that every separate Full Clear recovery path was rewritten.
+**A larger repeated resource notice can affect consumers differently.** In [SafariResources.notice](../src/main/kotlin/net/johnceo/sparklingmutuals/safari/resources/SafariResources.kt), reported coin/food maxima update before the early return for an already resolved/outstanding sender/type. Its outstanding allocation and required population are not increased on that path. A notice of `1x` followed by `2x` from the same sender can therefore increase contributions consumed by the bird/Gimmiegold checking ledgers while leaving this resource obligation at its earlier quantity. Other capture targets may mask the difference. Reproduction should compare resource obligations and species checking separately; this audit changes neither ledger.
 
 ### d7
 
@@ -74,8 +72,6 @@ The audit follows owners through event registration/callers, mode/configuration 
 
 **Full Clear bird capture completion tests known blockers, not complete source knowledge.** [SafariBirdLedger.capturesComplete](../src/main/kotlin/net/johnceo/sparklingmutuals/safari/resources/SafariBirdLedger.kt) can pass from its capture target and absence of known remaining food/held resources. It does not itself require the positive feeding-resolution proof used by other bird consumers. Unknown inventory/floor observations are therefore weaker than confirmed empty observations. The bird guide documents this actual distinction; whether the server supplied every opportunity remains unverified.
 
-**Issue #68 follow-up (runtime `76dd746`):** `SafariRun.birdComplete` now requires complete current starting reports and either known initial floor coverage or a received fd. Wholly unknown coverage with no report no longer passes at the run boundary. The pure capture formula still uses known current blockers and actual captures, rather than requiring the stronger local feeding-resolution/positive-current-empty survey. This finding is narrowed, not a claim that every bird mode now uses the same predicate.
-
 ### d12
 
 **Capture projections remain conditional geometry.** The fixed ordinary-capsule spatial curve is not a server-time simulation. Masterful/movement/water previews, launch extrapolation, current-position critter proxies, Shyworm multipart association, mound display surfaces and first-contact ordering are implementation hypotheses. Native rendering checks and narrow historical position residuals do not establish target selection, server hitboxes or guaranteed capture. Optional Iris compatibility was exercised on 26.1.2 with specific shader packs; it does not certify every pack. [The capture guide](CAPTURE_SHOT_RECORDING.md) owns the contracts and limits.
@@ -96,4 +92,4 @@ The PR records the final inventory/disposition map, representative before/after 
 
 ## Last updated
 
-2026-10-19 (America/New_York) — Consolidated static documentation discrepancies and retained implementation/server uncertainties at the reviewed revision above. No live validation or gameplay fixes in the original audit. Issue #68 follow-up annotations scope d3/d9 to runtime `76dd746` without redispatching unrelated findings.
+2026-10-19 (America/New_York) — Consolidated static documentation discrepancies and retained implementation/server uncertainties at the reviewed revision above. No live validation or gameplay fixes in this audit.

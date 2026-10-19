@@ -1,7 +1,5 @@
 package net.johnceo.sparklingmutuals.safari.resources
 
-import net.johnceo.sparklingmutuals.safari.resources.knownStartingEvidence
-
 import net.johnceo.sparklingmutuals.safari.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -11,7 +9,7 @@ class StartingResourceDeliveryTest {
         select(setOf("me")); accept(setOf("me"), mapOf("me" to (SafariRoster.all.map { it.name }.toSet() - needed.toSet())))
     }
     @Test fun `mixed starting items produce one short message and one combined title`() {
-        val run = SafariRun(0).knownStartingEvidence()
+        val run = SafariRun(0)
         val needs = party("Gimmiegold", "Macaw")
         run.inventoryEvidence(listOf("Shining Coin" to 1, "Yogi Berry" to 1), 0)
         run.resourceReminders.afterBiomeClear(0)
@@ -32,11 +30,10 @@ class StartingResourceDeliveryTest {
         assertTrue(notice.length < 256)
         assertFalse(run.resourceReminders.dispatch(8000, "Local", SafariBiome.CAVERN, needs) { _, _ -> fail("duplicate message") })
     }
-    @Test fun `legacy combined notice codec supports all food categories and quantities`() {
+    @Test fun `all foods share missing bird explanation and fit one party message`() {
         val needs = party("Gimmiegold", "Bluebird", "Parakeet", "Macaw")
-        val run = SafariRun(0).knownStartingEvidence()
-        // Deliberately oversized legacy format fixture, not a genuine two-grant entry snapshot.
-        run.resources.inventory(listOf("Shining Coin" to 2, "Wriggleworm" to 2, "Yogi Berry" to 2, "Bag of Seeds" to 2), true)
+        val run = SafariRun(0)
+        run.inventoryEvidence(listOf("Shining Coin" to 2, "Wriggleworm" to 2, "Yogi Berry" to 2, "Bag of Seeds" to 2), 0)
         run.resourceReminders.afterBiomeClear(0)
         assertTrue(run.resourceReminders.dispatch(4000, "Local", SafariBiome.CAVERN, needs) { text, _ ->
             assertTrue(text.contains("missing Sparkling Bluebird, Parakeet, Macaw"))
@@ -61,7 +58,7 @@ class StartingResourceDeliveryTest {
         }
     }
     @Test fun `failed batch dispatch leaves every item available for retry`() {
-        val run = SafariRun(0).knownStartingEvidence()
+        val run = SafariRun(0)
         val needs = party("Gimmiegold", "Macaw")
         run.inventoryEvidence(listOf("Shining Coin" to 1, "Bag of Seeds" to 1), 0)
         run.resourceReminders.afterBiomeClear(0)
@@ -94,15 +91,14 @@ class StartingResourceDeliveryTest {
             party("Gimmiegold")).single(), party("Gimmiegold"))!!.quantity)
     }
     @Test fun `late first inventory keeps floor pickups separate from silent starting food`() {
-        val run = SafariRun(0).knownStartingEvidence()
+        val run = SafariRun(0)
         run.resources.pickup("FLOOR DROP! Shining Coin")
-        run.inventoryEvidence(listOf("Shining Coin" to 2, "Yogi Berry" to 1), 10000)
-        assertEquals(1, run.resources.startingCount(FloorDropType.COIN))
-        assertEquals(1, run.resources.startingCount(FloorDropType.BERRY))
-        assertEquals(10, run.birds.feedingTarget)
-        run.startingMessage("HOTSPOT! Your Hunting Hotspot is the Cavern Biome!", 10000)
+        run.inventoryEvidence(listOf("Shining Coin" to 3, "Yogi Berry" to 2), 10000)
+        assertEquals(2, run.resources.startingCount(FloorDropType.COIN))
+        assertEquals(2, run.resources.startingCount(FloorDropType.BERRY))
+        assertEquals(11, run.birds.feedingTarget)
         run.inventoryEvidence(listOf("Yogi Berry" to 20), 13001)
-        assertEquals(1, run.resources.startingCount(FloorDropType.BERRY), "later holdings are not new grants")
+        assertEquals(2, run.resources.startingCount(FloorDropType.BERRY), "later holdings are not new grants")
     }
     @Test fun `one clear trigger batches all eligible items with independent discovery gates`() {
         for ((needs, expected) in listOf(
@@ -110,7 +106,7 @@ class StartingResourceDeliveryTest {
             party("Macaw") to listOf(FloorDropType.SEEDS),
             party("Gimmiegold") to listOf(FloorDropType.COIN),
             party() to emptyList())) {
-            val run = SafariRun(0).knownStartingEvidence()
+            val run = SafariRun(0)
             run.inventoryEvidence(listOf("Shining Coin" to 1, "Bag of Seeds" to 1), 0)
             val output = mutableListOf<StartingResourceReminder>()
             val delivery = run.resourceReminders
@@ -122,12 +118,12 @@ class StartingResourceDeliveryTest {
             assertEquals(expected.toSet(), output.map { it.type }.toSet())
             assertEquals(expected.size, output.size)
             assertTrue(output.all { it.quantity == 1 && it.missing.size == 1 })
-            assertFalse(run.resources.pending(SafariBiome.HAUNTED), "local title delivery creates no shared obligation")
-            assertFalse(run.resources.pending(SafariBiome.FOREST), "local title delivery creates no shared obligation")
+            assertEquals(FloorDropType.COIN in expected, run.resources.pending(SafariBiome.HAUNTED))
+            assertEquals(FloorDropType.SEEDS in expected, run.resources.pending(SafariBiome.FOREST))
         }
     }
     @Test fun `temporary destination or discovery suppression does not lose an unsent reminder`() {
-        val run = SafariRun(0).knownStartingEvidence()
+        val run = SafariRun(0)
         run.inventoryEvidence(listOf("Shining Coin" to 1, "Yogi Berry" to 1), 0)
         val output = mutableListOf<StartingResourceReminder>()
         val delivery = run.resourceReminders
@@ -138,12 +134,12 @@ class StartingResourceDeliveryTest {
         assertFalse(delivery.dispatch(8000, "Local", SafariBiome.CAVERN, party("Macaw")) { _, r -> output.addAll(r.items) })
         assertTrue(delivery.dispatch(9000, "Local", SafariBiome.CAVERN, party("Gimmiegold", "Macaw")) { _, r -> output.addAll(r.items) })
         assertEquals(listOf(FloorDropType.BERRY, FloorDropType.COIN), output.map { it.type })
-        assertFalse(SafariRun(1).knownStartingEvidence().resourceReminders.dispatch(12000, "Local", SafariBiome.CAVERN, party("Macaw")) { _, r -> output.addAll(r.items) })
+        assertFalse(SafariRun(1).resourceReminders.dispatch(12000, "Local", SafariBiome.CAVERN, party("Macaw")) { _, r -> output.addAll(r.items) })
     }
-    @Test fun `legacy combined notices reconcile independent remaining quantities at the receiver`() {
-        val run = SafariRun(0).knownStartingEvidence()
+    @Test fun `dispatch rechecks quantities and only delivered items create independent spawn work`() {
+        val run = SafariRun(0)
         val needs = party("Gimmiegold", "Bluebird", "Parakeet")
-        run.resources.inventory(listOf("Shining Coin" to 2, "Bag of Seeds" to 2, "Yogi Berry" to 1), true)
+        run.inventoryEvidence(listOf("Shining Coin" to 2, "Bag of Seeds" to 2, "Yogi Berry" to 1), 0)
         val outgoing = mutableListOf<String>()
         val receiver = SafariResources()
         receiver.scan(SafariBiome.FOREST, 9)
@@ -173,7 +169,7 @@ class StartingResourceDeliveryTest {
         assertFalse(receiver.pending(SafariBiome.FOREST), "repeat notices do not create more work")
     }
     @Test fun `using one held item before dispatch suppresses only that reminder`() {
-        val run = SafariRun(0).knownStartingEvidence()
+        val run = SafariRun(0)
         run.inventoryEvidence(listOf("Shining Coin" to 1, "Wriggleworm" to 1), 0)
         run.resourceReminders.afterBiomeClear(0)
         run.inventoryEvidence(listOf("Wriggleworm" to 1), 5000)
@@ -185,14 +181,14 @@ class StartingResourceDeliveryTest {
     }
 
     @Test fun `late sampled food does not count a reported floor pickup as another starting grant`() {
-        val run = SafariRun(0).knownStartingEvidence()
+        val run = SafariRun(0)
         run.resources.pickup("FLOOR DROP! Yogi Berry")
         run.recordBirdFood("FLOOR DROP! Yogi Berry", SafariBiome.CAVERN, 10000)
         run.inventoryEvidence(listOf("Yogi Berry" to 3), 10000)
         assertEquals(2, run.resources.startingCount(FloorDropType.BERRY))
-        assertEquals(11, run.birds.feedingTarget, "two starting foods; the floor pickup belongs to the floor baseline")
+        assertEquals(12, run.birds.feedingTarget, "two starting foods plus one floor pickup")
         run.inventoryEvidence(listOf("Yogi Berry" to 3), 11000)
-        assertEquals(11, run.birds.feedingTarget)
+        assertEquals(12, run.birds.feedingTarget)
     }
 
     @Test fun `paced food notices preserve partial spawn credit between deliveries`() {
@@ -222,7 +218,7 @@ class StartingResourceDeliveryTest {
     }
 
     @Test fun `local clearing still delivers supplies when a prior party report suppresses our done message`() {
-        val run = SafariRun(0).knownStartingEvidence()
+        val run = SafariRun(0)
         val needs = party("Gimmiegold")
         run.visitBiome(SafariBiome.CAVERN)
         run.inventoryEvidence(listOf("Shining Coin" to 1), 0)

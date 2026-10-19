@@ -9,13 +9,13 @@
 | Biome | Haunted | Implemented roster |
 | Rarity | Rare | Supplied server notes; not live revalidated |
 | Spawn source | Shining Coin slots plus starting/party coins | Implemented evidence path; mechanics unverified |
-| Population model | Variable; Sparkling target F verified floor slots + S starting coins | Implemented rule, not server guarantee |
+| Population model | Variable; Sparkling target F registered floor slots + E extra coins | Implemented rule, not server guarantee |
 | Full Clear minimum | 3 shared captures before species adjustments | Implemented fallback/minimum |
 | Local scan coverage | Sparkling population radius 15 blocks around X/Z (-4, -64); slots learned Safari-wide | Implemented coverage |
 
 ## What makes this critter different
 
-- Sparkling requires complete initial source/current-roster report coverage, no remaining applicable coin sources, sampled zero held coins, and qualified actual captures plus current uncaptured models reaching F + S. Historical UUID totals cannot substitute; neither can a fixed three-coin fallback.
+- Sparkling requires all registered slots resolved, sampled zero held coins, and current captured-plus-rendered population F + E. Historical UUID totals cannot substitute.
 - Full Clear retains a separate conservative recovery ledger: fallback minimum 3 plus larger known targets.
 
 ## Spawn prerequisites
@@ -29,13 +29,13 @@ Collect registered slots/use all known coins. Grants, pickups, held coins, use m
 | Personal capture / party loot share ([exact messages](MESSAGES.md)) | Own capture adds personal + shared evidence; attributed loot share adds shared evidence | Local checks, source resolution or personal PB from another player's catch |
 | Live textured item display / qualified check | Current sighting; qualified evidence contributes under mode rule | Capture or absence inferred from missing outline |
 | Supplied capsule notes | Supplied notes say standard capsules can fail, replacement UUIDs may follow escape, and Masterful catches are guaranteed once hit. | Server mechanics revalidated by this source audit; see [D2](../IMPLEMENTATION_AUDIT.md#d2) |
-| Coin registry, inventory and qualified current population | Distinct floor opportunities F, known starting coins S, and fresh C + U against F + S; disappearance alone is not collection | Fixed three-slot guarantee, capture from resource use, or replacement UUID history as current population |
+| Coin registry, inventory and qualified current population | Slot collection and C + U against F + E | Fixed three-slot guarantee, capture from resource use, or replacement UUID history as current population |
 
 ## Completion by mode
 
 | Mode | Capture requirement | Checking or source requirement | Party-report effect |
 | --- | --- | --- | --- |
-| Sparkling | None for ordinary models; confirmed Sparkling capture override applies. | Known initial source/report coverage, no remaining sources, sampled 0 held coins, qualified C + U >= F + S. F is the observed variable count, including a verified zero; unknown is not zero. | Outside Haunted, current-demand hd supplies checking without local renders, retaining known resource blockers. New demand/contradictions invalidate old trust. Inside Haunted local conditions apply. |
+| Sparkling | None for ordinary models; confirmed Sparkling capture override applies. | All registered slots resolved, sampled 0 held coins, qualified C + U >= F + E; at least one registered slot required. | Outside Haunted, hd can supply checking trust. Inside Haunted local coin conditions apply. |
 | Unique | One shared capture, or the confirmed-Sparkling capture override. | None beyond capture; ordinary coin checks do not gate Unique. | Does not supply a capture. |
 | Full Clear | At least 3 shared captures, raised by source/contribution and observed-population targets. | Local recovery resolved, no known held coins/no remaining critters; resource/source contradictions may still block progress. | Without local proof, report plus capture minimum can complete progress; row still needs local proof. |
 
@@ -53,15 +53,15 @@ Collect registered slots/use all known coins. Grants, pickups, held coins, use m
 
 ## Party reports and late entry
 
-One [early absolute report](TRACKING.md#early-party-starting-resource-synchronization) shares original coins/food at HOTSPOT+2s. Sender/type maxima overlap local evidence, repeated reports and inbound legacy notices. Larger quantities increase demand without catches and require updated applicable proof. Missing/old-client/late-join reports remain unknown; no title creates demand. Fresh qualified F+S proof also resolves overlapping legacy coin bookkeeping against that same variable quota, without a second fixed-three Sparkling veto. Bird food belongs to Forest.
+Unused-item notices overlap by sender/maximum quantity; own notice overlaps starting coins. Extras increase demand without catches. Bird food belongs to Forest. hd trust outside Haunted is revalidated on entry. See [evidence/lifecycle](TRACKING.md).
 
 ## Retention and reopening
 
-Retain slot IDs/contribution demand through collection/unloading. Marker disappearance never records a pickup; matched positive pickups or fresh applicable source/population evidence account for opportunities. Unobservable space stays unknown. Travel retains completed validation; Haunted reentry, new slots, remaining markers, held coins or changed contributions revoke it. New run resets all. Pending detection identities add no separate completion gate; see [audit D1](../IMPLEMENTATION_AUDIT.md#d1).
+Retain slot IDs/contribution demand through collection/unloading. Unobservable missing markers stay unresolved. Travel retains completed validation; Haunted reentry, new slots, remaining markers, held coins or changed contributions revoke it. New run resets all. Pending detection identities add no separate completion gate; see [audit D1](../IMPLEMENTATION_AUDIT.md#d1).
 
 ## Examples
 
-F = 4 and S = 1 require C + U >= 5. Even with zero held coins, one remaining slot blocks checking. After collection, qualifying current population can finish; historical UUIDs cannot supply U.
+F = 4 and E = 1 require C + U >= 5. Even with zero held coins, one remaining slot blocks checking. After collection, qualifying current population can finish; historical UUIDs cannot supply U.
 
 ## Implementation and validation
 
@@ -75,10 +75,10 @@ Existing coverage: [GimmiegoldCoinFloorCheckTest](../../src/test/kotlin/net/john
 
 ## Open questions
 
-The original [audit D3](../IMPLEMENTATION_AUDIT.md#d3) describes older generic allocation limits. Current Sparkling uses updated F+S and fresh demand proof, including larger legacy overlaps. Full Clear retains separate actual-capture/source-recovery rules. The structural initial catalog/shared marker and live server grant assumptions still require multiplayer validation.
+Larger repeated resource notices can diverge between Sparkling maxima and conservative Full Clear recovery; see [audit D3](../IMPLEMENTATION_AUDIT.md#d3).
 
 Population guarantees and capsule success/escape claims from supplied notes were not live revalidated; see [audit D2](../IMPLEMENTATION_AUDIT.md#d2).
 
 ## Last updated
 
-2026-10-19 (America/New_York) — Updated early starting-resource synchronization, verified coverage and local-only reminders for issue #68 while preserving the merged documentation template. Resource runtime reviewed at `76dd746`; prior audit provenance remains scoped to its stated revision. Automated all-target and offline native checks are separate from pending live Hypixel validation.
+2026-10-19 (America/New_York) — Uniform species reference; audited evidence, modes, display and lifecycle. Reviewed source: `93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee`; no local runtime source changes reviewed. See [revision convention](../DOCUMENTATION_GUIDE.md).

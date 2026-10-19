@@ -22,31 +22,11 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
     fun excludeFromHistory() { historyExcluded = true }
     val entry = SafariEntryEvidence()
     val resources = SafariResources()
-    val startingAnnouncement = net.johnceo.sparklingmutuals.safari.resources.StartingResourceAnnouncement()
-    val floorCatalog = net.johnceo.sparklingmutuals.safari.resources.StartingFloorCatalog()
     val gimmiegoldCheck = net.johnceo.sparklingmutuals.safari.completion.GimmiegoldSparklingCheck()
     private var localPlayerName: String? = null
-    private var localResourceIdentity: String? = null
-    fun localPlayer(name: String, identity: String? = null) {
-        localPlayerName = name
-        if (identity != null) localResourceIdentity = identity.lowercase()
-    }
-    private val resourceSelf get() = localResourceIdentity ?: localPlayerName
-    fun startingMessage(text: String, now: Long) = startingAnnouncement.trigger(text, now)
-    fun startingItems(scope: String?): net.johnceo.sparklingmutuals.safari.resources.StartingItemReport? {
-        val departure = startingAnnouncement.departedAt ?: return null
-        if (firstInventoryAt == null || firstInventoryAt!! > departure + 2000 || startingEvidenceUncertain || resources.startingTotal() > 2) return null
-        val expected = (if (entry.ticket == SafariTicketType.FIRST_CLASS) 1 else 0) + (if (entry.headStart != null) 1 else 0)
-        if (resources.startingTotal() < expected) return null
-        return net.johnceo.sparklingmutuals.safari.resources.StartingItemReport(resources.startingQuantities(), scope)
-    }
-    fun ownStartingReport() {
-        closeStartingInventory()
-        resourceSelf?.let { resources.contributions.report(it, resources.startingQuantities(), complete = true) }
-    }
+    fun localPlayer(name: String) { localPlayerName = name }
     private fun syncGimmiegoldContributions() {
-        gimmiegoldCheck.contributions(resources.startingCount(FloorDropType.COIN), resourceSelf, resources.coinContributions())
-        refreshResourceDemand()
+        gimmiegoldCheck.contributions(resources.startingCount(FloorDropType.COIN), localPlayerName, resources.coinContributions())
     }
     private fun gimmiegoldCaptureMinimum(): Int {
         syncGimmiegoldContributions()
@@ -55,11 +35,7 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
     }
     fun scanGimmiegolds(live: Collection<java.util.UUID>, qualified: Boolean) {
         syncGimmiegoldContributions()
-        val current = live.filterNot(sparklingCaptures::resolved).map(sparklingCaptures::identity).distinct()
-        gimmiegoldCheck.scan(count("Gimmiegold"), current, qualified)
-        if (qualified) resources.scan(SafariBiome.HAUNTED, count("Gimmiegold") + current.size)
-        if (qualified && resources.contributions.complete && gimmiegoldCheck.complete)
-            resources.verifiedCoinPopulation(gimmiegoldCheck.required)
+        gimmiegoldCheck.scan(count("Gimmiegold"), live, qualified)
     }
     val resourceReminders = net.johnceo.sparklingmutuals.safari.resources.StartingResourceDelivery(resources)
     val sparklingParticles = net.johnceo.sparklingmutuals.safari.sparkling.SparklingParticleLocations()
@@ -88,24 +64,16 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
     var hadFourIncense = false
         private set
     private var firstInventoryAt: Long? = null
-    private var startingInventoryClosed = false
-    private var startingEvidenceUncertain = false
-    fun closeStartingInventory() { if (startingAnnouncement.departedAt != null) startingInventoryClosed = true }
-    fun inStartingInventoryWindow(now: Long) = endedAt == null && !startingInventoryClosed && now >= startedAt &&
-        startingAnnouncement.departedAt?.let { now - it in 0..2000 } != false
+    fun inStartingInventoryWindow(now: Long) = firstInventoryAt?.let { now - it in 0..3000 } == true
     fun inventoryEvidence(stacks: List<Pair<String, Int>>, now: Long = System.currentTimeMillis()) {
         if (firstInventoryAt == null && now >= startedAt) firstInventoryAt = now
-        val initial = inStartingInventoryWindow(now)
-        val plausible = resources.plausibleStartingInventory(stacks)
-        if (initial && !plausible) startingEvidenceUncertain = true
-        resources.inventory(stacks, initial && plausible)
+        resources.inventory(stacks, inStartingInventoryWindow(now))
         gimmiegoldCheck.inventory(stacks.filter { SafariRules.strip(it.first).trim() == "Shining Coin" }.sumOf { it.second.coerceAtLeast(0) })
         syncGimmiegoldContributions()
         birds.inventory(stacks)
         sparklingChecks.inventory(stacks)
         sparklingChecks.startingCoins(resources.startingCount(FloorDropType.COIN))
-        if (initial && plausible) birds.startingInventory(stacks, 0)
-        resourceSelf?.let { resources.contributions.report(it, resources.startingQuantities(), complete = false) }
+        if (endedAt == null && firstInventoryAt != null) birds.startingInventory(stacks, now - firstInventoryAt!!)
         if (stacks.filter { SafariRules.strip(it.first).trim() == "Soothing Incense" }.sumOf { it.second.coerceAtLeast(0) } >= 4)
             hadFourIncense = true
     }
@@ -122,9 +90,7 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
     private val knownPopulation = mutableMapOf<String, Int>()
     /** Current uncaptured UUIDs, never the union of pre/post-escape identities. */
     fun observePopulation(live: List<Pair<String, java.util.UUID>>) {
-        val remaining = live.filterNot { sparklingCaptures.resolved(it.second) }.map { (name, id) ->
-            name to if (name == "Gimmiegold") sparklingCaptures.identity(id) else id
-        }
+        val remaining = live.filterNot { sparklingCaptures.resolved(it.second) }
         remaining.groupBy({ it.first }, { it.second }).forEach { (name, ids) ->
             val critter = SafariRoster.named(name) ?: return@forEach
             if ((critter.biome in biomeReports || name in SafariFullClear.fixedCaptureTargets) && name != "Macaw") {
@@ -139,28 +105,11 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
     private val visited = mutableSetOf<SafariBiome>()
     private var forestReporter = false
     private var forestEntered = false
-    private var floorSourcesKnown = false
-    fun resourceCoverage(known: Boolean) { floorSourcesKnown = known }
-    private data class ResourceDemand(val contributions: Long, val sources: Long)
-    private var forestDemand: ResourceDemand? = null
-    private var hauntedDemand: ResourceDemand? = null
-    private var hauntedReport: ResourceDemand? = null
-    private fun currentHauntedDemand() = ResourceDemand(resources.contributions.revision(SafariBiome.HAUNTED), gimmiegoldCheck.revision)
-    private fun refreshResourceDemand() {
-        val forest = ResourceDemand(resources.contributions.revision(SafariBiome.FOREST), floorCatalog.revision)
-        val haunted = currentHauntedDemand()
-        if (forestDemand != forest) { completion.reopen(SafariBiome.FOREST); forestDemand = forest }
-        if (hauntedDemand != haunted) { completion.reopen(SafariBiome.HAUNTED); hauntedDemand = haunted }
-    }
-    private fun syncBirdContributions() {
-        birds.contributions(resourceSelf, resources.foodContributions())
-        refreshResourceDemand()
-    }
+    private fun syncBirdContributions() { birds.contributions(localPlayerName, resources.foodContributions()) }
     fun birdSpawnsComplete(localOnly: Boolean = false): Boolean {
         syncBirdContributions()
-        if (!resources.contributions.complete) return false
-        return if (lastBiome == SafariBiome.FOREST) floorSourcesKnown && birds.feedingResolved else !localOnly &&
-            (floorSourcesKnown && birds.feedingResolved || birds.remoteReady || birds.hasReport && birds.capturesComplete(::count))
+        return if (lastBiome == SafariBiome.FOREST) birds.feedingResolved else !localOnly &&
+            (birds.feedingResolved || birds.remoteReady || birds.hasReport && birds.capturesComplete(::count))
     }
     fun canReportBiome(biome: SafariBiome): Boolean {
         if (biome != SafariBiome.FOREST) return true
@@ -183,17 +132,12 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
     fun fullClearReportReceived(biome: SafariBiome) = biome in biomeReports
     private val uniqueSourceContradictions = mutableSetOf<String>()
     fun partyFullClear(raw: String) {
-        syncGimmiegoldContributions()
         SparklingChecks.doneBiome(raw)?.let {
             partyFullClears.add(it); communalClears.add(it)
             biomeReports.add(it)
             if (it == SafariBiome.FOREST) {
                 remoteForestReport = true
                 syncBirdContributions(); birds.report()
-            }
-            if (it == SafariBiome.HAUNTED) hauntedReport = currentHauntedDemand().takeIf {
-                !gimmiegoldCheck.knownBlocked && !resources.pending(SafariBiome.HAUNTED) &&
-                    (lastBiome != SafariBiome.HAUNTED || gimmiegoldCheck.complete)
             }
             if (it == SafariBiome.CAVERN && lastBiome != SafariBiome.CAVERN) {
                 remainingMounds = false; remainingWalls = false
@@ -297,10 +241,8 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
         if (name == "Honeybug") return (!localOnly && honeybugRemoteComplete) || honeybugLocalCheck ||
             lastBiome == SafariBiome.FOREST && sparklingChecks.locallyChecked(name)
         if (name == "Gimmiegold") {
+            if (!localOnly && lastBiome != SafariBiome.HAUNTED) partyCompletion(name, party)?.let { return it }
             syncGimmiegoldContributions()
-            if (!resources.contributions.complete || gimmiegoldCheck.knownBlocked || resources.pending(SafariBiome.HAUNTED)) return false
-            if (!localOnly && lastBiome != SafariBiome.HAUNTED && hauntedReport == currentHauntedDemand() &&
-                hauntedReport != null && partyCompletion(name, party) == true) return true
             return gimmiegoldCheck.complete
         }
         if (sourcePending(name)) return false
@@ -452,7 +394,6 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
     fun birdCount(personalOnly: Boolean = false) = birdSpecies.sumOf { if (personalOnly) personalCount(it) else count(it) }
     private fun birdComplete(species: String, speciesInRange: Set<String>?, personalOnly: Boolean = false): Boolean {
         syncBirdContributions()
-        if (!resources.contributions.complete || !floorSourcesKnown && !birds.hasReport) return false
         return birds.capturesComplete { if (personalOnly) personalCount(it) else count(it) }
     }
     fun birdsComplete(speciesInRange: Set<String>?, personalOnly: Boolean = false) =

@@ -1,7 +1,5 @@
 package net.johnceo.sparklingmutuals.safari.resources
 
-import net.johnceo.sparklingmutuals.safari.resources.knownStartingEvidence
-
 import net.johnceo.sparklingmutuals.safari.resources.renderBird
 import net.johnceo.sparklingmutuals.safari.resources.scanRenderedBirds
 
@@ -17,6 +15,7 @@ class SpawnSuppliesTest {
     @Test fun `sparkling birds wait for nine foods plus starting inventory and count macaw pairs once`() {
         for (extra in 0..2) {
             val birds = SafariBirdLedger()
+            repeat(extra) { birds.pickup("FLOOR DROP! Yogi Berry", null) }
             birds.startingInventory(listOf("§aYogi Berry" to extra, "Yogi Berry Shard" to 9), 500)
             birds.startingInventory(listOf("Yogi Berry" to extra), 2000)
             birds.startingInventory(listOf("Yogi Berry" to 30), 3001)
@@ -32,15 +31,13 @@ class SpawnSuppliesTest {
         }
     }
     @Test fun `early floor pickups and repeated inventory scans do not inflate starting food`() {
-        val run = SafariRun(1000).knownStartingEvidence()
+        val run = SafariRun(1000)
         run.birds.pickup("FLOOR DROP! Bag of Seeds", SafariBiome.FOREST)
-        run.resources.pickup("FLOOR DROP! Bag of Seeds")
         run.inventoryEvidence(listOf("Bag of Seeds" to 2, "Wriggleworm" to 1), 4000)
         run.inventoryEvidence(listOf("Bag of Seeds" to 2, "Wriggleworm" to 1), 4000)
-        run.startingMessage("HOTSPOT! Your Hunting Hotspot is the Forest Biome!", 4000)
         run.inventoryEvidence(listOf("Bag of Seeds" to 20), 7001)
         assertEquals(11, run.birds.sparklingTarget)
-        val fresh = SafariRun(5000).knownStartingEvidence()
+        val fresh = SafariRun(5000)
         fresh.inventoryEvidence(listOf("Yogi Berry" to 2), 4999)
         fresh.inventoryEvidence(emptyList(), 8001)
         assertEquals(9, fresh.birds.sparklingTarget)
@@ -57,7 +54,7 @@ class SpawnSuppliesTest {
         }
     }
     @Test fun `full clear nests ignore inherited claims and all structure helpers stay needed`() {
-        val run = SafariRun(0).knownStartingEvidence()
+        val run = SafariRun(0)
         run.partyFullClear("Party > Friend: fd")
         val party = PartySparklingState()
         assertFalse(run.partyNestsHandled)

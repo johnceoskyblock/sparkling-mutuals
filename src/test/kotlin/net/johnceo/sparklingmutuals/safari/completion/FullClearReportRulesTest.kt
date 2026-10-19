@@ -1,7 +1,5 @@
 package net.johnceo.sparklingmutuals.safari.completion
 
-import net.johnceo.sparklingmutuals.safari.resources.knownStartingEvidence
-
 import java.util.UUID
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.safari.*
@@ -15,14 +13,14 @@ class FullClearReportRulesTest {
     }
     @Test fun `variable species wait for report and real minimum captures without a local UUID survey`() {
         for ((name, word) in listOf("Driftling" to "cd", "Treefrog" to "fd", "Bloodbat" to "hd")) {
-            val run = SafariRun(0).knownStartingEvidence(); val minimum = SafariFullClear.minimum(name)
+            val run = SafariRun(0); val minimum = SafariFullClear.minimum(name)
             caught(run, name, minimum - 1)
             run.partyFullClear("Party > Friend: $word")
             assertFalse(run.fullClearComplete(name))
             caught(run, name, 1)
             assertTrue(run.fullClearComplete(name), name)
             assertEquals(0, run.personalCount(name))
-            val unreported = SafariRun(0).knownStartingEvidence()
+            val unreported = SafariRun(0)
             caught(unreported, name, minimum)
             unreported.updateCaptureEvidence(SafariRoster.named(name)!!.biome, emptySet(), false)
             assertTrue(unreported.captureComplete(name), "local proof can send our own report")
@@ -32,7 +30,7 @@ class FullClearReportRulesTest {
     @Test fun `fixed spawn progress uses catches while missing panel still needs local proof`() {
         ConfigManager.fullClearMode = true; ConfigManager.sparklingMode = false
         for ((name, minimum) in SafariFullClear.fixedCaptureTargets) {
-            val run = SafariRun(0).knownStartingEvidence(); val species = SafariRoster.named(name)!!
+            val run = SafariRun(0); val species = SafariRoster.named(name)!!
             caught(run, name, minimum - 1)
             assertFalse(run.fullClearComplete(name))
             caught(run, name, 1)
@@ -46,7 +44,7 @@ class FullClearReportRulesTest {
         }
     }
     @Test fun `positive reentry evidence reopens only its species until remaining captures arrive`() {
-        val run = SafariRun(0).knownStartingEvidence()
+        val run = SafariRun(0)
         caught(run, "Driftling", 3); caught(run, "Gemzie", 3)
         run.partyFullClear("Party > Friend: cd")
         assertTrue(run.fullClearComplete("Driftling")); assertTrue(run.fullClearComplete("Gemzie"))
@@ -62,7 +60,7 @@ class FullClearReportRulesTest {
         assertTrue(run.fullClearComplete("Driftling"), "captures resolve it without seeing old UUIDs again")
     }
     @Test fun `escape replacement UUIDs never accumulate more than the current observed population`() {
-        val run = SafariRun(0).knownStartingEvidence(); caught(run, "Driftling", 3)
+        val run = SafariRun(0); caught(run, "Driftling", 3)
         run.partyFullClear("Party > Friend: cd"); run.visitBiome(SafariBiome.CAVERN)
         repeat(10) { run.observePopulation(listOf("Driftling" to UUID.randomUUID())) }
         assertFalse(run.fullClearComplete("Driftling"))
@@ -70,7 +68,7 @@ class FullClearReportRulesTest {
         assertTrue(run.fullClearComplete("Driftling"))
     }
     @Test fun `Macaw one catch exception ignores additional Macaws found after the report`() {
-        val run = SafariRun(0).knownStartingEvidence(); caught(run, "Macaw", 1)
+        val run = SafariRun(0); caught(run, "Macaw", 1)
         run.partyFullClear("Party > Friend: fd"); run.visitBiome(SafariBiome.FOREST)
         run.observePopulation(List(12) { "Macaw" to UUID.randomUUID() })
         run.updateCaptureEvidence(SafariBiome.FOREST, setOf("Macaw"), false, macawsInRange = 12)
@@ -82,7 +80,7 @@ class FullClearReportRulesTest {
         assertTrue(run.fullClearComplete("Macaw"), "detection cannot override the normal one-Macaw exception")
     }
     @Test fun `report trust does not waive positively observed unbroken spawn sources`() {
-        val run = SafariRun(0).knownStartingEvidence()
+        val run = SafariRun(0)
         run.partyFullClear("Party > Friend: cd")
         assertTrue(run.fullClearComplete("Rockmite")); assertTrue(run.fullClearComplete("Snoozle"))
         val site = Triple(-100, 40, 50)
@@ -94,7 +92,7 @@ class FullClearReportRulesTest {
         assertTrue(run.fullClearComplete("Rockmite")); assertTrue(run.fullClearComplete("Snoozle"))
     }
     @Test fun `a Forest report alone cannot invent the no Macaw outcome`() {
-        val run = SafariRun(0).knownStartingEvidence()
+        val run = SafariRun(0)
         run.partyFullClear("Party > Friend: fd")
         assertFalse(run.fullClearComplete("Macaw"))
         caught(run, "Macaw", 1)
@@ -102,7 +100,7 @@ class FullClearReportRulesTest {
         assertTrue(run.fullClearComplete("Macaw"))
     }
     @Test fun `positive remainder seen from another biome reopens reported species until captured`() {
-        val run = SafariRun(0).knownStartingEvidence()
+        val run = SafariRun(0)
         run.visitBiome(SafariBiome.FOREST)
         caught(run, "Driftling", 3); caught(run, "Gemzie", 3)
         run.partyFullClear("Party > Friend: cd")
@@ -118,7 +116,7 @@ class FullClearReportRulesTest {
         assertTrue(run.fullClearComplete("Driftling"))
     }
     @Test fun `known held food and extra coins cannot be waived by an old completion report`() {
-        val birds = SafariRun(0).knownStartingEvidence()
+        val birds = SafariRun(0)
         caught(birds, "Macaw", 1)
         caught(birds, "Bluebird", 8)
         birds.partyFullClear("Party > Friend: fd")
@@ -126,9 +124,8 @@ class FullClearReportRulesTest {
         birds.inventoryEvidence(listOf("Yogi Berry" to 1), 10000)
         assertFalse(birds.fullClearComplete("Macaw"))
         assertFalse(birds.fullClearComplete("Bluebird"))
-        val gold = SafariRun(0).knownStartingEvidence()
+        val gold = SafariRun(0)
         gold.inventoryEvidence(emptyList(), 0)
-        gold.startingMessage("HOTSPOT! Your Hunting Hotspot is the Haunted Biome!", 0)
         caught(gold, "Gimmiegold", 3)
         gold.partyFullClear("Party > Friend: hd")
         assertTrue(gold.fullClearComplete("Gimmiegold"))

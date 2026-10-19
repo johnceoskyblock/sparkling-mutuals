@@ -1,7 +1,5 @@
 package net.johnceo.sparklingmutuals.safari.integration
 
-import net.johnceo.sparklingmutuals.safari.resources.knownStartingEvidence
-
 import net.johnceo.sparklingmutuals.safari.resources.renderBird
 import net.johnceo.sparklingmutuals.safari.resources.scanRenderedBirds
 
@@ -98,7 +96,7 @@ class DocumentedSafariRulesTest {
     }
 
     @Test fun `Gemzie announcement alone is pending and distinct run UUID checks persist`() {
-        val run = SafariRun(0).knownStartingEvidence()
+        val run = SafariRun(0)
         run.sparklingChecks.chat("A rumbling sound can be heard, and the door at the back of the chamber opens...", true)
         assertFalse(run.sparklingChecks.checked("Gemzie"))
         val first = UUID.randomUUID()
@@ -114,7 +112,7 @@ class DocumentedSafariRulesTest {
 
     @Test fun `party reports never supply Unique catches and reentry revalidates other modes`() {
         for ((biome, word) in listOf(SafariBiome.FOREST to "fd", SafariBiome.CAVERN to "cd", SafariBiome.ICY to "id", SafariBiome.HAUNTED to "hd")) {
-            val run = SafariRun(0).knownStartingEvidence()
+            val run = SafariRun(0)
             SafariMessages.forRun("Party > Friend: $word", run, true)
             assertEquals(0, run.completed(SafariMode.UNIQUE, biome.critters, party()))
             assertEquals(biome.critters.count { SafariFullClear.minimum(it.name) == 0 && it.name !in setOf("Bluebird", "Parakeet", "Macaw") }, run.completed(SafariMode.FULL_CLEAR, biome.critters, party()))
@@ -125,7 +123,7 @@ class DocumentedSafariRulesTest {
     }
 
     @Test fun `late catches satisfy radius checks without old UUIDs`() {
-        val run = SafariRun(0).knownStartingEvidence()
+        val run = SafariRun(0)
         caught(run, "Gemzie", 3)
         run.visitBiome(SafariBiome.CAVERN)
         run.updateCaptureEvidence(SafariBiome.CAVERN, emptySet(), false, playerX = 0.0, playerZ = 0.0)
@@ -137,7 +135,7 @@ class DocumentedSafariRulesTest {
     }
 
     @Test fun `honeybug source accounting uses catches plus live bees and known nest coverage`() {
-        val run = SafariRun(0).knownStartingEvidence()
+        val run = SafariRun(0)
         caught(run, "Honeybug")
         run.updateNestEvidence(false, 0, 3, 0)
         run.liveHoneybugs(2)
@@ -150,7 +148,7 @@ class DocumentedSafariRulesTest {
     }
 
     @Test fun `empty Haunted requires minimum catches and no held coins`() {
-        val run = SafariRun(0).knownStartingEvidence()
+        val run = SafariRun(0)
         (1..3).forEach { run.gimmiegoldCheck.floor(it, false) }
         run.inventoryEvidence(emptyList(), 10000)
         caught(run, "Gimmiegold", 2)
@@ -171,13 +169,13 @@ class DocumentedSafariRulesTest {
         val catch = SafariCatch.parse("LOOT SHARE! You received 12x Gemzie Shard from [Friend head]Friend catching a Gemzie!")!!
         assertEquals("Gemzie", catch.critter.name); assertFalse(catch.personal)
         assertEquals("Friend", catch.catcherName)
-        val run = SafariRun(0).knownStartingEvidence(); run.record(catch)
+        val run = SafariRun(0); run.record(catch)
         assertEquals(1, run.count("Gemzie")); assertEquals(0, run.personalCount("Gemzie"))
         assertEquals("Friend", run.catches.single().catcherName)
     }
 
     @Test fun `one shared Macaw completes Full Clear despite extra scanned Macaws after all food is used`() {
-        val run = SafariRun(0).knownStartingEvidence()
+        val run = SafariRun(0)
         val live = List(20) { "Macaw" to UUID.randomUUID() }
         run.observePopulation(live)
         run.updateCaptureEvidence(SafariBiome.FOREST, setOf("Macaw"), false, macawsInRange = 20)
@@ -200,7 +198,7 @@ class DocumentedSafariRulesTest {
     }
 
     @Test fun `additional verified population survives an unload but escape replacement adds no quota`() {
-        val run = SafariRun(0).knownStartingEvidence()
+        val run = SafariRun(0)
         caught(run, "Foxtrot", 6)
         run.observePopulation(listOf("Foxtrot" to UUID.randomUUID()))
         run.updateCaptureEvidence(SafariBiome.FOREST, emptySet(), false, playerX = 3.0, playerZ = 47.0)
@@ -208,7 +206,7 @@ class DocumentedSafariRulesTest {
         caught(run, "Foxtrot")
         run.updateCaptureEvidence(SafariBiome.FOREST, emptySet(), false, playerX = 3.0, playerZ = 47.0)
         assertTrue(run.captureComplete("Foxtrot"))
-        val rare = SafariRun(0).knownStartingEvidence()
+        val rare = SafariRun(0)
         repeat(10) { rare.observePopulation(listOf("Billygoat" to UUID.randomUUID())) }
         caught(rare, "Billygoat", 2)
         rare.updateCaptureEvidence(SafariBiome.ICY, emptySet(), false, playerX = -121.0, playerZ = -55.0)
@@ -248,7 +246,7 @@ class DocumentedSafariRulesTest {
     }
 
     @Test fun `extra coin notice requires an additional checked spawn and a Full Clear catch`() {
-        val run = SafariRun(0).knownStartingEvidence()
+        val run = SafariRun(0)
         (1..3).forEach { run.gimmiegoldCheck.floor(it, false) }
         run.inventoryEvidence(emptyList(), 10000)
         caught(run, "Gimmiegold", 3)

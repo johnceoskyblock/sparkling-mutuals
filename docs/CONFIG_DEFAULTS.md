@@ -46,7 +46,7 @@ Startup and mode changes apply an ESP preset enabling all groups, species and Ro
 - [Automatic contest downtime](CONTEST_DOWNTIME.md) defaults on independently of HUD/tracking. [Guard Safari entry](SAFARI_ENTRY_GUARD.md) and **!dt downtime** retain independent saved switches and stage-specific behavior.
 - History's **History** button precedes **Import History from Logs**. There is no startup-import scan/toggle; old auto-import keys are ignored. See [history, import and achievements](HISTORY_IMPORT.md).
 - **Missing / Unchecked panel** shares `missingPanel` and its HUD layout across modes. Sparkling labels it **Unchecked** for every biome; Unique and Full Clear use Missing.
-- The once-only HOTSPOT+2s starting food/coin report has no discovery/mode/HUD/ESP gate. Later unused-resource reminders are local titles only with no independent toggle; see [tracking](critters/TRACKING.md#early-party-starting-resource-synchronization).
+- Automatic unused starting-food/coin reminders have no independent toggle; see [tracking](critters/TRACKING.md).
 
 ### ESP appearance
 
@@ -84,4 +84,4 @@ Startup normalizes legacy `pb.*` keys from the general file and the earlier `Spa
 
 ## Last updated
 
-2026-10-19 (America/New_York) — Updated early starting-resource synchronization, verified coverage and local-only reminders for issue #68 while preserving the merged documentation template. Resource runtime reviewed at `76dd746`; prior audit provenance remains scoped to its stated revision. Automated all-target and offline native checks are separate from pending live Hypixel validation.
+2026-10-19 (America/New_York) — Audited loaded defaults, saved choices, presets, appearance and PB migration against source `93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee`. See [documentation conventions](DOCUMENTATION_GUIDE.md).
