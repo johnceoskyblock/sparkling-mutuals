@@ -7,8 +7,9 @@ Implemented defaults for fresh or missing settings. Enable all independently swi
 | Warp reminder (`warpAlertsEnabled`, `/alert`) | Off |
 | Coins at Insta Sell (`runCoinsInstaSell`) | Off |
 | Achievements to Party (`achievementsToParty`, including any equivalent achievement-to-party toggles) | Off |
+| Capture projections (`experimentalCapsulePath`) | Off |
 
-Keep achievements themselves enabled; the exception is their party announcement. These are defaults for fresh/missing settings, not permission to overwrite existing saved user choices on every launch. Automatic unused starting-food/coin title alerts and party reminders have no config toggle, as documented in [tracking rules](critters/TRACKING.md#unused-starting-foodcoin-reminders).
+Keep achievements themselves enabled; the exception is their party announcement. Capture projections is separately opt-in under Safari helpers and does not start recording. Missing/invalid saved preview values default off; explicit choices persist. Capsule hiding and the visual preview work independently; either or both hiding options can stay on. See its [scope and controls](CAPTURE_SHOT_RECORDING.md#experimental-capsule-path). These are defaults for fresh/missing settings, not permission to overwrite existing saved user choices on every launch. Automatic unused starting-food/coin title alerts and party reminders have no config toggle, as documented in [tracking rules](critters/TRACKING.md#unused-starting-foodcoin-reminders).
 
 Mode selectors remain mutually exclusive; “all on” applies to independent feature toggles, not simultaneous Unique/Full Clear/Sparkling modes. Retain established numeric/text selections and explicit mode-preset behavior unless separately changed. Field initialization, config-load fallbacks and GUI defaults agree. Explicitly saved GUI choices remain in effect.
 
@@ -23,6 +24,14 @@ On startup, automatically migrate legacy `pb.*` entries from the general config.
 ## Missing and Unchecked panels
 
 The existing `missingPanel` toggle and HUD layout are shared across modes. In Sparkling mode, every biome's checklist is named **Unchecked**, including the HUD editor label. Unique and Full Clear retain their Missing behavior. The config option names both uses; renaming does not reset saved positions or visibility preferences.
+
+## Experimental capsule path
+
+**Capture projections** is the only enable switch. Its existing `experimentalCapsulePath` key preserves deliberate saved on/off choices; missing/invalid values default off. The obsolete `allowUncalibratedCapsuleEstimates` key is ignored and omitted on the next save. Enabling the switch gives the full terrain ring/possible-critter diamond guide, including close launch, broader angles, Masterful, movement and water support. It never starts recording. Collision and target proxies remain unverified; strict recorder probes retain their eligibility rules.
+
+Capsule path width saves independently as `capsulePathWidth`, defaults to **3**, and clamps finite values to **1–5**. Invalid/non-finite values use 3. **Show guide through terrain** (`showCapsuleGuideThroughTerrain`) defaults **on**, including for missing/invalid saved values; an explicit off choice persists. These appearance controls do not add another enable gate or change collision stops.
+
+The projection status text and its HUD-editor entry are removed. Legacy `hud.capsule_status.*` properties are ignored and omitted on save; other HUD positions and settings remain unchanged.
 
 ## ESP label size
 
@@ -52,7 +61,11 @@ The History tab begins with the **History** button, followed immediately by **Im
 
 ## Last updated
 
+2026-10-18 (America/New_York) - Consolidated Capture projections into one saved switch and removed the status-text HUD.
+
 2026-10-17 - Aligned entry guards with tab-first Safari presence, two-second kick pauses, ticket-message downtime release and Shift override.
+
+2026-10-17 (America/New_York) - Separated visual capsule-guide availability from capsule hiding; preserved saved options and recorder calibration restrictions.
 
 2026-10-17 - Corrected PB filename to sparkling-mutuals-pbs.properties; also migrate the briefly used display-name filename safely.
 
@@ -64,3 +77,7 @@ The History tab begins with the **History** button, followed immediately by **Im
 
 2026-10-16 - Restricted automatic contest downtime requests to the confirmed party leader; retained existing defaults.
 2026-10-16 - Clarified independent Safari entry settings and removed the sneak override.
+
+2026-10-16 (America/New_York) - Added the explicit default-off experimental capsule path exception.
+
+2026-10-17 - Documented guide-through-terrain defaults and the independent capsule-status HUD layout.

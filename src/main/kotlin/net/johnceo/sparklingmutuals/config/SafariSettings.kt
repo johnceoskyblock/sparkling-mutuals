@@ -154,6 +154,12 @@ class SafariSettings : Config() {
         @ConfigEditorButton(runnableId = 5, buttonText = "Reset to 25s") var reset = false
     }
     class Safari {
+        @JvmField @ConfigOption(name = "Capture projections", desc = "Show capsule paths and estimated terrain/critter contacts, including Masterful, movement and water. Capture physics and target bounds remain unverified.")
+        @ConfigEditorBoolean var experimentalCapsulePath = ConfigManager.experimentalCapsulePath
+        @JvmField @ConfigOption(name = "Capsule path width", desc = "Line width from 1 to 5; default 3.")
+        @ConfigEditorSlider(minValue = 1f, maxValue = 5f, minStep = 1f) var capsulePathWidth = ConfigManager.capsulePathWidth
+        @JvmField @ConfigOption(name = "Show guide through terrain", desc = "See the capsule guide and contact marker behind terrain. The estimated route still stops at its first predicted collision.")
+        @ConfigEditorBoolean var showCapsuleGuideThroughTerrain = ConfigManager.showCapsuleGuideThroughTerrain
         @JvmField @ConfigOption(name = "Highlight teammates", desc = "Outline loaded party members anywhere in SkyBlock.")
         @ConfigEditorBoolean var highlightTeammates = ConfigManager.highlightTeammates
         @JvmField @ConfigOption(name = "Show teammate names", desc = "Show party member names through walls anywhere in SkyBlock.")
@@ -161,9 +167,9 @@ class SafariSettings : Config() {
         @JvmField @ConfigOption(name = "Alert", desc = "") @Accordion val alerts = Alerts()
         @JvmField @ConfigOption(name = "Hide useless chats in safari", desc = "Hide throws, captures, escapes, loot shares and mound chatter; tracking continues.")
         @ConfigEditorBoolean var hideCaptureChat = ConfigManager.hideCaptureChat
-        @JvmField @ConfigOption(name = "Hide capsules on ground", desc = "Hide ordinary dropped capsules in Safari.")
+        @JvmField @ConfigOption(name = "Hide capsules on ground", desc = "Hide ordinary dropped capsules in Safari. The projection guide stays visible.")
         @ConfigEditorBoolean var hideGroundCapsules = ConfigManager.hideGroundCapsules
-        @JvmField @ConfigOption(name = "Hide flying capsules", desc = "Hide flying capsules near the camera in Safari.")
+        @JvmField @ConfigOption(name = "Hide flying capsules", desc = "Hide flying capsules near the camera in Safari. The projection guide stays visible.")
         @ConfigEditorBoolean var hideFlyingCapsules = ConfigManager.hideFlyingCapsules
         @JvmField @ConfigOption(name = "Flying capsule distance", desc = "Hide flying capsules within this distance, in blocks.")
         @ConfigEditorSlider(minValue = .5f, maxValue = 6f, minStep = .5f)
@@ -287,6 +293,8 @@ class SafariSettings : Config() {
         val changes = listOf(ConfigManager::highlightTeammates to safari.highlightTeammates, ConfigManager::showTeammateNames to safari.showTeammateNames, ConfigManager::profitableShardEsp to modes.unique.profitable, ConfigManager::sparklingProfitableShardEsp to modes.sparkling.profitable, ConfigManager::partyCommandsEnabled to party.enabled, ConfigManager::downtimeCommand to party.downtime, ConfigManager::useCloudApi to api.cloud, ConfigManager::hideHauntedPaintings to safari.paintings,
             ConfigManager::shinyDetection to safari.shiny, ConfigManager::hideyhoQuestClicks to safari.hideyho, ConfigManager::hideyhoInsideOutside to safari.hideyhoInsideOutside,
             ConfigManager::progressHud to tracking.progress,
+            ConfigManager::experimentalCapsulePath to safari.experimentalCapsulePath,
+            ConfigManager::showCapsuleGuideThroughTerrain to safari.showCapsuleGuideThroughTerrain,
             ConfigManager::missingPanel to tracking.missing,
             ConfigManager::removeDarkness to safari.darkness,
             ConfigManager::sparklingAlert to safari.alert, ConfigManager::sparklingPartyAnnouncer to safari.announce,
@@ -297,12 +305,14 @@ class SafariSettings : Config() {
         val espChanged = esp.apply()
         val customizationChanged = customization.apply()
         val distance = ConfigManager.validCapsuleDistance(safari.capsuleHideDistance)
-        val generalChanged = espChanged || customizationChanged || changes.any { (property, value) -> property.get() != value } ||
+        val pathWidth = ConfigManager.validCapsulePathWidth(safari.capsulePathWidth)
+        val generalChanged = ConfigManager.capsulePathWidth != pathWidth || espChanged || customizationChanged || changes.any { (property, value) -> property.get() != value } ||
             ConfigManager.showWhere != tracking.where || ConfigManager.capsuleHideDistance != distance ||
             ConfigManager.runCompleteVolume != safari.alerts.runVolume.coerceIn(0, 100) || ConfigManager.sparklingSoundVolume != safari.alerts.volume.coerceIn(0, 100)
         changes.forEach { (property, value) -> property.set(value) }
         ConfigManager.showWhere = tracking.where.coerceIn(0, 2)
         ConfigManager.capsuleHideDistance = distance
+        ConfigManager.capsulePathWidth = pathWidth
         ConfigManager.runCompleteVolume = safari.alerts.runVolume.coerceIn(0, 100)
         ConfigManager.sparklingSoundVolume = safari.alerts.volume.coerceIn(0, 100)
         if (generalChanged) ConfigManager.save()

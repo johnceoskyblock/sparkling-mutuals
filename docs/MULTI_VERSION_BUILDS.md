@@ -55,6 +55,10 @@ Branch pushes and pull requests run read-only CI: helper tests, three target tes
 
 The required `build` status check succeeds only when build-helper tests, all target jobs and distribution verification succeed. Failed or skipped dependencies keep that gate from passing.
 
+The completed capture-shot feature uses the normal three-target matrix on every branch. Its temporary 26.1.2-only development exception is removed for the master integration; helper, target, tools and complete distribution verification must all pass. This does not publish a release or certify Hypixel trajectory/capture accuracy.
+
+World overlays use each target's native depth comparison without writing depth. On 26.3, line pipelines explicitly declare their translucent color attachment because the shared vanilla line snippet no longer supplies it; filled overlays retain the snippet's existing attachment. Pipeline contract tests and native client rendering cover this compatibility boundary.
+
 For a future release, choose a new `mod_version` and matching **`v<mod_version>`** tag. The tag workflow checks out the event's immutable commit, validates the tag, tests/builds all three targets and verifies the complete artifact set. Only the final publishing job has release write permission. It checks the tag still points at the tested commit and stages one draft before publishing.
 
 Draft reruns retain maintainer-written release notes, generate notes only when blank, retain unrelated non-JAR assets, reuse matching uploads and replace only stale expected JAR assets. Unexpected or duplicate JAR assets stop publication. A failed upload leaves a draft; publication requires all three matching sizes/digests. Rerunning an identical published release does nothing; a different or unverifiable published asset set fails for manual attention. Tokens stay in the publishing environment and are never forwarded through redirects.
@@ -68,5 +72,7 @@ The migration preserved all 115 existing suites (652 tests per target). Local st
 Adding a target is a deliberate change: verify official Minecraft/Fabric/library availability, add its Stonecutter settings and properties, inspect actual mapped APIs/mixin signatures, update the verifier/release target set and both CI matrices, then run clean tests, packaging and client/in-game checks. Update this table and installation guidance only to the versions demonstrated by that evidence.
 
 ## Last updated
+
+2026-10-18 (America/New_York) - Restored full three-target CI and required aggregate verification for the capture-shot master integration.
 
 2026-10-16 - Preserved the required build gate across all target/helper/distribution jobs while rebasing the three-target implementation onto master.

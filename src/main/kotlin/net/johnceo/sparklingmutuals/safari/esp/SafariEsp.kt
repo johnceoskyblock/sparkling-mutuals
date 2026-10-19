@@ -51,6 +51,9 @@ data class SafariEspObservations(val critters: List<EspCritterObservation>, val 
 
 /** Nebulune SafariESP identification and box offsets, adapted to our Fabric renderer without Athen. */
 object SafariEsp {
+    /** Invalidates per-tick contact validation when capture/model eligibility changes. */
+    internal var contactRevision=0L
+        private set
     private data class Target(val entity: Entity, val species: String, val shulker: Boolean)
     private var targets = emptyList<Target>()
     private var drops = emptyList<EspDrop>()
@@ -86,7 +89,7 @@ object SafariEsp {
             if (world === client.level && player === client.player && SafariAssist.inSafari &&
                 id in setOf("CRITTER_CAPSULE", "MASTERFUL_CRITTER_CAPSULE")) {
                 rememberAim(client)
-                captures.throwing(System.currentTimeMillis())
+                captures.throwing(System.currentTimeMillis());contactRevision++
             }
             InteractionResult.PASS
         }
@@ -128,13 +131,14 @@ object SafariEsp {
         if (target.species == "Rockmite" && target.entity is Display.ItemDisplay) return
         captures.sighted(target.entity.uuid, target.species, System.currentTimeMillis())
     }
-    fun threw(species: String) { captures.threw(species, System.currentTimeMillis()) }
+    fun threw(species: String) { captures.threw(species, System.currentTimeMillis());contactRevision++ }
     fun shywormMessage(text: String, now: Long) {
         val player = Minecraft.getInstance().player ?: return
         shyworms.chat(text, now, player.x, player.z)
     }
-    fun escaped(species: String) { captures.escaped(species, System.currentTimeMillis())?.let(modelLabels::release) }
+    fun escaped(species: String) { captures.escaped(species, System.currentTimeMillis())?.let(modelLabels::release);contactRevision++ }
     fun caught(species: String) {
+        contactRevision++
         val id = captures.caught(species, System.currentTimeMillis())
         if (id == null) {
             if (targets.any { it.species == species && trackedModel(it) })
@@ -144,7 +148,7 @@ object SafariEsp {
         logger.info("Retired captured {} model {}.", species, id)
         targets = targets.filterNot { it.entity.uuid == id }
     }
-    fun clearCaptured() { captures.reset(); modelLabels.reset(); motion.reset(); litterbugs.reset(); shyworms.reset() }
+    fun clearCaptured() { captures.reset(); modelLabels.reset(); motion.reset(); litterbugs.reset(); shyworms.reset();contactRevision++ }
     fun tick(client: Minecraft) {
         if (level !== client.level) { reset(); level = client.level }
         SafariFloorDrops.state.visit(SafariAssist.biome)
@@ -154,6 +158,7 @@ object SafariEsp {
         rememberAim(client)
         if (++ticks < 5) return
         ticks = 0
+        contactRevision++
         val strings = mutableListOf<EspDrop>()
         val entities = client.level!!.entitiesForRendering().filter { !it.isRemoved && client.level!!.getEntity(it.id) === it }.toList()
         predictedDrops = dropPredictor.scan(entities.filterIsInstance<Display.ItemDisplay>().map {
@@ -220,6 +225,9 @@ object SafariEsp {
         rememberAim(client)
     }
     private fun trackedModel(target: Target) = SafariEspRules.requiresModelLabel(target.species, target.entity.type.toShortString())
+    /** Read-only model/capture validity, independent of ESP mode and visibility switches. */
+    internal fun contactCurrent(entity: Entity, species: String, client: Minecraft): Boolean =
+        entity !is Player && live(Target(entity,species,false),client)
     private fun live(target: Target, client: Minecraft, forEsp: Boolean = false): Boolean {
         val entity = target.entity
         if (SafariTracking.ledger.current?.sparklingCaptures?.resolved(entity.uuid) == true) return false
@@ -236,6 +244,7 @@ object SafariEsp {
     fun debug(client: Minecraft) {
         val player = client.player ?: return
         val entities = client.level?.entitiesForRendering()?.filter { !it.isRemoved && player.distanceToSqr(it) <= 6400 }?.toList() ?: return
+        ShywormBodyDiagnostics.capture(client,entities).forEach { logger.info("SM_SHYWORM_BODY {}",it) }
         SafariAssist.diagnostics().forEach { logger.info("{}", it) }
         logger.info("Safari ESP diagnostics: biome={}, fullClear={}, collected={}", SafariAssist.biome,
             ConfigManager.fullClearMode, SafariRoster.all.associate { it.name to (SafariTracking.run?.count(it.name) ?: 0) })
@@ -289,12 +298,9 @@ object SafariEsp {
     }
     private fun bounds(target: Target, delta: Float): AABB {
         val e = target.entity
-        val box = when {
-            e is Display && target.shulker -> AABB(e.x - .5, e.y, e.z - .5, e.x + .5, e.y + 1, e.z + .5)
-            e is Display -> AABB(e.x - .3, e.y - .45, e.z - .3, e.x + .3, e.y + .15, e.z + .3)
-            e is ArmorStand -> AABB(e.x - .3, e.y + 1.35, e.z - .3, e.x + .3, e.y + 1.95, e.z + .3)
-            else -> e.boundingBox
-        }
+        val visual = EspBodyBounds.visual(net.johnceo.sparklingmutuals.safari.shots.ShotVector(e.x,e.y,e.z),
+            if(e is Display) "display" else if(e is ArmorStand) "armor_stand" else "native",target.shulker)
+        val box = visual?.let { AABB(it.min.x,it.min.y,it.min.z,it.max.x,it.max.y,it.max.z) } ?: e.boundingBox
         return EspBoxSize.padded(box.move(e.getPosition(delta).subtract(e.position())), target.species)
     }
     private fun render(context: LevelRenderContext) {
