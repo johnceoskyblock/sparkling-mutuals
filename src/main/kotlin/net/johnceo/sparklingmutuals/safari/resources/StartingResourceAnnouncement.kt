@@ -15,11 +15,15 @@ class StartingResourceAnnouncement(private val resources: SafariResources) {
 
     fun dispatch(now: Long, party: PartySparklingState, send: (String) -> Unit): Boolean {
         val departure = leftAt ?: return false
-        if (sent || now - departure < 2000 || !party.ready) return false
+        if (sent || now - departure < 500 || !party.ready) return false
         val notice = resources.startingNotice(party)
-        if (notice != null) send(notice.startingText)
+        if (notice != null) {
+            send(notice.startingTexts().single())
+            sent = true
+            return true
+        }
         // No applicable items is intentionally silent; API loading is handled above.
         sent = true
-        return notice != null
+        return false
     }
 }

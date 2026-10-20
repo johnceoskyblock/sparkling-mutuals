@@ -39,6 +39,9 @@ class SafariBirdLedger {
             (captures("Macaw") + live.count { it == "Macaw" }) / 2
         retainSpawnProof()
     }
+    /** Includes uncollected food and known party extras; render evidence estimates food already used. */
+    val foodLeftToUse get() = maxOf(0, feedingTarget - maxOf(accountedFeedings, verifiedPopulation),
+        (heldFoods ?: 0) + (floorDropsRemaining ?: 0))
     val accountedFeedings get() = currentPopulation ?: 0
     val knownFoodUnresolved get() = (heldFoods ?: 0) > 0 || (floorDropsRemaining ?: 0) > 0
     val feedingResolved get() = floorDropsRemaining == 0 && heldFoods == 0 &&

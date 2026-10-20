@@ -34,6 +34,8 @@ A current Miria scoreboard tier of **Uncommon or higher**, observed at least ten
 
 ### Combined reminder
 
+Contest-only readiness also has a travel fallback: after the exact server notice ` » SharkboardMC is traveling to Torrhus Canyon FOLLOW`, clear that player's `contest` hold **20 seconds after the first matching notice**. Each member has their own timer; duplicate notices do not extend it. Only outstanding contest holds can expire this way. Quoted party/public messages, other destinations and unrelated players cannot release another member's request. Existing ready/ticket messages can still clear a hold earlier. Non-contest reasons continue waiting for readiness. Transfers preserve the timer for the same party; party reset/disable clears it, and a new contest request discards previous-trip deadlines. This changes downtime only, not the independent Safari presence/kick protection.
+
 On returning to Torrhus, clients coordinate one party message naming all outstanding requesters and reasons, even if the reporting client requested no downtime: `Downtime requested: Alex (food); Steve (contest); Bob (no reason)`.
 
 Reports wait for the destination, stagger by party UUID order and suppress a matching report already heard, including one heard inside Safari. Resume/departure/ticket changes update pending content. Long reasons share the available message budget and use `...` truncation to preserve names. Local notices list holders and explain the Shift override. A ready message does not clear unrelated missing-member or kick guards.
@@ -58,5 +60,7 @@ Profile scope changes reset contest completion, tier, points and warnings, but d
 - Existing secondary coverage: [ContestTicketAndAutoWarpTest](../src/test/kotlin/net/johnceo/sparklingmutuals/contest/ContestTicketAndAutoWarpTest.kt), [SafariDowntimeTest](../src/test/kotlin/net/johnceo/sparklingmutuals/safari/automation/SafariDowntimeTest.kt), [DowntimeAnnouncementTest](../src/test/kotlin/net/johnceo/sparklingmutuals/safari/automation/DowntimeAnnouncementTest.kt). No tests or live session ran in this audit. Live checks should cross starts with each role/setting, earn tiers across rollovers, exercise multiple independent holders, transfers, staggered reports and same-window profile refreshes.
 
 ## Last updated
+
+2026-10-20 - Added per-member twenty-second contest-hold release from Torrhus server travel notices, allowing non-mod party members to resume without readiness chat.
 
 2026-10-19 (America/New_York) — Audited schedule, request gates, ticket/readiness release and lifecycle against source `93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee`. See [documentation conventions](DOCUMENTATION_GUIDE.md).

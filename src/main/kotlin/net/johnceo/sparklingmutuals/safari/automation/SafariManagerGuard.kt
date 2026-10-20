@@ -26,7 +26,7 @@ object SafariManagerGuard {
     private var requestedRosterAt = 0L
     private var messagedAt = 0L
     private var lastDecision = ""
-    fun register() { SafariPartyInput.register() }
+    fun register() { SafariPartyInput.register(); SafariTicketSelect.register() }
     fun activeRun(client: Minecraft): Boolean {
         val player = client.player ?: return false
         return runState.active(client.level, SafariIsland.onIsland, SafariAssist.location,
@@ -94,7 +94,10 @@ object SafariManagerGuard {
     }
     fun shouldBlock(entity: Entity?): Boolean {
         val client = Minecraft.getInstance()
-        return entity != null && isManager(client, entity) && blocks(client, "manager ${entity.id}")
+        if (entity == null || !isManager(client, entity)) return false
+        val blocked = blocks(client, "manager ${entity.id}")
+        if (!blocked) SafariTicketSelect.managerClicked(client)
+        return blocked
     }
     private fun blocks(client: Minecraft, route: String): Boolean {
         val player = client.player ?: return false

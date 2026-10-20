@@ -23,7 +23,9 @@ object ConfigManager {
     var timesaveOnly = true
     var warpAlertsEnabled = false
     var warpDelaySeconds = 25
-    var hideyhoQuestClicks = true
+    var hideyhoAutoAccept = true
+    var autoSelectSafariTicket = false
+    var safariTicketPreference = 0
     var hideyhoInsideOutside = true
     var hideHauntedPaintings = true
     var shinyDetection = true
@@ -71,7 +73,7 @@ object ConfigManager {
     var showWhere = 1
     val personalBests = SafariPersonalBests()
     private val flags = mapOf(::highlightTeammates to true, ::showTeammateNames to true, ::partyCommandsEnabled to true, ::useCloudApi to true, ::fullClearMode to false, ::sparklingMode to false, ::sparklingProfitableShardEsp to true, ::profitableShardEsp to true, ::timesaveOnly to true, ::warpAlertsEnabled to false,
-        ::hideyhoQuestClicks to true, ::hideyhoInsideOutside to true, ::hideHauntedPaintings to true, ::shinyDetection to true,
+        ::hideyhoAutoAccept to true, ::autoSelectSafariTicket to false, ::hideyhoInsideOutside to true, ::hideHauntedPaintings to true, ::shinyDetection to true,
         ::progressHud to true, ::countUniqueOnly to false, ::missingPanel to true,
         ::highlightBeeNests to true, ::removeDarkness to true, ::sparklingAlert to true,
         ::sparklingPartyAnnouncer to true, ::catchCountPanel to false, ::autoClicker to true, ::candleHitbox to true, ::holdManagerOnKick to true, ::downtimeCommand to true, ::honeyHives to true, ::phantomleafSolver to true, ::runHistory to true, ::achievements to true, ::achievementSound to true, ::achievementsToParty to false, ::runCoinsInstaSell to false,
@@ -97,6 +99,7 @@ object ConfigManager {
         sparklingSoundVolume = properties.getProperty("sparklingSoundVolume")?.toIntOrNull()?.coerceIn(0, 100) ?: 100
         flags.forEach { (property, default) -> property.set(properties.getProperty(property.name)?.toBooleanStrictOrNull() ?: default) }
         warpDelaySeconds = properties.getProperty("warpDelaySeconds", "25").toIntOrNull()?.coerceIn(1, 86400) ?: 25
+        safariTicketPreference = properties.getProperty("safariTicketPreference")?.toIntOrNull()?.takeIf { it in 0..1 } ?: 0
         showWhere = properties.getProperty("showWhere")?.toIntOrNull()?.takeIf { it in 0..2 } ?: 1
         capsuleHideDistance = validCapsuleDistance(properties.getProperty("capsuleHideDistance")?.toFloatOrNull())
         capsulePathWidth = validCapsulePathWidth(properties.getProperty("capsulePathWidth")?.toFloatOrNull())
@@ -121,6 +124,7 @@ object ConfigManager {
             setProperty("sparklingSoundVolume", sparklingSoundVolume.coerceIn(0, 100).toString())
             flags.forEach { (property, _) -> setProperty(property.name, property.get().toString()) }
             setProperty("warpDelaySeconds", warpDelaySeconds.toString())
+            setProperty("safariTicketPreference", safariTicketPreference.coerceIn(0, 1).toString())
             setProperty("showWhere", showWhere.coerceIn(0, 2).toString())
             setProperty("capsuleHideDistance", validCapsuleDistance(capsuleHideDistance).toString())
             setProperty("capsulePathWidth", validCapsulePathWidth(capsulePathWidth).toString())

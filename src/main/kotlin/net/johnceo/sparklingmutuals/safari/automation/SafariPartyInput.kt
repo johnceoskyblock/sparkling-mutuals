@@ -39,6 +39,7 @@ object SafariPartyInput {
     }
     private fun receive(text: String) {
         val client = Minecraft.getInstance()
+        if (SafariDowntime.travel(text)) return
         if (PartyRosterSignals.changed(text)) {
             // Membership notices are server system lines, never strings quoted within party chat.
             if (SafariDowntime.partyResetSignal(text)) resetPending()

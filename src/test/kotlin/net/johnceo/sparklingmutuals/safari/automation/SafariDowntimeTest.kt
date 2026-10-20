@@ -10,6 +10,50 @@ class SafariDowntimeTest {
     @BeforeEach fun clear() { ConfigManager.downtimeCommand = true; SafariDowntime.reset() }
     @AfterEach fun restore() { ConfigManager.downtimeCommand = true; SafariDowntime.reset() }
 
+    @Test fun `contest members release individually twenty seconds after their Torrhus travel`() {
+        SafariDowntime.chat("Party > Leader: !dt contest", false, "Me", listOf("Leader", "SharkboardMC", "Friend"))
+        SafariDowntime.chat("Party > Leader: r", false, "Me")
+        assertTrue(SafariDowntime.travel(" \u00BB SharkboardMC is traveling to Torrhus Canyon FOLLOW", 1000))
+        SafariDowntime.travel("\u00BB Friend is traveling to Torrhus Canyon FOLLOW", 6000)
+        SafariDowntime.travel("\u00BB SharkboardMC is traveling to Torrhus Canyon FOLLOW", 2000)
+        SafariDowntime.transfer()
+        SafariDowntime.releaseContestTravel(20999)
+        assertEquals("SharkboardMC, Friend", SafariDowntime.holders())
+        SafariDowntime.releaseContestTravel(21000)
+        assertEquals("Friend", SafariDowntime.holders())
+        assertTrue(SafariDowntime.entryHold)
+        SafariDowntime.releaseContestTravel(26000)
+        assertFalse(SafariDowntime.entryHold)
+        assertFalse(SafariDowntime.holding)
+    }
+    @Test fun `travel cannot release other reasons quoted notices or members without a matching notice`() {
+        SafariDowntime.chat("Party > Friend: !dt food", false, "Me")
+        SafariDowntime.chat("Party > Leader: !dt contest", false, "Me", listOf("Leader", "Friend"))
+        for (text in listOf("Party > Leader: \u00BB Leader is traveling to Torrhus Canyon FOLLOW",
+            "Leader: \u00BB Leader is traveling to Torrhus Canyon FOLLOW",
+            "\u00BB Leader is traveling to The Garden FOLLOW")) assertFalse(SafariDowntime.travel(text, 0))
+        SafariDowntime.travel("\u00BB Outsider is traveling to Torrhus Canyon FOLLOW", 0)
+        SafariDowntime.travel("\u00BB Friend is traveling to Torrhus Canyon FOLLOW", 0)
+        SafariDowntime.releaseContestTravel(20000)
+        assertEquals("Friend, Leader", SafariDowntime.holders())
+        SafariDowntime.travel("\u00BB Leader is traveling to Torrhus Canyon FOLLOW", 20000)
+        SafariDowntime.releaseContestTravel(40000)
+        assertEquals("Friend", SafariDowntime.holders(), "Non-contest downtime still needs its own readiness")
+    }
+    @Test fun `new contest and party reset cannot inherit an old trip timer`() {
+        SafariDowntime.chat("Party > Friend: !dt contest", false, "Me")
+        SafariDowntime.travel("\u00BB Friend is traveling to Torrhus Canyon FOLLOW", 0)
+        SafariDowntime.chat("Party > Friend: Ticket earned!", false, "Me")
+        SafariDowntime.chat("Party > Friend: !dt contest", false, "Me")
+        SafariDowntime.releaseContestTravel(30000)
+        assertTrue(SafariDowntime.entryHold)
+        SafariDowntime.travel("\u00BB Friend is traveling to Torrhus Canyon FOLLOW", 30000)
+        SafariDowntime.reset()
+        SafariDowntime.chat("Party > Friend: !dt contest", false, "Me")
+        SafariDowntime.releaseContestTravel(60000)
+        assertTrue(SafariDowntime.entryHold)
+    }
+
     @Test fun `readiness accepts clear confirmations but ignores unrelated r words questions and negation`() {
         for (body in listOf("r", "R!", "r/", "/r", "rrr", "rrt", "rt", "er", "ready", "rdy", "I'm ready", "im ready now!", "okay, ready to go!", "we are finally ready", "Ready when you are", "I'm all ready!")) {
             assertTrue(SafariDowntime.readyMessage(body), body)

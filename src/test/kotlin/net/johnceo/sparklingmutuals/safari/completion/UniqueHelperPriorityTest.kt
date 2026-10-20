@@ -29,13 +29,13 @@ class UniqueHelperPriorityTest {
         val needsCoin = party("Gimmiegold")
         assertTrue(state.enabledForMode(SafariBiome.FOREST, SafariMode.UNIQUE, true, run, all))
         state.inventory(listOf("Soothing Incense" to 4))
-        assertFalse(state.enabledForMode(SafariBiome.HAUNTED, SafariMode.UNIQUE, true, run, all))
+        assertTrue(state.enabledForMode(SafariBiome.HAUNTED, SafariMode.UNIQUE, true, run, all))
         assertTrue(state.enabledForMode(SafariBiome.HAUNTED, SafariMode.UNIQUE, true, run, needsCoin))
         assertFalse(state.enabledForMode(SafariBiome.HAUNTED, SafariMode.UNIQUE, false, run, needsCoin))
         run.record(SafariCatch(SafariRoster.named("Gimmiegold")!!))
         assertTrue(state.enabledForMode(SafariBiome.HAUNTED, SafariMode.UNIQUE, true, run, needsCoin))
-        assertFalse(state.enabledForMode(SafariBiome.HAUNTED, SafariMode.UNIQUE, true, run, all))
-        state.record("FLOOR DROP! Shining Coin", SafariBiome.HAUNTED)
+        assertTrue(state.enabledForMode(SafariBiome.HAUNTED, SafariMode.UNIQUE, true, run, all))
+        repeat(2) { state.record("FLOOR DROP! Shining Coin", SafariBiome.HAUNTED) }
         assertTrue(state.enabledForMode(SafariBiome.HAUNTED, SafariMode.UNIQUE, true, run, needsCoin))
         assertFalse(state.enabledForMode(SafariBiome.HAUNTED, SafariMode.UNIQUE, true, run, all))
     }

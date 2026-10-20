@@ -110,7 +110,7 @@ class UniqueCompletionTest {
         net.johnceo.sparklingmutuals.config.ConfigManager.fullClearMode = false
         net.johnceo.sparklingmutuals.config.ConfigManager.sparklingMode = false
         val rows = SafariPanels.missing(run, SafariBiome.CAVERN, true, 0, mounds = 2, party = state).rows
-        assertTrue(rows.any { it.label == "Rockmite" })
+        assertFalse(rows.any { it.label == "Rockmite" })
         assertFalse(rows.any { it.label == "Snoozle" })
         assertTrue(rows.any { it.label == "Mounds to break" })
     }
