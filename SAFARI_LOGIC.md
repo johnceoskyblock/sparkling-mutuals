@@ -32,7 +32,7 @@ Detected Sparkling identities impose **no additional capture gate in any mode**.
 
 Automatic fd, cd, id and hd announcements require current presence in that biome, a capture-evidence scan and all active-mode targets complete under localOnly. Sparkling also requires ready party discoveries. Unique suppresses its own report after receiving that biome's report; Forest/Haunted suppress received-report echoes in every mode. [Forest reporting](docs/BIRD_COMPLETION.md#sending-fd) uses complete qualified local bird spawning and source evidence, without a personal pickup quota, for initial and late entrants alike. Haunted late entrants can report complete local coin/population checks with the biome's other requirements.
 
-Queued reports are rechecked against current mode, biome and local requirements before sending. Biome sends are spaced by at least three seconds. Later unused-resource reminders display only local titles, with no party reminder message. Once per run, two seconds after leaving the observed boat, a compact party message shares only unused starting food/coins associated with missing party discoveries; unknown discovery data postpones it. See [resource timing](docs/critters/FLOOR_DROPS.md#early-starting-foodcoin-reports). Announcement memory prevents duplicates without adding catches.
+Queued reports are rechecked against current mode, biome and local requirements before sending. Biome sends are spaced by at least three seconds. Unused-resource local titles remain, and each locally sent biome report can be followed by a paced party message listing unused starting food/coins, the IGNs needing their related Sparklings and a request to wait. This follow-up is revalidated before sending and does not add resource contributions twice. Once per run, 0.5 seconds after leaving the observed boat, a compact party message shares only unused starting food/coins associated with missing party discoveries and names the members needing each related Sparkling; unknown discovery data postpones it. See [resource timing](docs/critters/FLOOR_DROPS.md#early-starting-foodcoin-reports). Announcement memory prevents duplicates without adding catches.
 
 The configured run-complete alert requires all active-mode targets complete, a nonempty target set and, in Sparkling, ready party state. It can use remote progress; it does not certify a personal clear.
 
@@ -87,6 +87,12 @@ Reviewed source: 93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee; documentation-only wo
 Numeric minima and whole-biome coverage are not certified by client predicates. [The consolidated audit](docs/IMPLEMENTATION_AUDIT.md) records documentation mismatches, PB differences and server uncertainties.
 
 ## Last updated
+
+2026-10-20 — Unique missing rows now track shared first catches (with proven zero-spawn waivers), while progress and biome reports retain source gates. Unique coin ESP without a needed Gimmiegold discovery stops after two floor pickups. Starting-item reports omit names/needs; post-biome reminders retain them. Hideyho offers can auto-accept inside Safari.
+
+2026-10-20 - Beginning unused-supply messages name missing members and use a 0.5-second post-boat delay.
+
+2026-10-20 - Added named party reminders for required unused starting supplies immediately after local biome reports.
 
 2026-10-19 - Added local Unique zero-spawn Cavern completion and confirmed no-Macaw Forest reporting after all food obligations resolve.
 

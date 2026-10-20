@@ -50,7 +50,9 @@ class PartyRepliesTest {
     }
     @Test fun `every lookup failure stays local but successful results are publishable`() {
         for (failure in listOf(ApiFailure(ApiFailureKind.INVALID_KEY, "Invalid key"),
-            ApiFailure.unavailable(), ApiFailure.dataUnavailable(), ApiFailure(ApiFailureKind.RATE_LIMIT, "Request limit"))) {
+            ApiFailure.unavailable(), ApiFailure.dataUnavailable(), ApiFailure.malformedData(),
+            ApiFailure(ApiFailureKind.PLAYER_NOT_FOUND, "Minecraft player not found: c73xx"),
+            ApiFailure(ApiFailureKind.RATE_LIMIT, "Request limit"))) {
             val reply = PartyLookupResult.fetch(tickets, "key") { throw failure }
             assertFalse(reply.successful)
             assertNull(reply.partyMessage)

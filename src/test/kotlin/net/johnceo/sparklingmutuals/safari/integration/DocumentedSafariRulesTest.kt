@@ -79,7 +79,7 @@ class DocumentedSafariRulesTest {
         for (mode in SafariMode.entries) {
             assertEquals(mode != SafariMode.SPARKLING, s.needed(FloorDropType.INCENSE, mode, party("Gimmiegold")))
             assertFalse(s.needed(FloorDropType.INCENSE, mode, party()))
-            assertEquals(mode == SafariMode.FULL_CLEAR, s.needed(FloorDropType.COIN, mode, party()))
+            assertEquals(mode != SafariMode.SPARKLING, s.needed(FloorDropType.COIN, mode, party()))
             assertTrue(s.needed(FloorDropType.COIN, mode, party("Gimmiegold")))
         }
         assertNull(FloorPickup.parse("FLOOR DROP! You found Shining Coin Shard on the ground!"))

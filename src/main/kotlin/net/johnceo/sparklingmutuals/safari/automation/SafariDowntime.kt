@@ -25,11 +25,13 @@ object SafariDowntime {
         val raw = SafariRules.strip(body).lowercase().trim().trim { !it.isLetterOrDigit() }
         // Only short r-spam and one adjacent keyboard key; never arbitrary words containing r.
         if (raw.length <= 6 && readyTypo.matches(raw)) return true
-        val words = SafariRules.strip(body).lowercase().replace('’', '\'')
+        val words = SafariRules.strip(body).lowercase().replace('â€™', '\'')
             .replace(Regex("[.,!]+"), " ").trim().replace(Regex("\\s+"), " ")
         return resume.matches(words)
     }
     private const val NAME = "(?:\\[[^]]+]\\s*)*([A-Za-z0-9_]{1,16})"
+    private val torrhusTravel = Regex("^\u00BB\\s+$NAME is traveling to Torrhus Canyon FOLLOW$")
+    private val contestTravelAt = mutableMapOf<String, Long>()
     /** One member gone: their request goes with them. */
     private val departed = listOf(
         Regex("^$NAME (?:has left the party|has been removed from the party)[.!]$"),
@@ -61,6 +63,9 @@ object SafariDowntime {
         announcement.observe(chat.body)
         request.matchEntire(chat.body)?.let { match ->
             val reason = match.groupValues[1].trim()
+            // A new contest request starts a new wait; never reuse a previous trip's deadline.
+            if (reason.equals("contest", true)) contestTravelAt.clear()
+            else contestTravelAt.remove(chat.sender.lowercase())
             if (requests.isEmpty()) announcement.clear()
             // A leader's contest request asks the whole current party to get ready.
             if (reason.equals("contest", true)) contestMembers.forEach { member ->
@@ -85,6 +90,30 @@ object SafariDowntime {
             tell("[SM] ${chat.sender} is ready." + if (active) " Waiting for ${holders()}." else if (wasActive) " Downtime cleared." else " Request cancelled.")
         }
         return null
+    }
+
+    /** Only the server FOLLOW notice starts this timer, never quoted party/public chat. */
+    internal fun travel(text: String, now: Long = System.currentTimeMillis()): Boolean {
+        val player = torrhusTravel.matchEntire(SafariRules.strip(text))?.groupValues?.get(1) ?: return false
+        if (ConfigManager.downtimeCommand && requests.values.any { it.equals("contest", true) })
+            contestTravelAt.putIfAbsent(player.lowercase(), now)
+        return true
+    }
+    internal fun releaseContestTravel(now: Long) {
+        if (!ConfigManager.downtimeCommand) { contestTravelAt.clear(); return }
+        val released = requests.entries.filter { (key, reason) ->
+            reason.equals("contest", true) && contestTravelAt[displayName(key).lowercase()]?.let {
+                now - it >= 20_000
+            } == true
+        }.map { it.key }
+        released.forEach { key ->
+            requests.remove(key)
+            contestTravelAt.remove(displayName(key).lowercase())
+        }
+        if (requests.isEmpty()) active = false
+        if (requests.values.none { it.equals("contest", true) }) contestTravelAt.clear()
+        if (released.isNotEmpty()) tell("[SM] Contest downtime cleared for ${released.joinToString(", ", transform = ::displayName)} after Torrhus travel." +
+            if (requests.isNotEmpty()) " Waiting for ${holders()}." else "")
     }
 
     /** Party readiness is sender-specific for every reason; local scoreboard still calls ticketEarned. */
@@ -145,6 +174,7 @@ object SafariDowntime {
 
     fun onClientTick(client: Minecraft) {
         if (!ConfigManager.downtimeCommand && (active || requests.isNotEmpty())) clear()
+        releaseContestTravel(System.currentTimeMillis())
         if (client.player == null || client.connection == null || !PartyManager.hasInfo) return
         val inSafari = SafariManagerGuard.activeRun(client)
         if (!inSafari) leftSafari(client.player?.name?.string.orEmpty())?.let(::queueAnnouncement)
@@ -186,7 +216,7 @@ object SafariDowntime {
 
     fun holders() = requests.keys.joinToString(", ", transform = ::displayName)
     /** Explicit disable or confirmed party change drops requests. */
-    fun clear() { active = false; announcementDue = false; requests.clear(); announcement.clear() }
+    fun clear() { active = false; announcementDue = false; requests.clear(); announcement.clear(); contestTravelAt.clear() }
     fun reset() { clear() }
 
     private fun send(message: String) { Minecraft.getInstance().player?.connection?.sendCommand("pc $message") }

@@ -49,7 +49,7 @@ class SafariFeatureIntegrationTest {
         }
         inspect(SafariSettings())
         assertTrue(switches.size >= 40, "Inspect nested GUI options, including panel borders")
-        val exceptions = setOf("history.instaSell", "history.toParty", "warp.enabled", "safari.experimentalCapsulePath")
+        val exceptions = setOf("history.instaSell", "history.toParty", "warp.enabled", "safari.experimentalCapsulePath", "safari.autoSelectTicket", "esp.rewardDrops")
         val modes = setOf("modes.unique.enabled", "modes.fullClear.enabled", "modes.sparkling.enabled")
         switches.filterKeys { it !in modes }.forEach { (name, value) -> assertEquals(name !in exceptions, value, name) }
         assertEquals(1, modes.count { switches[it] == true })
@@ -145,7 +145,7 @@ class SafariFeatureIntegrationTest {
         assertTrue(state.needed(FloorDropType.COIN, SafariMode.SPARKLING, party("Gimmiegold")))
         assertFalse(state.needed(FloorDropType.COIN, SafariMode.SPARKLING, party("Doomspiral")))
         for (mode in listOf(SafariMode.UNIQUE, SafariMode.FULL_CLEAR))
-            assertEquals(mode == SafariMode.FULL_CLEAR, state.needed(FloorDropType.COIN, mode, party()))
+            assertEquals(mode != SafariMode.SPARKLING, state.needed(FloorDropType.COIN, mode, party()))
         state.inventory(listOf("Soothing Incense" to 2))
         repeat(2) { state.record("FLOOR DROP! You found Soothing Incense on the ground!", SafariBiome.HAUNTED) }
         state.inventory(listOf("§fSoothing Incense" to 2, "Soothing Incense" to 2), initial = false)

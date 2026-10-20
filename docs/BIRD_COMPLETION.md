@@ -14,7 +14,7 @@ A **feeding opportunity** is the ledger's unit of expected bird population: one 
 
 ### Expected population
 
-Expected opportunities are **max(9, personally collected Forest food quantity) + local extra food + reported extra food**. Early discovery-gated starting-item reports supply remote contributions before clearing completes; later unused-resource reminders are local titles only. Nine is the implemented baseline. Local extras include starting inventory/grants and pickups outside Forest, avoiding overlap with early pickup messages. Accepted party notices use sender/type maxima; the local sender's notice overlaps local extras. The first available inventory sample starts the three-second starting-inventory window.
+Expected opportunities are **max(9, personally collected Forest food quantity) + local extra food + reported extra food**. Early discovery-gated starting-item reports supply remote contributions before clearing completes; later unused-resource local titles remain, and a separately paced party follow-up after a local biome report names which members still need the related Sparklings without adding source contributions again. Nine is the implemented baseline. Local extras include starting inventory/grants and pickups outside Forest, avoiding overlap with early pickup messages. Accepted party notices use sender/type maxima; the local sender's notice overlaps local extras. The first available inventory sample starts the three-second starting-inventory window.
 
 Qualified population is:
 
@@ -80,6 +80,10 @@ Reviewed source: 93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee.
 Live-server confirmation remains pending for baseline population, Safari-wide marker delivery, late-entry coverage and escape/replacement behavior. See [audit D9](IMPLEMENTATION_AUDIT.md#d9) for Full Clear's weaker source-observation requirement.
 
 ## Last updated
+
+2026-10-20 — Unique bird rows disappear after their first shared capture. Proven no-Macaw absence still waives its row. Forest shows Bird food left to use below the nest footer: the greater of unresolved feeding demand (including reported party extras) and known held plus remaining floor food. This is inferred from captures/render evidence, not a direct server usage counter; spawning/progress/report gates remain independent.
+
+2026-10-20 - Named completion-time party wait reminders reuse current starting-food quantities without counting them twice.
 
 2026-10-19 - Verified local zero-Macaw fd and row removal include all reported starting food; any Macaw encounter retains the catch requirement.
 

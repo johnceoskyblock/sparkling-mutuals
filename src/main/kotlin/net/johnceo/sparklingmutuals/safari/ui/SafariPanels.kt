@@ -45,25 +45,26 @@ object SafariPanels {
                 party.needs(it.name) && run?.sparklingComplete(it.name, party) != true ||
                     run?.sparklingChecks?.wumpaPrerequisite(it.name, party) == true && run.count("Wumpa") == 0 && run.count(it.name) == 0
             }
-            else if (SafariFullClear.mode == SafariMode.UNIQUE) run?.uniqueComplete(it.name, party) != true
+            else if (SafariFullClear.mode == SafariMode.UNIQUE) run == null || run.count(it.name) == 0 && !run.uniqueUnavailable(it.name)
             else run?.missing(it, ConfigManager.fullClearMode) != false }
     }
     fun missing(run: SafariRun?, biome: SafariBiome, unique: Boolean, nests: Int, mounds: Int = 0,
         walls: WallSummary = WallSummary(emptyList()), party: PartySparklingState = SafariSparklingMode.state): HudPanel {
         val sparkling = SafariFullClear.mode == SafariMode.SPARKLING
         val missing = missingCritters(run, biome, party)
-        // Needed checking stays visible after a Unique catch, using the same plain species row.
-        val listed = biome.critters.filter { critter ->
-            critter in missing || SafariFullClear.mode == SafariMode.UNIQUE && run != null &&
-                run.count(critter.name) > 0 && party.needs(critter.name) && !run.uniqueComplete(critter.name, party)
-        }
+        val listed = missing
         val rows = listed.map { critter ->
             HudRow(critter.name, fixedCounter(critter.name, run, SafariFullClear.mode, party), critter.color, HudRow.GRAY)
-        }.ifEmpty { listOf(HudRow(if (sparkling) "All checked!" else "All caught and checked!", color = biome.color)) }
+        }.ifEmpty { listOf(HudRow(if (sparkling) "All checked!"
+            else if (SafariFullClear.mode == SafariMode.UNIQUE &&
+                run?.completed(SafariMode.UNIQUE, biome.critters, party) != biome.critters.size) "All caught!"
+            else "All caught and checked!", color = biome.color)) }
         val helpers = buildList {
             val mode = SafariFullClear.mode
             if (biome == SafariBiome.FOREST && SafariHelperRules.showNestCounter(mode, run, party))
                 add(HudRow("Bee nests to punch", "$nests", HudRow.GOLD, HudRow.GRAY))
+            if (biome == SafariBiome.FOREST && mode == SafariMode.UNIQUE)
+                add(HudRow("Bird food left to use", "${run?.birdFoodLeftToUse ?: 9}", HudRow.GOLD, HudRow.GRAY))
             if (biome == SafariBiome.CAVERN) {
                 if (SafariHelperRules.needed("Snoozle", mode, run, party) && walls.states.isNotEmpty() && !walls.allBroken)
                     add(HudRow("Snooper walls to break", walls.remaining, HudRow.GOLD, HudRow.GRAY))

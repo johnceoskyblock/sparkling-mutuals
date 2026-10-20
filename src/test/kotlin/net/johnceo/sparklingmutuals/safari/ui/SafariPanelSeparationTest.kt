@@ -27,6 +27,23 @@ class SafariPanelSeparationTest {
             assertEquals(0, SafariPanels.missingCritters(run, critter.biome).count { it.name == name })
         }
     }
+    @Test fun `Unique captured birds and source critters leave checklist before source progress completes`() {
+        ConfigManager.init(dir)
+        val run = SafariRun(0)
+        val party = net.johnceo.sparklingmutuals.safari.PartySparklingState()
+        for (name in listOf("Bluebird", "Parakeet", "Macaw", "Rockmite", "Snoozle")) {
+            val critter = SafariRoster.named(name)!!
+            run.record(SafariCatch(critter))
+            assertFalse(SafariPanels.missingCritters(run, critter.biome, party).any { it.name == name })
+            assertFalse(run.uniqueComplete(name, party), "source gates still apply to progress for $name")
+        }
+        val rows = SafariPanels.missing(run, SafariBiome.FOREST, true, 3, party = party).rows
+        assertEquals("9", rows.first { it.label == "Bird food left to use" }.value)
+        run.birds.inventory(listOf("Bag of Seeds" to 2))
+        run.birds.scan(2, 7)
+        assertEquals("4", SafariPanels.missing(run, SafariBiome.FOREST, true, 3, party = party).rows
+            .first { it.label == "Bird food left to use" }.value)
+    }
     @Test fun `scanned empty mounds complete Rockmite only after revealed critters are caught`() {
         ConfigManager.init(dir); SafariFullClear.toggle()
         val run = SafariRun(0)

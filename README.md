@@ -49,6 +49,8 @@ The guide is a visual estimate, not guaranteed flight, impact or capture physics
 | `/alert`, `/alertdelay <seconds>` | Optional warp reminder controls |
 | `/sm shots`, `/sm debug` | Explicit local recording controls or tracking diagnostics; review logs/exports before sharing |
 
+Press Tab to complete current-party IGNs in `/sparkling`, including successive comparison names, and name arguments for `!missing`, `!ticket`/`!tickets` and `!pb doom`/`!pb wumpa`. Party-chat forms such as `/pc !missing Jo` and `/p chat !tickets Jo` are supported. Matching ignores case; suggestions resolve verified party names even for members absent from the current tab list, without fetching SkyBlock discovery data.
+
 ### Contribute and verify
 
 [Contributing](CONTRIBUTING.md) covers setup, focused changes and pull requests. [Multi-version builds](docs/MULTI_VERSION_BUILDS.md), [source synchronization](docs/SOURCE_SYNC.md), [manual scenarios](docs/IMPLEMENTATION_TEST_CHECKLIST.md), and the [implementation audit](docs/IMPLEMENTATION_AUDIT.md) distinguish static checks from live Minecraft evidence.
@@ -66,6 +68,10 @@ The guide is a visual estimate, not guaranteed flight, impact or capture physics
 - Licensing and attribution: [LICENSE](LICENSE) and [third-party notices](licenses).
 
 ## Last updated
+
+2026-10-20 — Added optional reward-drop ESP and non-leader ticket selection; removed obsolete Hideyho clicks and fixed unresolved party-name suggestions.
+
+2026-10-20 - Added party-name Tab suggestions to Sparkling lookups and player-taking party commands.
 
 2026-10-19 - Added the Garden Phantomleaf Solver and Misc Endgame Features tab with SkyHanni attribution.
 

@@ -38,6 +38,7 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
         gimmiegoldCheck.scan(count("Gimmiegold"), live, qualified)
     }
     val resourceReminders = net.johnceo.sparklingmutuals.safari.resources.StartingResourceDelivery(resources)
+    val partyResourceReminders = net.johnceo.sparklingmutuals.safari.resources.StartingResourcePartyReminder(resources)
     val startingAnnouncement = net.johnceo.sparklingmutuals.safari.resources.StartingResourceAnnouncement(resources)
     val sparklingParticles = net.johnceo.sparklingmutuals.safari.sparkling.SparklingParticleLocations()
     val sparklingCaptures = SparklingCaptureState()
@@ -105,6 +106,7 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
     }
     private val visited = mutableSetOf<SafariBiome>()
     private fun syncBirdContributions() { birds.contributions(localPlayerName, resources.foodContributions()) }
+    val birdFoodLeftToUse: Int get() { syncBirdContributions(); return birds.foodLeftToUse }
     fun birdSpawnsComplete(localOnly: Boolean = false): Boolean {
         syncBirdContributions()
         return if (lastBiome == SafariBiome.FOREST) birds.feedingResolved else !localOnly &&

@@ -17,14 +17,14 @@ A **missing row** is an unfinished species entry, not an inventory/capture total
 | Mode | Progress/denominator | Species-row inclusion |
 | --- | --- | --- |
 | Sparkling | Only party-needed discoveries; ? while discovery state is not ready. No targets displays a complete zero-length bar | Needed species whose sparklingComplete is false, plus uncaught Icy prerequisites while Wumpa is needed and uncaught |
-| Unique | All species; uniqueComplete, plus needed Honeybug checking for progress | Species whose uniqueComplete is false; Honeybug's first catch removes its row before its checking-dependent progress can complete |
+| Unique | All species; uniqueComplete, plus needed Honeybug checking for progress | Uncaught species, except locally proven zero-spawn Macaw, Rockmite and Snoozle. Every first shared catch removes its row immediately; source/checking requirements remain in progress |
 | Full Clear | All species; fullClearComplete | Species whose fullClearMissingComplete is false |
 
 Full Clear progress can use remote report/capture minima or fixed capture targets while a local missing row remains. A report alone cannot remove that row. Conversely, local capture/source/qualified absence proof can advance both without a report. Qualified absence proof is retained after travel until positive remaining evidence revokes it.
 
 In Unique mode, locally proven zero-spawn Macaw, Rockmite and Snoozle are removed from the species list. Macaw requires resolved bird feeding including known party extras and no encounter. Rockmite/Snoozle require fully resolved mounds/walls and a local Cavern absence scan with no encounter. Their absence also counts toward progress and local biome announcements; actual capture counts remain zero.
 
-Plain species names use their species colors. No checking prose, absence notes or duplicate Gazer footer is appended. When no species remain, Sparkling says **All checked!**; Unique/Full Clear say **All caught and checked!**. A separate source footer may still appear below that sentence.
+Plain species names use their species colors. No checking prose, absence notes or duplicate Gazer footer is appended. When no species remain, Sparkling says **All checked!**; Full Clear says **All caught and checked!**. Unique says **All caught!** while source/progress work remains, then **All caught and checked!** once progress also completes. A separate source footer may still appear below that sentence.
 
 In Sparkling, title/editor label is **Unchecked** in every biome. Unique/Full Clear use the existing Missing setting/editor position; the panel title itself uses the biome and “Biome — N left”. Changing mode preserves saved position/settings.
 
@@ -58,6 +58,7 @@ Highest priority: while the party needs Wumpa, every Icy species with zero share
 
 | Footer | Full Clear | Unique | Sparkling |
 | --- | --- | --- | --- |
+| Bird food left to use | Not shown | Remaining feeding demand including known party extras; at least known held plus floor food | Not shown |
 | Bee nests to punch | Until all nests checked or captures reach known nest quota; fd/live bees alone do not suppress it | Until locally resolved or trusted fd; after first Honeybug catch, keep only if its discovery is needed | Only when Honeybug is needed and local/trusted checking remains unresolved |
 | Snooper walls to break | Known wall state exists and not all five broken | Snoozle incomplete and either uncaught or discovery needed | Needed incomplete Snoozle |
 | Mounds to break | Positive remaining mound count | Rockmite incomplete and either uncaught or discovery needed | Needed incomplete Rockmite |
@@ -71,8 +72,8 @@ There is no separate bird-food or Gazer-check footer. Ordinary ESP, detected Spa
 | Species/group | Visible distinction |
 | --- | --- |
 | Honeybug | Unique first catch removes its row; needed checking may still hold progress and nest footer |
-| Rockmite/Snoozle | Their Unique rows wait for applicable source/report conditions, even after a catch |
-| Birds | Shared spawning/capture formulas govern rows and progress; [bird policy](BIRD_COMPLETION.md) owns the exceptions |
+| Rockmite/Snoozle | Unique rows disappear on first shared catch, or on qualified local zero-spawn proof |
+| Birds | Unique rows track first shared captures separately from spawning-dependent progress; [bird policy](BIRD_COMPLETION.md) owns the exceptions |
 | Icy prerequisites | Extra prerequisite-only rows are outside Sparkling's progress denominator; a shared Wumpa catch clears every Icy Sparkling row |
 | Detected Sparkling | Detection alone adds no row and revokes no completion; normal positive remainder/source evidence is evaluated separately |
 
@@ -97,6 +98,8 @@ Reviewed source: 93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee.
 The older Billygoat proposal expected Unique progress to wait for two checks after its first catch. Current uniqueComplete uses the same ordinary first-catch result for row/progress. This proposal/code distinction is recorded in [audit D13](IMPLEMENTATION_AUDIT.md#d13), not presented as implemented. Live layout/entity validation remains pending.
 
 ## Last updated
+
+2026-10-20 — Unique is a capture checklist independent of source progress. Added Forest bird-food footer; empty Unique checklist says All caught! while progress still has work.
 
 2026-10-19 - Documented local Unique zero-spawn row removal, progress and biome reports for Macaw, Rockmite and Snoozle.
 

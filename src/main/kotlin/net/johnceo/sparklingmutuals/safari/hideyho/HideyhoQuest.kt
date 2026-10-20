@@ -1,18 +1,16 @@
 package net.johnceo.sparklingmutuals.safari.hideyho
 
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents
-import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents
-import net.fabricmc.fabric.api.client.screen.v1.ScreenMouseEvents
 import net.johnceo.sparklingmutuals.LocalChat
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.safari.SafariRules
+import net.johnceo.sparklingmutuals.safari.SafariAssist
 import net.minecraft.client.Minecraft
-import net.minecraft.client.gui.screens.ChatScreen
 import net.minecraft.network.chat.ClickEvent
 import net.minecraft.network.chat.Component
 import net.minecraft.network.protocol.common.ServerboundCustomClickActionPacket
 
-/** Click-anywhere quest acceptance adapted from ShinyHunter's QuestAccepter (MIT). */
+/** Quest button matching adapted from ShinyHunter's QuestAccepter (MIT). */
 object HideyhoQuest {
     private val dialogue = HideyhoPromptWindow()
     private var pending: ClickEvent? = null
@@ -27,14 +25,10 @@ object HideyhoQuest {
         ClientReceiveMessageEvents.CHAT.register { message, _, _, _, _ ->
             Minecraft.getInstance().execute { receive(message) }
         }
-        ScreenEvents.AFTER_INIT.register { _, screen, _, _ ->
-            if (screen is ChatScreen) ScreenMouseEvents.allowMouseClick(screen).register { _, _ ->
-                !accept()
-            }
-        }
     }
+    private fun enabled() = ConfigManager.hideyhoAutoAccept && SafariAssist.inSafari
     private fun receive(message: Component) {
-        if (!ConfigManager.hideyhoQuestClicks) { reset(); return }
+        if (!enabled()) { reset(); return }
         val client = Minecraft.getInstance()
         if (hasContext() && !sameContext(client)) reset()
         val text = SafariRules.strip(message.string)
@@ -49,12 +43,12 @@ object HideyhoQuest {
         offeredAt = now
         connection = Minecraft.getInstance().connection
         level = Minecraft.getInstance().level
-        Minecraft.getInstance().player?.sendSystemMessage(LocalChat.component("[SM] Click with chat open to accept Hideyho."))
+        accept()
     }
     private fun accept(): Boolean {
         val client = Minecraft.getInstance()
         val event = pending ?: return false
-        if (!ConfigManager.hideyhoQuestClicks ||
+        if (!enabled() ||
             client.connection !== connection || client.level !== level || System.currentTimeMillis() - offeredAt > 30000) { reset(); return false }
         val active = client.connection ?: return false
         reset()
@@ -68,7 +62,7 @@ object HideyhoQuest {
     }
     fun onClientTick(client: Minecraft) {
         dialogue.synchronize(client.level, client.connection)
-        if (!ConfigManager.hideyhoQuestClicks || (hasContext() && !sameContext(client)) ||
+        if (!enabled() || (hasContext() && !sameContext(client)) ||
             (pending != null && System.currentTimeMillis() - offeredAt > 30000)) reset()
     }
     private fun hasContext() = connection != null || level != null

@@ -133,6 +133,7 @@ object SparklingMutuals : ModInitializer {
         HideyhoSpotter.onClientTick(client)
         SafariDowntime.onClientTick(client)
         SafariManagerGuard.onClientTick(client)
+        net.johnceo.sparklingmutuals.safari.automation.SafariTicketSelect.tick(client)
         net.johnceo.sparklingmutuals.safari.shots.ShotRecorder.tick(client)
         CapsulePreview.tick(client)
     }

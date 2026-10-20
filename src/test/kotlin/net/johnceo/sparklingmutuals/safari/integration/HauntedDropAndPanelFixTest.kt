@@ -56,6 +56,22 @@ class HauntedDropAndPanelFixTest {
             assertEquals(mode == SafariMode.FULL_CLEAR, state.needed(FloorDropType.COIN, mode, party()))
         }
     }
+    @Test fun `Unique keeps coins until two floor pickups independently of starting inventory`() {
+        val state = FloorDropState()
+        state.startingGrant(FloorDropType.COIN)
+        state.inventory(listOf("Shining Coin" to 2))
+        assertTrue(state.needed(FloorDropType.COIN, SafariMode.UNIQUE, party()))
+        state.record("FLOOR DROP! You found Shining Coin!", SafariBiome.HAUNTED)
+        assertTrue(state.needed(FloorDropType.COIN, SafariMode.UNIQUE, party()))
+        state.record("FLOOR DROP! You found Shining Coin!", SafariBiome.HAUNTED)
+        state.inventory(emptyList(), initial = false)
+        state.visit(SafariBiome.CAVERN); state.visit(SafariBiome.HAUNTED)
+        assertFalse(state.needed(FloorDropType.COIN, SafariMode.UNIQUE, party()))
+        assertTrue(state.needed(FloorDropType.COIN, SafariMode.UNIQUE, party("Gimmiegold")))
+        assertTrue(state.needed(FloorDropType.COIN, SafariMode.FULL_CLEAR, party()))
+        state.reset()
+        assertTrue(state.needed(FloorDropType.COIN, SafariMode.UNIQUE, party()))
+    }
     @Test fun `four actual incense pickups hide incense in all modes even when Gimmiegold is missing`() {
         for (mode in SafariMode.entries) {
             val state = FloorDropState(); val missing = party("Gimmiegold", "Doomspiral")
@@ -123,7 +139,7 @@ class HauntedDropAndPanelFixTest {
             for (biome in SafariBiome.entries) {
                 val rows = SafariPanels.missing(run, biome, mode == SafariMode.UNIQUE, 8, 9,
                     WallSummary(List(5) { WallState.INTACT }), missing).rows
-                rows.filter { it.label.isNotBlank() && it.label !in setOf("Bee nests to punch", "Snooper walls to break", "Mounds to break") }.forEach { row ->
+                rows.filter { it.label.isNotBlank() && it.label !in setOf("Bee nests to punch", "Bird food left to use", "Snooper walls to break", "Mounds to break") }.forEach { row ->
                     val species = SafariRoster.named(row.label)
                     assertNotNull(species, row.label)
                     assertEquals(species!!.color, row.color)

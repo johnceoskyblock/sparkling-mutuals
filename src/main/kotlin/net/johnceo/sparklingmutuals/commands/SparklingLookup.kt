@@ -34,7 +34,8 @@ object SparklingLookup {
         ClientCommandRegistrationCallback.EVENT.register { dispatcher, _ ->
             dispatcher.register(ClientCommands.literal("sparkling")
                 .executes { Minecraft.getInstance().player?.name?.string?.let { card(it) }; 1 }
-                .then(ClientCommands.argument("players", StringArgumentType.greedyString()).executes {
+                .then(ClientCommands.argument("players", StringArgumentType.greedyString())
+                    .suggests { _, builder -> PartyNameSuggestions.sparkling(builder) }.executes {
                     val names = StringArgumentType.getString(it, "players").trim().split(Regex("\\s+")).filter(String::isNotEmpty)
                     when {
                         names.size == 1 && names[0].equals("party", true) -> party()

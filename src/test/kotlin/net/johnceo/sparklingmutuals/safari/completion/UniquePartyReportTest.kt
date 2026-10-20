@@ -39,7 +39,7 @@ class UniquePartyReportTest {
                 assertFalse(run.uniqueComplete(name, state))
                 run.record(SafariCatch(SafariRoster.named(name)!!, false))
                 assertEquals(reportFirst, run.uniqueComplete(name, state))
-                assertEquals(!reportFirst, SafariPanels.missing(run, SafariBiome.CAVERN, true, 0, party = state).rows.any { it.label == name })
+                assertFalse(SafariPanels.missing(run, SafariBiome.CAVERN, true, 0, party = state).rows.any { it.label == name })
             }
             report(run, SafariBiome.CAVERN)
             assertEquals(2, run.completed(SafariMode.UNIQUE, SafariBiome.CAVERN.critters, state))
@@ -129,7 +129,7 @@ class UniquePartyReportTest {
         assertFalse(run.uniqueComplete("Rockmite", state)); assertTrue(run.uniqueComplete("Snoozle", state))
         run.reconcileStructures(SafariBiome.CAVERN, true, true)
         assertEquals(7, run.completed(SafariMode.UNIQUE, SafariBiome.CAVERN.critters, state))
-        assertEquals(setOf("Rockmite", "Snoozle"), SafariPanels.missing(run, SafariBiome.CAVERN, true, 0, party = state).rows
+        assertEquals(emptySet<String>(), SafariPanels.missing(run, SafariBiome.CAVERN, true, 0, party = state).rows
             .map { it.label }.filter { label -> SafariBiome.CAVERN.critters.any { it.name == label } }.toSet())
         assertEquals(7, run.completed(SafariMode.UNIQUE, SafariBiome.CAVERN.critters, party(emptySet())))
         assertEquals(7, run.completed(SafariMode.UNIQUE, SafariBiome.CAVERN.critters, party(setOf("Snoozle"))))

@@ -8,6 +8,8 @@ class SafariEspSettings {
     @JvmField @ConfigOption(name = "ESP text scale", desc = "Size of floor-drop names, timers, nest labels and teammate names. 1 = original size; default 2.")
     @ConfigEditorSlider(minValue = .5f, maxValue = 4f, minStep = .25f)
     var textScale = SafariEspConfig.textScale
+    @JvmField @ConfigOption(name = "XP / Essence / Shard floor drops", desc = "Highlight all predicted reward floor drops, independently of mode requirements. Off by default.")
+    @ConfigEditorBoolean var rewardDrops = SafariEspConfig.rewardDrops
     @JvmField @ConfigOption(name = "Floor-drop colors", desc = "Set each named drop's highlight and label color independently.")
     @Accordion val floorColors = FloorDropColorSettings()
     @JvmField @ConfigOption(name = "Floor drops: only in current biome", desc = "Limit floor highlights to your current biome.")
@@ -22,7 +24,8 @@ class SafariEspSettings {
     @ConfigEditorBoolean var haunted = SafariEspConfig.groups.getValue("haunted").onlyInBiome
     fun apply(): Boolean {
         val scale = SafariEspConfig.validTextScale(textScale)
-        var changed = floorColors.apply() || SafariEspConfig.textScale != scale
+        var changed = floorColors.apply() || SafariEspConfig.textScale != scale || SafariEspConfig.rewardDrops != rewardDrops
+        SafariEspConfig.rewardDrops = rewardDrops
         SafariEspConfig.textScale = scale
         mapOf("floor" to floor, "forest" to forest, "cavern" to cavern, "icy" to icy, "haunted" to haunted).forEach { (key, value) ->
             val group = SafariEspConfig.groups.getValue(key)
@@ -58,8 +61,11 @@ class FloorDropColorSettings {
     @ConfigEditorColour var coin = SafariEspConfig.dropColor(FloorDropType.COIN)
     @JvmField @ConfigOption(name = "Icebreaker", desc = "Highlight, fill and label color.")
     @ConfigEditorColour var icebreaker = SafariEspConfig.dropColor(FloorDropType.ICEBREAKER)
+    @JvmField @ConfigOption(name = "XP / Essence / Shard", desc = "Reward floor-drop color; default #6D6D75.")
+    @ConfigEditorColour var generic = SafariEspConfig.dropColor(FloorDropType.GENERIC)
     fun apply(): Boolean {
         val values = mapOf(
+            FloorDropType.GENERIC to generic,
             FloorDropType.LIME to lime,
             FloorDropType.PURPLE to purple,
             FloorDropType.ORANGE to orange,

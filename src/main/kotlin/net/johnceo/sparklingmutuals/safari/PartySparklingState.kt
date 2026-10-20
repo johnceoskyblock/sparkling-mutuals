@@ -9,20 +9,24 @@ import net.johnceo.sparklingmutuals.api.HypixelApi
 class PartySparklingState {
     private var members = emptySet<String>()
     private var shared: Set<String>? = null
+    private var individual = emptyMap<String, Set<String>>()
     private var provider: ApiProvider? = null
     val ready get() = shared != null
     fun select(roster: Set<String>, selectedProvider: ApiProvider = HypixelApi.provider) {
         if (members != roster || provider != selectedProvider) {
-            members = roster.toSet(); provider = selectedProvider; shared = null
+            members = roster.toSet(); provider = selectedProvider; shared = null; individual = emptyMap()
         }
     }
     fun accept(roster: Set<String>, discoveries: Map<String, Set<String>>, source: ApiProvider = HypixelApi.provider): Boolean {
         if (source != provider || source != HypixelApi.provider || roster.isEmpty() || roster != members || !discoveries.keys.containsAll(roster)) return false
-        shared = roster.map { discoveries.getValue(it).map(::key).toSet() }.reduce(Set<String>::intersect)
+        individual = roster.associateWith { discoveries.getValue(it).map(::key).toSet() }
+        shared = individual.values.reduce(Set<String>::intersect)
         return true
     }
     private fun key(species: String) = species.uppercase(Locale.ROOT).replace(' ', '_')
     fun everyoneHas(vararg species: String) = shared?.containsAll(species.map(::key)) == true
     fun needs(species: String) = !everyoneHas(species)
-    fun reset() { members = emptySet(); shared = null; provider = null }
+    fun missingMembers(species: String): List<String> = if (!ready) emptyList() else
+        members.filter { key(species) !in individual.getValue(it) }
+    fun reset() { members = emptySet(); shared = null; provider = null; individual = emptyMap() }
 }

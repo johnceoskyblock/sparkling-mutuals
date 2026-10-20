@@ -83,7 +83,7 @@ class SafariSettings : Config() {
     class Party {
         @JvmField @ConfigOption(name = "Respond to party commands", desc = "Reply to party commands; each mod user shares their PB.")
         @ConfigEditorBoolean var enabled = ConfigManager.partyCommandsEnabled
-        @JvmField @ConfigOption(name = "!dt downtime", desc = "Hold Torrhus Safari entry for each !dt requester until their own r or Ticket earned!. No sneak bypass.")
+        @JvmField @ConfigOption(name = "!dt downtime", desc = "Hold Torrhus Safari entry until ready or ticket messages. Contest holds also release 20 seconds after each player's Torrhus travel notice. Hold Shift to bypass.")
         @ConfigEditorBoolean var downtime = ConfigManager.downtimeCommand
 
     }
@@ -186,10 +186,15 @@ class SafariSettings : Config() {
         @ConfigEditorBoolean var candleHitbox = ConfigManager.candleHitbox
         @JvmField @ConfigOption(name = "Guard Safari entry", desc = "Hold Safari entry for missing/loading party members, with a 2-second pause after kick reports. Hold Shift to bypass entry blocks for the current click. Readiness on Torrhus uses !dt downtime.")
         @ConfigEditorBoolean var holdManagerOnKick = ConfigManager.holdManagerOnKick
+        @JvmField @ConfigOption(name = "Auto-select Safari ticket", desc = "When not party leader, select an available ticket in the entry menu. Entry guard still applies.")
+        @ConfigEditorBoolean var autoSelectTicket = ConfigManager.autoSelectSafariTicket
+        @JvmField @ConfigOption(name = "Preferred ticket", desc = "First Class falls back downward; Basic falls back upward through available tiers.")
+        @ConfigEditorDropdown(values = ["First Class", "Basic"])
+        var ticketPreference = ConfigManager.safariTicketPreference
         @JvmField @ConfigOption(name = "Auto Clicker", desc = "Hold Mouse 0 on Rockmite mounds for 12 CPS.")
         @ConfigEditorBoolean var autoClicker = ConfigManager.autoClicker
-        @JvmField @ConfigOption(name = "Hideyho quest clicks", desc = "Click with chat open to accept Hideyho’s offer.")
-        @ConfigEditorBoolean var hideyho = ConfigManager.hideyhoQuestClicks
+        @JvmField @ConfigOption(name = "Auto-accept Hideyho", desc = "Accept Hideyho’s quest offer inside Safari without opening chat.")
+        @ConfigEditorBoolean var hideyhoAutoAccept = ConfigManager.hideyhoAutoAccept
         @JvmField @ConfigOption(name = "Hideyho inside/outside", desc = "Unique and Full Clear only: title and chat line saying whether Hideyho hid inside or outside the mansion.")
         @ConfigEditorBoolean var hideyhoInsideOutside = ConfigManager.hideyhoInsideOutside
         @JvmField @ConfigOption(name = "Hide Haunted paintings", desc = "Hide paintings in the Haunted biome.")
@@ -299,7 +304,7 @@ class SafariSettings : Config() {
     fun apply(notifyMode: Boolean = false) {
         if (warp.enabled != ConfigManager.warpAlertsEnabled) AlertManager.toggleAlert()
         val changes = listOf(ConfigManager::phantomleafSolver to miscEndgame.phantomleafSolver, ConfigManager::highlightTeammates to safari.highlightTeammates, ConfigManager::showTeammateNames to safari.showTeammateNames, ConfigManager::profitableShardEsp to modes.unique.profitable, ConfigManager::sparklingProfitableShardEsp to modes.sparkling.profitable, ConfigManager::partyCommandsEnabled to party.enabled, ConfigManager::downtimeCommand to party.downtime, ConfigManager::useCloudApi to api.cloud, ConfigManager::hideHauntedPaintings to safari.paintings,
-            ConfigManager::shinyDetection to safari.shiny, ConfigManager::hideyhoQuestClicks to safari.hideyho, ConfigManager::hideyhoInsideOutside to safari.hideyhoInsideOutside,
+            ConfigManager::shinyDetection to safari.shiny, ConfigManager::hideyhoAutoAccept to safari.hideyhoAutoAccept, ConfigManager::autoSelectSafariTicket to safari.autoSelectTicket, ConfigManager::hideyhoInsideOutside to safari.hideyhoInsideOutside,
             ConfigManager::progressHud to tracking.progress,
             ConfigManager::experimentalCapsulePath to safari.experimentalCapsulePath,
             ConfigManager::gemzieGemAutoSelect to safari.gemzieGemAutoSelect,
@@ -316,9 +321,10 @@ class SafariSettings : Config() {
         val distance = ConfigManager.validCapsuleDistance(safari.capsuleHideDistance)
         val pathWidth = ConfigManager.validCapsulePathWidth(safari.capsulePathWidth)
         val generalChanged = ConfigManager.capsulePathWidth != pathWidth || espChanged || customizationChanged || changes.any { (property, value) -> property.get() != value } ||
-            ConfigManager.showWhere != tracking.where || ConfigManager.capsuleHideDistance != distance ||
+            ConfigManager.safariTicketPreference != safari.ticketPreference || ConfigManager.showWhere != tracking.where || ConfigManager.capsuleHideDistance != distance ||
             ConfigManager.runCompleteVolume != safari.alerts.runVolume.coerceIn(0, 100) || ConfigManager.sparklingSoundVolume != safari.alerts.volume.coerceIn(0, 100)
         changes.forEach { (property, value) -> property.set(value) }
+        ConfigManager.safariTicketPreference = safari.ticketPreference.coerceIn(0, 1)
         ConfigManager.showWhere = tracking.where.coerceIn(0, 2)
         ConfigManager.capsuleHideDistance = distance
         ConfigManager.capsulePathWidth = pathWidth

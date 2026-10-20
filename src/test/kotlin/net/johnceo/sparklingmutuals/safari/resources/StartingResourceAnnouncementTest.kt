@@ -6,6 +6,25 @@ import org.junit.jupiter.api.Test
 import java.util.UUID
 
 class StartingResourceAnnouncementTest {
+    @Test fun `starting report lists quantities and remains compatible with resource accounting`() {
+        val source = SafariResources().apply {
+            inventory(listOf("Bag of Seeds" to 2, "Yogi Berry" to 1, "Shining Coin" to 1), initial = true)
+        }
+        val message = source.startingNotice(party("Macaw", "Gimmiegold"))!!.startingTexts().single()
+        assertEquals("[SM] Starting items: 1x Yogi Berry; 2x Bag of Seeds; 1x Shining Coin", message)
+        val receiver = party("Bluebird")
+        val parsed = StartingResourceNotice.parse(message, receiver)!!
+        assertEquals(listOf("Bluebird"), parsed.items.first { it.type == FloorDropType.SEEDS }.missing,
+            "Sender's explanatory text must not replace the receiver's own discovery requirements")
+        assertEquals(parsed, StartingResourceNotice.parse(message.substringBefore(" (Alex needs"), receiver))
+        assertEquals(parsed, StartingResourceNotice.parse(message.substringBefore(" (Alex needs") +
+            " (Party needs Macaw, Gimmiegold)", receiver))
+        val received = SafariResources()
+        assertTrue(received.partyNotice("Party > Friend: $message"))
+        assertEquals(3, received.foodContributions().values.sum())
+        assertEquals(1, received.coinContributions()["friend"])
+        assertNull(StartingResourceNotice.parse(message + " (Party needs Doomspiral)", receiver))
+    }
     @Test fun `member without API profile data makes every mod user report their own unused food and coins`() {
         val all = SafariRoster.all.map { it.name }.toSet()
         val roster = setOf("ModA", "ModB", "NewPlayer")
@@ -40,7 +59,29 @@ class StartingResourceAnnouncementTest {
         accept(setOf("me"), mapOf("me" to (SafariRoster.all.map { it.name }.toSet() - needed.toSet())))
     }
 
-    @Test fun `two seconds after observed boat departure only needed unused starting items are sent once`() {
+    @Test fun `early report does not wait for names or include discovery reasons`() {
+        val all = SafariRoster.all.map { it.name }.toSet()
+        val roster = setOf("idA", "idB")
+        val state = PartySparklingState().apply {
+            select(roster)
+            accept(roster, mapOf("idA" to all - "Macaw", "idB" to all - "Gimmiegold"))
+        }
+        val run = SafariRun(0)
+        run.inventoryEvidence(listOf("Bag of Seeds" to 1, "Shining Coin" to 1), 0)
+        run.startingAnnouncement.observeArea(0, 0)
+        run.startingAnnouncement.observeArea(1, 100)
+        val sent = mutableListOf<String>()
+        assertFalse(run.startingAnnouncement.dispatch(599, state, sent::add))
+        assertTrue(run.startingAnnouncement.dispatch(600, state, sent::add))
+        assertFalse(run.startingAnnouncement.dispatch(601, state, sent::add))
+        assertEquals("[SM] Starting items: 1x Bag of Seeds; 1x Shining Coin", sent.single())
+        val receiver = SafariResources()
+        assertTrue(receiver.partyNotice("Party > Reporter: ${sent.single()}"))
+        assertEquals(1, receiver.foodContributions().values.sum())
+        assertEquals(1, receiver.coinContributions()["reporter"])
+    }
+
+    @Test fun `half a second after observed boat departure only needed unused starting items are sent once`() {
         for ((needs, expected) in listOf(
             party("Gimmiegold", "Macaw") to "[SM] Starting items: 2x Bag of Seeds; 1x Shining Coin",
             party("Macaw") to "[SM] Starting items: 2x Bag of Seeds",
@@ -55,8 +96,8 @@ class StartingResourceAnnouncementTest {
             delivery.observeArea(null, 10001)
             assertFalse(delivery.dispatch(20000, needs, sent::add), "unknown area is not departure")
             delivery.observeArea(2, 20001)
-            assertFalse(delivery.dispatch(22000, needs, sent::add))
-            delivery.dispatch(22001, needs, sent::add)
+            assertFalse(delivery.dispatch(20500, needs, sent::add))
+            delivery.dispatch(20501, needs, sent::add)
             delivery.observeArea(0, 23000)
             delivery.observeArea(4, 24000)
             assertFalse(delivery.dispatch(30000, needs, sent::add))

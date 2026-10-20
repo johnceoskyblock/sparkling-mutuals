@@ -37,9 +37,10 @@ Unsupported prefixes or phase mismatch enter an XP / Essence / Shard tail for th
 
 | Type | Implemented eligibility, in addition to rendering/config gates |
 | --- | --- |
+| XP / Essence / Shard | Optional ESP setting, off by default; default #6D6D75. Independent of mode quest requirements; current-biome/group controls still apply |
 | Gems | Cavern Full Clear, needed Gemzie discovery, or uncaught Unique Gemzie; each acquired/starting gem color hides all remaining predicted markers of that color, including after placement |
 | Bird food | Configured floor group; Full Clear, or any needed bird discovery/uncaught Unique bird. Only predicted food groups are selected |
-| Shining Coin | Every remaining coin in Full Clear; in Unique/Sparkling only when Gimmiegold discovery is needed. No pickup/holding/capture cutoff |
+| Shining Coin | Every remaining coin in Full Clear and whenever Gimmiegold discovery is needed. Unique without that discovery need shows coins until two coin floor-drop units have been picked up; starting inventory does not count toward this cutoff. Sparkling without that discovery need hides coins |
 | Soothing Incense | All five predicted slots eligible, with no distance ranking or reduction for starting incense. Hide after four pickup units or a peak inventory of four. Sparkling additionally needs Doomspiral discovery; Unique/Full Clear additionally require Gimmiegold discovery needed or acquired units + known starting quantity (at least peak held inventory) below four |
 | Icebreaker | Automatic selection only in Full Clear, until one acquired/starting Icebreaker |
 | Generic/unknown | No quest-item ESP |
@@ -64,7 +65,7 @@ Late entry or missing the earliest groups can establish the wrong anchor. Group 
 
 ### Early starting food/coin reports
 
-After observing the boat/center (mapped area 0), the first transition to a biome (areas 1–4) starts a two-second delay. Sample inventory on the boat as well as during clearing. With known multi-player party membership and ready party discovery data, send one compact party report containing only still-held starting food/coins whose related Sparkling discovery is missing. Example: `[SM] Starting items: 2x Bag of Seeds; 1x Shining Coin`. If only a bird is needed, send only the food. If neither category is needed, send nothing. A member with no profile/Safari discovery data counts as zero discoveries and needs both Gimmiegold and all birds. Every mod user independently reports their own unused starting resources once; another user's report does not suppress it. Actual loading/network errors still postpone the decision. There is no empty/zero announcement. See [API fallback and retries](../API_LOOKUPS.md).
+After observing the boat/center (mapped area 0), the first transition to a biome (areas 1–4) starts a 0.5-second delay. Sample inventory on the boat as well as during clearing. With known multi-player party membership and ready party discovery data, send one compact party report containing only still-held starting food/coins whose related Sparkling discovery is missing. Example: `[SM] Starting items: 2x Bag of Seeds; 1x Shining Coin`. This opening report lists only unused starting items and quantities. It waits for ready discovery data to select relevant items, but does not wait for IGNs. Names and missing Sparkling species appear only in the follow-up after a local biome completion report. Older reports with named or generic `(Party needs ...)` suffixes remain accepted. If only a bird is needed, send only the food. If neither category is needed, send nothing. A member with no profile/Safari discovery data counts as zero discoveries and needs both Gimmiegold and all birds. Every mod user independently reports their own unused starting resources once; another user's report does not suppress it. Actual loading/network errors still postpone the decision. There is no empty/zero announcement. See [API fallback and retries](../API_LOOKUPS.md).
 
 Each sender/type quantity is a retained maximum, overlapping the local grant/inventory and its own echo. Early reports update the bird/coin contribution totals directly, not the old delayed-notice outstanding ledger. Repeating an early report, or a later legacy notice for that same sender/type, does not add the quantity again. Floor pickups are separate from starting inventory. An unknown area is not boat departure; a new run owns a fresh schedule. A client that never observes the boat cannot infer the departure time.
 
@@ -77,7 +78,9 @@ After the first locally completed biome, starting-resource delivery activates af
 | Shining Coin | Gimmiegold needed | Haunted / USE YOUR SHINING COIN! |
 | Bag of Seeds, Wriggleworm, Yogi Berry | Any bird needed | Forest / USE YOUR BIRD FOOD! |
 
-Before delivery, resample inventory and rebuild quantities/discovery needs. Remind only with ready party discovery data, while outside the resource's destination and still holding the tracked unused starting quantity. Each item is filtered independently. There is no separate configuration toggle. Eligible items are combined; mixed destinations use USE YOUR STARTING ITEMS! This is a **local title/subtitle only**: no end-of-biome unused-item party message or local chat line is sent. Displaying the title records notification state only; it creates no new source obligation. Unsent suppressed candidates remain eligible.
+Before delivery, resample inventory and rebuild quantities/discovery needs. Remind only with ready party discovery data, while outside the resource's destination and still holding the tracked unused starting quantity. Each item is filtered independently. There is no separate configuration toggle. Eligible items are combined; mixed destinations use USE YOUR STARTING ITEMS! This existing reminder remains a **local title/subtitle**. A separate named party follow-up is armed only when this client actually sends a biome-completion report, as described below. Displaying the title records notification state only; it creates no new source obligation. Unsent suppressed candidates remain eligible.
+
+After this client actually sends `fd`, `cd`, `id` or `hd`, queue a follow-up after 1.5 seconds of party-chat spacing if it still holds starting food/coins whose related Sparkling discoveries are needed. Example: `Need to use: 1x Shining Coin; Alex, Bob still need Sparkling Gimmiegold. Please wait.` Distinct per-member discoveries determine exactly which IGNs need each species; species needed by the same players share one clause. All retained starting supplies are eligible, regardless of the just-cleared biome. Sample held quantities and requirements again before sending. Wait for ready API data and resolved player names rather than guessing names. If supplies are used or requirements disappear, suppress the reminder. Each local report arms at most one follow-up, split only when necessary for the party-chat length limit and paced 1.5 seconds apart. It is separate from the existing local title and does not count starting-item quantities a second time. A teammate's report alone does not arm this party follow-up. A new run owns fresh reminder state.
 
 For mixed-version parties, receivers still accept `[SM] Unused floor drops: ...`, compact `[SM] Use: ...` and verbose unused-starting-item formats. New clients no longer broadcast those end-of-biome messages. Malformed/duplicate-type batches are rejected as a whole.
 
@@ -116,6 +119,16 @@ Primary methods: com.shinyhunter.FloorDropLog.scan, predict, repredict, onGround
 Validate ordering, late entry, partial/unknown triples, teammate pickups, marker disappearance and prediction revisions against actual server rewards. Client filtering cannot establish whole-world coverage. No live Minecraft validation was performed in this audit.
 
 ## Last updated
+
+2026-10-20 — Added ESP → XP / Essence / Shard floor drops, off by default, with customizable default color #6D6D75. It highlights all predicted reward-tail drops regardless of active-mode quest requirements, while respecting floor-group/current-biome controls and loaded/uncollected marker checks. Quest-drop colors and rules remain independent.
+
+2026-10-20 — Unique coin ESP requires two floor pickups when no Gimmiegold discovery is needed. Opening reports list only quantities; named needs remain in post-biome reminders.
+
+2026-10-20 - Beginning reports name the players missing each Sparkling and start 0.5 seconds after boat departure; old reports and paced long-message accounting remain supported.
+
+2026-10-20 - Added named party wait reminders after local biome reports, retaining current quantities, per-member requirements and independent local titles without double-counting supplies.
+
+2026-10-19 - Starting-item reports append `(Party needs <species>)` with distinct relevant missing Sparkling species; receivers accept both annotated and older messages without changing contribution accounting.
 
 2026-10-19 - Clarified that no-data party members need all Sparklings and allow each mod user's independent unused starting food/coin report.
 

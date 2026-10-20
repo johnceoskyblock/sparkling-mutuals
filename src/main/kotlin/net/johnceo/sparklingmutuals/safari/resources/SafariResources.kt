@@ -32,7 +32,16 @@ data class StartingResourceReminder(val type: FloorDropType, val quantity: Int, 
 
 /** Shared item parser; new runs broadcast compact starting quantities, later reminders are local titles. */
 data class StartingResourceNotice(val items: List<StartingResourceReminder>) {
-    val startingText get() = "[SM] Starting items: " + items.joinToString("; ") { "${it.quantity}x ${it.type.label}" }
+    internal fun namedNeeds(party: PartySparklingState, nameOf: (String) -> String?): List<Pair<List<String>, List<String>>>? {
+        val species = items.flatMap { it.missing }.distinct()
+        val missing = species.associateWith { party.missingMembers(it).sorted() }
+        val names = missing.values.flatten().distinct().associateWith { nameOf(it) ?: return null }
+        return species.groupBy { missing.getValue(it) }.map { (members, critters) ->
+            members.map { names.getValue(it) } to critters
+        }
+    }
+    fun startingTexts(): List<String> = listOf("[SM] Starting items: " +
+        items.joinToString("; ") { "${it.quantity}x ${it.type.label}" })
     val text get() = "[SM] Unused floor drops: " + items.groupBy { it.destination }.values.joinToString("; ") { group ->
         val drops = group.joinToString(" + ") { "${it.quantity}x ${it.type.label}" }
         val missing = group.flatMap { it.missing }.distinct().joinToString(", ")
@@ -43,9 +52,23 @@ data class StartingResourceNotice(val items: List<StartingResourceReminder>) {
     companion object {
         fun parse(text: String, party: PartySparklingState): StartingResourceNotice? {
             val trimmed = text.trim()
+            var reportedNeeds: List<String>? = null
             val parts = when {
-                trimmed.startsWith("[SM] Starting items: ") -> trimmed.removePrefix("[SM] Starting items: ")
-                    .split("; ").map { "[SM] Use: $it" }
+                trimmed.startsWith("[SM] Starting items: ") -> {
+                    val payload = trimmed.removePrefix("[SM] Starting items: ")
+                    val annotated = Regex("""^(.+) \(([^()]+)\)$""").matchEntire(payload)
+                    if (annotated != null) {
+                        val explanation = annotated.groupValues[2]
+                        reportedNeeds = if (explanation.startsWith("Party needs "))
+                            explanation.removePrefix("Party needs ").split(", ")
+                        else explanation.split("; ").flatMap { reason ->
+                            val clause = Regex("""^[A-Za-z0-9_]{1,16}(?:, [A-Za-z0-9_]{1,16})* (?:needs|need) (.+)$""")
+                                .matchEntire(reason) ?: return null
+                            clause.groupValues[1].split(", ")
+                        }
+                    }
+                    (annotated?.groupValues?.get(1) ?: payload).split("; ").map { "[SM] Use: $it" }
+                }
                 trimmed.startsWith("[SM] Unused floor drops: ") -> {
                     trimmed.removePrefix("[SM] Unused floor drops: ").split("; ").flatMap { group ->
                         val match = Regex("""^(.+) \(missing Sparkling ([^()]+)\)$""").matchEntire(group) ?: return null
@@ -66,6 +89,11 @@ data class StartingResourceNotice(val items: List<StartingResourceReminder>) {
             }
             val items = parts.map { StartingResourceReminder.parse(it, party) ?: return null }
             if (items.map { it.type }.distinct().size != items.size) return null
+            if (reportedNeeds != null) {
+                val allowed = items.flatMap { if (it.type == FloorDropType.COIN) listOf("Gimmiegold")
+                    else listOf("Bluebird", "Parakeet", "Macaw") }.toSet()
+                if (reportedNeeds.any { it !in allowed } || reportedNeeds.distinct().size != reportedNeeds.size) return null
+            }
             return StartingResourceNotice(items)
         }
     }

@@ -20,7 +20,8 @@ class FloorDropState {
     fun needed(type: FloorDropType, mode: SafariMode, party: PartySparklingState): Boolean = when (type) {
         FloorDropType.LIME, FloorDropType.PURPLE, FloorDropType.ORANGE -> amount(type) == 0
         FloorDropType.ICEBREAKER -> mode == SafariMode.FULL_CLEAR && amount(type) == 0
-        FloorDropType.COIN -> mode == SafariMode.FULL_CLEAR || party.needs("Gimmiegold")
+        FloorDropType.COIN -> mode == SafariMode.FULL_CLEAR || party.needs("Gimmiegold") ||
+            mode == SafariMode.UNIQUE && (acquired[type] ?: 0) < 2
         FloorDropType.INCENSE -> (acquired[type] ?: 0) < 4 && (inventoryPeak[type] ?: 0) < 4 &&
             if (mode == SafariMode.SPARKLING) party.needs("Doomspiral")
             else party.needs("Gimmiegold") || amount(type) < 4
@@ -98,6 +99,7 @@ object SafariFloorDrops {
     val state = FloorDropState()
     fun selected(drop: PredictedFloorDrop, incenseIds: Set<Int>): Boolean {
         val type = drop.type ?: return false
+        if (type == FloorDropType.GENERIC) return SafariEspConfig.rewardDrops && SafariEspConfig.groups.getValue("floor").enabled
         val mode = SafariFullClear.mode
         val party = SafariSparklingMode.state
         return (type != FloorDropType.INCENSE || drop.id in incenseIds) && enabled(drop.biome) && state.needed(type, mode, party)

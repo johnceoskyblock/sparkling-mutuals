@@ -77,4 +77,8 @@ Population guarantees and capsule success/escape claims from supplied notes were
 
 ## Last updated
 
+2026-10-20 — Removed the Hideyho quest-click setting and chat mouse interception; auto-accept is the only acceptance helper.
+
+2026-10-20 — Added Auto-accept Hideyho (enabled by default). Inside Safari, the validated Hideyho dialogue and Sure button send the supplied RunCommand/custom action without opening chat. Connection/world changes and prompt expiry cancel pending offers; accepting consumes the prompt. The former click-anywhere chat feature has been removed. Disable auto-accept to use Hypixel’s original quest buttons.
+
 2026-10-19 (America/New_York) — Uniform species reference; audited evidence, modes, display and lifecycle. Reviewed source: `93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee`; no local runtime source changes reviewed. See [revision convention](../DOCUMENTATION_GUIDE.md).

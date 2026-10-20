@@ -5,7 +5,6 @@ import java.util.concurrent.Future
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents
 import net.johnceo.sparklingmutuals.LocalChat
 import net.johnceo.sparklingmutuals.api.ApiProvider
-import net.johnceo.sparklingmutuals.api.ApiRetryWindow
 import net.johnceo.sparklingmutuals.api.HypixelApi
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.party.PartyManager
@@ -22,8 +21,6 @@ object PartyCommands {
         val provider: ApiProvider = HypixelApi.provider,
         var task: Future<*>? = null, var chunks: List<String>? = null)
     private val pending = mutableMapOf<String, Pending>()
-    private data class Failed(val state: Pending, val connection: Any?, val window: ApiRetryWindow)
-    private val failed = mutableMapOf<String, Failed>()
     private val recent = mutableMapOf<String, Long>()
     private val requests = mutableMapOf<String, PartyRequest>()
     private val history = PartyResponseHistory()
@@ -60,7 +57,6 @@ object PartyCommands {
         if (now - (recent[request.token] ?: 0) < 10_000) return
         recent[request.token] = now
         requests[request.token] = request
-        failed.remove(request.token)
         pending.remove(request.token)?.task?.cancel(false)
         val client = Minecraft.getInstance()
         val connection = client.connection ?: return
@@ -89,20 +85,6 @@ object PartyCommands {
         if (client.player == null || client.connection == null) { reset(); return }
         if (!ConfigManager.partyCommandsEnabled) { cancelPending(); return }
         val now = System.currentTimeMillis()
-        val retryIterator = failed.entries.iterator()
-        while (retryIterator.hasNext()) {
-            val (token, retry) = retryIterator.next()
-            val state = retry.state
-            if (retry.connection !== client.connection || state.mode != SafariFullClear.mode ||
-                !state.request.command.allowed() || !stillFor(state.request.command, state.run, state.world) || !sameParty(client, state.roster) ||
-                history.hasReply(state.request.command, state.chatCursor, state.roster)) {
-                retryIterator.remove()
-            } else if (retry.window.due(now, HypixelApi.provider)) {
-                pending[token] = Pending(state.request, state.roster,
-                    ResponderElection(client.player!!.uuid.toString(), state.roster, now), state.chatCursor, state.mode, state.run, state.world, HypixelApi.provider)
-                retryIterator.remove()
-            }
-        }
         if (replies.isNotEmpty()) {
             val reply = replies.first()
             if (reply.mode != SafariFullClear.mode || !stillFor(reply.command, reply.run, reply.world) || !stillUsing(reply.command, reply.provider) ||
@@ -156,9 +138,8 @@ object PartyCommands {
                                 state.election.lookupReady(System.currentTimeMillis())
                             } else {
                                 pending.remove(token)
-                                if (state.request.command.requiresApiKey) failed[token] = Failed(state, connection,
-                                    ApiRetryWindow().apply { failed(System.currentTimeMillis(), state.provider) })
-                                if (!result.successful) client.player?.sendSystemMessage(LocalChat.component(result.text))
+                                // Commands are one-shot: report failure locally and wait for a new request.
+                                client.player?.sendSystemMessage(LocalChat.component(result.text))
                             }
                         }
                     }
@@ -170,7 +151,6 @@ object PartyCommands {
     private fun cancelPending() {
         pending.values.forEach { it.task?.cancel(false) }
         pending.clear()
-        failed.clear()
         replies.clear()
     }
     fun reset() { cancelPending(); recent.clear(); requests.clear(); history.clear(); sentReplyAt = 0 }

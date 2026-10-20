@@ -54,8 +54,9 @@ object SafariEspConfig {
     var textScale = DEFAULT_TEXT_SCALE
         set(value) { field = validTextScale(value) }
     val labelWorldScale get() = .025f * textScale
-    val floorColors = FloorDropType.entries.filter { it != FloorDropType.GENERIC }
-        .associateWith { defaultColor(0xFF00FF00.toInt()) }.toMutableMap()
+    var rewardDrops = false
+    private fun defaultDropColor(type: FloorDropType) = defaultColor(if (type == FloorDropType.GENERIC) 0xFF6D6D75.toInt() else 0xFF00FF00.toInt())
+    val floorColors = FloorDropType.entries.associateWith(::defaultDropColor).toMutableMap()
     fun dropColor(type: FloorDropType) = floorColors[type] ?: floorColor
     var floorColor = defaultColor(0xFF00FF00.toInt())
         set(value) {
@@ -80,6 +81,7 @@ object SafariEspConfig {
     fun rgb(color: String) = ChromaColour.specialToChromaRGB(color)
     private fun key(name: String) = name.lowercase().replace(' ', '_')
     fun load(properties: Properties) {
+        rewardDrops = properties.getProperty("esp.floor.rewards.enabled")?.toBooleanStrictOrNull() ?: false
         textScale = properties.getProperty("esp.textScale")?.toFloatOrNull() ?: DEFAULT_TEXT_SCALE
         groups.forEach { (name, group) ->
             group.enabled = properties.getProperty("esp.$name.enabled")?.toBooleanStrictOrNull() ?: true
@@ -90,13 +92,15 @@ object SafariEspConfig {
             mob.color = validColor(properties.getProperty("esp.${key(name)}.color"), defaultColor(palette.getValue(name)))
         }
         floorColor = validColor(properties.getProperty("esp.floor.color"), defaultColor(0xFF00FF00.toInt()))
-        floorColors.keys.forEach { type -> floorColors[type] = validColor(properties.getProperty("esp.floor.${type.name.lowercase()}.color"), floorColor) }
+        floorColors.keys.forEach { type -> floorColors[type] = validColor(properties.getProperty("esp.floor.${type.name.lowercase()}.color"),
+            if (type == FloorDropType.GENERIC) defaultDropColor(type) else floorColor) }
         rockmiteMoundEnabled = properties.getProperty("esp.rockmite.moundEnabled")?.toBooleanStrictOrNull()
             ?: properties.getProperty("esp.rockmite.enabled")?.toBooleanStrictOrNull() ?: true
         rockmiteMoundColor = validColor(properties.getProperty("esp.rockmite.moundColor"),
             properties.getProperty("esp.rockmite.color")?.let { mobs.getValue("Rockmite").color } ?: defaultColor(0xFFFFFFFF.toInt()))
     }
     fun save(properties: Properties) {
+        properties.setProperty("esp.floor.rewards.enabled", rewardDrops.toString())
         properties.setProperty("esp.textScale", textScale.toString())
         groups.forEach { (name, group) ->
             properties.setProperty("esp.$name.enabled", group.enabled.toString())
