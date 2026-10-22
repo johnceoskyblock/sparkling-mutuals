@@ -268,6 +268,15 @@ If a scenario fails, preserve a minimal reproduction and compare the current own
 - Enter Forest late with existing bird catches and no fd: insufficient qualified population blocks; enough population plus empty held/floor food permits fd once the other active-mode checks pass, without six personal pickups. Repeat Haunted with hd and the registered coin target. Received fd/hd must not be echoed.
 - Finish a biome with eligible starting food/coins still held. Expect a readable local title only, no unused-item party/local chat message. Normal fd/cd/id/hd still work. Multi-client Hypixel validation is pending; offline tests cannot establish server delivery or live marker completeness.
 
+## Unique Haunted checking and Rockmite highlights
+
+- In Unique with a party member missing Gazer/Gimmiegold, catch each once: both rows disappear, but Haunted progress and hd remain pending. Gazers left to check counts distinct retained checks down from four; repeated UUIDs do not double count.
+- Observe coin floor slots: uncollected coins stay counted after travel/unloading, collected-but-held coins remain work, and qualified used/spawned evidence resolves the counter. Unknown catalog/inventory shows ?. New party coin demand reopens it. Received hd inside Haunted cannot bypass local checking.
+- Repeat with both discoveries shared: first catches complete their Unique requirements and neither footer appears. Full Clear/Sparkling keep their own displays.
+- Before the first Unique Rockmite catch, show mounds and silverfish. Afterwards hide silverfish; retain mound ESP only if anyone still needs Sparkling Rockmite. A new run restores both.
+
 ## Last updated
+
+2026-10-22 — Added Unique Haunted progress/footer and discovery-dependent Rockmite ESP gameplay checks.
 
 2026-10-19 (America/New_York) — Added early resource, local-title and late-entry report scenarios. Reviewed source: working changes on `78885e0`; live validation pending.

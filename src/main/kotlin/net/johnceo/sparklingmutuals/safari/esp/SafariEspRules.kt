@@ -2,11 +2,9 @@ package net.johnceo.sparklingmutuals.safari.esp
 
 import net.johnceo.sparklingmutuals.safari.PartySparklingState
 import net.johnceo.sparklingmutuals.safari.SafariBiome
-import net.johnceo.sparklingmutuals.safari.SafariMode
 import net.johnceo.sparklingmutuals.safari.SafariRoster
 import net.johnceo.sparklingmutuals.safari.SafariRules
 import net.johnceo.sparklingmutuals.safari.SafariRun
-import net.johnceo.sparklingmutuals.safari.completion.SafariHelperRules
 
 /** Identification, palette and quadrant limits adapted from Nebulune a573283 (BSD-3-Clause). */
 data class EspEntity(val type: String, val texture: String? = null, val shulker: String? = null,
@@ -26,9 +24,8 @@ object SafariEspRules {
     fun neededForRun(species: String, mound: Boolean, run: SafariRun?, fullClear: Boolean, profitable: Boolean = true,
         party: PartySparklingState? = null) =
         if (fullClear) true
-        else if (species == "Rockmite" && mound && party != null)
-            SafariHelperRules.needed(species, if (fullClear) SafariMode.FULL_CLEAR else SafariMode.UNIQUE, run, party)
-        else profitableEsp(species, profitable) || species == "Rockmite" && mound ||
+        else if (species == "Rockmite" && mound) (run?.count(species) ?: 0) == 0 || party?.needs(species) == true
+        else profitableEsp(species, profitable) ||
             (run?.count(species) ?: 0) == 0 && run?.uniqueUnavailable(species) != true
     fun neededForSparkling(species: String, mound: Boolean, party: PartySparklingState, profitable: Boolean,
         run: SafariRun? = null, uuid: java.util.UUID? = null, now: Long = System.currentTimeMillis()): Boolean {

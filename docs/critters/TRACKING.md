@@ -83,7 +83,8 @@ Loaded Cavern mound/wall observations run from **any Safari biome** without a pl
 
 | Outcome | Accepted report effect | Revalidation |
 | --- | --- | --- |
-| Ordinary Unique | None needed after its shared first catch | No ordinary discovery scan gate |
+| Ordinary Unique | None needed after its shared first catch, except the needed discovery checks below | Needed Honeybug, Gazer and Gimmiegold retain their checking gates |
+| Unique Gazer/Gimmiegold | hd may supply checking outside Haunted after a shared catch | Inside Haunted, needed Gazer requires four reconciled checks; needed Gimmiegold requires local coin-source proof. First catches remove rows but leave progress pending |
 | Unique Rockmite/Snoozle | Local Cavern absence plus fully resolved sources confirms unseen zero spawn without cd; cd may supply unknown checking after a catch or retain remote zero-spawn trust | Known intact sources cannot be erased by another report; encountered uncaught species cannot use zero-spawn trust |
 | Honeybug Unique/Sparkling | fd supplies checking, never captures | Trust survives Forest entry and incomplete later renders |
 | Ordinary Sparkling | Report substitutes checking | Entry/local scan clears inherited ordinary checking; retained local UUID evidence remains |
@@ -135,6 +136,8 @@ Reviewed source: 93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee.
 Hypixel population guarantees, precise server render coverage and replacement UUID behavior remain unverified. Exact prerequisite-to-boss-spawn relationships require live evidence; inventory alone is not proof of a spawn. [The audit report](../IMPLEMENTATION_AUDIT.md) separates these uncertainties from documentation mismatches.
 
 ## Last updated
+
+2026-10-22 — Documented needed Unique Gazer/Gimmiegold checks after the first capture and local Haunted revalidation.
 
 2026-10-21 â€” Full Clear Gimmiegold capture targets are coin-derived, not raised by historical/replacement model UUID population estimates. A cleared dedicated coin-source ledger plus sufficient actual captures and no live remainder completes the species even if the older generic floor-marker scan remains blocked by unrelated rewards. Legacy coin proof remains a fallback; additional real coins and held coins still block completion. Added a three-coin whole-Haunted regression.
 

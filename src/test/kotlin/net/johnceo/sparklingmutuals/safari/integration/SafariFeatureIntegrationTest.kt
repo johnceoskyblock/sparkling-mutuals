@@ -168,7 +168,7 @@ class SafariFeatureIntegrationTest {
         run.scanGimmiegolds(emptyList(), true)
         run.sparklingChecks.scan(SafariBiome.HAUNTED, -4.0, -64.0, emptyList(), hauntedDropsRemaining = 1)
         assertFalse(run.sparklingComplete("Gimmiegold", party("Gimmiegold")))
-        assertTrue(run.uniqueComplete("Gimmiegold", party("Gimmiegold")))
+        assertFalse(run.uniqueComplete("Gimmiegold", party("Gimmiegold")))
         run.scanGimmiegolds(emptyList(), true)
         run.sparklingChecks.scan(SafariBiome.HAUNTED, -4.0, -64.0, emptyList(), hauntedDropsRemaining = -1)
         assertFalse(run.sparklingComplete("Gimmiegold", party("Gimmiegold")))
@@ -177,6 +177,7 @@ class SafariFeatureIntegrationTest {
         run.scanGimmiegolds(emptyList(), true)
         run.sparklingChecks.scan(SafariBiome.HAUNTED, -4.0, -64.0, emptyList(), hauntedDropsRemaining = 0)
         assertTrue(run.sparklingComplete("Gimmiegold", party("Gimmiegold")))
+        assertTrue(run.uniqueComplete("Gimmiegold", party("Gimmiegold")))
     }
 
     @Test fun `Hideyho watch is Haunted-only and leaving cancels pending dialogue`() {

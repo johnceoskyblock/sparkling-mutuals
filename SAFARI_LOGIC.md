@@ -17,12 +17,12 @@ Authoritative reference for implemented mode outcomes, announcement eligibility 
 | Mode | Progress requirement | Missing/checklist requirement |
 | --- | --- | --- |
 | Sparkling | Complete checks for party-needed discoveries; unknown party state shows ? | Needed unfinished species, plus uncaught Icy prerequisites while Wumpa is needed and uncaught |
-| Unique | One shared catch per ordinary species, with exceptions below | uniqueComplete; Honeybug's first catch removes its row even when progress still needs checking |
+| Unique | One shared catch per ordinary species, with exceptions below | uniqueComplete; Honeybug, Gazer and Gimmiegold can leave the capture list while needed discovery checks still hold progress |
 | Full Clear | Local capture/source proof, or report-backed capture minima; fixed-target species can complete progress early | Local capture/source proof and qualified absence coverage; a report alone cannot remove the row |
 
 Unique can waive an uncaught Macaw after complete local bird feeding (including known party starting food) with no Macaw encounter. It can also waive an uncaught Rockmite/Snoozle after complete local source resolution and a Cavern absence scan with no encounter. These species disappear from Missing and may complete fd/cd once all other local requirements pass. No catch is fabricated.
 
-Ordinary Sparkling checks use retained qualified UUID evidence reconciled with shared catches. Ordinary Unique completion adds no discovery scan/radius requirement. Full Clear uses actual catches, known population targets, source conditions and qualified empty scans; [tracking](docs/critters/TRACKING.md) explains those evidence paths.
+Ordinary Sparkling checks use retained qualified UUID evidence reconciled with shared catches. Ordinary Unique completion adds no discovery scan/radius requirement except the documented Honeybug, Gazer and Gimmiegold checking gates when their discovery is needed. In Haunted, Gazer requires four retained reconciled checks and Gimmiegold requires resolved floor coins, no held coins and qualified spawn evidence; a first ordinary catch or received hd cannot replace that local work. Full Clear uses actual catches, known population targets, source conditions and qualified empty scans; [tracking](docs/critters/TRACKING.md) explains those evidence paths.
 
 Valid selected profile members with no Safari/Sparkling discovery fields have zero discoveries and need every species checked. Actual failed background discovery lookups retry after one minute in the same mode; temporary roster changes cannot leave a finished lookup marked busy. See [API data and recovery](docs/API_LOOKUPS.md).
 
@@ -87,6 +87,8 @@ Reviewed source: 93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee; documentation-only wo
 Numeric minima and whole-biome coverage are not certified by client predicates. [The consolidated audit](docs/IMPLEMENTATION_AUDIT.md) records documentation mismatches, PB differences and server uncertainties.
 
 ## Last updated
+
+2026-10-22 — Kept needed Haunted discovery checks separate from first-catch Unique rows; Rockmite mounds remain highlighted after a catch only while its discovery is needed.
 
 2026-10-20 — Extended local Unique zero-spawn waivers to Bluebird and Parakeet alongside Macaw. Full Clear already permits absent bird species when actual catches satisfy the shared food/population formula; regression coverage now includes either bird being absent with extra party food.
 

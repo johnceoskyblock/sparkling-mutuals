@@ -28,6 +28,10 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
     private fun syncGimmiegoldContributions() {
         gimmiegoldCheck.contributions(resources.startingCount(FloorDropType.COIN), localPlayerName, resources.coinContributions())
     }
+    val coinsLeftToUse: Int? get() {
+        syncGimmiegoldContributions()
+        return gimmiegoldCheck.leftToUse
+    }
     private fun gimmiegoldCaptureMinimum(): Int {
         syncGimmiegoldContributions()
         return maxOf(sparklingChecks.gimmiegoldMinimum, gimmiegoldCheck.required,
@@ -283,6 +287,8 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
             (count(name) > 0 || uniqueUnavailable(name) || name == "Macaw" &&
                 lastBiome != SafariBiome.FOREST && !localOnly && count("Bluebird") > 0 && count("Parakeet") > 0 && birds.remoteReady)
         if (sparklingCaptures.captured(name)) return true
+        if (name in setOf("Gazer", "Gimmiegold") && party.needs(name))
+            return count(name) > 0 && sparklingComplete(name, party, localOnly || lastBiome == SafariBiome.HAUNTED)
         if (name == "Rockmite" || name == "Snoozle") {
             if (name in uniqueSourceContradictions && !sparklingChecks.locallyChecked(name)) return false
             val checked = cavernSourcesChecked(name) || sparklingChecks.locallyChecked(name)

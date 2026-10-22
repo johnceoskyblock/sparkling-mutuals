@@ -33,14 +33,14 @@ class SafariUniqueEspTest {
             assertTrue(SafariEspRules.neededForRun(critter.name, false, SafariRun(1000), false, false))
         }
     }
-    @Test fun `mound and wall shiny checks survive unique captures without changing ESP settings`() {
+    @Test fun `unique captures hide Rockmite models and mounds without changing ESP settings`() {
         ConfigManager.init(dir)
         SafariFullClear.toggle(); SafariFullClear.toggle()
         val run = SafariRun(0)
         run.record(SafariCatch(SafariRoster.named("Rockmite")!!))
         run.record(SafariCatch(SafariRoster.named("Snoozle")!!))
         run.record(SafariCatch(SafariRoster.named("Foxtrot")!!, false))
-        assertTrue(SafariEspRules.neededForRun("Rockmite", true, run, false, false))
+        assertFalse(SafariEspRules.neededForRun("Rockmite", true, run, false, false))
         assertFalse(SafariEspRules.neededForRun("Rockmite", false, run, false, false))
         assertFalse(SafariEspRules.neededForRun("Snoozle", false, run, false, false))
         assertFalse(SafariEspRules.neededForRun("Foxtrot", false, run, false, false))

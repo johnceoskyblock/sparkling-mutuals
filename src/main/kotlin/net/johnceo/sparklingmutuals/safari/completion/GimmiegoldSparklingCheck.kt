@@ -16,6 +16,10 @@ class GimmiegoldSparklingCheck {
     fun report() { reportedTarget = required }
     val remoteReady get() = (reportedTarget ?: -1) >= required
     private var population = 0
+    /** Uncollected slots and unused coins both remain work; loading is not a zero count. */
+    val leftToUse: Int? get() = held?.takeIf { floors.isNotEmpty() }?.let {
+        maxOf(remaining + it, (required - population).coerceAtLeast(0))
+    }
 
     /** A disappeared marker is collected only when its location can still be observed. */
     fun floor(id: Int, present: Boolean?, collected: Boolean = false) {

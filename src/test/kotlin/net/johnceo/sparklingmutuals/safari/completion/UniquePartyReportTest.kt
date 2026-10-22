@@ -20,7 +20,7 @@ class UniquePartyReportTest {
     @Test fun `each ordinary Unique capture advances remote progress immediately without any report or scan`() {
         ConfigManager.fullClearMode = false; ConfigManager.sparklingMode = false
         val state = party()
-        for (species in SafariRoster.all.filter { it.name !in setOf("Honeybug", "Rockmite", "Snoozle", "Bluebird", "Parakeet", "Macaw") }) {
+        for (species in SafariRoster.all.filter { it.name !in setOf("Honeybug", "Rockmite", "Snoozle", "Bluebird", "Parakeet", "Macaw", "Gazer", "Gimmiegold") }) {
             val run = SafariRun(0)
             run.visitBiome(SafariBiome.entries.first { it != species.biome })
             assertFalse(run.uniqueComplete(species.name, state))
@@ -101,7 +101,7 @@ class UniquePartyReportTest {
             assertTrue(biome.critters.all { run.count(it.name) == 1 && run.personalCount(it.name) == 0 })
         }
     }
-    @Test fun `Forest Icy and Haunted stay complete on entry despite unfinished local discovery checks`() {
+    @Test fun `entering Haunted reopens needed local checks while other biomes keep their own rules`() {
         val state = party()
         for (biome in listOf(SafariBiome.FOREST, SafariBiome.ICY, SafariBiome.HAUNTED)) {
             val run = SafariRun(0); caught(run, biome); report(run, biome)
@@ -110,10 +110,10 @@ class UniquePartyReportTest {
                 run.updateCaptureEvidence(biome, biome.critters.map { it.name }.toSet(), false)
                 run.inventoryEvidence(listOf("Shining Coin" to 2, "Yogi Berry" to 2), 10000)
                 run.sparklingChecks.scan(biome, 0.0, 0.0, emptyList())
-                assertEquals(biome.critters.size - if (biome == SafariBiome.FOREST) 3 else 0,
+                assertEquals(biome.critters.size - when (biome) { SafariBiome.FOREST -> 3; SafariBiome.HAUNTED -> 2; else -> 0 },
                     run.completed(SafariMode.UNIQUE, biome.critters, state), biome.label)
             }
-            assertEquals(biome.critters.size - if (biome == SafariBiome.FOREST) 4 else 0,
+            assertEquals(biome.critters.size - when (biome) { SafariBiome.FOREST -> 4; SafariBiome.HAUNTED -> 2; else -> 0 },
                 run.completed(SafariMode.UNIQUE, biome.critters, state, localOnly = true))
             assertNull(run.completion.announcement(run, biome, SafariMode.UNIQUE, state), "do not echo another player's checking evidence")
         }
