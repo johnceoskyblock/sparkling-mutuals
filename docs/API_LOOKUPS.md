@@ -12,6 +12,8 @@ Per-member discovery sets are retained alongside their intersection. Completion-
 
 ## Retained party data
 
+Timesave `!missing` lists each missing bird by name; `!mutual`/`!mutuals` lists each bird shared by every party member. Bluebird, Parakeet and Macaw are no longer collapsed into `All Birds`, so partial discoveries remain visible. Bird-food spawning and completion rules still treat the birds as a shared source group. Older `All Birds` replies remain recognized for mixed-version parties.
+
 Mode requirements and `!mutuals` use the same retained discovery baselines. Roster additions fetch only new members; removals drop that member from the calculation immediately and retain everyone else. A new run or mode switch reuses loaded data. Server-confirmed catches update participating members locally and cannot be overwritten by a delayed API result. Discovery caches are scoped to account, provider and Alpha/main realm and survive ordinary server transfers. Process restart, provider/account/realm changes, or leaving and rejoining the party require appropriate fresh baselines.
 
 Live history uniqueness now uses the pre-catch cached discovery set without another API call. If the baseline is unavailable, the flag stays unconfirmed. Personal stats refresh normally every thirty minutes, and Bazaar attempts are throttled to three hours, including failures. `/sparkling party` uses the existing UUID/name resolver instead of UUID fragments. Explicit `!missing`, ticket and profile-card fetch behavior is unchanged.
@@ -45,6 +47,8 @@ Test in Sparkling mode without toggling modes: let a request fail, restore API a
 See [API fetch audit](API_FETCH_AUDIT.md) for every current HTTP trigger, client cache, cooldown and retry scope. The inventory describes the current reduced-fetch policy.
 
 ## Last updated
+
+2026-10-22 — Listed individual birds in timesave discovery replies, including partial missing/shared bird sets.
 
 2026-10-21 — Retained party discovery baselines and local catch credits; only new members fetch. Personal stats now refresh every thirty minutes, Bazaar every three hours, and party profile cards resolve IGNs.
 

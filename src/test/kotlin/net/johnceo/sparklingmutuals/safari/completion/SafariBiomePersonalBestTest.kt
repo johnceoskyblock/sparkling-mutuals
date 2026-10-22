@@ -36,7 +36,7 @@ class SafariBiomePersonalBestTest {
     }
 
     @Test fun `lookup formatting switches between timesaves and all species`() {
-        assertEquals(listOf("All Birds"), SafariLookup.formatDiscoveries(setOf("BLUEBIRD", "PARAKEET", "MACAW"), true))
+        assertEquals(listOf("Bluebird", "Parakeet", "Macaw"), SafariLookup.formatDiscoveries(setOf("BLUEBIRD", "PARAKEET", "MACAW"), true))
         assertEquals(listOf("Bluebird", "Parakeet", "Macaw"), SafariLookup.formatDiscoveries(setOf("BLUEBIRD", "PARAKEET", "MACAW"), false))
         assertEquals(37, SafariLookup.formatMissing(emptySet(), false).size)
         val command = PartyCommand(PartyCommandKind.MISSING, "Player")
