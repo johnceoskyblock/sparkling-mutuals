@@ -22,7 +22,7 @@ object SafariLookup {
     private val timesaves = linkedMapOf("ROCKMITE" to "Rockmite", "SNOOZLE" to "Snoozle",
         "GEMZIE" to "Gemzie", "HONEYBUG" to "Honeybug", "GAZER" to "Gazer",
         "GIMMIEGOLD" to "Gimmiegold", "DOOMSPIRAL" to "Doomspiral", "WUMPA" to "Wumpa")
-    private val birds = setOf("BLUEBIRD", "PARAKEET", "MACAW")
+    private val birds = linkedMapOf("BLUEBIRD" to "Bluebird", "PARAKEET" to "Parakeet", "MACAW" to "Macaw")
 
     fun clearCache() = cache.clear()
     /** No profile/Safari history means no discoveries for party requirements, not an unfinished lookup. */
@@ -90,10 +90,12 @@ object SafariLookup {
         if (timesaveOnly) formatTimesaves(discoveries) else SafariRoster.all.filter { discoveryKey(it.name) in discoveries }.map { it.name }
     fun formatMissing(discoveries: Set<String>, timesaveOnly: Boolean): List<String> =
         if (!timesaveOnly) SafariRoster.all.filter { discoveryKey(it.name) !in discoveries }.map { it.name }
-        else timesaves.filterKeys { it !in discoveries }.values.toMutableList().also { if (!discoveries.containsAll(birds)) it.add("All Birds") }
+        else timesaves.filterKeys { it !in discoveries }.values.toMutableList().also {
+            it.addAll(birds.filterKeys { it !in discoveries }.values)
+        }
 
     private fun formatTimesaves(discoveries: Set<String>): List<String> =
         timesaves.filterKeys { it in discoveries }.values.toMutableList().also {
-            if (discoveries.containsAll(birds)) it.add("All Birds")
+            it.addAll(birds.filterKeys { it in discoveries }.values)
         }
 }
