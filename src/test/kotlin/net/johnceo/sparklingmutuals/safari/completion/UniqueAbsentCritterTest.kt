@@ -115,7 +115,7 @@ class UniqueAbsentCritterTest {
         SafariBiome.FOREST.critters.filter { it.name != "Macaw" }.forEach { run.record(SafariCatch(it)) }
         run.partyFullClear("Party > Friend: fd")
         run.visitBiome(SafariBiome.FOREST)
-        assertEquals(6, run.completed(SafariMode.UNIQUE, SafariBiome.FOREST.critters, state), "Forest entry requires local bird spawning proof")
+        assertEquals(5, run.completed(SafariMode.UNIQUE, SafariBiome.FOREST.critters, state), "Forest entry requires local nest and bird spawning proof")
         assertEquals(0, run.count("Macaw")); assertEquals(0, run.personalCount("Macaw"))
         assertFalse(run.uniqueComplete("Macaw", state, localOnly = true))
     }

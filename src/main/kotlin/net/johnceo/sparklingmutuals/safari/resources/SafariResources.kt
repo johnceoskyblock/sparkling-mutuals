@@ -144,6 +144,7 @@ class SafariResources {
             }
         }
     }
+    fun heldCount(type: FloorDropType) = held[type] ?: 0
     fun startingCount(type: FloorDropType) = starting[type] ?: 0
     fun headStart(text: String) {
         val name = Regex("^HEAD START! You started with a (.+)!$").matchEntire(text)?.groupValues?.get(1) ?: return

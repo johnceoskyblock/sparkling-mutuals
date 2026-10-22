@@ -35,8 +35,8 @@ Resolve all five Snooper walls. Only third-stage wall dialogue confirms destruct
 
 | Mode | Capture requirement | Checking or source requirement | Party-report effect |
 | --- | --- | --- | --- |
-| Sparkling | None for ordinary released critters; confirmed Sparkling capture override applies. | Resolve all five Snooper walls; no local critter-radius requirement. | cd can supply inherited checking for unknown sources; positive intact sources contradict it. |
-| Unique | One shared capture if encountered; confirmed Sparkling capture overrides the combined check. | Resolve all five Snooper walls; zero captures can complete from a local Cavern absence scan after all sources resolve, with no encounter. Outside local proof, resolved sources plus cd retain the zero-spawn fallback. | cd can supplement checking; cannot erase positive intact sources or supply a catch. |
+| Sparkling | None for ordinary released critters; confirmed Sparkling capture override applies. | Resolve all five Snooper walls; no local critter-radius requirement. | Outside Cavern, cd supplies checking even after an earlier visit; current Cavern requires local source proof. |
+| Unique | One shared capture if encountered; confirmed Sparkling capture overrides the combined check. | Resolve all five Snooper walls; zero captures can complete from a local Cavern absence scan after all sources resolve, with no encounter. Outside local proof, resolved sources plus cd retain the zero-spawn fallback. | Outside Cavern, cd supplies checking after a catch or waives an unencountered zero spawn; current Cavern requires local proof. |
 | Full Clear | Fallback minimum 0 rises with encounters; local proof and report-based progress have [separate raised-target scopes](TRACKING.md#full-clear-evidence-and-late-entry). | Local empty scan and all five Snooper walls resolved. | Without local proof, report plus capture minimum can complete progress; row still needs local proof. |
 
 ## Display and highlights
@@ -53,7 +53,7 @@ Resolve all five Snooper walls. Only third-stage wall dialogue confirms destruct
 
 ## Party reports and late entry
 
-Track loaded sources from any Safari biome. Cavern entry retires inherited checking; newly observed intact sources reopen the combined result without erasing captures. Reports cannot discharge positive source contradictions. See [evidence/lifecycle](TRACKING.md).
+Track loaded sources from any Safari biome. Cavern entry retires inherited checking; newly observed intact sources reopen the combined result without erasing captures. Outside Cavern, a retained cd supplies checking despite earlier source observations; returning restores local source requirements. See [evidence/lifecycle](TRACKING.md).
 
 ## Retention and reopening
 
@@ -61,7 +61,7 @@ Retain mound sites and sampled wall states through unloading; unknown space is n
 
 ## Examples
 
-One shared Snoozle catch hides ordinary Unique ESP, but an intact source keeps progress/row pending. With no encounter, resolved sources alone remain insufficient for Unique until cd arrives.
+One shared Snoozle catch hides ordinary Unique ESP and removes its capture row. Current Cavern progress still needs resolved walls. With no encounter, resolved walls plus a qualified local absence scan can complete Unique without cd; outside Cavern, cd may waive an unencountered zero spawn.
 
 ## Implementation and validation
 
@@ -78,6 +78,8 @@ Existing coverage: [UniquePartyReportTest](../../src/test/kotlin/net/johnceo/spa
 Population guarantees and capsule success/escape claims from supplied notes were not live revalidated; see [audit D2](../IMPLEMENTATION_AUDIT.md#d2).
 
 ## Last updated
+
+2026-10-22 - Clarified remote Cavern report trust and current-biome local source checks.
 
 2026-10-19 - Unique local zero-spawn proof now completes the species and removes its missing row without waiting for cd; intact sources and any encounter still block the waiver.
 

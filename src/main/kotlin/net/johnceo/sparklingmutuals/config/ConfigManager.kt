@@ -24,7 +24,7 @@ object ConfigManager {
     var warpAlertsEnabled = false
     var warpDelaySeconds = 25
     var hideyhoAutoAccept = true
-    var autoSelectSafariTicket = false
+    var autoSelectSafariTicket = true
     var safariTicketPreference = 0
     var hideyhoInsideOutside = true
     var hideHauntedPaintings = true
@@ -66,19 +66,19 @@ object ConfigManager {
     var hideCaptureChat = true
     var hideGroundCapsules = true
     var hideFlyingCapsules = true
-    var experimentalCapsulePath = false
+    var experimentalCapsulePath = true
     var capsulePathWidth = 3f
     var showCapsuleGuideThroughTerrain = true
     var capsuleHideDistance = 2f
     var showWhere = 1
     val personalBests = SafariPersonalBests()
     private val flags = mapOf(::highlightTeammates to true, ::showTeammateNames to true, ::partyCommandsEnabled to true, ::useCloudApi to true, ::fullClearMode to false, ::sparklingMode to false, ::sparklingProfitableShardEsp to true, ::profitableShardEsp to true, ::timesaveOnly to true, ::warpAlertsEnabled to false,
-        ::hideyhoAutoAccept to true, ::autoSelectSafariTicket to false, ::hideyhoInsideOutside to true, ::hideHauntedPaintings to true, ::shinyDetection to true,
+        ::hideyhoAutoAccept to true, ::autoSelectSafariTicket to true, ::hideyhoInsideOutside to true, ::hideHauntedPaintings to true, ::shinyDetection to true,
         ::progressHud to true, ::countUniqueOnly to false, ::missingPanel to true,
         ::highlightBeeNests to true, ::removeDarkness to true, ::sparklingAlert to true,
         ::sparklingPartyAnnouncer to true, ::catchCountPanel to false, ::autoClicker to true, ::candleHitbox to true, ::holdManagerOnKick to true, ::downtimeCommand to true, ::honeyHives to true, ::phantomleafSolver to true, ::runHistory to true, ::achievements to true, ::achievementSound to true, ::achievementsToParty to false, ::runCoinsInstaSell to false,
         ::hideCaptureChat to true, ::hideGroundCapsules to true, ::hideFlyingCapsules to true,
-        ::experimentalCapsulePath to false, ::showCapsuleGuideThroughTerrain to true, ::gemzieGemAutoSelect to true,
+        ::experimentalCapsulePath to true, ::showCapsuleGuideThroughTerrain to true, ::gemzieGemAutoSelect to true,
         ::highlightSnooperWalls to true, ::showBeeNests to true, ::showMoundCount to true,
         ::showSnooperWalls to true, ::showMoundStats to false,
         ::allGemsAlert to true, ::allBirdFoodAlert to true, ::allIncenseAlert to true, ::runCompleteAlert to true)

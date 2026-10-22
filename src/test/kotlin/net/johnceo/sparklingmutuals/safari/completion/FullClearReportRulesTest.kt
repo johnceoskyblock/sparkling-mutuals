@@ -79,14 +79,14 @@ class FullClearReportRulesTest {
         run.observeSparkling(UUID.randomUUID(), "Macaw")
         assertTrue(run.fullClearComplete("Macaw"), "detection cannot override the normal one-Macaw exception")
     }
-    @Test fun `report trust does not waive positively observed unbroken spawn sources`() {
+    @Test fun `remote report outranks old unbroken source observations with zero spawn minima`() {
         val run = SafariRun(0)
         run.partyFullClear("Party > Friend: cd")
         assertTrue(run.fullClearComplete("Rockmite")); assertTrue(run.fullClearComplete("Snoozle"))
         val site = Triple(-100, 40, 50)
         run.moundSurvey.scan(setOf(site)) { true }
         run.observeCavernSources(true, true, false)
-        assertFalse(run.fullClearComplete("Rockmite")); assertFalse(run.fullClearComplete("Snoozle"))
+        assertTrue(run.fullClearComplete("Rockmite")); assertTrue(run.fullClearComplete("Snoozle"))
         run.moundSurvey.scan(emptySet()) { true }
         run.observeCavernSources(false, false, true)
         assertTrue(run.fullClearComplete("Rockmite")); assertTrue(run.fullClearComplete("Snoozle"))
@@ -99,7 +99,7 @@ class FullClearReportRulesTest {
         caught(run, "Bluebird", 8)
         assertTrue(run.fullClearComplete("Macaw"))
     }
-    @Test fun `positive remainder seen from another biome reopens reported species until captured`() {
+    @Test fun `remote reports with minimum captures outrank sightings from another biome`() {
         val run = SafariRun(0)
         run.visitBiome(SafariBiome.FOREST)
         caught(run, "Driftling", 3); caught(run, "Gemzie", 3)
@@ -107,11 +107,11 @@ class FullClearReportRulesTest {
         assertTrue(run.fullClearComplete("Driftling"))
         val id = UUID.randomUUID()
         run.observePopulation(listOf("Driftling" to id))
-        assertFalse(run.fullClearComplete("Driftling"))
+        assertTrue(run.fullClearComplete("Driftling"))
         assertTrue(run.fullClearComplete("Gemzie"))
         run.observePopulation(emptyList())
         run.partyFullClear("Party > Friend: cd")
-        assertFalse(run.fullClearComplete("Driftling"), "unloading or another report does not catch it")
+        assertTrue(run.fullClearComplete("Driftling"), "remote report and minimum captures remain sufficient")
         caught(run, "Driftling", 1)
         assertTrue(run.fullClearComplete("Driftling"))
     }

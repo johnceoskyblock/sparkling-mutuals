@@ -5,28 +5,35 @@ import net.johnceo.sparklingmutuals.safari.resources.FloorDropType
 
 /** Modes own targets; these switches only control where their highlights appear. */
 class SafariEspSettings {
-    @JvmField @ConfigOption(name = "Other ESP text scale", desc = "Size of critter timers, nest labels and unknown Sparkling labels. Floor drops and party names have independent sizes.")
-    @ConfigEditorSlider(minValue = .5f, maxValue = 4f, minStep = .25f)
-    var textScale = SafariEspConfig.textScale
-    @JvmField @ConfigOption(name = "Party member text scale", desc = "Size of party member ESP names, independently of other labels. 1 = original size.")
-    @ConfigEditorSlider(minValue = .5f, maxValue = 4f, minStep = .25f)
-    var teammateTextScale = SafariEspConfig.teammateTextScale
-    @JvmField @ConfigOption(name = "Floor-drop text sizes", desc = "Set the label size independently for each floor-drop type.")
-    @Accordion val floorTextSizes = FloorDropScaleSettings()
-    @JvmField @ConfigOption(name = "XP / Essence / Shard floor drops", desc = "Highlight all predicted reward floor drops, independently of mode requirements. Off by default.")
-    @ConfigEditorBoolean var rewardDrops = SafariEspConfig.rewardDrops
-    @JvmField @ConfigOption(name = "Floor-drop colors", desc = "Set each named drop's highlight and label color independently.")
-    @Accordion val floorColors = FloorDropColorSettings()
-    @JvmField @ConfigOption(name = "Floor drops: only in current biome", desc = "Limit floor highlights to your current biome.")
-    @ConfigEditorBoolean var floor = SafariEspConfig.groups.getValue("floor").onlyInBiome
-    @JvmField @ConfigOption(name = "Forest: only in current biome", desc = "Limit Forest critter highlights to Forest.")
-    @ConfigEditorBoolean var forest = SafariEspConfig.groups.getValue("forest").onlyInBiome
-    @JvmField @ConfigOption(name = "Cavern: only in current biome", desc = "Limit Cavern critter highlights to Cavern.")
-    @ConfigEditorBoolean var cavern = SafariEspConfig.groups.getValue("cavern").onlyInBiome
-    @JvmField @ConfigOption(name = "Icy: only in current biome", desc = "Limit Icy critter highlights to Icy.")
-    @ConfigEditorBoolean var icy = SafariEspConfig.groups.getValue("icy").onlyInBiome
-    @JvmField @ConfigOption(name = "Haunted: only in current biome", desc = "Limit Haunted critter highlights to Haunted.")
-    @ConfigEditorBoolean var haunted = SafariEspConfig.groups.getValue("haunted").onlyInBiome
+    @JvmField @ConfigOption(name = "Floor drops", desc = "") @Accordion val floorDrops = FloorDropEspSettings()
+    @JvmField @ConfigOption(name = "Other text sizes", desc = "") @Accordion val labels = EspLabelSettings()
+    @JvmField @ConfigOption(name = "Critter biome limits", desc = "") @Accordion val biomes = EspBiomeSettings()
+    var rewardDrops
+        get() = floorDrops.rewardDrops
+        set(value) { floorDrops.rewardDrops = value }
+    var floor
+        get() = floorDrops.floor
+        set(value) { floorDrops.floor = value }
+    val floorTextSizes get() = floorDrops.floorTextSizes
+    val floorColors get() = floorDrops.floorColors
+    var textScale
+        get() = labels.textScale
+        set(value) { labels.textScale = value }
+    var teammateTextScale
+        get() = labels.teammateTextScale
+        set(value) { labels.teammateTextScale = value }
+    var forest
+        get() = biomes.forest
+        set(value) { biomes.forest = value }
+    var cavern
+        get() = biomes.cavern
+        set(value) { biomes.cavern = value }
+    var icy
+        get() = biomes.icy
+        set(value) { biomes.icy = value }
+    var haunted
+        get() = biomes.haunted
+        set(value) { biomes.haunted = value }
     fun apply(): Boolean {
         val scale = SafariEspConfig.validTextScale(textScale)
         val colorsChanged = floorColors.apply()
@@ -44,6 +51,37 @@ class SafariEspSettings {
         }
         return changed
     }
+}
+
+class FloorDropEspSettings {
+    @JvmField @ConfigOption(name = "XP / Essence / Shard floor drops", desc = "Highlight all predicted reward floor drops, independently of mode requirements. Off by default.")
+    @ConfigEditorBoolean var rewardDrops = SafariEspConfig.rewardDrops
+    @JvmField @ConfigOption(name = "Floor drops: only in current biome", desc = "Limit floor highlights to your current biome.")
+    @ConfigEditorBoolean var floor = SafariEspConfig.groups.getValue("floor").onlyInBiome
+    @JvmField @ConfigOption(name = "Floor-drop text sizes", desc = "Set the label size independently for each floor-drop type.")
+    @Accordion val floorTextSizes = FloorDropScaleSettings()
+    @JvmField @ConfigOption(name = "Floor-drop colors", desc = "Set each named drop's highlight and label color independently.")
+    @Accordion val floorColors = FloorDropColorSettings()
+}
+
+class EspLabelSettings {
+    @JvmField @ConfigOption(name = "Other ESP text scale", desc = "Size of critter timers, nest labels and unknown Sparkling labels. Floor drops and party names have independent sizes.")
+    @ConfigEditorSlider(minValue = .5f, maxValue = 4f, minStep = .25f)
+    var textScale = SafariEspConfig.textScale
+    @JvmField @ConfigOption(name = "Party member text scale", desc = "Size of party member ESP names, independently of other labels. 1 = original size.")
+    @ConfigEditorSlider(minValue = .5f, maxValue = 4f, minStep = .25f)
+    var teammateTextScale = SafariEspConfig.teammateTextScale
+}
+
+class EspBiomeSettings {
+    @JvmField @ConfigOption(name = "Forest: only in current biome", desc = "Limit Forest critter highlights to Forest.")
+    @ConfigEditorBoolean var forest = SafariEspConfig.groups.getValue("forest").onlyInBiome
+    @JvmField @ConfigOption(name = "Cavern: only in current biome", desc = "Limit Cavern critter highlights to Cavern.")
+    @ConfigEditorBoolean var cavern = SafariEspConfig.groups.getValue("cavern").onlyInBiome
+    @JvmField @ConfigOption(name = "Icy: only in current biome", desc = "Limit Icy critter highlights to Icy.")
+    @ConfigEditorBoolean var icy = SafariEspConfig.groups.getValue("icy").onlyInBiome
+    @JvmField @ConfigOption(name = "Haunted: only in current biome", desc = "Limit Haunted critter highlights to Haunted.")
+    @ConfigEditorBoolean var haunted = SafariEspConfig.groups.getValue("haunted").onlyInBiome
 }
 
 class FloorDropColorSettings {

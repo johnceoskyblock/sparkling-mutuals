@@ -46,21 +46,21 @@ class ConfigTest {
         ConfigManager.init(dir);assertEquals(3f,ConfigManager.capsulePathWidth)
     }
     @TempDir lateinit var dir: Path
-    @Test fun `capsule preview is opt in and survives settings application and reload`() {
+    @Test fun `capsule preview defaults on and saved opt out survives settings application and reload`() {
         val old=ConfigManager.experimentalCapsulePath
         try {
             ConfigManager.init(dir)
-            assertFalse(ConfigManager.experimentalCapsulePath)
+            assertTrue(ConfigManager.experimentalCapsulePath)
             Files.writeString(dir.resolve("sparkling-mutuals.properties"),"experimentalCapsulePath=invalid\n")
             ConfigManager.init(dir)
-            assertFalse(ConfigManager.experimentalCapsulePath)
-            val settings=SafariSettings()
-            settings.safari.experimentalCapsulePath=true
-            settings.apply()
-            ConfigManager.experimentalCapsulePath=false
-            ConfigManager.init(dir)
             assertTrue(ConfigManager.experimentalCapsulePath)
-            assertTrue(SafariSettings().safari.experimentalCapsulePath)
+            val settings=SafariSettings()
+            settings.safari.experimentalCapsulePath=false
+            settings.apply()
+            ConfigManager.experimentalCapsulePath=true
+            ConfigManager.init(dir)
+            assertFalse(ConfigManager.experimentalCapsulePath)
+            assertFalse(SafariSettings().safari.experimentalCapsulePath)
         } finally { ConfigManager.experimentalCapsulePath=old }
     }
     @Test fun `HUD layouts and personal bests survive actual configuration saving`() {

@@ -14,13 +14,18 @@ class SafariCompletionEvents {
     fun reopen(biome: SafariBiome) { announced.remove(biome); pending.remove(biome); alerted = false }
     /** Local clearing can trigger supplies even if a teammate's report suppresses our announcement. */
     fun locallyComplete(run: SafariRun, biome: SafariBiome, mode: SafariMode, party: PartySparklingState): Boolean {
-        if (run.lastBiome != biome || !run.hasCaptureEvidence(biome) ||
+        if (run.lastBiome != biome || !run.hasCaptureEvidence(biome) || run.hasUnusedStartingForBiome(biome, party) ||
             mode == SafariMode.SPARKLING && !party.ready) return false
         val targets = biome.critters.filter { mode != SafariMode.SPARKLING || party.needs(it.name) }
         return run.completed(mode, targets, party, localOnly = true) == targets.size
     }
+    /** Completion feedback belongs to each client even when a peer sent the shared biome report first. */
+    fun armSharedClearReminder(run: SafariRun, biome: SafariBiome, mode: SafariMode, party: PartySparklingState, now: Long) {
+        if ((biome in announced || run.uniqueReportReceived(biome)) && locallyComplete(run, biome, mode, party))
+            run.partyResourceReminders.afterBiomeReport(now)
+    }
     fun announcement(run: SafariRun, biome: SafariBiome, mode: SafariMode, party: PartySparklingState): String? {
-        if (!run.canReportBiome(biome)) { pending.remove(biome); return null }
+        if (!run.canReportBiome(biome, party)) { pending.remove(biome); return null }
         if (run.lastBiome != biome) { pending.remove(biome); return null }
         if ((mode == SafariMode.UNIQUE || biome == SafariBiome.FOREST || biome == SafariBiome.HAUNTED) &&
             run.uniqueReportReceived(biome)) { pending.remove(biome); return null }

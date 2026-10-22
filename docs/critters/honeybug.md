@@ -16,7 +16,7 @@
 ## What makes this critter different
 
 - Known nest count N is covered by shared captures C plus current bees U. C >= N can complete Full Clear from any biome, subject to larger known population.
-- Unique row disappears after one capture; progress additionally needs checking if anyone needs Sparkling Honeybug. Trusted fd survives Forest entry.
+- Unique row disappears after one capture; progress additionally needs checking if anyone needs Sparkling Honeybug. Trusted fd supplies checking outside Forest; current Forest needs local nest proof.
 
 ## Spawn prerequisites
 
@@ -35,8 +35,8 @@ Classify actual nests/hives in the initial loaded survey. Punching records sourc
 
 | Mode | Capture requirement | Checking or source requirement | Party-report effect |
 | --- | --- | --- | --- |
-| Sparkling | None for ordinary bees; confirmed Sparkling capture override applies. | Every actual nest punched, or known nest population covered by shared captures plus current bees. | Trusted fd supplies checking and survives Forest reentry. |
-| Unique | One shared capture, or the confirmed-Sparkling capture override. | Progress also needs checking if discovery is needed; row uses the capture condition. | fd supplies needed checking, never the capture. |
+| Sparkling | None for ordinary bees; confirmed Sparkling capture override applies. | Every actual nest punched, or known nest population covered by shared captures plus current bees. | Trusted fd supplies checking outside Forest; reentry requires local nest proof. |
+| Unique | One shared capture, or the confirmed-Sparkling capture override. | Progress also needs checking if discovery is needed; row uses the capture condition. | Outside Forest, fd supplies needed checking, never the capture. Current Forest requires local nest proof. |
 | Full Clear | Capture verified N, raised by known extra population; otherwise use conservative fallback/source proof. | Known N needs no local empty scan or personal punch history. | fd supplies no captures and cannot retire Full Clear nest work before quota. |
 
 ## Display and highlights
@@ -78,5 +78,7 @@ Existing coverage: [HoneybugModeEvidenceTest](../../src/test/kotlin/net/johnceo/
 Population guarantees and capsule success/escape claims from supplied notes were not live revalidated; see [audit D2](../IMPLEMENTATION_AUDIT.md#d2).
 
 ## Last updated
+
+2026-10-22 — Honeybug reports supply checking outside Forest only; current Forest uses local nest proof.
 
 2026-10-19 (America/New_York) — Uniform species reference; audited evidence, modes, display and lifecycle. Reviewed source: `93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee`; no local runtime source changes reviewed. See [revision convention](../DOCUMENTATION_GUIDE.md).

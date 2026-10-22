@@ -36,8 +36,8 @@ Resolve every registered mound. Cracking/progress dialogue is not a terminal out
 
 | Mode | Capture requirement | Checking or source requirement | Party-report effect |
 | --- | --- | --- | --- |
-| Sparkling | None for ordinary released critters; confirmed Sparkling capture override applies. | Resolve every registered mound; no local critter-radius requirement. | cd can supply inherited checking for unknown sources; positive intact sources contradict it. |
-| Unique | One shared capture if encountered; confirmed Sparkling capture overrides the combined check. | Resolve every registered mound; zero captures can complete from a local Cavern absence scan after all sources resolve, with no encounter. Outside local proof, resolved sources plus cd retain the zero-spawn fallback. | cd can supplement checking; cannot erase positive intact sources or supply a catch. |
+| Sparkling | None for ordinary released critters; confirmed Sparkling capture override applies. | Resolve every registered mound; no local critter-radius requirement. | Outside Cavern, cd supplies checking even after an earlier visit; current Cavern requires local source proof. |
+| Unique | One shared capture if encountered; confirmed Sparkling capture overrides the combined check. | Resolve every registered mound; zero captures can complete from a local Cavern absence scan after all sources resolve, with no encounter. Outside local proof, resolved sources plus cd retain the zero-spawn fallback. | Outside Cavern, cd supplies checking after a catch or waives an unencountered zero spawn; current Cavern requires local proof. |
 | Full Clear | Capture requirements include revealed mound/encounter evidence; local proof and report-based progress have [separate raised-target scopes](TRACKING.md#full-clear-evidence-and-late-entry). | Local empty scan and every registered mound resolved. | Without local proof, report plus capture minimum can complete progress; row still needs local proof. |
 
 ## Display and highlights
@@ -54,7 +54,7 @@ Resolve every registered mound. Cracking/progress dialogue is not a terminal out
 
 ## Party reports and late entry
 
-Track loaded sources from any Safari biome. Cavern entry retires inherited checking; newly observed intact sources reopen the combined result without erasing captures. Reports cannot discharge positive source contradictions. See [evidence/lifecycle](TRACKING.md).
+Track loaded sources from any Safari biome. Cavern entry retires inherited checking; newly observed intact sources reopen the combined result without erasing captures. Outside Cavern, a retained cd supplies checking despite earlier source observations; returning restores local source requirements. See [evidence/lifecycle](TRACKING.md).
 
 ## Retention and reopening
 
@@ -81,6 +81,8 @@ Existing coverage: [UniquePartyReportTest](../../src/test/kotlin/net/johnceo/spa
 Population guarantees and capsule success/escape claims from supplied notes were not live revalidated; see [audit D2](../IMPLEMENTATION_AUDIT.md#d2).
 
 ## Last updated
+
+2026-10-22 - Clarified remote Cavern report trust and current-biome local source checks.
 
 2026-10-22 — Kept Unique mounds visible after the first catch only for party-needed Rockmite discovery, independently of captured silverfish.
 

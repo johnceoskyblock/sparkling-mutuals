@@ -58,10 +58,10 @@ class SafariCompletionAnnouncementsTest {
         assertEquals(9, SafariPanels.missingCritters(run, SafariBiome.FOREST, state).size, "fd supplies progress trust, not local missing-panel proof")
         unique()
     }
-    @Test fun `cd requires source proof for Unique no spawn and never adds catches`() {
+    @Test fun `remote cd can waive zero spawn Unique species and never adds catches`() {
         val run = SafariRun(0); val needed = party("Snoozle")
         SafariMessages.forRun("Party > Friend: cd", run, true)
-        assertEquals(0, run.completed(SafariMode.UNIQUE, SafariBiome.CAVERN.critters, needed))
+        assertEquals(2, run.completed(SafariMode.UNIQUE, SafariBiome.CAVERN.critters, needed))
         assertEquals(9, run.completed(SafariMode.SPARKLING, SafariBiome.CAVERN.critters, needed))
         run.visitBiome(SafariBiome.CAVERN)
         run.reconcileStructures(SafariBiome.CAVERN, true, true)
@@ -189,14 +189,14 @@ class SafariCompletionAnnouncementsTest {
         assertEquals("id", run.completion.announcement(run, SafariBiome.ICY, SafariMode.UNIQUE, state))
         assertNull(run.completion.announcement(run, SafariBiome.ICY, SafariMode.SPARKLING, state))
     }
-    @Test fun `remote cd cannot erase globally observed intact sources`() {
+    @Test fun `remote cd overrides old source observations until local reentry`() {
         val run = SafariRun(0); val state = party("Rockmite", "Snoozle")
         run.visitBiome(SafariBiome.CAVERN)
         run.reconcileStructures(SafariBiome.CAVERN, true, true)
         run.visitBiome(SafariBiome.FOREST)
         SafariMessages.forRun("Party > Friend: cd", run, true)
-        assertEquals(7, run.completed(SafariMode.SPARKLING, SafariBiome.CAVERN.critters, state))
-        assertEquals(0, run.completed(SafariMode.UNIQUE, SafariBiome.CAVERN.critters, state))
+        assertEquals(9, run.completed(SafariMode.SPARKLING, SafariBiome.CAVERN.critters, state))
+        assertEquals(2, run.completed(SafariMode.UNIQUE, SafariBiome.CAVERN.critters, state))
         run.visitBiome(SafariBiome.CAVERN)
         assertEquals(0, run.completed(SafariMode.SPARKLING, SafariBiome.CAVERN.critters, state))
     }

@@ -52,7 +52,7 @@ class HoneybugModeEvidenceTest {
         }
     }
 
-    @Test fun `Forest report survives entry but never supplies Unique or Full Clear captures`() {
+    @Test fun `Forest report applies outside while current Forest requires local nest proof`() {
         for (mode in SafariMode.entries) {
             val run = SafariRun(0)
             run.visitBiome(SafariBiome.CAVERN)
@@ -65,7 +65,7 @@ class HoneybugModeEvidenceTest {
             assertEquals(expected, run.completed(mode, listOf(honeybug), party(true)))
             run.visitBiome(SafariBiome.FOREST)
             run.updateNestEvidence(false, 0, 0, 13)
-            assertEquals(expected, run.completed(mode, listOf(honeybug), party(true)), "entering Forest cannot retire trusted checking")
+            assertEquals(0, run.completed(mode, listOf(honeybug), party(true)), "current Forest requires local nest proof")
             run.visitBiome(SafariBiome.CAVERN)
             assertEquals(expected, run.completed(mode, listOf(honeybug), party(true)))
             catch(run, 3)

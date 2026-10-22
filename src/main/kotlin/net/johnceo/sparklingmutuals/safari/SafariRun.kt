@@ -131,7 +131,10 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
         return if (lastBiome == SafariBiome.FOREST) birds.feedingResolved else !localOnly &&
             (birds.feedingResolved || birds.remoteReady || birds.hasReport && birds.capturesComplete(::count))
     }
-    fun canReportBiome(biome: SafariBiome): Boolean {
+    fun hasUnusedStartingForBiome(biome: SafariBiome, party: PartySparklingState) =
+        resources.startingNotice(party)?.items?.any { it.destination == biome } == true
+    fun canReportBiome(biome: SafariBiome, party: PartySparklingState = SafariSparklingMode.state): Boolean {
+        if (hasUnusedStartingForBiome(biome, party)) return false
         if (biome == SafariBiome.HAUNTED) return biome !in biomeReports
         if (biome != SafariBiome.FOREST) return true
         return biome !in biomeReports && birdSpawnsComplete(localOnly = true)
@@ -147,7 +150,7 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
     private val communalClears = mutableSetOf<SafariBiome>()
     private val biomeReports = mutableSetOf<SafariBiome>()
     private var remoteForestReport = false
-    val honeybugRemoteComplete get() = remoteForestReport
+    val honeybugRemoteComplete get() = remoteForestReport && lastBiome != SafariBiome.FOREST
     private val fullClearObservedTargets = mutableMapOf<String, Int>()
     fun uniqueReportReceived(biome: SafariBiome) = biome in biomeReports
     fun fullClearReportReceived(biome: SafariBiome) = biome in biomeReports
@@ -170,8 +173,22 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
     }
     fun fullClearProgress(critters: List<SafariCritter>) = critters.count { fullClearComplete(it.name) }
     /** Local proof advances progress directly; remote reports use capture minima. PBs remain personal. */
+    private fun remoteReport(biome: SafariBiome) = lastBiome != biome && biome in biomeReports
+    private val optionalUniqueSpawns = setOf("Rockmite", "Snoozle", "Bluebird", "Parakeet", "Macaw")
+    private fun remoteCaptureMinimum(name: String): Int = when (name) {
+        "Honeybug" -> maxOf(SafariFullClear.minimum(name), foundNests, punchedNests)
+        "Rockmite" -> maxOf(rockmiteMounds, if (encountered(name)) 1 else 0)
+        "Snoozle" -> if (encountered(name)) 1 else 0
+        "Gimmiegold" -> maxOf(SafariFullClear.minimum(name), gimmiegoldCaptureMinimum())
+        else -> SafariFullClear.minimum(name)
+    }
     fun fullClearComplete(name: String): Boolean {
         val critter = SafariRoster.named(name) ?: return false
+        if (remoteReport(critter.biome)) {
+            if (name in birdSpecies) return birdComplete(name, null)
+            if (name == "Gimmiegold" && (sparklingChecks.hasHeldCoins || resources.pending(SafariBiome.HAUNTED))) return false
+            return count(name) >= remoteCaptureMinimum(name)
+        }
         if (name in birdSpecies) return birdComplete(name, nearby[SafariBiome.FOREST])
         if (sourcePending(name)) return false
         if (name == "Gimmiegold" && (sparklingChecks.hasHeldCoins || sparklingChecks.knownCoinsUnresolved && !gimmiegoldCheck.complete)) return false
@@ -234,10 +251,11 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
         "Snoozle" -> wallsChecked && !remainingWalls
         else -> false
     }
-    /** Party reports never resolve a positively observed intact source. */
+    /** Current-biome sources require local proof; remote reports supply checking elsewhere. */
     private fun partyCompletion(name: String, party: PartySparklingState): Boolean? {
-        if (name == "Honeybug") return if (honeybugRemoteComplete) true else null
         val critter = SafariRoster.named(name) ?: return null
+        if (lastBiome == critter.biome) return null
+        if (name == "Honeybug") return if (honeybugRemoteComplete) true else null
         if (critter.biome !in communalClears && !sparklingChecks.partyChecked(name)) return null
         if (critter.biome == SafariBiome.CAVERN && lastBiome != SafariBiome.CAVERN) return true
         return when (name) {
@@ -248,9 +266,22 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
     }
     fun sparklingComplete(name: String, party: PartySparklingState, localOnly: Boolean = false): Boolean {
         val critter = SafariRoster.named(name) ?: return false
+        if (name !in birdSpecies && sparklingCaptures.captured(name)) return true
+        if (!localOnly && remoteReport(critter.biome)) {
+            if (SparklingChecks.requiresCapture(name)) return count(name) > 0
+            if (name in birdSpecies) {
+                syncBirdContributions()
+                val held = listOf(FloorDropType.SEEDS, FloorDropType.WORM, FloorDropType.BERRY).any { resources.heldCount(it) > 0 }
+                return !held && (birds.reportCoversTarget || birds.capturesComplete(::count))
+            }
+            if (name == "Gimmiegold") {
+                syncGimmiegoldContributions()
+                return resources.heldCount(FloorDropType.COIN) == 0 && (gimmiegoldCheck.remoteReady || gimmiegoldCheck.complete)
+            }
+            return true
+        }
         if (critter.biome == SafariBiome.ICY && count("Wumpa") > 0) return true
         if (name in birdSpecies) return birdSpawnsComplete(localOnly)
-        if (sparklingCaptures.captured(name)) return true
         if (SparklingChecks.requiresCapture(name)) return count(name) > 0
         if (name == "Rockmite" || name == "Snoozle") {
             if (name in uniqueSourceContradictions && !sparklingChecks.locallyChecked(name)) return false
@@ -283,10 +314,15 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
     }
     /** A completed local source/absence survey can waive a variable species that never spawned. */
     fun uniqueComplete(name: String, party: PartySparklingState, localOnly: Boolean = false): Boolean {
+        val critter = SafariRoster.named(name) ?: return false
+        if (name !in birdSpecies && sparklingCaptures.captured(name)) return true
+        if (!localOnly && remoteReport(critter.biome)) {
+            if ((name in birdSpecies || name == "Gimmiegold") && hasUnusedStartingForBiome(critter.biome, party)) return false
+            return count(name) > 0 || name in optionalUniqueSpawns && !encountered(name)
+        }
         if (name in birdSpecies) return birdSpawnsComplete(localOnly) &&
             (count(name) > 0 || uniqueUnavailable(name) || name == "Macaw" &&
                 lastBiome != SafariBiome.FOREST && !localOnly && count("Bluebird") > 0 && count("Parakeet") > 0 && birds.remoteReady)
-        if (sparklingCaptures.captured(name)) return true
         if (name in setOf("Gazer", "Gimmiegold") && party.needs(name))
             return count(name) > 0 && sparklingComplete(name, party, localOnly || lastBiome == SafariBiome.HAUNTED)
         if (name == "Rockmite" || name == "Snoozle") {

@@ -8,7 +8,7 @@ Collect opt-in local observations for ordinary and Masterful Critter Capsules, i
 
 ### Experimental capsule path
 
-In `/sm → Safari helpers`, **Capture projections** is the single enable switch and defaults **off**. **Capsule path width** saves from 1–5, default 3; **Show guide through terrain** defaults on. Its off state restores terrain-occluded rendering without changing predicted collision stops. The option uses the existing `experimentalCapsulePath` key; obsolete second-gate/status-HUD properties are ignored. There is no projection text overlay or HUD-editor status entry.
+In `/sm → Safari helpers → Capture tools`, **Capture projections** is the single enable switch and defaults **on** for missing/invalid settings; existing saved off choices are preserved. **Capsule path width** saves from 1–5, default 3; **Show guide through terrain** defaults on. Its off state restores terrain-occluded rendering without changing predicted collision stops. The option uses the existing `experimentalCapsulePath` key; obsolete second-gate/status-HUD properties are ignored. There is no projection text overlay or HUD-editor status entry.
 
 The visual guide works independently of recording, ESP toggles and either capsule-hiding option. It uses an ordinary or Masterful capsule in the main hand in Safari, with finite aim across pitch −90° through +90°. Walking, sprinting, sneaking, jumping, falling, standing/swimming in water and third-person views are supported as uncalibrated estimates. Flying, riding, lava, unsupported items and off-hand-only use suppress it. Screens and hidden HUD suppress geometry. Expanded display does not require two stationary ticks.
 
@@ -172,5 +172,7 @@ Historical recorder-v2 budget regression used 64 changing targets at 20 ticks/se
 Broader trajectory, endpoint, collision/proxy, hidden-capsule fidelity and Hypixel visual checks remain pending. Builds/synthetic arithmetic/offline smoke checks cannot establish them. Live visual checks should cover camera turns/FOV/GUI scale, hidden HUD/screens, item/hand/motion/water changes, world transfer, terrain-visibility modes, shader toggles, contact ordering and recording independence. [Issue #51](https://github.com/johnceoskyblock/sparkling-mutuals/issues/51) retains unfinished calibration/model work.
 
 ## Last updated
+
+2026-10-22 — Projection controls are grouped under Capture tools. Projections now default on for missing/invalid settings; explicit saved off values remain off.
 
 2026-10-19 (America/New_York) — Audited recorder, projection, contact/probe separation, tools and lifecycle against source `93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee`; consolidated historical experiment evidence and retained live-validation limits. See [documentation conventions](DOCUMENTATION_GUIDE.md).

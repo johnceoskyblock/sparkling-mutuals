@@ -29,7 +29,7 @@ The ledger retains maximum qualified species populations (captures + current ren
 | Mode | Inside Forest | Outside Forest |
 | --- | --- | --- |
 | Sparkling | Local feedingResolved: sampled zero floor food, zero held food and current/retained qualified population reaching expected opportunities | Earned local proof, or accepted fd covering current demand with no known food blockers; a retained report plus sufficient actual captures can cover increased demand |
-| Unique | Sparkling spawning requirement plus each bird's shared catch; waive any bird with completed local proof that the species never spawned | Earned local spawning proof plus catches/no-Macaw proof; otherwise fd supplies spawning trust. If Bluebird and Parakeet are caught, remoteReady may waive the last Macaw catch |
+| Unique | Sparkling spawning requirement plus each bird's shared catch; waive any bird with completed local proof that the species never spawned | Remote fd plus each bird catch, with an unencountered zero-spawn exception for each bird; still-held needed starting food blocks the source completion |
 | Full Clear | Shared captures meet the capture formula below, with no known food blockers | The same actual capture formula; fd supplies no captures |
 
 Full Clear's formula requires Bluebird and Parakeet catches each reaching that species' greatest qualified population. If Macaws are known, at least one Macaw catch is required. Macaw credit is zero before a catch, otherwise max(floor(known qualified Macaw population / 2), ceil(Macaw catches / 2)). Bluebird catches + Parakeet catches + Macaw credit must reach expected opportunities.
@@ -79,7 +79,15 @@ Reviewed source: 93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee.
 
 Live-server confirmation remains pending for baseline population, Safari-wide marker delivery, late-entry coverage and escape/replacement behavior. See [audit D9](IMPLEMENTATION_AUDIT.md#d9) for Full Clear's weaker source-observation requirement.
 
+### Remote report priority
+
+While outside Forest, Unique trusts fd after each bird's first catch, or waives an unencountered bird as a zero spawn. Bluebird and Parakeet are now eligible for the same remote zero-spawn exception as Macaw. A prior Forest visit does not prevent this trust. Inside Forest, local feeding/source proof remains required. Full Clear retains its actual bird capture formula in every biome.
+
+Outside-Forest Sparkling checks accept fd covering the current feeding target, ignoring old floor-marker scans, while still requiring no held food. Later starting-food contributions increase demand and require a fresh report or enough actual capture proof. Needed starting food still held by this client blocks its destination completion/report.
+
 ## Last updated
+
+2026-10-22 — Remote fd can waive unseen zero-spawn birds in Unique; current Forest retains local spawning proof.
 
 2026-10-20 — All three bird types support zero-spawn completion: Unique requires resolved feeding (including known party extras), qualified Forest survey and no catch/sighting of that species. Full Clear retains the actual-population capture formula, which allows zero Bluebirds/Parakeets when the other captures cover all feeding opportunities. No catches are fabricated.
 

@@ -124,9 +124,10 @@ class SafariCustomizationTest {
         ConfigManager.init(dir)
         ContestConfig.init(dir)
         val settings = SafariSettings()
-        val labels = CustomizationSettings::class.java.fields.mapNotNull {
+        val groups = listOf(settings.customization.huds, settings.customization.alertHuds, settings.customization.critters)
+        val labels = groups.flatMap { group -> group.javaClass.fields.mapNotNull {
             it.getAnnotation(io.github.notenoughupdates.moulconfig.annotations.ConfigOption::class.java)?.name
-        }
+        } }
         assertTrue(labels.containsAll(listOf("Missing panel HUD", "Sparkling alert HUD", "Cavern critter colors", "Forest critter colors", "Icy critter colors", "Haunted critter colors")))
         assertFalse(labels.any { it.endsWith(" ESP") && it != "Floor drop ESP" })
         settings.customization.selectedHex = "#123456"

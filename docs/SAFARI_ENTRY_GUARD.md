@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Cancel recognized Safari entry interactions before their normal packet path while party readiness or presence is unresolved. The guard only blocks interactions. An independently opt-in ticket-selection helper can finish a manually initiated Manager interaction, through the same guard. [Contest and downtime](CONTEST_DOWNTIME.md) owns requests, readiness parsing and ticket release.
+Cancel recognized Safari entry interactions before their normal packet path while party readiness or presence is unresolved. The guard only blocks interactions. An independently configurable ticket-selection helper can finish a manually initiated Manager interaction, through the same guard. [Contest and downtime](CONTEST_DOWNTIME.md) owns requests, readiness parsing and ticket release.
 
 ## Controls and defaults
 
@@ -17,7 +17,7 @@ Each saved switch controls its own blockers. **Hold either physical Shift key** 
 
 ## Optional ticket auto-selection
 
-**Safari helpers → Auto-select Safari ticket** is off by default. Directly below it, **Preferred ticket** offers **First Class** (default preference) or **Basic**. After a permitted Manager interaction by a verified non-leader in a party, the helper waits for the exact `Critter Safari Entry` menu and all four ticket controls. It chooses the preferred available tier: First Class → Premium → Economy → Basic, or Basic → Economy → Premium → First Class.
+**Safari helpers → Safari entry → Auto-select Safari ticket** is on by default. Directly below it, **Preferred ticket** offers **First Class** (default preference) or **Basic**. After a permitted Manager interaction by a verified non-leader in a party, the helper waits for the exact `Critter Safari Entry` menu and all four ticket controls. It chooses the preferred available tier: First Class → Premium → Economy → Basic, or Basic → Economy → Premium → First Class. Existing saved off choices are preserved.
 
 Availability comes from menu lore counts or explicit usable/unavailable text, not guessed API balances or item stack counts. Unknown availability waits rather than spending another ticket. A short menu-loading delay precedes selection. While auto-selection is handling the menu, its contents/background are hidden and mouse clicks are ignored; the actual server menu stays open for the normal guarded selection. The menu becomes visible if entry is blocked, all tiers are unavailable, or loading/selection takes more than two seconds. Escape remains available. Every automated selection calls the normal guard and container-input path; readiness/presence blocks continue to hold selection unless Shift is physically held. The helper clicks at most once per opened menu. A new world/connection, disabled toggle, or 15-second expiry cancels the pending Manager interaction. It does not initiate Manager interactions or spend tickets for party leaders/solo players.
 
@@ -63,6 +63,8 @@ Both switches persist in the [general configuration](CONFIG_DEFAULTS.md). Presen
 - Existing secondary coverage: [EntryBoundaryTest](../src/test/kotlin/net/johnceo/sparklingmutuals/safari/automation/EntryBoundaryTest.kt), [EntryGuardStateTest](../src/test/kotlin/net/johnceo/sparklingmutuals/safari/automation/EntryGuardStateTest.kt), [EntryPartyInboxTest](../src/test/kotlin/net/johnceo/sparklingmutuals/safari/automation/EntryPartyInboxTest.kt), [SafariManagerGuardTest](../src/test/kotlin/net/johnceo/sparklingmutuals/safari/automation/SafariManagerGuardTest.kt). No local runtime suites, mixin startup or live packet capture ran for this documentation audit; CI results are separate. Live checks remain needed on all supported targets: repeated entry attempts with missing/late members; each intercepted route, hand and GUI input; Shift/release; unknown roster; kick-pause expiry/restart; transfers; independent holders; unrelated controls.
 
 ## Last updated
+
+2026-10-22 — Entry controls are grouped under Safari entry; automatic ticket selection now defaults on while preserving saved choices and the First Class preference.
 
 2026-10-20 — Hide the ticket GUI during auto-selection, with a visible fallback for blockers/unavailable tickets/slow responses; no automatic menu closure.
 

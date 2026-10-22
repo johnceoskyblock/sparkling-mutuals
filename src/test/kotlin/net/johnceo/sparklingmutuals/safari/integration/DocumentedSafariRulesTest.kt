@@ -114,11 +114,11 @@ class DocumentedSafariRulesTest {
         for ((biome, word) in listOf(SafariBiome.FOREST to "fd", SafariBiome.CAVERN to "cd", SafariBiome.ICY to "id", SafariBiome.HAUNTED to "hd")) {
             val run = SafariRun(0)
             SafariMessages.forRun("Party > Friend: $word", run, true)
-            assertEquals(0, run.completed(SafariMode.UNIQUE, biome.critters, party()))
+            assertEquals(biome.critters.count { it.name in setOf("Rockmite", "Snoozle", "Bluebird", "Parakeet", "Macaw") }, run.completed(SafariMode.UNIQUE, biome.critters, party()))
             assertEquals(biome.critters.count { SafariFullClear.minimum(it.name) == 0 && it.name !in setOf("Bluebird", "Parakeet", "Macaw") }, run.completed(SafariMode.FULL_CLEAR, biome.critters, party()))
             run.visitBiome(biome)
-            assertEquals(if (biome == SafariBiome.FOREST) 1 else 0, run.completed(SafariMode.SPARKLING, biome.critters, party()),
-                "Honeybug retains its trusted Forest report on entry")
+            assertEquals(0, run.completed(SafariMode.SPARKLING, biome.critters, party()),
+                "current biome requires local checking")
         }
     }
 

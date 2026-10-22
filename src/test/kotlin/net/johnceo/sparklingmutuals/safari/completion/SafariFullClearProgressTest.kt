@@ -94,8 +94,8 @@ class SafariFullClearProgressTest {
         val run=SafariRun(0); run.partyFullClear("Party > Player: cd")
         assertEquals("0/9",row(SafariRun(1),SafariBiome.CAVERN))
         SafariFullClear.select(SafariMode.UNIQUE)
-        assertEquals("0/9",row(run,SafariBiome.CAVERN))
+        assertEquals("2/9",row(run,SafariBiome.CAVERN))
         run.record(SafariCatch(SafariRoster.named("Driftling")!!))
-        assertEquals("1/9",row(run,SafariBiome.CAVERN))
+        assertEquals("3/9",row(run,SafariBiome.CAVERN))
     }
 }
