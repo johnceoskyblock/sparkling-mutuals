@@ -10,11 +10,17 @@ HTTP errors, invalid credentials, rate limits and malformed discovery objects/li
 
 Per-member discovery sets are retained alongside their intersection. Completion-time supply reminders can therefore name exactly which current party members need each related Sparkling, including zero-discovery members. Party/provider changes invalidate both views together; incomplete refreshes cannot replace a complete accepted snapshot.
 
+## Retained party data
+
+Mode requirements and `!mutuals` use the same retained discovery baselines. Roster additions fetch only new members; removals drop that member from the calculation immediately and retain everyone else. A new run or mode switch reuses loaded data. Server-confirmed catches update participating members locally and cannot be overwritten by a delayed API result. Discovery caches are scoped to account, provider and Alpha/main realm and survive ordinary server transfers. Process restart, provider/account/realm changes, or leaving and rejoining the party require appropriate fresh baselines.
+
+Live history uniqueness now uses the pre-catch cached discovery set without another API call. If the baseline is unavailable, the flag stays unconfirmed. Personal stats refresh normally every thirty minutes, and Bazaar attempts are throttled to three hours, including failures. `/sparkling party` uses the existing UUID/name resolver instead of UUID fragments. Explicit `!missing`, ticket and profile-card fetch behavior is unchanged.
+
 ## Retry behavior
 
-An active background party-discovery lookup retries **60 seconds after a failure**, without switching modes. User-invoked party commands such as `!missing` attempt their lookup once per request. Any failure, including an invalid IGN, is shown locally and that request ends; another attempt requires a new command. `/sparkling <IGN>` and multi-player/profile-card requests likewise remain one-shot. Personal Safari stats also retry after a minute on failure, retaining their normal ten-minute refresh after successful reads. Requests run off the client thread. Missing credentials with the cloud disabled still require configuring a usable provider.
+An active background party-discovery lookup retries **60 seconds after a failure**, without switching modes. User-invoked party commands such as `!missing` attempt their lookup once per request. Any failure, including an invalid IGN, is shown locally and that request ends; another attempt requires a new command. `/sparkling <IGN>` and multi-player/profile-card requests likewise remain one-shot. Personal Safari stats also retry after a minute on failure, retaining their normal thirty-minute refresh after successful reads and no after-run refresh. Requests run off the client thread. Missing credentials with the cloud disabled still require configuring a usable provider.
 
-A repeated failure schedules the next attempt one minute later. Changing the provider/key can wake a failed request immediately. Existing per-provider successful discovery caching lasts 60 seconds; failed calls are not cached as successes. A successful complete lookup ends the failed-lookup retry cycle. Repeated identical discovery warnings remain suppressed.
+A repeated failure schedules the next attempt one minute later. Changing the provider/key can wake a failed request immediately. Successful party discovery baselines persist for unchanged members with no time expiry; failed calls are not cached as successes. A successful complete lookup ends the failed-lookup retry cycle. Repeated identical discovery warnings remain suppressed.
 
 The Sparkling-mode worker releases its busy flag before rejecting a result for temporarily unavailable/different party membership. Rejected or incomplete results schedule recovery; they cannot leave progress permanently displaying `?` because a finished worker remains marked busy. Generation checks protect newer lookups from older callbacks. Unknown current party membership still cannot be treated as solo or as successful data.
 
@@ -34,7 +40,15 @@ Focused automated checks cover the exact 60-second boundary and repeated failure
 
 Test in Sparkling mode without toggling modes: let a request fail, restore API access, and wait for the next one-minute retry. Test a party member with no Sparkling history or unavailable profile data: progress should leave `?` after all members load, all species should need Sparkling checks for that member, and every mod user holding starting food/coins should send their own combined report. Malformed payloads and transport errors should remain failures. Confirm a new party or provider cannot accept an earlier lookup's result.
 
+## Fetch inventory
+
+See [API fetch audit](API_FETCH_AUDIT.md) for every current HTTP trigger, client cache, cooldown and retry scope. The inventory describes the current reduced-fetch policy.
+
 ## Last updated
+
+2026-10-21 — Retained party discovery baselines and local catch credits; only new members fetch. Personal stats now refresh every thirty minutes, Bazaar every three hours, and party profile cards resolve IGNs.
+
+2026-10-21 — Documented all API fetch triggers and cache timings without changing API behavior.
 
 2026-10-20 — Fixed party-name completion when the roster or name cache was not already populated; unresolved verified UUIDs now resolve asynchronously.
 

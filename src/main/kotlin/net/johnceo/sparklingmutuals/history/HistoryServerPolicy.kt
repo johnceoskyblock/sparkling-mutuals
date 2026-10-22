@@ -24,6 +24,7 @@ class HistoryServerState {
 object HistoryServerPolicy {
     private var state = HistoryServerState()
     private var connection: Any? = null
+    fun alpha(client: Minecraft = Minecraft.getInstance()): Boolean { allows(client); return state.alpha }
     fun allows(client: Minecraft = Minecraft.getInstance()): Boolean {
         if (client.connection !== connection) {
             connection = client.connection

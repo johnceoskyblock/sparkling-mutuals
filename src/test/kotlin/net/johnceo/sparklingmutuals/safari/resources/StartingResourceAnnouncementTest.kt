@@ -129,6 +129,46 @@ class StartingResourceAnnouncementTest {
         assertEquals(listOf("[SM] Starting items: 1x Shining Coin"), sent)
     }
 
+    @Test fun `waiting on boat before admission does not lose the second ticket reward`() {
+        val run = SafariRun(0)
+        run.inventoryEvidence(emptyList(), 0)
+        run.startingAnnouncement.observeArea(0, 0)
+        run.startingGrantWindow(60000)
+        run.resources.headStart("HEAD START! You started with a Wriggleworm!")
+        run.birds.startingGrant("Wriggleworm")
+        run.inventoryEvidence(listOf("Wriggleworm" to 1, "Yogi Berry" to 1), 60100)
+        run.startingAnnouncement.observeArea(1, 60200)
+        val sent = mutableListOf<String>()
+        assertTrue(run.startingAnnouncement.dispatch(60700, party("Macaw"), sent::add))
+        assertEquals("[SM] Starting items: 1x Wriggleworm; 1x Yogi Berry", sent.single())
+        assertEquals(1, run.resources.startingCount(FloorDropType.BERRY))
+        assertEquals(11, run.birds.feedingTarget)
+        run.startingGrantWindow(65000)
+        assertFalse(run.inStartingInventoryWindow(65001), "a repeated grant line cannot keep extending the window")
+    }
+    @Test fun `delayed boat reward amends the report without treating later Forest pickups as starting items`() {
+        val run = SafariRun(0)
+        run.localPlayer("Me")
+        run.startingGrantWindow(10000)
+        run.resources.headStart("HEAD START! You started with a Wriggleworm!")
+        run.inventoryEvidence(listOf("Wriggleworm" to 1), 10000)
+        run.startingAnnouncement.observeArea(0, 10000)
+        run.startingAnnouncement.observeArea(1, 10100)
+        val sent = mutableListOf<String>()
+        fun send(message: String) { sent += message; run.resources.partyNotice("Party > Me: $message") }
+        assertTrue(run.startingAnnouncement.dispatch(10600, party("Macaw"), ::send))
+        run.resources.pickup("FLOOR DROP! You found Yogi Berry on the ground!", startingPickup = true)
+        run.inventoryEvidence(listOf("Wriggleworm" to 1, "Yogi Berry" to 1), 10800)
+        assertFalse(run.startingAnnouncement.dispatch(10800, party("Macaw"), ::send))
+        assertTrue(run.startingAnnouncement.dispatch(12100, party("Macaw"), ::send))
+        assertEquals(listOf("[SM] Starting items: 1x Wriggleworm", "[SM] Starting items: 1x Wriggleworm; 1x Yogi Berry"), sent)
+        assertEquals(2, run.resources.foodContributions().values.sum(), "corrections overlap earlier sender/type quantities")
+        run.resources.pickup("FLOOR DROP! Bag of Seeds")
+        run.inventoryEvidence(listOf("Wriggleworm" to 1, "Yogi Berry" to 1, "Bag of Seeds" to 1), 12500)
+        assertFalse(run.startingAnnouncement.dispatch(14000, party("Macaw"), ::send))
+        run.inventoryEvidence(emptyList(), 15000)
+        assertFalse(run.startingAnnouncement.dispatch(15000, party("Macaw"), ::send))
+    }
     @Test fun `failed send is retried but a successfully sent announcement is not repeated`() {
         val run = SafariRun(0)
         run.inventoryEvidence(listOf("Bag of Seeds" to 2), 0)

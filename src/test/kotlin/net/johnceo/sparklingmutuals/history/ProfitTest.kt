@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class ProfitTest {
-    @Test fun `valuing runs refreshes loaded prices after thirty minutes`() {
+    @Test fun `valuing runs refreshes loaded prices after three hours`() {
         var now = 2_000_000L
         var quote = 250.0
         var pending: ((Map<String, DoubleArray>) -> Unit)? = null
@@ -16,7 +16,7 @@ class ProfitTest {
         pending = null
         assertEquals(250L, cache.value(mapOf("Cavernfish" to 1), 0, instaSell = false))
         assertNull(pending, "fresh prices are reused without another request")
-        now += 1_800_000L
+        now += 10_800_000L
         assertEquals(250L, cache.value(mapOf("Cavernfish" to 1), 0, instaSell = false))
         assertNotNull(pending, "using a stale populated cache starts a refresh")
         val inFlight = pending
@@ -28,21 +28,24 @@ class ProfitTest {
         assertEquals(500L, cache.value(mapOf("Cavernfish" to 1), 0, instaSell = false))
         assertNull(pending, "fresh prices are reused without another request")
     }
-    @Test fun `failed refresh retains loaded prices and retries after a minute`() {
+    @Test fun `failed refresh retains loaded prices and retries no sooner than three hours`() {
         var now = 2_000_000L
         var pending: ((Map<String, DoubleArray>) -> Unit)? = null
         val cache = BazaarPriceCache({ now }) { complete -> pending = complete }
         cache.ensureFresh()
         pending!!(mapOf("SHARD_CAVERNFISH" to doubleArrayOf(100.0, 250.0)))
         pending = null
-        now += 1_800_000L
+        now += 10_800_000L
         cache.value(mapOf("Cavernfish" to 1), 0, instaSell = false)
         assertNotNull(pending)
         pending!!(emptyMap())
         pending = null
         assertEquals(250L, cache.value(mapOf("Cavernfish" to 1), 0, instaSell = false))
         assertNull(pending)
-        now += 60_000L
+        now += 10_800_000L - 1
+        cache.value(mapOf("Cavernfish" to 1), 0, instaSell = false)
+        assertNull(pending)
+        now++
         cache.value(mapOf("Cavernfish" to 1), 0, instaSell = false)
         assertNotNull(pending)
     }

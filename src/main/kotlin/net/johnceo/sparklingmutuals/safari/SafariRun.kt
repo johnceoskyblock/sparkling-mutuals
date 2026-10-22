@@ -66,6 +66,12 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
     var hadFourIncense = false
         private set
     private var firstInventoryAt: Long? = null
+    private var startingGrantAt: Long? = null
+    fun startingGrantWindow(now: Long) {
+        if (startingGrantAt != null) return
+        startingGrantAt = now
+        firstInventoryAt = now
+    }
     fun inStartingInventoryWindow(now: Long) = firstInventoryAt?.let { now - it in 0..3000 } == true
     fun inventoryEvidence(stacks: List<Pair<String, Int>>, now: Long = System.currentTimeMillis()) {
         if (firstInventoryAt == null && now >= startedAt) firstInventoryAt = now
@@ -89,18 +95,27 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
     private val personal = mutableMapOf<String, Int>()
     private val catchEvents = mutableListOf<SafariCatch>()
     val catches: List<SafariCatch> get() = catchEvents.toList()
+    private val populationClock = checkClock
+    private val settlingRemainders = mutableSetOf<String>()
+    private val lastPopulationCapture = mutableMapOf<String, Long>()
+    private fun populationSettling(species: String) = species in setOf("Driftling", "Chuckwalla") &&
+        lastPopulationCapture[species]?.let { populationClock() - it in 0..2500 } == true
     private val knownPopulation = mutableMapOf<String, Int>()
     /** Current uncaptured UUIDs, never the union of pre/post-escape identities. */
     fun observePopulation(live: List<Pair<String, java.util.UUID>>) {
         val remaining = live.filterNot { sparklingCaptures.resolved(it.second) }
+        settlingRemainders.clear()
+        settlingRemainders.addAll(remaining.map { it.first }.filter(::populationSettling))
         remaining.groupBy({ it.first }, { it.second }).forEach { (name, ids) ->
             val critter = SafariRoster.named(name) ?: return@forEach
+            if (populationSettling(name)) return@forEach
             if ((critter.biome in biomeReports || name in SafariFullClear.fixedCaptureTargets) && name != "Macaw") {
                 val remaining = if (name in birdSpecies) ids.size else ids.distinct().size
                 fullClearObservedTargets[name] = maxOf(fullClearObservedTargets[name] ?: 0, count(name) + remaining)
             }
         }
         remaining.filter { it.first !in birdSpecies }.groupBy({ it.first }, { it.second }).forEach { (name, ids) ->
+            if (populationSettling(name)) return@forEach
             knownPopulation[name] = maxOf(knownPopulation[name] ?: 0, count(name) + ids.distinct().size)
         }
     }
@@ -155,7 +170,7 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
         val critter = SafariRoster.named(name) ?: return false
         if (name in birdSpecies) return birdComplete(name, nearby[SafariBiome.FOREST])
         if (sourcePending(name)) return false
-        if (name == "Gimmiegold" && sparklingChecks.knownCoinsUnresolved) return false
+        if (name == "Gimmiegold" && (sparklingChecks.hasHeldCoins || sparklingChecks.knownCoinsUnresolved && !gimmiegoldCheck.complete)) return false
         if (name == "Honeybug") {
             return fullClearMissingComplete(name)
         }
@@ -163,6 +178,7 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
         // The local checklist already requires qualified coverage, captures and resolved sources.
         // Its retained proof remains valid after leaving the scan radius or biome.
         if (fullClearMissingComplete(name)) return true
+        if (populationSettling(name) && name in settlingRemainders) return false
         val fixed = SafariFullClear.fixedCaptureTargets[name]
         if (fixed == null && critter.biome !in biomeReports) return false
         val minimum = when (name) {
@@ -171,7 +187,7 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
             "Gimmiegold" -> maxOf(SafariFullClear.minimum(name), gimmiegoldCaptureMinimum())
             else -> SafariFullClear.minimum(name)
         }
-        return count(name) >= maxOf(fixed ?: minimum, fullClearObservedTargets[name] ?: 0)
+        return count(name) >= maxOf(fixed ?: minimum, if (name == "Gimmiegold") 0 else fullClearObservedTargets[name] ?: 0)
     }
     private val inheritedBiomes = mutableSetOf<SafariBiome>()
     fun visitBiome(biome: SafariBiome) {
@@ -264,8 +280,8 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
     /** A completed local source/absence survey can waive a variable species that never spawned. */
     fun uniqueComplete(name: String, party: PartySparklingState, localOnly: Boolean = false): Boolean {
         if (name in birdSpecies) return birdSpawnsComplete(localOnly) &&
-            (count(name) > 0 || name == "Macaw" && (uniqueUnavailable(name) ||
-                lastBiome != SafariBiome.FOREST && !localOnly && count("Bluebird") > 0 && count("Parakeet") > 0 && birds.remoteReady))
+            (count(name) > 0 || uniqueUnavailable(name) || name == "Macaw" &&
+                lastBiome != SafariBiome.FOREST && !localOnly && count("Bluebird") > 0 && count("Parakeet") > 0 && birds.remoteReady)
         if (sparklingCaptures.captured(name)) return true
         if (name == "Rockmite" || name == "Snoozle") {
             if (name in uniqueSourceContradictions && !sparklingChecks.locallyChecked(name)) return false
@@ -278,10 +294,10 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
     }
     /** A completed local survey can prove a variable critter never spawned; a sighting revokes it. */
     fun uniqueUnavailable(name: String): Boolean {
-        if (name == "Macaw") {
+        if (name in birdSpecies) {
             syncBirdContributions()
-            return forestBirdsSurveyed && !encountered(name) &&
-                !birds.hasMacaws(count(name), nearbyMacaws) && birds.feedingResolved
+            return forestBirdsSurveyed && !encountered(name) && birds.spawnedCount(name) == 0 &&
+                (name != "Macaw" || !birds.hasMacaws(count(name), nearbyMacaws)) && birds.feedingResolved
         }
         val remaining = nearby[SafariBiome.CAVERN] ?: return false
         if (encountered(name) || name in remaining) return false
@@ -337,13 +353,19 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
     private var forestBirdsSurveyed = false
     val birdFoodsComplete get() = birds.foodsComplete
     fun recordBirdFood(raw: String, biome: SafariBiome? = SafariBiome.FOREST, now: Long = System.currentTimeMillis()) =
-        birds.pickup(raw, biome, now - startedAt)
+        birds.pickup(raw, biome, now - (firstInventoryAt ?: startedAt))
     fun updateCaptureEvidence(biome: SafariBiome, speciesInRange: Set<String>, allWallsChecked: Boolean, allNestsChecked: Boolean = false,
         macawsInRange: Int = if ("Macaw" in speciesInRange) 1 else 0,
         playerX: Double? = null, playerZ: Double? = null, nestsPunched: Int = 0, nestsFound: Int = nestsPunched) {
         nearby[biome] = speciesInRange
+        for (name in listOf("Driftling", "Chuckwalla")) {
+            if (SafariRoster.named(name)?.biome == biome) {
+                if (name in speciesInRange && populationSettling(name)) settlingRemainders.add(name)
+                else settlingRemainders.remove(name)
+            }
+        }
         speciesInRange.filter { it != "Macaw" && SafariRoster.named(it) != null }.forEach { name ->
-            if (biome in biomeReports || name in SafariFullClear.fixedCaptureTargets)
+            if (!populationSettling(name) && (biome in biomeReports || name in SafariFullClear.fixedCaptureTargets))
                 fullClearObservedTargets[name] = maxOf(fullClearObservedTargets[name] ?: 0, count(name) + 1)
         }
         partyFullClears.remove(biome); communalClears.remove(biome); sparklingChecks.localScan(biome)
@@ -384,6 +406,7 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
     fun hasCaptureEvidence(biome: SafariBiome) = biome in nearby
     /** Local checklist proof can advance progress without a party report. */
     fun fullClearMissingComplete(name: String): Boolean {
+        if (name == "Hideyho") return count(name) >= SafariFullClear.minimum(name)
         val critter = SafariRoster.named(name) ?: return false
         if (name in birdSpecies) return birdComplete(name, nearby[SafariBiome.FOREST])
         if ((name in SafariCompletionZones.forBiome(critter.biome) || name in SafariCompletionZones.uuidMinimums) &&
@@ -413,17 +436,21 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
         if (species in birdSpecies) return birdComplete(species, speciesInRange, personalOnly)
         if (sourcePending(species)) return false
         val captured = if (personalOnly) personalCount(species) else count(species)
+        // Finding Hideyho and receiving the reward is the quest's terminal success, not a live mob catch.
+        if (species == "Hideyho") return captured >= SafariFullClear.minimum(species)
         // The initial known nest total and actual catch messages suffice from any biome.
         if (species == "Honeybug" && beeNestCountKnown)
             return captured >= maxOf(honeybugCaptureTarget, knownPopulation[species] ?: 0)
         val remaining = speciesInRange ?: return false
         if (species in birdSpecies) return birdComplete(species, remaining, personalOnly)
         val minimum = if (species == "Honeybug") honeybugCaptureTarget else SafariFullClear.minimum(species)
+        // Gimmiegolds come from coins, not the number of model UUIDs seen across capsule transitions.
+        if (species == "Gimmiegold") {
+            if (captured < maxOf(minimum, gimmiegoldCaptureMinimum()) || species in remaining || sparklingChecks.hasHeldCoins) return false
+            return SafariBiome.HAUNTED !in zonesRequired || gimmiegoldCheck.complete || sparklingChecks.goldComplete(captured, absent = true)
+        }
         if (captured < maxOf(minimum, if (species == "Macaw") 0 else knownPopulation[species] ?: 0)) return false
-        if (species == "Gimmiegold" && captured < gimmiegoldCaptureMinimum()) return false
         val biome = SafariRoster.named(species)!!.biome
-        if (biome in zonesRequired && species == "Gimmiegold" &&
-            !sparklingChecks.goldComplete(captured, species !in remaining)) return false
         if (biome in zonesRequired && (species in SafariCompletionZones.forBiome(biome) || species in SafariCompletionZones.uuidMinimums) &&
             species !in confirmedZones) return false
         if (species in remaining) return false
@@ -454,6 +481,7 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
     fun observedCount(species: String) = observedCritters[species]?.size ?: 0
     fun record(catch: SafariCatch, now: Long = System.currentTimeMillis(), self: String? = null) {
         if (catch.sparkling) sparklingCaptures.capture(catch.critter.name, if (catch.personal) self else catch.catcherName, broadcast = false, at = now)
+        lastPopulationCapture[catch.critter.name] = now
         catchEvents.add(catch)
         resources.capture(catch.critter.name)
         if (!catch.personal && catch.critter.biome !in visited) priorLootShare.add(catch.critter.biome)

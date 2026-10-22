@@ -94,6 +94,85 @@ class SafariModelLabelsTest {
         assertFalse(labels.current(model, 1500))
         assertTrue(labels.current(escaped, 1500))
     }
+    @Test fun `late frozen Driftling cannot inflate targets linger in ESP or block local completion`() {
+        val motion = EspMotion()
+        val labels = EspModelLabels()
+        val run = SafariRun(0)
+        repeat(5) { run.record(SafariCatch(SafariRoster.named("Driftling")!!, false)) }
+        run.visitBiome(SafariBiome.CAVERN)
+        run.partyFullClear("Party > Friend: cd")
+        fun active(now: Long) = SafariEspRules.driftlingCurrent(labels.label(model) != null,
+            labels.current(model, now), labels.visible(model), motion.current(model, now), motion.movementObserved(model))
+        fun scan(now: Long) {
+            val live = if (active(now)) listOf("Driftling" to model) else emptyList()
+            run.observePopulation(live)
+            run.updateCaptureEvidence(SafariBiome.CAVERN, live.map { it.first }.toSet(), false,
+                playerX = -120.0, playerZ = 55.0)
+        }
+        motion.observe(model, "Driftling", -120.0, 50.0, 55.0, 25.0, 0)
+        // No original name tag was loaded because this player arrived after the catch.
+        labels.observe(model, "Driftling", emptyList(), 0)
+        scan(0)
+        assertFalse(active(0), "first sight of an unlabelled frozen head is not a live spawn")
+        // A retained hidden custom name is not a visible live label either.
+        labels.observe(model, "Driftling", listOf(tag(visible = false)), 2500)
+        motion.observe(model, "Driftling", -120.0, 50.0, 55.0, 25.0, 2500)
+        scan(2500)
+        assertFalse(active(2500))
+        for (sparkling in listOf(false, true))
+            assertFalse(SafariEspRules.renderCurrent("Driftling", sparkling, active(2500), false, true))
+        assertTrue(run.captureComplete("Driftling"))
+        assertTrue(run.fullClearMissingComplete("Driftling"))
+        assertEquals(5, run.count("Driftling"))
+        // A genuinely moving model reopens remaining work without adding any capture.
+        motion.observe(model, "Driftling", -119.0, 50.0, 55.0, 25.0, 2750)
+        scan(2750)
+        assertTrue(active(2750))
+        assertFalse(run.fullClearMissingComplete("Driftling"))
+        assertEquals(5, run.count("Driftling"))
+    }
+    @Test fun `a retained visible Driftling label cannot keep a frozen head alive`() {
+        assertFalse(SafariEspRules.driftlingCurrent(true, true, true, false, false))
+        assertFalse(SafariEspRules.driftlingCurrent(true, false, true, true, true))
+    }
+    @Test fun `Driftling movement expires beyond thirty blocks even with a retained visible name`() {
+        val motion = EspMotion()
+        motion.observe(model, "Driftling", 0.0, 0.0, 0.0, 2500.0, 0)
+        motion.observe(model, "Driftling", 1.0, 0.0, 0.0, 2500.0, 250)
+        assertTrue(SafariEspRules.driftlingCurrent(true, true, true, motion.recentMovement(model, 500), true))
+        motion.observe(model, "Driftling", 1.0, 0.0, 0.0, 2500.0, 2500)
+        assertTrue(motion.current(model, 2500), "legacy distance grace is unrelated to Driftling's fresh movement gate")
+        assertFalse(SafariEspRules.driftlingCurrent(true, true, true, motion.recentMovement(model, 2500), true))
+        motion.observe(model, "Driftling", 2.0, 0.0, 0.0, 2500.0, 2750)
+        assertTrue(motion.recentMovement(model, 2750))
+    }
+    @Test fun `Chuckwalla needs a current visible label and never an orphaned or hidden name`() {
+        assertFalse(SafariEspRules.chuckwallaCurrent(false, true, false))
+        assertFalse(SafariEspRules.chuckwallaCurrent(true, true, false))
+        assertFalse(SafariEspRules.chuckwallaCurrent(true, false, true))
+        assertTrue(SafariEspRules.chuckwallaCurrent(true, true, true))
+    }
+    @Test fun `capture transition does not permanently increase Driftling or Chuckwalla target`() {
+        for (species in listOf("Driftling", "Chuckwalla")) {
+            var now = 0L
+            val run = SafariRun(0) { now }
+            run.visitBiome(SafariBiome.CAVERN)
+            repeat(6) { run.record(SafariCatch(SafariRoster.named(species)!!, false), now) }
+            run.partyFullClear("Party > Friend: cd")
+            now = 500
+            run.observePopulation(listOf(species to model))
+            run.updateCaptureEvidence(SafariBiome.CAVERN, setOf(species), false, playerX = -120.0, playerZ = 45.0)
+            assertFalse(run.fullClearMissingComplete(species), "positive remaining evidence still blocks during transition")
+            assertFalse(run.fullClearComplete(species))
+            now = 3000
+            run.observePopulation(emptyList())
+            run.updateCaptureEvidence(SafariBiome.CAVERN, emptySet(), false, playerX = -120.0, playerZ = 45.0)
+            assertTrue(run.fullClearMissingComplete(species), "capture plus old head must not become a permanent seventh capture")
+            run.observePopulation(listOf(species to java.util.UUID.randomUUID()))
+            run.updateCaptureEvidence(SafariBiome.CAVERN, setOf(species), false)
+            assertFalse(run.fullClearComplete(species), "a genuinely remaining critter after transition still blocks")
+        }
+    }
     @Test fun `missing label releases red Driftling count without hiding a genuinely remaining copy`() {
         val labels = EspModelLabels()
         labels.observe(model, "Driftling", listOf(tag()), 0)

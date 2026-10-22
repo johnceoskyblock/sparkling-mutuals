@@ -69,6 +69,46 @@ class UniqueAbsentCritterTest {
         run.observeCritter(42, "Macaw")
         assertFalse(run.uniqueComplete("Macaw", state), "a newly seen Macaw revokes zero-spawn completion")
     }
+    @Test fun `any bird may have zero spawns after all feeding opportunities including party extras resolve`() {
+        ConfigManager.fullClearMode = false; ConfigManager.sparklingMode = false
+        for (absent in listOf("Bluebird", "Parakeet", "Macaw")) {
+            val run = SafariRun(0); val state = party()
+            val spawned = if (absent == "Bluebird") "Parakeet" else "Bluebird"
+            run.visitBiome(SafariBiome.FOREST)
+            run.localPlayer("Me")
+            run.resources.partyNotice("Party > Other: [SM] Starting items: 1x Bag of Seeds")
+            run.inventoryEvidence(emptyList(), 10000)
+            run.updateCaptureEvidence(SafariBiome.FOREST, emptySet(), false, allNestsChecked = true)
+            SafariBiome.FOREST.critters.filter { it.name !in setOf("Bluebird", "Parakeet", "Macaw") }
+                .forEach { run.record(SafariCatch(it)) }
+            run.record(SafariCatch(SafariRoster.named(spawned)!!))
+            run.scanBirdSources(0, List(8) { spawned })
+            assertFalse(run.uniqueUnavailable(absent), "the party's tenth food has not been used")
+            run.inventoryEvidence(listOf("Bag of Seeds" to 1), 20000)
+            run.scanBirdSources(0, List(9) { spawned })
+            assertFalse(run.uniqueComplete(absent, state), "held food can still spawn the missing bird")
+            run.inventoryEvidence(emptyList(), 21000)
+            run.scanBirdSources(1, List(9) { spawned })
+            assertFalse(run.uniqueComplete(absent, state), "remaining floor food prevents absence proof")
+            run.scanBirdSources(0, List(9) { spawned })
+            assertTrue(run.uniqueUnavailable(absent), absent)
+            assertTrue(run.uniqueComplete(absent, state, localOnly = true), absent)
+            assertFalse(SafariPanels.missing(run, SafariBiome.FOREST, true, 0, party = state).rows.any { it.label == absent })
+            assertFalse(SafariEspRules.neededForRun(absent, false, run, false, false, state))
+            assertEquals("fd", run.completion.announcement(run, SafariBiome.FOREST, SafariMode.UNIQUE, state))
+            assertFalse(run.captureComplete(absent), "Full Clear still needs the spawned birds caught")
+            repeat(9) { run.record(SafariCatch(SafariRoster.named(spawned)!!)) }
+            run.scanBirdSources(0, emptyList())
+            for (bird in listOf("Bluebird", "Parakeet", "Macaw")) {
+                assertTrue(run.captureComplete(bird), "Full Clear permits zero $absent after catching the actual population")
+                assertTrue(run.fullClearMissingComplete(bird))
+            }
+            assertEquals(0, run.count(absent))
+            assertEquals(0, run.personalCount(absent))
+            run.observeCritter(4242, absent)
+            assertFalse(run.uniqueUnavailable(absent), "a later sighting revokes zero-spawn proof")
+        }
+    }
     @Test fun `party fd cannot complete Unique Forest without catches`() {
         val run = SafariRun(0); val state = party()
         run.visitBiome(SafariBiome.CAVERN)

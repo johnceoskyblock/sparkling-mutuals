@@ -46,8 +46,7 @@ object PartyCommands {
         // Keep actual result bodies; a different result for the same command cannot cancel ours.
         val parsed = PartyCommand.fromChat(text) ?: return
         val request = parsed.copy(command = parsed.command.forResponder(Minecraft.getInstance().player?.name?.string ?: return))
-        if (!request.command.allowed() || !request.command.answerable() ||
-            !request.command.ownedBy(Minecraft.getInstance().player?.name?.string.orEmpty())) return
+        if (!request.command.allowed() || !request.command.answerable()) return
         // Bind run-scoped commands to the run they were asked in; every later stage rechecks it.
         val run = SafariTracking.ledger.current
         val world = Minecraft.getInstance().level
@@ -67,7 +66,8 @@ object PartyCommands {
                 !stillUsing(request.command, provider)) return@withPartyInfo
             val local = client.player?.uuid?.toString() ?: return@withPartyInfo
             val roster = PartyManager.withLocal(local)?.toList() ?: return@withPartyInfo
-            pending[request.token] = Pending(request, roster, ResponderElection(local, if (request.command.isSince) listOf(local) else roster, now), chatCursor, mode, run, world, provider)
+            if (request.command.kind == PartyCommandKind.MUTUALS) SafariLookup.selectParty(roster.toSet(), provider)
+            pending[request.token] = Pending(request, roster, ResponderElection(local, roster, now), chatCursor, mode, run, world, provider)
         }
     }
 

@@ -149,7 +149,6 @@ object SparklingMutuals : ModInitializer {
         SafariAssist.reset()
         HideyhoQuest.reset()
         HideyhoSpotter.reset()
-        OwnStats.reset()
         SafariTracking.finish()
         SafariEsp.reset()
         AutoClicker.reset()

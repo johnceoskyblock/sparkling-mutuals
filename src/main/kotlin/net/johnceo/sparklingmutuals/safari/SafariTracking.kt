@@ -85,6 +85,7 @@ object SafariTracking {
             ensureRun(client)
             ledger.current?.sparklingBroadcast(text, now)
             ledger.current?.entry?.chat(text)
+            if (text.startsWith("HEAD START!")) ledger.current?.startingGrantWindow(now)
             ledger.current?.resources?.headStart(text)
             if (text.startsWith("HEAD START!")) ledger.current?.entry?.headStart?.let { type ->
                 SafariFloorDrops.state.startingGrant(type)
@@ -95,8 +96,10 @@ object SafariTracking {
             if (text == "A Gimmiegold appeared out of nowhere and gobbled up your Shining Coin!") ledger.current?.resources?.spawn(SafariBiome.HAUNTED)
         }
         if (text.startsWith("FLOOR DROP!") && SafariAssist.inSafari) {
-            ensureRun(client); ledger.current?.recordBirdFood(text, SafariAssist.biome)
-            ledger.current?.resources?.pickup(text)
+            ensureRun(client)
+            val onBoat = client.player?.let { SafariAreaMap.areaAt(it.x, it.y, it.z) == 0 } == true
+            ledger.current?.recordBirdFood(text, if (onBoat) null else SafariAssist.biome, now)
+            ledger.current?.resources?.pickup(text, startingPickup = onBoat && ledger.current?.inStartingInventoryWindow(now) == true)
             SafariEsp.floorPickup(text)
             SafariFloorDrops.state.record(text, SafariAssist.biome)
             return

@@ -23,11 +23,9 @@ object SafariSparklingMode {
     private var provider: ApiProvider? = null
     private var partyRefreshAt = 0L
     private var attemptedAt = 0L
-    private var loadedRun: SafariRun? = null
-    private var refresh = false
     private var warning: String? = null
     private val retry = ApiRetryWindow()
-    fun requestRefresh() { invalidate(); refresh = true }
+    fun requestRefresh() { invalidate() }
     private fun local(client: Minecraft, message: String) {
         if (warning == message) return
         warning = message
@@ -36,10 +34,13 @@ object SafariSparklingMode {
     private fun invalidate() { generation++; task?.cancel(false); task = null; attemptedAt = 0; retry.reset() }
     fun tick(client: Minecraft) {
         if (client.player == null || client.connection == null) return
+        if (SafariLookup.useAccount(client.player!!.uuid.toString() + ":" + net.johnceo.sparklingmutuals.history.HistoryServerPolicy.alpha(client))) {
+            invalidate(); state.reset(); roster = emptySet()
+        }
         val active = SafariAssist.location == SafariLocation.INSIDE || ConfigManager.sparklingMode
         val currentProvider = HypixelApi.provider
         if (provider != currentProvider) {
-            invalidate(); state.reset(); provider = currentProvider; refresh = true; warning = null
+            invalidate(); state.reset(); provider = currentProvider; warning = null
         }
         if (!active) return
         if (!currentProvider.enabled) {
@@ -54,17 +55,22 @@ object SafariSparklingMode {
         // A confirmed empty roster is solo. Unknown membership cannot be treated as solo.
         val members = PartyManager.withLocal(client.player!!.uuid.toString())
         if (members == null) {
-            if (roster.isNotEmpty()) { invalidate(); roster = emptySet(); state.reset(); refresh = true }
+            if (roster.isNotEmpty()) { invalidate(); roster = emptySet(); state.reset() }
             PartyManager.requestPartyInfo()
             return
         }
         if (members != roster) { invalidate(); roster = members; warning = null }
+        SafariLookup.selectParty(members, currentProvider)
         state.select(members, currentProvider)
-        val run = SafariTracking.ledger.current
-        if (task != null || (!refresh && state.ready && loadedRun === run) ||
+        val cached = members.mapNotNull { id -> SafariLookup.known(id, currentProvider)?.let { id to it } }.toMap()
+        if (cached.size == members.size) {
+            state.accept(members, cached, currentProvider)
+            retry.reset(); warning = null
+            return
+        }
+        if (task != null ||
             if (retry.pending) !retry.due(now, currentProvider) else now - attemptedAt < 60_000) return
         retry.reset()
-        refresh = false
         attemptedAt = now
         val revision = generation
         val connection = client.connection
@@ -76,21 +82,46 @@ object SafariSparklingMode {
                 task = null
                 if (client.connection !== connection || HypixelApi.provider != currentProvider) return@execute
                 if (client.player?.uuid?.toString()?.let(PartyManager::withLocal) != members) {
-                    retry.failed(System.currentTimeMillis(), currentProvider); refresh = true
+                    retry.failed(System.currentTimeMillis(), currentProvider)
                     return@execute
                 }
                 result.fold({ discoveries ->
-                    if (state.accept(members, discoveries, currentProvider)) { loadedRun = run; warning = null }
-                    else { retry.failed(System.currentTimeMillis(), currentProvider); refresh = true }
+                    if (state.accept(members, discoveries.mapValues { (id, value) -> SafariLookup.known(id, currentProvider) ?: value }, currentProvider)) { warning = null }
+                    else { retry.failed(System.currentTimeMillis(), currentProvider) }
                 }, { failure ->
-                    retry.failed(System.currentTimeMillis(), currentProvider); refresh = true
+                    retry.failed(System.currentTimeMillis(), currentProvider)
                     local(client, (failure as? ApiFailure)?.message ?: ApiFailure.unavailable().message!!)
                 })
             }
         }
     }
+    /** Server-confirmed catch only; detections and player-written party messages never grant discoveries. */
+    fun caught(player: String, species: String): Boolean? {
+        val client = Minecraft.getInstance()
+        val self = client.player ?: return null
+        if (!SafariAssist.inSafari) return null
+        val members = PartyManager.withLocal(self.uuid.toString()) ?: return null
+        val catcher = members.firstOrNull { uuid ->
+            val name = if (uuid == self.uuid.toString()) self.name.string else
+                client.connection?.getPlayerInfo(java.util.UUID.fromString(uuid))?.profile?.name
+                    ?: net.johnceo.sparklingmutuals.safari.automation.SafariPartyInput.nameOf(uuid)
+            name.equals(player, true)
+        } ?: return null
+        SafariLookup.useAccount(self.uuid.toString() + ":" + net.johnceo.sparklingmutuals.history.HistoryServerPolicy.alpha(client))
+        val participants = members.filterTo(mutableSetOf()) { uuid ->
+            uuid == self.uuid.toString() || client.connection?.getPlayerInfo(java.util.UUID.fromString(uuid)) != null
+        }
+        val before = SafariLookup.caught(members, species, participants)
+        state.select(members)
+        val updated = members.mapNotNull { id -> SafariLookup.known(id)?.let { id to it } }.toMap()
+        state.accept(members, updated)
+        if (!net.johnceo.sparklingmutuals.history.HistoryServerPolicy.alpha(client))
+            net.johnceo.sparklingmutuals.history.OwnStats.sparkling(species)
+        val key = species.uppercase(java.util.Locale.ROOT).replace(' ', '_')
+        return before[catcher]?.contains(key)
+    }
     fun reset() {
         invalidate(); state.reset(); roster = emptySet(); provider = null; partyRefreshAt = 0
-        loadedRun = null; refresh = false; warning = null
+        warning = null
     }
 }

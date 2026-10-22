@@ -12,7 +12,7 @@ A Fabric client mod for Hypixel SkyBlock Safari, Sparkling discoveries, party co
 2. Download an appropriate published build from [Releases](https://github.com/johnceoskyblock/sparkling-mutuals/releases), or `jar-mc<version>` from a successful [Actions run](https://github.com/johnceoskyblock/sparkling-mutuals/actions).
 3. Install **one** matching Sparkling Mutuals JAR in `mods`, replacing the older mod JAR. Do not install source/test/development JARs. [Exact dependencies and filenames](docs/MULTI_VERSION_BUILDS.md#prerequisites).
 
-Current release: **[v3.4.0](https://github.com/johnceoskyblock/sparkling-mutuals/releases/tag/v3.4.0)**, with `sparkling-mutuals-3.4.0+mc26.1.2.jar`, `sparkling-mutuals-3.4.0+mc26.2.jar` and `sparkling-mutuals-3.4.0+mc26.3.jar`. Install only the file matching your Minecraft version and remove the older Sparkling Mutuals JAR before updating.
+Current release: **[v3.5.0](https://github.com/johnceoskyblock/sparkling-mutuals/releases/tag/v3.5.0)**, with `sparkling-mutuals-3.5.0+mc26.1.2.jar`, `sparkling-mutuals-3.5.0+mc26.2.jar` and `sparkling-mutuals-3.5.0+mc26.3.jar`. Install only the file matching your Minecraft version and remove the older Sparkling Mutuals JAR before updating.
 
 HM API and MoulConfig are bundled. Player profile lookups use a Hypixel API key or the optional Shiny Hunter shared API. Keep keys and local authentication files private. Release notes and the availability of published assets belong to their [release descriptions](https://github.com/johnceoskyblock/sparkling-mutuals/releases).
 
@@ -29,7 +29,9 @@ HM API and MoulConfig are bundled. Player profile lookups use a Hypixel API key 
 | HUD layout | `/sm gui`; drag and scroll to move/resize supported HUDs. Projection status text has been removed. |
 | Capture review | `/captures` for current/last-run captures |
 | History and achievements | `/sm history`, `/sm history import`, `/sm achievements`; [history/import/profit rules](docs/HISTORY_IMPORT.md) |
-| Party streaks | `!since sparkling`, `!since unique`; [credit and participation](docs/SINCE_COMMAND.md) |
+| Sparkling rates | `/sparklingrates`; [cached-party checks and rate estimates](docs/SPARKLING_RATES.md) |
+| Profitable critters | `/profitablecritters`; [cached-price ranking and estimates](docs/PROFITABLE_CRITTERS.md) |
+| Party streaks | `!since`, `!since unique`; [credit and participation](docs/SINCE_COMMAND.md) |
 | Contest and readiness | [Miria/downtime](docs/CONTEST_DOWNTIME.md), [Safari entry guard and Shift override](docs/SAFARI_ENTRY_GUARD.md) |
 | Canyon and warp | [Honeyhives](docs/HONEYHIVES.md), [warp reminders and automatic warp](docs/WARP_ALERTS.md) |
 
@@ -68,6 +70,14 @@ Press Tab to complete current-party IGNs in `/sparkling`, including successive c
 - Licensing and attribution: [LICENSE](LICENSE) and [third-party notices](licenses).
 
 ## Last updated
+
+2026-10-21 (America/New_York) — Prepared v3.5.0 with cached-data commands, retained party discoveries and updated completion/ESP behavior.
+
+2026-10-21 — Added `/sparklingrates` with cached-party biome/manual-check filtering and six boat-visible species.
+
+2026-10-21 — Added `/profitablecritters`: top five shard prices with estimated shards and coins per run, using existing cached prices only.
+
+2026-10-21 — Renamed the default party streak command to `!since`; all mod users reply with their own party-credited streak. Non-detection party messages use shiny wording.
 
 2026-10-20 — Added optional reward-drop ESP and non-leader ticket selection; removed obsolete Hideyho clicks and fixed unresolved party-name suggestions.
 

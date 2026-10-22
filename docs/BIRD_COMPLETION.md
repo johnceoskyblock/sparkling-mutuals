@@ -29,7 +29,7 @@ The ledger retains maximum qualified species populations (captures + current ren
 | Mode | Inside Forest | Outside Forest |
 | --- | --- | --- |
 | Sparkling | Local feedingResolved: sampled zero floor food, zero held food and current/retained qualified population reaching expected opportunities | Earned local proof, or accepted fd covering current demand with no known food blockers; a retained report plus sufficient actual captures can cover increased demand |
-| Unique | Sparkling spawning requirement plus each bird's shared catch; waive Macaw only when completed local proof establishes no Macaws | Earned local spawning proof plus catches/no-Macaw proof; otherwise fd supplies spawning trust. If Bluebird and Parakeet are caught, remoteReady may waive the last Macaw catch |
+| Unique | Sparkling spawning requirement plus each bird's shared catch; waive any bird with completed local proof that the species never spawned | Earned local spawning proof plus catches/no-Macaw proof; otherwise fd supplies spawning trust. If Bluebird and Parakeet are caught, remoteReady may waive the last Macaw catch |
 | Full Clear | Shared captures meet the capture formula below, with no known food blockers | The same actual capture formula; fd supplies no captures |
 
 Full Clear's formula requires Bluebird and Parakeet catches each reaching that species' greatest qualified population. If Macaws are known, at least one Macaw catch is required. Macaw credit is zero before a catch, otherwise max(floor(known qualified Macaw population / 2), ceil(Macaw catches / 2)). Bluebird catches + Parakeet catches + Macaw credit must reach expected opportunities.
@@ -48,14 +48,14 @@ Inventory is sampled before queuing and before dispatch decisions. Queued report
 
 ## Exceptions
 
-- Proven no-Macaw spawning can waive the Unique Macaw catch; Full Clear's formula can also complete with no Macaws when the other captures cover demand.
+- Proven zero-spawn Bluebird, Parakeet or Macaw can waive that Unique catch; Full Clear's formula can also complete with no Macaws when the other captures cover demand.
 - A remote fd can waive Unique's last Macaw catch outside Forest once Bluebird and Parakeet are caught; it does not prove a personal Macaw capture.
 - Additional food changes demand without adding captures. An old report whose recorded target is too small cannot alone waive that new demand.
 - Disabling bird ESP does not disable evidence collection. Capsule replacement UUIDs are not accumulated as feeding opportunities; current-population observations still depend on correct loaded entity identity.
 
-For a local Unique Forest clearer, no Macaw catch is required if no Macaw has ever been seen or caught and qualified population/source evidence resolves all food opportunities. This includes party-reported unused starting food. Remaining food markers, held food or insufficient accounted population block the waiver. The Macaw row then disappears and fd may send when every other Forest requirement is complete. A later Macaw sighting revokes the zero-spawn waiver.
+For a local Unique Forest clearer, no catch of a bird species is required if that species has never been seen or caught and qualified population/source evidence resolves all food opportunities. This includes party-reported unused starting food. Remaining food markers, held food or insufficient accounted population block the waiver. That species’ row then disappears and fd may send when every other Forest requirement is complete. A later sighting of that species revokes the zero-spawn waiver.
 
-For a local Unique Forest clearer, no Macaw catch is required if no Macaw has ever been seen or caught and qualified population/source evidence resolves all food opportunities. This includes party-reported unused starting food. Remaining food markers, held food or insufficient accounted population block the waiver. The Macaw row then disappears and fd may send when every other Forest requirement is complete. A later Macaw sighting revokes the zero-spawn waiver.
+For a local Unique Forest clearer, no catch of a bird species is required if that species has never been seen or caught and qualified population/source evidence resolves all food opportunities. This includes party-reported unused starting food. Remaining food markers, held food or insufficient accounted population block the waiver. That species’ row then disappears and fd may send when every other Forest requirement is complete. A later sighting of that species revokes the zero-spawn waiver.
 
 ## Examples
 
@@ -80,6 +80,8 @@ Reviewed source: 93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee.
 Live-server confirmation remains pending for baseline population, Safari-wide marker delivery, late-entry coverage and escape/replacement behavior. See [audit D9](IMPLEMENTATION_AUDIT.md#d9) for Full Clear's weaker source-observation requirement.
 
 ## Last updated
+
+2026-10-20 — All three bird types support zero-spawn completion: Unique requires resolved feeding (including known party extras), qualified Forest survey and no catch/sighting of that species. Full Clear retains the actual-population capture formula, which allows zero Bluebirds/Parakeets when the other captures cover all feeding opportunities. No catches are fabricated.
 
 2026-10-20 — Unique bird rows disappear after their first shared capture. Proven no-Macaw absence still waives its row. Forest shows Bird food left to use below the nest footer: the greater of unresolved feeding demand (including reported party extras) and known held plus remaining floor food. This is inferred from captures/render evidence, not a direct server usage counter; spawning/progress/report gates remain independent.
 

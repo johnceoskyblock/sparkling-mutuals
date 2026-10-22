@@ -28,9 +28,9 @@ SafariParticleMixin observes WAX_ON packet origins on the client thread after th
 
 There is no player-distance/current-biome filter, but origins must be finite, Y 0–160 and inside a recognized Safari quadrant. Nearby origins in the same biome within three blocks coalesce and update last-seen position/time. At most 128 stored locations are accepted per run. These are approximate packet origins, not tracked moving entities or reliable counts.
 
-After the next name/skin scan, an unidentified location may show SPARKLING! / Critter Unknown and party text SPARKLING Critter Unknown! with biome/coordinates. The world label and HUD retain last-seen coordinates through unloading/travel. Debug output identifies source=wax_on; source terminology does not appear in title/party text.
+After the next name/skin scan, an unidentified location may show SPARKLING! / Critter Unknown locally. Unknown detections never send party chat; a party notice is eligible only after the species is identified. The world label and HUD retain last-seen coordinates through unloading/travel. Debug output identifies source=wax_on; source terminology does not appear in title/party text.
 
-Only an independent name/skin positive within three blocks retires an anonymous waypoint. It also cancels its queued unknown party message/banner. Known detections take priority in the scan. If the unknown message was already sent, the later named species can still announce. Unrelated catches/reports cannot identify an anonymous marker.
+Only an independent name/skin positive within three blocks retires an anonymous waypoint. It also clears its unknown banner. Known detections take priority in the scan and can send the one named notice for that species in the run. Unrelated catches/reports cannot identify an anonymous marker.
 
 ### Notification controls and retention
 
@@ -39,7 +39,7 @@ Only an independent name/skin positive within three blocks retires an anonymous 
 | Identified GUI/sound alert | Sparkling alert enabled; sound uses its own volume/sound values | Once per species per run |
 | Identified party notice | Sparkling party announcer enabled | Once per species per run; queue paced at least 1.5 seconds |
 | Anonymous GUI/sound | Same independent alert controls | One shared unknown notification per run across all locations |
-| Anonymous party notice | Same party-announcer control | One shared unknown notification per run |
+| Anonymous party notice | Never sent | Unknown detections do not consume a named species notice |
 | Glow, detected panel, anonymous world labels | Sparkling detection display toggle and rendering/UI gates | Current named entities; retained anonymous locations |
 
 Switching alert/ESP toggles does not stop the underlying detector. Capsule transitions, escapes, replacement identities, travel and mode changes do not reset notification histories. A new run/world reset does. Disabling party announcements or leaving Safari clears queued party notices; a notice already reserved in notification memory is not automatically requeued on reenable.
@@ -84,6 +84,14 @@ User observation, 2026-10-15: Duplico at (-4, 71, -72) unloaded near player (-73
 
 Live checks remain pending for delayed skin updates, real-player exclusion, cross-biome received particles, low vanilla particle settings, clustering near moving/multiple Sparklings and replacement aliases. The user's wax-on association and duplicate-capsule entity explanation are observations requiring confirmation. No whole-Safari coverage is guaranteed.
 
+## Party wording
+
+Only the actual `SPARKLING <Critter>! (<Biome> <Coordinates>)` detection notice uses the detection keyword in mod-authored party text. Lookup results use Shiny/Shinies, streak replies use shiny, and completion-time supply reminders use Shiny. Party-only achievement names and echoed downtime reasons replace sparkling/sparkle with shiny while their local wording remains unchanged. Command help lists `!since` and `!since unique`. Legacy incoming discovery-result headings remain recognized for compatibility.
+
 ## Last updated
+
+2026-10-21 — Reserved party detection keywords for actual sightings; changed non-detection party wording without changing local text or API requests.
+
+2026-10-21 — Unknown detections retain local alerts only; party announcements wait for identification and remain once per species per run.
 
 2026-10-19 (America/New_York) — Audited detector/particle wiring, notification limits and completion separation; preserved skin/range provenance. Reviewed source: 93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee; static source/caller review, no live Minecraft validation.

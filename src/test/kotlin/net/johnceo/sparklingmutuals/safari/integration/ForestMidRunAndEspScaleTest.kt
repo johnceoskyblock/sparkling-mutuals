@@ -36,4 +36,25 @@ class ForestMidRunAndEspScaleTest {
             assertEquals(expected, SafariEspConfig.textScale, raw)
         }
     }
+    @Test fun `legacy scale migrates then floor types and party names persist independently`() {
+        SafariEspConfig.load(Properties().apply { setProperty("esp.textScale", "3") })
+        val types = net.johnceo.sparklingmutuals.safari.resources.FloorDropType.entries
+        types.forEach { assertEquals(3f, SafariEspConfig.dropTextScale(it)) }
+        assertEquals(3f, SafariEspConfig.teammateTextScale)
+        val settings = net.johnceo.sparklingmutuals.config.SafariEspSettings()
+        settings.floorTextSizes.coin = 4f
+        settings.floorTextSizes.incense = .5f
+        settings.teammateTextScale = 1.25f
+        settings.textScale = 2f
+        assertTrue(settings.apply())
+        val saved = Properties().also(SafariEspConfig::save)
+        SafariEspConfig.load(Properties())
+        SafariEspConfig.load(saved)
+        assertEquals(4f, SafariEspConfig.dropTextScale(net.johnceo.sparklingmutuals.safari.resources.FloorDropType.COIN))
+        assertEquals(.5f, SafariEspConfig.dropTextScale(net.johnceo.sparklingmutuals.safari.resources.FloorDropType.INCENSE))
+        assertEquals(3f, SafariEspConfig.dropTextScale(net.johnceo.sparklingmutuals.safari.resources.FloorDropType.SEEDS))
+        assertEquals(1.25f, SafariEspConfig.teammateTextScale)
+        assertEquals(2f, SafariEspConfig.textScale)
+    }
+
 }

@@ -47,6 +47,26 @@ class HauntedCompletionTest {
             assertTrue(fresh.sparklingChecks.checked(name))
         }
     }
+    @Test fun `Hideyho reward completes Full Clear despite persistent quest NPC and inflated model estimates`() {
+        val run = SafariRun(0)
+        run.visitBiome(SafariBiome.HAUNTED)
+        run.updateCaptureEvidence(SafariBiome.HAUNTED, setOf("Hideyho"), false, playerX = -4.0, playerZ = -64.0)
+        assertFalse(run.fullClearMissingComplete("Hideyho"))
+        assertNull(SafariCatch.parse("[MOB] Hideyho: Aah! You found me!"), "dialogue alone supplies no capture")
+        val reward = SafariCatch.parse("CAPTURE! You found the Hideyho, and as a reward it gave you 3x Hideyho Shard!")!!
+        run.record(reward)
+        run.partyFullClear("Party > Friend: hd")
+        run.observePopulation(List(3) { "Hideyho" to UUID.randomUUID() })
+        run.updateCaptureEvidence(SafariBiome.HAUNTED, setOf("Hideyho"), false, playerX = -4.0, playerZ = -64.0)
+        assertEquals(1, run.count("Hideyho"), "three shards are one successful find")
+        assertTrue(run.fullClearMissingComplete("Hideyho"))
+        assertTrue(run.fullClearComplete("Hideyho"))
+        assertTrue(run.captureComplete("Hideyho", personalOnly = true))
+        val shared = SafariRun(0)
+        shared.record(SafariCatch(reward.critter, personal = false, catcherName = "Friend"))
+        assertTrue(shared.fullClearMissingComplete("Hideyho"))
+        assertFalse(shared.captureComplete("Hideyho", personalOnly = true), "a party reward does not invent a personal PB catch")
+    }
     @Test fun `six picked coins require six unique Gimmiegolds and six Full Clear captures`() {
         val run=SafariRun(0); val seen=List(6) { "Gimmiegold" to UUID.randomUUID() }
         repeat(6) { run.sparklingChecks.chat("FLOOR DROP! You found a Shining Coin!"); run.sparklingChecks.chat("A Gimmiegold appeared out of nowhere and gobbled up your Shining Coin!") }

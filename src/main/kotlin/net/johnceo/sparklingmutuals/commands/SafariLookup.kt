@@ -8,37 +8,42 @@ import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.safari.SafariRoster
 
 object SafariLookup {
-    private data class Cached(val discoveries: Set<String>, val timestamp: Long)
-    private data class CacheKey(val provider: ApiProvider, val uuid: String)
-    private val cache = mutableMapOf<CacheKey, Cached>()
+    private val cache = net.johnceo.sparklingmutuals.api.PartyDiscoveryCache()
+    private var account: String? = null
+    @Synchronized fun useAccount(identity: String): Boolean {
+        if (account == identity) return false
+        cache.clear(); account = identity
+        return true
+    }
+    fun selectParty(members: Set<String>, provider: ApiProvider = HypixelApi.provider) = cache.select(members, provider)
+    fun known(uuid: String, provider: ApiProvider = HypixelApi.provider) = cache.known(uuid, provider)
+    fun caught(members: Set<String>, species: String, participants: Set<String> = members) =
+        cache.caught(members, species, HypixelApi.provider, participants)
     private val timesaves = linkedMapOf("ROCKMITE" to "Rockmite", "SNOOZLE" to "Snoozle",
         "GEMZIE" to "Gemzie", "HONEYBUG" to "Honeybug", "GAZER" to "Gazer",
         "GIMMIEGOLD" to "Gimmiegold", "DOOMSPIRAL" to "Doomspiral", "WUMPA" to "Wumpa")
     private val birds = setOf("BLUEBIRD", "PARAKEET", "MACAW")
 
-    @Synchronized fun clearCache() = cache.clear()
+    fun clearCache() = cache.clear()
     /** No profile/Safari history means no discoveries for party requirements, not an unfinished lookup. */
     internal fun discoveriesOrEmpty(lookup: () -> Set<String>): Set<String> = try {
         lookup()
     } catch (failure: ApiFailure) {
         if (failure.kind == ApiFailureKind.DATA_UNAVAILABLE) emptySet() else throw failure
     }
-    /** Both party commands and mode refreshes share a provider-scoped, serialized 60-second cache. */
-    @Synchronized fun discoveries(uuid: String, key: String = ConfigManager.apiKey): Set<String> =
+    /** Retained for this party membership; only missing/new members need HTTP. */
+    fun discoveries(uuid: String, key: String = ConfigManager.apiKey): Set<String> =
         discoveries(uuid, ApiProvider.capture(key))
-    @Synchronized fun discoveries(uuid: String, provider: ApiProvider): Set<String> {
+    fun discoveries(uuid: String, provider: ApiProvider): Set<String> {
         check(provider == HypixelApi.provider) { "API provider changed during lookup" }
         if (!provider.enabled) throw ApiFailure(ApiFailureKind.MISSING_KEY, "No Hypixel API key. Use /apikey or settings.")
-        val id = CacheKey(provider, uuid)
-        val now = System.currentTimeMillis()
-        cache[id]?.takeIf { now - it.timestamp < 60_000 }?.let { return it.discoveries }
-        val result = discoveriesOrEmpty {
-            HypixelApi.getSparklingCritters(uuid, HypixelApi.getCurrentProfileUuid(uuid))
+        return cache.load(uuid, provider) {
+            val read = discoveriesOrEmpty {
+                HypixelApi.getSparklingCritters(uuid, HypixelApi.getCurrentProfileUuid(uuid))
+            }
+            check(provider == HypixelApi.provider) { "API provider changed during lookup" }
+            read
         }
-        check(provider == HypixelApi.provider) { "API provider changed during lookup" }
-        cache[id] = Cached(result, System.currentTimeMillis())
-        cache.entries.removeIf { System.currentTimeMillis() - it.value.timestamp > 60_000 }
-        return result
     }
 
     fun run(command: PartyCommand, members: List<String>, localName: String = "You"): String = when (command.kind) {
@@ -53,18 +58,18 @@ object SafariLookup {
         PartyCommandKind.MISSING_RUN -> SafariMissingReply.current(command.biome)
         PartyCommandKind.MUTUALS -> {
             val discoveries = members.map { discoveries(it) }.reduceOrNull(Set<String>::intersect).orEmpty()
-            "Mutual ${if (ConfigManager.timesaveOnly) "Timesave " else ""}Sparkling Critters: ${mutualResult(discoveries, ConfigManager.timesaveOnly)}"
+            "Mutual ${if (ConfigManager.timesaveOnly) "Timesave " else ""}Shiny Critters: ${mutualResult(discoveries, ConfigManager.timesaveOnly)}"
         }
         PartyCommandKind.MISSING -> {
             val uuid = HypixelApi.getPlayerUuid(command.ign)
             val discovered = HypixelApi.getSparklingCritters(uuid, HypixelApi.getCurrentProfileUuid(uuid))
-                        "Missing ${if (ConfigManager.timesaveOnly) "Timesave " else ""}Sparklings for ${command.ign}: ${missingResult(discovered, ConfigManager.timesaveOnly)}"
+                        "Missing ${if (ConfigManager.timesaveOnly) "Timesave " else ""}Shinies for ${command.ign}: ${missingResult(discovered, ConfigManager.timesaveOnly)}"
         }
         PartyCommandKind.TICKETS -> {
             val uuid = HypixelApi.getPlayerUuid(command.ign)
             val tickets = HypixelApi.getSafariTickets(uuid, HypixelApi.getCurrentProfileUuid(uuid))
             "${command.ign}: Basic (${tickets["basic"]}), Economy (${tickets["economy"]}), " +
-                "Premium (${tickets["premium"]}), First-Class (${tickets["first_class"]})"
+                "Premium (${tickets["premium"]}), First-Class (${tickets["first_class"]}), Total (${tickets.values.sum()})"
         }
     }
 
@@ -78,6 +83,8 @@ object SafariLookup {
             else -> missing.joinToString(", ")
         }
     }
+    fun isManualCheck(name: String) = discoveryKey(name) in timesaves || discoveryKey(name) in birds
+    fun isBird(name: String) = discoveryKey(name) in birds
     private fun discoveryKey(name: String) = name.uppercase(java.util.Locale.ROOT).replace(' ', '_')
     fun formatDiscoveries(discoveries: Set<String>, timesaveOnly: Boolean): List<String> =
         if (timesaveOnly) formatTimesaves(discoveries) else SafariRoster.all.filter { discoveryKey(it.name) in discoveries }.map { it.name }

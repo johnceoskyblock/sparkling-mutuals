@@ -74,4 +74,8 @@ Population guarantees and capsule success/escape claims from supplied notes were
 
 ## Last updated
 
+2026-10-20 — After a shared Driftling/Chuckwalla catch, defer increases to inferred capture targets for 2.5 seconds so delayed old models are not added on top of that catch. Positive remaining evidence still blocks completion during this interval. Stable live evidence afterward can raise targets normally; catches are unchanged.
+
+2026-10-20 — Ordinary head-model ESP and remaining-population/completion now require a bound, current visible species label. Retained hidden names and orphan textures are not live-capture evidence. Distant texture-only models wait for label confirmation; Sparkling skin detection remains independent.
+
 2026-10-19 (America/New_York) — Uniform species reference; audited evidence, modes, display and lifecycle. Reviewed source: `93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee`; no local runtime source changes reviewed. See [revision convention](../DOCUMENTATION_GUIDE.md).

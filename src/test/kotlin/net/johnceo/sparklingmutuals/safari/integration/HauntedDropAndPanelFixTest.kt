@@ -53,10 +53,10 @@ class HauntedDropAndPanelFixTest {
         state.inventory(emptyList(), initial = false)
         for (mode in SafariMode.entries + SafariMode.entries.reversed()) {
             assertTrue(state.needed(FloorDropType.COIN, mode, party("Gimmiegold")))
-            assertEquals(mode == SafariMode.FULL_CLEAR, state.needed(FloorDropType.COIN, mode, party()))
+            assertEquals(mode != SafariMode.SPARKLING, state.needed(FloorDropType.COIN, mode, party()))
         }
     }
-    @Test fun `Unique keeps coins until two floor pickups independently of starting inventory`() {
+    @Test fun `Unique keeps remaining coins after pickups consumption and biome travel without a discovery need`() {
         val state = FloorDropState()
         state.startingGrant(FloorDropType.COIN)
         state.inventory(listOf("Shining Coin" to 2))
@@ -66,7 +66,7 @@ class HauntedDropAndPanelFixTest {
         state.record("FLOOR DROP! You found Shining Coin!", SafariBiome.HAUNTED)
         state.inventory(emptyList(), initial = false)
         state.visit(SafariBiome.CAVERN); state.visit(SafariBiome.HAUNTED)
-        assertFalse(state.needed(FloorDropType.COIN, SafariMode.UNIQUE, party()))
+        assertTrue(state.needed(FloorDropType.COIN, SafariMode.UNIQUE, party()))
         assertTrue(state.needed(FloorDropType.COIN, SafariMode.UNIQUE, party("Gimmiegold")))
         assertTrue(state.needed(FloorDropType.COIN, SafariMode.FULL_CLEAR, party()))
         state.reset()

@@ -1,9 +1,6 @@
 package net.johnceo.sparklingmutuals.history
 
-import java.util.concurrent.Executors
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents
-import net.johnceo.sparklingmutuals.api.HypixelApi
-import net.johnceo.sparklingmutuals.commands.SafariLookup
 import net.johnceo.sparklingmutuals.history.importing.SparklingHistoryMerge
 import net.johnceo.sparklingmutuals.safari.SafariMessages
 import net.johnceo.sparklingmutuals.safari.SafariRoster
@@ -16,7 +13,6 @@ import net.minecraft.client.Minecraft
 object SparklingLog {
     class Data(var entries: MutableList<SparklingEntry> = mutableListOf(), var ticketsSinceSparkling: Int = 0)
     private var data = Data()
-    private val executor = Executors.newSingleThreadExecutor { Thread(it, "Sparkling Mutuals sparkling log").apply { isDaemon = true } }
     val entries: List<SparklingEntry> get() = data.entries
     /** Tickets the party has used since anyone's last sparkling. */
     val ticketsSinceSparkling get() = data.ticketsSinceSparkling
@@ -30,9 +26,10 @@ object SparklingLog {
 
     private fun chat(text: String) {
         val match = RunTally.sparkling.matchEntire(text) ?: return
-        if (!HistoryServerPolicy.allows()) return
         val player = match.groupValues[1]
         val critter = SafariRoster.named(match.groupValues[2].trim())?.name ?: match.groupValues[2].trim()
+        val wasKnown = net.johnceo.sparklingmutuals.safari.SafariSparklingMode.caught(player, critter)
+        if (!HistoryServerPolicy.allows()) return
         val entry = SparklingEntry(System.currentTimeMillis(), player, critter, tickets = data.ticketsSinceSparkling)
         data.ticketsSinceSparkling = 0
         data.entries.add(0, entry)
@@ -40,21 +37,14 @@ object SparklingLog {
         val client = Minecraft.getInstance()
         val own = player.equals(client.player?.name?.string, true)
         Achievements.onSparkling(entry, own)
-        markUnique(entry, own)
+        markUnique(entry, own, wasKnown)
     }
 
-    /**
-     * Unique means the player hadn't discovered it before. The discoveries lookup is cached for a minute, so it usually
-     * predates the catch; a fresh one can race the server recording it, in which case the catch isn't flagged.
-     */
-    private fun markUnique(entry: SparklingEntry, own: Boolean) {
-        val client = Minecraft.getInstance()
+    /** Compare the pre-catch party snapshot; never fetch a delayed API response to verify a live catch. */
+    private fun markUnique(entry: SparklingEntry, own: Boolean, wasKnown: Boolean?) {
         val earlier = data.entries.any { it !== entry && it.player.equals(entry.player, true) && it.critter.equals(entry.critter, true) }
-        if (earlier) return
-        executor.submit {
-            val known = runCatching { SafariLookup.discoveries(HypixelApi.getPlayerUuid(entry.player)) }.getOrNull() ?: return@submit
-            val key = entry.critter.uppercase(java.util.Locale.ROOT).replace(' ', '_')
-            if (key !in known) client.execute { entry.unique = true; save(); Achievements.onUnique(own) }
+        if (!earlier && wasKnown == false) {
+            entry.unique = true; save(); Achievements.onUnique(own)
         }
     }
 

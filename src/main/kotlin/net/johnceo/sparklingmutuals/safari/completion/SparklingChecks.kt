@@ -88,7 +88,8 @@ class SparklingChecks(private val clock: () -> Long = System::currentTimeMillis)
     fun goldComplete(catches: Int, absent: Boolean) = goldEnvironmentReady && absent &&
         catches >= gimmiegoldMinimum && (heldCoins ?: 0) == 0 && coinUseResolved(catches)
     val gimmiegoldMinimum get() = maxOf(3, coinsPicked + startingCoins, coinsSpent, validatedCoinDemand)
-    val knownCoinsUnresolved get() = (heldCoins ?: 0) > 0 ||
+    val hasHeldCoins get() = (heldCoins ?: 0) > 0
+    val knownCoinsUnresolved get() = hasHeldCoins ||
         coinsPicked + startingCoins > coinsSpent && !gimmiegoldReady()
     fun gimmiegoldReady() = goldEnvironmentReady && heldCoins == 0 && coinUseResolved(checkCount("Gimmiegold")) && extraCoinChecksResolved()
     fun gimmiegoldDebug() = "coinSourcesVerified=$goldEnvironmentReady sourcePath=${if (confirmedCoinSource) "confirmed-coins" else if (goldEnvironmentReady) "marker-scan" else "pending"} " +

@@ -9,7 +9,7 @@ import net.johnceo.sparklingmutuals.safari.SafariTracking
 
 /** Streaks since any party Sparkling credited during a recorded or current Safari run. */
 object SafariSinceReply {
-    private fun label(unique: Boolean) = if (unique) "unique sparkling" else "sparkling"
+    private fun label(unique: Boolean) = if (unique) "unique shiny" else "shiny"
     fun format(player: String, unique: Boolean, runs: List<RunRecord>, entries: List<SparklingEntry>, active: SafariRun? = null): String {
         val validRuns = runs.filter { it.start > 0 }.sortedBy { it.start }
         fun credited(entry: SparklingEntry): Boolean {
