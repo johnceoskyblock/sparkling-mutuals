@@ -18,6 +18,7 @@ class EspModelLabels {
     }
     // Unknown models remain conservative; a known label gets four scan intervals of packet grace.
     fun current(id: java.util.UUID, now: Long) = bindings[id]?.let { now - it.seenAt in 0..1000 } ?: true
+    fun visible(id: java.util.UUID) = bindings[id]?.visible == true
     fun label(id: java.util.UUID) = bindings[id]?.label
     fun release(id: java.util.UUID) { bindings.remove(id) }
     fun reset() { bindings.clear() }

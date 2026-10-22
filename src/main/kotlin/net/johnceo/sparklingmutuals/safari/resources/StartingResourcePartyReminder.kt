@@ -21,7 +21,7 @@ class StartingResourcePartyReminder(private val resources: SafariResources) {
         if (notice == null) { active = false; queued.clear(); return false }
         val reasons = (notice.namedNeeds(party, nameOf) ?: return false).map { (members, critters) ->
             val players = members.joinToString(", ")
-            "$players still ${if (members.size == 1) "needs" else "need"} Sparkling ${critters.joinToString(", ")}"
+            "$players still ${if (members.size == 1) "needs" else "need"} Shiny ${critters.joinToString(", ")}"
         }
         val items = notice.items.joinToString(", ") { "${it.quantity}x ${it.type.label}" }
         val current = "Need to use: $items; ${reasons.joinToString("; ")}. Please wait."

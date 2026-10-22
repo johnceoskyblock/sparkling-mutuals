@@ -20,8 +20,7 @@ class FloorDropState {
     fun needed(type: FloorDropType, mode: SafariMode, party: PartySparklingState): Boolean = when (type) {
         FloorDropType.LIME, FloorDropType.PURPLE, FloorDropType.ORANGE -> amount(type) == 0
         FloorDropType.ICEBREAKER -> mode == SafariMode.FULL_CLEAR && amount(type) == 0
-        FloorDropType.COIN -> mode == SafariMode.FULL_CLEAR || party.needs("Gimmiegold") ||
-            mode == SafariMode.UNIQUE && (acquired[type] ?: 0) < 2
+        FloorDropType.COIN -> mode != SafariMode.SPARKLING || party.needs("Gimmiegold")
         FloorDropType.INCENSE -> (acquired[type] ?: 0) < 4 && (inventoryPeak[type] ?: 0) < 4 &&
             if (mode == SafariMode.SPARKLING) party.needs("Doomspiral")
             else party.needs("Gimmiegold") || amount(type) < 4

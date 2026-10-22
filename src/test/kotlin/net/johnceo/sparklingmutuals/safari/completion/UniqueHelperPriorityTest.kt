@@ -24,7 +24,7 @@ class UniqueHelperPriorityTest {
         assertFalse(state.enabledForMode(SafariBiome.CAVERN, SafariMode.UNIQUE, true, run, all))
         assertTrue(state.enabledForMode(SafariBiome.CAVERN, SafariMode.FULL_CLEAR, true, run, all))
     }
-    @Test fun `unique bird supplies precede captures while coins follow missing party discoveries`() {
+    @Test fun `unique bird supplies precede captures while remaining coins stay enabled`() {
         val run = SafariRun(0); val state = FloorDropState(); val all = party()
         val needsCoin = party("Gimmiegold")
         assertTrue(state.enabledForMode(SafariBiome.FOREST, SafariMode.UNIQUE, true, run, all))
@@ -37,7 +37,7 @@ class UniqueHelperPriorityTest {
         assertTrue(state.enabledForMode(SafariBiome.HAUNTED, SafariMode.UNIQUE, true, run, all))
         repeat(2) { state.record("FLOOR DROP! Shining Coin", SafariBiome.HAUNTED) }
         assertTrue(state.enabledForMode(SafariBiome.HAUNTED, SafariMode.UNIQUE, true, run, needsCoin))
-        assertFalse(state.enabledForMode(SafariBiome.HAUNTED, SafariMode.UNIQUE, true, run, all))
+        assertTrue(state.enabledForMode(SafariBiome.HAUNTED, SafariMode.UNIQUE, true, run, all))
     }
     @Test fun `structure helpers prioritize first catch then remaining party checks`() {
         for (name in SafariHelperRules.species) {

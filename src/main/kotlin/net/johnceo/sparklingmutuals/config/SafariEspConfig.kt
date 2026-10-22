@@ -54,6 +54,12 @@ object SafariEspConfig {
     var textScale = DEFAULT_TEXT_SCALE
         set(value) { field = validTextScale(value) }
     val labelWorldScale get() = .025f * textScale
+    val floorTextScales = FloorDropType.entries.associateWith { DEFAULT_TEXT_SCALE }.toMutableMap()
+    fun dropTextScale(type: FloorDropType) = validTextScale(floorTextScales[type] ?: textScale)
+    fun dropLabelWorldScale(type: FloorDropType) = .025f * dropTextScale(type)
+    var teammateTextScale = DEFAULT_TEXT_SCALE
+        set(value) { field = validTextScale(value) }
+    val teammateLabelWorldScale get() = .025f * teammateTextScale
     var rewardDrops = false
     private fun defaultDropColor(type: FloorDropType) = defaultColor(if (type == FloorDropType.GENERIC) 0xFF6D6D75.toInt() else 0xFF00FF00.toInt())
     val floorColors = FloorDropType.entries.associateWith(::defaultDropColor).toMutableMap()
@@ -83,6 +89,10 @@ object SafariEspConfig {
     fun load(properties: Properties) {
         rewardDrops = properties.getProperty("esp.floor.rewards.enabled")?.toBooleanStrictOrNull() ?: false
         textScale = properties.getProperty("esp.textScale")?.toFloatOrNull() ?: DEFAULT_TEXT_SCALE
+        teammateTextScale = properties.getProperty("esp.teammate.textScale")?.toFloatOrNull() ?: textScale
+        floorTextScales.keys.forEach { type ->
+            floorTextScales[type] = validTextScale(properties.getProperty("esp.floor.${type.name.lowercase()}.textScale")?.toFloatOrNull() ?: textScale)
+        }
         groups.forEach { (name, group) ->
             group.enabled = properties.getProperty("esp.$name.enabled")?.toBooleanStrictOrNull() ?: true
             group.onlyInBiome = properties.getProperty("esp.$name.onlyInBiome")?.toBooleanStrictOrNull() ?: true
@@ -102,6 +112,10 @@ object SafariEspConfig {
     fun save(properties: Properties) {
         properties.setProperty("esp.floor.rewards.enabled", rewardDrops.toString())
         properties.setProperty("esp.textScale", textScale.toString())
+        properties.setProperty("esp.teammate.textScale", teammateTextScale.toString())
+        floorTextScales.forEach { (type, _) ->
+            properties.setProperty("esp.floor.${type.name.lowercase()}.textScale", dropTextScale(type).toString())
+        }
         groups.forEach { (name, group) ->
             properties.setProperty("esp.$name.enabled", group.enabled.toString())
             properties.setProperty("esp.$name.onlyInBiome", group.onlyInBiome.toString())

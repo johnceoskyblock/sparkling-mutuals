@@ -39,14 +39,14 @@ class SafariFullClearProgressTest {
     @Test fun `variable progress waits for report then positive remaining critters reopen it`() {
         ConfigManager.init(dir); SafariFullClear.select(SafariMode.FULL_CLEAR)
         val run=SafariRun(0); run.visitBiome(SafariBiome.CAVERN)
-        repeat(3) { run.record(SafariCatch(SafariRoster.named("Driftling")!!)) }
+        repeat(3) { run.record(SafariCatch(SafariRoster.named("Driftling")!!), now = 0L) }
         run.updateCaptureEvidence(SafariBiome.CAVERN, emptySet(), false)
         assertEquals("0/9", row(run, SafariBiome.CAVERN))
         run.partyFullClear("Party > Friend: cd")
         assertTrue(run.fullClearComplete("Driftling"))
         run.updateCaptureEvidence(SafariBiome.CAVERN, setOf("Driftling"), false)
         assertFalse(run.fullClearComplete("Driftling"))
-        run.record(SafariCatch(SafariRoster.named("Driftling")!!))
+        run.record(SafariCatch(SafariRoster.named("Driftling")!!), now = 0L)
         assertTrue(run.fullClearComplete("Driftling"))
     }
     @Test fun `local Honeybug capture and source proof advances progress without waiting for report`() {

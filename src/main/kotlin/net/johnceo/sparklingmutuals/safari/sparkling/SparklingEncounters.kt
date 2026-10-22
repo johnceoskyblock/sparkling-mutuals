@@ -27,7 +27,9 @@ data class SparklingNotice(val id: UUID, val name: String, val where: String, va
 
 class SparklingNotices {
     private val queue = ArrayDeque<SparklingNotice>()
-    fun add(notice: SparklingNotice) { queue.addLast(notice) }
+    fun add(notice: SparklingNotice) {
+        if (!notice.unknown && notice.name != SparklingAlert.UNKNOWN) queue.addLast(notice)
+    }
     fun identify(ids: Collection<UUID>) { queue.removeAll { it.unknown && it.id in ids } }
     fun next() = queue.removeFirstOrNull()
     fun clear() = queue.clear()
@@ -42,7 +44,7 @@ class SparklingMemory {
         else -> name?.let(net.johnceo.sparklingmutuals.safari.SafariRoster::named)?.name ?: id.toString()
     }
     fun alert(id: UUID, enabled: Boolean, name: String? = null) = enabled && alerted.add(key(id, name))
-    fun announce(id: UUID, enabled: Boolean, name: String? = null) = enabled && announced.add(key(id, name))
+    fun announce(id: UUID, enabled: Boolean, name: String? = null) = enabled && name != SparklingAlert.UNKNOWN && announced.add(key(id, name))
     fun reset() { alerted.clear(); announced.clear() }
 }
 
@@ -66,7 +68,7 @@ object SparklingEncounters {
         if (memory.alert(id, ConfigManager.sparklingAlert, name)) {
             banner = notice; shownAt = System.currentTimeMillis(); playSound(Minecraft.getInstance())
         }
-        if (memory.announce(id, ConfigManager.sparklingPartyAnnouncer, name)) queue.add(notice)
+        if (!unknown && memory.announce(id, ConfigManager.sparklingPartyAnnouncer, name)) queue.add(notice)
     }
     fun tick(client: Minecraft) {
         if (!ConfigManager.sparklingPartyAnnouncer || !SafariAssist.inSafari || client.connection == null) { queue.clear(); return }

@@ -14,7 +14,7 @@ Build one shared Kotlin source tree into exactly three matching Fabric JARs. Ins
 
 All targets require **Java 25**, **Fabric Loader 0.19.5+**, matching **Fabric API**, and **Fabric Language Kotlin 1.14.1+kotlin.2.4.20**. HM API and MoulConfig are bundled; DevAuth 1.2.2 is development-only. Do not install source, test or development JARs.
 
-The 26.1 line targets **26.1.2 only**. Other patches are not advertised. **v3.4.0** is the first published three-target release, with internal version **3.4.0** in every JAR. The older single-target v3.3.0 release remains unchanged.
+The 26.1 line targets **26.1.2 only**. Other patches are not advertised. **v3.4.0** was the first published three-target release. The current release is **v3.5.0**, with internal version **3.5.0** in every target JAR. The older single-target v3.3.0 release remains unchanged.
 
 Upstream `modern-26.2:4.8.0` retains `Fabric-Minecraft-Version: 26.2-pre-2` in its build manifest. This exact pinned artifact passed 26.2 client startup and settings rendering. Packaging accepts that specific upstream label, rejects other target mismatches, and still requires the mod's Minecraft metadata to be exactly `26.2`.
 
@@ -84,5 +84,7 @@ Source owners: [settings](../settings.gradle.kts), [controller and verification 
 Use Java 25 and the repository wrapper. A valid single-target JAR does not form a complete distribution. Do not substitute a development/source JAR or another Minecraft patch. Failed/skipped prerequisite jobs cannot satisfy the aggregate build gate. Release publication failures retain a draft for inspection; never claim a release from a branch build.
 
 ## Last updated
+
+2026-10-21 (America/New_York) — Updated the current three-target release to v3.5.0.
 
 2026-10-19 (America/New_York) — Consolidated build guidance and retained v3.4.0 as the first published three-target release during the master rebase. Reviewed runtime source: `93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee`; documentation-only changes, no local runtime differences or new live validation.

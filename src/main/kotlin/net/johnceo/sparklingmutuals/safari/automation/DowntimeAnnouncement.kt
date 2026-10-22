@@ -28,7 +28,7 @@ class DowntimeAnnouncement {
             val fixed = prefix.length + requests.keys.sumOf { it.length + 3 } + (requests.size - 1).coerceAtLeast(0) * 2
             val budget = ((252 - fixed) / requests.size.coerceAtLeast(1)).coerceAtLeast(3)
             return prefix + requests.entries.joinToString("; ") { (name, reason) ->
-                val detail = reason.ifBlank { "no reason" }
+                val detail = net.johnceo.sparklingmutuals.commands.PartyWording.shiny(reason.ifBlank { "no reason" })
                 "$name (${if (detail.length <= budget) detail else detail.take(budget - 3) + "..."})"
             }
         }

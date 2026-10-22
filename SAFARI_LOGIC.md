@@ -88,6 +88,8 @@ Numeric minima and whole-biome coverage are not certified by client predicates. 
 
 ## Last updated
 
+2026-10-20 — Extended local Unique zero-spawn waivers to Bluebird and Parakeet alongside Macaw. Full Clear already permits absent bird species when actual catches satisfy the shared food/population formula; regression coverage now includes either bird being absent with extra party food.
+
 2026-10-20 — Unique missing rows now track shared first catches (with proven zero-spawn waivers), while progress and biome reports retain source gates. Unique coin ESP without a needed Gimmiegold discovery stops after two floor pickups. Starting-item reports omit names/needs; post-biome reminders retain them. Hideyho offers can auto-accept inside Safari.
 
 2026-10-20 - Beginning unused-supply messages name missing members and use a 0.5-second post-boat delay.

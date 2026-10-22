@@ -10,7 +10,7 @@
 | Rarity | Rare | Supplied server notes; not live revalidated |
 | Spawn source | Hide-and-seek quest/reward | Implemented evidence path; mechanics unverified |
 | Population model | Implemented minimum; actual population can exceed it | Implemented rule, not server guarantee |
-| Full Clear minimum | 1 shared capture before species adjustments | Implemented fallback/minimum |
+| Full Clear minimum | 1 confirmed successful find/reward; no model-based target adjustment | Implemented fallback/minimum |
 | Local scan coverage | Biome scan; no species-specific center radius | Implemented coverage |
 
 ## What makes this critter different
@@ -37,14 +37,14 @@ Offer/acceptance, hiding and found dialogue are quest states. Successful found r
 | --- | --- | --- | --- |
 | Sparkling | None for ordinary critters; a confirmed Sparkling capture also completes the check. | 1 reconciled check from qualified UUID sightings/shared captures; retain checks for the run. | Party hd can supply inherited checking; local scans retire it. |
 | Unique | One shared capture, or the confirmed-Sparkling capture override. | None. | Does not supply a capture. |
-| Full Clear | At least 1 shared capture. Local proof and report-based progress have [separate raised-target scopes](TRACKING.md#full-clear-evidence-and-late-entry). | Qualified empty local scan for row removal/local progress. | Without local proof, report plus capture minimum can complete progress; row still needs local proof. |
+| Full Clear | One confirmed successful find/reward (shared capture or attributed loot share). | The reward completes the quest; lingering NPC models, UUID changes and absence scans do not add requirements. Personal PBs still require the personal reward. | A report alone supplies no successful find. |
 
 ## Display and highlights
 
 | Outcome | Implemented behavior |
 | --- | --- |
 | Progress | Mode-specific predicate above; see [shared modes](../../SAFARI_LOGIC.md). |
-| Missing/unchecked row | Unique uses its capture/source predicate. Sparkling lists needed unresolved checks. Full Clear needs local capture/absence proof, separately from report-based progress. See [panel rules](../MISSING_PANEL.md). |
+| Missing/unchecked row | Unique uses its capture/source predicate. Sparkling lists needed unresolved checks. Full Clear removes the row on a confirmed successful reward/attributed loot share, without waiting for the NPC to disappear. See [panel rules](../MISSING_PANEL.md). |
 | Counters | None in the species row; capture panel shows actual shared catches. |
 | Ordinary ESP | Unique: until first shared capture. Full Clear: eligible uncaught models. Sparkling: discovery-gated, normally up to 10 seconds per UUID. Settings and model validity still apply. |
 | Source helpers | Location announcement uses settled known spots/mansion footprint, not capture proof. |
@@ -57,11 +57,11 @@ Captures received before visiting this biome remain in the run. Reports supply c
 
 ## Retention and reopening
 
-Captures and qualified UUID checks persist through unloading/travel. Retained local Full Clear row proof survives leaving its radius; positive remaining population revokes local proof. A new run resets evidence; the ended run can remain displayed. Pending detection identities add no separate completion gate; see [audit D1](../IMPLEMENTATION_AUDIT.md#d1).
+Captures and qualified UUID checks persist through unloading/travel. A confirmed quest reward retains Full Clear completion for this run; a leftover or replacement NPC model cannot revoke it. A new run resets evidence; the ended run can remain displayed. Pending detection identities add no separate completion gate; see [audit D1](../IMPLEMENTATION_AUDIT.md#d1).
 
 ## Examples
 
-One party loot share completes Unique Hideyho. Full Clear still needs its implemented minimum and local empty coverage, or report-based progress under the shared rule.
+One party loot share completes Unique and shared Full Clear Hideyho. Quest acceptance or ordinary dialogue without a capture/reward does not complete it.
 
 ## Implementation and validation
 
@@ -76,6 +76,8 @@ Existing coverage: [HideyhoSpotterTest](../../src/test/kotlin/net/johnceo/sparkl
 Population guarantees and capsule success/escape claims from supplied notes were not live revalidated; see [audit D2](../IMPLEMENTATION_AUDIT.md#d2).
 
 ## Last updated
+
+2026-10-21 — Confirmed Hideyho rewards now complete Full Clear directly, including missing-row removal and capture coloring. Retained quest NPCs and replacement UUID population estimates cannot require additional finds. The completed NPC is excluded from ordinary ESP and remaining-population scans; quest acceptance alone still does not count. Shared and personal reward evidence remain separate.
 
 2026-10-20 — Removed the Hideyho quest-click setting and chat mouse interception; auto-accept is the only acceptance helper.
 

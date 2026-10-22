@@ -103,6 +103,7 @@ data class StartingResourceNotice(val items: List<StartingResourceReminder>) {
 class SafariResources {
     private val starting = mutableMapOf<FloorDropType, Int>()
     private val pickups = mutableMapOf<FloorDropType, Int>()
+    private val startingPickups = mutableMapOf<FloorDropType, Int>()
     private val held = mutableMapOf<FloorDropType, Int>()
     private val notified = mutableMapOf<FloorDropType, Int>()
     private data class Outstanding(val amount: Int, val population: Int, val events: Int, val credits: Int)
@@ -131,10 +132,18 @@ class SafariResources {
     fun inventory(stacks: List<Pair<String, Int>>, initial: Boolean) {
         FloorDropType.entries.forEach { type ->
             held[type] = stacks.filter { SafariRules.strip(it.first).trim() == type.label }.sumOf { it.second.coerceAtLeast(0) }
-            if (initial) starting[type] = maxOf(starting[type] ?: 0, held.getValue(type) - (pickups[type] ?: 0))
+            if (initial) starting[type] = maxOf(starting[type] ?: 0, held.getValue(type) - (pickups[type] ?: 0) + (startingPickups[type] ?: 0))
         }
     }
-    fun pickup(text: String) { FloorPickup.parse(text)?.let { pickups.merge(it.type, it.quantity, Int::plus) } }
+    fun pickup(text: String, startingPickup: Boolean = false) {
+        FloorPickup.parse(text)?.let {
+            pickups.merge(it.type, it.quantity, Int::plus)
+            if (startingPickup) {
+                startingPickups.merge(it.type, it.quantity, Int::plus)
+                starting[it.type] = maxOf(starting[it.type] ?: 0, startingPickups.getValue(it.type))
+            }
+        }
+    }
     fun startingCount(type: FloorDropType) = starting[type] ?: 0
     fun headStart(text: String) {
         val name = Regex("^HEAD START! You started with a (.+)!$").matchEntire(text)?.groupValues?.get(1) ?: return

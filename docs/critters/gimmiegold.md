@@ -79,6 +79,14 @@ Larger repeated resource notices can diverge between Sparkling maxima and conser
 
 Population guarantees and capsule success/escape claims from supplied notes were not live revalidated; see [audit D2](../IMPLEMENTATION_AUDIT.md#d2).
 
+## Coin ESP presentation
+
+Unique and Full Clear keep Shining Coin waypoints for every remaining drop throughout the run, even when no party member needs its Sparkling variant. Sparkling mode retains the discovery-needs gate. Pickup tracking removes collected drops normally. This is an ESP-only rule: Unique capture/check requirements and Full Clear minimum/capture rules remain unchanged.
+
 ## Last updated
+
+2026-10-21 — Removed the Unique-mode coin ESP pickup cutoff; all remaining coins stay highlighted without changing completion logic.
+
+2026-10-21 — Full Clear Gimmiegold capture targets are coin-derived, not raised by historical/replacement model UUID population estimates. A cleared dedicated coin-source ledger plus sufficient actual captures and no live remainder completes the species even if the older generic floor-marker scan remains blocked by unrelated rewards. Legacy coin proof remains a fallback; additional real coins and held coins still block completion. Added a three-coin whole-Haunted regression.
 
 2026-10-19 (America/New_York) — Early coin quantities feed F + E; hd trust is target-scoped and late entrants can report local capture-plus-render proof. Reviewed source: working changes on `78885e0`; live validation pending.

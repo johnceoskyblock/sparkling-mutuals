@@ -17,16 +17,16 @@ object PartyNameSuggestions {
     private data class NameLookup(val future: CompletableFuture<String?>, val expiresAt: Long)
     private val resolved = java.util.concurrent.ConcurrentHashMap<String, NameLookup>()
 
-    private fun namesAsync(): CompletableFuture<List<String>> {
+    fun namesByIdAsync(): CompletableFuture<Map<String, String>> {
         val client = Minecraft.getInstance()
-        val self = client.player ?: return CompletableFuture.completedFuture(emptyList())
-        val connection = client.connection ?: return CompletableFuture.completedFuture(emptyList())
+        val self = client.player ?: return CompletableFuture.completedFuture(emptyMap())
+        val connection = client.connection ?: return CompletableFuture.completedFuture(emptyMap())
         val ready = CompletableFuture<Unit>()
         PartyManager.withPartyInfo { ready.complete(Unit) }
         return ready.completeOnTimeout(Unit, 5, java.util.concurrent.TimeUnit.SECONDS).thenCompose {
-            val result = CompletableFuture<List<String>>()
+            val result = CompletableFuture<Map<String, String>>()
             client.execute {
-                if (client.connection !== connection || client.player !== self) { result.complete(emptyList()); return@execute }
+                if (client.connection !== connection || client.player !== self) { result.complete(emptyMap()); return@execute }
                 val roster = PartyManager.withLocal(self.uuid.toString()).orEmpty()
                 val online = connection.onlinePlayers.associate {
                     SafariEntryPresence.normalize(it.profile.id.toString()) to it.profile.name
@@ -52,11 +52,11 @@ object PartyNameSuggestions {
                 }
                 CompletableFuture.allOf(*futures.toTypedArray()).whenComplete { _, _ ->
                     client.execute {
-                        if (client.connection !== connection || client.player !== self) result.complete(emptyList())
+                        if (client.connection !== connection || client.player !== self) result.complete(emptyMap())
                         else {
                             val current = PartyManager.withLocal(self.uuid.toString()).orEmpty().map(SafariEntryPresence::normalize).toSet()
                             result.complete(roster.zip(futures).filter { SafariEntryPresence.normalize(it.first) in current }
-                                .mapNotNull { it.second.getNow(null) }.distinctBy(String::lowercase))
+                                .mapNotNull { (id, future) -> future.getNow(null)?.let { SafariEntryPresence.normalize(id) to it } }.toMap())
                         }
                     }
                 }
@@ -64,6 +64,8 @@ object PartyNameSuggestions {
             result
         }
     }
+
+    private fun namesAsync(): CompletableFuture<List<String>> = namesByIdAsync().thenApply { it.values.toList() }
 
     internal fun fill(builder: SuggestionsBuilder, names: Collection<String>, excluded: Set<String> = emptySet()): CompletableFuture<Suggestions> {
         names.distinctBy(String::lowercase).sortedBy(String::lowercase)

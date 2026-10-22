@@ -136,6 +136,14 @@ Hypixel population guarantees, precise server render coverage and replacement UU
 
 ## Last updated
 
+2026-10-21 — Full Clear Gimmiegold capture targets are coin-derived, not raised by historical/replacement model UUID population estimates. A cleared dedicated coin-source ledger plus sufficient actual captures and no live remainder completes the species even if the older generic floor-marker scan remains blocked by unrelated rewards. Legacy coin proof remains a fallback; additional real coins and held coins still block completion. Added a three-coin whole-Haunted regression.
+
+2026-10-20 — After a shared Driftling/Chuckwalla catch, defer increases to inferred capture targets for 2.5 seconds so delayed old models are not added on top of that catch. Positive remaining evidence still blocks completion during this interval. Stable live evidence afterward can raise targets normally; catches are unchanged.
+
+2026-10-20 — Driftling movement now expires independently of distance and label visibility. Chuckwalla needs current visible label confirmation. Both checks run before ordinary ESP, population estimates and completion scans; debug output reports each lifecycle gate. After a Cavern completion report and minimum catches, changed Driftling/Chuckwalla lifecycle states are also logged automatically (bounded per run), so a future incident can be investigated even without /sm debug.
+
+2026-10-20 — Late-loaded Driftling armor-stand heads now require current visible label evidence or observed live movement (with no stale known label). ESP and population/completion consume this same gate, preventing frozen leftovers from increasing targets or keeping a biome incomplete. Other species retain their existing policies.
+
 2026-10-19 - Added local Unique zero-spawn Cavern completion from resolved sources and absence, without a circular cd requirement.
 
 2026-10-19 (America/New_York) — Added early contribution routing, local-title reminders, target-scoped hd trust and late-entry reporting. Reviewed source: working changes on `78885e0`; live validation pending.

@@ -70,7 +70,6 @@ object RunHistory {
         data.runs.add(0, record)
         save()
         Achievements.onRunEnd(record)
-        OwnStats.refreshSoon() // the bestiary now has this run too
     }
 
     /**

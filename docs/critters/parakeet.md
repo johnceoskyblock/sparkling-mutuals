@@ -76,4 +76,6 @@ Population guarantees and capsule success/escape claims from supplied notes were
 
 ## Last updated
 
+2026-10-20 — This species may have zero spawns. In Unique, waive its catch and remove its missing row only after qualified Forest feeding/source proof accounts for all known food (including party extras), with no sighting or capture of this species. Full Clear permits zero catches of this species when actual catches of the spawned birds satisfy the shared bird-population/food formula. A later sighting revokes the Unique absence waiver.
+
 2026-10-19 (America/New_York) — Updated late-entry reporting and early shared starting-food totals. Reviewed source: working changes on `78885e0`; live validation pending.

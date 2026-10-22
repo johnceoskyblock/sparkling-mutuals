@@ -134,4 +134,32 @@ class GimmiegoldCoinFloorCheckTest {
         assertTrue(run.fullClearComplete("Gimmiegold"))
     }
 
+    @Test fun `three coin Full Clear ignores inflated model history and clears Haunted from canonical source proof`() {
+        val run = SafariRun(0)
+        run.visitBiome(SafariBiome.HAUNTED)
+        run.inventoryEvidence(emptyList(), 0)
+        (1..3).forEach { run.gimmiegoldCheck.floor(it, true) }
+        repeat(3) { run.record(SafariCatch(SafariRoster.named("Gimmiegold")!!, false)) }
+        // Capsule/replacement models seen after captures must not invent extra coin opportunities.
+        run.observePopulation(List(5) { "Gimmiegold" to UUID.randomUUID() })
+        run.updateCaptureEvidence(SafariBiome.HAUNTED, setOf("Gimmiegold"), false)
+        assertFalse(run.captureComplete("Gimmiegold"))
+        (1..3).forEach { run.gimmiegoldCheck.floor(it, false) }
+        run.scanGimmiegolds(emptyList(), true)
+        run.sparklingChecks.scan(SafariBiome.HAUNTED, -4.0, -64.0, emptyList(), hauntedCoinDropsRemaining = 11)
+        assertTrue(run.gimmiegoldCheck.complete)
+        assertFalse(run.sparklingChecks.goldComplete(3, true), "old marker check still sees unrelated floor rewards")
+        SafariBiome.HAUNTED.critters.filter { it.name != "Gimmiegold" }.forEach { critter ->
+            repeat(SafariFullClear.minimum(critter.name)) { run.record(SafariCatch(critter, false)) }
+        }
+        run.updateCaptureEvidence(SafariBiome.HAUNTED, emptySet(), false, playerX = -4.0, playerZ = -64.0)
+        assertTrue(run.captureComplete("Gimmiegold"))
+        assertTrue(run.fullClearMissingComplete("Gimmiegold"))
+        assertTrue(run.fullClearComplete("Gimmiegold"))
+        assertEquals("hd", run.completion.announcement(run, SafariBiome.HAUNTED,
+            net.johnceo.sparklingmutuals.safari.SafariMode.FULL_CLEAR, party()))
+        run.gimmiegoldCheck.floor(4, true)
+        assertFalse(run.captureComplete("Gimmiegold"), "a genuine extra coin increases the capture minimum")
+    }
+
 }

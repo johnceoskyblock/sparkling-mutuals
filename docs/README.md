@@ -12,6 +12,8 @@ Players: start with [installation and controls](../README.md). Contributors: rea
 | Gameplay overview | [Modes and completion](../SAFARI_LOGIC.md), [37 species](critters/README.md) |
 | Evidence | [Tracking](critters/TRACKING.md), [exact messages](critters/MESSAGES.md), [floor drops](critters/FLOOR_DROPS.md) |
 | API data and recovery | [Safari API lookups, new players and one-minute retries](API_LOOKUPS.md) |
+| Cached-data estimates | [Profitable critters](PROFITABLE_CRITTERS.md), [Sparkling rates](SPARKLING_RATES.md) |
+| Network investigations | [API fetch audit](API_FETCH_AUDIT.md), [shared API usage report](SHINYHUNTER_API_USAGE_REPORT.md), [unknown-packet disconnect investigation](NETWORK_DISCONNECTS.md) |
 | Gameplay display | [Bird completion](BIRD_COMPLETION.md), [missing panel](MISSING_PANEL.md), [Sparkling detection](SPARKLING_DETECTION.md) |
 | Controls | [Configuration](CONFIG_DEFAULTS.md), [entry guard](SAFARI_ENTRY_GUARD.md), [warp alerts](WARP_ALERTS.md) |
 | Contest and Canyon | [Contest/downtime](CONTEST_DOWNTIME.md), [Honeyhives](HONEYHIVES.md) |
@@ -72,6 +74,8 @@ Runtime assets, mod metadata and mixin registration remain under `src/main/resou
 Generated `.gradle/`, `.kotlin/`, `build/`, `versions/<target>/build/`, IDE files, `run/` and logs are not maintained source. Do not commit authentication files or raw player recordings.
 
 ## Last updated
+
+2026-10-21 (America/New_York) — Indexed the cached-data commands and API/network investigation references for v3.5.0.
 
 2026-10-19 - Indexed API empty-discovery handling and automatic one-minute failure recovery.
 

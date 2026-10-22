@@ -100,13 +100,20 @@ object SparklingLookup {
         PartyManager.withPartyInfo {
             val roster = PartyManager.withLocal(local)?.toList() ?: return@withPartyInfo tell("[SM] Party not known yet. Try again.")
             if (roster.size < 2) return@withPartyInfo tell("[SM] You're not in a party.")
-            fun nameOf(uuid: String) = client.connection?.getPlayerInfo(java.util.UUID.fromString(uuid))?.profile?.name ?: uuid.take(8)
-            val named = roster.associateBy(::nameOf)
-            tell("[SM] Looking up ${named.keys.joinToString(", ")}...")
-            executor.submit {
-                val results = named.mapValues { (_, uuid) -> runCatching { HypixelApi.getSafariProfile(uuid) } }
-                client.execute { report(results) }
-            }
+            val connection = client.connection
+            PartyNameSuggestions.namesByIdAsync().thenAccept { names -> client.execute {
+                if (client.connection !== connection || PartyManager.withLocal(local)?.toSet() != roster.toSet()) return@execute
+                val named = roster.mapIndexed { index, uuid ->
+                    val id = net.johnceo.sparklingmutuals.safari.SafariEntryPresence.normalize(uuid)
+                    (names[id] ?: "Member ${index + 1} (name unavailable)") to uuid
+                }.toMap()
+                tell("[SM] Looking up ${named.keys.joinToString(", ")}...")
+                executor.submit {
+                    val results = named.mapValues { (_, uuid) -> runCatching { HypixelApi.getSafariProfile(uuid) } }
+                    client.execute { if (client.connection === connection) report(results) }
+                }
+            } }
+
         }
     }
 

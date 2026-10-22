@@ -74,4 +74,10 @@ Population guarantees and capsule success/escape claims from supplied notes were
 
 ## Last updated
 
+2026-10-20 — After a shared Driftling/Chuckwalla catch, defer increases to inferred capture targets for 2.5 seconds so delayed old models are not added on top of that catch. Positive remaining evidence still blocks completion during this interval. Stable live evidence afterward can raise targets normally; catches are unchanged.
+
+2026-10-20 — Tightened the late-head fix: actual position movement must be recent (under two seconds), regardless of player distance. A retained visible name alone can no longer keep a frozen model current. Both ESP and remaining-population/completion use this gate.
+
+2026-10-20 — Driftling now shares one live-model gate across ordinary ESP, Sparkling contacts, population targets and completion evidence. A visible current bound label validates an idle model. Without a visible label, actual observed movement and current motion are required; an unlabelled head first loaded after capture supplies no live spawn. A stale known binding stays invalid. New movement can restore the model; this never creates a capture.
+
 2026-10-19 (America/New_York) — Uniform species reference; audited evidence, modes, display and lifecycle. Reviewed source: `93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee`; no local runtime source changes reviewed. See [revision convention](../DOCUMENTATION_GUIDE.md).

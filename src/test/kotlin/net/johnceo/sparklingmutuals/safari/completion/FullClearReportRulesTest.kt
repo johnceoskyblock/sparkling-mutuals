@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test
 
 class FullClearReportRulesTest {
     private fun caught(run: SafariRun, name: String, count: Int) = repeat(count) {
-        run.record(SafariCatch(SafariRoster.named(name)!!, false))
+        run.record(SafariCatch(SafariRoster.named(name)!!, false), now = 0L)
     }
     @Test fun `variable species wait for report and real minimum captures without a local UUID survey`() {
         for ((name, word) in listOf("Driftling" to "cd", "Treefrog" to "fd", "Bloodbat" to "hd")) {

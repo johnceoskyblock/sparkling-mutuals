@@ -30,7 +30,7 @@ object TeammateEsp {
                 if (!isTeammate(player)) continue
                 val pos = player.getPosition(delta)
                 val distance = pos.distanceTo(camera)
-                val scale = (SafariEspConfig.labelWorldScale * TeammateEspRules.nameScale(distance)).toFloat()
+                val scale = (SafariEspConfig.teammateLabelWorldScale * TeammateEspRules.nameScale(distance)).toFloat()
                 val text = player.gameProfile.name
                 WorldRenderCompat.label(context, text, COLOR, pos.x, pos.y + player.bbHeight + .7 + distance * .015, pos.z, scale)
             }

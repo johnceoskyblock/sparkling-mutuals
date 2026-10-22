@@ -5,9 +5,14 @@ import net.johnceo.sparklingmutuals.safari.resources.FloorDropType
 
 /** Modes own targets; these switches only control where their highlights appear. */
 class SafariEspSettings {
-    @JvmField @ConfigOption(name = "ESP text scale", desc = "Size of floor-drop names, timers, nest labels and teammate names. 1 = original size; default 2.")
+    @JvmField @ConfigOption(name = "Other ESP text scale", desc = "Size of critter timers, nest labels and unknown Sparkling labels. Floor drops and party names have independent sizes.")
     @ConfigEditorSlider(minValue = .5f, maxValue = 4f, minStep = .25f)
     var textScale = SafariEspConfig.textScale
+    @JvmField @ConfigOption(name = "Party member text scale", desc = "Size of party member ESP names, independently of other labels. 1 = original size.")
+    @ConfigEditorSlider(minValue = .5f, maxValue = 4f, minStep = .25f)
+    var teammateTextScale = SafariEspConfig.teammateTextScale
+    @JvmField @ConfigOption(name = "Floor-drop text sizes", desc = "Set the label size independently for each floor-drop type.")
+    @Accordion val floorTextSizes = FloorDropScaleSettings()
     @JvmField @ConfigOption(name = "XP / Essence / Shard floor drops", desc = "Highlight all predicted reward floor drops, independently of mode requirements. Off by default.")
     @ConfigEditorBoolean var rewardDrops = SafariEspConfig.rewardDrops
     @JvmField @ConfigOption(name = "Floor-drop colors", desc = "Set each named drop's highlight and label color independently.")
@@ -24,7 +29,12 @@ class SafariEspSettings {
     @ConfigEditorBoolean var haunted = SafariEspConfig.groups.getValue("haunted").onlyInBiome
     fun apply(): Boolean {
         val scale = SafariEspConfig.validTextScale(textScale)
-        var changed = floorColors.apply() || SafariEspConfig.textScale != scale || SafariEspConfig.rewardDrops != rewardDrops
+        val colorsChanged = floorColors.apply()
+        val sizesChanged = floorTextSizes.apply()
+        val teammateScale = SafariEspConfig.validTextScale(teammateTextScale)
+        var changed = colorsChanged || sizesChanged || SafariEspConfig.textScale != scale ||
+            SafariEspConfig.teammateTextScale != teammateScale || SafariEspConfig.rewardDrops != rewardDrops
+        SafariEspConfig.teammateTextScale = teammateScale
         SafariEspConfig.rewardDrops = rewardDrops
         SafariEspConfig.textScale = scale
         mapOf("floor" to floor, "forest" to forest, "cavern" to cavern, "icy" to icy, "haunted" to haunted).forEach { (key, value) ->
@@ -81,6 +91,60 @@ class FloorDropColorSettings {
             val valid = SafariEspConfig.validColor(color, SafariEspConfig.dropColor(type))
             if (valid != SafariEspConfig.dropColor(type)) changed = true
             SafariEspConfig.floorColors[type] = valid
+        }
+        return changed
+    }
+}
+
+class FloorDropScaleSettings {
+    @JvmField @ConfigOption(name = "Lime Gem", desc = "Label size; 1 = original size.")
+    @ConfigEditorSlider(minValue = .5f, maxValue = 4f, minStep = .25f)
+    var lime = SafariEspConfig.dropTextScale(FloorDropType.LIME)
+    @JvmField @ConfigOption(name = "Purple Gem", desc = "Label size; 1 = original size.")
+    @ConfigEditorSlider(minValue = .5f, maxValue = 4f, minStep = .25f)
+    var purple = SafariEspConfig.dropTextScale(FloorDropType.PURPLE)
+    @JvmField @ConfigOption(name = "Orange Gem", desc = "Label size; 1 = original size.")
+    @ConfigEditorSlider(minValue = .5f, maxValue = 4f, minStep = .25f)
+    var orange = SafariEspConfig.dropTextScale(FloorDropType.ORANGE)
+    @JvmField @ConfigOption(name = "Wriggleworm", desc = "Label size; 1 = original size.")
+    @ConfigEditorSlider(minValue = .5f, maxValue = 4f, minStep = .25f)
+    var worm = SafariEspConfig.dropTextScale(FloorDropType.WORM)
+    @JvmField @ConfigOption(name = "Yogi Berry", desc = "Label size; 1 = original size.")
+    @ConfigEditorSlider(minValue = .5f, maxValue = 4f, minStep = .25f)
+    var berry = SafariEspConfig.dropTextScale(FloorDropType.BERRY)
+    @JvmField @ConfigOption(name = "Bag of Seeds", desc = "Label size; 1 = original size.")
+    @ConfigEditorSlider(minValue = .5f, maxValue = 4f, minStep = .25f)
+    var seeds = SafariEspConfig.dropTextScale(FloorDropType.SEEDS)
+    @JvmField @ConfigOption(name = "Soothing Incense", desc = "Label size; 1 = original size.")
+    @ConfigEditorSlider(minValue = .5f, maxValue = 4f, minStep = .25f)
+    var incense = SafariEspConfig.dropTextScale(FloorDropType.INCENSE)
+    @JvmField @ConfigOption(name = "Shining Coin", desc = "Label size; 1 = original size.")
+    @ConfigEditorSlider(minValue = .5f, maxValue = 4f, minStep = .25f)
+    var coin = SafariEspConfig.dropTextScale(FloorDropType.COIN)
+    @JvmField @ConfigOption(name = "Icebreaker", desc = "Label size; 1 = original size.")
+    @ConfigEditorSlider(minValue = .5f, maxValue = 4f, minStep = .25f)
+    var icebreaker = SafariEspConfig.dropTextScale(FloorDropType.ICEBREAKER)
+    @JvmField @ConfigOption(name = "XP / Essence / Shard", desc = "Label size; 1 = original size.")
+    @ConfigEditorSlider(minValue = .5f, maxValue = 4f, minStep = .25f)
+    var generic = SafariEspConfig.dropTextScale(FloorDropType.GENERIC)
+    fun apply(): Boolean {
+        val values = mapOf(
+            FloorDropType.LIME to lime,
+            FloorDropType.PURPLE to purple,
+            FloorDropType.ORANGE to orange,
+            FloorDropType.WORM to worm,
+            FloorDropType.BERRY to berry,
+            FloorDropType.SEEDS to seeds,
+            FloorDropType.INCENSE to incense,
+            FloorDropType.COIN to coin,
+            FloorDropType.ICEBREAKER to icebreaker,
+            FloorDropType.GENERIC to generic
+        )
+        var changed = false
+        values.forEach { (type, scale) ->
+            val valid = SafariEspConfig.validTextScale(scale)
+            if (SafariEspConfig.dropTextScale(type) != valid) changed = true
+            SafariEspConfig.floorTextScales[type] = valid
         }
         return changed
     }

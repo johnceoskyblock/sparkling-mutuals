@@ -256,7 +256,7 @@ object Achievements {
             client.gui.smSetSubtitle(Component.literal("${tier.code}${achievement.name}"))
             client.gui.smSetTitle(Component.literal("§6§lACHIEVEMENT"))
         }
-        if (ConfigManager.achievementsToParty) player.connection.sendCommand("pc Achievement unlocked: ${achievement.name}!")
+        if (ConfigManager.achievementsToParty) player.connection.sendCommand("pc Achievement unlocked: ${net.johnceo.sparklingmutuals.commands.PartyWording.shiny(achievement.name)}!")
     }
 
     /** First run: unlock what the history already earns, quietly, and say how many in one line. */

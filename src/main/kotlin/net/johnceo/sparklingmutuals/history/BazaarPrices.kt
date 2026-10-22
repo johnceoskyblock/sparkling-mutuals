@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory
 /**
  * Bazaar prices for critter shards and Rainbow Feathers, for run profit. Read from Hypixel's public bazaar endpoint,
  * which needs no key: an ordinary HTTP request, nothing sent to the game server. Every critter's shard is listed as
- * `SHARD_<NAME>` (`SHARD_MANTIS_SHRIMP`). Refreshed at most every half hour, and only when something wants a price.
+ * `SHARD_<NAME>` (`SHARD_MANTIS_SHRIMP`). Refreshed at most every three hours, and only when something wants a price.
  */
 object BazaarPrices {
     private const val URL = "https://api.hypixel.net/v2/skyblock/bazaar"
@@ -44,6 +44,10 @@ object BazaarPrices {
     }
 
     fun ready() = cache.prices.isNotEmpty()
+    /** Read only: commands must not start a refresh or add API traffic. */
+    fun cachedShardPrice(critter: String, instaSell: Boolean = ConfigManager.runCoinsInstaSell): Double? =
+        cache.prices[shardId(critter)]?.getOrNull(if (instaSell) 0 else 1)?.takeIf { it.isFinite() && it > 0 }
+
     fun shardId(critter: String) = "SHARD_" + critter.uppercase(Locale.ROOT).replace(' ', '_')
 
     /** A run's shards and feathers in coins, or -1 while prices aren't loaded. Sell offer unless insta-sell is chosen. */
@@ -65,19 +69,19 @@ internal class BazaarPriceCache(
     private val clock: () -> Long,
     private val fetch: ((Map<String, DoubleArray>) -> Unit) -> Unit,
 ) {
-    private val refreshMillis = 30 * 60_000L
+    private val refreshMillis = 3 * 60 * 60_000L
     @Volatile var prices: Map<String, DoubleArray> = emptyMap()
         private set
-    private var fetchedAt = 0L
+    private var fetchedAt: Long? = null
     private var fetching = false
 
     fun ensureFresh() {
-        if (fetching || clock() - fetchedAt < refreshMillis) return
+        if (fetching || fetchedAt?.let { clock() - it < refreshMillis } == true) return
         fetching = true
+        fetchedAt = clock()
         fetch { read ->
             fetching = false
-            if (read.isEmpty()) fetchedAt = clock() - refreshMillis + 60_000L
-            else { prices = read; fetchedAt = clock() }
+            if (read.isNotEmpty()) prices = read
         }
     }
 

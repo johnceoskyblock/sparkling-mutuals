@@ -69,7 +69,7 @@ class PartyCommandTest {
         val commands = listOf(PartyCommand(PartyCommandKind.MISSING, "JohnCEO"),
             PartyCommand(PartyCommandKind.TICKETS, "JohnCEO"), PartyCommand(PartyCommandKind.MUTUALS))
         val results = listOf("Missing Timesave Sparklings for JohnCEO: None",
-            "JohnCEO: Basic (233), Economy (0), Premium (0), First-Class (5)",
+            "JohnCEO: Basic (233), Economy (0), Premium (0), First-Class (5), Total (238)",
             "Mutual Timesave Sparkling Critters: Honeybug")
         commands.forEachIndexed { index, command ->
             assertTrue(command.matchesResponse(results[index]))

@@ -6,7 +6,8 @@ import net.johnceo.sparklingmutuals.safari.PartySparklingState
 class StartingResourceAnnouncement(private val resources: SafariResources) {
     private var sawBoat = false
     private var leftAt: Long? = null
-    private var sent = false
+    private val announced = mutableMapOf<FloorDropType, Int>()
+    private var nextAt = 0L
 
     fun observeArea(area: Int?, now: Long) {
         if (area == 0) sawBoat = true
@@ -15,15 +16,13 @@ class StartingResourceAnnouncement(private val resources: SafariResources) {
 
     fun dispatch(now: Long, party: PartySparklingState, send: (String) -> Unit): Boolean {
         val departure = leftAt ?: return false
-        if (sent || now - departure < 500 || !party.ready) return false
-        val notice = resources.startingNotice(party)
-        if (notice != null) {
-            send(notice.startingTexts().single())
-            sent = true
-            return true
-        }
-        // No applicable items is intentionally silent; API loading is handled above.
-        sent = true
-        return false
+        if (now < nextAt || now - departure < 500 || !party.ready) return false
+        val notice = resources.startingNotice(party) ?: return false
+        // Delayed starting rewards can amend the early report, but consumption cannot repeat it.
+        if (notice.items.none { it.quantity > (announced[it.type] ?: 0) }) return false
+        send(notice.startingTexts().single())
+        notice.items.forEach { announced[it.type] = maxOf(announced[it.type] ?: 0, it.quantity) }
+        nextAt = now + 1500
+        return true
     }
 }

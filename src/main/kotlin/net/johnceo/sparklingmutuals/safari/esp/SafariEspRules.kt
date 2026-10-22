@@ -101,6 +101,13 @@ object SafariEspRules {
     }
     fun targetCurrent(species: String, descriptor: EspEntity, removed: Boolean, registered: Boolean, sameLevel: Boolean) =
         !removed && registered && sameLevel && identify(descriptor)?.name == species
+    /** A late-loaded frozen head is not proof of a remaining Driftling. Never mint a catch here. */
+    fun driftlingCurrent(labelBound: Boolean, labelCurrent: Boolean, labelVisible: Boolean,
+        motionCurrent: Boolean, movementObserved: Boolean): Boolean =
+        (!labelBound || labelCurrent) && motionCurrent && movementObserved
+    /** Chuckwalla is stationary, so a texture/hidden custom name cannot establish that it remains uncaught. */
+    fun chuckwallaCurrent(labelBound: Boolean, labelCurrent: Boolean, labelVisible: Boolean) =
+        labelBound && labelCurrent && labelVisible
     /** Name-tag distance and idle movement are not reliable reasons to hide legacy moving-critter ESP. */
     fun renderCurrent(species: String, sparkling: Boolean, entityCurrent: Boolean, motionCurrent: Boolean, labelCurrent: Boolean, profitable: Boolean = false) =
         entityCurrent && (profitableEsp(species, profitable) || species == "Shyworm" || !sparkling && species in EspMotion.movingSpecies || motionCurrent && labelCurrent)

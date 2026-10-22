@@ -22,7 +22,6 @@ enum class PartyCommandKind { MUTUALS, MISSING, TICKETS, HELP, PB_DOOM, PB_WUMPA
 data class PartyCommand(val kind: PartyCommandKind, val ign: String = "", val duo: Boolean = false, val trackedPlayer: Boolean = false,
     val biome: SafariBiome? = null) {
     val isSince get() = kind == PartyCommandKind.SINCE_SPARKLING || kind == PartyCommandKind.SINCE_UNIQUE
-    fun ownedBy(name: String) = !isSince || ign.equals(name, true)
     val requiresApiKey get() = kind in listOf(PartyCommandKind.MUTUALS, PartyCommandKind.MISSING, PartyCommandKind.TICKETS)
     val pbName get() = when (kind) {
         PartyCommandKind.PB_DOOM -> "Doomspiral"
@@ -40,12 +39,12 @@ data class PartyCommand(val kind: PartyCommandKind, val ign: String = "", val du
     }
     /** `!m` describes the run in progress, so only clients inside the Safari answer it. */
     fun answerable(inSafari: Boolean = SafariAssist.inSafari) = kind != PartyCommandKind.MISSING_RUN || inSafari
-    // Unnamed PB requests target this client; explicit player queries retain their requested IGN.
-    fun forResponder(name: String) = if (pbName != null && !trackedPlayer)
+    // Streak replies describe each responding client; explicit PB queries retain their requested IGN.
+    fun forResponder(name: String) = if (isSince || pbName != null && !trackedPlayer)
         copy(ign = name) else this
     private val failurePrefix: String get() = when (kind) {
-        PartyCommandKind.MUTUALS -> "Mutual Timesave Sparkling Critters: "
-        PartyCommandKind.MISSING -> "Missing Timesave Sparklings for $ign: "
+        PartyCommandKind.MUTUALS -> "Mutual Timesave Shiny Critters: "
+        PartyCommandKind.MISSING -> "Missing Timesave Shinies for $ign: "
         PartyCommandKind.TICKETS -> "Safari Tickets for $ign: "
         PartyCommandKind.SINCE_SPARKLING, PartyCommandKind.SINCE_UNIQUE -> "$ign: "
         PartyCommandKind.HELP -> "Commands: "
@@ -60,8 +59,10 @@ data class PartyCommand(val kind: PartyCommandKind, val ign: String = "", val du
         return when (kind) {
             PartyCommandKind.MISSING, PartyCommandKind.MUTUALS -> {
                 val prefixes = if (kind == PartyCommandKind.MISSING)
-                    listOf("Missing Timesave Sparklings for $ign: ", "Missing Sparklings for $ign: ")
-                else listOf("Mutual Timesave Sparkling Critters: ", "Mutual Sparkling Critters: ")
+                    listOf("Missing Timesave Shinies for $ign: ", "Missing Shinies for $ign: ",
+                        "Missing Timesave Sparklings for $ign: ", "Missing Sparklings for $ign: ")
+                else listOf("Mutual Timesave Shiny Critters: ", "Mutual Shiny Critters: ",
+                    "Mutual Timesave Sparkling Critters: ", "Mutual Sparkling Critters: ")
                 prefixes.any { prefix ->
                     if (body.startsWith(prefix, true)) lookupResult.matches(body.substring(prefix.length))
                     else {
@@ -72,7 +73,7 @@ data class PartyCommand(val kind: PartyCommandKind, val ign: String = "", val du
                 }
             }
             PartyCommandKind.TICKETS -> Regex(
-                "^${Regex.escape(ign)}: Basic \\(\\d+\\), Economy \\(\\d+\\), Premium \\(\\d+\\), First-Class \\(\\d+\\)$",
+                "^${Regex.escape(ign)}: Basic \\(\\d+\\), Economy \\(\\d+\\), Premium \\(\\d+\\), First-Class \\(\\d+\\)(?:, Total \\(\\d+\\))?$",
                 RegexOption.IGNORE_CASE
             ).matches(body)
             PartyCommandKind.SINCE_SPARKLING, PartyCommandKind.SINCE_UNIQUE -> SafariSinceReply.matches(this, body)
@@ -88,7 +89,7 @@ data class PartyCommand(val kind: PartyCommandKind, val ign: String = "", val du
         PartyCommandKind.MUTUALS -> "!mutuals"
         PartyCommandKind.MISSING -> "!missing $ign"
         PartyCommandKind.TICKETS -> "!tickets $ign"
-        PartyCommandKind.SINCE_SPARKLING -> "!since sparkling"
+        PartyCommandKind.SINCE_SPARKLING -> "!since"
         PartyCommandKind.SINCE_UNIQUE -> "!since unique"
         PartyCommandKind.HELP -> "!commands"
         PartyCommandKind.MISSING_RUN -> if (biome == null) "!m" else "!m ${biome.label.lowercase()}"
@@ -102,7 +103,7 @@ data class PartyCommand(val kind: PartyCommandKind, val ign: String = "", val du
         private val lookupResult = Regex("^(?:None|None\\. :skull:|All\\. :skull:|(?:$names)(?:, (?:$names))*)$", RegexOption.IGNORE_CASE)
         private val bossLookup = Regex("""^!pb\s+(doom|wumpa)\s+([A-Za-z0-9_]{1,16})$""", RegexOption.IGNORE_CASE)
         private val lookup = Regex("""^!(missing|tickets?)\s+([A-Za-z0-9_]{1,16})$""", RegexOption.IGNORE_CASE)
-        private val since = Regex("""^!since\s+(sparkling|unique)$""", RegexOption.IGNORE_CASE)
+        private val since = Regex("""^!since(?:\s+(unique))?$""", RegexOption.IGNORE_CASE)
         private val missingRun = Regex("""^!m(?:\s+(\S+))?$""", RegexOption.IGNORE_CASE)
         fun fromChat(text: String): PartyRequest? {
             val chat = PartyChat.parse(text) ?: return null
@@ -119,7 +120,7 @@ data class PartyCommand(val kind: PartyCommandKind, val ign: String = "", val du
                 "!pb cavern" -> PartyCommand(PartyCommandKind.PB_CAVERN)
                 else -> since.matchEntire(chat.body)?.let { match ->
                     PartyCommand(if (match.groupValues[1].equals("unique", true)) PartyCommandKind.SINCE_UNIQUE
-                        else PartyCommandKind.SINCE_SPARKLING, chat.sender)
+                        else PartyCommandKind.SINCE_SPARKLING)
                 } ?: missingRun.matchEntire(chat.body)?.let { match ->
                     val word = match.groupValues[1]
                     if (word.isEmpty()) PartyCommand(PartyCommandKind.MISSING_RUN)
