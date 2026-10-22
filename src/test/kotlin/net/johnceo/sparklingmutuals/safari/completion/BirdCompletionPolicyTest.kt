@@ -50,10 +50,10 @@ class BirdCompletionPolicyTest {
         run.scanBirdSources(0)
         names.forEach { assertTrue(run.uniqueComplete(it, state)); assertTrue(run.fullClearComplete(it)) }
     }
-    @Test fun `outside fd supplies spawn trust and only the missing Macaw Unique catch exception`() {
+    @Test fun `outside fd trusts absent bird species without inventing Full Clear captures`() {
         val run = run(SafariBiome.CAVERN); val state = party()
         run.partyFullClear("Party > Friend: fd")
-        names.forEach { assertTrue(run.sparklingComplete(it, state)); assertFalse(run.uniqueComplete(it, state)) }
+        names.forEach { assertTrue(run.sparklingComplete(it, state)); assertTrue(run.uniqueComplete(it, state)) }
         catch(run, "Bluebird"); catch(run, "Parakeet")
         names.forEach { assertTrue(run.uniqueComplete(it, state)); assertFalse(run.fullClearComplete(it)) }
         catch(run, "Bluebird", 7)
@@ -62,14 +62,14 @@ class BirdCompletionPolicyTest {
         run.visitBiome(SafariBiome.FOREST)
         assertFalse(run.sparklingComplete("Bluebird", state), "entering Forest needs qualified local evidence")
     }
-    @Test fun `a floor marker anywhere or food in inventory overrides fd and captures`() {
+    @Test fun `remote report outranks floor scans while held food and Full Clear capture proof remain required`() {
         val run = run(SafariBiome.ICY); val state = party()
         catch(run, "Bluebird", 8); catch(run, "Parakeet")
         run.partyFullClear("Party > Friend: fd")
         run.scanBirdSources(1, qualified = false)
-        names.forEach { assertFalse(run.sparklingComplete(it, state)); assertFalse(run.uniqueComplete(it, state)); assertFalse(run.fullClearComplete(it)) }
+        names.forEach { assertTrue(run.sparklingComplete(it, state)); assertTrue(run.uniqueComplete(it, state)); assertFalse(run.fullClearComplete(it)) }
         run.visitBiome(SafariBiome.HAUNTED)
-        assertFalse(run.sparklingComplete("Macaw", state))
+        assertTrue(run.sparklingComplete("Macaw", state))
         run.scanBirdSources(0, qualified = false)
         assertTrue(run.sparklingComplete("Macaw", state))
         run.inventoryEvidence(listOf("Yogi Berry" to 1), 20000)

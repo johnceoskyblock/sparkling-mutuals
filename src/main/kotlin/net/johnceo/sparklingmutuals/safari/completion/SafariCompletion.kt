@@ -35,9 +35,10 @@ object SafariCompletion {
             run.completion.announcement(run, area, mode, party)?.let { queue.addLast(area to it) }
         }
         // Revalidate queued completions after contradictory local evidence or a mode change.
-        queue.removeAll { (area, _) -> !run.canReportBiome(area) || area != biome || mode == SafariMode.SPARKLING && !party.ready || run.completed(mode,
+        queue.removeAll { (area, _) -> !run.canReportBiome(area, party) || area != biome || mode == SafariMode.SPARKLING && !party.ready || run.completed(mode,
             area.critters.filter { mode != SafariMode.SPARKLING || party.needs(it.name) }, party, localOnly = true) !=
             area.critters.count { mode != SafariMode.SPARKLING || party.needs(it.name) } }
+        run.completion.armSharedClearReminder(run, biome, mode, party, now)
         if (run.completion.locallyComplete(run, biome, mode, party)) run.resourceReminders.afterBiomeClear(now)
         run.resourceReminders.dispatch(now, client.player?.name?.string ?: "Player", biome, party) { _, reminder ->
             client.gui.smSetTimes(5, 50, 15)

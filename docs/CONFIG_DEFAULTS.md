@@ -13,9 +13,21 @@ Open `/sm` for settings. Independent feature switches shown in the current GUI d
 | Warp reminder | `warpAlertsEnabled` | Off |
 | Coins at insta-sell | `runCoinsInstaSell` | Off (sell-offer valuation) |
 | Achievements to party | `achievementsToParty` | Off |
-| Capture projections | `experimentalCapsulePath` | Off |
+| XP / Essence / Shard floor drops | `esp.rewardDrops` | Off |
 
 Achievements themselves and achievement sound default on. A button's backing field is not an enable switch. Mode selectors are mutually exclusive: fresh configuration selects **Unique** (`fullClearMode=false`, `sparklingMode=false`); they are not an all-on feature group.
+
+Capture projections and automatic ticket selection default on. **Preferred ticket** defaults to **First Class**. Explicit saved feature switches and preferences are preserved; these defaults apply only to missing or invalid settings.
+
+### GUI organization
+
+Related controls use collapsible dropdowns, in this order:
+
+- **Safari helpers:** Safari entry; Capture tools; Biome interactions; Party visibility; Visual cleanup; Detection and alerts. Ticket preference sits below automatic selection; capture width and terrain visibility sit below capture projections.
+- **ESP:** Floor drops (reward toggle, biome restriction, individual text sizes and colors); Other text sizes (general labels and party names); Critter biome limits (Forest, Cavern, Icy, Haunted).
+- **Customization:** shared selected hex color; Tracking HUDs; Alert HUDs; Highlights and waypoints; Critter colors ordered Forest, Cavern, Icy, Haunted. Each HUD retains its border, colors, and transparency controls.
+
+Moving controls does not rename saved keys. Collapsed groups save their current choices just like expanded groups.
 
 | Numeric/text control | Default | Implemented load validation |
 | --- | --- | --- |
@@ -45,7 +57,7 @@ Startup and mode changes apply an ESP preset enabling all groups, species and Ro
 
 **Safari helpers → Gemzie gem auto-select** uses the independent saved key `gemzieGemAutoSelect`. It defaults on for missing/malformed values, preserves an explicit off choice, and is not changed by mode presets. It selects a whole hotbar gem for one fresh top-face Gemzie podium interaction; see [Gemzie](critters/gemzie.md#whole-gem-selection-helper). It does not move inventory/offhand items or add completion evidence.
 
-- [Capture projections](CAPTURE_SHOT_RECORDING.md#experimental-capsule-path) has one enable switch, independent of recording and capsule hiding. Missing/invalid saved enable values are off. The obsolete `allowUncalibratedCapsuleEstimates` and `hud.capsule_status.*` keys are ignored and omitted on save; no projection status HUD is offered.
+- [Capture projections](CAPTURE_SHOT_RECORDING.md#experimental-capsule-path) has one enable switch, independent of recording and capsule hiding. Missing/invalid saved enable values are on. The obsolete `allowUncalibratedCapsuleEstimates` and `hud.capsule_status.*` keys are ignored and omitted on save; no projection status HUD is offered.
 - [Warp reminder](WARP_ALERTS.md) controls both the alert and automatic `/p warp`; changing its switch/delay cancels pending work.
 - [Automatic contest downtime](CONTEST_DOWNTIME.md) defaults on independently of HUD/tracking. [Guard Safari entry](SAFARI_ENTRY_GUARD.md) and **!dt downtime** retain independent saved switches and stage-specific behavior.
 - History's **History** button precedes **Import History from Logs**. There is no startup-import scan/toggle; old auto-import keys are ignored. See [history, import and achievements](HISTORY_IMPORT.md).
@@ -54,7 +66,7 @@ Startup and mode changes apply an ESP preset enabling all groups, species and Ro
 
 ### ESP appearance
 
-ESP text scale applies to floor-drop names, critter timers, nest labels and teammate names; teammate names also retain distance scaling. Scale 1 restores original label size.
+Other ESP text scale applies to critter timers, nest labels and unknown sparkling labels. Each floor-drop type and party names have independent scales; teammate names also retain distance scaling. Scale 1 restores original label size.
 
 **ESP → Floor-drop colors** offers Lime Gem, Purple Gem, Orange Gem, Wriggleworm, Yogi Berry, Bag of Seeds, Soothing Incense, Shining Coin and Icebreaker. Each changes outline, fill and label. Per-type `esp.floor.<type>.color` values fall back to the saved shared color (fresh green). **Customization → All floor-drop colors** deliberately changes every type; merely applying an unchanged shared value preserves individual choices. Generic drops remain unhighlighted and colors do not change eligibility.
 
@@ -87,6 +99,8 @@ Startup normalizes legacy `pb.*` keys from the general file and the earlier `Spa
 - Existing secondary coverage: [ConfigTest](../src/test/kotlin/net/johnceo/sparklingmutuals/config/ConfigTest.kt), [SafariSettingsTest](../src/test/kotlin/net/johnceo/sparklingmutuals/config/SafariSettingsTest.kt), [SafariCustomizationTest](../src/test/kotlin/net/johnceo/sparklingmutuals/config/SafariCustomizationTest.kt), [SafariFeatureDefaultsTest](../src/test/kotlin/net/johnceo/sparklingmutuals/config/SafariFeatureDefaultsTest.kt). No tests or live settings session ran in this audit. Reopen/restart, migration failure recovery and preset transitions require their appropriate runtime checks.
 
 ## Last updated
+
+2026-10-22 — Grouped Safari helpers, ESP and Customization into related dropdowns. Capture projections and ticket auto-selection now default on; the four explicit opt-outs remain off, First Class remains the default preference, and saved choices are preserved.
 
 2026-10-19 - Added Misc Endgame Features and the persisted Phantomleaf Solver switch (default on).
 

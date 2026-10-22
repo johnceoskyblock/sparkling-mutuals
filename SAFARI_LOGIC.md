@@ -30,9 +30,9 @@ Detected Sparkling identities impose **no additional capture gate in any mode**.
 
 ### Reports and run-complete alerts
 
-Automatic fd, cd, id and hd announcements require current presence in that biome, a capture-evidence scan and all active-mode targets complete under localOnly. Sparkling also requires ready party discoveries. Unique suppresses its own report after receiving that biome's report; Forest/Haunted suppress received-report echoes in every mode. [Forest reporting](docs/BIRD_COMPLETION.md#sending-fd) uses complete qualified local bird spawning and source evidence, without a personal pickup quota, for initial and late entrants alike. Haunted late entrants can report complete local coin/population checks with the biome's other requirements.
+Automatic fd, cd, id and hd announcements require current presence, a capture-evidence scan, no still-held needed starting items for that destination, and all active-mode targets complete under localOnly. Sparkling also requires ready party discoveries. Unique suppresses its own report after receiving that biome's report; Forest/Haunted suppress received-report echoes in every mode. [Forest reporting](docs/BIRD_COMPLETION.md#sending-fd) uses complete qualified local bird spawning and source evidence, without a personal pickup quota, for initial and late entrants alike. Haunted late entrants can report complete local coin/population checks with the biome's other requirements.
 
-Queued reports are rechecked against current mode, biome and local requirements before sending. Biome sends are spaced by at least three seconds. Unused-resource local titles remain, and each locally sent biome report can be followed by a paced party message listing unused starting food/coins, the IGNs needing their related Sparklings and a request to wait. This follow-up is revalidated before sending and does not add resource contributions twice. Once per run, 0.5 seconds after leaving the observed boat, a compact party message shares only unused starting food/coins associated with missing party discoveries and names the members needing each related Sparkling; unknown discovery data postpones it. See [resource timing](docs/critters/FLOOR_DROPS.md#early-starting-foodcoin-reports). Announcement memory prevents duplicates without adding catches.
+Queued reports are rechecked against current mode, biome and local requirements before sending. Biome sends are spaced by at least three seconds. Unused-resource local titles remain, and one locally confirmed own or shared clear per run can be followed by a paced party reminder batch listing unused starting food/coins, the IGNs needing their related Sparklings and a request to wait. This follow-up is revalidated before sending and does not add resource contributions twice. Once per run, 0.5 seconds after leaving the observed boat, a compact party message shares only unused starting food/coins associated with missing party discoveries ; unknown discovery data postpones it. Named needs appear in the completion reminder. See [resource timing](docs/critters/FLOOR_DROPS.md#early-starting-foodcoin-reports). Announcement memory prevents duplicates without adding catches.
 
 The configured run-complete alert requires all active-mode targets complete, a nonempty target set and, in Sparkling, ready party state. It can use remote progress; it does not certify a personal clear.
 
@@ -57,7 +57,7 @@ Changing mode selects presentation presets and PB category without clearing run 
 | --- | --- |
 | Bluebird, Parakeet, Macaw | Food/population rules and no-Macaw/one-Macaw exceptions: [bird completion](docs/BIRD_COMPLETION.md) |
 | Honeybug | Needed checking gates Unique progress, but the first catch removes its row. Full Clear uses the known nest population when available |
-| Rockmite, Snoozle | Unique adds resolved sources or accepted unknown-source report trust; resolved sources plus cd may confirm unseen zero spawn. Positive intact sources contradict trust |
+| Rockmite, Snoozle | Current Cavern uses local source checks. Outside Cavern, cd supplies checking after a catch and may waive an unencountered zero spawn; returning restores local requirements |
 | Wumpa, Doomspiral | Needed Sparkling checks require actual catch evidence: a shared catch or accepted global Sparkling-catch override; sightings, spawn/slain text and reports cannot replace it |
 | Icy after Wumpa capture | Any shared Wumpa catch completes every Icy Sparkling check for the run, without adding other species' catches |
 | Gemzie | Exact chamber-opening server text gives retained checking proof after five seconds, never catches |
@@ -86,7 +86,15 @@ Reviewed source: 93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee; documentation-only wo
 
 Numeric minima and whole-biome coverage are not certified by client predicates. [The consolidated audit](docs/IMPLEMENTATION_AUDIT.md) records documentation mismatches, PB differences and server uncertainties.
 
+### Current biome and report priority
+
+Outside the current biome, trust a party completion report even after an earlier visit. Unique requires one confirmed shared capture per ordinary species, with zero-spawn exceptions for unencountered birds, Rockmite and Snoozle. Full Clear still requires actual capture minimums, known nest/coin targets and its bird capture formula. Current-biome local scans remain authoritative; reports supply no capture or personal-PB credit.
+
+Send at most one unused starting-item party reminder batch per run after a locally confirmed clear with an own or peer-supplied report. Each client checks its own items, so a peer's report does not suppress the reminder. Needed items still held for the current destination block its local completion/report until used. Long batches remain paced, but later biome clears cannot repeat a batch already sent.
+
 ## Last updated
+
+2026-10-22 — One-per-run unused-item reminder batches, shared local clears and stronger remote report trust with capture requirements retained.
 
 2026-10-22 — Kept needed Haunted discovery checks separate from first-catch Unique rows; Rockmite mounds remain highlighted after a catch only while its discovery is needed.
 

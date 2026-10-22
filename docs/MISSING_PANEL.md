@@ -100,7 +100,13 @@ Reviewed source: 93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee.
 
 The older Billygoat proposal expected Unique progress to wait for two checks after its first catch. Current uniqueComplete uses the same ordinary first-catch result for row/progress. This proposal/code distinction is recorded in [audit D13](IMPLEMENTATION_AUDIT.md#d13), not presented as implemented. Live layout/entity validation remains pending.
 
+### Remote report progress
+
+Outside the current biome, a party completion report is trusted even after an earlier visit. Unique retains confirmed first captures, except unencountered zero-spawn birds, Rockmite and Snoozle. Full Clear retains actual capture minimums, known nest/coin targets and its bird capture formula. Current-biome scans remain authoritative. A report cannot invent capture counts or local missing-panel proof.
+
 ## Last updated
+
+2026-10-22 — Clarified remote Unique/Full Clear progress and current-biome scan authority.
 
 2026-10-22 — Added Unique Haunted coin/Gazer footers and checking-dependent progress; clarified discovery-gated Rockmite mound ESP after the first catch.
 

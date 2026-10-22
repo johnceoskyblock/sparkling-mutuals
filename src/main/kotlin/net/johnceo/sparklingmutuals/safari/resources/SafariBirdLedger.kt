@@ -66,6 +66,7 @@ class SafariBirdLedger {
         }
     }
     fun report() { reportedTarget = feedingTarget }
+    val reportCoversTarget get() = (reportedTarget ?: -1) >= feedingTarget
     val hasReport get() = reportedTarget != null
     val remoteReady get() = !knownFoodUnresolved && (reportedTarget ?: 0) >= feedingTarget
     fun spawnedCount(species: String) = renderedTotals[species] ?: 0

@@ -245,6 +245,7 @@ class SafariPanelSeparationTest {
         run.record(SafariCatch(SafariRoster.named("Rockmite")!!))
         run.moundSurvey.scan(emptySet()) { true }
         assertTrue(green("Rockmite"))
+        run.visitBiome(SafariBiome.CAVERN)
         run.updateCaptureEvidence(SafariBiome.CAVERN, setOf("Rockmite"), true)
         assertFalse(green("Rockmite"))
     }

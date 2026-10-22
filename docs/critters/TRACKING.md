@@ -62,7 +62,7 @@ Scrappy, Troodon, Gazer and Hideyho have biome-qualified UUID minima without ano
 
 For implemented minimum M and shared captures C, the minimum outstanding captures are max(0, M − C); known population or extra-resource targets can increase this. Catches received before visiting a biome persist once. Catches before the client joined are unknown.
 
-Local Full Clear missing-row proof requires the capture target, resolved sources and qualified absence. It persists after leaving the zone/biome. Positive eligible remaining sightings revoke that absence proof. Local checklist/PB population observations retain a target based on captures plus current uncaptured entities; unloading does not erase that local target. Remote progress uses a separate target populated only by observations made after a report, or for a fixed-target species. A larger population seen only before a later report can therefore remain a local blocker without raising the remote-progress target; see [audit D17](../IMPLEMENTATION_AUDIT.md#d17). Remaining Macaws have the separate bird exception.
+Local Full Clear missing-row proof requires the capture target, resolved sources and qualified absence. It persists after leaving the zone/biome. Positive eligible remaining sightings revoke that local absence proof. Local checklist/PB observations retain capture-plus-current-population targets; unloading does not erase them. Outside the current biome, a party report instead uses actual capture minimums, known nest/source totals, real coin demand and the bird capture formula. Old UUID history and source/absence scan contradictions do not raise that remote minimum. New explicit unused-resource demand and actual held items remain separate blockers. Remaining Macaws retain their one-capture exception under the bird formula.
 
 Scrappy 3, Gemzie 3, Troodon 3 and Gazer 4 can complete progress from their fixed capture totals before local absence removes their missing row. Other species without local proof normally need a biome report plus minimum captures. Honeybug and birds have explicit exceptions. Neither a report nor historical checked UUIDs supplies personal Full Clear evidence.
 
@@ -77,25 +77,25 @@ Scrappy 3, Gemzie 3, Troodon 3 and Gazer 4 can complete progress from their fixe
 | Gimmiegold Sparkling | Registered validated coin slots must all resolve, sampled held coins must be zero, and a qualified captured + current uncaptured population must reach slots + deduplicated extras. Proof retains through unloading, but reentry resets its population validation |
 | Gimmiegold Full Clear | Separate source recovery can use no remaining coin markers or at least three actual floor pickups, sufficient coin use and sampled empty inventory in the qualifying environment. Additional coins/notices and capture/absence requirements still apply |
 
-Loaded Cavern mound/wall observations run from **any Safari biome** without a player-distance cutoff, independently of HUD/ESP. Positive intact sources can reopen their own species even if its discovery is owned. Observed source completion can resolve a contradiction without entering Cavern. Source proof does not manufacture a catch. Bird source retention belongs to [BIRD_COMPLETION](../BIRD_COMPLETION.md); slot registration and resource reminders belong to [FLOOR_DROPS](FLOOR_DROPS.md).
+Loaded Cavern mound/wall observations run from **any Safari biome** without a player-distance cutoff, independently of HUD/ESP. Positive intact sources can reopen their own species even if its discovery is owned; a party report takes priority while outside that biome. Observed source completion can resolve a contradiction without entering Cavern. Source proof does not manufacture a catch. Bird source retention belongs to [BIRD_COMPLETION](../BIRD_COMPLETION.md); slot registration and resource reminders belong to [FLOOR_DROPS](FLOOR_DROPS.md).
 
 ### Party reports and reentry
 
 | Outcome | Accepted report effect | Revalidation |
 | --- | --- | --- |
-| Ordinary Unique | None needed after its shared first catch, except the needed discovery checks below | Needed Honeybug, Gazer and Gimmiegold retain their checking gates |
-| Unique Gazer/Gimmiegold | hd may supply checking outside Haunted after a shared catch | Inside Haunted, needed Gazer requires four reconciled checks; needed Gimmiegold requires local coin-source proof. First catches remove rows but leave progress pending |
-| Unique Rockmite/Snoozle | Local Cavern absence plus fully resolved sources confirms unseen zero spawn without cd; cd may supply unknown checking after a catch or retain remote zero-spawn trust | Known intact sources cannot be erased by another report; encountered uncaught species cannot use zero-spawn trust |
-| Honeybug Unique/Sparkling | fd supplies checking, never captures | Trust survives Forest entry and incomplete later renders |
-| Ordinary Sparkling | Report substitutes checking | Entry/local scan clears inherited ordinary checking; retained local UUID evidence remains |
-| Gimmiegold Sparkling | hd may substitute outside Haunted up to its recorded floor-plus-extra target | Inside Haunted requires dedicated local slot/inventory/population validation; newly learned extra demand requires fresh proof/report |
-| Birds | Mode/location-specific trust | [Bird report policy](../BIRD_COMPLETION.md#completion-by-mode) |
-| Full Clear progress | Report plus real capture targets, unless local/fixed/Honeybug path already qualifies | Positive remaining entities, intact sources and applicable resources still block; a report alone does not remove local missing rows |
-| Wumpa/Doomspiral Sparkling | Spawn/slain text and biome reports cannot substitute for capture | Shared catch or accepted global Sparkling-catch override completes that boss; only a shared Wumpa counter increment checks all Icy species |
+| Ordinary Unique | Outside a reported biome, one confirmed shared catch completes an ordinary species | Current biome retains local checking gates |
+| Optional Unique spawns | Remote reports can waive unencountered zero-spawn birds, Rockmite and Snoozle | An encountered species still needs its capture; local absence proof remains required inside |
+| Honeybug Unique/Sparkling | fd supplies checking outside Forest; Unique still needs a catch | Current Forest requires local nest evidence |
+| Ordinary Sparkling | Outside a reported biome, its report substitutes checking | Reentry uses local proof |
+| Gimmiegold Sparkling | hd covers its recorded coin demand outside Haunted | Held coins or later demand still block; current Haunted needs local validation |
+| Birds | Remote fd covers its recorded food demand | Held food and later extras still block; Full Clear keeps actual captures |
+| Full Clear | Remote report plus actual capture minimums and known nest/coin/bird targets | Current biome retains local source/scan requirements |
+| Wumpa/Doomspiral Sparkling | Report cannot substitute for required capture | Existing shared-catch requirements remain |
+
 
 Reports are recognized from parsed party message bodies, case-insensitively, with an optional trailing period. The implementation does not cross-check the sender against a separate current-party roster here. Server delivery in the Party channel is the trust boundary; arbitrary quoted nonparty text does not become a report.
 
-Early `[SM] Starting items: ...` party reports establish sender/type food/coin contribution maxima before clearing completes; they never add captures or resource use. Send only unused starting items tied to a missing party discovery, after two seconds off the observed boat and ready discovery data. End-of-biome unused-item reminders are local titles only. See [resource timing](FLOOR_DROPS.md#early-starting-foodcoin-reports).
+Early `[SM] Starting items: ...` party reports establish sender/type food/coin contribution maxima before clearing completes; they never add captures or resource use. Send only unused starting items tied to a missing party discovery, 0.5 seconds after leaving the observed boat and ready discovery data. End-of-biome feedback also includes one named party reminder batch per run after a locally confirmed own or shared clear. See [resource timing](FLOOR_DROPS.md#early-starting-foodcoin-reports).
 
 A late Forest entrant may report fd from qualified capture-plus-current-render/source proof without six personal pickups if no fd was received. Late Haunted entrants can likewise report hd after local Gimmiegold and the biome's other active-mode requirements pass. Forest/Haunted reports already received suppress automatic echoes in every mode; Unique retains its report suppression for all biomes.
 
@@ -135,9 +135,19 @@ Reviewed source: 93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee.
 
 Hypixel population guarantees, precise server render coverage and replacement UUID behavior remain unverified. Exact prerequisite-to-boss-spawn relationships require live evidence; inventory alone is not proof of a spawn. [The audit report](../IMPLEMENTATION_AUDIT.md) separates these uncertainties from documentation mismatches.
 
+### Current biome and remote report priority
+
+A retained report is authoritative only while outside its biome, even if this client visited it earlier. Old source/UUID/absence observations do not block that remote shortcut. Unique still requires one actual shared capture for each ordinary species. Bluebird, Parakeet, Macaw, Rockmite and Snoozle can be waived remotely at zero captures only if never encountered. Encountered species still require a real catch. Needed starting items held for the destination continue to block completion/reporting.
+
+Full Clear still requires actual minimum captures, known Honeybug nest totals, source-derived Gimmiegold coin demand, and the existing bird capture formula. Reports never invent captures or personal PB evidence. Returning to the biome restores its local scan/source checks. Honeybug checking now follows this same current-biome rule rather than retaining fd trust inside Forest. Sparkling-mode boss capture requirements remain unchanged. Later food/coin demand can invalidate an older report; held resources are not considered used merely because a report arrived.
+
+Each client can send one unused starting-item reminder batch per run after a local clear, even if a peer sent that biome report first. A report for a different biome alone never arms that client's reminder.
+
 ## Last updated
 
-2026-10-22 � Documented needed Unique Gazer/Gimmiegold checks after the first capture and local Haunted revalidation.
+2026-10-22 — Remote reports take priority outside the current biome, including previously visited biomes; Unique first catches and Full Clear capture minimums remain required.
+
+2026-10-22 — Documented needed Unique Gazer/Gimmiegold checks after the first capture and local Haunted revalidation.
 
 2026-10-21 — Full Clear Gimmiegold capture targets are coin-derived, not raised by historical/replacement model UUID population estimates. A cleared dedicated coin-source ledger plus sufficient actual captures and no live remainder completes the species even if the older generic floor-marker scan remains blocked by unrelated rewards. Legacy coin proof remains a fallback; additional real coins and held coins still block completion. Added a three-coin whole-Haunted regression.
 

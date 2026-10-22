@@ -30,13 +30,13 @@ class UniquePartyReportTest {
             assertFalse(SafariPanels.missing(run, species.biome, true, 0, party = state).rows.any { it.label == species.name })
         }
     }
-    @Test fun `Rockmite and Snoozle need their own catch and cd but not every Cavern catch`() {
+    @Test fun `Rockmite and Snoozle remote reports waive absent spawns without other Cavern catches`() {
         ConfigManager.fullClearMode = false; ConfigManager.sparklingMode = false
         for (reportFirst in listOf(false, true)) {
             val run = SafariRun(0); val state = party(emptySet())
             if (reportFirst) report(run, SafariBiome.CAVERN)
             for (name in listOf("Rockmite", "Snoozle")) {
-                assertFalse(run.uniqueComplete(name, state))
+                assertEquals(reportFirst, run.uniqueComplete(name, state))
                 run.record(SafariCatch(SafariRoster.named(name)!!, false))
                 assertEquals(reportFirst, run.uniqueComplete(name, state))
                 assertFalse(SafariPanels.missing(run, SafariBiome.CAVERN, true, 0, party = state).rows.any { it.label == name })
@@ -110,7 +110,7 @@ class UniquePartyReportTest {
                 run.updateCaptureEvidence(biome, biome.critters.map { it.name }.toSet(), false)
                 run.inventoryEvidence(listOf("Shining Coin" to 2, "Yogi Berry" to 2), 10000)
                 run.sparklingChecks.scan(biome, 0.0, 0.0, emptyList())
-                assertEquals(biome.critters.size - when (biome) { SafariBiome.FOREST -> 3; SafariBiome.HAUNTED -> 2; else -> 0 },
+                assertEquals(biome.critters.size - when (biome) { SafariBiome.FOREST -> 4; SafariBiome.HAUNTED -> 2; else -> 0 },
                     run.completed(SafariMode.UNIQUE, biome.critters, state), biome.label)
             }
             assertEquals(biome.critters.size - when (biome) { SafariBiome.FOREST -> 4; SafariBiome.HAUNTED -> 2; else -> 0 },
@@ -134,7 +134,7 @@ class UniquePartyReportTest {
         assertEquals(7, run.completed(SafariMode.UNIQUE, SafariBiome.CAVERN.critters, party(emptySet())))
         assertEquals(7, run.completed(SafariMode.UNIQUE, SafariBiome.CAVERN.critters, party(setOf("Snoozle"))))
         run.visitBiome(SafariBiome.ICY); report(run, SafariBiome.CAVERN)
-        assertEquals(7, run.completed(SafariMode.UNIQUE, SafariBiome.CAVERN.critters, state), "a repeated report cannot erase observed unbroken sources")
+        assertEquals(9, run.completed(SafariMode.UNIQUE, SafariBiome.CAVERN.critters, state), "remote report is trusted after leaving Cavern")
         run.visitBiome(SafariBiome.CAVERN)
         run.sparklingChecks.scan(SafariBiome.CAVERN, -114.0, 49.0, emptyList(), moundsCleared = true, wallsCleared = true)
         assertEquals(9, run.completed(SafariMode.UNIQUE, SafariBiome.CAVERN.critters, state))

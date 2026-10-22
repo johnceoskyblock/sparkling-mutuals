@@ -28,7 +28,11 @@ class StartingResourcePartyReminderTest {
         assertTrue(message.contains("Alice, Bob still need Shiny Gimmiegold"))
         assertTrue(message.endsWith("Please wait."))
         assertFalse(run.resources.partyNotice("Party > Alice: $message"), "Reminder must not count the starting items twice")
+        run.partyResourceReminders.afterBiomeReport(18000)
         assertFalse(run.partyResourceReminders.dispatch(20000, party, names::get, sent::add))
+        run.partyResourceReminders.afterBiomeReport(30000)
+        assertFalse(run.partyResourceReminders.dispatch(32000, party, names::get, sent::add))
+        assertEquals(1, sent.size, "later biome clears must not repeat the reminder")
         assertFalse(SafariRun(20000).partyResourceReminders.dispatch(30000, party, names::get, sent::add))
     }
     @Test fun `dispatch waits for names and API then resamples unused quantities and current requirements`() {
@@ -72,4 +76,32 @@ class StartingResourcePartyReminderTest {
         assertEquals(6, receiver.foodContributions().values.sum(), "Repeated quantities across named chunks overlap")
         assertEquals(2, receiver.coinContributions()["reporter"])
     }
+    @Test fun `shared local clear arms each clients unused items even when a peer sent the report`() {
+        val run = SafariRun(0)
+        run.visitBiome(SafariBiome.ICY)
+        SafariBiome.ICY.critters.forEach { run.record(SafariCatch(it)) }
+        run.updateCaptureEvidence(SafariBiome.ICY, emptySet(), true)
+        run.resources.inventory(listOf("Shining Coin" to 1), true)
+        val party = state()
+        run.partyFullClear("Party > OtherModUser: id")
+        assertNull(run.completion.announcement(run, SafariBiome.ICY, SafariMode.UNIQUE, party))
+        run.completion.armSharedClearReminder(run, SafariBiome.ICY, SafariMode.UNIQUE, party, 10000)
+        val sent = mutableListOf<String>()
+        assertTrue(run.partyResourceReminders.dispatch(11500, party, { it }, sent::add))
+        assertTrue(sent.single().contains("1x Shining Coin"))
+        run.completion.armSharedClearReminder(run, SafariBiome.ICY, SafariMode.UNIQUE, party, 20000)
+        assertFalse(run.partyResourceReminders.dispatch(22000, party, { it }, sent::add))
+    }
+
+    @Test fun `destination report waits for still held needed starting items`() {
+        val run = SafariRun(0)
+        val party = state()
+        assertTrue(run.canReportBiome(SafariBiome.HAUNTED, party))
+        run.resources.inventory(listOf("Shining Coin" to 1), true)
+        assertTrue(run.hasUnusedStartingForBiome(SafariBiome.HAUNTED, party))
+        assertFalse(run.canReportBiome(SafariBiome.HAUNTED, party))
+        run.resources.inventory(emptyList(), false)
+        assertTrue(run.canReportBiome(SafariBiome.HAUNTED, party))
+    }
+
 }

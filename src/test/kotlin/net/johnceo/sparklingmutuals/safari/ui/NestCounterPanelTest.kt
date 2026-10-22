@@ -88,7 +88,7 @@ class NestCounterPanelTest {
         assertTrue(rows(SafariMode.FULL_CLEAR, run, 0).any { it.label == "Bee nests to punch" })
         run.partyFullClear("Party > Friend: fd")
         for (mode in SafariMode.entries)
-            assertEquals(mode == SafariMode.FULL_CLEAR, rows(mode, run, 0).any { it.label == "Bee nests to punch" }, "only checking modes trust fd for source helpers")
+            assertTrue(rows(mode, run, 0).any { it.label == "Bee nests to punch" }, "current Forest requires local nest evidence in every mode")
     }
     @Test fun `Sparkling checklist is named Unchecked in every biome`() {
         val before = net.johnceo.sparklingmutuals.config.ConfigManager.sparklingMode

@@ -49,14 +49,14 @@ class UniquePartyResourceEvidenceTest {
         SafariBiome.FOREST.critters.forEach { record(SafariCatch(it)) }
         updateCaptureEvidence(SafariBiome.FOREST, emptySet(), false)
     }
-    @Test fun `Unique party cd has no effect before or after visiting Cavern`() {
+    @Test fun `Unique party cd waives absent variable species only while outside Cavern`() {
         val run = SafariRun(0); val state = party("Rockmite", "Snoozle")
         run.visitBiome(SafariBiome.CAVERN)
         run.reconcileStructures(SafariBiome.CAVERN, true, true)
         SafariMessages.forRun("Party > Friend: cd", run, true)
         assertEquals(0, run.completed(SafariMode.UNIQUE, SafariBiome.CAVERN.critters, state))
         run.visitBiome(SafariBiome.ICY)
-        assertEquals(0, run.completed(SafariMode.UNIQUE, SafariBiome.CAVERN.critters, state))
+        assertEquals(2, run.completed(SafariMode.UNIQUE, SafariBiome.CAVERN.critters, state))
         run.visitBiome(SafariBiome.CAVERN)
         assertEquals(0, run.completed(SafariMode.UNIQUE, SafariBiome.CAVERN.critters, state))
     }

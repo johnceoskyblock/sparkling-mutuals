@@ -160,19 +160,115 @@ class SafariSettings : Config() {
         @ConfigEditorButton(runnableId = 5, buttonText = "Reset to 25s") var reset = false
     }
     class Safari {
-        @JvmField @ConfigOption(name = "Gemzie gem auto-select", desc = "On a fresh click on a Cavern gem podium's top, select its whole gem from your hotbar and attempt that same placement once.")
-        @ConfigEditorBoolean var gemzieGemAutoSelect = ConfigManager.gemzieGemAutoSelect
+        @JvmField @ConfigOption(name = "Safari entry", desc = "") @Accordion val entry = SafariEntrySettings()
+        @JvmField @ConfigOption(name = "Capture tools", desc = "") @Accordion val capture = SafariCaptureSettings()
+        @JvmField @ConfigOption(name = "Biome interactions", desc = "") @Accordion val interactions = SafariInteractionSettings()
+        @JvmField @ConfigOption(name = "Party visibility", desc = "") @Accordion val teammates = SafariTeammateSettings()
+        @JvmField @ConfigOption(name = "Visual cleanup", desc = "") @Accordion val visibility = SafariVisibilitySettings()
+        @JvmField @ConfigOption(name = "Detection and alerts", desc = "") @Accordion val alerts = Alerts()
+        var holdManagerOnKick
+            get() = entry.holdManagerOnKick
+            set(value) { entry.holdManagerOnKick = value }
+        var autoSelectTicket
+            get() = entry.autoSelectTicket
+            set(value) { entry.autoSelectTicket = value }
+        var ticketPreference
+            get() = entry.ticketPreference
+            set(value) { entry.ticketPreference = value }
+        var experimentalCapsulePath
+            get() = capture.experimentalCapsulePath
+            set(value) { capture.experimentalCapsulePath = value }
+        var capsulePathWidth
+            get() = capture.capsulePathWidth
+            set(value) { capture.capsulePathWidth = value }
+        var showCapsuleGuideThroughTerrain
+            get() = capture.showCapsuleGuideThroughTerrain
+            set(value) { capture.showCapsuleGuideThroughTerrain = value }
+        var autoClicker
+            get() = capture.autoClicker
+            set(value) { capture.autoClicker = value }
+        var gemzieGemAutoSelect
+            get() = interactions.gemzieGemAutoSelect
+            set(value) { interactions.gemzieGemAutoSelect = value }
+        var candleHitbox
+            get() = interactions.candleHitbox
+            set(value) { interactions.candleHitbox = value }
+        var hideyhoAutoAccept
+            get() = interactions.hideyhoAutoAccept
+            set(value) { interactions.hideyhoAutoAccept = value }
+        var hideyhoInsideOutside
+            get() = interactions.hideyhoInsideOutside
+            set(value) { interactions.hideyhoInsideOutside = value }
+        var highlightTeammates
+            get() = teammates.highlightTeammates
+            set(value) { teammates.highlightTeammates = value }
+        var showTeammateNames
+            get() = teammates.showTeammateNames
+            set(value) { teammates.showTeammateNames = value }
+        var hideCaptureChat
+            get() = visibility.hideCaptureChat
+            set(value) { visibility.hideCaptureChat = value }
+        var hideGroundCapsules
+            get() = visibility.hideGroundCapsules
+            set(value) { visibility.hideGroundCapsules = value }
+        var hideFlyingCapsules
+            get() = visibility.hideFlyingCapsules
+            set(value) { visibility.hideFlyingCapsules = value }
+        var capsuleHideDistance
+            get() = visibility.capsuleHideDistance
+            set(value) { visibility.capsuleHideDistance = value }
+        var paintings
+            get() = visibility.paintings
+            set(value) { visibility.paintings = value }
+        var darkness
+            get() = visibility.darkness
+            set(value) { visibility.darkness = value }
+        var shiny
+            get() = alerts.shiny
+            set(value) { alerts.shiny = value }
+        var alert
+            get() = alerts.alert
+            set(value) { alerts.alert = value }
+        var announce
+            get() = alerts.announce
+            set(value) { alerts.announce = value }
+    }
+    class SafariEntrySettings {
+        @JvmField @ConfigOption(name = "Guard Safari entry", desc = "Hold Safari entry for missing/loading party members, with a 2-second pause after kick reports. Hold Shift to bypass entry blocks for the current click. Readiness on Torrhus uses !dt downtime.")
+        @ConfigEditorBoolean var holdManagerOnKick = ConfigManager.holdManagerOnKick
+        @JvmField @ConfigOption(name = "Auto-select Safari ticket", desc = "When not party leader, select an available ticket in the entry menu. Entry guard still applies.")
+        @ConfigEditorBoolean var autoSelectTicket = ConfigManager.autoSelectSafariTicket
+        @JvmField @ConfigOption(name = "Preferred ticket", desc = "First Class falls back downward; Basic falls back upward through available tiers.")
+        @ConfigEditorDropdown(values = ["First Class", "Basic"])
+        var ticketPreference = ConfigManager.safariTicketPreference
+    }
+    class SafariCaptureSettings {
         @JvmField @ConfigOption(name = "Capture projections", desc = "Show capsule paths and estimated terrain/critter contacts, including Masterful, movement and water. Capture physics and target bounds remain unverified.")
         @ConfigEditorBoolean var experimentalCapsulePath = ConfigManager.experimentalCapsulePath
         @JvmField @ConfigOption(name = "Capsule path width", desc = "Line width from 1 to 5; default 3.")
         @ConfigEditorSlider(minValue = 1f, maxValue = 5f, minStep = 1f) var capsulePathWidth = ConfigManager.capsulePathWidth
         @JvmField @ConfigOption(name = "Show guide through terrain", desc = "See the capsule guide and contact marker behind terrain. The estimated route still stops at its first predicted collision.")
         @ConfigEditorBoolean var showCapsuleGuideThroughTerrain = ConfigManager.showCapsuleGuideThroughTerrain
+        @JvmField @ConfigOption(name = "Auto Clicker", desc = "Hold Mouse 0 on Rockmite mounds for 12 CPS.")
+        @ConfigEditorBoolean var autoClicker = ConfigManager.autoClicker
+    }
+    class SafariInteractionSettings {
+        @JvmField @ConfigOption(name = "Gemzie gem auto-select", desc = "On a fresh click on a Cavern gem podium's top, select its whole gem from your hotbar and attempt that same placement once.")
+        @ConfigEditorBoolean var gemzieGemAutoSelect = ConfigManager.gemzieGemAutoSelect
+        @JvmField @ConfigOption(name = "Full candle hitbox", desc = "Easier candle clicks in Haunted while holding Soothing Incense.")
+        @ConfigEditorBoolean var candleHitbox = ConfigManager.candleHitbox
+        @JvmField @ConfigOption(name = "Auto-accept Hideyho", desc = "Accept Hideyho’s quest offer inside Safari without opening chat.")
+        @ConfigEditorBoolean var hideyhoAutoAccept = ConfigManager.hideyhoAutoAccept
+        @JvmField @ConfigOption(name = "Hideyho inside/outside", desc = "Unique and Full Clear only: title and chat line saying whether Hideyho hid inside or outside the mansion.")
+        @ConfigEditorBoolean var hideyhoInsideOutside = ConfigManager.hideyhoInsideOutside
+    }
+    class SafariTeammateSettings {
         @JvmField @ConfigOption(name = "Highlight teammates", desc = "Outline loaded party members anywhere in SkyBlock.")
         @ConfigEditorBoolean var highlightTeammates = ConfigManager.highlightTeammates
         @JvmField @ConfigOption(name = "Show teammate names", desc = "Show party member names through walls anywhere in SkyBlock.")
         @ConfigEditorBoolean var showTeammateNames = ConfigManager.showTeammateNames
-        @JvmField @ConfigOption(name = "Alert", desc = "") @Accordion val alerts = Alerts()
+    }
+    class SafariVisibilitySettings {
         @JvmField @ConfigOption(name = "Hide useless chats in safari", desc = "Hide throws, captures, escapes, loot shares and mound chatter; tracking continues.")
         @ConfigEditorBoolean var hideCaptureChat = ConfigManager.hideCaptureChat
         @JvmField @ConfigOption(name = "Hide capsules on ground", desc = "Hide ordinary dropped capsules in Safari. The projection guide stays visible.")
@@ -182,33 +278,18 @@ class SafariSettings : Config() {
         @JvmField @ConfigOption(name = "Flying capsule distance", desc = "Hide flying capsules within this distance, in blocks.")
         @ConfigEditorSlider(minValue = .5f, maxValue = 6f, minStep = .5f)
         var capsuleHideDistance = ConfigManager.capsuleHideDistance
-        @JvmField @ConfigOption(name = "Full candle hitbox", desc = "Easier candle clicks in Haunted while holding Soothing Incense.")
-        @ConfigEditorBoolean var candleHitbox = ConfigManager.candleHitbox
-        @JvmField @ConfigOption(name = "Guard Safari entry", desc = "Hold Safari entry for missing/loading party members, with a 2-second pause after kick reports. Hold Shift to bypass entry blocks for the current click. Readiness on Torrhus uses !dt downtime.")
-        @ConfigEditorBoolean var holdManagerOnKick = ConfigManager.holdManagerOnKick
-        @JvmField @ConfigOption(name = "Auto-select Safari ticket", desc = "When not party leader, select an available ticket in the entry menu. Entry guard still applies.")
-        @ConfigEditorBoolean var autoSelectTicket = ConfigManager.autoSelectSafariTicket
-        @JvmField @ConfigOption(name = "Preferred ticket", desc = "First Class falls back downward; Basic falls back upward through available tiers.")
-        @ConfigEditorDropdown(values = ["First Class", "Basic"])
-        var ticketPreference = ConfigManager.safariTicketPreference
-        @JvmField @ConfigOption(name = "Auto Clicker", desc = "Hold Mouse 0 on Rockmite mounds for 12 CPS.")
-        @ConfigEditorBoolean var autoClicker = ConfigManager.autoClicker
-        @JvmField @ConfigOption(name = "Auto-accept Hideyho", desc = "Accept Hideyho’s quest offer inside Safari without opening chat.")
-        @ConfigEditorBoolean var hideyhoAutoAccept = ConfigManager.hideyhoAutoAccept
-        @JvmField @ConfigOption(name = "Hideyho inside/outside", desc = "Unique and Full Clear only: title and chat line saying whether Hideyho hid inside or outside the mansion.")
-        @ConfigEditorBoolean var hideyhoInsideOutside = ConfigManager.hideyhoInsideOutside
         @JvmField @ConfigOption(name = "Hide Haunted paintings", desc = "Hide paintings in the Haunted biome.")
         @ConfigEditorBoolean var paintings = ConfigManager.hideHauntedPaintings
-        @JvmField @ConfigOption(name = "Nearby shiny detection", desc = "Highlight sparkling critters within 80 blocks in your biome.")
-        @ConfigEditorBoolean var shiny = ConfigManager.shinyDetection
         @JvmField @ConfigOption(name = "Remove darkness", desc = "Remove the darkness effect in Safari.")
         @ConfigEditorBoolean var darkness = ConfigManager.removeDarkness
+    }
+    class Alerts {
+        @JvmField @ConfigOption(name = "Nearby shiny detection", desc = "Highlight sparkling critters within 80 blocks in your biome.")
+        @ConfigEditorBoolean var shiny = ConfigManager.shinyDetection
         @JvmField @ConfigOption(name = "Sparkling alert", desc = "Show an alert for each detected sparkling critter.")
         @ConfigEditorBoolean var alert = ConfigManager.sparklingAlert
         @JvmField @ConfigOption(name = "Announce sparklings to party", desc = "Announce sparkling critters with biome and coordinates.")
         @ConfigEditorBoolean var announce = ConfigManager.sparklingPartyAnnouncer
-    }
-    class Alerts {
         @JvmField @ConfigOption(name = "Sparkling sound", desc = "Minecraft sound identifier for sparkling alerts.")
         @ConfigEditorText var sound = ConfigManager.sparklingSound
         @JvmField @ConfigOption(name = "Sparkling sound volume", desc = "Set to zero to mute.")

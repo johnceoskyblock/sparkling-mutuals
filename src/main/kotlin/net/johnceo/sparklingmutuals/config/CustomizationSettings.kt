@@ -45,29 +45,30 @@ class PanelAppearanceSettings(private val style: PanelStyle, selection: () -> St
 class CustomizationSettings(private val dropSettings: FloorDropColorSettings? = null) {
     @JvmField @ConfigOption(name = "Selected hex color", desc = "Enter #RRGGBB, then press Set Color for each item.")
     @ConfigEditorText var selectedHex = AppearanceConfig.selectedHex
-    private fun panel(id: String) = PanelAppearanceSettings(AppearanceConfig.panels.getValue(id)) { selectedHex }
-    @JvmField @ConfigOption(name = "Miria contest HUD", desc = "Border and background.") @Accordion val miria = panel("miria")
-    @JvmField @ConfigOption(name = "Progress HUD", desc = "Border and background.") @Accordion val progress = panel("progress")
-    @JvmField @ConfigOption(name = "Missing panel HUD", desc = "Border and background.") @Accordion val missing = panel("missing")
-    @JvmField @ConfigOption(name = "Biome captures HUD", desc = "Border and background.") @Accordion val captures = panel("captures")
-    @JvmField @ConfigOption(name = "Nearby sparklings HUD", desc = "Border and background.") @Accordion val sparklings = panel("sparklings")
-    @JvmField @ConfigOption(name = "Sparkling alert HUD", desc = "Border and background.") @Accordion val alert = panel("alert")
-    @JvmField @ConfigOption(name = "All Gems alert HUD", desc = "") @Accordion val gems = panel("gems")
-    @JvmField @ConfigOption(name = "All Bird Food alert HUD", desc = "") @Accordion val birdFood = panel("bird_food")
-    @JvmField @ConfigOption(name = "All Incense alert HUD", desc = "") @Accordion val incense = panel("incense")
-    @JvmField @ConfigOption(name = "Run completion alert HUD", desc = "") @Accordion val runComplete = panel("run_complete")
-    @JvmField @ConfigOption(name = "Run completion text color", desc = "") @Accordion val runCompleteText = ColorChoice(
-        { AppearanceConfig.runCompleteColor }, { AppearanceConfig.runCompleteColor = it }) { selectedHex }
-    @JvmField @ConfigOption(name = "Warp reminder HUD", desc = "") @Accordion val warp = panel("warp")
-    @JvmField @ConfigOption(name = "Bee nest waypoints", desc = "") @Accordion val beeNests = ColorChoice(
-        { AppearanceConfig.nestColor }, { AppearanceConfig.nestColor = it }) { selectedHex }
-    @JvmField @ConfigOption(name = "Snooper wall waypoints", desc = "") @Accordion val snooperWalls = ColorChoice(
-        { AppearanceConfig.snooperColor }, { AppearanceConfig.snooperColor = it }) { selectedHex }
-    @JvmField @ConfigOption(name = "Sparkling highlights and alerts", desc = "") @Accordion val sparklingHighlights = ColorChoice(
-        { AppearanceConfig.sparklingColor }, { AppearanceConfig.sparklingColor = it }) { selectedHex }
-    @JvmField @ConfigOption(name = "All floor-drop colors", desc = "Changing this color sets every drop type. Individual colors are in the ESP tab.") @Accordion val floor = ColorChoice(
-        { SafariEspConfig.floorColor }, { SafariEspConfig.setAllDropColors(it); dropSettings?.reload() }) { selectedHex }
-    @JvmField @ConfigOption(name = "Cavern critter colors", desc = "") @Accordion val cavern = CavernColorSettings { selectedHex }
+    @JvmField @ConfigOption(name = "Tracking HUDs", desc = "") @Accordion val huds = TrackingAppearanceSettings({ selectedHex })
+    @JvmField @ConfigOption(name = "Alert HUDs", desc = "") @Accordion val alertHuds = AlertAppearanceSettings({ selectedHex })
+    @JvmField @ConfigOption(name = "Highlights and waypoints", desc = "") @Accordion val waypoints = WaypointAppearanceSettings(dropSettings, { selectedHex })
+    @JvmField @ConfigOption(name = "Critter colors", desc = "") @Accordion val critters = CritterAppearanceSettings({ selectedHex })
+    val progress get() = huds.progress
+    val missing get() = huds.missing
+    val captures get() = huds.captures
+    val miria get() = huds.miria
+    val sparklings get() = huds.sparklings
+    val alert get() = alertHuds.alert
+    val gems get() = alertHuds.gems
+    val birdFood get() = alertHuds.birdFood
+    val incense get() = alertHuds.incense
+    val runComplete get() = alertHuds.runComplete
+    val runCompleteText get() = alertHuds.runCompleteText
+    val warp get() = alertHuds.warp
+    val sparklingHighlights get() = waypoints.sparklingHighlights
+    val beeNests get() = waypoints.beeNests
+    val snooperWalls get() = waypoints.snooperWalls
+    val floor get() = waypoints.floor
+    val forest get() = critters.forest
+    val cavern get() = critters.cavern
+    val icy get() = critters.icy
+    val haunted get() = critters.haunted
     val cavernfish get() = cavern.cavernfish
     val flitter get() = cavern.flitter
     val shyworm get() = cavern.shyworm
@@ -78,7 +79,6 @@ class CustomizationSettings(private val dropSettings: FloorDropColorSettings? = 
     val scrappy get() = cavern.scrappy
     val snoozle get() = cavern.snoozle
     val gemzie get() = cavern.gemzie
-    @JvmField @ConfigOption(name = "Forest critter colors", desc = "") @Accordion val forest = ForestColorSettings { selectedHex }
     val foxtrot get() = forest.foxtrot
     val bluebird get() = forest.bluebird
     val honeybug get() = forest.honeybug
@@ -88,7 +88,6 @@ class CustomizationSettings(private val dropSettings: FloorDropColorSettings? = 
     val hideonfloor get() = forest.hideonfloor
     val parakeet get() = forest.parakeet
     val macaw get() = forest.macaw
-    @JvmField @ConfigOption(name = "Icy critter colors", desc = "") @Accordion val icy = IcyColorSettings { selectedHex }
     val strongarm get() = icy.strongarm
     val tepid get() = icy.tepid
     val polaris get() = icy.polaris
@@ -98,7 +97,6 @@ class CustomizationSettings(private val dropSettings: FloorDropColorSettings? = 
     val nozzlenose get() = icy.nozzlenose
     val troodon get() = icy.troodon
     val wumpa get() = icy.wumpa
-    @JvmField @ConfigOption(name = "Haunted critter colors", desc = "") @Accordion val haunted = HauntedColorSettings { selectedHex }
     val areita get() = haunted.areita
     val bloodbat get() = haunted.bloodbat
     val duplico get() = haunted.duplico
@@ -116,6 +114,7 @@ class CustomizationSettings(private val dropSettings: FloorDropColorSettings? = 
         if (selectedChanged) AppearanceConfig.selectedHex = selectedHex
         val changed = javaClass.fields.map { field ->
             when (val option = field.get(this)) {
+                is AppearanceSettingsGroup -> option.apply()
                 is ColorChoice -> option.apply()
                 is PanelAppearanceSettings -> option.apply()
                 is BiomeColorSettings -> option.apply()
@@ -124,6 +123,58 @@ class CustomizationSettings(private val dropSettings: FloorDropColorSettings? = 
         }.any { it }
         return selectedChanged || changed
     }
+}
+
+
+/** Applies every nested appearance choice, including collapsed dropdowns. */
+open class AppearanceSettingsGroup {
+    fun apply(): Boolean = javaClass.fields.map { field ->
+        when (val option = field.get(this)) {
+            is ColorChoice -> option.apply()
+            is PanelAppearanceSettings -> option.apply()
+            is BiomeColorSettings -> option.apply()
+            else -> false
+        }
+    }.any { it }
+}
+
+class TrackingAppearanceSettings(private val selection: () -> String) : AppearanceSettingsGroup() {
+    private fun panel(id: String) = PanelAppearanceSettings(AppearanceConfig.panels.getValue(id), selection)
+    @JvmField @ConfigOption(name = "Progress HUD", desc = "Border and background.") @Accordion val progress = panel("progress")
+    @JvmField @ConfigOption(name = "Missing panel HUD", desc = "Border and background.") @Accordion val missing = panel("missing")
+    @JvmField @ConfigOption(name = "Biome captures HUD", desc = "Border and background.") @Accordion val captures = panel("captures")
+    @JvmField @ConfigOption(name = "Miria contest HUD", desc = "Border and background.") @Accordion val miria = panel("miria")
+    @JvmField @ConfigOption(name = "Nearby sparklings HUD", desc = "Border and background.") @Accordion val sparklings = panel("sparklings")
+}
+
+class AlertAppearanceSettings(private val selection: () -> String) : AppearanceSettingsGroup() {
+    private fun panel(id: String) = PanelAppearanceSettings(AppearanceConfig.panels.getValue(id), selection)
+    @JvmField @ConfigOption(name = "Sparkling alert HUD", desc = "Border and background.") @Accordion val alert = panel("alert")
+    @JvmField @ConfigOption(name = "All Gems alert HUD", desc = "") @Accordion val gems = panel("gems")
+    @JvmField @ConfigOption(name = "All Bird Food alert HUD", desc = "") @Accordion val birdFood = panel("bird_food")
+    @JvmField @ConfigOption(name = "All Incense alert HUD", desc = "") @Accordion val incense = panel("incense")
+    @JvmField @ConfigOption(name = "Run completion alert HUD", desc = "") @Accordion val runComplete = panel("run_complete")
+    @JvmField @ConfigOption(name = "Run completion text color", desc = "") @Accordion val runCompleteText = ColorChoice(
+        { AppearanceConfig.runCompleteColor }, { AppearanceConfig.runCompleteColor = it }, selection)
+    @JvmField @ConfigOption(name = "Warp reminder HUD", desc = "") @Accordion val warp = panel("warp")
+}
+
+class WaypointAppearanceSettings(private val dropSettings: FloorDropColorSettings?, private val selection: () -> String) : AppearanceSettingsGroup() {
+    @JvmField @ConfigOption(name = "Sparkling highlights and alerts", desc = "") @Accordion val sparklingHighlights = ColorChoice(
+        { AppearanceConfig.sparklingColor }, { AppearanceConfig.sparklingColor = it }, selection)
+    @JvmField @ConfigOption(name = "Bee nest waypoints", desc = "") @Accordion val beeNests = ColorChoice(
+        { AppearanceConfig.nestColor }, { AppearanceConfig.nestColor = it }, selection)
+    @JvmField @ConfigOption(name = "Snooper wall waypoints", desc = "") @Accordion val snooperWalls = ColorChoice(
+        { AppearanceConfig.snooperColor }, { AppearanceConfig.snooperColor = it }, selection)
+    @JvmField @ConfigOption(name = "All floor-drop colors", desc = "Changing this color sets every drop type. Individual colors are in the ESP tab.") @Accordion val floor = ColorChoice(
+        { SafariEspConfig.floorColor }, { SafariEspConfig.setAllDropColors(it); dropSettings?.reload() }, selection)
+}
+
+class CritterAppearanceSettings(private val selection: () -> String) : AppearanceSettingsGroup() {
+    @JvmField @ConfigOption(name = "Forest critter colors", desc = "") @Accordion val forest = ForestColorSettings(selection)
+    @JvmField @ConfigOption(name = "Cavern critter colors", desc = "") @Accordion val cavern = CavernColorSettings(selection)
+    @JvmField @ConfigOption(name = "Icy critter colors", desc = "") @Accordion val icy = IcyColorSettings(selection)
+    @JvmField @ConfigOption(name = "Haunted critter colors", desc = "") @Accordion val haunted = HauntedColorSettings(selection)
 }
 
 open class BiomeColorSettings(private val selection: () -> String) {

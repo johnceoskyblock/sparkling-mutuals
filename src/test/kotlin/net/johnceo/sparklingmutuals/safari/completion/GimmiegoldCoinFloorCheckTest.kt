@@ -102,6 +102,8 @@ class GimmiegoldCoinFloorCheckTest {
         (1..5).forEach { run.gimmiegoldCheck.floor(it, true) }
         run.inventoryEvidence(listOf("Shining Coin" to 1), 0)
         run.partyFullClear("Party > Friend: hd")
+        assertFalse(run.sparklingComplete("Gimmiegold", party()), "a held starting coin still needs using")
+        run.inventoryEvidence(emptyList(), 1000)
         assertTrue(run.sparklingComplete("Gimmiegold", party()))
         assertFalse(run.uniqueComplete("Gimmiegold", party()))
         assertFalse(run.fullClearComplete("Gimmiegold"))
