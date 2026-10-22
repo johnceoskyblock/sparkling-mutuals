@@ -36,7 +36,7 @@ Collect registered slots/use all known coins. Grants, pickups, held coins, use m
 | Mode | Capture requirement | Checking or source requirement | Party-report effect |
 | --- | --- | --- | --- |
 | Sparkling | None for ordinary models; confirmed Sparkling capture override applies. | All registered slots resolved, sampled 0 held coins, qualified C + U >= F + E; at least one registered slot required. | Outside Haunted, hd can supply checking trust. Inside Haunted local coin conditions apply. |
-| Unique | One shared capture, or the confirmed-Sparkling capture override. | None beyond capture; ordinary coin checks do not gate Unique. | Does not supply a capture. |
+| Unique | One shared capture, or the confirmed-Sparkling capture override. | If anyone needs Gimmiegold, require the same resolved floor-slot/held-coin/qualified-population check as Sparkling before progress completes. First catch removes only the missing row. | Outside Haunted hd may supply inherited checking; inside Haunted local coin conditions apply. Never supplies a capture. |
 | Full Clear | At least 3 shared captures, raised by source/contribution and observed-population targets. | Local recovery resolved, no known held coins/no remaining critters; resource/source contradictions may still block progress. | Without local proof, report plus capture minimum can complete progress; row still needs local proof. |
 
 ## Display and highlights
@@ -45,7 +45,7 @@ Collect registered slots/use all known coins. Grants, pickups, held coins, use m
 | --- | --- |
 | Progress | Mode-specific predicate above; see [shared modes](../../SAFARI_LOGIC.md). |
 | Missing/unchecked row | Unique uses its capture/source predicate. Sparkling lists needed unresolved checks. Full Clear needs local capture/absence proof, separately from report-based progress. See [panel rules](../MISSING_PANEL.md). |
-| Counters | None in the species row; capture panel shows actual shared catches. |
+| Counters | No species-row counter; capture panel shows actual shared catches. Unique Haunted shows Coins left to use while its discovery check remains: max(uncollected slots + held coins, required floor/starting/party coins - qualified captured/live Gimmiegolds). Unknown catalog/inventory displays ?. |
 | Ordinary ESP | Unique: until first shared capture. Full Clear: eligible uncaught models. Sparkling: discovery-gated, normally up to 10 seconds per UUID. Settings and model validity still apply. |
 | Source helpers | Remaining eligible coin markers are independent of incense cutoffs; Sparkling requires needed Gimmiegold discovery. |
 | Automatic completion announcements | Shared local whole-biome/report-readiness gates in [mode rules](../../SAFARI_LOGIC.md). |
@@ -84,6 +84,8 @@ Population guarantees and capsule success/escape claims from supplied notes were
 Unique and Full Clear keep Shining Coin waypoints for every remaining drop throughout the run, even when no party member needs its Sparkling variant. Sparkling mode retains the discovery-needs gate. Pickup tracking removes collected drops normally. This is an ESP-only rule: Unique capture/check requirements and Full Clear minimum/capture rules remain unchanged.
 
 ## Last updated
+
+2026-10-22 — Kept needed coin-source checking after Unique capture, with a remaining-use footer that includes uncollected, held and party-extra demand.
 
 2026-10-21 — Removed the Unique-mode coin ESP pickup cutoff; all remaining coins stay highlighted without changing completion logic.
 

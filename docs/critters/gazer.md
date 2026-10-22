@@ -35,7 +35,7 @@ None. No species-specific resource or structure gate is used.
 | Mode | Capture requirement | Checking or source requirement | Party-report effect |
 | --- | --- | --- | --- |
 | Sparkling | None for ordinary critters; a confirmed Sparkling capture also completes the check. | 4 reconciled checks from qualified UUID sightings/shared captures; retain checks for the run. | Party hd can supply inherited checking; local scans retire it. |
-| Unique | One shared capture, or the confirmed-Sparkling capture override. | None. | Does not supply a capture. |
+| Unique | One shared capture, or the confirmed-Sparkling capture override. | If anyone needs Gazer, four retained reconciled checks are also required for progress. The first catch still removes its missing row. | Outside Haunted hd may supply inherited checking; inside Haunted local checks are required. Never supplies a capture. |
 | Full Clear | At least 4 shared captures. Local proof and report-based progress have [separate raised-target scopes](TRACKING.md#full-clear-evidence-and-late-entry). | Qualified empty local scan for row removal/local progress. | Fixed capture target can complete progress without a report; missing row still requires local empty proof. |
 
 ## Display and highlights
@@ -46,7 +46,7 @@ None. No species-specific resource or structure gate is used.
 | Missing/unchecked row | Unique uses its capture/source predicate. Sparkling lists needed unresolved checks. Full Clear needs local capture/absence proof, separately from report-based progress. See [panel rules](../MISSING_PANEL.md). |
 | Counters | Full Clear: X/4 captured. Sparkling: X/4 checked. Unique: checked counter only while discovery is needed and its row remains. Counts clamp to 4. |
 | Ordinary ESP | Unique: until first shared capture. Full Clear: eligible uncaught models. Sparkling: discovery-gated, normally up to 10 seconds per UUID. Settings and model validity still apply. |
-| Source helpers | None. |
+| Source helpers | Unique Haunted shows Gazers left to check while its discovery is needed and checking remains, even after the first catch removes its row. |
 | Automatic completion announcements | Shared local whole-biome/report-readiness gates in [mode rules](../../SAFARI_LOGIC.md). |
 | PB eligibility | Personal Unique: own catch of every species. Full Clear: personal captures/local proof. Party Unique: separate shared-capture/absence predicate; progress alone is insufficient. |
 
@@ -73,5 +73,7 @@ Existing coverage: [SafariFullClearProgressTest](../../src/test/kotlin/net/johnc
 Population guarantees and capsule success/escape claims from supplied notes were not live revalidated; see [audit D2](../IMPLEMENTATION_AUDIT.md#d2).
 
 ## Last updated
+
+2026-10-22 — Separated first-catch Unique rows from needed four-check progress and added the Haunted remaining-check footer.
 
 2026-10-19 (America/New_York) — Uniform species reference; audited evidence, modes, display and lifecycle. Reviewed source: `93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee`; no local runtime source changes reviewed. See [revision convention](../DOCUMENTATION_GUIDE.md).

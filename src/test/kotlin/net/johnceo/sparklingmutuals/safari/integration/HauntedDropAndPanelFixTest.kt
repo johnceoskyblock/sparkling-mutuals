@@ -139,7 +139,7 @@ class HauntedDropAndPanelFixTest {
             for (biome in SafariBiome.entries) {
                 val rows = SafariPanels.missing(run, biome, mode == SafariMode.UNIQUE, 8, 9,
                     WallSummary(List(5) { WallState.INTACT }), missing).rows
-                rows.filter { it.label.isNotBlank() && it.label !in setOf("Bee nests to punch", "Bird food left to use", "Snooper walls to break", "Mounds to break") }.forEach { row ->
+                rows.filter { it.label.isNotBlank() && it.label !in setOf("Bee nests to punch", "Bird food left to use", "Snooper walls to break", "Mounds to break", "Coins left to use", "Gazers left to check") }.forEach { row ->
                     val species = SafariRoster.named(row.label)
                     assertNotNull(species, row.label)
                     assertEquals(species!!.color, row.color)
@@ -160,6 +160,6 @@ class HauntedDropAndPanelFixTest {
         run.sparklingChecks.scan(SafariBiome.HAUNTED, -4.0, -64.0, listOf("Gazer" to UUID.randomUUID()))
         val rows = SafariPanels.missing(run, SafariBiome.HAUNTED, true, 0, party = party("Gazer")).rows
         assertFalse(rows.any { it.label == "Gazer" })
-        assertFalse(rows.any { it.label.startsWith("Gazers") || it.label.contains("still needs") })
+        assertEquals("2", rows.single { it.label == "Gazers left to check" }.value)
     }
 }

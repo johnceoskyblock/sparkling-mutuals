@@ -62,7 +62,7 @@ class UniqueCompletionTest {
     }
     @Test fun `ordinary Unique species complete from shared catches regardless of missing discoveries`() {
         val run = SafariRun(0); val state = party(*SafariRoster.all.map { it.name }.toTypedArray())
-        (SafariBiome.ICY.critters + SafariBiome.HAUNTED.critters).forEach {
+        (SafariBiome.ICY.critters + SafariBiome.HAUNTED.critters).filterNot { it.name in setOf("Gazer", "Gimmiegold") }.forEach {
             caught(run, it.name)
             assertTrue(complete(run, it.name, state), "Every ordinary Unique species completes from the first shared catch")
             assertTrue(complete(run, it.name, party()), "Owned discovery needs only the catch")

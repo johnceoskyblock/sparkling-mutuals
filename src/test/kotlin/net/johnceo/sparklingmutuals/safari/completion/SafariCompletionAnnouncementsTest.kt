@@ -102,14 +102,14 @@ class SafariCompletionAnnouncementsTest {
         assertTrue(SafariHelperRules.needed("Snoozle", SafariMode.SPARKLING, run, needed))
         assertTrue(SafariEspRules.neededForSparkling("Rockmite", true, needed, false, run))
     }
-    @Test fun `Unique Gazer completes from its first shared catch without a UUID radius check`() {
+    @Test fun `Unique Gazer needs distinct qualified checks after its first shared catch`() {
         val run = SafariRun(0); val state = party("Gazer")
         run.visitBiome(SafariBiome.HAUNTED); caught(run, "Gazer")
         val id = UUID.randomUUID()
         repeat(4) { run.observeCritter(it, "Gazer", id) }
-        assertTrue(run.uniqueComplete("Gazer", state), "four entity IDs for one UUID are not four gazers")
+        assertFalse(run.uniqueComplete("Gazer", state), "four entity IDs for one UUID are not four gazers")
         repeat(2) { run.observeCritter(10 + it, "Gazer", UUID.randomUUID()) }
-        assertTrue(run.uniqueComplete("Gazer", state))
+        assertFalse(run.uniqueComplete("Gazer", state), "unqualified sightings do not finish checking")
         run.observeCritter(12, "Gazer", UUID.randomUUID())
         run.sparklingChecks.scan(SafariBiome.HAUNTED, -4.0, -64.0, List(3) { "Gazer" to UUID.randomUUID() })
         assertTrue(run.uniqueComplete("Gazer", state))

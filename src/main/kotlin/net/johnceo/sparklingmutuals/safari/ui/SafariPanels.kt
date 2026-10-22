@@ -71,6 +71,13 @@ object SafariPanels {
                 if (SafariHelperRules.needed("Rockmite", mode, run, party) && mounds > 0)
                     add(HudRow("Mounds to break", "$mounds", HudRow.GOLD, HudRow.GRAY))
             }
+            if (biome == SafariBiome.HAUNTED && mode == SafariMode.UNIQUE) {
+                if (party.needs("Gimmiegold") && run?.sparklingComplete("Gimmiegold", party, localOnly = true) != true)
+                    add(HudRow("Coins left to use", run?.coinsLeftToUse?.toString() ?: "?", HudRow.GOLD, HudRow.GRAY))
+                if (party.needs("Gazer") && run?.sparklingComplete("Gazer", party, localOnly = true) != true)
+                    add(HudRow("Gazers left to check", "${(4 - (run?.sparklingChecks?.checkCount("Gazer") ?: 0)).coerceAtLeast(0)}",
+                        HudRow.GOLD, HudRow.GRAY))
+            }
         }
         return HudPanel("${biome.label} ${if (sparkling) "Unchecked" else "Biome"} — ${listed.size} left", biome.color,
             rows + if (helpers.isEmpty()) emptyList() else listOf(HudRow()) + helpers)
