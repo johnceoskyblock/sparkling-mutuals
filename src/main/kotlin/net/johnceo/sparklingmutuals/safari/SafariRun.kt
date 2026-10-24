@@ -124,7 +124,25 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
         }
     }
     private val visited = mutableSetOf<SafariBiome>()
-    private fun syncBirdContributions() { birds.contributions(localPlayerName, resources.foodContributions()) }
+    private fun syncBirdContributions() { birds.contributions(localPlayerName, resources.foodContributions(), resources.startingReporters()) }
+    fun observeEarlyBirdVisitor(name: String, x: Double, z: Double, now: Long) {
+        if (name.equals(localPlayerName, true)) return
+        birds.earlyVisitor(name, now - startedAt,
+            net.johnceo.sparklingmutuals.safari.completion.ForestCompletionZones.nearBirdScanRadius(x, z),
+            resources.startingReporters().any { it.equals(name, true) })
+        syncBirdContributions()
+    }
+    /** Counts for compact Full Clear replies, independent of completion/report overrides. */
+    fun capturesLeft(name: String): Int {
+        val target = when (name) {
+            "Honeybug" -> honeybugCaptureTarget
+            "Macaw" -> if (encountered(name)) 1 else 0
+            "Bluebird", "Parakeet" -> birds.spawnedCount(name)
+            "Gimmiegold" -> gimmiegoldCaptureMinimum()
+            else -> maxOf(SafariFullClear.minimum(name), knownPopulation[name] ?: 0)
+        }
+        return (target - count(name)).coerceAtLeast(0)
+    }
     val birdFoodLeftToUse: Int get() { syncBirdContributions(); return birds.foodLeftToUse }
     fun birdSpawnsComplete(localOnly: Boolean = false): Boolean {
         syncBirdContributions()

@@ -40,10 +40,10 @@ class HideyhoSpotterTest {
         val outside = LocalChat.hideyho(inside = false)
         assertEquals("Hideyho inside!", inside.string)
         assertEquals("Hideyho outside!", outside.string)
-        assertEquals(listOf(SafariTheme.TEXT, SafariTheme.ACCENT), colours(inside))
-        assertEquals(listOf(SafariTheme.TEXT, SafariTheme.TEXT), colours(outside))
+        assertEquals(listOf(SafariTheme.CHAT_TEXT, SafariTheme.CHAT_ACCENT), colours(inside))
+        assertEquals(listOf(SafariTheme.CHAT_TEXT, SafariTheme.CHAT_TEXT), colours(outside))
         val line = LocalChat.component(inside)
         assertEquals("[SM] Hideyho inside!", line.string)
-        assertEquals(SafariTheme.ACCENT, line.toFlatList().first().style.color?.value)
+        assertEquals(SafariTheme.CHAT_ACCENT, line.toFlatList().first().style.color?.value)
     }
 }

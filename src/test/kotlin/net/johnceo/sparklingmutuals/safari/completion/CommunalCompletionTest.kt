@@ -94,8 +94,8 @@ class CommunalCompletionTest {
     @Test fun `completion background defaults and customized appearance survive reload`() {
         AppearanceConfig.load(Properties())
         val style = AppearanceConfig.panels.getValue("run_complete")
-        assertEquals(80, style.transparency)
-        assertEquals(0x33AAFFAA, style.backgroundArgb)
+        assertEquals(20, style.transparency)
+        assertEquals(0xCC0D0D10.toInt(), style.backgroundArgb)
         style.transparency = 45
         AppearanceConfig.runCompleteColor = AppearanceConfig.color(0x123456)
         val saved = Properties(); AppearanceConfig.save(saved); AppearanceConfig.load(saved)

@@ -22,9 +22,41 @@ class MissingRunCommandTest {
     }
     @Test fun `only clients inside the Safari answer`() {
         val command = PartyCommand(PartyCommandKind.MISSING_RUN, biome = SafariBiome.ICY)
-        assertTrue(command.answerable(inSafari = true))
+        assertTrue(command.answerable(inSafari = true, currentBiome = SafariBiome.ICY))
+        assertFalse(command.answerable(inSafari = true, currentBiome = SafariBiome.CAVERN))
+        val run = net.johnceo.sparklingmutuals.safari.SafariRun(0)
+        assertTrue(SafariMissingReply.holds(command, run, run, true, currentBiome = SafariBiome.ICY))
+        assertFalse(SafariMissingReply.holds(command, run, run, true, currentBiome = SafariBiome.CAVERN))
         assertFalse(command.answerable(inSafari = false))
         assertTrue(PartyCommand(PartyCommandKind.MUTUALS).answerable(inSafari = false))
+    }
+    private fun party(vararg needed: String) = net.johnceo.sparklingmutuals.safari.PartySparklingState().apply {
+        select(setOf("local"))
+        accept(setOf("local"), mapOf("local" to net.johnceo.sparklingmutuals.safari.SafariRoster.all.map { it.name }.toSet() - needed.toSet()))
+    }
+    @Test fun `full clear reply uses minimum or known populations and rendered source counts`() {
+        val run = net.johnceo.sparklingmutuals.safari.SafariRun(0)
+        run.record(net.johnceo.sparklingmutuals.safari.SafariCatch.parse("CAPTURE! You caught a Nozzlenose!")!!)
+        fun left(biome: SafariBiome) = SafariMissingReply.requirements(run, biome,
+            net.johnceo.sparklingmutuals.safari.SafariMode.FULL_CLEAR, party(), 2, "3")
+        assertTrue("Nozzlenose: 1" in left(SafariBiome.ICY))
+        run.observePopulation(listOf("Nozzlenose" to java.util.UUID.randomUUID(), "Nozzlenose" to java.util.UUID.randomUUID()))
+        assertTrue("Nozzlenose: 2" in left(SafariBiome.ICY))
+        run.updateNestEvidence(false, 1, found = 5, unknown = 0)
+        run.record(net.johnceo.sparklingmutuals.safari.SafariCatch.parse("CAPTURE! You caught a Honeybug!")!!)
+        assertTrue("Honeybug: 4" in left(SafariBiome.FOREST))
+        assertTrue(left(SafariBiome.CAVERN).containsAll(listOf("Mounds: 2", "Snoozle Walls: 3")))
+    }
+    @Test fun `unique and shiny requirements use party needs and retain bee source reminder after capture`() {
+        val run = net.johnceo.sparklingmutuals.safari.SafariRun(0)
+        run.record(net.johnceo.sparklingmutuals.safari.SafariCatch.parse("CAPTURE! You caught a Honeybug!")!!)
+        val unique = net.johnceo.sparklingmutuals.safari.SafariMode.UNIQUE
+        assertTrue("Make sure to clear all nests" in SafariMissingReply.requirements(run, SafariBiome.FOREST, unique, party("Honeybug"), 0, "0"))
+        assertFalse("Honeybug" in SafariMissingReply.requirements(run, SafariBiome.FOREST, unique, party("Honeybug"), 0, "0"))
+        assertFalse("Make sure to clear all nests" in SafariMissingReply.requirements(run, SafariBiome.FOREST, unique, party(), 0, "0"))
+        val shiny = net.johnceo.sparklingmutuals.safari.SafariMode.SPARKLING
+        assertEquals(listOf("Snoozle Walls: 2"), SafariMissingReply.requirements(run, SafariBiome.CAVERN, shiny, party("Snoozle"), 4, "2"))
+        assertEquals(listOf("Wumpa: capture"), SafariMissingReply.requirements(run, SafariBiome.ICY, shiny, party("Wumpa"), 0, "0"))
     }
     @Test fun `a delayed reply is dropped once its run ends or another run starts`() {
         val command = PartyCommand(PartyCommandKind.MISSING_RUN)

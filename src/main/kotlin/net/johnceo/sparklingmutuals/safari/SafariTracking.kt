@@ -85,6 +85,7 @@ object SafariTracking {
             ensureRun(client)
             ledger.current?.sparklingBroadcast(text, now)
             ledger.current?.entry?.chat(text)
+            ledger.current?.startingAnnouncement?.observeHotspot(text, now)
             if (text.startsWith("HEAD START!")) ledger.current?.startingGrantWindow(now)
             ledger.current?.resources?.headStart(text)
             if (text.startsWith("HEAD START!")) ledger.current?.entry?.headStart?.let { type ->
@@ -131,7 +132,6 @@ object SafariTracking {
         // Sample on the boat too, before anyone can use starting supplies or collect floor drops.
         run.inventoryEvidence((0 until player.inventory.containerSize).map { player.inventory.getItem(it) }
             .filterNot { it.isEmpty }.map { it.hoverName.string to it.count }, now)
-        run.startingAnnouncement.observeArea(SafariAreaMap.areaAt(player.x, player.y, player.z), now)
         if (PartyManager.hasInfo && PartyManager.getMembers().size > 1) {
             run.startingAnnouncement.dispatch(now, SafariSparklingMode.state) { message ->
                 connection.sendCommand("pc $message")

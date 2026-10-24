@@ -8,13 +8,15 @@ Authoritative shared spawning, capture and reporting rules for Bluebird, Parakee
 
 A **feeding opportunity** is the ledger's unit of expected bird population: one Bluebird, one Parakeet, or a Macaw pair. This is implemented accounting, not proof of an exact server population.
 
-**Qualified population** means shared captures plus current uncaptured rendered birds, observed while the player is inside Forest at X/Z 6/51 within 15 horizontal blocks. **Retained spawning proof** is qualified population established with sampled zero held food and zero remaining food markers. It is not a union of old bird UUIDs.
+**Qualified population** means shared captures plus current uncaptured rendered birds, observed while the player is inside Forest at X/Z 6/51 within 40 horizontal blocks. **Retained spawning proof** is qualified population established with sampled zero held food and zero remaining food markers. It is not a union of old bird UUIDs.
 
 ## Implemented rules
 
 ### Expected population
 
-Expected opportunities are **max(9, personally collected Forest food quantity) + local extra food + reported extra food**. Early discovery-gated starting-item reports supply remote contributions before clearing completes; later unused-resource local titles remain, and a separately paced party follow-up after a local biome report names which members still need the related Sparklings without adding source contributions again. Nine is the implemented baseline. Local extras include starting inventory/grants and pickups outside Forest, avoiding overlap with early pickup messages. Accepted party notices use sender/type maxima; the local sender's notice overlaps local extras. The first available inventory sample starts the three-second starting-inventory window.
+Expected opportunities are **max(9, personally collected Forest food quantity) + local extra food + reported extra food + inferred unreported starting food**. Early discovery-gated starting-item reports supply remote contributions before clearing completes; later unused-resource local titles remain, and a separately paced party follow-up after a local biome report names which members still need the related Sparklings without adding source contributions again. Nine is the implemented baseline. Local extras include starting inventory/grants and pickups outside Forest, avoiding overlap with early pickup messages. Accepted party notices use sender/type maxima; the local sender's notice overlaps local extras. The first available inventory sample starts the three-second starting-inventory window.
+
+During the first 30 seconds from run arrival, a loaded party teammate in mapped Forest within 20 blocks of the 40-block scan radius (60 horizontal blocks from X/Z 6/51) contributes one inferred starting food if they have not sent a parsed `[SM] Starting items:` report. The local player is excluded. Repeated sightings, departure/reentry and sightings after 30 seconds add nothing further. Any later starting report replaces this estimate with its actual food quantities; a report listing only coins removes the food estimate. This is a conservative heuristic, not proof that the teammate actually owns food. It raises the shared feeding target without fabricating a pickup, capture or usage event.
 
 Qualified population is:
 
@@ -86,6 +88,8 @@ While outside Forest, Unique trusts fd after each bird's first catch, or waives 
 Outside-Forest Sparkling checks accept fd covering the current feeding target, ignoring old floor-marker scans, while still requiring no held food. Later starting-food contributions increase demand and require a fresh report or enough actual capture proof. Needed starting food still held by this client blocks its destination completion/report.
 
 ## Last updated
+
+2026-10-24 — Expanded bird population/food-use coverage to 40 blocks and added one provisional starting food for unreporting early Forest visitors, replaced by real starting reports.
 
 2026-10-22 — Remote fd can waive unseen zero-spawn birds in Unique; current Forest retains local spawning proof.
 
