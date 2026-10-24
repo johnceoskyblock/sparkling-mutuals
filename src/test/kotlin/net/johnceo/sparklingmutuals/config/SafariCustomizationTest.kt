@@ -14,6 +14,29 @@ import org.junit.jupiter.api.io.TempDir
 
 class SafariCustomizationTest {
     @TempDir lateinit var dir: Path
+    @Test fun `dark theme upgrades old panel defaults while preserving custom colors and opacity`() {
+        val saved = Properties().apply {
+            setProperty("appearance.progress.backgroundColor", AppearanceConfig.color(0x241F18))
+            setProperty("appearance.progress.borderColor", AppearanceConfig.color(0xE3C77E))
+            setProperty("appearance.run_complete.backgroundColor", AppearanceConfig.color(0xAAFFAA))
+            setProperty("appearance.run_complete.transparency", "80")
+            setProperty("appearance.missing.backgroundColor", "3:70:18:52:86")
+            setProperty("appearance.missing.borderColor", AppearanceConfig.color(0x123456))
+            setProperty("appearance.missing.transparency", "45")
+        }
+        AppearanceConfig.load(saved)
+        assertEquals(AppearanceConfig.color(SafariTheme.BACKGROUND), AppearanceConfig.panels.getValue("progress").backgroundColor)
+        assertEquals(AppearanceConfig.color(SafariTheme.BORDER), AppearanceConfig.panels.getValue("progress").borderColor)
+        assertEquals(0xCC0D0D10.toInt(), AppearanceConfig.panels.getValue("run_complete").backgroundArgb)
+        val custom = AppearanceConfig.panels.getValue("missing")
+        assertEquals("3:70:18:52:86", custom.backgroundColor)
+        assertEquals(AppearanceConfig.color(0x123456), custom.borderColor)
+        assertEquals(45, custom.transparency)
+        AppearanceConfig.save(saved)
+        AppearanceConfig.load(saved)
+        assertEquals("3:70:18:52:86", custom.backgroundColor)
+        assertEquals(0xCC0D0D10.toInt(), AppearanceConfig.panels.getValue("run_complete").backgroundArgb)
+    }
     @Test fun `settings categories omit descriptors and general owns shared actions`() {
         ConfigManager.init(dir)
         ContestConfig.init(dir)
@@ -32,7 +55,7 @@ class SafariCustomizationTest {
         AppearanceConfig.panels.filterKeys { it != "run_complete" }.values.forEach {
             assertTrue(it.borderEnabled)
             assertEquals(20, it.transparency)
-            assertEquals(0xCC241F18.toInt(), it.backgroundArgb)
+            assertEquals(0xCC0D0D10.toInt(), it.backgroundArgb)
         }
     }
     @Test fun `one selected hex color applies to multiple targets without enabling borders or ESP`() {
@@ -88,7 +111,7 @@ class SafariCustomizationTest {
         })
         assertEquals(100, AppearanceConfig.panels.getValue("miria").transparency)
         assertEquals(0, AppearanceConfig.panels.getValue("missing").transparency)
-        assertEquals(0xCC241F18.toInt(), AppearanceConfig.panels.getValue("captures").backgroundArgb)
+        assertEquals(0xCC0D0D10.toInt(), AppearanceConfig.panels.getValue("captures").backgroundArgb)
     }
     @Test fun `customization offers every existing critter color exactly once`() {
         ConfigManager.init(dir)

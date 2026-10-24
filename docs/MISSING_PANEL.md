@@ -91,7 +91,7 @@ Haunted footers remain after their first catches remove the species rows, and di
 
 Reviewed source: 93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee.
 
-- [SafariPanels](../src/main/kotlin/net/johnceo/sparklingmutuals/safari/ui/SafariPanels.kt): progress, missingCritters (also used by !m), missing, fixedCounter and captures.
+- [SafariPanels](../src/main/kotlin/net/johnceo/sparklingmutuals/safari/ui/SafariPanels.kt): progress, missingCritters (GUI only; !m uses SafariMissingReply), missing, fixedCounter and captures.
 - [SafariRun](../src/main/kotlin/net/johnceo/sparklingmutuals/safari/SafariRun.kt): completed, uniqueComplete, fullClearComplete, fullClearMissingComplete and nestCounterNeeded; [SafariHelperRules](../src/main/kotlin/net/johnceo/sparklingmutuals/safari/completion/SafariHelperRules.kt): independent helper gates.
 - [SafariTracking](../src/main/kotlin/net/johnceo/sparklingmutuals/safari/SafariTracking.kt) supplies runtime HUD consumers; [SafariBiomeClearTracking](../src/main/kotlin/net/johnceo/sparklingmutuals/safari/completion/SafariBiomeClearTracking.kt) collects evidence independently of HUD visibility.
 - Existing checks: [SafariPanelSeparationTest](../src/test/kotlin/net/johnceo/sparklingmutuals/safari/ui/SafariPanelSeparationTest.kt), [NestCounterPanelTest](../src/test/kotlin/net/johnceo/sparklingmutuals/safari/ui/NestCounterPanelTest.kt), [FullClearMissingPanelTest](../src/test/kotlin/net/johnceo/sparklingmutuals/safari/completion/FullClearMissingPanelTest.kt). Not run locally in this audit.
@@ -104,7 +104,19 @@ The older Billygoat proposal expected Unique progress to wait for two checks aft
 
 Outside the current biome, a party completion report is trusted even after an earlier visit. Unique retains confirmed first captures, except unencountered zero-spawn birds, Rockmite and Snoozle. Full Clear retains actual capture minimums, known nest/coin targets and its bird capture formula. Current-biome scans remain authoritative. A report cannot invent capture counts or local missing-panel proof.
 
+## Party command: !m
+
+Any party member may request `!m` or `!m <biome>` (including c/f/i/h). A mod client only answers while inside the requested biome; bare `!m` selects that client's current biome. Queued answers are discarded if the responder leaves the biome, run, world or mode. Existing command cooldowns, party-response deduplication and chunk pacing apply; this command makes no API requests.
+
+- **Full Clear:** concise `Critter: remaining` entries use known populations where available, otherwise the species minimum, minus shared captures. Honeybug uses the retained nest-derived target; birds use known spawn totals with the one-Macaw exception. Zero or negative remainders are omitted. Cavern also lists rendered `Mounds` and `Snoozle Walls`; Forest lists food left to use.
+- **Unique:** uncaught species only, preserving proven zero-spawn exceptions. Extra check notes appear only for species the party needs shiny. If shiny Honeybug is needed, always include `Make sure to clear all nests`, even after catching one.
+- **Sparkle:** outstanding checks only for needed species: nests, mounds, Snoozle Walls, bird food and checking birds, Shining Coins and checking Gimmiegolds, Wumpa/Doomspiral captures, and remaining species checks. Completed checks are omitted.
+
+The compact party reply uses `Missing <Biome>: ...`, `Done` when nothing remains, and ordinary `shiny` wording rather than the detection-alert keyword. Unknown discovery data is reported as loading rather than complete. The GUI missing panel keeps its existing presentation; the command now has its own mode-aware formatter.
+
 ## Last updated
+
+2026-10-24 — Added mode-specific, current-biome-only !m replies with capture deficits and source/check requirements.
 
 2026-10-22 — Clarified remote Unique/Full Clear progress and current-biome scan authority.
 

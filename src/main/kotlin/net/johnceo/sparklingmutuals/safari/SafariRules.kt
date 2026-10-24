@@ -31,13 +31,13 @@ object SafariRules {
     fun isHideyhoDialogue(text: String) = hideyho.matches(strip(text))
 }
 
-/** Area 0 in the v0.9.0 graph is the boat/center, not the entrance. Unknown sidebar data never ends a run. */
+/** Area 0 is the boat/center. An active run can temporarily leave the graph during death/respawn. */
 enum class SafariLocation {
     INSIDE, ENTRANCE, OUTSIDE, UNKNOWN;
     companion object {
         fun resolve(lines: List<String>, mappedArea: Int?, entered: Boolean): SafariLocation = when {
             SafariRules.isEntrance(lines) -> ENTRANCE
-            SafariRules.isIslandName(lines) && mappedArea == null -> OUTSIDE
+            SafariRules.isIslandName(lines) && mappedArea == null && !entered -> OUTSIDE
             SafariRules.isSafari(lines) -> INSIDE
             SafariRules.zone(lines) != null -> OUTSIDE
             entered && mappedArea in 0..4 -> INSIDE

@@ -195,6 +195,7 @@ class SafariResources {
         val chat = PartyChat.parse(SafariRules.strip(raw)) ?: return false
         val reminders = StartingResourceNotice.parse(chat.body, PartySparklingState()) ?: return false
         val early = chat.body.trim().startsWith("[SM] Starting items: ")
+        if (early) startingReporters.add(chat.sender.lowercase())
         reminders.items.forEach {
             val key = chat.sender.lowercase() to it.type
             if (early || key in earlyReports) {
@@ -204,6 +205,8 @@ class SafariResources {
         }
         return true
     }
+    private val startingReporters = mutableSetOf<String>()
+    fun startingReporters(): Set<String> = startingReporters.toSet()
     private fun contribution(player: String, type: FloorDropType, amount: Int) {
         val key = player.lowercase() to type
         if (type == FloorDropType.COIN) reportedCoins[key.first] = maxOf(reportedCoins[key.first] ?: 0, amount)

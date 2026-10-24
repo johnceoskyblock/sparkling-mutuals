@@ -67,7 +67,9 @@ object SafariAssist {
     fun onClientTick(client: Minecraft) {
         if (client.level !== lastLevel) { reset(); lastLevel = client.level }
         val player = client.player
-        if (client.level == null || player == null) { reset(); return }
+        // Respawning may briefly replace the player while the Safari world is unchanged.
+        // World changes and disconnects reset the session separately; a missing player must not.
+        if (client.level == null || player == null) { shinies = emptyList(); return }
         if (ConfigManager.removeDarkness && inSafari) player.removeEffect(MobEffects.DARKNESS)
         if (++ticks < 5) return
         ticks = 0

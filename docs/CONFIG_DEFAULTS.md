@@ -64,7 +64,13 @@ Startup and mode changes apply an ESP preset enabling all groups, species and Ro
 - **Missing / Unchecked panel** shares `missingPanel` and its HUD layout across modes. Sparkling labels it **Unchecked** for every biome; Unique and Full Clear use Missing.
 - Automatic unused starting-food/coin reminders have no independent toggle; see [tracking](critters/TRACKING.md).
 
-### ESP appearance
+### Dark interface theme
+
+Settings, HUDs, alerts, the HUD editor, capture-count screen and API-key screen use near-black backgrounds (`#0D0D10`), charcoal controls (`#19191E`, hover `#292930`), light gray body text (`#E6E6EB`) and restrained gold accents (`#C9A75D`). HUD borders default to muted gold (`#605238`). Local chat uses brighter text (`#F1F1F5`) with a light gold `[SM]` prefix (`#E6C878`); explicitly styled feedback keeps its semantic colors. `/sm history` and its Stats tab retain their existing appearance.
+
+Every HUD, including the run-completion alert, defaults to the dark background at 20% transparency. Exact saved old brown backgrounds and old gold borders migrate to the new defaults. The old mint run-completion background and its default 80% transparency migrate to dark at 20%. Other custom colors, chroma, opacity, border switches and layout remain saved as chosen. These migrations are written with the next ordinary config save.
+
+### ESP label appearance
 
 Other ESP text scale applies to critter timers, nest labels and unknown sparkling labels. Each floor-drop type and party names have independent scales; teammate names also retain distance scaling. Scale 1 restores original label size.
 
@@ -99,6 +105,8 @@ Startup normalizes legacy `pb.*` keys from the general file and the earlier `Spa
 - Existing secondary coverage: [ConfigTest](../src/test/kotlin/net/johnceo/sparklingmutuals/config/ConfigTest.kt), [SafariSettingsTest](../src/test/kotlin/net/johnceo/sparklingmutuals/config/SafariSettingsTest.kt), [SafariCustomizationTest](../src/test/kotlin/net/johnceo/sparklingmutuals/config/SafariCustomizationTest.kt), [SafariFeatureDefaultsTest](../src/test/kotlin/net/johnceo/sparklingmutuals/config/SafariFeatureDefaultsTest.kt). No tests or live settings session ran in this audit. Reopen/restart, migration failure recovery and preset transitions require their appropriate runtime checks.
 
 ## Last updated
+
+2026-10-24 — Applied a near-black and charcoal theme with subtle gold accents and brighter local chat. Migrated old default HUD colors; preserved custom choices and the History/Stats GUI.
 
 2026-10-22 — Grouped Safari helpers, ESP and Customization into related dropdowns. Capture projections and ticket auto-selection now default on; the four explicit opt-outs remain off, First Class remains the default preference, and saved choices are preserved.
 

@@ -332,7 +332,7 @@ class SafariSettings : Config() {
 
     override fun getTitle(): StructuredText = StructuredText.of("Sparkling Mutuals · Safari").withColour(SafariTheme.ACCENT)
     override fun formatCategoryName(category: ProcessedCategory, selected: Boolean): StructuredText =
-        category.displayName.copyShallow().withColour(if (selected) SafariTheme.ACCENT else 0xC5B99E)
+        category.displayName.copyShallow().withColour(if (selected) SafariTheme.ACCENT else SafariTheme.MUTED)
 
     private fun feedback(text: String) { Minecraft.getInstance().player?.sendSystemMessage(LocalChat.component("[SM] $text")) }
     override fun executeRunnable(id: Int) {

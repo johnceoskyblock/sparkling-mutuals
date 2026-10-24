@@ -45,7 +45,9 @@ object PartyCommands {
         history.record(chat.body, senderUuid)
         // Keep actual result bodies; a different result for the same command cannot cancel ours.
         val parsed = PartyCommand.fromChat(text) ?: return
-        val request = parsed.copy(command = parsed.command.forResponder(Minecraft.getInstance().player?.name?.string ?: return))
+        val responderCommand = parsed.command.forResponder(Minecraft.getInstance().player?.name?.string ?: return)
+        val request = parsed.copy(command = if (responderCommand.kind == PartyCommandKind.MISSING_RUN && responderCommand.biome == null)
+            responderCommand.copy(biome = SafariAssist.biome ?: return) else responderCommand)
         if (!request.command.allowed() || !request.command.answerable()) return
         // Bind run-scoped commands to the run they were asked in; every later stage rechecks it.
         val run = SafariTracking.ledger.current

@@ -32,8 +32,7 @@ class StartingResourceAnnouncementTest {
         val runs = listOf(SafariRun(0), SafariRun(0))
         runs.forEach { run ->
             run.inventoryEvidence(listOf("Bag of Seeds" to 2, "Shining Coin" to 1), 0)
-            run.startingAnnouncement.observeArea(0, 0)
-            run.startingAnnouncement.observeArea(2, 100)
+            run.startingAnnouncement.observeHotspot("HOTSPOT! Your Hunting Hotspot is the Forest Biome!", 100)
             assertFalse(run.startingAnnouncement.dispatch(2100, state) { fail("still loading") })
         }
         val noData = net.johnceo.sparklingmutuals.commands.SafariLookup.discoveriesOrEmpty {
@@ -68,8 +67,7 @@ class StartingResourceAnnouncementTest {
         }
         val run = SafariRun(0)
         run.inventoryEvidence(listOf("Bag of Seeds" to 1, "Shining Coin" to 1), 0)
-        run.startingAnnouncement.observeArea(0, 0)
-        run.startingAnnouncement.observeArea(1, 100)
+        run.startingAnnouncement.observeHotspot("HOTSPOT! Your Hunting Hotspot is the Forest Biome!", 100)
         val sent = mutableListOf<String>()
         assertFalse(run.startingAnnouncement.dispatch(599, state, sent::add))
         assertTrue(run.startingAnnouncement.dispatch(600, state, sent::add))
@@ -91,15 +89,13 @@ class StartingResourceAnnouncementTest {
             run.inventoryEvidence(listOf("Bag of Seeds" to 2, "Shining Coin" to 1, "Icebreaker" to 1), 0)
             val sent = mutableListOf<String>()
             val delivery = run.startingAnnouncement
-            delivery.observeArea(0, 0)
             assertFalse(delivery.dispatch(10000, needs, sent::add), "time on boat does not trigger sending")
-            delivery.observeArea(null, 10001)
+            delivery.observeHotspot("Party > Friend: HOTSPOT! Your Hunting Hotspot is the Forest Biome!", 10001)
             assertFalse(delivery.dispatch(20000, needs, sent::add), "unknown area is not departure")
-            delivery.observeArea(2, 20001)
+            delivery.observeHotspot("HOTSPOT! Your Hunting Hotspot is the Forest Biome!", 20001)
             assertFalse(delivery.dispatch(20500, needs, sent::add))
             delivery.dispatch(20501, needs, sent::add)
-            delivery.observeArea(0, 23000)
-            delivery.observeArea(4, 24000)
+            delivery.observeHotspot("HOTSPOT! Your Hunting Hotspot is the Haunted Biome!", 24000)
             assertFalse(delivery.dispatch(30000, needs, sent::add))
             assertEquals(listOfNotNull(expected), sent)
             assertFalse(SafariRun(40000).startingAnnouncement.dispatch(100000, needs, sent::add))
@@ -109,8 +105,7 @@ class StartingResourceAnnouncementTest {
     @Test fun `loading discoveries waits rather than broadcasting every resource as missing`() {
         val run = SafariRun(0)
         run.inventoryEvidence(listOf("Shining Coin" to 2, "Yogi Berry" to 1), 0)
-        run.startingAnnouncement.observeArea(0, 0)
-        run.startingAnnouncement.observeArea(3, 100)
+        run.startingAnnouncement.observeHotspot("HOTSPOT! Your Hunting Hotspot is the Forest Biome!", 100)
         val sent = mutableListOf<String>()
         assertFalse(run.startingAnnouncement.dispatch(2100, PartySparklingState(), sent::add))
         assertTrue(run.startingAnnouncement.dispatch(3000, party("Bluebird"), sent::add))
@@ -120,8 +115,7 @@ class StartingResourceAnnouncementTest {
     @Test fun `dispatch samples unused quantities without announcing later pickups as starting grants`() {
         val run = SafariRun(0)
         run.inventoryEvidence(listOf("Shining Coin" to 2), 0)
-        run.startingAnnouncement.observeArea(0, 0)
-        run.startingAnnouncement.observeArea(4, 4000)
+        run.startingAnnouncement.observeHotspot("HOTSPOT! Your Hunting Hotspot is the Forest Biome!", 4000)
         run.resources.pickup("FLOOR DROP! Bag of Seeds")
         run.inventoryEvidence(listOf("Shining Coin" to 1, "Bag of Seeds" to 1), 6000)
         val sent = mutableListOf<String>()
@@ -132,12 +126,11 @@ class StartingResourceAnnouncementTest {
     @Test fun `waiting on boat before admission does not lose the second ticket reward`() {
         val run = SafariRun(0)
         run.inventoryEvidence(emptyList(), 0)
-        run.startingAnnouncement.observeArea(0, 0)
         run.startingGrantWindow(60000)
         run.resources.headStart("HEAD START! You started with a Wriggleworm!")
         run.birds.startingGrant("Wriggleworm")
         run.inventoryEvidence(listOf("Wriggleworm" to 1, "Yogi Berry" to 1), 60100)
-        run.startingAnnouncement.observeArea(1, 60200)
+        run.startingAnnouncement.observeHotspot("HOTSPOT! Your Hunting Hotspot is the Forest Biome!", 60200)
         val sent = mutableListOf<String>()
         assertTrue(run.startingAnnouncement.dispatch(60700, party("Macaw"), sent::add))
         assertEquals("[SM] Starting items: 1x Wriggleworm; 1x Yogi Berry", sent.single())
@@ -152,8 +145,7 @@ class StartingResourceAnnouncementTest {
         run.startingGrantWindow(10000)
         run.resources.headStart("HEAD START! You started with a Wriggleworm!")
         run.inventoryEvidence(listOf("Wriggleworm" to 1), 10000)
-        run.startingAnnouncement.observeArea(0, 10000)
-        run.startingAnnouncement.observeArea(1, 10100)
+        run.startingAnnouncement.observeHotspot("HOTSPOT! Your Hunting Hotspot is the Forest Biome!", 10100)
         val sent = mutableListOf<String>()
         fun send(message: String) { sent += message; run.resources.partyNotice("Party > Me: $message") }
         assertTrue(run.startingAnnouncement.dispatch(10600, party("Macaw"), ::send))
@@ -172,8 +164,7 @@ class StartingResourceAnnouncementTest {
     @Test fun `failed send is retried but a successfully sent announcement is not repeated`() {
         val run = SafariRun(0)
         run.inventoryEvidence(listOf("Bag of Seeds" to 2), 0)
-        run.startingAnnouncement.observeArea(0, 0)
-        run.startingAnnouncement.observeArea(1, 1)
+        run.startingAnnouncement.observeHotspot("HOTSPOT! Your Hunting Hotspot is the Forest Biome!", 1)
         assertThrows(IllegalStateException::class.java) {
             run.startingAnnouncement.dispatch(2001, party("Macaw")) { error("not sent") }
         }

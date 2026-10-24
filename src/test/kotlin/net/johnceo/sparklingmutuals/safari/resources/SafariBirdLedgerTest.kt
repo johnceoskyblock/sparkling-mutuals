@@ -5,6 +5,31 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class SafariBirdLedgerTest {
+    @Test fun `early unreported teammate adds one food and a real starting report replaces the estimate`() {
+        val run = net.johnceo.sparklingmutuals.safari.SafariRun(1000)
+        run.localPlayer("Local")
+        run.observeEarlyBirdVisitor("Local", 6.0, 51.0, 2000)
+        run.observeEarlyBirdVisitor("FarAway", 66.01, 51.0, 2000)
+        run.observeEarlyBirdVisitor("Late", 6.0, 51.0, 31001)
+        assertEquals(9, run.birds.feedingTarget)
+        repeat(3) { run.observeEarlyBirdVisitor("Friend", 66.0, 51.0, 2000) }
+        assertEquals(10, run.birds.feedingTarget)
+        run.resources.partyNotice("Party > Friend: [SM] Starting items: 2x Bag of Seeds")
+        run.birdFoodLeftToUse // Reconcile retained party reports with inferred food.
+        assertEquals(11, run.birds.feedingTarget)
+        run.observeEarlyBirdVisitor("Friend", 6.0, 51.0, 3000)
+        assertEquals(11, run.birds.feedingTarget)
+        run.resources.partyNotice("Party > Reporter: [SM] Starting items: 1x Shining Coin")
+        run.observeEarlyBirdVisitor("Reporter", 6.0, 51.0, 3000)
+        assertEquals(11, run.birds.feedingTarget)
+    }
+    @Test fun `bird food scan covers forty horizontal blocks`() {
+        val zone = net.johnceo.sparklingmutuals.safari.completion.ForestCompletionZones
+        assertTrue(zone.inBirdScanRadius(46.0, 51.0))
+        assertFalse(zone.inBirdScanRadius(46.01, 51.0))
+        assertTrue(zone.nearBirdScanRadius(66.0, 51.0))
+        assertFalse(zone.nearBirdScanRadius(66.01, 51.0))
+    }
     private fun ready() = SafariBirdLedger().apply { inventory(emptyList()); floor(0) }
     @Test fun `spawn chat never establishes population or Macaw pairs`() {
         val birds = ready()

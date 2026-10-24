@@ -7,7 +7,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor
 
 class PanelStyle {
     var borderEnabled = true
-    var borderColor = AppearanceConfig.color(SafariTheme.ACCENT)
+    var borderColor = AppearanceConfig.color(SafariTheme.BORDER)
     var backgroundColor = AppearanceConfig.color(SafariTheme.BACKGROUND)
     var transparency = 20
         set(value) { field = value.coerceIn(0, 100) }
@@ -23,9 +23,7 @@ class PanelStyle {
 
 object AppearanceConfig {
     fun color(rgb: Int) = ChromaColour.special(0, 255, rgb)
-    val panels = listOf("miria", "progress", "missing", "captures", "sparklings", "alert", "gems", "bird_food", "incense", "warp", "run_complete").associateWith { id -> PanelStyle().apply {
-        if (id == "run_complete") { backgroundColor = color(0xAAFFAA); transparency = 80 }
-    } }
+    val panels = listOf("miria", "progress", "missing", "captures", "sparklings", "alert", "gems", "bird_food", "incense", "warp", "run_complete").associateWith { PanelStyle() }
     var runCompleteColor = color(0x55FF55)
     var selectedHex = "#FFD700"
     var nestColor = color(0x55FF55)
@@ -42,14 +40,21 @@ object AppearanceConfig {
         selectedHex = properties.getProperty("appearance.selectedHex")?.takeIf { withHex(color(0), it) != null } ?: "#FFD700"
         panels.forEach { (id, style) ->
             style.borderEnabled = properties.getProperty("appearance.$id.borderEnabled")?.toBooleanStrictOrNull() ?: true
-            style.borderColor = SafariEspConfig.validColor(properties.getProperty("appearance.$id.borderColor"), color(SafariTheme.ACCENT))
-            style.backgroundColor = SafariEspConfig.validColor(properties.getProperty("appearance.$id.backgroundColor"), color(if (id == "run_complete") 0xAAFFAA else SafariTheme.BACKGROUND))
-            style.transparency = properties.getProperty("appearance.$id.transparency")?.toIntOrNull() ?: if (id == "run_complete") 80 else 20
+            val background = properties.getProperty("appearance.$id.backgroundColor")
+            val legacyCompletion = id == "run_complete" && background == color(0xAAFFAA)
+            // Upgrade exact old defaults only; user-picked colors, alpha and chroma remain intact.
+            style.borderColor = migratedColor(properties.getProperty("appearance.$id.borderColor"), SafariTheme.BORDER, setOf(0xE3C77E))
+            style.backgroundColor = migratedColor(background, SafariTheme.BACKGROUND,
+                if (id == "run_complete") setOf(0x241F18, 0xAAFFAA) else setOf(0x241F18))
+            val transparency = properties.getProperty("appearance.$id.transparency")?.toIntOrNull()
+            style.transparency = if (legacyCompletion && transparency == 80) 20 else transparency ?: 20
         }
         waypointColors.forEach { (property, default) ->
             property.set(SafariEspConfig.validColor(properties.getProperty("appearance.${property.name}"), color(default)))
         }
     }
+    private fun migratedColor(saved: String?, default: Int, legacy: Set<Int>): String =
+        if (legacy.any { saved == color(it) }) color(default) else SafariEspConfig.validColor(saved, color(default))
     fun save(properties: Properties) {
         properties.setProperty("appearance.selectedHex", selectedHex)
         panels.forEach { (id, style) ->

@@ -107,7 +107,7 @@ Escape-capable species can reportedly return with replacement UUIDs. The retaine
 
 ### Run lifecycle
 
-SafariLedger creates a run on detected arrival; a later entry banner confirms the same arrival without erasing it. Entrance/outside, world change and disconnect end the active run. Unknown location alone does not end it. Last-run display can remain after departure; it is not a new active run. A new run resets catches, checks, contributions, slots, source surveys and notification histories. Display switches do not control evidence collection.
+SafariLedger creates a run on detected arrival; a later entry banner confirms the same arrival without erasing it. A player death does not end the run: an unmapped death/respawn position while the area still says Critter Safari keeps the active run, and a temporarily missing local player in the same world does not reset location or sparkling alert memory. Captures, checks, source evidence, biome reports, resources and the original timer remain attached to that same run. Confirmed entrance/outside locations, actual world changes and disconnects end the active run. Unknown location alone does not end it. Last-run display can remain after departure; it is not a new active run. A new run resets catches, checks, contributions, slots, source surveys and notification histories. Display switches do not control evidence collection.
 
 ## Exceptions
 
@@ -144,6 +144,8 @@ Full Clear still requires actual minimum captures, known Honeybug nest totals, s
 Each client can send one unused starting-item reminder batch per run after a local clear, even if a peer sent that biome report first. A report for a different biome alone never arms that client's reminder.
 
 ## Last updated
+
+2026-10-24 — Preserve the active run during unmapped death/respawn positions and temporary local-player replacement. Confirmed departures still end the run; the next run starts with fresh progress.
 
 2026-10-22 — Remote reports take priority outside the current biome, including previously visited biomes; Unique first catches and Full Clear capture minimums remain required.
 

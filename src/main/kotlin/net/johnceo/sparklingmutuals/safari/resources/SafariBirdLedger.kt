@@ -16,6 +16,12 @@ class SafariBirdLedger {
     private var verifiedPopulation = 0
     private var heldFoods: Int? = null
     private var reportedExtras = 0
+    private val inferredFood = mutableSetOf<String>()
+    private var inferredExtras = 0
+    /** One provisional food per unreporting teammate; later starting reports replace the estimate. */
+    fun earlyVisitor(name: String, elapsed: Long, nearBirds: Boolean, hasStartingReport: Boolean) {
+        if (elapsed in 0..30000 && nearBirds && !hasStartingReport) inferredFood.add(name.lowercase())
+    }
     private var reportedTarget: Int? = null
     private var announced = false
     private var forestPickupEvents = 0
@@ -57,10 +63,12 @@ class SafariBirdLedger {
         return maxOf(startingFoods[food] ?: 0, early) + (picked[food] ?: 0) - (forest[food] ?: 0) - early
     }
     private val localExtras get() = foods.sumOf(::localExtra)
-    val feedingTarget get() = maxOf(9, forestCollected) + localExtras + reportedExtras
+    val feedingTarget get() = maxOf(9, forestCollected) + localExtras + reportedExtras + inferredExtras
     val sparklingTarget get() = feedingTarget
     /** Sender/type maxima deduplicate repeated notices; local notices overlap starting inventory. */
-    fun contributions(local: String?, notices: Map<Pair<String, FloorDropType>, Int>) {
+    fun contributions(local: String?, notices: Map<Pair<String, FloorDropType>, Int>, reporters: Set<String> = emptySet()) {
+        val known = reporters.map(String::lowercase).toSet() + notices.keys.map { it.first.lowercase() }
+        inferredExtras = inferredFood.count { it !in known && !it.equals(local, true) }
         reportedExtras = notices.entries.sumOf { (key, amount) ->
             if (local != null && key.first.equals(local, true)) (amount - localExtra(key.second.label)).coerceAtLeast(0) else amount
         }
@@ -117,5 +125,5 @@ class SafariBirdLedger {
             count("Bluebird") + count("Parakeet") + macawCredit >= feedingTarget
     }
     fun debug() = "expected=$feedingTarget qualifiedPopulation=$currentPopulation verifiedPopulation=$verifiedPopulation floorRemaining=$floorDropsRemaining " +
-        "heldFood=$heldFoods localForestPickups=$forestPickupEvents reportTarget=$reportedTarget renderedTotals=$renderedTotals"
+        "heldFood=$heldFoods localForestPickups=$forestPickupEvents inferredExtras=$inferredExtras reportTarget=$reportedTarget renderedTotals=$renderedTotals"
 }

@@ -41,6 +41,32 @@ class SafariSessionTest {
         assertEquals(6000L, run.elapsed(12000))
         assertEquals(1, ledger.displayed!!.count("Honeybug"))
     }
+    @Test fun `death outside biome map preserves the same run until a confirmed exit`() {
+        val ledger = SafariLedger()
+        ledger.update(SafariLocation.INSIDE, SafariBiome.FOREST, 1000)
+        val run = ledger.current!!
+        run.record(SafariCatch.parse("CAPTURE! You caught a Honeybug!")!!)
+        run.record(SafariCatch.parse("LOOT SHARE! You received 1x Bluebird Shard from Friend catching a Bluebird!")!!)
+        // Death/respawn can put the player outside all mapped areas while the sidebar still says Safari.
+        val respawning = SafariLocation.resolve(listOf("Area: Critter Safari"), null, entered = true)
+        assertEquals(SafariLocation.INSIDE, respawning)
+        ledger.update(respawning, null, 2000)
+        ledger.update(SafariLocation.UNKNOWN, null, 3000)
+        ledger.confirmEntry(4000)
+        ledger.update(SafariLocation.INSIDE, SafariBiome.CAVERN, 5000)
+        assertSame(run, ledger.current)
+        assertNull(run.endedAt)
+        assertEquals(1000L, run.startedAt)
+        assertEquals(1, run.count("Honeybug"))
+        assertEquals(1, run.count("Bluebird"))
+        // An actual departure still closes the run, and the next entry starts clean.
+        ledger.update(SafariLocation.resolve(listOf("Area: Torrhus Canyon"), null, true), null, 6000)
+        assertNull(ledger.current)
+        assertSame(run, ledger.last)
+        ledger.update(SafariLocation.INSIDE, null, 7000)
+        assertNotSame(run, ledger.current)
+        assertEquals(0, ledger.current!!.count("Honeybug"))
+    }
     @Test fun `toggles never erase counts and last run remains until new arrival`() {
         val ledger = SafariLedger()
         ledger.update(SafariLocation.INSIDE, SafariBiome.HAUNTED, 10)
