@@ -29,14 +29,34 @@ data class ProfitableCritter(val name: String, val shardPrice: Double, val avera
 
 object ProfitableCritters {
     const val SHARDS_PER_CRITTER = 1.5025
+    private val excluded = setOf("Scrappy", "Rockmite", "Troodon")
+    private var rankedPrices: Map<String, DoubleArray>? = null
+    private var rankedInstaSell: Boolean? = null
+    private var ranked = emptyList<ProfitableCritter>()
+    private var species = emptySet<String>()
 
-    /** Rank by the price of one shard, retaining fractional yields until display formatting. */
+    /** Shared by the command and ESP; re-rank only for new cached quotes or a price preference change. */
+    fun cachedTop(): List<ProfitableCritter> {
+        val prices = BazaarPrices.cachedPrices
+        val instaSell = ConfigManager.runCoinsInstaSell
+        if (prices !== rankedPrices || instaSell != rankedInstaSell) {
+            ranked = top({ prices[BazaarPrices.shardId(it)]?.getOrNull(if (instaSell) 0 else 1) })
+            species = ranked.map { it.name }.toSet()
+            rankedPrices = prices
+            rankedInstaSell = instaSell
+        }
+        return ranked
+    }
+    fun cachedSpecies(): Set<String> { cachedTop(); return species }
+
+    /** Rank by estimated gross coins per run, retaining fractional yields until display formatting. */
     fun top(prices: (String) -> Double?, averages: Map<String, Double> = CritterSpawnAverages.fullParty): List<ProfitableCritter> =
         SafariRoster.all.mapNotNull { critter ->
+            if (critter.name in excluded) return@mapNotNull null
             val average = averages[critter.name]?.takeIf { it.isFinite() && it > 0 } ?: return@mapNotNull null
             val price = prices(critter.name)?.takeIf { it.isFinite() && it > 0 } ?: return@mapNotNull null
             ProfitableCritter(critter.name, price, average)
-        }.sortedWith(compareByDescending<ProfitableCritter> { it.shardPrice }.thenBy { it.name }).take(5)
+        }.sortedWith(compareByDescending<ProfitableCritter> { it.coinsPerRun }.thenBy { it.name }).take(10)
 
     fun line(rank: Int, entry: ProfitableCritter): String = String.format(Locale.ROOT,
         "[SM] %d. %s: %,.0f coins/shard | %.2f shards/run | ~%,.0f coins/run",
@@ -44,12 +64,12 @@ object ProfitableCritters {
 
     fun show(source: FabricClientCommandSource): Int {
         val instaSell = ConfigManager.runCoinsInstaSell
-        val ranked = top({ BazaarPrices.cachedShardPrice(it, instaSell) })
+        val ranked = cachedTop()
         if (ranked.isEmpty()) {
             source.sendFeedback(LocalChat.component("[SM] No cached Safari shard prices available yet. Try again after the normal Bazaar update."))
             return 1
         }
-        source.sendFeedback(LocalChat.component("[SM] Top ${ranked.size} by shard price (${if (instaSell) "insta-sell" else "sell offer"}, cached). Full-party averages, x1.5025 shards."))
+        source.sendFeedback(LocalChat.component("[SM] Top ${ranked.size} by coins/run (${if (instaSell) "insta-sell" else "sell offer"}, cached). Full-party averages, x1.5025 shards."))
         ranked.forEachIndexed { index, entry -> source.sendFeedback(LocalChat.component(line(index + 1, entry))) }
         return 1
     }

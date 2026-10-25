@@ -10,7 +10,7 @@ import net.johnceo.sparklingmutuals.safari.esp.SafariEspRules
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
-class IcyCompletionTest {
+class IcyCompletionTest : net.johnceo.sparklingmutuals.safari.esp.ProfitableEspPriceFixture() {
     private val points=mapOf("Tepid" to (-73.0 to -46.0), "Strongarm" to (-107.0 to -56.0),
         "Polaris" to (-110.0 to -78.0), "Shuddersquid" to (-127.0 to -48.0),
         "Nozzlenose" to (-73.0 to -46.0), "Mantis Shrimp" to (-73.0 to -46.0),

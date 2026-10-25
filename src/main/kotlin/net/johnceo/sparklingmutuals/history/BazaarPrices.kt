@@ -44,6 +44,8 @@ object BazaarPrices {
     }
 
     fun ready() = cache.prices.isNotEmpty()
+    /** Read-only snapshot identity changes only when the existing refresh accepts new quotes. */
+    internal val cachedPrices get() = cache.prices
     /** Read only: commands must not start a refresh or add API traffic. */
     fun cachedShardPrice(critter: String, instaSell: Boolean = ConfigManager.runCoinsInstaSell): Double? =
         cache.prices[shardId(critter)]?.getOrNull(if (instaSell) 0 else 1)?.takeIf { it.isFinite() && it > 0 }

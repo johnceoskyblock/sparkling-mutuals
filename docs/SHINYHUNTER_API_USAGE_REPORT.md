@@ -50,7 +50,7 @@ These also send no requests to your Worker:
 - Ordinary captures, biome/run completion, mode switching with loaded data, and starting-item/supply reminders.
 - Sparkling detection, alert messages and history imports.
 - `!since`, `!since unique`, PB commands, `!m` and command help.
-- `/sparklingrates`: reads existing party discoveries and roster only. `/profitablecritters`: reads existing Bazaar quotes only. Neither command starts a fetch.
+- `/rates`: reads existing party discoveries and roster only. `/profitablecritters`: reads existing Bazaar quotes only. Neither command starts a fetch.
 - Honeyhive waypoints: an API refill-reader function exists but has no production callers.
 - Party roster checks: these use Hypixel Mod API in-game packets, not your HTTP service.
 - Player-name resolution: Mojang services, not your Worker. `/sparkling party` reuses the existing name resolver.
@@ -94,6 +94,8 @@ These are source-based estimates, not measured telemetry or upstream Hypixel req
 Current implementation: [CloudApi](../src/main/kotlin/net/johnceo/sparklingmutuals/api/CloudApi.kt), [PartyDiscoveryCache](../src/main/kotlin/net/johnceo/sparklingmutuals/api/PartyDiscoveryCache.kt), [SafariSparklingMode](../src/main/kotlin/net/johnceo/sparklingmutuals/safari/SafariSparklingMode.kt), [SafariLookup](../src/main/kotlin/net/johnceo/sparklingmutuals/commands/SafariLookup.kt), [OwnStats](../src/main/kotlin/net/johnceo/sparklingmutuals/history/OwnStats.kt), and [full client fetch inventory](API_FETCH_AUDIT.md).
 
 ## Last updated
+
+2026-10-25 — Renamed the local rate command to `/rates`; no new API requests. `/profitablecritters` now ranks ten results by estimated coins per run.
 
 2026-10-21 — Included the two read-only local estimate commands; shared API traffic is unchanged.
 

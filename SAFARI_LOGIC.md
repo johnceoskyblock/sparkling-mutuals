@@ -61,7 +61,7 @@ Changing mode selects presentation presets and PB category without clearing run 
 | Wumpa, Doomspiral | Needed Sparkling checks require actual catch evidence: a shared catch or accepted global Sparkling-catch override; sightings, spawn/slain text and reports cannot replace it |
 | Icy after Wumpa capture | Any shared Wumpa catch completes every Icy Sparkling check for the run, without adding other species' catches |
 | Gemzie | Exact chamber-opening server text gives retained checking proof after five seconds, never catches |
-| Gimmiegold | Sparkling uses registered coin slots plus extras and qualified current population; hd may substitute outside Haunted |
+| Gimmiegold | Sparkling uses registered coin slots plus extras and retained qualified capture/check coverage; hd may substitute outside Haunted |
 | Scrappy, Gemzie, Troodon, Gazer | Fixed capture targets allow Full Clear progress before local missing-row absence proof |
 
 Species pages and [source evidence](docs/critters/TRACKING.md#source-evidence-and-retention) detail these exceptions. Source helpers and ordinary ESP are separate presentation decisions.
@@ -93,6 +93,8 @@ Outside the current biome, trust a party completion report even after an earlier
 Send at most one unused starting-item party reminder batch per run after a locally confirmed clear with an own or peer-supplied report. Each client checks its own items, so a peer's report does not suppress the reminder. Needed items still held for the current destination block its local completion/report until used. Long batches remain paced, but later biome clears cannot repeat a batch already sent.
 
 ## Last updated
+
+2026-10-25 — Gimmiegold qualified checks retain through partial unloading. In Unique mode, captured Rockmite/Snoozle only require source checking when the party needs that shiny; Full Clear source/capture rules remain unchanged.
 
 2026-10-22 — One-per-run unused-item reminder batches, shared local clears and stronger remote report trust with capture requirements retained.
 

@@ -29,7 +29,7 @@ Mode discovery loading is active inside Safari in every mode, or outside Safari 
 | Sparkling catch / history uniqueness | **No API fetch.** Uses and updates the retained party discovery snapshot as described above. Imported history also does not fetch. |
 | Bazaar prices | One request at history initialization, then lazily as valuation needs it; **at most once every three hours**, including after a failed attempt. Failures retain existing prices. One in flight; 20-second request timeout. Public endpoint, no shared/personal key. |
 
-`!m`, `!since`, PB commands, command help, starting-item messages, completion checks and supply reminders do not independently fetch SkyBlock data. `/sparklingrates` reads the verified roster and retained party discoveries only; it never requests roster or profile data. `/profitablecritters` reads already-cached Bazaar quotes without triggering even a normal refresh; it never adds HTTP requests. `getHoneyRefills()` exists but has no production callers; hive waypoints do not request API refill data.
+`!m`, `!since`, PB commands, command help, starting-item messages, completion checks and supply reminders do not independently fetch SkyBlock data. `/rates` reads the verified roster and retained party discoveries only; it never requests roster or profile data. `/profitablecritters` reads already-cached Bazaar quotes without triggering even a normal refresh; it never adds HTTP requests. `getHoneyRefills()` exists but has no production callers; hive waypoints do not request API refill data.
 
 ## Transport and service boundaries
 
@@ -56,6 +56,8 @@ Sources under `src/main/kotlin/net/johnceo/sparklingmutuals/`: `api/PartyDiscove
 Focused automated coverage exercises retained members, joining/leaving members, local catch credits, delayed API results, partial failures, provider invalidation and the three-hour Bazaar boundary. Live roster and server-message timing remain Minecraft checks.
 
 ## Last updated
+
+2026-10-25 — Renamed the local rate command to `/rates`; no new API requests. `/profitablecritters` now ranks ten results by estimated coins per run.
 
 2026-10-21 — Added `/sparklingrates` as a read-only local consumer of cached roster/discovery data, with no new API requests.
 

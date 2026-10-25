@@ -10,6 +10,27 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class GimmiegoldProvidedLogRegressionTest {
+    @Test fun `JohnFounder six spent coins retain earlier checks when one Gimmiegold unloads before final pickup`() {
+        val run = SafariRun(0).apply { visitBiome(SafariBiome.HAUNTED) }
+        (1..6).forEach { run.gimmiegoldCheck.floor(it, true) }
+        coins(run, 5)
+        val firstFive = List(5) { "Gimmiegold" to UUID.randomUUID() }
+        scan(run, firstFive)
+        assertFalse(run.sparklingComplete("Gimmiegold", party()), "one coin slot is still uncollected")
+        repeat(2) { run.record(SafariCatch(SafariRoster.named("Gimmiegold")!!)) }
+        scan(run, firstFive.takeLast(2))
+        coins(run, 1)
+        val last = "Gimmiegold" to UUID.randomUUID()
+        run.record(SafariCatch(SafariRoster.named("Gimmiegold")!!))
+        scan(run, listOf(firstFive.last(), last))
+        assertEquals(3, run.count("Gimmiegold"))
+        assertTrue(run.sparklingComplete("Gimmiegold", party()))
+        assertTrue(run.uniqueComplete("Gimmiegold", party()))
+        assertEquals(0, run.coinsLeftToUse)
+        assertFalse(run.captureComplete("Gimmiegold"), "checks must not fabricate Full Clear catches")
+        run.gimmiegoldCheck.inventory(1)
+        assertFalse(run.sparklingComplete("Gimmiegold", party()), "held coins still block completion")
+    }
     private val live = listOf(
         "Gimmiegold" to UUID.fromString("fb6d1f04-d5d8-b124-de98-581d4b89a3e0"),
         "Gimmiegold" to UUID.fromString("0ca20a18-6f87-440d-9df2-0a46da4911d0"))

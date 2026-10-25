@@ -75,7 +75,7 @@ class GimmiegoldCompletionRecoveryTest {
         scan(run, live)
         assertTrue(run.sparklingComplete("Gimmiegold", party()))
     }
-    @Test fun `new coin and Haunted reentry require a fresh full population check`() {
+    @Test fun `new coin raises check demand while reentry retains qualified UUID checks`() {
         val run = run(); run.visitBiome(SafariBiome.HAUNTED)
         val firstThree = List(3) { "Gimmiegold" to UUID.randomUUID() }
         scan(run, firstThree)
@@ -86,13 +86,13 @@ class GimmiegoldCompletionRecoveryTest {
         scan(run, firstThree)
         assertFalse(run.sparklingComplete("Gimmiegold", party()))
         scan(run, listOf("Gimmiegold" to UUID.randomUUID()))
-        assertFalse(run.sparklingComplete("Gimmiegold", party()), "history cannot replace the full current population")
+        assertTrue(run.sparklingComplete("Gimmiegold", party()), "all four distinct UUIDs have now been checked for the new demand")
         scan(run, firstThree + ("Gimmiegold" to UUID.randomUUID()))
         assertTrue(run.sparklingComplete("Gimmiegold", party()))
         run.visitBiome(SafariBiome.CAVERN); run.visitBiome(SafariBiome.HAUNTED)
         assertFalse(run.sparklingComplete("Gimmiegold", party()))
         scan(run, emptyList())
-        assertFalse(run.sparklingComplete("Gimmiegold", party()), "reentry needs current population, not old UUID checks")
+        assertTrue(run.sparklingComplete("Gimmiegold", party()), "reentry revalidates sources without discarding prior qualified checks")
         scan(run, List(4) { "Gimmiegold" to UUID.randomUUID() })
         assertTrue(run.sparklingComplete("Gimmiegold", party()))
     }

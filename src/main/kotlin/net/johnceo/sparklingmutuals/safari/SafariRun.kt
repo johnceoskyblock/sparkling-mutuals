@@ -344,6 +344,7 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
         if (name in setOf("Gazer", "Gimmiegold") && party.needs(name))
             return count(name) > 0 && sparklingComplete(name, party, localOnly || lastBiome == SafariBiome.HAUNTED)
         if (name == "Rockmite" || name == "Snoozle") {
+            if (count(name) > 0 && !party.needs(name)) return true
             if (name in uniqueSourceContradictions && !sparklingChecks.locallyChecked(name)) return false
             val checked = cavernSourcesChecked(name) || sparklingChecks.locallyChecked(name)
             if (count(name) > 0) return checked || !localOnly && uniqueReportedComplete(name)

@@ -30,13 +30,13 @@ class GimmiegoldCoinFloorCheckTest {
         check.floor(6, true)
         assertFalse(check.complete, "a newly known source reopens the check")
     }
-    @Test fun `captured plus currently rendered population cannot use historical UUID checks`() {
+    @Test fun `retained checks deduplicate UUIDs and require qualified scans`() {
         val check = GimmiegoldSparklingCheck()
         (1..4).forEach { check.floor(it, false) }
         check.inventory(0)
-        repeat(6) { check.scan(1, live(1), true) }
-        assertFalse(check.complete, "many old UUIDs do not establish four current-or-captured critters")
         val id = UUID.randomUUID()
+        repeat(6) { check.scan(1, listOf(id), true) }
+        assertFalse(check.complete, "repeated sightings of one UUID do not establish four critters")
         check.scan(1, listOf(id, id, id), true)
         assertFalse(check.complete)
         check.scan(1, live(3), false)

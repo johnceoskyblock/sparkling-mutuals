@@ -19,8 +19,8 @@ object SafariEspRules {
     fun labelSpecies(raw: String) = SafariRules.strip(raw).let { SafariRules.sparklingSpecies(it) ?: SafariRoster.named(it)?.name }
     fun thrownSpecies(text: String) = throwMessage.matchEntire(text)?.groupValues?.get(1)?.let(::labelSpecies)
     fun escapedSpecies(text: String) = escapeMessage.matchEntire(text)?.groupValues?.get(1)?.let(::labelSpecies)
-    private val profitableSpecies = setOf("Hideonfloor", "Hideonwall", "Chuckwalla", "Fluffling", "Mantis Shrimp")
-    fun profitableEsp(species: String, enabled: Boolean) = enabled && species in profitableSpecies
+    fun profitableEsp(species: String, enabled: Boolean) = enabled &&
+        species in net.johnceo.sparklingmutuals.commands.ProfitableCritters.cachedSpecies()
     fun neededForRun(species: String, mound: Boolean, run: SafariRun?, fullClear: Boolean, profitable: Boolean = true,
         party: PartySparklingState? = null) =
         if (fullClear) true

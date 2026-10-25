@@ -10,7 +10,7 @@ import net.johnceo.sparklingmutuals.safari.esp.SafariEspRules
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
-class HauntedCompletionTest {
+class HauntedCompletionTest : net.johnceo.sparklingmutuals.safari.esp.ProfitableEspPriceFixture() {
     @Test fun `Haunted zones require minimum UUIDs and correct boundary`() {
         for (name in listOf("Areita", "Bloodbat", "Solsnatcher", "Litterbug", "Duplico", "Hideonwall")) {
             val run = SafariRun(0)

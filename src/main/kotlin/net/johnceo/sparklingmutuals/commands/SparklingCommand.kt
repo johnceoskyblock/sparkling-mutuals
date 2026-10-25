@@ -59,7 +59,7 @@ object SparklingCommand {
                         1
                     })
             )
-            dispatcher.register(ClientCommands.literal("sparklingrates").executes { SparklingRates.show(it.source) })
+            dispatcher.register(ClientCommands.literal("rates").executes { SparklingRates.show(it.source) })
             dispatcher.register(ClientCommands.literal("profitablecritters").executes { ProfitableCritters.show(it.source) })
             dispatcher.register(ClientCommands.literal("captures").executes { open { CatchCountScreen() } })
             dispatcher.register(ClientCommands.literal("unique").executes { mode(it.source, SafariMode.UNIQUE) })

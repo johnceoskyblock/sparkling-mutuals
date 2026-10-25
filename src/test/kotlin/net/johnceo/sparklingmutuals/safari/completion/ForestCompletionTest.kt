@@ -10,7 +10,7 @@ import net.johnceo.sparklingmutuals.safari.esp.SafariEspRules
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
-class ForestCompletionTest {
+class ForestCompletionTest : net.johnceo.sparklingmutuals.safari.esp.ProfitableEspPriceFixture() {
     @Test fun `Forest zones retain captures and require UUID minimums inside each radius`() {
         for ((name,radius) in mapOf("Foxtrot" to 30.0,"Fluffling" to 30.0,"Woodchucker" to 50.0,"Treefrog" to 50.0,"Hideonfloor" to 50.0)) {
             val run=SafariRun(0)

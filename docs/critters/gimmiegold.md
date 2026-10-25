@@ -15,7 +15,7 @@
 
 ## What makes this critter different
 
-- Sparkling requires all registered slots resolved, sampled zero held coins, and current captured-plus-rendered population F + E. Historical UUID totals cannot substitute.
+- Sparkling requires all registered slots resolved, sampled zero held coins, and qualified capture/check coverage of F + E. Qualified UUID checks are retained when critters leave render range; they are not captures.
 - Full Clear retains a separate conservative recovery ledger: fallback minimum 3 plus larger known targets.
 
 ## Spawn prerequisites
@@ -29,13 +29,13 @@ Collect registered slots/use all known coins. Grants, pickups, held coins, use m
 | Personal capture / party loot share ([exact messages](MESSAGES.md)) | Own capture adds personal + shared evidence; attributed loot share adds shared evidence | Local checks, source resolution or personal PB from another player's catch |
 | Live textured item display / qualified check | Current sighting; qualified evidence contributes under mode rule | Capture or absence inferred from missing outline |
 | Supplied capsule notes | Supplied notes say standard capsules can fail, replacement UUIDs may follow escape, and Masterful catches are guaranteed once hit. | Server mechanics revalidated by this source audit; see [D2](../IMPLEMENTATION_AUDIT.md#d2) |
-| Coin registry, inventory and qualified current population | Slot collection and C + U against F + E | Fixed three-slot guarantee, capture from resource use, or replacement UUID history as current population |
+| Coin registry, inventory and qualified retained capture/check coverage | Slot collection and qualified capture/check coverage against F + E | Fixed three-slot guarantee, capture from resource use, or replacement UUID history as current population |
 
 ## Completion by mode
 
 | Mode | Capture requirement | Checking or source requirement | Party-report effect |
 | --- | --- | --- | --- |
-| Sparkling | None for ordinary models; confirmed Sparkling capture override applies. | All registered slots resolved, sampled 0 held coins, qualified C + U >= F + E; at least one registered slot required. | Outside Haunted, hd can supply checking trust. Inside Haunted local coin conditions apply. |
+| Sparkling | None for ordinary models; confirmed Sparkling capture override applies. | All registered slots resolved, sampled 0 held coins, qualified capture/check coverage >= F + E; at least one registered slot required. | Outside Haunted, hd can supply checking trust. Inside Haunted local coin conditions apply. |
 | Unique | One shared capture, or the confirmed-Sparkling capture override. | If anyone needs Gimmiegold, require the same resolved floor-slot/held-coin/qualified-population check as Sparkling before progress completes. First catch removes only the missing row. | Outside Haunted hd may supply inherited checking; inside Haunted local coin conditions apply. Never supplies a capture. |
 | Full Clear | At least 3 shared captures, raised by source/contribution and observed-population targets. | Local recovery resolved, no known held coins/no remaining critters; resource/source contradictions may still block progress. | Without local proof, report plus capture minimum can complete progress; row still needs local proof. |
 
@@ -57,11 +57,11 @@ Early starting-item reports overlap by sender/maximum quantity; own report overl
 
 ## Retention and reopening
 
-Retain slot IDs/contribution demand through collection/unloading. Unobservable missing markers stay unresolved. Travel retains completed validation; Haunted reentry, new slots, remaining markers, held coins or changed contributions revoke it. New run resets all. Pending detection identities add no separate completion gate; see [audit D1](../IMPLEMENTATION_AUDIT.md#d1).
+Retain slot IDs/contribution demand through collection/unloading. Unobservable missing markers stay unresolved. Travel retains completed validation. Haunted reentry revalidates sources/inventory using retained qualified UUID checks. New slots, returning uncollected markers or changed contribution demand clear the prior check cohort, so old checks cannot automatically satisfy new work. Remaining markers and held coins still block completion. First-seen capture baselines prevent a later catch from counting the same checked critter twice; a UUID repeated in a scan counts once. New run resets all. Pending detection identities add no separate completion gate; see [audit D1](../IMPLEMENTATION_AUDIT.md#d1).
 
 ## Examples
 
-F = 4 and E = 1 require C + U >= 5. Even with zero held coins, one remaining slot blocks checking. After collection, qualifying current population can finish; historical UUIDs cannot supply U.
+F = 4 and E = 1 require qualified coverage of five captured or checked critters. Even with zero held coins, one remaining slot blocks checking. Once sources resolve, earlier qualified checks may complete the requirement even if some critters have left render range. Actual Full Clear catches remain a separate counter.
 
 ## Implementation and validation
 
@@ -84,6 +84,8 @@ Population guarantees and capsule success/escape claims from supplied notes were
 Unique and Full Clear keep Shining Coin waypoints for every remaining drop throughout the run, even when no party member needs its Sparkling variant. Sparkling mode retains the discovery-needs gate. Pickup tracking removes collected drops normally. This is an ESP-only rule: Unique capture/check requirements and Full Clear minimum/capture rules remain unchanged.
 
 ## Last updated
+
+2026-10-25 — Fixed JohnFounder's six-coin Unique run: qualified UUID checks now survive partial unloading before the final pickup. New source/contribution demand clears prior check credit; actual capture counts and Full Clear minimums stay separate.
 
 2026-10-22 — Kept needed coin-source checking after Unique capture, with a remaining-use footer that includes uncollected, held and party-extra demand.
 

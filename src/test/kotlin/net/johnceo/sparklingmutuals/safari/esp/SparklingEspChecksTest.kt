@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 
-class SparklingEspChecksTest {
+class SparklingEspChecksTest : net.johnceo.sparklingmutuals.safari.esp.ProfitableEspPriceFixture() {
     @TempDir lateinit var dir: Path
     private fun party(vararg needs: String) = PartySparklingState().apply {
         select(setOf("me")); accept(setOf("me"), mapOf("me" to SafariRoster.all.map { it.name }.toSet() - needs.toSet()))
