@@ -33,7 +33,7 @@ For each qualifying nonbird UUID, SparklingChecks stores the shared catch total 
 
 Qualified histories survive unloading, biome travel, reentry and mode changes. Reentry removes inherited ordinary party checks and source completion flags, not UUID history. Out-of-zone sightings add no qualified history. Gemzie's exact chamber-opening message starts a single five-second timer; its run-owned proof supplies at least three checked thereafter, independently of scans. Duplicate text does not restart it; quoted player chat does not start it.
 
-Birds use qualified **current** rendered population plus captures instead of accumulated UUIDs. Gimmiegold's dedicated Sparkling validator also uses current qualified population, not its historical generic check counter. Seeing an ordinary entity, or a positive Sparkling name/skin, never increments a capture counter.
+Birds use qualified **current** rendered population plus captures instead of accumulated UUIDs. Gimmiegold's dedicated Sparkling validator retains qualified UUID checks with capture baselines, so partial unloading cannot lose a previously seen critter. New coin-source/contribution demand clears the prior cohort; these checks never become actual captures. Seeing an ordinary entity, or a positive Sparkling name/skin, never increments a capture counter.
 
 ### Scan zones
 
@@ -56,7 +56,7 @@ These zones qualify the **player's X/Z position**, in horizontal blocks. They do
 | Billygoat | -121/-55 | 40 | 30 |
 | Areita, Bloodbat, Duplico, Litterbug, Solsnatcher, Hideonwall | -3/-63 | 40 | 30 |
 
-Scrappy, Troodon, Gazer and Hideyho have biome-qualified UUID minima without another species position zone. Doomspiral's Full Clear absence uses its biome scan; its Sparkling check requires catch evidence, including the accepted global Sparkling-catch override. Source species use their source-specific paths. Birds use X/Z 6/51, radius 15; Gimmiegold uses X/Z -4/-64, radius 15 for its source/current-population validation.
+Scrappy, Troodon, Gazer and Hideyho have biome-qualified UUID minima without another species position zone. Doomspiral's Full Clear absence uses its biome scan; its Sparkling check requires catch evidence, including the accepted global Sparkling-catch override. Source species use their source-specific paths. Birds use X/Z 6/51, radius 40; Gimmiegold uses X/Z -4/-64, radius 15 for qualified source/check validation.
 
 ### Full Clear evidence and late entry
 
@@ -74,7 +74,7 @@ Scrappy 3, Gemzie 3, Troodon 3 and Gazer 4 can complete progress from their fixe
 | Honeybug Full Clear | Known nest population plus actual captures can complete from any biome without another scan/report, also respecting known population targets. Unknown coverage uses the fallback/species capture path |
 | Rockmite mounds | Retained mound sites, loaded-world absence and terminal source outcomes. An unobservable site remains unknown; an empty outside-Cavern scan with no known sites invents no survey |
 | Snoozle walls | Five fixed block sites retain loaded observations. Air means broken; a loaded nonair site means intact. Unloaded sites retain their previous state |
-| Gimmiegold Sparkling | Registered validated coin slots must all resolve, sampled held coins must be zero, and a qualified captured + current uncaptured population must reach slots + deduplicated extras. Proof retains through unloading, but reentry resets its population validation |
+| Gimmiegold Sparkling | Registered validated coin slots must all resolve, sampled held coins must be zero, and qualified capture/check coverage must reach slots + deduplicated extras. UUID checks retain through unloading and reentry; new sources/extra demand clear the previous cohort, while unresolved markers and held coins still block |
 | Gimmiegold Full Clear | Separate source recovery can use no remaining coin markers or at least three actual floor pickups, sufficient coin use and sampled empty inventory in the qualifying environment. Additional coins/notices and capture/absence requirements still apply |
 
 Loaded Cavern mound/wall observations run from **any Safari biome** without a player-distance cutoff, independently of HUD/ESP. Positive intact sources can reopen their own species even if its discovery is owned; a party report takes priority while outside that biome. Observed source completion can resolve a contradiction without entering Cavern. Source proof does not manufacture a catch. Bird source retention belongs to [BIRD_COMPLETION](../BIRD_COMPLETION.md); slot registration and resource reminders belong to [FLOOR_DROPS](FLOOR_DROPS.md).
@@ -144,6 +144,8 @@ Full Clear still requires actual minimum captures, known Honeybug nest totals, s
 Each client can send one unused starting-item reminder batch per run after a local clear, even if a peer sent that biome report first. A report for a different biome alone never arms that client's reminder.
 
 ## Last updated
+
+2026-10-25 — Gimmiegold retains qualified check UUIDs through unloading; Unique Rockmite/Snoozle source requirements apply after first capture only when their shiny is needed.
 
 2026-10-24 — Preserve the active run during unmapped death/respawn positions and temporary local-player replacement. Confirmed departures still end the run; the next run starts with fresh progress.
 

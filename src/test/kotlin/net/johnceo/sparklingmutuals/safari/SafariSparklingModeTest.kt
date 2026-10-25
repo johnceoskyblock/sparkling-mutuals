@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 
-class SafariSparklingModeTest {
+class SafariSparklingModeTest : net.johnceo.sparklingmutuals.safari.esp.ProfitableEspPriceFixture() {
     @TempDir lateinit var dir: Path
     private val all = SafariRoster.all.map { it.name.uppercase().replace(' ', '_') }.toSet()
     @Test fun `disabling cloud invalidates discoveries for an unchanged party and blank key`() {
@@ -69,7 +69,7 @@ class SafariSparklingModeTest {
         val run = SafariRun(0)
         run.record(SafariCatch(SafariRoster.named("Driftling")!!, false))
         assertTrue(SafariEspRules.neededForSparkling("Driftling", false, state, false))
-        assertFalse(SafariEspRules.neededForSparkling("Foxtrot", false, state, true))
+        assertTrue(SafariEspRules.neededForSparkling("Foxtrot", false, state, true))
         assertTrue(SafariEspRules.neededForSparkling("Chuckwalla", false, state, true))
         assertFalse(SafariEspRules.neededForSparkling("Chuckwalla", false, state, false))
         assertTrue(SafariEspRules.neededForSparkling("Mantis Shrimp", false, state, false))

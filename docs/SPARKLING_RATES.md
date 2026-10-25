@@ -1,6 +1,6 @@
 # Sparkling rate estimate
 
-`/sparklingrates` estimates the party's average Sparkling-mode check opportunities per run using cached discoveries. It works as a local command in any mode without switching modes or changing completion requirements.
+`/rates` estimates the party's average Sparkling-mode check opportunities per run using cached discoveries. It works as a local command in any mode without switching modes or changing completion requirements.
 
 Example when every species needs checking:
 
@@ -58,5 +58,7 @@ Adding/removing members and locally credited catches affect the next estimate th
 Automated coverage checks the full 14.12 baseline, category separation, the six boat exceptions, omission of completed biomes and shared manual sources, grouped bird spawning, unavailable party data and two-decimal formatting. Live checks: run in a party with loaded baselines, hover for the breakdown, change party membership or catch a needed Sparkling and run again, and confirm the command itself adds no fetches.
 
 ## Last updated
+
+2026-10-25 — Renamed the local rate command to `/rates`; no new API requests. `/profitablecritters` now ranks ten results by estimated coins per run.
 
 2026-10-21 (America/New_York) — Added cached-party rate estimation, grouped bird rules and six user-reported boat detections, including Shyworm.

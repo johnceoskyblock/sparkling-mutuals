@@ -37,7 +37,7 @@ Resolve every registered mound. Cracking/progress dialogue is not a terminal out
 | Mode | Capture requirement | Checking or source requirement | Party-report effect |
 | --- | --- | --- | --- |
 | Sparkling | None for ordinary released critters; confirmed Sparkling capture override applies. | Resolve every registered mound; no local critter-radius requirement. | Outside Cavern, cd supplies checking even after an earlier visit; current Cavern requires local source proof. |
-| Unique | One shared capture if encountered; confirmed Sparkling capture overrides the combined check. | Resolve every registered mound; zero captures can complete from a local Cavern absence scan after all sources resolve, with no encounter. Outside local proof, resolved sources plus cd retain the zero-spawn fallback. | Outside Cavern, cd supplies checking after a catch or waives an unencountered zero spawn; current Cavern requires local proof. |
+| Unique | One shared capture if encountered; confirmed Sparkling capture overrides the combined check. | After one shared capture, resolve every registered mound only if the party needs this shiny. When nobody needs it, the capture alone completes Unique even if sources remain. Zero captures can complete from a local Cavern absence scan after all sources resolve, with no encounter. Outside local proof, resolved sources plus cd retain the zero-spawn fallback. | Outside Cavern, cd supplies checking after a catch or waives an unencountered zero spawn; current Cavern requires local proof. |
 | Full Clear | Capture requirements include revealed mound/encounter evidence; local proof and report-based progress have [separate raised-target scopes](TRACKING.md#full-clear-evidence-and-late-entry). | Local empty scan and every registered mound resolved. | Without local proof, report plus capture minimum can complete progress; row still needs local proof. |
 
 ## Display and highlights
@@ -81,6 +81,8 @@ Existing coverage: [UniquePartyReportTest](../../src/test/kotlin/net/johnceo/spa
 Population guarantees and capsule success/escape claims from supplied notes were not live revalidated; see [audit D2](../IMPLEMENTATION_AUDIT.md#d2).
 
 ## Last updated
+
+2026-10-25 — Unique source checking is discovery-gated after the first shared capture. Unneeded shiny sources no longer block Cavern completion; Sparkle and Full Clear source rules remain unchanged.
 
 2026-10-22 - Clarified remote Cavern report trust and current-biome local source checks.
 

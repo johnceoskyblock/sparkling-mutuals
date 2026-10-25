@@ -71,13 +71,13 @@ class SafariSettings : Config() {
     class Sparkling {
         @JvmField @ConfigOption(name = "Sparkling Mode", desc = "Highlight missing sparklings for you or your party. Requires an API key.")
         @ConfigEditorBoolean var enabled = ConfigManager.sparklingMode
-        @JvmField @ConfigOption(name = "Critter ESP for profitable shards", desc = "Keep profitable critters highlighted throughout the run.")
+        @JvmField @ConfigOption(name = "Critter ESP for profitable shards", desc = "Keep the /profitablecritters top 10 highlighted, ranked by estimated coins per run using cached prices. Excludes Scrappy, Rockmite and Troodon.")
         @ConfigEditorBoolean var profitable = ConfigManager.sparklingProfitableShardEsp
     }
     class Unique {
         @JvmField @ConfigOption(name = "Unique mode", desc = "Highlight missing uniques and track unique-run PBs.")
         @ConfigEditorBoolean var enabled = SafariFullClear.mode == SafariMode.UNIQUE
-        @JvmField @ConfigOption(name = "Critter ESP for profitable shards", desc = "Keep profitable critters highlighted throughout the run.")
+        @JvmField @ConfigOption(name = "Critter ESP for profitable shards", desc = "Keep the /profitablecritters top 10 highlighted, ranked by estimated coins per run using cached prices. Excludes Scrappy, Rockmite and Troodon.")
         @ConfigEditorBoolean var profitable = ConfigManager.profitableShardEsp
     }
     class Party {

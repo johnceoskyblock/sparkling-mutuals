@@ -15,10 +15,40 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 
-class SafariProfitableUniqueTest {
+class SafariProfitableUniqueTest : net.johnceo.sparklingmutuals.safari.esp.ProfitableEspPriceFixture() {
+    @Test fun `ESP matches the command top ten and refreshes for prices and sell preference without a fetch`() {
+        val ranking = net.johnceo.sparklingmutuals.commands.ProfitableCritters
+        val quote = net.johnceo.sparklingmutuals.history.BazaarPrices
+        prices(SafariRoster.all.associate { quote.shardId(it.name) to when (it.name) {
+            "Scrappy", "Rockmite", "Troodon" -> doubleArrayOf(1e12, 1e12)
+            "Wumpa" -> doubleArrayOf(1e9, 1.0)
+            "Nozzlenose" -> doubleArrayOf(1.0, 1e9)
+            else -> doubleArrayOf(100.0, 100.0)
+        } })
+        val party = PartySparklingState().apply {
+            select(setOf("me")); accept(setOf("me"), mapOf("me" to SafariRoster.all.map { it.name }.toSet()))
+        }
+        for (instaSell in listOf(false, true)) {
+            ConfigManager.runCoinsInstaSell = instaSell
+            val top = ranking.cachedTop()
+            assertEquals(if (instaSell) "Wumpa" else "Nozzlenose", top.first().name)
+            assertEquals(10, top.size)
+            assertSame(top, ranking.cachedTop())
+            val expected = top.map { it.name }.toSet()
+            for (critter in SafariRoster.all) {
+                val run = SafariRun(0).apply { record(SafariCatch(critter)) }
+                assertEquals(critter.name in expected, SafariEspRules.neededForRun(critter.name, false, run, false, true), critter.name)
+                assertEquals(critter.name in expected, SafariEspRules.neededForSparkling(critter.name, false, party, true, run, java.util.UUID.randomUUID(), 0), critter.name)
+                assertFalse(SafariEspRules.profitableEsp(critter.name, false))
+            }
+        }
+        prices(emptyMap())
+        assertTrue(ranking.cachedTop().isEmpty())
+        assertFalse(SafariEspRules.profitableEsp("Wumpa", true))
+    }
     @TempDir lateinit var dir: Path
-    @Test fun `Unique profitable toggle keeps only the five profitable species after first capture`() {
-        val profitable = setOf("Hideonfloor", "Hideonwall", "Chuckwalla", "Fluffling", "Mantis Shrimp")
+    @Test fun `Unique profitable toggle keeps only the top ten profitable species after first capture`() {
+        val profitable = net.johnceo.sparklingmutuals.safari.esp.ProfitableEspPriceFixture.profitable
         for (critter in SafariRoster.all) {
             val run = SafariRun(0)
             assertTrue(SafariEspRules.neededForRun(critter.name, false, run, false, false))
@@ -43,18 +73,18 @@ class SafariProfitableUniqueTest {
         assertEquals("[SM] Full clear mode on.", SafariFullClear.modeMessage())
     }
     @Test fun `profitable highlights survive label and motion gaps only for current entities`() {
-        for (sparkling in listOf(false, true)) for (name in listOf("Hideonfloor", "Hideonwall", "Chuckwalla", "Fluffling", "Mantis Shrimp")) {
+        for (sparkling in listOf(false, true)) for (name in net.johnceo.sparklingmutuals.safari.esp.ProfitableEspPriceFixture.profitable) {
             assertTrue(SafariEspRules.renderCurrent(name, sparkling, true, false, false, true))
             assertFalse(SafariEspRules.renderCurrent(name, sparkling, false, true, true, true))
         }
         assertFalse(SafariEspRules.renderCurrent("Hideonwall", true, true, false, false, false))
         assertFalse(SafariEspRules.renderCurrent("Flitter", true, true, false, false, true))
     }
-    @Test fun `profitable Sparkling toggle preserves all five species after catches and checks`() {
+    @Test fun `profitable Sparkling toggle preserves all top ten species after catches and checks`() {
         val party = PartySparklingState().apply {
             select(setOf("me")); accept(setOf("me"), mapOf("me" to SafariRoster.all.map { it.name }.toSet()))
         }
-        for (name in listOf("Hideonfloor", "Hideonwall", "Chuckwalla", "Fluffling", "Mantis Shrimp")) {
+        for (name in net.johnceo.sparklingmutuals.safari.esp.ProfitableEspPriceFixture.profitable) {
             val run = SafariRun(0); val id = java.util.UUID.randomUUID()
             run.record(SafariCatch(SafariRoster.named(name)!!))
             assertTrue(SafariEspRules.neededForSparkling(name, false, party, true, run, id, 0))

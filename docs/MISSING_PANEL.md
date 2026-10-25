@@ -48,7 +48,7 @@ Thus fixed-target/report-backed green progress can coexist with a missing local 
 
 ### Ordinary ESP
 
-Ordinary ESP has its own entity-current, model-label/movement, biome/group and per-species configuration gates. Full Clear normally selects every eligible uncaptured critter; Unique normally selects uncaught species. The profitable-species toggle can additionally retain Hideonfloor, Hideonwall, Chuckwalla, Fluffling and Mantis Shrimp.
+Ordinary ESP has its own entity-current, model-label/movement, biome/group and per-species configuration gates. Full Clear normally selects every eligible uncaptured critter; Unique normally selects uncaught species. In Unique and Sparkle modes, the profitable-species toggle additionally retains the cached `/profitablecritters` top ten by estimated coins per run, excluding Scrappy, Rockmite and Troodon. It follows the same price preference and quote updates without new API requests; unavailable prices provide no extra profitable highlights. See [profitability](PROFITABLE_CRITTERS.md#profitable-shard-esp).
 
 Sparkling ordinary ESP normally requires the discovery and uses a ten-second per-UUID display window. Driftling has no such timeout; ordinary Honeybug and released Rockmite are suppressed. Needed Doomspiral stays eligible until a shared catch. Source mounds follow their unfinished checking/helper eligibility. A timer expiring hides an outline without deleting qualified evidence or proving capture.
 
@@ -115,6 +115,8 @@ Any party member may request `!m` or `!m <biome>` (including c/f/i/h). A mod cli
 The compact party reply uses `Missing <Biome>: ...`, `Done` when nothing remains, and ordinary `shiny` wording rather than the detection-alert keyword. Unknown discovery data is reported as loading rather than complete. The GUI missing panel keeps its existing presentation; the command now has its own mode-aware formatter.
 
 ## Last updated
+
+2026-10-25 — Profitable-shard ESP uses the shared dynamic top ten in Unique and Sparkle modes instead of a fixed species list.
 
 2026-10-24 — Added mode-specific, current-biome-only !m replies with capture deficits and source/check requirements.
 

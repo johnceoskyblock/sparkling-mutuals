@@ -38,7 +38,7 @@ class UniquePartyReportTest {
             for (name in listOf("Rockmite", "Snoozle")) {
                 assertEquals(reportFirst, run.uniqueComplete(name, state))
                 run.record(SafariCatch(SafariRoster.named(name)!!, false))
-                assertEquals(reportFirst, run.uniqueComplete(name, state))
+                assertTrue(run.uniqueComplete(name, state), "a first catch completes a species whose shiny is shared")
                 assertFalse(SafariPanels.missing(run, SafariBiome.CAVERN, true, 0, party = state).rows.any { it.label == name })
             }
             report(run, SafariBiome.CAVERN)
@@ -118,7 +118,7 @@ class UniquePartyReportTest {
             assertNull(run.completion.announcement(run, biome, SafariMode.UNIQUE, state), "do not echo another player's checking evidence")
         }
     }
-    @Test fun `intact Cavern sources contradict completion regardless of discovery ownership`() {
+    @Test fun `intact Cavern sources only contradict needed shiny checks after first captures`() {
         ConfigManager.fullClearMode = false; ConfigManager.sparklingMode = false
         val run = SafariRun(0); caught(run, SafariBiome.CAVERN); report(run, SafariBiome.CAVERN)
         val state = party()
@@ -131,8 +131,8 @@ class UniquePartyReportTest {
         assertEquals(7, run.completed(SafariMode.UNIQUE, SafariBiome.CAVERN.critters, state))
         assertEquals(emptySet<String>(), SafariPanels.missing(run, SafariBiome.CAVERN, true, 0, party = state).rows
             .map { it.label }.filter { label -> SafariBiome.CAVERN.critters.any { it.name == label } }.toSet())
-        assertEquals(7, run.completed(SafariMode.UNIQUE, SafariBiome.CAVERN.critters, party(emptySet())))
-        assertEquals(7, run.completed(SafariMode.UNIQUE, SafariBiome.CAVERN.critters, party(setOf("Snoozle"))))
+        assertEquals(9, run.completed(SafariMode.UNIQUE, SafariBiome.CAVERN.critters, party(emptySet())))
+        assertEquals(8, run.completed(SafariMode.UNIQUE, SafariBiome.CAVERN.critters, party(setOf("Snoozle"))))
         run.visitBiome(SafariBiome.ICY); report(run, SafariBiome.CAVERN)
         assertEquals(9, run.completed(SafariMode.UNIQUE, SafariBiome.CAVERN.critters, state), "remote report is trusted after leaving Cavern")
         run.visitBiome(SafariBiome.CAVERN)

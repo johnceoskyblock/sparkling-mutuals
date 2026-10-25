@@ -14,6 +14,20 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class UniqueCompletionTest {
+    @Test fun `Unique Cavern ignores remaining mounds after Rockmite capture when only Snoozle shiny is needed`() {
+        val run = SafariRun(0)
+        run.visitBiome(SafariBiome.CAVERN)
+        SafariBiome.CAVERN.critters.forEach { run.record(SafariCatch(it)) }
+        run.updateCaptureEvidence(SafariBiome.CAVERN, setOf("Rockmite Mound"), true)
+        run.observeCavernSources(moundsRemain = true, wallsRemain = false, allWallsBroken = true)
+        val state = party("Snoozle")
+        assertTrue(run.uniqueComplete("Rockmite", state, localOnly = true))
+        assertTrue(run.uniqueComplete("Snoozle", state, localOnly = true))
+        assertEquals(9, run.completed(SafariMode.UNIQUE, SafariBiome.CAVERN.critters, state, localOnly = true))
+        assertEquals("cd", run.completion.announcement(run, SafariBiome.CAVERN, SafariMode.UNIQUE, state))
+        assertFalse(run.uniqueComplete("Rockmite", party("Rockmite", "Snoozle"), localOnly = true))
+        assertFalse(run.captureComplete("Rockmite"), "Full Clear still requires all mounds")
+    }
     private fun party(vararg needed: String) = PartySparklingState().apply {
         select(setOf("me")); accept(setOf("me"), mapOf("me" to (SafariRoster.all.map { it.name }.toSet() - needed.toSet())))
     }

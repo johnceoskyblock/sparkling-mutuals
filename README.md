@@ -29,7 +29,7 @@ HM API and MoulConfig are bundled. Player profile lookups use a Hypixel API key 
 | HUD layout | `/sm gui`; drag and scroll to move/resize supported HUDs. Projection status text has been removed. |
 | Capture review | `/captures` for current/last-run captures |
 | History and achievements | `/sm history`, `/sm history import`, `/sm achievements`; [history/import/profit rules](docs/HISTORY_IMPORT.md) |
-| Sparkling rates | `/sparklingrates`; [cached-party checks and rate estimates](docs/SPARKLING_RATES.md) |
+| Sparkling rates | `/rates`; [cached-party checks and rate estimates](docs/SPARKLING_RATES.md) |
 | Profitable critters | `/profitablecritters`; [cached-price ranking and estimates](docs/PROFITABLE_CRITTERS.md) |
 | Party streaks | `!since`, `!since unique`; [credit and participation](docs/SINCE_COMMAND.md) |
 | Contest and readiness | [Miria/downtime](docs/CONTEST_DOWNTIME.md), [Safari entry guard and Shift override](docs/SAFARI_ENTRY_GUARD.md) |
@@ -70,6 +70,8 @@ Press Tab to complete current-party IGNs in `/sparkling`, including successive c
 - Licensing and attribution: [LICENSE](LICENSE) and [third-party notices](licenses).
 
 ## Last updated
+
+2026-10-25 — Renamed the local rate command to `/rates`; no new API requests. `/profitablecritters` now ranks ten results by estimated coins per run.
 
 2026-10-21 (America/New_York) — Prepared v3.5.0 with cached-data commands, retained party discoveries and updated completion/ESP behavior.
 

@@ -23,8 +23,8 @@ object CommandHelp {
     private val local = listOf(
         "/sm" to "Settings",
         "/sm gui" to "Move and resize HUDs",
-        "/sparklingrates" to "Expected runs per Sparkling from cached party checks (hover for details)",
-        "/profitablecritters" to "Top five shard prices and estimated shards/profit per run (cached prices)",
+        "/rates" to "Expected runs per Sparkling from cached party checks (hover for details)",
+        "/profitablecritters" to "Top ten critters by estimated coins per run (cached prices)",
         "/captures" to "Current or last run captures",
         "/sparkling [IGN|party|IGNs]" to "Sparkling card, or shared sparklings",
         "/sm history" to "Runs, bests, sparklings, achievements, stats",
