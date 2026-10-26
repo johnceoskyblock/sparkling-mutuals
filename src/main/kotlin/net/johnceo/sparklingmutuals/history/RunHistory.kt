@@ -28,6 +28,12 @@ object RunHistory {
 
     fun register() {
         data = HistoryStore.load("runs", Data::class.java, ::Data).also { d -> d.runs.sortByDescending { it.start } }
+        if (HistoryMerge.removeExactDuplicates(data.runs) > 0) {
+            data.nextNumber = data.runs.size + 1
+            runCatching { HistoryStore.backup("runs", "pre-deduplication") }
+                .onSuccess { save() }
+                .onFailure { org.slf4j.LoggerFactory.getLogger("sparkling-mutuals/history").warn("Couldn't back up run history repair", it) }
+        }
         BazaarPrices.ensureFresh()
         ClientReceiveMessageEvents.GAME.register { message, overlay ->
             if (!overlay) Minecraft.getInstance().execute { chat(message.string) }
@@ -56,6 +62,8 @@ object RunHistory {
 
     private fun finish(run: SafariRun, client: Minecraft) {
         if (run.historyExcluded || !ConfigManager.runHistory || tally.party.isEmpty()) return
+        // The run start is stable across callbacks; never insert or award the same live run twice.
+        if (data.runs.any { !it.imported && it.start == run.startedAt }) return
         val record = RunRecord(start = run.startedAt, length = run.elapsed(System.currentTimeMillis()),
             mode = SafariFullClear.mode.name, party = tally.party.size, you = tally.catches.size,
             caught = tally.caught, lootShares = tally.lootShares,
@@ -103,22 +111,31 @@ internal class LiveHistorySession {
     var tickets = 0
         private set
     private var pendingTickets = 0
+    private var finishing = false
 
     /** A later ticket listener may run after chat has already synchronized the new run. */
     fun onTicket(run: SafariRun?) {
-        if (run != null && run === active) tickets++ else pendingTickets++
+        if (!finishing && run != null && run === active) tickets++ else pendingTickets++
     }
 
     fun sync(run: SafariRun?, finish: (SafariRun) -> Unit) {
-        if (run === active) return
-        active?.let(finish)
+        if (finishing || run === active) return
+        val previous = active
         active = run
-        tally = RunTally(); splits.clear()
-        tickets = if (run == null) 0 else pendingTickets
-        if (run != null) pendingTickets = 0
+        finishing = true
+        try {
+            previous?.let(finish)
+        } finally {
+            tally = RunTally(); splits.clear()
+            tickets = if (run == null) 0 else pendingTickets
+            if (run != null) pendingTickets = 0
+            finishing = false
+        }
     }
 
     fun chat(run: SafariRun?, raw: String, self: String, finish: (SafariRun) -> Unit) {
+        // A local achievement/chat message during finish must not close or modify the departing run again.
+        if (finishing) return
         sync(run, finish)
         if (active == null) return
         SafariMessages.lines(raw).forEach { tally.line(it, self) }
@@ -128,6 +145,23 @@ internal class LiveHistorySession {
 /** The merge behind imports, separate so it can be tested. */
 object HistoryMerge {
     const val SAME_RUN_MILLIS = 90_000L
+    /** Only the display number is excluded. Close timestamps or equal capture totals alone are not duplicates. */
+    private fun signature(run: RunRecord): List<Any> = with(run) {
+        listOf(start, length, mode, party, you, caught, lootShares, partySize, tickets, shards, catches,
+            feathers, sparklings, ownSparklings, macaws, splits, imported, coins, ticketAt, coinsEstimated, modeEstimated)
+    }
+    fun removeExactDuplicates(runs: MutableList<RunRecord>): Int {
+        val seen = mutableSetOf<List<Any>>()
+        val before = runs.size
+        runs.removeAll { it.start > 0 && !seen.add(signature(it)) }
+        val removed = before - runs.size
+        if (removed > 0) {
+            runs.sortBy { it.start }
+            runs.forEachIndexed { index, run -> run.number = index + 1 }
+            runs.sortByDescending { it.start }
+        }
+        return removed
+    }
     /** Replace one overlapping import of this run; nearby, already-finished runs remain separate. */
     fun removeLiveDuplicate(runs: MutableList<RunRecord>, live: RunRecord): RunRecord? {
         val imported = runs.filter { it.imported && kotlin.math.abs(it.start - live.start) <= SAME_RUN_MILLIS &&
@@ -143,6 +177,8 @@ object HistoryMerge {
      * each other, so two short runs close together both survive.
      */
     fun merge(runs: MutableList<RunRecord>, found: List<RunRecord>): Int {
+        removeExactDuplicates(runs)
+        val incoming = found.distinctBy { if (it.start > 0) signature(it) else it }
         data class Match(val found: Int, val saved: Int, val distance: Long)
         val sortedSaved = runs.withIndex().sortedBy { it.value.start }
         val candidates = mutableMapOf<Pair<Int, Int>, Long>()
@@ -151,7 +187,7 @@ object HistoryMerge {
             while (lo < hi) { val mid = (lo + hi) ushr 1; if (sortedSaved[mid].value.start < at) lo = mid + 1 else hi = mid }
             return lo
         }
-        found.forEachIndexed { fi, run ->
+        incoming.forEachIndexed { fi, run ->
             listOf(run.start, run.ticketAt).filter { it > 0 }.distinct().forEach { anchor ->
                 var index = lowerBound(anchor - SAME_RUN_MILLIS)
                 while (index < sortedSaved.size && sortedSaved[index].value.start <= anchor + SAME_RUN_MILLIS) {
@@ -165,8 +201,8 @@ object HistoryMerge {
         candidates.map { (pair, distance) -> Match(pair.first, pair.second, distance) }.sortedBy { it.distance }.forEach {
             if (it.found !in matchedFound && it.saved !in matchedSaved) { matchedFound += it.found; matchedSaved += it.saved }
         }
-        found.forEachIndexed { index, run -> if (index !in matchedFound) runs += run }
-        val added = found.size - matchedFound.size
+        incoming.forEachIndexed { index, run -> if (index !in matchedFound) runs += run }
+        val added = incoming.size - matchedFound.size
         // Saved native and imported details are preserved; only chronological numbering changes.
         runs.sortBy { it.start }
         runs.forEachIndexed { index, run -> run.number = index + 1 }

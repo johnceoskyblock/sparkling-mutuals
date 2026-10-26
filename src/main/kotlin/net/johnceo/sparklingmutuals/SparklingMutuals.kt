@@ -111,6 +111,7 @@ object SparklingMutuals : ModInitializer {
     }
 
     private fun onClientTick(client: Minecraft) {
+        JoinWelcome.tick(client)
         PartyManager.onClientTick(client)
         PartyCommands.onClientTick(client)
         ContestTracker.onClientTick(client)
@@ -139,6 +140,7 @@ object SparklingMutuals : ModInitializer {
     }
 
     private fun resetSession() {
+        JoinWelcome.reset()
         PhantomleafSolver.reset()
         CapsulePreview.reset()
         net.johnceo.sparklingmutuals.safari.shots.ShotRecorder.disconnect()

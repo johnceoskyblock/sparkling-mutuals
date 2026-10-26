@@ -29,11 +29,15 @@ In Unique and Sparkle modes, **Critter ESP for profitable shards** retains exact
 
 Before any valid quotes have loaded, the extra profitable list is empty; ordinary mode and sparkling-detection highlights remain available. A partial price cache yields fewer than ten species, matching the command. Updated quotes and changes to the price preference update both consumers together without repeated sorting for each rendered entity.
 
+In Sparkle mode, a top-ten Gimmiegold also enables remaining Shining Coin floor-drop ESP while the profitable-shard toggle is enabled, even if everyone already owns shiny Gimmiegold. Floor-group and biome visibility restrictions still apply. This does not enable incense, add required shiny checks, change completion, or send unused-resource reminders for already shared discoveries.
+
 ## Verification
 
 Automated checks verify all 37 source species, fractional arithmetic, invalid/missing quote exclusion, the top-ten cutoff and a case where per-run revenue would produce a different ranking than shard price. Live checks: run the command after prices load, verify ten local critter messages, change the existing insta-sell preference and verify the quoted prices, and run before prices are available to confirm the local fallback without a new fetch.
 
 ## Last updated
+
+2026-10-25 — Extended profitable Sparkle Gimmiegold highlights to their Shining Coin sources; the same cached ranking and mode toggle control both.
 
 2026-10-25 — Unique/Sparkle profitable-shard ESP now shares the command's cached top-ten ranking and exclusions, replacing the fixed five-species list with no new fetches.
 

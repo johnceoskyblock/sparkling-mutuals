@@ -114,14 +114,14 @@ class HistoryBackfillImportTest {
         val existing=mutableListOf(native)
         assertEquals(0,HistoryMerge.merge(existing,listOf(imported))); assertSame(native,existing.single())
     }
-    @Test fun `sparkling merge preserves flags and ticket deltas and keeps legitimate close repeats`() {
+    @Test fun `sparkling merge repairs repeat flags and preserves ticket deltas and legitimate close repeats`() {
         val original=SparklingEntry(at(13,0,5),"Local","Macaw",unique=true,tickets=99)
         val old=SparklingEntry(at(12,0),"Friend","Macaw",tickets=4)
         val entries=mutableListOf(original)
         val found=listOf(old,SparklingEntry(at(13,0,2),"Local","Macaw"),SparklingEntry(at(13,0,5),"Local","Macaw"),
             SparklingEntry(at(13,3),"Friend","Gemzie"))
         assertEquals(3,SparklingHistoryMerge.merge(entries,found,listOf(at(11,0),at(12,30),at(13,1))))
-        assertTrue(original.unique); assertEquals(99,original.tickets); assertFalse(original.uniqueEstimated)
+        assertFalse(original.unique); assertEquals(99,original.tickets); assertFalse(original.uniqueEstimated)
         assertEquals(1,entries.first().tickets); assertEquals(1,entries.first { it.at==at(13,0,2) }.tickets)
         assertTrue(old.unique); assertTrue(old.uniqueEstimated)
         assertFalse(entries.first { it.at==at(13,0,2) }.unique)

@@ -11,6 +11,27 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class UniqueHelperPriorityTest {
+    @Test fun `Gemzie completion hides remaining gems in every mode even with manual ESP enabled`() {
+        for (mode in SafariMode.entries) {
+            var now = 1000L
+            val run = SafariRun(0) { now }
+            val state = FloorDropState().apply { visit(SafariBiome.CAVERN); force(true) }
+            val needs = party("Gemzie")
+            assertTrue(state.enabledForMode(SafariBiome.CAVERN, mode, true, run, needs))
+            when (mode) {
+                SafariMode.UNIQUE -> run.record(SafariCatch(SafariRoster.named("Gemzie")!!))
+                SafariMode.FULL_CLEAR -> repeat(3) { run.record(SafariCatch(SafariRoster.named("Gemzie")!!)) }
+                SafariMode.SPARKLING -> {
+                    run.sparklingChecks.chat("A rumbling sound can be heard, and the door at the back of the chamber opens...")
+                    now = 6000
+                }
+            }
+            assertEquals(1, run.completed(mode, listOf(SafariRoster.named("Gemzie")!!), needs))
+            assertFalse(state.enabledForMode(SafariBiome.CAVERN, mode, true, run, needs))
+            state.visit(SafariBiome.FOREST)
+            assertFalse(state.enabledForMode(SafariBiome.CAVERN, mode, true, run, needs))
+        }
+    }
     private fun party(vararg missing: String) = PartySparklingState().apply {
         select(setOf("me")); accept(setOf("me"), mapOf("me" to SafariRoster.all.map { it.name }.toSet() - missing.toSet()))
     }

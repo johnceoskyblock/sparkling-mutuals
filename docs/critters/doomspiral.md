@@ -49,7 +49,7 @@ Soothing Incense can come from grants/Haunted floor pickups. Holding incense, ri
 | Ordinary ESP | Unique stops after first shared catch; Full Clear keeps eligible uncaught models. Sparkling requires needed discovery and no shared boss catch. |
 | Source helpers | All five predicted incense locations are eligible under the existing mode/resource gates, without distance ranking or starting-item slot reduction. Four pickup units or having held four incense suppresses them for the run; Sparkling also needs Doomspiral discovery. See [FLOOR_DROPS](FLOOR_DROPS.md). |
 | Automatic completion announcements | Shared local whole-biome/report-readiness gates in [mode rules](../../SAFARI_LOGIC.md). |
-| PB eligibility | Personal Unique: own catch of every species. Full Clear: personal captures/local proof. Party Unique: separate shared-capture/absence predicate; progress alone is insufficient. Boss Solo needs having held 4 Soothing Incense; own boss catch may update Duo. Ordinary attributed loot share can record Observed time only; Sparkling boss text misses the current dedicated PB matcher ([D15](../IMPLEMENTATION_AUDIT.md#d15)). |
+| PB eligibility | Personal Unique: own catch of every species. Full Clear: personal captures/local proof. Party Unique: separate shared-capture/absence predicate; progress alone is insufficient. Boss Solo requires holding 4 Soothing Incense before the own boss capture; otherwise it records Duo. Later inventory cannot upgrade that capture. Observed Doomspiral is assumed Solo. Ordinary and explicitly SPARKLING capture/reward messages are supported; see [PB rules](../PERSONAL_BESTS.md). |
 
 ## Party reports and late entry
 
@@ -76,5 +76,7 @@ Existing coverage: [SafariPersonalBestTest](../../src/test/kotlin/net/johnceo/sp
 Population guarantees and capsule success/escape claims from supplied notes were not live revalidated; see [audit D2](../IMPLEMENTATION_AUDIT.md#d2).
 
 ## Last updated
+
+2026-10-26 — Clarified Solo/Duo timing and observed boss classification.
 
 2026-10-19 (America/New_York) — Uniform species reference; audited evidence, modes, display and lifecycle. Reviewed source: `93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee`; no local runtime source changes reviewed. See [revision convention](../DOCUMENTATION_GUIDE.md).

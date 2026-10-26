@@ -25,17 +25,16 @@ object SafariSinceReply {
         }
         val last = entries.filter { (!unique || it.unique) && credited(it) }.maxByOrNull { it.at }
         val label = label(unique)
-        if (last == null) return "$player: No $label in history (${validRuns.size} runs tracked)."
+        if (last == null) return "${validRuns.size} runs tracked; no $label in history."
         val count = validRuns.count { it.start > last.at }
-        return "$player: $count run${if (count == 1) "" else "s"} since last $label: ${last.critter} caught by ${last.player}."
+        return "$count run${if (count == 1) "" else "s"} since last $label: ${last.critter} caught by ${last.player}."
     }
     /** Called on the client thread before the async reply pipeline, so histories cannot race an import/save. */
     fun current(command: PartyCommand) = format(command.ign, command.kind == PartyCommandKind.SINCE_UNIQUE,
         RunHistory.runs, SparklingLog.entries, SafariTracking.ledger.current)
     fun matches(command: PartyCommand, body: String): Boolean {
-        val name = Regex.escape(command.ign)
         val label = label(command.kind == PartyCommandKind.SINCE_UNIQUE)
-        return Regex("^$name: (?:[0-9]+ runs? since last $label: .+ caught by [A-Za-z0-9_]{1,16}\\.|No $label in history \\([0-9]+ runs tracked\\)\\.)$",
+        return Regex("""^(?:[0-9]+ runs? since last $label: .+ caught by [A-Za-z0-9_]{1,16}\.|[0-9]+ runs tracked; no $label in history\.)$""",
             RegexOption.IGNORE_CASE).matches(body)
     }
 }

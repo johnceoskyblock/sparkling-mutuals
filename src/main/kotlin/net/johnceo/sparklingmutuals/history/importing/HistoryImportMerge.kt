@@ -59,6 +59,7 @@ object SparklingHistoryMerge {
             previous = ti; seen += species
         }
         entries.sortByDescending { it.at }
+        net.johnceo.sparklingmutuals.history.SparklingUniqueness.reconcile(entries)
         return added.size
     }
 }

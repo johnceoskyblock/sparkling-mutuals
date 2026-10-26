@@ -63,7 +63,8 @@ object SafariPanels {
             val mode = SafariFullClear.mode
             if (biome == SafariBiome.FOREST && SafariHelperRules.showNestCounter(mode, run, party))
                 add(HudRow("Bee nests to punch", "$nests", HudRow.GOLD, HudRow.GRAY))
-            if (biome == SafariBiome.FOREST && mode == SafariMode.UNIQUE)
+            if (biome == SafariBiome.FOREST && (mode == SafariMode.UNIQUE || sparkling &&
+                    listOf("Bluebird", "Parakeet", "Macaw").any(party::needs) && run?.birdSpawnsComplete() != true))
                 add(HudRow("Bird food left to use", "${run?.birdFoodLeftToUse ?: 9}", HudRow.GOLD, HudRow.GRAY))
             if (biome == SafariBiome.CAVERN) {
                 if (SafariHelperRules.needed("Snoozle", mode, run, party) && walls.states.isNotEmpty() && !walls.allBroken)
@@ -71,7 +72,7 @@ object SafariPanels {
                 if (SafariHelperRules.needed("Rockmite", mode, run, party) && mounds > 0)
                     add(HudRow("Mounds to break", "$mounds", HudRow.GOLD, HudRow.GRAY))
             }
-            if (biome == SafariBiome.HAUNTED && mode == SafariMode.UNIQUE) {
+            if (biome == SafariBiome.HAUNTED && (mode == SafariMode.UNIQUE || sparkling)) {
                 if (party.needs("Gimmiegold") && run?.sparklingComplete("Gimmiegold", party, localOnly = true) != true)
                     add(HudRow("Coins left to use", run?.coinsLeftToUse?.toString() ?: "?", HudRow.GOLD, HudRow.GRAY))
                 if (party.needs("Gazer") && run?.sparklingComplete("Gazer", party, localOnly = true) != true)

@@ -109,14 +109,21 @@ class UniqueHauntedChecksTest {
         assertFalse(complete(SafariRun(1), "Gazer", party("Gazer")))
     }
 
-    @Test fun `new Haunted footers are confined to Unique mode`() {
+    @Test fun `Haunted checking footers appear only for needed discoveries in Unique and Sparkling`() {
         val state = party("Gazer", "Gimmiegold")
         val run = SafariRun(0).apply { visitBiome(SafariBiome.HAUNTED) }
-        for (mode in listOf(SafariMode.FULL_CLEAR, SafariMode.SPARKLING)) {
+        for (mode in SafariMode.entries) {
             ConfigManager.fullClearMode = mode == SafariMode.FULL_CLEAR
             ConfigManager.sparklingMode = mode == SafariMode.SPARKLING
-            assertNull(footer(run, state, "Coins left to use"))
-            assertNull(footer(run, state, "Gazers left to check"))
+            if (mode == SafariMode.FULL_CLEAR) {
+                assertNull(footer(run, state, "Coins left to use"))
+                assertNull(footer(run, state, "Gazers left to check"))
+            } else {
+                assertEquals("?", footer(run, state, "Coins left to use")?.value)
+                assertEquals("4", footer(run, state, "Gazers left to check")?.value)
+                assertNull(footer(run, party("Gazer"), "Coins left to use"))
+                assertNull(footer(run, party("Gimmiegold"), "Gazers left to check"))
+            }
         }
     }
 

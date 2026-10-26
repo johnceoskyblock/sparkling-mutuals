@@ -5,6 +5,24 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class SparklingParticleLocationsTest {
+    @Test fun `confirmed Foxtrot catch clears its anonymous trail but preserves other biomes and future sightings`() {
+        val run = net.johnceo.sparklingmutuals.safari.SafariRun(0)
+        val points = run.sparklingParticles
+        points.observe(true, true, -14.0, 66.0, 61.0, 0)
+        points.observe(true, true, -6.0, 66.0, 64.0, 100)
+        points.observe(true, true, 0.0, 50.0, -60.0, 100)
+        assertEquals(3, points.unknown().size)
+        run.record(net.johnceo.sparklingmutuals.safari.SafariCatch.parse("CAPTURE! You caught a Foxtrot!")!!, 500)
+        assertEquals(3, points.unknown().size, "ordinary catches cannot resolve particle detections")
+        run.sparklingBroadcast("SPARKLING! Friend caught a SPARKLING Foxtrot!", 1000)
+        assertEquals(SafariBiome.HAUNTED, points.unknown().single().biome)
+        assertNull(points.observe(true, true, -6.0, 66.0, 64.0, 1200), "ignore trailing capture particles")
+        val later = points.observe(true, true, -6.0, 66.0, 64.0, 3000)!!
+        // The loot-share reward is the same capture, not a second reason to clear a new sighting.
+        run.record(net.johnceo.sparklingmutuals.safari.SafariCatch.parse(
+            "LOOT SHARE! You received a Rainbow Feather from Friend catching a SPARKLING Foxtrot!")!!, 3100)
+        assertTrue(points.unknown().any { it.id == later.id })
+    }
     @Test fun `wax on is accepted only in Safari and valid map coordinates`() {
         val points = SparklingParticleLocations()
         assertNull(points.observe(false, true, 0.0, 50.0, -60.0, 0))

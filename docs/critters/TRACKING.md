@@ -70,7 +70,7 @@ Scrappy 3, Gemzie 3, Troodon 3 and Gazer 4 can complete progress from their fixe
 
 | Source | Implemented evidence and retention |
 | --- | --- |
-| Honeybug nests | Retain the greatest found/punched nest counts and improved coverage. Known population requires a positive nest count and no unknown sites, or a completed nest survey. Local checking resolves from all nests checked or shared catches + current uncaptured bees reaching that count. Newly expanded nest evidence invalidates prior local checking |
+| Honeybug nests | Retain the greatest found/punched nest counts and improved coverage. Known population requires a positive nest count and no unknown sites, or a completed nest survey. Local checking resolves from all nests checked or a fresh Forest render showing shared catches + current uncaptured bees reaching that count. Retain confirmed proof through unloading, reports and reentry; a block refresh cannot latch stale live counts. Newly expanded nest evidence invalidates prior local checking |
 | Honeybug Full Clear | Known nest population plus actual captures can complete from any biome without another scan/report, also respecting known population targets. Unknown coverage uses the fallback/species capture path |
 | Rockmite mounds | Retained mound sites, loaded-world absence and terminal source outcomes. An unobservable site remains unknown; an empty outside-Cavern scan with no known sites invents no survey |
 | Snoozle walls | Five fixed block sites retain loaded observations. Air means broken; a loaded nonair site means intact. Unloaded sites retain their previous state |
@@ -144,6 +144,8 @@ Full Clear still requires actual minimum captures, known Honeybug nest totals, s
 Each client can send one unused starting-item reminder batch per run after a local clear, even if a peer sent that biome report first. A report for a different biome alone never arms that client's reminder.
 
 ## Last updated
+
+2026-10-25 — Honeybug local checking proof now retains after a complete fresh render; fd remains an outside-Forest override only, and expanded nest evidence reopens local work.
 
 2026-10-25 — Gimmiegold retains qualified check UUIDs through unloading; Unique Rockmite/Snoozle source requirements apply after first capture only when their shiny is needed.
 

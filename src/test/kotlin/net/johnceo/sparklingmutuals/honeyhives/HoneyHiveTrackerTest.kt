@@ -35,6 +35,15 @@ class HoneyHiveTrackerTest {
         val tracker = HoneyHiveTracker(times, lootedAt = loots)
         tracker.click("a", 100)
         tracker.chat("HIVE! Honey!", 200)
+        val originalDeadline = 200 + HoneyHiveRules.REFILL_MILLIS
+        assertFalse(tracker.observe("a", "Click to loot!", 5, 500))
+        assertFalse(tracker.observe("a", "Refill in: 12m 34s", 0, 500))
+        assertEquals(originalDeadline, times["a"])
+        val restarted = HoneyHiveTracker(times, lootedAt = loots)
+        assertEquals(HiveState.EMPTY, restarted.state("a", originalDeadline - 1))
+        assertEquals(HiveState.FULL, restarted.state("a", originalDeadline))
+        assertFalse(restarted.observe("a", "Refill in: 12m 34s", 0, originalDeadline + 1))
+        assertEquals(HiveState.FULL, restarted.state("a", originalDeadline + 1))
         val saved = java.util.Properties().apply {
             setProperty("tracking.version", "2")
             setProperty("refill.$owner.a", (times.getValue("a") + 5000).toString())
@@ -48,9 +57,11 @@ class HoneyHiveTrackerTest {
         assertEquals(HiveState.FULL, HoneyHiveRules.state(deadline, deadline))
         assertTrue(HoneyHiveRules.savedRefills(restored, deadline).isEmpty())
         restored.setProperty("observedRefill.$owner.a", "100000")
-        assertEquals(100000L, HoneyHiveRules.savedRefills(restored, 500).getValue(owner).getValue("a"))
+        assertEquals(200 + HoneyHiveRules.REFILL_MILLIS, HoneyHiveRules.savedRefills(restored, 500).getValue(owner).getValue("a"))
         restored.setProperty("full.$owner.a", "1")
-        assertTrue(HoneyHiveRules.savedRefills(restored, 500).isEmpty(), "hologram full/Queen Bee survives restart")
+        assertEquals(deadline, HoneyHiveRules.savedRefills(restored, 500).getValue(owner).getValue("a"), "legacy visual full cannot clear a personal timer")
+        restored.setProperty("queenFull.$owner.a", "1")
+        assertTrue(HoneyHiveRules.savedRefills(restored, 500).isEmpty(), "only a confirmed Queen Bee proc overrides the timer")
     }
     @Test fun `a fresh click at the refill boundary upgrades an earlier empty click`() {
         val times = mutableMapOf("a" to 200L)
@@ -85,8 +96,8 @@ class HoneyHiveTrackerTest {
         }
         assertTrue(HoneyHiveRules.savedRefills(saved, 0).isEmpty())
         saved.setProperty("tracking.version", "2")
-        saved.setProperty("full.player.profile-a.c", "1")
-        saved.setProperty("full.player.unknown.a", "1")
+        saved.setProperty("queenFull.player.profile-a.c", "1")
+        saved.setProperty("queenFull.player.unknown.a", "1")
         val restored = HoneyHiveRules.savedRefills(saved, 150000)
         assertEquals(mapOf("b" to 200000L), restored["player.profile-a"])
         assertEquals(mapOf("a" to 300000L), restored["player.profile-b"])
@@ -111,7 +122,7 @@ class HoneyHiveTrackerTest {
         tracker.chat("HIVE! Honey!", 500)
         assertEquals(500 + HoneyHiveRules.REFILL_MILLIS, times["a"])
     }
-    @Test fun `Queen Bee is full by timestamp until a matching hologram corrects it`() {
+    @Test fun `confirmed Queen Bee remains full despite a stale countdown hologram`() {
         val times = mutableMapOf<String, Long>()
         val tracker = HoneyHiveTracker(times)
         tracker.click("a", 100); tracker.chat("HIVE! Honey!", 200)
@@ -119,8 +130,8 @@ class HoneyHiveTrackerTest {
         tracker.observe("a", null, 0, 3000)
         assertEquals(HiveState.FULL, tracker.state("a", 3000))
         tracker.observe("a", "Refill in: 59m 59s", 5, 6000)
-        assertEquals(HiveState.EMPTY, tracker.state("a", 6000))
-        assertEquals(3605000L, times["a"])
+        assertEquals(HiveState.FULL, tracker.state("a", 6000))
+        assertNull(times["a"])
     }
     @Test fun `profile promotion retains queued click and Queen Bee correlation`() {
         val provisional = mutableMapOf<String, Long>()
@@ -169,7 +180,7 @@ class HoneyHiveTrackerTest {
         assertFalse(tracker.chat("HIVE! Honey!", 10_000))
         assertTrue(times.isEmpty())
     }
-    @Test fun `all block levels preserve timestamp state and only holograms correct it`() {
+    @Test fun `all block levels and early loot labels preserve an active timer`() {
         val times = mutableMapOf("a" to 9000000L)
         val tracker = HoneyHiveTracker(times)
         for (level in listOf(0, 3, 5, null)) {
@@ -179,11 +190,14 @@ class HoneyHiveTrackerTest {
             assertEquals(HiveState.FULL, tracker.state("a", 9000001))
         }
         tracker.observe("a", "Click to loot!", 0, 2000)
-        assertEquals(HiveState.FULL, tracker.state("a", 2000))
+        assertEquals(HiveState.EMPTY, tracker.state("a", 2000))
+        assertEquals(9000000L, times["a"])
+        tracker.observe("a", "Click to loot!", 0, 9000001)
+        assertEquals(HiveState.FULL, tracker.state("a", 9000001))
         assertNull(times["a"])
-        tracker.observe("a", "Refill in: 12m 34s", 5, 3000)
-        assertEquals(757000L, times["a"])
-        assertEquals(HiveState.EMPTY, tracker.state("a", 3000))
+        tracker.observe("a", "Refill in: 12m 34s", 5, 10000000)
+        assertEquals(10754000L, times["a"])
+        assertEquals(HiveState.EMPTY, tracker.state("a", 10000000))
     }
     @Test fun `confirmed loot and Queen Bee are immediate despite inconsistent blocks`() {
         val times = mutableMapOf<String, Long>()

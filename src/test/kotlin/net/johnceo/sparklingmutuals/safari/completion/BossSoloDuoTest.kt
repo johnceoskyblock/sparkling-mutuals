@@ -12,6 +12,27 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class BossSoloDuoTest {
+    @Test fun `observed Wumpa uses named prerequisites while late incense cannot upgrade local Doom`() {
+        val bests = SafariPersonalBests()
+        val run = SafariRun(0)
+        val shared = "LOOT SHARE! You received a Wumpa Shard from Friend catching a Wumpa!"
+        SafariBiome.ICY.critters.filter { it.name != "Wumpa" }.forEach { run.record(SafariCatch(it, false, "Another")) }
+        assertTrue(bests.captureFeedback(shared, run, 1000, "Me")!!.notice.contains("Observed Duo"))
+        SafariBiome.ICY.critters.filter { it.name != "Wumpa" }.forEach { run.record(SafariCatch(it, false, "Friend")) }
+        assertTrue(bests.captureFeedback(shared, run, 2000, "Me")!!.notice.contains("Observed Solo"))
+        val restored = SafariPersonalBests().apply { load(Properties().also(bests::save)) }
+        assertTrue(restored.trackedResponse("friend", "Wumpa").endsWith("0:02.000"))
+        assertTrue(restored.trackedResponse("friend", "Wumpa", true).endsWith("0:01.000"))
+        val doom = SafariRun(0)
+        doom.record(SafariCatch(SafariRoster.named("Doomspiral")!!), 3000, "Me")
+        doom.inventoryEvidence(listOf("Soothing Incense" to 4), 4000)
+        assertFalse(doom.hadFourIncense)
+        assertTrue(bests.captureFeedback("CAPTURE! You caught a SPARKLING Doomspiral!", doom, 3000, "Me")!!.notice.contains("Duo"))
+        val solo = SafariRun(0).apply { inventoryEvidence(listOf("Soothing Incense" to 4), 2000) }
+        bests.captureFeedback("CAPTURE! You caught a Doomspiral!", solo, 10000, "Me")
+        assertEquals(3000L, bests.time("Doomspiral", duo = true))
+        assertEquals(10000L, bests.time("Doomspiral"))
+    }
     @Test fun `Wumpa solo requires all eight personal prerequisites and duo only the own boss capture`() {
         val run = SafariRun(1000); val bests = SafariPersonalBests()
         SafariBiome.ICY.critters.filter { it.name != "Wumpa" }.forEach { run.record(SafariCatch(it, false)) }

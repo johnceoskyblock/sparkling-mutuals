@@ -1,6 +1,7 @@
 package net.johnceo.sparklingmutuals.safari.resources
 
 import net.johnceo.sparklingmutuals.config.SafariEspConfig
+import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.safari.PartySparklingState
 import net.johnceo.sparklingmutuals.safari.SafariAssist
 import net.johnceo.sparklingmutuals.safari.SafariBiome
@@ -10,6 +11,7 @@ import net.johnceo.sparklingmutuals.safari.SafariRun
 import net.johnceo.sparklingmutuals.safari.SafariSparklingMode
 import net.johnceo.sparklingmutuals.safari.SafariTracking
 import net.johnceo.sparklingmutuals.safari.completion.SafariFullClear
+import net.johnceo.sparklingmutuals.safari.esp.SafariEspRules
 
 /** Per-run pickups survive item consumption; a manual choice lasts only for this biome visit. */
 class FloorDropState {
@@ -17,10 +19,10 @@ class FloorDropState {
     private val inventoryPeak = mutableMapOf<FloorDropType, Int>()
     private val heldMaximum = mutableMapOf<FloorDropType, Int>()
     fun startingGrant(type: FloorDropType) { heldMaximum[type] = maxOf(heldMaximum[type] ?: 0, 1) }
-    fun needed(type: FloorDropType, mode: SafariMode, party: PartySparklingState): Boolean = when (type) {
+    fun needed(type: FloorDropType, mode: SafariMode, party: PartySparklingState, profitableGimmiegold: Boolean = false): Boolean = when (type) {
         FloorDropType.LIME, FloorDropType.PURPLE, FloorDropType.ORANGE -> amount(type) == 0
         FloorDropType.ICEBREAKER -> mode == SafariMode.FULL_CLEAR && amount(type) == 0
-        FloorDropType.COIN -> mode != SafariMode.SPARKLING || party.needs("Gimmiegold")
+        FloorDropType.COIN -> mode != SafariMode.SPARKLING || party.needs("Gimmiegold") || profitableGimmiegold
         FloorDropType.INCENSE -> (acquired[type] ?: 0) < 4 && (inventoryPeak[type] ?: 0) < 4 &&
             if (mode == SafariMode.SPARKLING) party.needs("Doomspiral")
             else party.needs("Gimmiegold") || amount(type) < 4
@@ -76,7 +78,10 @@ class FloorDropState {
             else -> configured
         }
     }
-    fun enabledForMode(biome: SafariBiome?, mode: SafariMode, configured: Boolean, run: SafariRun?, party: PartySparklingState): Boolean {
+    fun enabledForMode(biome: SafariBiome?, mode: SafariMode, configured: Boolean, run: SafariRun?, party: PartySparklingState,
+        profitableGimmiegold: Boolean = false): Boolean {
+        if (biome == SafariBiome.CAVERN && run?.completed(mode,
+                listOf(net.johnceo.sparklingmutuals.safari.SafariRoster.named("Gemzie")!!), party) == 1) return false
         if (biome == this.biome && override != null) return override!!
         fun caught(name: String) = (run?.count(name) ?: 0) > 0
         val fullClear = mode == SafariMode.FULL_CLEAR
@@ -86,7 +91,7 @@ class FloorDropState {
             SafariBiome.FOREST -> configured && (fullClear || listOf("Bluebird", "Parakeet", "Macaw").any {
                 party.needs(it) || mode == SafariMode.UNIQUE && !caught(it)
             })
-            SafariBiome.HAUNTED -> configured && (needed(FloorDropType.COIN, mode, party) || needed(FloorDropType.INCENSE, mode, party))
+            SafariBiome.HAUNTED -> configured && (needed(FloorDropType.COIN, mode, party, profitableGimmiegold) || needed(FloorDropType.INCENSE, mode, party))
             SafariBiome.ICY -> fullClear && needed(FloorDropType.ICEBREAKER, mode, party)
             else -> false
         }
@@ -96,17 +101,21 @@ class FloorDropState {
 
 object SafariFloorDrops {
     val state = FloorDropState()
+    private fun profitableGimmiegold() = SafariFullClear.mode == SafariMode.SPARKLING &&
+        SafariEspRules.profitableEsp("Gimmiegold", ConfigManager.sparklingProfitableShardEsp)
     fun selected(drop: PredictedFloorDrop, incenseIds: Set<Int>): Boolean {
         val type = drop.type ?: return false
         if (type == FloorDropType.GENERIC) return SafariEspConfig.rewardDrops && SafariEspConfig.groups.getValue("floor").enabled
         val mode = SafariFullClear.mode
         val party = SafariSparklingMode.state
-        return (type != FloorDropType.INCENSE || drop.id in incenseIds) && enabled(drop.biome) && state.needed(type, mode, party)
+        return (type != FloorDropType.INCENSE || drop.id in incenseIds) && enabled(drop.biome) &&
+            state.needed(type, mode, party, profitableGimmiegold())
     }
     fun enabled(biome: SafariBiome? = SafariAssist.biome): Boolean {
         state.visit(SafariAssist.biome)
         val run = SafariTracking.ledger.current
         val party = SafariSparklingMode.state
-        return state.enabledForMode(biome, SafariFullClear.mode, SafariEspConfig.groups.getValue("floor").enabled, run, party)
+        return state.enabledForMode(biome, SafariFullClear.mode, SafariEspConfig.groups.getValue("floor").enabled, run, party,
+            profitableGimmiegold())
     }
 }

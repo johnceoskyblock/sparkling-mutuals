@@ -11,6 +11,31 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class SafariUniquePbTest {
+    @Test fun `observed unique records attribute solo and party captures and survive reload`() {
+        val bests = SafariPersonalBests()
+        for (biome in SafariBiome.entries) {
+            val solo = SafariRun(1000)
+            biome.critters.dropLast(1).forEach { solo.record(SafariCatch(it, false, "Friend")) }
+            assertFalse(bests.recordObservedUnique(biome, solo, 3000))
+            solo.record(SafariCatch(biome.critters.last(), false, "Friend"))
+            assertTrue(bests.recordObservedUnique(biome, solo, 4000))
+            assertFalse(bests.recordObservedUnique(biome, solo, 5000))
+            assertTrue(bests.trackedResponse("friend", biome.label).endsWith("0:03.000"))
+            val mixed = SafariRun(1000)
+            biome.critters.forEachIndexed { index, critter ->
+                mixed.record(SafariCatch(critter, index == 0, if (index == 0) null else "Friend"), self = "Me")
+            }
+            assertTrue(bests.recordObservedUnique(biome, mixed, 3500))
+            assertTrue(bests.trackedResponse("Friend", biome.label, true).endsWith("0:02.500"))
+            assertTrue(bests.trackedResponse("Me", biome.label, true).endsWith("0:02.500"))
+            val query = PartyCommand.fromChat("Party > Me: !pb ${biome.label.lowercase()} Friend party")!!.command
+            assertTrue(query.trackedPlayer); assertTrue(query.duo)
+            assertTrue(query.matchesResponse(bests.trackedResponse("Friend", biome.label, true)))
+        }
+        val restored = SafariPersonalBests().apply { load(Properties().also(bests::save)) }
+        assertEquals(bests.trackedResponse("Friend", "Forest"), restored.trackedResponse("friend", "Forest"))
+        assertEquals(bests.trackedResponse("Friend", "Forest", true), restored.trackedResponse("friend", "Forest", true))
+    }
     @Test fun `each biome requires every unique personally even if loot shares fill the display`() {
         for (biome in SafariBiome.entries) {
             val run = SafariRun(1000)

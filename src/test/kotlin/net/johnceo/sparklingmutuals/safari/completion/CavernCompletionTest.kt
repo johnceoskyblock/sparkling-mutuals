@@ -59,13 +59,13 @@ class CavernCompletionTest {
         run.updateCaptureEvidence(SafariBiome.CAVERN,emptySet(),false,playerX=-85.0,playerZ=81.0)
         assertTrue(run.captureComplete("Scrappy"))
     }
-    @Test fun `sparkling keeps Driftling and never shows silverfish while timed Cavern ESP expires`() {
+    @Test fun `automatic Cavern checking does not highlight ordinary models`() {
         val run=SafariRun(0);val party=PartySparklingState().apply { select(setOf("me"));accept(setOf("me"),mapOf("me" to emptySet())) }
         val id=UUID.randomUUID()
         assertFalse(SafariEspRules.neededForSparkling("Rockmite",false,party,true,run,id,0))
-        assertTrue(SafariEspRules.neededForSparkling("Driftling",false,party,false,run,id,0))
-        assertTrue(SafariEspRules.neededForSparkling("Driftling",false,party,false,run,id,10000))
-        assertTrue(SafariEspRules.neededForSparkling("Chuckwalla",false,party,false,run,id,0))
+        assertFalse(SafariEspRules.neededForSparkling("Driftling",false,party,false,run,id,0))
+        assertFalse(SafariEspRules.neededForSparkling("Driftling",false,party,false,run,id,10000))
+        assertFalse(SafariEspRules.neededForSparkling("Chuckwalla",false,party,false,run,id,0))
         assertFalse(SafariEspRules.neededForSparkling("Chuckwalla",false,party,false,run,id,10000))
     }
 }

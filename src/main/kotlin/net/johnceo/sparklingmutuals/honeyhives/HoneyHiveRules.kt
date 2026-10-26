@@ -9,12 +9,30 @@ data class Hive(val x: Int, val y: Int, val z: Int, var id: String? = null) {
 
 /** The decisions behind the honeyhive beacons, free of the client so they can be tested. */
 object HoneyHiveRules {
+    val catalog: List<Hive> by lazy {
+        checkNotNull(HoneyHiveRules::class.java.getResourceAsStream("/assets/sparkling-mutuals/honeyhives.txt"))
+            .bufferedReader().use { parse(it.readText()) }
+    }
+    private val catalogKeys by lazy { catalog.mapTo(hashSetOf()) { it.key } }
+    fun knownHive(key: String) = key in catalogKeys
+    /** Unloaded known waypoints remain useful; a loaded missing block is never a hive waypoint. */
+    fun waypointExists(key: String, loaded: Boolean, beeNest: Boolean) = knownHive(key) && (!loaded || beeNest)
+    /** Old terrain scans and clicks could persist decorative/temporary nests as lootable honeyhives. */
+    fun removeUnknownPositions(saved: java.util.Properties): Int {
+        val prefixes = listOf("hive.", "refill.", "observedRefill.", "looted.", "state.", "full.", "queenFull.")
+        val invalid = saved.stringPropertyNames().filter { name ->
+            prefixes.any(name::startsWith) && !knownHive(correctedKey(name.substringAfterLast('.')))
+        }
+        invalid.forEach(saved::remove)
+        return invalid.size
+    }
     const val REMOVED_HIVE = "-730,132,184"
     fun correctedKey(key: String) = if (key == "-704,92,225") "-705,92,225" else key
     /** Discard pre-fix timers once; later launches retain each valid hive's personal deadline. */
     fun savedRefills(saved: java.util.Properties, now: Long): Map<String, Map<String, Long>> {
         if (saved.getProperty("tracking.version") != "2") return emptyMap()
         val result = mutableMapOf<String, MutableMap<String, Long>>()
+        val exactLootKeys = mutableSetOf<Pair<String, String>>()
         saved.stringPropertyNames().forEach { name ->
             parseLoot(name, saved.getProperty(name), "refill")
                 ?.takeIf { (owner, key, at) -> !owner.endsWith(".unknown") && key != REMOVED_HIVE && now < at }
@@ -24,6 +42,7 @@ object HoneyHiveRules {
         saved.stringPropertyNames().forEach { name ->
             parseLoot(name, saved.getProperty(name), "looted")?.let { (owner, key, at) ->
                 if (!owner.endsWith(".unknown") && key != REMOVED_HIVE && at >= 0 && at <= Long.MAX_VALUE - REFILL_MILLIS) {
+                    exactLootKeys.add(owner to key)
                     val times = result.getOrPut(owner) { mutableMapOf() }
                     if (at + REFILL_MILLIS > now) times[key] = at + REFILL_MILLIS else times.remove(key)
                 }
@@ -31,7 +50,7 @@ object HoneyHiveRules {
         }
         saved.stringPropertyNames().forEach { name ->
             parseLoot(name, saved.getProperty(name), "observedRefill")?.let { (owner, key, at) ->
-                if (!owner.endsWith(".unknown") && key != REMOVED_HIVE) {
+                if (!owner.endsWith(".unknown") && key != REMOVED_HIVE && owner to key !in exactLootKeys) {
                     val times = result.getOrPut(owner) { mutableMapOf() }
                     if (at > now) times[key] = at else times.remove(key)
                 }
@@ -45,7 +64,8 @@ object HoneyHiveRules {
         if (saved.getProperty("tracking.version") != "2") return emptyMap()
         val result = mutableMapOf<String, MutableSet<String>>()
         saved.stringPropertyNames().forEach { name ->
-            parseLoot(name, saved.getProperty(name), "full")
+            // Legacy `full` mixed hologram observations with real Queen Bee procs and cannot override a timer.
+            parseLoot(name, saved.getProperty(name), "queenFull")
                 ?.takeIf { (owner, key, value) -> !owner.endsWith(".unknown") && key != REMOVED_HIVE && value == 1L }
                 ?.let { (owner, key, _) -> result.getOrPut(owner) { mutableSetOf() }.add(key) }
         }

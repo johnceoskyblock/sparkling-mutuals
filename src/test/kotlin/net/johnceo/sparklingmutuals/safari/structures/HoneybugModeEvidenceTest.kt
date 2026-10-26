@@ -7,6 +7,34 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class HoneybugModeEvidenceTest {
+    @Test fun `confirmed Honeybug population retains through unloading reports and Forest reentry but new nests reopen it`() {
+        val run = SafariRun(0).apply { visitBiome(SafariBiome.FOREST); updateNestEvidence(false, 0, 4, 0) }
+        run.liveHoneybugs(3)
+        catch(run, 1)
+        run.updateNestEvidence(false, 0, 4, 0)
+        run.liveHoneybugs(2)
+        assertFalse(run.sparklingComplete("Honeybug", party(true)), "a stale render plus a new catch must not latch proof")
+        run.liveHoneybugs(3)
+        assertTrue(run.sparklingComplete("Honeybug", party(true)))
+        run.partyFullClear("Party > Friend: fd")
+        run.liveHoneybugs(0)
+        run.updateNestEvidence(false, 0, 0, 13)
+        for (mode in listOf(SafariMode.UNIQUE, SafariMode.SPARKLING)) {
+            assertEquals(1, run.completed(mode, listOf(honeybug), party(true)))
+            assertFalse(SafariHelperRules.showNests(mode, run, party(true)))
+        }
+        run.visitBiome(SafariBiome.CAVERN)
+        run.visitBiome(SafariBiome.FOREST)
+        run.liveHoneybugs(0)
+        assertTrue(run.sparklingComplete("Honeybug", party(true)), "retain real local proof on reentry")
+        assertFalse(run.fullClearComplete("Honeybug"), "render checking never supplies Full Clear captures")
+        run.updateNestEvidence(false, 0, 5, 0)
+        assertFalse(run.sparklingComplete("Honeybug", party(true)), "a report cannot cover newly discovered local nest work")
+        run.liveHoneybugs(4)
+        assertTrue(run.sparklingComplete("Honeybug", party(true)))
+        run.liveHoneybugs(0)
+        assertTrue(run.sparklingComplete("Honeybug", party(true)))
+    }
     private val honeybug = SafariRoster.named("Honeybug")!!
     private fun party(needs: Boolean) = PartySparklingState().apply {
         select(setOf("me"))

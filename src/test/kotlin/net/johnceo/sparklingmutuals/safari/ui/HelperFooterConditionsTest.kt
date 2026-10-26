@@ -56,4 +56,15 @@ class HelperFooterConditionsTest {
         assertEquals(1, haunted.count { it.label == "Gazer" })
         assertFalse(haunted.any { it.label.startsWith("Gazers") })
     }
+    @Test fun `Sparkling bird food counter appears for any needed bird and disappears after feeding completes`() {
+        ConfigManager.init(dir)
+        val run = SafariRun(0).apply { visitBiome(SafariBiome.FOREST) }
+        fun food(state: PartySparklingState) = labels(run, SafariMode.SPARKLING, state).contains("Bird food left to use")
+        assertFalse(food(party()))
+        assertFalse(food(party("Honeybug")))
+        for (bird in listOf("Bluebird", "Parakeet", "Macaw")) assertTrue(food(party(bird)), bird)
+        run.birds.inventory(emptyList())
+        run.scanBirdSources(0, List(9) { "Bluebird" }, qualified = true)
+        assertFalse(food(party("Parakeet")), "resolved food work should not linger")
+    }
 }

@@ -58,16 +58,16 @@ Highest priority: while the party needs Wumpa, every Icy species with zero share
 
 | Footer | Full Clear | Unique | Sparkling |
 | --- | --- | --- | --- |
-| Bird food left to use | Not shown | Remaining feeding demand including known party extras; at least known held plus floor food | Not shown |
+| Bird food left to use | Not shown | Remaining feeding demand including known party extras; at least known held plus floor food | Same count, only when Bluebird, Parakeet or Macaw is needed and feeding remains unresolved |
 | Bee nests to punch | Until all nests checked or captures reach known nest quota; fd/live bees alone do not suppress it | Until locally resolved or trusted fd; after first Honeybug catch, keep only if its discovery is needed | Only when Honeybug is needed and local/trusted checking remains unresolved |
 | Snooper walls to break | Known wall state exists and not all five broken | Snoozle incomplete and either uncaught or discovery needed | Needed incomplete Snoozle |
 | Mounds to break | Positive remaining mound count | Rockmite incomplete and either uncaught or discovery needed | Needed incomplete Rockmite |
-| Coins left to use | Not shown | Only when Gimmiegold is needed and local coin checking remains: uncollected floor slots/held coins and outstanding required spawns; ? while catalog/inventory is unknown | Not shown |
-| Gazers left to check | Not shown | Only when Gazer is needed and unresolved: four minus retained reconciled sightings/catches | Not shown |
+| Coins left to use | Not shown | Only when Gimmiegold is needed and local coin checking remains: uncollected floor slots/held coins and outstanding required spawns; ? while catalog/inventory is unknown | Same needed-Gimmiegold counter until local checking resolves |
+| Gazers left to check | Not shown | Only when Gazer is needed and unresolved: four minus retained reconciled sightings/catches | Same needed-Gazer counter until local checking resolves |
 
 Footers appear beneath the species list with gray counts. Unknown wall coverage is preserved. Resolved sources disappear; a punched nest loses its individual waypoint immediately. The nest count helper and nest highlight use the same mode eligibility, while actual waypoint presence depends on unpunched known nests. A helper can remain after the species row clears.
 
-Haunted footers remain after their first catches remove the species rows, and disappear after the needed checks resolve. Unique Rockmite silverfish ESP ends on the first catch; mound ESP stays on before that catch or while anyone still needs its discovery. A new run restores first-catch eligibility. Ordinary ESP, detected Sparkling glow and source helpers have independent render/config gates; [SAFARI_LOGIC](../SAFARI_LOGIC.md) and [detection](SPARKLING_DETECTION.md) distinguish their outcomes.
+In Unique, Haunted footers remain after their first catches remove the species rows. Unique and Sparkle Haunted footers disappear after the needed checks resolve. Sparkle shows coin, Gazer, mound, Snoozle-wall, bird-food and bee-nest counters only for the corresponding needed discovery (any needed bird enables bird food); resolved source work hides its counter. Unique Rockmite silverfish ESP ends on the first catch; mound ESP stays on before that catch or while anyone still needs its discovery. A new run restores first-catch eligibility. Ordinary ESP, detected Sparkling glow and source helpers have independent render/config gates; [SAFARI_LOGIC](../SAFARI_LOGIC.md) and [detection](SPARKLING_DETECTION.md) distinguish their outcomes.
 
 ## Exceptions
 
@@ -115,6 +115,8 @@ Any party member may request `!m` or `!m <biome>` (including c/f/i/h). A mod cli
 The compact party reply uses `Missing <Biome>: ...`, `Done` when nothing remains, and ordinary `shiny` wording rather than the detection-alert keyword. Unknown discovery data is reported as loading rather than complete. The GUI missing panel keeps its existing presentation; the command now has its own mode-aware formatter.
 
 ## Last updated
+
+2026-10-25 — Sparkle now includes needed-Gimmiegold coins, needed-Gazer checks and needed-bird food counters alongside the existing discovery-gated mound, wall and nest helpers.
 
 2026-10-25 — Profitable-shard ESP uses the shared dynamic top ten in Unique and Sparkle modes instead of a fixed species list.
 

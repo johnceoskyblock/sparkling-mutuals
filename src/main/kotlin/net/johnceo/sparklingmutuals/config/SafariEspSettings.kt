@@ -11,9 +11,6 @@ class SafariEspSettings {
     var rewardDrops
         get() = floorDrops.rewardDrops
         set(value) { floorDrops.rewardDrops = value }
-    var floor
-        get() = floorDrops.floor
-        set(value) { floorDrops.floor = value }
     val floorTextSizes get() = floorDrops.floorTextSizes
     val floorColors get() = floorDrops.floorColors
     var textScale
@@ -38,13 +35,14 @@ class SafariEspSettings {
         val scale = SafariEspConfig.validTextScale(textScale)
         val colorsChanged = floorColors.apply()
         val sizesChanged = floorTextSizes.apply()
+        val visibilityChanged = floorDrops.visibility.apply()
         val teammateScale = SafariEspConfig.validTextScale(teammateTextScale)
-        var changed = colorsChanged || sizesChanged || SafariEspConfig.textScale != scale ||
+        var changed = colorsChanged || sizesChanged || visibilityChanged || SafariEspConfig.textScale != scale ||
             SafariEspConfig.teammateTextScale != teammateScale || SafariEspConfig.rewardDrops != rewardDrops
         SafariEspConfig.teammateTextScale = teammateScale
         SafariEspConfig.rewardDrops = rewardDrops
         SafariEspConfig.textScale = scale
-        mapOf("floor" to floor, "forest" to forest, "cavern" to cavern, "icy" to icy, "haunted" to haunted).forEach { (key, value) ->
+        mapOf("forest" to forest, "cavern" to cavern, "icy" to icy, "haunted" to haunted).forEach { (key, value) ->
             val group = SafariEspConfig.groups.getValue(key)
             if (group.onlyInBiome != value) changed = true
             group.onlyInBiome = value
@@ -54,14 +52,50 @@ class SafariEspSettings {
 }
 
 class FloorDropEspSettings {
-    @JvmField @ConfigOption(name = "XP / Essence / Shard floor drops", desc = "Highlight all predicted reward floor drops, independently of mode requirements. Off by default.")
+    @JvmField @ConfigOption(name = "XP / Essence / Shard floor drops", desc = "Highlight all predicted reward floor drops, independently of mode requirements. Outside-biome visibility is configured separately.")
     @ConfigEditorBoolean var rewardDrops = SafariEspConfig.rewardDrops
-    @JvmField @ConfigOption(name = "Floor drops: only in current biome", desc = "Limit floor highlights to your current biome.")
-    @ConfigEditorBoolean var floor = SafariEspConfig.groups.getValue("floor").onlyInBiome
+    @JvmField @ConfigOption(name = "Show outside current biome", desc = "Choose which drop types are visible across biomes. Mode and collection rules still apply.")
+    @Accordion val visibility = FloorDropVisibilitySettings()
     @JvmField @ConfigOption(name = "Floor-drop text sizes", desc = "Set the label size independently for each floor-drop type.")
     @Accordion val floorTextSizes = FloorDropScaleSettings()
     @JvmField @ConfigOption(name = "Floor-drop colors", desc = "Set each named drop's highlight and label color independently.")
     @Accordion val floorColors = FloorDropColorSettings()
+}
+
+class FloorDropVisibilitySettings {
+    @JvmField @ConfigOption(name = "Bag of Seeds", desc = "Show eligible drops outside your current biome.")
+    @ConfigEditorBoolean var seeds = !SafariEspConfig.dropOnlyInBiome(FloorDropType.SEEDS)
+    @JvmField @ConfigOption(name = "Wriggleworm", desc = "Show eligible drops outside your current biome.")
+    @ConfigEditorBoolean var worm = !SafariEspConfig.dropOnlyInBiome(FloorDropType.WORM)
+    @JvmField @ConfigOption(name = "Yogi Berry", desc = "Show eligible drops outside your current biome.")
+    @ConfigEditorBoolean var berry = !SafariEspConfig.dropOnlyInBiome(FloorDropType.BERRY)
+    @JvmField @ConfigOption(name = "Lime Gem", desc = "Show eligible drops outside your current biome.")
+    @ConfigEditorBoolean var lime = !SafariEspConfig.dropOnlyInBiome(FloorDropType.LIME)
+    @JvmField @ConfigOption(name = "Purple Gem", desc = "Show eligible drops outside your current biome.")
+    @ConfigEditorBoolean var purple = !SafariEspConfig.dropOnlyInBiome(FloorDropType.PURPLE)
+    @JvmField @ConfigOption(name = "Orange Gem", desc = "Show eligible drops outside your current biome.")
+    @ConfigEditorBoolean var orange = !SafariEspConfig.dropOnlyInBiome(FloorDropType.ORANGE)
+    @JvmField @ConfigOption(name = "Icebreaker", desc = "Show eligible drops outside your current biome.")
+    @ConfigEditorBoolean var icebreaker = !SafariEspConfig.dropOnlyInBiome(FloorDropType.ICEBREAKER)
+    @JvmField @ConfigOption(name = "Soothing Incense", desc = "Show eligible drops outside your current biome.")
+    @ConfigEditorBoolean var incense = !SafariEspConfig.dropOnlyInBiome(FloorDropType.INCENSE)
+    @JvmField @ConfigOption(name = "Shining Coin", desc = "Show eligible drops outside your current biome.")
+    @ConfigEditorBoolean var coin = !SafariEspConfig.dropOnlyInBiome(FloorDropType.COIN)
+    @JvmField @ConfigOption(name = "XP / Essence / Shard", desc = "Show reward drops outside your current biome. Off by default; the reward ESP toggle remains separate.")
+    @ConfigEditorBoolean var generic = !SafariEspConfig.dropOnlyInBiome(FloorDropType.GENERIC)
+    fun apply(): Boolean {
+        val values = mapOf(FloorDropType.SEEDS to seeds, FloorDropType.WORM to worm, FloorDropType.BERRY to berry,
+            FloorDropType.LIME to lime, FloorDropType.PURPLE to purple, FloorDropType.ORANGE to orange,
+            FloorDropType.ICEBREAKER to icebreaker, FloorDropType.INCENSE to incense,
+            FloorDropType.COIN to coin, FloorDropType.GENERIC to generic)
+        var changed = false
+        values.forEach { (type, outside) ->
+            val onlyInBiome = !outside
+            if (SafariEspConfig.dropOnlyInBiome(type) != onlyInBiome) changed = true
+            SafariEspConfig.floorOnlyInBiome[type] = onlyInBiome
+        }
+        return changed
+    }
 }
 
 class EspLabelSettings {

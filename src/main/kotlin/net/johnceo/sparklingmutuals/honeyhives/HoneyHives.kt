@@ -26,9 +26,7 @@ import org.slf4j.LoggerFactory
 /** Personal honeyhive beacons, driven by confirmed loot/refill chat and loaded server holograms. */
 object HoneyHives {
     private val logger = LoggerFactory.getLogger("sparkling-mutuals/honeyhives")
-    private const val REMOVED_HIVE = HoneyHiveRules.REMOVED_HIVE
     private const val RANGE = 256.0
-    private const val SCAN_RADIUS = 96
     private const val FULL = 0xFF55FF55.toInt()
     private val hives = linkedMapOf<String, Hive>()
     /** Scope -> hive key -> when it refills: the one thing that decides whether a hive is full. */
@@ -80,8 +78,7 @@ object HoneyHives {
             !world.getBlockState(pos).`is`(Blocks.BEE_NEST)) return
         updateScope(client)
         val key = "${pos.x},${pos.y},${pos.z}"
-        if (key == REMOVED_HIVE) return
-        if (hives.putIfAbsent(key, Hive(pos.x, pos.y, pos.z)) == null) save()
+        if (key !in hives) return
         tracker?.click(key, System.currentTimeMillis())
     }
 
@@ -119,16 +116,15 @@ object HoneyHives {
         var expired = false
         refillAt.values.forEach { times -> if (times.entries.removeIf { now >= it.value }) expired = true }
         if (expired) save()
-        val world = client.level ?: return
-        val player = client.player ?: return
+        if (client.level == null || client.player == null) return
         if (!ConfigManager.honeyHives || !SkyblockSidebar.inSkyblock(client)) { visible = emptyList(); return }
-        // The positions only mean anything on Torrhus Canyon: confirmed by finding a known hive where it should be.
-        if (!onTorrhus) onTorrhus = hives.values.any { val pos = BlockPos(it.x, it.y, it.z)
-            world.hasChunkAt(pos) && world.getBlockState(pos).`is`(Blocks.BEE_NEST) }
+        // A decorative nest elsewhere must never establish this island's identity.
+        val mode = net.johnceo.sparklingmutuals.safari.SafariIsland.currentMode
+        onTorrhus = if (mode != null) mode.equals("foraging_3", true)
+            else SkyblockSidebar.areaName(client) in setOf("Torrhus Canyon", "Torrhus Springs")
         if (!onTorrhus || ContestTracker.isComplete()) {
             visible = emptyList(); return
         }
-        if (ticks % 40 == 0) survey(client)
         verifyHolograms(client, now)
         refreshVisible(client, now)
     }
@@ -139,6 +135,7 @@ object HoneyHives {
         val refills = scope?.let { refillAt[it] }.orEmpty()
         val shown = mutableListOf<Pair<Hive, Int>>()
         for (hive in hives.values) {
+            if (!waypointExists(client, hive)) continue
             if (player.distanceToSqr(hive.x + .5, hive.y + .5, hive.z + .5) > RANGE * RANGE) continue
             val refill = refills[hive.key]
             when (tracker?.state(hive.key, now) ?: HoneyHiveRules.state(now, refill)) {
@@ -149,30 +146,11 @@ object HoneyHives {
         visible = shown
     }
 
-    /** Learns hives from the build around each one, using the palette to skip sections without a nest. */
-    private fun survey(client: Minecraft) {
-        val world = client.level ?: return
-        val center = client.player?.blockPosition() ?: return
-        var added = false
-        for (cx in ((center.x - SCAN_RADIUS) shr 4)..((center.x + SCAN_RADIUS) shr 4))
-            for (cz in ((center.z - SCAN_RADIUS) shr 4)..((center.z + SCAN_RADIUS) shr 4)) {
-                if (!world.hasChunk(cx, cz)) continue
-                val chunk = world.getChunk(cx, cz)
-                chunk.sections.forEachIndexed { index, section ->
-                    if (section.hasOnlyAir() || !section.maybeHas { it.`is`(Blocks.BEE_NEST) }) return@forEachIndexed
-                    val bottom = chunk.minY + (index shl 4)
-                    for (x in 0..15) for (y in 0..15) for (z in 0..15) {
-                        if (!section.getBlockState(x, y, z).`is`(Blocks.BEE_NEST)) continue
-                        val pos = BlockPos((cx shl 4) + x, bottom + y, (cz shl 4) + z)
-                        if (world.getBlockState(pos.below()).`is`(Blocks.OAK_FENCE) && world.getBlockState(pos.above()).`is`(Blocks.OAK_TRAPDOOR)) {
-                            val hive = Hive(pos.x, pos.y, pos.z)
-                            if (hive.key == REMOVED_HIVE) continue
-                            if (hives.putIfAbsent(hive.key, hive) == null) added = true
-                        }
-                    }
-                }
-            }
-        if (added) save()
+    private fun waypointExists(client: Minecraft, hive: Hive): Boolean {
+        val world = client.level ?: return false
+        val pos = BlockPos(hive.x, hive.y, hive.z)
+        val loaded = world.hasChunkAt(pos)
+        return HoneyHiveRules.waypointExists(hive.key, loaded, loaded && world.getBlockState(pos).`is`(Blocks.BEE_NEST))
     }
 
     private fun verifyHolograms(client: Minecraft, now: Long) {
@@ -216,12 +194,13 @@ object HoneyHives {
     private fun beams(context: LevelRenderContext) {
         val client = Minecraft.getInstance()
         val world = client.level ?: return
-        if (visible.isEmpty() || beamsBroken) return
+        if (world !== level || !ConfigManager.honeyHives || visible.isEmpty() || beamsBroken) return
         try {
             val camera = client.gameRenderer.smCamera.position()
             val animation = Math.floorMod(world.gameTime, 40L) + client.deltaTracker.getGameTimeDeltaPartialTick(false)
             val poses = context.poseStack()
             for ((hive, color) in visible) {
+                if (!waypointExists(client, hive)) continue
                 // Beams have no transparency, so an unknown hive's dimmer colour becomes a darker one.
                 val rgb = if (color ushr 24 < 0xFF) (color and 0xFEFEFE) shr 1 else color and 0xFFFFFF
                 poses.pushPose()
@@ -239,10 +218,11 @@ object HoneyHives {
 
     private fun outlines(context: LevelRenderContext) {
         val client = Minecraft.getInstance()
-        if (client.level == null || client.options.smHideGui || visible.isEmpty()) return
+        if (client.level == null || client.level !== level || !ConfigManager.honeyHives || client.options.smHideGui || visible.isEmpty()) return
         fun box(minX: Double, minY: Double, minZ: Double, maxX: Double, maxY: Double, maxZ: Double, color: Int) =
             WorldRenderCompat.box(context, lines, net.minecraft.world.phys.AABB(minX, minY, minZ, maxX, maxY, maxZ), color)
         for ((hive, color) in visible) {
+            if (!waypointExists(client, hive)) continue
             box(hive.x.toDouble(), hive.y.toDouble(), hive.z.toDouble(), hive.x + 1.0, hive.y + 1.0, hive.z + 1.0, color)
             if (beamsBroken) box(hive.x + .35, hive.y + 1.0, hive.z + .35, hive.x + .65, hive.y + 64.0, hive.z + .65, color)
         }
@@ -252,20 +232,25 @@ object HoneyHives {
     // ------------------------------------------------------------------ storage
 
     private fun load() {
-        javaClass.getResourceAsStream("/assets/sparkling-mutuals/honeyhives.txt")?.bufferedReader()?.use { reader ->
-            HoneyHiveRules.parse(reader.readText()).forEach { hives[it.key] = it }
-        }
+        hives.clear()
+        HoneyHiveRules.catalog.forEach { hives[it.key] = it.copy() }
         if (!Files.exists(file)) return
         val saved = Properties().apply { Files.newInputStream(file).use(::load) }
+        if (saved.stringPropertyNames().any { it.startsWith("full.") && !saved.containsKey("queenFull." + it.removePrefix("full.")) }) {
+            runCatching { Files.copy(file, file.resolveSibling(file.fileName.toString() + ".pre-timer-priority.bak"),
+                java.nio.file.StandardCopyOption.REPLACE_EXISTING) }
+                .onFailure { logger.warn("Couldn't back up old hive readiness", it) }
+        }
+        if (HoneyHiveRules.removeUnknownPositions(saved) > 0) {
+            runCatching { Files.copy(file, file.resolveSibling(file.fileName.toString() + ".pre-waypoint-cleanup.bak"),
+                java.nio.file.StandardCopyOption.REPLACE_EXISTING) }
+                .onFailure { logger.warn("Couldn't back up old hive positions", it) }
+        }
         val now = System.currentTimeMillis()
         // Preserve version-2 personal deadlines across upgrades and relogs.
         HoneyHiveRules.savedRefills(saved, now).forEach { (owner, times) -> refillAt[owner] = times.toMutableMap() }
         HoneyHiveRules.savedQueenFull(saved).forEach { (owner, keys) -> queenFull[owner] = keys.toMutableSet() }
-        // Keep surveyed positions, except the removed non-existent hive; ids no longer control readiness.
-        saved.stringPropertyNames().filter { it.startsWith("hive.") }.forEach { name ->
-            HoneyHiveRules.parse(name.removePrefix("hive.").replace(',', ' ') + " " + saved.getProperty(name))
-                .firstOrNull()?.takeIf { it.key != REMOVED_HIVE }?.let { hives.putIfAbsent(it.key, it) }
-        }
+        // Only the bundled catalogue defines locations; saved positions never expand it.
         saved.stringPropertyNames().forEach { name ->
             HoneyHiveRules.parseLoot(name, saved.getProperty(name), "observedRefill")?.let { (owner, key, at) ->
                 observedRefills.getOrPut(owner) { mutableMapOf() }[key] = at
@@ -291,7 +276,7 @@ object HoneyHives {
                 ?: HoneyHiveRules.state(now, refillAt[owner]?.get(key))
             out.setProperty("state.$owner.$key", current.name.lowercase())
         } }
-        queenFull.forEach { (owner, keys) -> keys.forEach { key -> out.setProperty("full.$owner.$key", "1") } }
+        queenFull.forEach { (owner, keys) -> keys.forEach { key -> out.setProperty("queenFull.$owner.$key", "1") } }
         lastScope?.let { out.setProperty("scope.last", it) }
         runCatching { Files.createDirectories(file.parent); Files.newOutputStream(file).use { out.store(it, "Sparkling Mutuals honeyhives") } }
             .onFailure { logger.warn("Couldn't save honeyhives", it) }

@@ -46,7 +46,7 @@ Offer/acceptance, hiding and found dialogue are quest states. Successful found r
 | Progress | Mode-specific predicate above; see [shared modes](../../SAFARI_LOGIC.md). |
 | Missing/unchecked row | Unique uses its capture/source predicate. Sparkling lists needed unresolved checks. Full Clear removes the row on a confirmed successful reward/attributed loot share, without waiting for the NPC to disappear. See [panel rules](../MISSING_PANEL.md). |
 | Counters | None in the species row; capture panel shows actual shared catches. |
-| Ordinary ESP | Unique: until first shared capture. Full Clear: eligible uncaught models. Sparkling: discovery-gated, normally up to 10 seconds per UUID. Settings and model validity still apply. |
+| Ordinary ESP | Unique: until first shared capture. Full Clear: eligible uncaught models. Sparkling: no ordinary model ESP solely for automatic checking. Settings and model validity still apply. |
 | Source helpers | Location announcement uses settled known spots/mansion footprint, not capture proof. |
 | Automatic completion announcements | Shared local whole-biome/report-readiness gates in [mode rules](../../SAFARI_LOGIC.md). |
 | PB eligibility | Personal Unique: own catch of every species. Full Clear: personal captures/local proof. Party Unique: separate shared-capture/absence predicate; progress alone is insufficient. |
@@ -76,6 +76,8 @@ Existing coverage: [HideyhoSpotterTest](../../src/test/kotlin/net/johnceo/sparkl
 Population guarantees and capsule success/escape claims from supplied notes were not live revalidated; see [audit D2](../IMPLEMENTATION_AUDIT.md#d2).
 
 ## Last updated
+
+2026-10-26 — Removed ordinary ESP added solely for automatic Sparkling checks and its per-UUID linger. Capture/source and profitable-highlight exceptions remain separate.
 
 2026-10-21 — Confirmed Hideyho rewards now complete Full Clear directly, including missing-row removal and capture coloring. Retained quest NPCs and replacement UUID population estimates cannot require additional finds. The completed NPC is excluded from ordinary ESP and remaining-population scans; quest acceptance alone still does not count. Shared and personal reward evidence remain separate.
 

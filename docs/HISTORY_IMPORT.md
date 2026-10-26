@@ -27,7 +27,7 @@ The History settings tab places **History** immediately before **Import History 
 
 Run recording follows the Safari ledger's arriving/leaving run objects. Chat is tallied on the client thread; replacing/ending a run finishes the prior tally before resetting it. A live record is saved only with **Save runs** on, a non-Alpha run and at least one personally/shared captured party species. It includes mode at finish, elapsed time, personal capture counts, loot shares, personal/party species coverage, ticket confirmations, shard quantities, feathers, Macaw bonuses, Sparkling announcements and observed biome splits. History's `37/37` full-run labels describe party species coverage; they are not proof of Full Clear population completion or PB eligibility.
 
-Sparkling history independently saves recognized system announcements for personal and other catchers, with the live tickets-since-Sparkling counter. It is not gated by **Save runs** or restricted to the credited-run calculation used by [`!since`](SINCE_COMMAND.md). A live unique flag requires no earlier same-player/species entry and a pre-catch cached discovery baseline that lacks the species. Catches update participating party members locally without an API fetch. An unavailable baseline leaves the unique flag unconfirmed; the flag is not guaranteed first-discovery proof.
+Sparkling history independently saves recognized system announcements for personal and other catchers, with the live tickets-since-Sparkling counter. It is not gated by **Save runs** or restricted to the credited-run calculation used by [`!since`](SINCE_COMMAND.md). A live unique flag requires no earlier species entry from any participating catcher and the local mod user’s pre-catch cached discovery baseline to lack the species. The catcher’s discovery status does not determine whether the local user gains a unique. Catches update participating party members locally without an API fetch. An unavailable baseline leaves the unique flag unconfirmed; the flag is not guaranteed first-discovery proof.
 
 Runs can be sorted by date, duration, catches, coins or species coverage, filtered to Sparkling runs, and selected for details/splits. Sparklings offers a mine-only filter. Bests combines dedicated PBs with history-derived records; Stats and Profit aggregate saved records. The Profit tab groups by the computer's local date and includes estimated imports in totals. Unknown duration displays `-`, and unknown live coin value is `-` until prices load.
 
@@ -55,10 +55,10 @@ Recognized messages rebuild personal captures, loot shares, shard rewards, feath
 | --- | --- | --- |
 | Mode | Sparkling, flagged estimated. | Logs do not establish selected mode. |
 | Coins | Median of up to nine nearest positive-coin reference runs, weighted by captures, shares, party species, Sparkling count and feathers; zero without references. | `~` identifies the estimate; not verified historical income. Explicit Profit repricing can replace it. |
-| Unique flag | Earliest chronological species among imported and existing Sparkling entries, across catchers, flagged estimated. | Not per-account discovery verification; existing saved flags stay unchanged. |
+| Unique flag | Earliest chronological species among imported and existing Sparkling entries, across catchers, flagged estimated. | Not per-account discovery verification; first-seen estimates are recalculated after older history is imported. Repeated species cannot remain unique merely because a different player caught them. |
 | Tickets between finds | Recognized confirmations since the previous known find. | Missing logs undercount. |
 
-Matched existing records retain their values/flags instead of receiving import estimates. Imported flags can affect [`!since unique`](SINCE_COMMAND.md).
+Matched existing records retain their values instead of receiving import estimates. Uniqueness is reconciled across the combined chronological history: estimated flags follow first occurrence, and older catcher-based unique flags are cleared if that species already appears earlier. Verified pre-owned first catches stay non-unique. Imported flags can affect [`!since unique`](SINCE_COMMAND.md).
 
 ### Achievements
 
@@ -80,6 +80,11 @@ Disabling achievements blocks unlocks/announcements and periodic/contest process
 
 ## Lifecycle and persistence
 
+
+Live history transitions are guarded while the departing run is finalized. Reentrant chat/tick callbacks cannot finish it twice or mutate its tally; tickets arriving for the next run remain pending until the old tally is saved. A second persistence guard rejects another native record with an already-saved live start timestamp, so end-of-run achievements are not awarded twice.
+
+At startup, history removes exact repeated records with a positive start timestamp. All recorded fields must match except the display run number; nearby starts, equal capture totals, or unknown timestamps alone are insufficient. Before writing repaired history, the original file is backed up to `sparkling-mutuals-runs.json.pre-deduplication.bak`. Remaining runs are numbered oldest-first and the next number is rebuilt. Loot, coins, splits and Sparkling lists in retained records are unchanged. Imports also drop exact duplicates already saved or repeated within the same batch. Existing short-run/import matching rules otherwise remain unchanged.
+
 Local JSON files under `config/` are `sparkling-mutuals-runs.json`, `sparkling-mutuals-sparklings.json`, `sparkling-mutuals-achievements.json` and `sparkling-mutuals-playtime.json`. They are local-instance stores, not player/profile-keyed databases. PBs use the [separate PB properties file](CONFIG_DEFAULTS.md#personal-best-storage-and-migration). Reads occur at registration; failed JSON loads start empty and log a warning. Writes use temporary replacement and atomic move where supported.
 
 Only one manual import runs at a time. Parsing is asynchronous; merging/saving runs on the client thread. Repeated/overlapping imports deduplicate: saved-run matching considers starts/ticket times within 90 seconds, assigns closest matches first and consumes each saved record at most once. Sparkling matches use the same catcher/species within ten seconds; new repeated messages within 1.5 seconds collapse. Separate later finds remain separate. New entries are added chronologically and run numbers rebuilt; existing values and the live ticket streak counter are retained. A completed live run can replace its overlapping imported duplicate.
@@ -98,6 +103,10 @@ Missing messages/dates cannot be reconstructed, and close run starts can be ambi
 - Existing secondary coverage: [HistoryBackfillImportTest](../src/test/kotlin/net/johnceo/sparklingmutuals/history/HistoryBackfillImportTest.kt), [HistoryServerPolicyTest](../src/test/kotlin/net/johnceo/sparklingmutuals/history/HistoryServerPolicyTest.kt), [HistoryTest](../src/test/kotlin/net/johnceo/sparklingmutuals/history/HistoryTest.kt), [ProfitTest](../src/test/kotlin/net/johnceo/sparklingmutuals/history/ProfitTest.kt). No local runtime suites or Minecraft session ran for this documentation audit; CI results are separate. Live validation remains needed for message order, GUI actions, settings/restart, Alpha transitions and real imported-log fidelity; parser tests alone do not prove those paths.
 
 ## Last updated
+
+2026-10-26 — Prevented reentrant live finalization and repeated native start insertion; added backed-up exact-duplicate cleanup and import-batch deduplication.
+
+2026-10-26 — Live uniques use the local participating account’s cached discovery baseline. Startup repairs legacy repeated-species unique flags with a `.pre-unique-repair.bak` backup; imports also reconcile first-seen estimates after adding older history. No new API requests.
 
 2026-10-21 — History uniqueness uses pre-catch party cache data; personal stats refresh every thirty minutes and Bazaar attempts every three hours.
 

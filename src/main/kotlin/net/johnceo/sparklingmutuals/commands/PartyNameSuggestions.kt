@@ -12,7 +12,7 @@ import java.util.concurrent.CompletableFuture
 object PartyNameSuggestions {
     private val wrapper = Regex("""^/(?:pc|pchat|(?:p|party)\s+chat)\s+""", RegexOption.IGNORE_CASE)
     private val lookup = Regex("""^!(?:missing|tickets?)\s+([A-Za-z0-9_]*)$""", RegexOption.IGNORE_CASE)
-    private val boss = Regex("""^!pb\s+(?:doom|wumpa)\s+([A-Za-z0-9_]*)$""", RegexOption.IGNORE_CASE)
+    private val boss = Regex("""^!pb\s+(?:doom|wumpa|forest|haunted|icy|cavern)\s+([A-Za-z0-9_]*)$""", RegexOption.IGNORE_CASE)
 
     private data class NameLookup(val future: CompletableFuture<String?>, val expiresAt: Long)
     private val resolved = java.util.concurrent.ConcurrentHashMap<String, NameLookup>()
@@ -94,6 +94,6 @@ object PartyNameSuggestions {
         val body = before.substring(offset)
         val match = lookup.matchEntire(body) ?: boss.matchEntire(body) ?: return null
         val start = offset + match.groups[1]!!.range.first
-        return fill(SuggestionsBuilder(before, start), if (body.startsWith("!pb", true)) names + "duo" else names)
+        return fill(SuggestionsBuilder(before, start), if (Regex("""^!pb\s+(?:doom|wumpa)\s+""", RegexOption.IGNORE_CASE).containsMatchIn(body)) names + "duo" else names)
     }
 }

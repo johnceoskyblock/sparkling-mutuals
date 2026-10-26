@@ -49,6 +49,8 @@ class HudPanel(val title: String, val titleColor: Int = HudRow.GOLD, val rows: L
     fun draw(graphics: GuiGraphicsExtractor, hud: SafariHud) {
         val window = Minecraft.getInstance().window
         val bounds = bounds(hud, window.guiScaledWidth, window.guiScaledHeight)
-        draw(graphics, bounds.x, bounds.y, hud.layout.scale, AppearanceConfig.panels.getValue(hud.name.lowercase()))
+        val scale = hud.layout.effectiveScale(window.guiScaledWidth, window.guiScaledHeight,
+            width(Minecraft.getInstance().font::width), height)
+        draw(graphics, bounds.x, bounds.y, scale, AppearanceConfig.panels.getValue(hud.name.lowercase()))
     }
 }

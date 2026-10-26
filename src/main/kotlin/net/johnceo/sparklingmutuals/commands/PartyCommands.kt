@@ -91,7 +91,7 @@ object PartyCommands {
             val reply = replies.first()
             if (reply.mode != SafariFullClear.mode || !stillFor(reply.command, reply.run, reply.world) || !stillUsing(reply.command, reply.provider) ||
                 !sameParty(client, reply.roster) ||
-                history.containsResult(reply.body, reply.cursor, reply.roster)) replies.removeFirst()
+                (!reply.command.isSince && history.containsResult(reply.body, reply.cursor, reply.roster))) replies.removeFirst()
             else if (reply.part == 0 || now - sentReplyAt >= 1500) {
                 replies.removeFirst()
                 client.player?.connection?.sendCommand("pc ${reply.body}")
@@ -112,7 +112,7 @@ object PartyCommands {
             val chunks = state.chunks
             if (chunks != null && state.election.canPublish(now)) {
                 chunks.forEachIndexed { part, body ->
-                    if (!history.containsResult(body, state.chatCursor, state.roster))
+                    if (state.request.command.isSince || !history.containsResult(body, state.chatCursor, state.roster))
                         replies.addLast(QueuedReply(token, body, state.roster, state.mode, state.chatCursor, part, state.request.command, state.run, state.world, state.provider))
                 }
                 iterator.remove()

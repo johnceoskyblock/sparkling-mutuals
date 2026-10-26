@@ -9,6 +9,30 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 
 class ConfigTest {
+    @Test fun `curated defaults exclude account data and never replace existing configs`() {
+        val defaults = FreshInstallDefaults.main()
+        assertFalse(defaults.containsKey("apiKey"))
+        assertFalse(defaults.stringPropertyNames().any { it.startsWith("pb.") || it.contains("uuid", true) })
+        ConfigManager.init(dir); ContestConfig.init(dir)
+        assertEquals(1, ConfigManager.safariTicketPreference)
+        assertFalse(AppearanceConfig.panels.getValue("progress").borderEnabled)
+        assertEquals(.015104167f, SafariHud.PROGRESS.layout.x)
+        val contest = ContestConfig.layoutFor(640, 360).bounds(640, 360, 150, 42)
+        assertEquals(129, contest.x); assertEquals(9, contest.y)
+        val main = "shinyDetection=false\nsafariTicketPreference=0\nhud.progress.x=0.25\nhud.progress.scale=1.4\n"
+        val legacyContest = "hudX=41\nhudY=22\nhudScale=1.2\ncontestWarnMinutes=5\n"
+        Files.writeString(dir.resolve("sparkling-mutuals.properties"), main)
+        Files.writeString(dir.resolve("sparkling-mutuals-contest.properties"), legacyContest)
+        ConfigManager.init(dir); ContestConfig.init(dir)
+        assertFalse(ConfigManager.shinyDetection)
+        assertEquals(0, ConfigManager.safariTicketPreference)
+        assertEquals(.25f, SafariHud.PROGRESS.layout.x)
+        assertEquals(1.4f, SafariHud.PROGRESS.layout.effectiveScale(320, 240, 100, 100))
+        assertEquals(41, ContestConfig.layoutFor(320, 240).bounds(320, 240, 150, 42).x)
+        assertEquals(listOf(5), ContestConfig.warningMinutes())
+        assertEquals(main, Files.readString(dir.resolve("sparkling-mutuals.properties")))
+        assertEquals(legacyContest, Files.readString(dir.resolve("sparkling-mutuals-contest.properties")))
+    }
     @Test fun `single projection switch preserves old master choice and drops the obsolete gate on save`() {
         val file=dir.resolve("sparkling-mutuals.properties")
         for(master in listOf(false,true)) for(oldGate in listOf(false,true)) {
@@ -95,7 +119,7 @@ class ConfigTest {
         assertFalse(Files.readString(main).contains("pb."))
         assertEquals("keep-me", ConfigManager.apiKey)
         assertEquals(61000L, ConfigManager.personalBests.time("Doomspiral", duo = true))
-        assertTrue(Files.readString(separate).contains("pb.party.friend.wumpaMillis=70000"))
+        assertTrue(Files.readString(separate).contains("pb.party.friend.times.duo.WumpaMillis=70000"))
         ConfigManager.init(dir)
         assertEquals(61000L, ConfigManager.personalBests.time("Doomspiral", duo = true))
         assertEquals(90000L, ConfigManager.personalBests.time("Forest", net.johnceo.sparklingmutuals.safari.completion.BiomePbType.UNIQUE))
@@ -137,7 +161,7 @@ class ConfigTest {
     @Test
     fun `warning presets parse spaces and none survives saving`() {
         ContestConfig.init(dir)
-        assertEquals(listOf(5, 3, 1), ContestConfig.warningMinutes())
+        assertEquals(listOf(3, 1), ContestConfig.warningMinutes())
         ContestConfig.contestWarnMinutes = "3, 1"
         ContestConfig.save()
         ContestConfig.init(dir)

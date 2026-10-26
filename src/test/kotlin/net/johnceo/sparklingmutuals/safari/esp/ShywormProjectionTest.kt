@@ -82,14 +82,14 @@ class ShywormProjectionTest {
         p.observe(id, Double.NaN, 1.0, 20.0, false, 750)
         assertNull(p.hiddenHeight(id))
     }
-    @Test fun `underground Shyworm ESP survives label loss but sparkling eligibility and UUID expiry still win`() {
+    @Test fun `underground Shyworm ESP survives label loss but automatic sparkle checks add no ESP`() {
         assertTrue(SafariEspRules.renderCurrent("Shyworm", true, true, true, false))
         assertFalse(SafariEspRules.renderCurrent("Shyworm", true, false, true, false))
         val party = PartySparklingState().apply {
             select(setOf("me")); accept(setOf("me"), mapOf("me" to SafariRoster.all.map { it.name }.toSet() - "Shyworm"))
         }
         val run = SafariRun(0)
-        assertTrue(SafariEspRules.neededForSparkling("Shyworm", false, party, false, run, id, 0))
+        assertFalse(SafariEspRules.neededForSparkling("Shyworm", false, party, false, run, id, 0))
         assertFalse(SafariEspRules.neededForSparkling("Shyworm", false, party, false, run, id, 10000))
         party.accept(setOf("me"), mapOf("me" to SafariRoster.all.map { it.name }.toSet()))
         assertFalse(SafariEspRules.neededForSparkling("Shyworm", false, party, false, run, UUID.randomUUID(), 10001))

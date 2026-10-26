@@ -21,9 +21,9 @@ object HistoryStore {
             .onFailure { logger.warn("Couldn't read {} — starting empty", file.fileName, it) }.getOrElse { empty() }
     }
     /** One recoverable snapshot of each history file before a manual import. */
-    fun backup(name: String) {
+    fun backup(name: String, reason: String = "pre-import") {
         val file = path(name)
-        if (Files.exists(file)) Files.copy(file, file.resolveSibling(file.fileName.toString() + ".pre-import.bak"),
+        if (Files.exists(file)) Files.copy(file, file.resolveSibling(file.fileName.toString() + ".$reason.bak"),
             java.nio.file.StandardCopyOption.REPLACE_EXISTING)
     }
     fun save(name: String, value: Any): Result<Unit> {

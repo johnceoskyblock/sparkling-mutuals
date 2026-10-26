@@ -53,10 +53,10 @@ class IcyCompletionTest : net.johnceo.sparklingmutuals.safari.esp.ProfitableEspP
             assertTrue(SafariEspRules.neededForSparkling(name,false,state,true,run,uuid,0))
             assertTrue(SafariEspRules.neededForSparkling(name,false,state,true,run,uuid,20000))
             run.record(SafariCatch(SafariRoster.named(name)!!))
-            assertTrue(SafariEspRules.neededForSparkling(name,false,state,true,run,uuid,20001))
+            assertEquals(name == "Mantis Shrimp", SafariEspRules.neededForSparkling(name,false,state,true,run,uuid,20001))
             assertEquals(name == "Mantis Shrimp", SafariEspRules.neededForSparkling(name,false,state,true,run,uuid,30001))
             val normal=SafariRun(0);val own=party(name)
-            assertTrue(SafariEspRules.neededForSparkling(name,false,own,true,normal,uuid,0))
+            assertEquals(name == "Mantis Shrimp", SafariEspRules.neededForSparkling(name,false,own,true,normal,uuid,0))
             assertEquals(name == "Mantis Shrimp" || name == "Wumpa", SafariEspRules.neededForSparkling(name,false,own,true,normal,uuid,10000))
         }
     }

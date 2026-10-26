@@ -46,8 +46,8 @@ Collect registered slots/use all known coins. Grants, pickups, held coins, use m
 | Progress | Mode-specific predicate above; see [shared modes](../../SAFARI_LOGIC.md). |
 | Missing/unchecked row | Unique uses its capture/source predicate. Sparkling lists needed unresolved checks. Full Clear needs local capture/absence proof, separately from report-based progress. See [panel rules](../MISSING_PANEL.md). |
 | Counters | No species-row counter; capture panel shows actual shared catches. Unique Haunted shows Coins left to use while its discovery check remains: max(uncollected slots + held coins, required floor/starting/party coins - qualified captured/live Gimmiegolds). Unknown catalog/inventory displays ?. |
-| Ordinary ESP | Unique: until first shared capture. Full Clear: eligible uncaught models. Sparkling: discovery-gated, normally up to 10 seconds per UUID. Settings and model validity still apply. |
-| Source helpers | Remaining eligible coin markers are independent of incense cutoffs; Sparkling requires needed Gimmiegold discovery. |
+| Ordinary ESP | Unique: until first shared capture. Full Clear: eligible uncaught models. Sparkling: no ordinary model ESP solely for automatic checking. Settings and model validity still apply. |
+| Source helpers | Remaining eligible coin markers are independent of incense cutoffs; Sparkling requires needed Gimmiegold discovery or enabled profitable-shard ESP with Gimmiegold in the cached top ten. This exception does not add discovery checks or source reminders. |
 | Automatic completion announcements | Shared local whole-biome/report-readiness gates in [mode rules](../../SAFARI_LOGIC.md). |
 | PB eligibility | Personal Unique: own catch of every species. Full Clear: personal captures/local proof. Party Unique: separate shared-capture/absence predicate; progress alone is insufficient. |
 
@@ -84,6 +84,10 @@ Population guarantees and capsule success/escape claims from supplied notes were
 Unique and Full Clear keep Shining Coin waypoints for every remaining drop throughout the run, even when no party member needs its Sparkling variant. Sparkling mode retains the discovery-needs gate. Pickup tracking removes collected drops normally. This is an ESP-only rule: Unique capture/check requirements and Full Clear minimum/capture rules remain unchanged.
 
 ## Last updated
+
+2026-10-26 — Removed ordinary ESP added solely for automatic Sparkling checks and its per-UUID linger. Capture/source and profitable-highlight exceptions remain separate.
+
+2026-10-25 — Keep Shining Coin ESP in Sparkle mode for top-ten profitable Gimmiegold when profitable ESP is enabled, even if its shiny is shared. No mode completion changes or new price fetches.
 
 2026-10-25 — Fixed JohnFounder's six-coin Unique run: qualified UUID checks now survive partial unloading before the final pickup. New source/contribution demand clears prior check credit; actual capture counts and Full Clear minimums stay separate.
 

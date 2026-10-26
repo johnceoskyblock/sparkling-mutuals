@@ -47,12 +47,12 @@ object SafariLookup {
     }
 
     fun run(command: PartyCommand, members: List<String>, localName: String = "You"): String = when (command.kind) {
-        PartyCommandKind.PB_DOOM -> if (command.trackedPlayer) ConfigManager.personalBests.trackedResponse(command.ign, "Doomspiral") else ConfigManager.personalBests.response(localName, "Doomspiral", command.duo)
-        PartyCommandKind.PB_WUMPA -> if (command.trackedPlayer) ConfigManager.personalBests.trackedResponse(command.ign, "Wumpa") else ConfigManager.personalBests.response(localName, "Wumpa", command.duo)
-        PartyCommandKind.PB_FOREST -> ConfigManager.personalBests.response(localName, "Forest")
-        PartyCommandKind.PB_HAUNTED -> ConfigManager.personalBests.response(localName, "Haunted")
-        PartyCommandKind.PB_ICY -> ConfigManager.personalBests.response(localName, "Icy")
-        PartyCommandKind.PB_CAVERN -> ConfigManager.personalBests.response(localName, "Cavern")
+        PartyCommandKind.PB_DOOM -> if (command.trackedPlayer) ConfigManager.personalBests.trackedResponse(command.ign, "Doomspiral", command.duo) else ConfigManager.personalBests.response(localName, "Doomspiral", command.duo)
+        PartyCommandKind.PB_WUMPA -> if (command.trackedPlayer) ConfigManager.personalBests.trackedResponse(command.ign, "Wumpa", command.duo) else ConfigManager.personalBests.response(localName, "Wumpa", command.duo)
+        PartyCommandKind.PB_FOREST -> if (command.trackedPlayer) ConfigManager.personalBests.trackedResponse(command.ign, "Forest", command.duo) else ConfigManager.personalBests.response(localName, "Forest")
+        PartyCommandKind.PB_HAUNTED -> if (command.trackedPlayer) ConfigManager.personalBests.trackedResponse(command.ign, "Haunted", command.duo) else ConfigManager.personalBests.response(localName, "Haunted")
+        PartyCommandKind.PB_ICY -> if (command.trackedPlayer) ConfigManager.personalBests.trackedResponse(command.ign, "Icy", command.duo) else ConfigManager.personalBests.response(localName, "Icy")
+        PartyCommandKind.PB_CAVERN -> if (command.trackedPlayer) ConfigManager.personalBests.trackedResponse(command.ign, "Cavern", command.duo) else ConfigManager.personalBests.response(localName, "Cavern")
         PartyCommandKind.SINCE_SPARKLING, PartyCommandKind.SINCE_UNIQUE -> SafariSinceReply.current(command)
         PartyCommandKind.HELP -> CommandHelp.partyReply()
         PartyCommandKind.MISSING_RUN -> SafariMissingReply.current(command.biome)

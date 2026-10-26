@@ -39,6 +39,14 @@ object SafariPartyInput {
     }
     private fun receive(text: String) {
         val client = Minecraft.getInstance()
+        if (SafariDowntime.partyWarpMessage(text)) {
+            val inCanyon = client.level != null && !SafariManagerGuard.activeRun(client) &&
+                (net.johnceo.sparklingmutuals.safari.SafariIsland.currentMode.equals("foraging_3", true) ||
+                    net.johnceo.sparklingmutuals.hud.SkyblockSidebar.areaName(client).equals("Torrhus Canyon", true))
+            SafariDowntime.partyWarp(text, inCanyon, client.player?.uuid?.toString()?.let(PartyManager::isLeader) == true,
+                client.player?.name?.string.orEmpty())
+            return
+        }
         if (SafariDowntime.travel(text)) return
         if (PartyRosterSignals.changed(text)) {
             // Membership notices are server system lines, never strings quoted within party chat.

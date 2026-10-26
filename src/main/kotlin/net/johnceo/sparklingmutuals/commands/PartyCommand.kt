@@ -47,7 +47,7 @@ data class PartyCommand(val kind: PartyCommandKind, val ign: String = "", val du
         PartyCommandKind.MUTUALS -> "Mutual Timesave Shiny Critters: "
         PartyCommandKind.MISSING -> "Missing Timesave Shinies for $ign: "
         PartyCommandKind.TICKETS -> "Safari Tickets for $ign: "
-        PartyCommandKind.SINCE_SPARKLING, PartyCommandKind.SINCE_UNIQUE -> "$ign: "
+        PartyCommandKind.SINCE_SPARKLING, PartyCommandKind.SINCE_UNIQUE -> ""
         PartyCommandKind.HELP -> "Commands: "
         PartyCommandKind.MISSING_RUN -> SafariMissingReply.prefix(biome)
         PartyCommandKind.PB_DOOM -> "Doomspiral PB: "
@@ -81,7 +81,7 @@ data class PartyCommand(val kind: PartyCommandKind, val ign: String = "", val du
             PartyCommandKind.HELP -> body.startsWith("[SM] Commands: ")
             PartyCommandKind.MISSING_RUN -> body.startsWith(SafariMissingReply.prefix(biome), true)
             else -> Regex(
-                "^${if (ign.isEmpty()) "[A-Za-z0-9_]{1,16}" else Regex.escape(ign)}'s ${pbName}${if (trackedPlayer) " Observed" else if (duo) " Duo" else ""}${if (kind in listOf(PartyCommandKind.PB_FOREST, PartyCommandKind.PB_HAUNTED, PartyCommandKind.PB_ICY, PartyCommandKind.PB_CAVERN)) "(?: (?:Full Clear|Unique Run))?" else ""} PB: (?:\\d+:\\d{2}\\.\\d{3}|Not recorded yet)(?: \\| Party PB: \\d+:\\d{2}\\.\\d{3})?$",
+                "^${if (ign.isEmpty()) "[A-Za-z0-9_]{1,16}" else Regex.escape(ign)}'s ${pbName}${if (trackedPlayer) " Observed${if (duo && kind in listOf(PartyCommandKind.PB_DOOM, PartyCommandKind.PB_WUMPA)) " Duo" else ""}" else if (duo) " Duo" else ""}${if (kind in listOf(PartyCommandKind.PB_FOREST, PartyCommandKind.PB_HAUNTED, PartyCommandKind.PB_ICY, PartyCommandKind.PB_CAVERN)) { if (trackedPlayer) " Unique Run${if (duo) " Party" else ""}" else "(?: (?:Full Clear|Unique Run))?" } else ""} PB: (?:\\d+:\\d{2}\\.\\d{3}|Not recorded yet)(?: \\| Party PB: \\d+:\\d{2}\\.\\d{3})?$",
                 RegexOption.IGNORE_CASE).matches(body)
         }
     }
@@ -94,15 +94,15 @@ data class PartyCommand(val kind: PartyCommandKind, val ign: String = "", val du
         PartyCommandKind.SINCE_UNIQUE -> "!since unique"
         PartyCommandKind.HELP -> "!commands"
         PartyCommandKind.MISSING_RUN -> if (biome == null) "!m" else "!m ${biome.label.lowercase()}"
-        PartyCommandKind.PB_DOOM -> "!pb doom${if (trackedPlayer) " $ign" else if (duo) " duo" else ""}"
-        PartyCommandKind.PB_WUMPA -> "!pb wumpa${if (trackedPlayer) " $ign" else if (duo) " duo" else ""}"
-        else -> "!pb ${pbName!!.lowercase()}"
+        PartyCommandKind.PB_DOOM -> "!pb doom${if (trackedPlayer) " $ign${if (duo) " duo" else ""}" else if (duo) " duo" else ""}"
+        PartyCommandKind.PB_WUMPA -> "!pb wumpa${if (trackedPlayer) " $ign${if (duo) " duo" else ""}" else if (duo) " duo" else ""}"
+        else -> "!pb ${pbName!!.lowercase()}${if (trackedPlayer) " $ign${if (duo) " party" else ""}" else ""}"
     }
 
     companion object {
         private val names = (SafariRoster.all.map { Regex.escape(it.name) } + "All Birds").joinToString("|")
         private val lookupResult = Regex("^(?:None|None\\. :skull:|All\\. :skull:|(?:$names)(?:, (?:$names))*)$", RegexOption.IGNORE_CASE)
-        private val bossLookup = Regex("""^!pb\s+(doom|wumpa)\s+([A-Za-z0-9_]{1,16})$""", RegexOption.IGNORE_CASE)
+        private val bossLookup = Regex("""^!pb\s+(doom|wumpa|forest|haunted|icy|cavern)\s+([A-Za-z0-9_]{1,16})(?:\s+(duo|party))?$""", RegexOption.IGNORE_CASE)
         private val lookup = Regex("""^!(missing|tickets?)\s+([A-Za-z0-9_]{1,16})$""", RegexOption.IGNORE_CASE)
         private val since = Regex("""^!since(?:\s+(unique))?$""", RegexOption.IGNORE_CASE)
         private val missingRun = Regex("""^!m(?:\s+(\S+))?$""", RegexOption.IGNORE_CASE)
@@ -128,8 +128,11 @@ data class PartyCommand(val kind: PartyCommandKind, val ign: String = "", val du
                     else PartyCommand(PartyCommandKind.MISSING_RUN, biome = SafariMissingReply.biome(word) ?: return null)
                 } ?: run {
                     val boss = bossLookup.matchEntire(chat.body)
-                    if (boss != null) PartyCommand(if (boss.groupValues[1].equals("doom", true))
-                        PartyCommandKind.PB_DOOM else PartyCommandKind.PB_WUMPA, boss.groupValues[2], trackedPlayer = true)
+                    if (boss != null) PartyCommand(when (boss.groupValues[1].lowercase()) {
+                        "doom" -> PartyCommandKind.PB_DOOM; "wumpa" -> PartyCommandKind.PB_WUMPA
+                        "forest" -> PartyCommandKind.PB_FOREST; "haunted" -> PartyCommandKind.PB_HAUNTED
+                        "icy" -> PartyCommandKind.PB_ICY; else -> PartyCommandKind.PB_CAVERN
+                    }, boss.groupValues[2], duo = boss.groupValues[3].isNotEmpty(), trackedPlayer = true)
                     else {
                         val match = lookup.matchEntire(chat.body) ?: return null
                         PartyCommand(if (match.groupValues[1].equals("missing", true))

@@ -27,19 +27,16 @@ object SafariEspRules {
         else if (species == "Rockmite" && mound) (run?.count(species) ?: 0) == 0 || party?.needs(species) == true
         else profitableEsp(species, profitable) ||
             (run?.count(species) ?: 0) == 0 && run?.uniqueUnavailable(species) != true
+    @Suppress("UNUSED_PARAMETER")
     fun neededForSparkling(species: String, mound: Boolean, party: PartySparklingState, profitable: Boolean,
         run: SafariRun? = null, uuid: java.util.UUID? = null, now: Long = System.currentTimeMillis()): Boolean {
         if (profitableEsp(species, profitable)) return true
         if (species == "Honeybug" || species == "Rockmite" && !mound) return false
-        if (species == "Doomspiral") return party.needs(species) && (run?.count(species) ?: 0) == 0
+        if (species == "Doomspiral" || species == "Wumpa") return party.needs(species) && (run?.count(species) ?: 0) == 0
         if (run?.sparklingChecks?.wumpaPrerequisite(species, party) == true && run.count(species) == 0) return true
-        if (SafariRoster.named(species) != null && party.needs(species) &&
-            species != "Driftling" && !mound &&
-            uuid != null && run?.sparklingChecks?.keepEsp(uuid, now) == false) return false
         if (!party.needs(species)) return false
-        if (species == "Driftling") return true
         if (mound && species == "Rockmite") return run?.sparklingComplete(species, party) != true
-        return uuid == null || run?.sparklingChecks?.keepEsp(uuid, now) != false
+        return false // Automatic checking needs no ordinary critter highlight or per-UUID linger.
     }
     fun captureModel(type: String) = type.endsWith("display") || type == "armor_stand"
     fun requiresModelLabel(species: String, type: String) = captureModel(type) && !(species == "Rockmite" && type == "item_display")

@@ -36,6 +36,9 @@ object SparklingCommand {
                     .apply { ShotCommands.register(this) }
                     .executes { open(::SafariConfigScreen) }
                     .then(ClientCommands.literal("config").executes { open(::SafariConfigScreen) })
+                    .then(ClientCommands.literal("help").executes { context ->
+                        CommandHelp.localLines().forEach { context.source.sendFeedback(LocalChat.component(it)) }; 1
+                    })
                     .then(ClientCommands.literal("gui").executes { open { ContestGui() } })
                     .then(ClientCommands.literal("history")
                         .then(ClientCommands.literal("import")

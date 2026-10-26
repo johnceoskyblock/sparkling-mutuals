@@ -32,13 +32,14 @@ class SparklingCaptureState {
     fun pending(biome: SafariBiome) = pending.values.any { SafariRoster.named(it)?.biome == biome }
     fun anyPending() = pending.isNotEmpty()
     /** The global announcement and own/loot-share reward describe the same catch, in either order. */
-    fun capture(species: String, player: String?, broadcast: Boolean, at: Long) {
+    fun capture(species: String, player: String?, broadcast: Boolean, at: Long): Boolean {
         proofs.removeAll { at - it.at > 5000 }
         val duplicate = proofs.indexOfFirst { it.species == species && it.broadcast != broadcast &&
             (it.player == null || player == null || it.player.equals(player, true)) && kotlin.math.abs(at - it.at) <= 5000 }
-        if (duplicate >= 0) { proofs.removeAt(duplicate); return }
+        if (duplicate >= 0) { proofs.removeAt(duplicate); return false }
         capturedSpecies.add(species)
         proofs += Proof(species, player, broadcast, at)
         pending.entries.firstOrNull { it.value == species }?.key?.let(pending::remove)
+        return true
     }
 }

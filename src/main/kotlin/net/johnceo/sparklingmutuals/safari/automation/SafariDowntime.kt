@@ -31,6 +31,7 @@ object SafariDowntime {
     }
     private const val NAME = "(?:\\[[^]]+]\\s*)*([A-Za-z0-9_]{1,16})"
     private val torrhusTravel = Regex("^\u00BB\\s+$NAME is traveling to Torrhus Canyon FOLLOW$")
+    private val partyWarp = Regex("^SkyBlock Party Warp \\([0-9]+ players?\\)$")
     private val contestTravelAt = mutableMapOf<String, Long>()
     /** One member gone: their request goes with them. */
     private val departed = listOf(
@@ -62,7 +63,7 @@ object SafariDowntime {
         val chat = PartyChat.parse(text) ?: return null
         announcement.observe(chat.body)
         request.matchEntire(chat.body)?.let { match ->
-            val reason = match.groupValues[1].trim()
+            val reason = match.groupValues[1].trim().let { if (it.equals("contest", true)) "contest" else it }
             // A new contest request starts a new wait; never reuse a previous trip's deadline.
             if (reason.equals("contest", true)) contestTravelAt.clear()
             else contestTravelAt.remove(chat.sender.lowercase())
@@ -73,7 +74,8 @@ object SafariDowntime {
             }
             val existing = requests.keys.firstOrNull { it.equals(chat.sender, true) }
             requests[existing ?: chat.sender] = reason
-            tell("[SM] ${chat.sender} requested downtime" + (if (reason.isEmpty()) "" else ": $reason") + if (inSafari) " (after this run)." else ".")
+            tell("[SM] ${chat.sender} requested ${if (reason.equals("contest", true)) "contest" else "downtime"}" +
+                (if (reason.isEmpty() || reason.equals("contest", true)) "" else ": $reason") + if (inSafari) " (after this run)." else ".")
             return if (!inSafari) {
                 if (active) { tell(localNotice()); summary() } else leftSafari(self)
             } else null
@@ -84,10 +86,10 @@ object SafariDowntime {
         }
         if (readyMessage(chat.body)) {
             val key = requests.keys.firstOrNull { it.equals(chat.sender, true) } ?: return null
-            requests.remove(key)
+            val reason = requests.remove(key)
             val wasActive = active
             if (requests.isEmpty()) active = false
-            tell("[SM] ${chat.sender} is ready." + if (active) " Waiting for ${holders()}." else if (wasActive) " Downtime cleared." else " Request cancelled.")
+            tell("[SM] ${chat.sender} is ready." + if (active) " Waiting for ${waitingFor()}." else if (wasActive) " ${holdLabel(reason)} cleared." else " Request cancelled.")
         }
         return null
     }
@@ -99,29 +101,41 @@ object SafariDowntime {
             contestTravelAt.putIfAbsent(player.lowercase(), now)
         return true
     }
+    /** A confirmed leader warp to this Torrhus instance starts all other contest timers together. */
+    internal fun partyWarpMessage(text: String) = partyWarp.matches(SafariRules.strip(text).trim())
+    internal fun partyWarp(text: String, inCanyon: Boolean, leader: Boolean, self: String,
+        now: Long = System.currentTimeMillis()): Boolean {
+        if (!partyWarpMessage(text)) return false
+        if (ConfigManager.downtimeCommand && inCanyon && leader) {
+            requests.filter { (key, reason) -> reason.equals("contest", true) && !displayName(key).equals(self, true) }
+                .forEach { (key, _) -> contestTravelAt.putIfAbsent(key.lowercase(), now) }
+        }
+        return true
+    }
     internal fun releaseContestTravel(now: Long) {
         if (!ConfigManager.downtimeCommand) { contestTravelAt.clear(); return }
         val released = requests.entries.filter { (key, reason) ->
-            reason.equals("contest", true) && contestTravelAt[displayName(key).lowercase()]?.let {
+            reason.equals("contest", true) && (contestTravelAt[key.lowercase()] ?: contestTravelAt[displayName(key).lowercase()])?.let {
                 now - it >= 20_000
             } == true
         }.map { it.key }
         released.forEach { key ->
             requests.remove(key)
+            contestTravelAt.remove(key.lowercase())
             contestTravelAt.remove(displayName(key).lowercase())
         }
         if (requests.isEmpty()) active = false
         if (requests.values.none { it.equals("contest", true) }) contestTravelAt.clear()
-        if (released.isNotEmpty()) tell("[SM] Contest downtime cleared for ${released.joinToString(", ", transform = ::displayName)} after Torrhus travel." +
-            if (requests.isNotEmpty()) " Waiting for ${holders()}." else "")
+        if (released.isNotEmpty()) tell("[SM] Contest cleared for ${released.joinToString(", ", transform = ::displayName)} after 20 seconds in Torrhus." +
+            if (requests.isNotEmpty()) " Waiting for ${waitingFor()}." else "")
     }
 
     /** Party readiness is sender-specific for every reason; local scoreboard still calls ticketEarned. */
     fun ready(player: String): Boolean {
         val key = requests.keys.firstOrNull { it.equals(player, true) } ?: return false
-        requests.remove(key)
+        val reason = requests.remove(key)
         if (requests.isEmpty()) active = false
-        tell("[SM] $key is ready." + if (active) " Waiting for ${holders()}." else " Downtime cleared.")
+        tell("[SM] $key is ready." + if (active) " Waiting for ${waitingFor()}." else " ${holdLabel(reason)} cleared.")
         return true
     }
     /** A connection transfer invalidates run context, not the same party's requests. */
@@ -135,7 +149,7 @@ object SafariDowntime {
             ?: return false
         requests.remove(key)
         if (requests.isEmpty()) active = false
-        tell("[SM] $key earned a ticket. " + if (active) "Waiting for ${holders()}." else "Downtime cleared.")
+        tell("[SM] $key earned a ticket. " + if (active) "Waiting for ${waitingFor()}." else "Contest cleared.")
         return true
     }
 
@@ -144,17 +158,17 @@ object SafariDowntime {
     /** Party membership notices. Returns whether the line was one, so it isn't read as chat. */
     private fun partyChanged(line: String): Boolean {
         if (partyGone.any { it.matches(line) }) {
-            if (requests.isNotEmpty()) tell("[SM] Party changed. Downtime cleared.")
+            if (requests.isNotEmpty()) tell("[SM] Party changed. Requests cleared.")
             clear()
             return true
         }
         val name = departed.firstNotNullOfOrNull { it.matchEntire(line) }?.groupValues?.get(1) ?: return false
         val key = requests.keys.firstOrNull { it.equals(name, true) } ?: return true
-        requests.remove(key)
+        val reason = requests.remove(key)
         val released = active && requests.isEmpty()
         if (requests.isEmpty()) active = false
-        tell("[SM] $key left. Downtime request removed." +
-            if (released) " Downtime cleared." else if (active) " Waiting for ${holders()}." else "")
+        tell("[SM] $key left. ${holdLabel(reason)} request removed." +
+            if (released) " ${holdLabel(reason)} cleared." else if (active) " Waiting for ${waitingFor()}." else "")
         return true
     }
 
@@ -188,7 +202,9 @@ object SafariDowntime {
 
     private fun displayName(key: String) = if (key.matches(Regex("[0-9a-f]{32}")))
         SafariPartyInput.nameOf(key) ?: "name loading" else key
-    internal fun localNotice() = "[SM] Downtime: wait for ${holders()} to say r or report a ticket in party chat. Hold Shift to enter anyway."
+    internal fun localNotice() = "[SM] ${if (requests.values.all { it.equals("contest", true) }) "Contest" else "Downtime"}: wait for ${waitingFor()} to say r or report a ticket in party chat." +
+        (if (requests.values.any { it.equals("contest", true) }) " Other players' contest holds also clear 20s after a Torrhus party warp." else "") +
+        " Hold Shift to enter anyway."
     private fun summary() = DowntimeAnnouncement.format(requests.entries.associate { displayName(it.key) to it.value })
     fun queueAnnouncement(message: String) {
         val client = Minecraft.getInstance()
@@ -204,7 +220,9 @@ object SafariDowntime {
             val name = ids.entries.firstOrNull { it.value == key }?.key
             if (name != null) {
                 val reason = requests.remove(key) ?: return@forEach
-                if (requests.keys.none { it.equals(name, true) }) requests[SafariPartyInput.nameOf(key) ?: name] = reason
+                val resolved = SafariPartyInput.nameOf(key) ?: name
+                if (requests.keys.none { it.equals(name, true) }) requests[resolved] = reason
+                contestTravelAt.remove(key.lowercase())?.let { contestTravelAt.putIfAbsent(resolved.lowercase(), it) }
             }
         }
         requests.keys.removeAll { name ->
@@ -215,6 +233,10 @@ object SafariDowntime {
     }
 
     fun holders() = requests.keys.joinToString(", ", transform = ::displayName)
+    private fun holdLabel(reason: String?) = if (reason.equals("contest", true)) "Contest" else "Downtime"
+    fun waitingFor() = requests.entries.joinToString(", ") { (key, reason) ->
+        "${displayName(key)} (${reason.ifBlank { "downtime" }.take(60)})"
+    }
     /** Explicit disable or confirmed party change drops requests. */
     fun clear() { active = false; announcementDue = false; requests.clear(); announcement.clear(); contestTravelAt.clear() }
     fun reset() { clear() }

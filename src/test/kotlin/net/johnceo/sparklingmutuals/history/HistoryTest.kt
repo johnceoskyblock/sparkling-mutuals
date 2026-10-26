@@ -38,13 +38,19 @@ class HistoryTest {
             assertEquals(mapOf("Cavernfish" to 1), session.tally.shards)
             assertEquals(mapOf("Cavern" to 60_000L), session.splits)
             assertEquals(1, session.tickets)
+            // Finishing can emit a local achievement message before the outer synchronization returns.
+            session.chat(null, "[SM] Achievement unlocked!", "Me") { fail<Unit>("reentrant chat must not finish again") }
+            session.sync(next) { fail<Unit>("reentrant ticks must not finish again") }
+            session.onTicket(next)
+            assertEquals(mapOf("Cavernfish" to 1), session.tally.shards)
+            assertEquals(1, session.tickets, "a ticket for the next run cannot change the departing tally")
         }
         session.sync(next) { fail<Unit>("the old run must finish only once") }
         assertEquals(1, finished)
         assertEquals(1, session.tally.caught)
         assertEquals(mapOf("Bloodbat" to 1), session.tally.shards)
         assertTrue(session.splits.isEmpty())
-        assertEquals(1, session.tickets)
+        assertEquals(2, session.tickets)
     }
     @Test fun `a ticket callback after chat synchronization belongs to the current run`() {
         val session = LiveHistorySession()
@@ -71,6 +77,28 @@ class HistoryTest {
         val live = RunRecord(start = 1_100_050, length = 50_000)
         assertSame(duplicate, HistoryMerge.removeLiveDuplicate(runs, live))
         assertEquals(listOf(previous), runs)
+    }
+    @Test fun `existing exact duplicates are repaired without merging nearby runs or changing recorded loot`() {
+        val original = RunRecord(number = 8, start = 1_000_000, length = 72_512, caught = 11,
+            lootShares = 9, tickets = 1, shards = linkedMapOf("Foxtrot" to 3), coins = 1122447)
+        val duplicate = RunRecord(number = 9, start = original.start, length = original.length, caught = 11,
+            lootShares = 9, tickets = 1, shards = linkedMapOf("Foxtrot" to 3), coins = 1122447)
+        val quickNext = RunRecord(number = 10, start = original.start + 75_000, length = 60_000,
+            caught = 11, lootShares = 9, tickets = 1, shards = linkedMapOf("Foxtrot" to 3), coins = 1122447)
+        val unknown = RunRecord()
+        val runs = mutableListOf(quickNext, duplicate, original, unknown, RunRecord())
+        assertEquals(1, HistoryMerge.removeExactDuplicates(runs))
+        assertEquals(4, runs.size)
+        assertTrue(runs.contains(quickNext))
+        assertEquals(2, runs.count { it.start == 0L })
+        assertEquals(1, runs.count { it.start == original.start })
+        assertEquals(1122447L, runs.single { it.start == original.start }.coins)
+        assertEquals(0, HistoryMerge.removeExactDuplicates(runs))
+        val imported = RunRecord(start = 2_000_000, length = 100_000, imported = true)
+        val repeatedImport = RunRecord(start = imported.start, length = imported.length, imported = true)
+        assertEquals(1, HistoryMerge.merge(runs, listOf(imported, repeatedImport)))
+        assertEquals(0, HistoryMerge.merge(runs, listOf(imported, repeatedImport)))
+        assertEquals(1, runs.count { it.start == imported.start })
     }
     @Test fun `finishing a new short run keeps the preceding imported run`() {
         val previous = RunRecord(number = 1, start = 1_000_000, length = 100_000, imported = true)

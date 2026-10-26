@@ -62,17 +62,17 @@ class SafariSparklingModeTest : net.johnceo.sparklingmutuals.safari.esp.Profitab
         assertFalse(state.accept(setOf("me", "friend"), mapOf("me" to all, "friend" to all)))
         assertFalse(state.everyoneHas("Gemzie"))
     }
-    @Test fun `sparkling ESP stays through catches with a separate optional profitable exception`() {
+    @Test fun `automatic sparkling checks add no ordinary ESP while profitable highlighting remains optional`() {
         val state = PartySparklingState()
         state.select(setOf("me"))
         state.accept(setOf("me"), mapOf("me" to all - "DRIFTLING" - "MANTIS_SHRIMP"))
         val run = SafariRun(0)
         run.record(SafariCatch(SafariRoster.named("Driftling")!!, false))
-        assertTrue(SafariEspRules.neededForSparkling("Driftling", false, state, false))
+        assertFalse(SafariEspRules.neededForSparkling("Driftling", false, state, false))
         assertTrue(SafariEspRules.neededForSparkling("Foxtrot", false, state, true))
         assertTrue(SafariEspRules.neededForSparkling("Chuckwalla", false, state, true))
         assertFalse(SafariEspRules.neededForSparkling("Chuckwalla", false, state, false))
-        assertTrue(SafariEspRules.neededForSparkling("Mantis Shrimp", false, state, false))
+        assertFalse(SafariEspRules.neededForSparkling("Mantis Shrimp", false, state, false))
         assertFalse(SafariEspRules.neededForSparkling("Rockmite", true, state, false))
     }
     @Test fun `sparkling selection persists and modes are mutually exclusive without resetting captures`() {

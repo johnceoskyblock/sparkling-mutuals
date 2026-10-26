@@ -2,29 +2,45 @@
 
 ## Purpose
 
-Describe settings actually loaded and saved by the reviewed implementation. Defaults apply to fresh/missing settings; mode presets and migrations can also change derived settings. This page owns configuration behavior, while each feature guide owns its gameplay effect.
+Describe settings actually loaded and saved by the reviewed implementation. Fresh installations load a curated preferences profile. Existing files retain their saved values and use the original field fallbacks for missing keys; mode presets and migrations can also change derived settings. This page owns configuration behavior, while each feature guide owns its gameplay effect.
 
 ## Controls and defaults
 
-Open `/sm` for settings. Independent feature switches shown in the current GUI default on except these:
+On joining Hypixel (including Alpha), a short local welcome appears once the player/world is ready and two seconds have elapsed. It explains `/sm`, `/sm help`, Unique/Full Clear/Sparkle, HUD editing and history. It is shown once per connection, not on ordinary lobby/world transfers or respawns, and may appear again after disconnecting and reconnecting. Hypixel is recognized by its server hostname or explicit scoreboard address. The welcome sends no party messages, commands or API requests.
+
+`/sm help` prints the existing mode-aware local and party command list in local chat. The same list remains available through General → Command help.
+
+The welcome is one compact MOTD-style block with a gold heading/dividers and light body text, without repeated `[SM]` prefixes. Commands are gold, clickable, and show explanatory hover text. Ordinary local feedback retains its usual prefix.
+
+Open `/sm` for settings. Fresh installs use [bundled main defaults](../src/main/resources/defaults/sparkling-mutuals.properties) and [contest defaults](../src/main/resources/defaults/sparkling-mutuals-contest.properties), copied from the author’s chosen settings. Most feature switches are on, with these notable preferences:
 
 | Setting | Saved key | Default |
 | --- | --- | --- |
 | Warp reminder | `warpAlertsEnabled` | Off |
 | Coins at insta-sell | `runCoinsInstaSell` | Off (sell-offer valuation) |
 | Achievements to party | `achievementsToParty` | Off |
-| XP / Essence / Shard floor drops | `esp.rewardDrops` | Off |
+| XP / Essence / Shard floor drops | `esp.floor.rewards.enabled` | On, current biome only |
+| HUD borders | `appearance.<panel>.borderEnabled` | Off |
+| Five-minute contest warning | `contestWarnMinutes` | Off; warnings at 3 and 1 minutes |
 
 Achievements themselves and achievement sound default on. A button's backing field is not an enable switch. Mode selectors are mutually exclusive: fresh configuration selects **Unique** (`fullClearMode=false`, `sparklingMode=false`); they are not an all-on feature group.
 
-Capture projections and automatic ticket selection default on. **Preferred ticket** defaults to **First Class**. Explicit saved feature switches and preferences are preserved; these defaults apply only to missing or invalid settings.
+Capture projections and automatic ticket selection default on. **Preferred ticket** is **Basic** for fresh installs. Existing files preserve their preferences and retain First Class as the older missing/invalid-field fallback. The curated profile is applied only when the corresponding main or contest config file does not exist, including when a user explicitly deletes that file.
+
+### Fresh-install profile and portable HUDs
+
+Only explicit settings and appearance/layout properties are bundled. The main profile omits API keys and all `pb.*` properties. History, sparkling history, PB/stat files, achievements, account IDs, playtime, and honeyhive timers are never seeded from the author’s files. Main and contest files are checked independently; an existing file is loaded without merging the curated profile or rewriting it as part of applying defaults.
+
+Fresh HUD layouts, including the contest HUD, use normalized positions and a 640×360 logical reference canvas (1920×1080 at GUI scale 3). Their effective text/panel scale follows the smaller viewport ratio, keeping physical layout consistent as GUI scale changes. Oversized adaptive panels shrink to fit and all positions clamp to the screen. The same calculation is used for rendering, previews and drag hitboxes; reference dimensions persist when saving. Very small windows can reduce text readability, and different aspect ratios retain normalized placement rather than identical pixel spacing.
+
+Older HUD layouts without reference dimensions retain their fixed GUI-size behavior. Legacy contest pixel positions remain until the user edits them; opening the editor converts their current placement to normalized coordinates. **Reset positions** explicitly restores the bundled author layout, including adaptive sizing, without resetting feature settings.
 
 ### GUI organization
 
 Related controls use collapsible dropdowns, in this order:
 
 - **Safari helpers:** Safari entry; Capture tools; Biome interactions; Party visibility; Visual cleanup; Detection and alerts. Ticket preference sits below automatic selection; capture width and terrain visibility sit below capture projections.
-- **ESP:** Floor drops (reward toggle, biome restriction, individual text sizes and colors); Other text sizes (general labels and party names); Critter biome limits (Forest, Cavern, Icy, Haunted).
+- **ESP:** Floor drops (reward toggle, per-type outside-biome visibility, individual text sizes and colors); Other text sizes (general labels and party names); Critter biome limits (Forest, Cavern, Icy, Haunted).
 - **Customization:** shared selected hex color; Tracking HUDs; Alert HUDs; Highlights and waypoints; Critter colors ordered Forest, Cavern, Icy, Haunted. Each HUD retains its border, colors, and transparency controls.
 
 Moving controls does not rename saved keys. Collapsed groups save their current choices just like expanded groups.
@@ -39,7 +55,7 @@ Moving controls does not rename saved keys. Collapsed groups save their current 
 | Progress HUD location | Safari and entrance | `showWhere=1`; accepts 0–2. |
 | Sparkling alert sound/volume | `minecraft:block.amethyst_block.chime`, 100 | Valid sound identifier; volume 0–100. |
 | Run-completion title/sound/volume | `Run Complete`, `minecraft:block.bell.use`, 100 | Nonblank title ≤120 characters; valid identifier; volume 0–100. |
-| Contest warnings | 5, 3, 1 minutes | Only these three thresholds are used. |
+| Contest warnings | 3, 1 minutes for fresh installs | Only 5, 3 and 1 are supported thresholds; older missing fields retain 5, 3, 1. |
 
 General boolean loading uses strict `true`/`false` with a field-specific fallback. Contest's automatic downtime switch does likewise; older contest tracking/warning/title boolean readers use `toBoolean()` (an invalid value becomes false). Do not assume every malformed property has the same fallback.
 
@@ -71,6 +87,10 @@ Settings, HUDs, alerts, the HUD editor, capture-count screen and API-key screen 
 Every HUD, including the run-completion alert, defaults to the dark background at 20% transparency. Exact saved old brown backgrounds and old gold borders migrate to the new defaults. The old mint run-completion background and its default 80% transparency migrate to dark at 20%. Other custom colors, chroma, opacity, border switches and layout remain saved as chosen. These migrations are written with the next ordinary config save.
 
 ### ESP label appearance
+
+**ESP → Floor drops → Show outside current biome** provides independent switches for every named quest drop and the combined XP/Essence/Shard reward category. Quest switches default on (visible across biomes); the reward category defaults off (current biome only). These switches affect visibility, not whether mode/collection requirements select a drop. Reward ESP itself remains separately off by default.
+
+Save each restriction as `esp.floor.<type>.onlyInBiome`, with the inverse of the displayed outside-biome switch. Existing per-type values are preserved on reload and mode switches. The old shared `esp.floor.onlyInBiome` is superseded, does not control these defaults, and is omitted from new saves. Critter biome restrictions, colors and label sizes remain independent.
 
 Other ESP text scale applies to critter timers, nest labels and unknown sparkling labels. Each floor-drop type and party names have independent scales; teammate names also retain distance scaling. Scale 1 restores original label size.
 
@@ -105,6 +125,14 @@ Startup normalizes legacy `pb.*` keys from the general file and the earlier `Spa
 - Existing secondary coverage: [ConfigTest](../src/test/kotlin/net/johnceo/sparklingmutuals/config/ConfigTest.kt), [SafariSettingsTest](../src/test/kotlin/net/johnceo/sparklingmutuals/config/SafariSettingsTest.kt), [SafariCustomizationTest](../src/test/kotlin/net/johnceo/sparklingmutuals/config/SafariCustomizationTest.kt), [SafariFeatureDefaultsTest](../src/test/kotlin/net/johnceo/sparklingmutuals/config/SafariFeatureDefaultsTest.kt). No tests or live settings session ran in this audit. Reopen/restart, migration failure recovery and preset transitions require their appropriate runtime checks.
 
 ## Last updated
+
+2026-10-26 — Bundled sanitized author preferences for fresh installations only. Added adaptive HUD reference sizing and normalized contest placements; preserved existing config files and legacy layout behavior.
+
+2026-10-25 — Replaced the shared floor biome restriction with independent per-type visibility switches. Quest drops default to cross-biome visibility; XP/Essence/Shard defaults to current-biome only.
+
+2026-10-25 — Restyled the welcome as a single MOTD block with clickable commands and no repeated prefixes; connection timing is unchanged.
+
+2026-10-25 — Added a once-per-Hypixel-connection local welcome and `/sm help` for the command list.
 
 2026-10-24 — Applied a near-black and charcoal theme with subtle gold accents and brighter local chat. Migrated old default HUD colors; preserved custom choices and the History/Stats GUI.
 
