@@ -46,7 +46,7 @@ Resolve all five Snooper walls. Only third-stage wall dialogue confirms destruct
 | Progress | Mode-specific predicate above; see [shared modes](../../SAFARI_LOGIC.md). |
 | Missing/unchecked row | Unique uses its capture/source predicate. Sparkling lists needed unresolved checks. Full Clear needs local capture/absence proof, separately from report-based progress. See [panel rules](../MISSING_PANEL.md). |
 | Counters | Plain species row; separate wall footer including unknown states. |
-| Ordinary ESP | Unique stops ordinary released-critter ESP after first shared catch. Full Clear keeps eligible uncaught models. Sparkling uses standard discovery/timeout filters for Snoozle. |
+| Ordinary ESP | Unique stops ordinary released-critter ESP after first shared catch. Full Clear keeps eligible uncaught models. Sparkling checks add no ordinary released-Snoozle ESP; wall helpers retain their separate rules. |
 | Source helpers | Separate outstanding-source footer and highlights follow [panel rules](../MISSING_PANEL.md). Unique helper need after a catch is discovery-gated although progress still needs source proof. |
 | Automatic completion announcements | Shared local whole-biome/report-readiness gates in [mode rules](../../SAFARI_LOGIC.md). |
 | PB eligibility | Personal Unique: own catch of every species. Full Clear: personal captures/local proof. Party Unique: separate shared-capture/absence predicate; progress alone is insufficient. |
@@ -78,6 +78,8 @@ Existing coverage: [UniquePartyReportTest](../../src/test/kotlin/net/johnceo/spa
 Population guarantees and capsule success/escape claims from supplied notes were not live revalidated; see [audit D2](../IMPLEMENTATION_AUDIT.md#d2).
 
 ## Last updated
+
+2026-10-26 — Removed check-only ordinary ESP and its per-UUID linger; capture/source and profitable highlighting retain their own rules.
 
 2026-10-25 — Unique source checking is discovery-gated after the first shared capture. Unneeded shiny sources no longer block Cavern completion; Sparkle and Full Clear source rules remain unchanged.
 

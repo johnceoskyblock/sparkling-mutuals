@@ -10,10 +10,10 @@ enum class BiomePbType(val label: String) { FULL_CLEAR("Full Clear"), UNIQUE("Un
 /** Only the player's successful CAPTURE messages can improve a personal best. */
 class SafariPersonalBests {
     data class CaptureFeedback(val notice: String, val changed: Boolean)
-    private data class PartyBest(val name: String, var doom: Long? = null, var wumpa: Long? = null)
+    private data class PartyBest(val name: String, val times: MutableMap<String, Long> = linkedMapOf())
     private val partyBests = linkedMapOf<String, PartyBest>()
     private val ign = Regex("^[A-Za-z0-9_]{1,16}$")
-    private val sharedBoss = Regex("^LOOT SHARE! .*\\bfrom\\s+([A-Za-z0-9_]{1,16})\\s+catching a (Doomspiral|Wumpa)(?![A-Za-z]).*$")
+    private val sharedBoss = Regex("^LOOT SHARE! .*\\bfrom\\s+([A-Za-z0-9_]{1,16})\\s+catching a (?:SPARKLING )?(Doomspiral|Wumpa)(?![A-Za-z]).*$")
     private fun playerKey(name: String) = name.lowercase(java.util.Locale.ROOT)
     @Synchronized fun rememberParty(names: Iterable<String>): Boolean {
         var changed = false
@@ -22,10 +22,28 @@ class SafariPersonalBests {
         }
         return changed
     }
-    @Synchronized fun trackedResponse(player: String, species: String): String {
+    @Synchronized fun trackedResponse(player: String, species: String, duo: Boolean = false): String {
         val record = partyBests[playerKey(player)]
-        val best = if (species == "Doomspiral") record?.doom else record?.wumpa
-        return "${record?.name ?: player}'s $species Observed PB: ${best?.let(::formatTime) ?: "Not recorded yet"}"
+        val biome = SafariBiome.entries.any { it.label == species }
+        val key = if (biome) "${if (duo) "uniqueParty" else "unique"}.$species" else "${if (duo) "duo" else "solo"}.$species"
+        val category = if (biome) " Unique Run${if (duo) " Party" else ""}" else if (duo) " Duo" else ""
+        return "${record?.name ?: player}'s $species Observed$category PB: ${record?.times?.get(key)?.let(::formatTime) ?: "Not recorded yet"}"
+    }
+    /** Observed unique biomes stop at the party's final required unique capture. */
+    @Synchronized fun recordObservedUnique(biome: SafariBiome, run: SafariRun, now: Long): Boolean {
+        if (run.endedAt != null || now < run.startedAt || biome in run.observedUniqueClears ||
+            biome.critters.any { run.count(it.name) == 0 && !run.uniqueUnavailable(it.name) }) return false
+        run.observedUniqueClears.add(biome)
+        var changed = false
+        for (player in run.catchers(biome)) {
+            if (rememberParty(listOf(player))) changed = true
+            val solo = run.catchers(biome).size == 1 && biome.critters.all { run.playerCount(it.name, player) > 0 || run.uniqueUnavailable(it.name) }
+            val key = "${if (solo) "unique" else "uniqueParty"}.${biome.label}"
+            val times = partyBests.getValue(playerKey(player)).times
+            val elapsed = now - run.startedAt
+            if (times[key] == null || elapsed < times.getValue(key)) { times[key] = elapsed; changed = true }
+        }
+        return changed
     }
     private fun soloEligible(species: String, run: SafariRun) = if (species == "Doomspiral") run.hadFourIncense
         else SafariBiome.ICY.critters.filter { it.name != "Wumpa" }.all { run.personalCount(it.name) > 0 }
@@ -41,15 +59,17 @@ class SafariPersonalBests {
         val elapsed = now - run.startedAt
         var changed = rememberParty(listOf(name))
         val record = partyBests.getValue(playerKey(name))
-        val previousObserved = if (species == "Doomspiral") record.doom else record.wumpa
-        val solo = own != null && soloEligible(species, run)
+        val solo = if (own != null) soloEligible(species, run) else species == "Doomspiral" ||
+            SafariBiome.ICY.critters.filter { it.name != "Wumpa" }.all { run.playerCount(it.name, name) > 0 }
+        val key = "${if (solo) "solo" else "duo"}.$species"
+        val previousObserved = record.times[key]
         val previous = if (own != null) time(species, duo = !solo) else previousObserved
         if (previousObserved == null || elapsed < previousObserved) {
-            if (species == "Doomspiral") record.doom = elapsed else record.wumpa = elapsed
+            record.times[key] = elapsed
             changed = true
         }
         if (own != null && record(text, run, now)) changed = true
-        val category = if (own == null) "Observed" else if (solo) "Solo" else "Duo"
+        val category = "${if (own == null) "Observed " else ""}${if (solo) "Solo" else "Duo"}"
         val gap = when {
             previous == null -> "first recorded PB"
             elapsed < previous -> "new PB, ${seconds(previous - elapsed)}s faster"
@@ -75,7 +95,7 @@ class SafariPersonalBests {
         biomeType = if (biomeType == BiomePbType.FULL_CLEAR) BiomePbType.UNIQUE else BiomePbType.FULL_CLEAR
         return biomeType
     }
-    private val capture = Regex("^CAPTURE! You caught a (Doomspiral|Wumpa)(?![A-Za-z]).*$")
+    private val capture = Regex("^CAPTURE! You caught a (?:SPARKLING )?(Doomspiral|Wumpa)(?![A-Za-z]).*$")
     fun time(species: String, type: BiomePbType = BiomePbType.FULL_CLEAR, duo: Boolean = false) = when (species) {
         "Doomspiral" -> if (duo) doomDuo else doom; "Wumpa" -> if (duo) wumpaDuo else wumpa; else -> (if (type == BiomePbType.UNIQUE) uniqueBiomes else biomes)[species]
     }
@@ -85,7 +105,7 @@ class SafariPersonalBests {
         val elapsed = now - run.startedAt
         var changed = false
         val duoBest = time(species, duo = true)
-        if (duoBest == null || elapsed < duoBest) {
+        if (!soloEligible(species, run) && (duoBest == null || elapsed < duoBest)) {
             if (species == "Doomspiral") doomDuo = elapsed else wumpaDuo = elapsed
             changed = true
         }
@@ -144,7 +164,16 @@ class SafariPersonalBests {
             if (ign.matches(name)) {
                 val prefix = "pb.party.${playerKey(name)}."
                 fun readParty(species: String) = properties.getProperty("${prefix}${species}Millis")?.toLongOrNull()?.takeIf { it >= 0 }
-                partyBests[playerKey(name)] = PartyBest(name, readParty("doomspiral"), readParty("wumpa"))
+                val record = PartyBest(name)
+                // Older observations have no capture attribution: Doom is assumed solo; Wumpa stays assisted.
+                readParty("doomspiral")?.let { record.times["solo.Doomspiral"] = it }
+                readParty("wumpa")?.let { record.times["duo.Wumpa"] = it }
+                properties.stringPropertyNames().filter { it.startsWith("${prefix}times.") }.forEach { timeKey ->
+                    properties.getProperty(timeKey)?.toLongOrNull()?.takeIf { it >= 0 }?.let {
+                        record.times[timeKey.removePrefix("${prefix}times.").removeSuffix("Millis")] = it
+                    }
+                }
+                partyBests[playerKey(name)] = record
             }
         }
         fun read(key: String) = properties.getProperty("pb.${key}Millis")?.toLongOrNull()?.takeIf { it >= 0 }
@@ -164,8 +193,7 @@ class SafariPersonalBests {
         partyBests.forEach { (key, value) ->
             val prefix = "pb.party.$key."
             properties.setProperty("${prefix}name", value.name)
-            value.doom?.let { properties.setProperty("${prefix}doomspiralMillis", it.toString()) }
-            value.wumpa?.let { properties.setProperty("${prefix}wumpaMillis", it.toString()) }
+            value.times.forEach { (category, time) -> properties.setProperty("${prefix}times.${category}Millis", time.toString()) }
         }
         biomes.forEach { (name, time) -> properties.setProperty("pb.${name.lowercase()}Millis", time.toString()) }
         uniqueBiomes.forEach { (name, time) -> properties.setProperty("pb.unique.${name.lowercase()}Millis", time.toString()) }

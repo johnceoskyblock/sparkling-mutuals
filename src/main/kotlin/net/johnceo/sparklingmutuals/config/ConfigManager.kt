@@ -89,7 +89,7 @@ object ConfigManager {
 
     fun init(configDirectory: Path) {
         configPath = configDirectory.resolve("sparkling-mutuals.properties")
-        val properties = Properties()
+        val properties = if (Files.exists(configPath)) Properties() else FreshInstallDefaults.main()
         if (Files.exists(configPath)) Files.newInputStream(configPath).use(properties::load)
         apiKey = properties.getProperty("apiKey", "")
         sparklingSound = validSparklingSound(properties.getProperty("sparklingSound"))

@@ -64,6 +64,8 @@ Both switches persist in the [general configuration](CONFIG_DEFAULTS.md). Presen
 
 ## Last updated
 
+2026-10-26 — Torrhus guard reasons now identify contest requests per player. A confirmed leader party warp starts the twenty-second release for other contest holds; see [contest/downtime](CONTEST_DOWNTIME.md).
+
 2026-10-22 — Entry controls are grouped under Safari entry; automatic ticket selection now defaults on while preserving saved choices and the First Class preference.
 
 2026-10-20 — Hide the ticket GUI during auto-selection, with a visible fallback for blockers/unavailable tickets/slow responses; no automatic menu closure.

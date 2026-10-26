@@ -19,6 +19,11 @@ object SparklingLog {
 
     fun register() {
         data = HistoryStore.load("sparklings", Data::class.java, ::Data).also { d -> d.entries.sortByDescending { it.at } }
+        if (SparklingUniqueness.reconcile(data.entries)) {
+            runCatching { HistoryStore.backup("sparklings", "pre-unique-repair") }
+                .onSuccess { save() }
+                .onFailure { org.slf4j.LoggerFactory.getLogger("sparkling-mutuals/history").warn("Couldn't back up unique history repair", it) }
+        }
         ClientReceiveMessageEvents.GAME.register { message, overlay ->
             if (!overlay) Minecraft.getInstance().execute { SafariMessages.lines(message.string).forEach(::chat) }
         }
@@ -42,8 +47,7 @@ object SparklingLog {
 
     /** Compare the pre-catch party snapshot; never fetch a delayed API response to verify a live catch. */
     private fun markUnique(entry: SparklingEntry, own: Boolean, wasKnown: Boolean?) {
-        val earlier = data.entries.any { it !== entry && it.player.equals(entry.player, true) && it.critter.equals(entry.critter, true) }
-        if (!earlier && wasKnown == false) {
+        if (SparklingUniqueness.isNew(entry, data.entries, wasKnown)) {
             entry.unique = true; save(); Achievements.onUnique(own)
         }
     }
@@ -53,7 +57,7 @@ object SparklingLog {
     /** Adds catches found elsewhere (old logs), skipping any already here. Returns how many were added. */
     fun importEntries(found: List<SparklingEntry>, ticketTimes: List<Long> = emptyList()): Int {
         val added = SparklingHistoryMerge.merge(data.entries, found, ticketTimes)
-        if (added > 0) save().getOrThrow()
+        save().getOrThrow()
         return added
     }
 

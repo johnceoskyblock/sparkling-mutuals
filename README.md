@@ -45,13 +45,14 @@ The guide is a visual estimate, not guaranteed flight, impact or capture physics
 | `!tickets <IGN>` | Safari ticket counts |
 | `!m [biome]` | Current-run remaining work |
 | `!dt [reason]`, `r` | Request downtime or release your own readiness hold |
-| `!pb <biome>`, `!pb doom`, `!pb wumpa` | Active-mode biome or boss bests; supported duo/player variants are in command help |
+| `!pb <biome>`, `!pb doom`, `!pb wumpa` | Active-mode biome or boss bests; [solo/duo and observed unique variants](docs/PERSONAL_BESTS.md) are in command help |
 | `!commands` | Available party commands in the active mode |
+| `/sm help` | Local and party command list for the active mode |
 | `/sparkling [IGN\|party\|IGNs]` | Player cards and discovery comparison |
 | `/alert`, `/alertdelay <seconds>` | Optional warp reminder controls |
 | `/sm shots`, `/sm debug` | Explicit local recording controls or tracking diagnostics; review logs/exports before sharing |
 
-Press Tab to complete current-party IGNs in `/sparkling`, including successive comparison names, and name arguments for `!missing`, `!ticket`/`!tickets` and `!pb doom`/`!pb wumpa`. Party-chat forms such as `/pc !missing Jo` and `/p chat !tickets Jo` are supported. Matching ignores case; suggestions resolve verified party names even for members absent from the current tab list, without fetching SkyBlock discovery data.
+Press Tab to complete current-party IGNs in `/sparkling`, including successive comparison names, and name arguments for `!missing`, `!ticket`/`!tickets` and `!pb doom`/`!pb wumpa` and biome PB lookups. Party-chat forms such as `/pc !missing Jo` and `/p chat !tickets Jo` are supported. Matching ignores case; suggestions resolve verified party names even for members absent from the current tab list, without fetching SkyBlock discovery data.
 
 ### Contribute and verify
 

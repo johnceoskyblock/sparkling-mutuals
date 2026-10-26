@@ -8,6 +8,30 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class HoneyHiveRulesTest {
+    @Test fun `only catalogued hives render and saved decorative or phantom positions are removed without losing timers`() {
+        val real = "-705,92,225"
+        val tree = "-542,119,298"
+        assertTrue(HoneyHiveRules.waypointExists(real, loaded = true, beeNest = true))
+        assertTrue(HoneyHiveRules.waypointExists(real, loaded = false, beeNest = false))
+        assertFalse(HoneyHiveRules.waypointExists(real, loaded = true, beeNest = false))
+        assertFalse(HoneyHiveRules.waypointExists(tree, loaded = true, beeNest = true))
+        assertFalse(HoneyHiveRules.waypointExists(tree, loaded = false, beeNest = false))
+        val saved = java.util.Properties().apply {
+            setProperty("tracking.version", "2")
+            setProperty("scope.last", "player.profile")
+            for (key in listOf(real, tree, "-730,132,184")) {
+                setProperty("hive.$key", "-")
+                setProperty("looted.player.profile.$key", "1000")
+                setProperty("refill.player.profile.$key", "3601000")
+            }
+            setProperty("refill.player.profile.-704,92,225", "3602000")
+        }
+        assertEquals(6, HoneyHiveRules.removeUnknownPositions(saved))
+        assertEquals("player.profile", saved.getProperty("scope.last"))
+        assertEquals("1000", saved.getProperty("looted.player.profile.$real"))
+        assertEquals(3601000L, HoneyHiveRules.savedRefills(saved, 2000).getValue("player.profile")[real])
+        assertEquals(0, HoneyHiveRules.removeUnknownPositions(saved))
+    }
     private val hour = HoneyHiveRules.REFILL_MILLIS
 
     @Test fun `overlapping loot times cannot permanently swap hive ids`() {

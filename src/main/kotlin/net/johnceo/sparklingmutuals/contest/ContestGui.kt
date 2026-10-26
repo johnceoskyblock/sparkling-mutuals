@@ -23,14 +23,12 @@ class ContestGui(private val parent: Screen? = null) : Screen(Component.literal(
     private data class Preview(val label: String, val layout: HudLayout, val width: Int, val height: Int,
         val draw: (GuiGraphicsExtractor, Int, Int) -> Unit)
     private val previews = mutableListOf<Preview>()
-    private val miria = HudLayout(0f, 0f)
+    private val miria = ContestConfig.layout
     private var dragging: Preview? = null
     private var offsetX = 0.0
     private var offsetY = 0.0
     override fun init() {
-        miria.x = ContestConfig.hudX.toFloat() / width.coerceAtLeast(1)
-        miria.y = ContestConfig.hudY.toFloat() / height.coerceAtLeast(1)
-        miria.scale = ContestConfig.hudScale
+        ContestConfig.editLayout(width, height)
         previews.clear()
         previews.add(Preview("Miria contest", miria, ContestHud.WIDTH, ContestHud.HEIGHT) { g, x, y ->
             ContestConfig.hudScale = miria.scale; ContestHud.renderPreview(g, x, y)
@@ -44,11 +42,12 @@ class ContestGui(private val parent: Screen? = null) : Screen(Component.literal(
         SafariHud.entries.forEach { hud ->
             val panel = panels.getValue(hud)
             previews.add(Preview(hud.label, hud.layout, panel.width(font::width), panel.height) { g, x, y ->
-                panel.draw(g, x, y, hud.layout.scale, AppearanceConfig.panels.getValue(hud.name.lowercase())) })
+                panel.draw(g, x, y, hud.layout.effectiveScale(width, height, panel.width(font::width), panel.height),
+                    AppearanceConfig.panels.getValue(hud.name.lowercase())) })
         }
         addRenderableWidget(Button.builder(Component.literal("Reset positions")) {
-            SafariHud.entries.forEach { it.layout.reset() }
-            miria.x = 10f / width.coerceAtLeast(1); miria.y = 10f / height.coerceAtLeast(1); miria.scale = 1f
+            SafariHud.resetDefaults()
+            ContestConfig.resetLayout()
             save()
         }.bounds(width / 2 - 104, height - 24, 120, 20).build())
         addRenderableWidget(Button.builder(Component.literal("Done")) { onClose() }.bounds(width / 2 + 20, height - 24, 84, 20).build())

@@ -114,7 +114,7 @@ object SafariManagerGuard {
             }, shiftDown(client))
         val reason = when (stage()) {
             EntryStage.TORRHUS -> if (SafariPartyInput.overflowReadiness) "Everyone must say r or Ticket earned! in party chat"
-                else if (SafariPartyInput.pendingDowntime) "Checking party readiness" else "Waiting for ${SafariDowntime.holders()} (downtime)"
+                else if (SafariPartyInput.pendingDowntime) "Checking party readiness" else "Waiting for ${SafariDowntime.waitingFor()}"
             EntryStage.UNKNOWN -> "Waiting for server info"
             else -> when {
                 !PartyManager.hasInfo -> "Loading party members"

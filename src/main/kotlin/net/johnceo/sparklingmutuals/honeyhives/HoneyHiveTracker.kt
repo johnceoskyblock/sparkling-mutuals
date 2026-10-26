@@ -11,7 +11,10 @@ class HoneyHiveTracker(private var refillAt: MutableMap<String, Long>, private v
     private val clicks = ArrayDeque<Click>()
     private var lastLoot: Click? = null
     private var queenBeforeLoot: Click? = null
-    fun state(key: String, now: Long) = HoneyHiveRules.state(now, refillAt[key])
+    private fun lootDeadline(key: String) = lootedAt[key]?.takeIf { it in 0..Long.MAX_VALUE - HoneyHiveRules.REFILL_MILLIS }
+        ?.plus(HoneyHiveRules.REFILL_MILLIS)
+    fun state(key: String, now: Long) = HoneyHiveRules.state(now,
+        if (key !in queenFull) lootDeadline(key) ?: refillAt[key] else refillAt[key])
 
     fun click(key: String, now: Long) {
         expire(now)
@@ -64,16 +67,20 @@ class HoneyHiveTracker(private var refillAt: MutableMap<String, Long>, private v
         return true
     }
 
-    /** Timers are the default. Only an unambiguous personal status hologram may correct them. */
+    /** A recorded loot owns its entire hour; labels may confirm readiness only after that hour. */
     @Suppress("UNUSED_PARAMETER")
     fun observe(key: String, label: String?, honeyLevel: Int? = null, now: Long): Boolean {
         val status = label?.let(SafariRules::strip)?.replace('\u00a0', ' ')?.trim() ?: return false
         val countdown = countdownMillis(status)
+        val exact = lootDeadline(key)
+        if (key in queenFull) return false // Only a new confirmed loot can consume a confirmed instant refill.
+        if (exact != null && (now < exact || countdown != null)) return false
+        if (exact == null && status.equals("Click to loot!", true) && refillAt[key]?.let { now < it } == true) return false
         val previous = refillAt[key]
         val fullBefore = key in queenFull
         when {
             status.equals("Click to loot!", true) -> {
-                refillAt.remove(key); observedRefills.remove(key); queenFull.add(key)
+                refillAt.remove(key)
                 clicks.filter { it.key == key }.forEach { it.eligible = true }
             }
             countdown != null -> {

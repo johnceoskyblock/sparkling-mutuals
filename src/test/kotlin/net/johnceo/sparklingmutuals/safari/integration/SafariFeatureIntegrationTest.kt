@@ -35,7 +35,7 @@ class SafariFeatureIntegrationTest {
         accept(setOf("local"), mapOf("local" to SafariRoster.all.map { it.name }.toSet() - missing.toSet()))
     }
 
-    @Test fun `fresh GUI enables features except the four explicit opt outs`() {
+    @Test fun `fresh GUI uses curated feature and appearance preferences`() {
         ConfigManager.init(dir); ContestConfig.init(dir)
         val switches = linkedMapOf<String, Boolean>()
         fun inspect(view: Any, path: String = "") {
@@ -49,11 +49,11 @@ class SafariFeatureIntegrationTest {
         }
         inspect(SafariSettings())
         assertTrue(switches.size >= 40, "Inspect nested GUI options, including panel borders")
-        val exceptions = setOf("history.instaSell", "history.toParty", "warp.enabled", "esp.floorDrops.rewardDrops")
+        val exceptions = setOf("history.instaSell", "history.toParty", "warp.enabled", "esp.floorDrops.visibility.generic", "esp.floorDrops.visibility.icebreaker", "miria.warning.five")
         val modes = setOf("modes.unique.enabled", "modes.fullClear.enabled", "modes.sparkling.enabled")
-        switches.filterKeys { it !in modes }.forEach { (name, value) -> assertEquals(name !in exceptions, value, name) }
+        switches.filterKeys { it !in modes }.forEach { (name, value) -> assertEquals(name !in exceptions && !name.endsWith(".borderEnabled"), value, name) }
         assertEquals(1, modes.count { switches[it] == true })
-        assertEquals(0, SafariSettings().safari.entry.ticketPreference)
+        assertEquals(1, SafariSettings().safari.entry.ticketPreference)
         assertTrue(ConfigManager.achievements)
         assertTrue(SafariEspConfig.mobs.values.all { it.enabled })
     }

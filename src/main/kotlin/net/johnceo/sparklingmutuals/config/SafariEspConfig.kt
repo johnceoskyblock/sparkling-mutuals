@@ -61,6 +61,8 @@ object SafariEspConfig {
         set(value) { field = validTextScale(value) }
     val teammateLabelWorldScale get() = .025f * teammateTextScale
     var rewardDrops = false
+    val floorOnlyInBiome = FloorDropType.entries.associateWith { it == FloorDropType.GENERIC }.toMutableMap()
+    fun dropOnlyInBiome(type: FloorDropType?) = floorOnlyInBiome[type] ?: true
     private fun defaultDropColor(type: FloorDropType) = defaultColor(if (type == FloorDropType.GENERIC) 0xFF6D6D75.toInt() else 0xFF00FF00.toInt())
     val floorColors = FloorDropType.entries.associateWith(::defaultDropColor).toMutableMap()
     fun dropColor(type: FloorDropType) = floorColors[type] ?: floorColor
@@ -88,6 +90,10 @@ object SafariEspConfig {
     private fun key(name: String) = name.lowercase().replace(' ', '_')
     fun load(properties: Properties) {
         rewardDrops = properties.getProperty("esp.floor.rewards.enabled")?.toBooleanStrictOrNull() ?: false
+        floorOnlyInBiome.keys.forEach { type ->
+            floorOnlyInBiome[type] = properties.getProperty("esp.floor.${type.name.lowercase()}.onlyInBiome")
+                ?.toBooleanStrictOrNull() ?: (type == FloorDropType.GENERIC)
+        }
         textScale = properties.getProperty("esp.textScale")?.toFloatOrNull() ?: DEFAULT_TEXT_SCALE
         teammateTextScale = properties.getProperty("esp.teammate.textScale")?.toFloatOrNull() ?: textScale
         floorTextScales.keys.forEach { type ->
@@ -111,6 +117,9 @@ object SafariEspConfig {
     }
     fun save(properties: Properties) {
         properties.setProperty("esp.floor.rewards.enabled", rewardDrops.toString())
+        floorOnlyInBiome.forEach { (type, value) ->
+            properties.setProperty("esp.floor.${type.name.lowercase()}.onlyInBiome", value.toString())
+        }
         properties.setProperty("esp.textScale", textScale.toString())
         properties.setProperty("esp.teammate.textScale", teammateTextScale.toString())
         floorTextScales.forEach { (type, _) ->
@@ -118,7 +127,7 @@ object SafariEspConfig {
         }
         groups.forEach { (name, group) ->
             properties.setProperty("esp.$name.enabled", group.enabled.toString())
-            properties.setProperty("esp.$name.onlyInBiome", group.onlyInBiome.toString())
+            if (name != "floor") properties.setProperty("esp.$name.onlyInBiome", group.onlyInBiome.toString())
         }
         mobs.forEach { (name, mob) ->
             properties.setProperty("esp.${key(name)}.enabled", mob.enabled.toString())

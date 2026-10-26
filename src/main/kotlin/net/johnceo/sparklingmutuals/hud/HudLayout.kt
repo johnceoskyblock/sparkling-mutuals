@@ -13,9 +13,18 @@ class HudLayout(private val defaultX: Float, private val defaultY: Float, privat
     var y = defaultY
     var scale = defaultScale
         set(value) { field = if (value.isFinite()) value.coerceIn(.15f, 2f) else defaultScale }
+    private var referenceWidth = 0f
+    private var referenceHeight = 0f
+    fun effectiveScale(screenWidth: Int, screenHeight: Int, panelWidth: Int, panelHeight: Int): Float {
+        if (referenceWidth <= 0 || referenceHeight <= 0) return scale
+        val adapted = scale * minOf(screenWidth / referenceWidth, screenHeight / referenceHeight)
+        return minOf(adapted, screenWidth.coerceAtLeast(1).toFloat() / panelWidth.coerceAtLeast(1),
+            screenHeight.coerceAtLeast(1).toFloat() / panelHeight.coerceAtLeast(1))
+    }
     fun bounds(screenWidth: Int, screenHeight: Int, panelWidth: Int, panelHeight: Int): HudBounds {
-        val w = ceil(panelWidth * scale).toInt()
-        val h = ceil(panelHeight * scale).toInt()
+        val fittedScale = effectiveScale(screenWidth, screenHeight, panelWidth, panelHeight)
+        val w = ceil(panelWidth * fittedScale).toInt()
+        val h = ceil(panelHeight * fittedScale).toInt()
         return HudBounds((x * screenWidth).toInt().coerceIn(0, (screenWidth - w).coerceAtLeast(0)),
             (y * screenHeight).toInt().coerceIn(0, (screenHeight - h).coerceAtLeast(0)), w, h)
     }
@@ -27,10 +36,16 @@ class HudLayout(private val defaultX: Float, private val defaultY: Float, privat
     fun load(properties: Properties, id: String) {
         fun read(key: String, default: Float) = properties.getProperty("hud.$id.$key")?.toFloatOrNull()?.takeIf(Float::isFinite) ?: default
         x = read("x", defaultX).coerceIn(0f, 1f); y = read("y", defaultY).coerceIn(0f, 1f); scale = read("scale", defaultScale)
+        referenceWidth = read("referenceWidth", 0f).coerceAtLeast(0f)
+        referenceHeight = read("referenceHeight", 0f).coerceAtLeast(0f)
     }
     fun save(properties: Properties, id: String) {
         properties.setProperty("hud.$id.x", x.toString()); properties.setProperty("hud.$id.y", y.toString())
         properties.setProperty("hud.$id.scale", scale.toString())
+        if (referenceWidth > 0 && referenceHeight > 0) {
+            properties.setProperty("hud.$id.referenceWidth", referenceWidth.toString())
+            properties.setProperty("hud.$id.referenceHeight", referenceHeight.toString())
+        }
     }
     fun reset() { x = defaultX; y = defaultY; scale = defaultScale }
 }
@@ -48,5 +63,6 @@ enum class SafariHud(private val defaultLabel: String, val layout: HudLayout) {
     companion object {
         fun load(properties: Properties) = entries.forEach { it.layout.load(properties, it.name.lowercase()) }
         fun save(properties: Properties) = entries.forEach { it.layout.save(properties, it.name.lowercase()) }
+        fun resetDefaults() = load(net.johnceo.sparklingmutuals.config.FreshInstallDefaults.main())
     }
 }

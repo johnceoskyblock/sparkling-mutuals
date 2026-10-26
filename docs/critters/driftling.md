@@ -15,7 +15,7 @@
 
 ## What makes this critter different
 
-- Sparkling ordinary ESP is exempt from the normal per-UUID 10-second timeout. Reappearance supplies no catch.
+- Automatic Sparkling checks add no ordinary Driftling ESP. Enabled profitable highlighting remains separate; reappearance supplies no catch.
 
 ## Spawn prerequisites
 
@@ -45,7 +45,7 @@ None. No species-specific resource or structure gate is used.
 | Progress | Mode-specific predicate above; see [shared modes](../../SAFARI_LOGIC.md). |
 | Missing/unchecked row | Unique uses its capture/source predicate. Sparkling lists needed unresolved checks. Full Clear needs local capture/absence proof, separately from report-based progress. See [panel rules](../MISSING_PANEL.md). |
 | Counters | None in the species row; capture panel shows actual shared catches. |
-| Ordinary ESP | Unique: until first shared capture. Full Clear: eligible uncaught models. Sparkling: discovery-gated, no ordinary per-UUID timeout for Driftling. Settings and model validity still apply. |
+| Ordinary ESP | Unique: until first shared capture. Full Clear: eligible uncaught models. Sparkling: no ordinary model ESP solely for automatic checking. Settings and model validity still apply. |
 | Source helpers | None. |
 | Automatic completion announcements | Shared local whole-biome/report-readiness gates in [mode rules](../../SAFARI_LOGIC.md). |
 | PB eligibility | Personal Unique: own catch of every species. Full Clear: personal captures/local proof. Party Unique: separate shared-capture/absence predicate; progress alone is insufficient. |
@@ -73,6 +73,8 @@ Existing coverage: [SafariFullClearProgressTest](../../src/test/kotlin/net/johnc
 Population guarantees and capsule success/escape claims from supplied notes were not live revalidated; see [audit D2](../IMPLEMENTATION_AUDIT.md#d2).
 
 ## Last updated
+
+2026-10-26 — Removed ordinary ESP added solely for automatic Sparkling checks and its per-UUID linger. Capture/source and profitable-highlight exceptions remain separate.
 
 2026-10-20 — After a shared Driftling/Chuckwalla catch, defer increases to inferred capture targets for 2.5 seconds so delayed old models are not added on top of that catch. Positive remaining evidence still blocks completion during this interval. Stable live evidence afterward can raise targets normally; catches are unchanged.
 

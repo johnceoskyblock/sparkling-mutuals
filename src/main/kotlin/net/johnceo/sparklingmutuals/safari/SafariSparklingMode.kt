@@ -95,13 +95,13 @@ object SafariSparklingMode {
             }
         }
     }
-    /** Server-confirmed catch only; detections and player-written party messages never grant discoveries. */
+    /** Server-confirmed catch; returns the local account's pre-catch discovery status for history. */
     fun caught(player: String, species: String): Boolean? {
         val client = Minecraft.getInstance()
         val self = client.player ?: return null
         if (!SafariAssist.inSafari) return null
         val members = PartyManager.withLocal(self.uuid.toString()) ?: return null
-        val catcher = members.firstOrNull { uuid ->
+        members.firstOrNull { uuid ->
             val name = if (uuid == self.uuid.toString()) self.name.string else
                 client.connection?.getPlayerInfo(java.util.UUID.fromString(uuid))?.profile?.name
                     ?: net.johnceo.sparklingmutuals.safari.automation.SafariPartyInput.nameOf(uuid)
@@ -118,7 +118,7 @@ object SafariSparklingMode {
         if (!net.johnceo.sparklingmutuals.history.HistoryServerPolicy.alpha(client))
             net.johnceo.sparklingmutuals.history.OwnStats.sparkling(species)
         val key = species.uppercase(java.util.Locale.ROOT).replace(' ', '_')
-        return before[catcher]?.contains(key)
+        return before[self.uuid.toString()]?.contains(key)
     }
     fun reset() {
         invalidate(); state.reset(); roster = emptySet(); provider = null; partyRefreshAt = 0

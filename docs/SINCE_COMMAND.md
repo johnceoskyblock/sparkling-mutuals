@@ -21,13 +21,13 @@ Type either command in party chat with `/pc` or `/p chat`:
 
 Any catcher's eligible Sparkling can reset the responding user's streak. Historical credit is not filtered to the current party roster. An entry qualifies inside the active run's start/end bounds, or inside the most recent saved run beginning no later than that entry. For a saved run with positive duration, the catch must fall within its duration. For an imported run with unknown duration, its Sparkling list must explicitly contain the same `catcher:critter`; a date alone is insufficient.
 
-The latest qualifying entry supplies the result. Count saved runs whose start is later than that catch; exclude the catch's run and do not add the unfinished active run. `unique` uses the entry's stored flag, including [estimated import flags](HISTORY_IMPORT.md#estimates); it does not perform a new discovery lookup.
+The latest qualifying entry supplies the result. Count saved runs whose start is later than that catch; exclude the catch's run and do not add the unfinished active run. `unique` uses the entry's stored flag, including [estimated import flags](HISTORY_IMPORT.md#estimates); it does not perform a new discovery lookup. Live unique flags refer to the responding account’s discovery baseline, regardless of catcher. Startup repairs legacy unique flags on species already seen earlier; imports recompute estimated first-seen flags across the combined history.
 
-Examples: `Farmer: 1 run since last shiny: Foxtrot caught by OtherPlayer.` and `Farmer: 3 runs since last unique shiny: Wumpa caught by Friend.` With no eligible entry, report `No shiny in history (N runs tracked).` or its unique equivalent.
+Examples: `1 run since last shiny: Foxtrot caught by OtherPlayer.` and `3 runs since last unique shiny: Wumpa caught by Friend.` With no eligible entry, report `N runs tracked; no shiny in history.` or its unique equivalent.
 
 ### Reply ownership
 
-Every mod user answers from their own history, labeled with their own IGN, even when another player requests the command. The last credited catch can belong to anyone in their party run; it is not restricted to their personal captures. The normal pipeline applies a ten-second request-token cooldown, party/context checks and result deduplication. Responders stagger replies by their roster UUID rank; one user’s reply does not suppress other users’ differently named replies. It snapshots the result on the client thread before the asynchronous reply task. Matching includes responder IGN and command kind, so another player's result or a normal streak cannot cancel a unique-streak result. Pending replies are also cancelled by mode or party changes.
+Every mod user answers from their own history, without an IGN prefix: replies start with the run count. The last credited catch can belong to anyone in their party run. The ten-second request-token cooldown and party/context checks still apply. Responders stagger replies by roster UUID rank; streak replies bypass cross-user result suppression so even identical histories produce each user's reply. The result is snapshotted on the client thread. Pending replies are cancelled by mode or party changes.
 
 ## Lifecycle and persistence
 
@@ -44,13 +44,17 @@ Commands do not modify history. Results use [persisted histories](HISTORY_IMPORT
 
 - Calculation and matching: [SafariSinceReply](../src/main/kotlin/net/johnceo/sparklingmutuals/commands/SafariSinceReply.kt), `format`, `current` and `matches`.
 - Parsing/ownership: [PartyCommand](../src/main/kotlin/net/johnceo/sparklingmutuals/commands/PartyCommand.kt); registration, snapshot and sending: [PartyCommands](../src/main/kotlin/net/johnceo/sparklingmutuals/commands/PartyCommands.kt); result history: [PartyReplies](../src/main/kotlin/net/johnceo/sparklingmutuals/commands/PartyReplies.kt).
-- Existing secondary coverage: [SafariSinceReplyTest](../src/test/kotlin/net/johnceo/sparklingmutuals/commands/SafariSinceReplyTest.kt), [PartyCommandTest](../src/test/kotlin/net/johnceo/sparklingmutuals/commands/PartyCommandTest.kt). Automated coverage includes all-responder parsing, distinct named replies and teammate catches resetting the streak. Live Minecraft validation remains pending. Live checks should compare both replies with own/party catches, active and imported unknown-duration runs, changed parties, disabled commands and multiple mod users.
+- Existing secondary coverage: [SafariSinceReplyTest](../src/test/kotlin/net/johnceo/sparklingmutuals/commands/SafariSinceReplyTest.kt), [PartyCommandTest](../src/test/kotlin/net/johnceo/sparklingmutuals/commands/PartyCommandTest.kt). Automated coverage includes all-responder parsing, prefix-free replies and teammate catches resetting the streak. Live Minecraft validation remains pending. Live checks should compare both replies with own/party catches, active and imported unknown-duration runs, changed parties, disabled commands and multiple mod users.
 
 ## Party wording
 
 Party replies use “shiny” or “unique shiny” so detection-keyword chat alerts remain reserved for actual Sparkling sightings. The old `!since sparkling` spelling is replaced by `!since`; `!since unique` is unchanged. No API requests are added.
 
 ## Last updated
+
+2026-10-26 — Corrected catcher-based live uniqueness and added automatic legacy repeat-flag reconciliation, so another player’s new discovery cannot reset an existing local discovery’s unique streak.
+
+2026-10-26 — Removed responder IGN prefixes; retained every mod user’s response even when results match.
 
 2026-10-21 — All mod users now reply with their own named party-credited streak; shortened the default command to `!since` and changed party wording to shiny. Credit/counting logic is unchanged.
 

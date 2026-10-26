@@ -167,8 +167,9 @@ object SafariTracking {
     }
     /** Party Unique PBs are checked after catches and after scans (absence evidence), see recordPartyUnique. */
     fun checkPartyUnique(client: Minecraft, biome: SafariBiome, now: Long = System.currentTimeMillis()) {
-        if (SafariFullClear.mode != SafariMode.UNIQUE) return
         val run = ledger.current ?: return
+        if (ConfigManager.personalBests.recordObservedUnique(biome, run, now)) ConfigManager.save()
+        if (SafariFullClear.mode != SafariMode.UNIQUE) return
         ConfigManager.personalBests.recordPartyUnique(biome, run, now)?.let { notice ->
             ConfigManager.save(); client.player?.sendSystemMessage(LocalChat.component(notice))
         }

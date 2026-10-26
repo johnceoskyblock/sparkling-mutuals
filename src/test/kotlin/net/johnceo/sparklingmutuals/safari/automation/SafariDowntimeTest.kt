@@ -10,6 +10,38 @@ class SafariDowntimeTest {
     @BeforeEach fun clear() { ConfigManager.downtimeCommand = true; SafariDowntime.reset() }
     @AfterEach fun restore() { ConfigManager.downtimeCommand = true; SafariDowntime.reset() }
 
+    @Test fun `Torrhus leader warp starts other contest holds together without readiness and preserves manual reasons`() {
+        SafariDowntime.chat("Party > Food: !dt food", false, "Leader")
+        SafariDowntime.chat("Party > Leader: !dt contest", false, "Leader", listOf("Leader", "Friend", "NoMod", "Food"))
+        val confirmation = "SkyBlock Party Warp (3 players)"
+        assertFalse(SafariDowntime.partyWarp("Party > Leader: $confirmation", true, true, "Leader", 0))
+        SafariDowntime.partyWarp(confirmation, false, true, "Leader", 0)
+        SafariDowntime.partyWarp(confirmation, true, false, "Leader", 0)
+        SafariDowntime.releaseContestTravel(20000)
+        assertEquals("Food, Leader, Friend, NoMod", SafariDowntime.holders())
+        SafariDowntime.partyWarp(confirmation, true, true, "Leader", 30000)
+        SafariDowntime.partyWarp(confirmation, true, true, "Leader", 40000)
+        SafariDowntime.chat("Party > Friend: Ticket earned!", false, "Leader")
+        SafariDowntime.releaseContestTravel(49999)
+        assertEquals("Food, Leader, NoMod", SafariDowntime.holders())
+        SafariDowntime.releaseContestTravel(50000)
+        assertEquals("Food, Leader", SafariDowntime.holders())
+        assertEquals("Food (food), Leader (contest)", SafariDowntime.waitingFor())
+        SafariDowntime.chat("Party > Leader: r", false, "Leader")
+        assertEquals("Food", SafariDowntime.holders())
+    }
+
+    @Test fun `party warp deadline survives resolving a contest member name`() {
+        val id = "a".repeat(32)
+        SafariDowntime.chat("Party > Leader: !dt contest", false, "Leader", listOf("Leader", id))
+        SafariDowntime.partyWarp("SkyBlock Party Warp (1 player)", true, true, "Leader", 1000)
+        SafariDowntime.pruneVerified(mapOf("friend" to id), setOf(id))
+        SafariDowntime.releaseContestTravel(21000)
+        assertEquals("Leader", SafariDowntime.holders())
+        assertTrue(SafariDowntime.localNotice().startsWith("[SM] Contest:"))
+        assertTrue(SafariDowntime.localNotice().contains("Leader (contest)"))
+    }
+
     @Test fun `contest members release individually twenty seconds after their Torrhus travel`() {
         SafariDowntime.chat("Party > Leader: !dt contest", false, "Me", listOf("Leader", "SharkboardMC", "Friend"))
         SafariDowntime.chat("Party > Leader: r", false, "Me")
@@ -67,7 +99,7 @@ class SafariDowntimeTest {
     @Test fun `leader contest waits for every member and local notice lists remaining players`() {
         SafariDowntime.chat("Party > Leader: !dt contest", false, "Me", listOf("Leader", "Me", "Friend"))
         assertEquals("Leader, Me, Friend", SafariDowntime.holders())
-        assertTrue(SafariDowntime.localNotice().contains("wait for Leader, Me, Friend to say r"))
+        assertTrue(SafariDowntime.localNotice().contains("wait for Leader (contest), Me (contest), Friend (contest) to say r"))
         SafariDowntime.chat("Party > Leader: r", false, "Me")
         assertTrue(SafariDowntime.entryHold)
         assertEquals("Me, Friend", SafariDowntime.holders())
@@ -97,7 +129,7 @@ class SafariDowntimeTest {
         val summary = SafariDowntime.chat("Party > Leader: !dt contest", false, "Me", listOf("Leader", "Friend", "Me"))
         assertTrue(summary!!.contains("Friend (food)"))
         assertFalse(SafariDowntime.ticketEarned("Friend"))
-        assertTrue(SafariDowntime.localNotice().contains("Friend, Leader, Me"))
+        assertTrue(SafariDowntime.localNotice().contains("Friend (food), Leader (contest), Me (contest)"))
     }
     @Test fun `any ticket mention clears only its senders downtime request`() {
         for (message in listOf("ticket", "got my TICKET", "two tickets ready", "Ticket earned!")) {

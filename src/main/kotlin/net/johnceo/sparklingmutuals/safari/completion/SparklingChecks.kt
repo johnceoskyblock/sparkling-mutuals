@@ -31,7 +31,6 @@ class SparklingChecks(private val clock: () -> Long = System::currentTimeMillis)
         if (wallsRemain) { completed.remove("Snoozle"); partyCompleted.remove("Snoozle") }
     }
     private val observed = mutableMapOf<String, MutableSet<UUID>>()
-    private val espSeenAt = mutableMapOf<UUID, Long>()
     private var validatedCoinDemand = 0
     private var extraCoinUuidBaseline: Set<UUID>? = null
     private var extraCoinChecksNeeded = 0
@@ -99,7 +98,6 @@ class SparklingChecks(private val clock: () -> Long = System::currentTimeMillis)
         "captures=${captured["Gimmiegold"] ?: 0} checked=${locallyChecked("Gimmiegold")}"
     fun capture(name: String) { captured.merge(name, 1, Int::plus) }
     fun checked(name: String) = locallyChecked(name) || !requiresCapture(name) && name in partyCompleted
-    fun keepEsp(uuid: UUID, now: Long) = now - espSeenAt.getOrPut(uuid) { now } < 10000
     fun wumpaPrerequisite(name: String, party: PartySparklingState) =
         SafariRoster.named(name)?.biome == SafariBiome.ICY && party.needs("Wumpa")
     fun scan(biome: SafariBiome, x: Double, z: Double, seen: List<Pair<String, UUID>>,

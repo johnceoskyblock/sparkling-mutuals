@@ -52,11 +52,13 @@ class SafariCustomizationTest {
         assertTrue(ConfigManager.showMoundCount)
         assertTrue(ConfigManager.showBeeNests)
         assertFalse(ConfigManager.showMoundStats)
-        AppearanceConfig.panels.filterKeys { it != "run_complete" }.values.forEach {
-            assertTrue(it.borderEnabled)
-            assertEquals(20, it.transparency)
-            assertEquals(0xCC0D0D10.toInt(), it.backgroundArgb)
+        AppearanceConfig.panels.values.forEach { assertFalse(it.borderEnabled) }
+        for (id in listOf("miria", "progress", "missing", "captures", "sparklings")) {
+            val style = AppearanceConfig.panels.getValue(id)
+            assertEquals(20, style.transparency)
+            assertEquals(0xCC000000.toInt(), style.backgroundArgb)
         }
+        assertEquals(67, AppearanceConfig.panels.getValue("incense").transparency)
     }
     @Test fun `one selected hex color applies to multiple targets without enabling borders or ESP`() {
         ConfigManager.init(dir)

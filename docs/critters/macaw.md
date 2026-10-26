@@ -46,7 +46,7 @@ Bag of Seeds, Wriggleworm and Yogi Berry create feeding opportunities. Starting 
 | Progress | Mode-specific predicate above; see [shared modes](../../SAFARI_LOGIC.md). |
 | Missing/unchecked row | Unique uses spawning plus own capture/no-Macaw rule. Sparkling lists needed unresolved spawning checks. Full Clear uses the shared bird capture predicate; no additional local empty scan. See [panel rules](../MISSING_PANEL.md). |
 | Counters | None in the species row; capture panel shows actual shared catches. |
-| Ordinary ESP | Standard mode/discovery/model filters. Unique stops after its own first catch even if spawning remains pending. Sparkling normally has a per-UUID 10-second window. |
+| Ordinary ESP | Standard mode/discovery/model filters. Unique stops after its own first catch even if spawning remains pending. Sparkling checks add no ordinary model ESP; enabled profitable highlighting remains separate. |
 | Source helpers | Food-drop highlights follow [FLOOR_DROPS](FLOOR_DROPS.md); hiding a marker does not use food. |
 | Automatic completion announcements | Any Forest entrant may report complete qualified spawning/source proof without a personal pickup quota if no fd was received. All other local active-mode gates still apply; see [bird reporting](../BIRD_COMPLETION.md#sending-fd). |
 | PB eligibility | Personal Unique: own catch of every species. Full Clear: personal captures/local proof. Party Unique: separate shared-capture/absence predicate; progress alone is insufficient. |
@@ -80,6 +80,8 @@ Existing coverage: [SafariBirdLedgerTest](../../src/test/kotlin/net/johnceo/spar
 Population guarantees and capsule success/escape claims from supplied notes were not live revalidated; see [audit D2](../IMPLEMENTATION_AUDIT.md#d2).
 
 ## Last updated
+
+2026-10-26 — Removed check-only ordinary ESP and its per-UUID linger; capture/source and profitable highlighting retain their own rules.
 
 2026-10-19 - Clarified local no-Macaw completion/row removal and fd after all known food, including party extras, is used; any sighting revokes the waiver.
 

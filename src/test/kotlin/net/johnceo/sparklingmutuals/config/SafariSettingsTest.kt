@@ -24,7 +24,7 @@ class SafariSettingsTest {
         assertFalse(ConfigManager.shinyDetection)
         assertFalse(ConfigManager.partyCommandsEnabled)
         assertTrue(ConfigManager.warpAlertsEnabled)
-        assertEquals(listOf(5, 1), ContestConfig.warningMinutes())
+        assertEquals(listOf(1), ContestConfig.warningMinutes())
         settings.miria.five = false
         settings.miria.one = false
         settings.apply()

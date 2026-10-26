@@ -31,6 +31,7 @@ class SparklingNotices {
         if (!notice.unknown && notice.name != SparklingAlert.UNKNOWN) queue.addLast(notice)
     }
     fun identify(ids: Collection<UUID>) { queue.removeAll { it.unknown && it.id in ids } }
+    fun captured(name: String, ids: Collection<UUID>) { queue.removeAll { it.name == name || it.id in ids } }
     fun next() = queue.removeFirstOrNull()
     fun clear() = queue.clear()
 }
@@ -61,6 +62,10 @@ object SparklingEncounters {
     fun identify(ids: Collection<UUID>) {
         queue.identify(ids)
         if (banner?.let { it.unknown && it.id in ids } == true) banner = null
+    }
+    fun captured(name: String, ids: Collection<UUID>) {
+        queue.captured(name, ids)
+        if (banner?.let { it.name == name || it.unknown && it.id in ids } == true) banner = null
     }
     fun observe(id: UUID, name: String, biome: SafariBiome, pos: BlockPos, unknown: Boolean = false) {
         val where = "${biome.label} ${pos.x} ${pos.y} ${pos.z}"

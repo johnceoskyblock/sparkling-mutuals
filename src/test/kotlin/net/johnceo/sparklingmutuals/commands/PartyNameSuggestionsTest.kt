@@ -21,7 +21,7 @@ class PartyNameSuggestionsTest {
     }
     @Test fun `party command names complete through supported chat wrappers with correct replacement ranges`() {
         for (prefix in listOf("", "/pc ", "/pchat ", "/p chat ", "/party chat ")) {
-            for (command in listOf("!missing ", "!ticket ", "!tickets ", "!pb doom ", "!pb wumpa ")) {
+            for (command in listOf("!missing ", "!ticket ", "!tickets ", "!pb doom ", "!pb wumpa ", "!pb forest ", "!pb cavern ", "!pb icy ", "!pb haunted ")) {
                 val input = prefix + command + "jo"
                 val suggestions = PartyNameSuggestions.chat(input, input.length, names)!!.join()
                 assertEquals(listOf("JohnCEO", "JohnFounder"), suggestions.list.map { it.text }, input)
@@ -31,7 +31,7 @@ class PartyNameSuggestionsTest {
         val empty = PartyNameSuggestions.chat("!missing ", 9, names)!!.join().list.map { it.text }
         assertEquals(listOf("Alice", "Bob", "JohnCEO", "JohnFounder"), empty)
         assertTrue(PartyNameSuggestions.chat("!pb doom d", 10, names)!!.join().list.any { it.text == "duo" })
-        for (input in listOf("hello jo", "/msg Alice jo", "/p invite jo", "!m fo", "!since sp", "!dt jo", "!missing Alice extra", "!pb forest jo"))
+        for (input in listOf("hello jo", "/msg Alice jo", "/p invite jo", "!m fo", "!since sp", "!dt jo", "!missing Alice extra"))
             assertNull(PartyNameSuggestions.chat(input, input.length, names), input)
     }
     @Test fun `chat suggestion hook targets exist in actual Minecraft bytecode`() {

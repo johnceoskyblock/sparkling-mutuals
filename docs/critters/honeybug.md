@@ -35,7 +35,7 @@ Classify actual nests/hives in the initial loaded survey. Punching records sourc
 
 | Mode | Capture requirement | Checking or source requirement | Party-report effect |
 | --- | --- | --- | --- |
-| Sparkling | None for ordinary bees; confirmed Sparkling capture override applies. | Every actual nest punched, or known nest population covered by shared captures plus current bees. | Trusted fd supplies checking outside Forest; reentry requires local nest proof. |
+| Sparkling | None for ordinary bees; confirmed Sparkling capture override applies. | Every actual nest punched, or known nest population covered by shared captures plus current bees. | Trusted fd supplies checking outside Forest; inside Forest uses confirmed local proof, retained from an earlier complete render or nest survey. |
 | Unique | One shared capture, or the confirmed-Sparkling capture override. | Progress also needs checking if discovery is needed; row uses the capture condition. | Outside Forest, fd supplies needed checking, never the capture. Current Forest requires local nest proof. |
 | Full Clear | Capture verified N, raised by known extra population; otherwise use conservative fallback/source proof. | Known N needs no local empty scan or personal punch history. | fd supplies no captures and cannot retire Full Clear nest work before quota. |
 
@@ -53,11 +53,11 @@ Classify actual nests/hives in the initial loaded survey. Punching records sourc
 
 ## Party reports and late entry
 
-Keep catches received outside Forest. Trusted fd survives Forest entry/mode changes; it supplies neither Unique catch nor Full Clear captures. Incomplete later rendering does not erase it. See [evidence/lifecycle](TRACKING.md).
+Keep catches received outside Forest. Trusted fd is retained for the run and supplies checking while outside Forest; it supplies neither a Unique catch nor Full Clear captures. Entering Forest uses local proof, not fd alone. A prior locally completed render/survey remains valid on reentry. See [evidence/lifecycle](TRACKING.md).
 
 ## Retention and reopening
 
-Classification, maximum known count, captures and trusted fd persist for the run. New actual nests can raise N and reopen local checking. Visibility loss preserves classification; new run resets it. Pending detection identities add no separate completion gate; see [audit D1](../IMPLEMENTATION_AUDIT.md#d1).
+Classification, maximum known count, captures and trusted fd persist for the run. Once a fresh Forest render confirms shared captures plus uncaptured bees cover the verified nest count, retain that local checking proof through partial/empty renders, fd messages, travel, reentry and mode changes. A complete punched-nest survey also supplies retained source proof. A block-survey refresh alone cannot combine a newly received catch with stale live-bee counts to create retained render proof. New actual nests can raise N and reopen local checking. Visibility loss preserves classification; new run resets it. Pending detection identities add no separate completion gate; see [audit D1](../IMPLEMENTATION_AUDIT.md#d1).
 
 ## Examples
 
@@ -78,6 +78,8 @@ Existing coverage: [HoneybugModeEvidenceTest](../../src/test/kotlin/net/johnceo/
 Population guarantees and capsule success/escape claims from supplied notes were not live revalidated; see [audit D2](../IMPLEMENTATION_AUDIT.md#d2).
 
 ## Last updated
+
+2026-10-25 — Retain confirmed local Honeybug render/source checks instead of overwriting completion on unloading. Outside Forest trusts fd; inside trusts local proof. New nest demand reopens checking, and fresh render samples prevent stale capture/render mixtures from latching completion.
 
 2026-10-22 — Honeybug reports supply checking outside Forest only; current Forest uses local nest proof.
 

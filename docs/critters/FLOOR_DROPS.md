@@ -12,6 +12,10 @@ A marker hidden by selection is not an absent resource. Unknown/partial markers 
 
 ## Implemented rules
 
+### Visibility outside the current biome
+
+**ESP → Floor drops → Show outside current biome** has a separate switch for Bag of Seeds, Wriggleworm, Yogi Berry, Lime Gem, Purple Gem, Orange Gem, Icebreaker, Soothing Incense, Shining Coin and XP/Essence/Shard. Quest drops default to visible across biomes; reward drops default to current-biome only. The old shared restriction is replaced. Per-type choices persist across mode changes/restarts and do not change mode eligibility, collection cutoffs, tracking, colors or text sizes. Only currently received/loaded drops can be drawn, and reward ESP still needs its separate enable toggle.
+
 ### Starting resources
 
 The supplied ticket observations describe zero ticket-specific items for Basic/Economy/Premium and one for First Class, plus one independent Head Start item when present. First Class has no grant message; inventory is authoritative for the total, including two identical items. The client records observed ticket/admission evidence but does not manufacture inventory from ticket type.
@@ -38,14 +42,14 @@ Unsupported prefixes or phase mismatch enter an XP / Essence / Shard tail for th
 | Type | Implemented eligibility, in addition to rendering/config gates |
 | --- | --- |
 | XP / Essence / Shard | Optional ESP setting, off by default; default #6D6D75. Independent of mode quest requirements; current-biome/group controls still apply |
-| Gems | Cavern Full Clear, needed Gemzie discovery, or uncaught Unique Gemzie; each acquired/starting gem color hides all remaining predicted markers of that color, including after placement |
+| Gems | Hidden whenever Gemzie is complete under the current mode’s progress rules; otherwise Cavern Full Clear, needed Gemzie discovery, or uncaught Unique Gemzie; each acquired/starting gem color hides all remaining predicted markers of that color, including after placement |
 | Bird food | Configured floor group; Full Clear, or any needed bird discovery/uncaught Unique bird. Only predicted food groups are selected |
-| Shining Coin | Every remaining coin throughout Unique and Full Clear, regardless of party discovery needs or pickup counts. Sparkling shows coins only when Gimmiegold discovery is needed. Collected drops disappear normally; this changes ESP presentation only, not completion requirements. |
+| Shining Coin | Every remaining coin throughout Unique and Full Clear, regardless of party discovery needs or pickup counts. Sparkling shows coins when Gimmiegold discovery is needed, or when Sparkle profitable-shard ESP is enabled and Gimmiegold is in the cached top ten. Collected drops disappear normally; this changes ESP presentation only, not completion requirements. |
 | Soothing Incense | All five predicted slots eligible, with no distance ranking or reduction for starting incense. Hide after four pickup units or a peak inventory of four. Sparkling additionally needs Doomspiral discovery; Unique/Full Clear additionally require Gimmiegold discovery needed or acquired units + known starting quantity (at least peak held inventory) below four |
 | Icebreaker | Automatic selection only in Full Clear, until one acquired/starting Icebreaker |
 | Generic/unknown | No quest-item ESP |
 
-Coin and incense selection are independent. Incense peak inventory includes starting items and stays recorded after consumption/travel/mode change. A pickup quantity contributes units to the typed cutoff; Forest reporting uses qualified population/source proof rather than personal pickup counts. Cavern/Icy manual overrides last for the current biome visit and affect the group gate; per-type acquisition/need selection still applies. Floor-group controls are not a universal gate for every automatic Cavern/Icy path.
+Coin and incense selection are independent. Incense peak inventory includes starting items and stays recorded after consumption/travel/mode change. A pickup quantity contributes units to the typed cutoff; Forest reporting uses qualified population/source proof rather than personal pickup counts. Cavern/Icy manual overrides last for the current biome visit and affect the group gate; per-type acquisition/need selection still applies. Gemzie completion takes priority over a manual Cavern enable override, so completed Gemzie never leaves gem floor-drop markers enabled. Floor-group controls are not a universal gate for every automatic Cavern/Icy path.
 
 Per-type colors cover nine quest types and apply to outline/fill/name. Older shared color supplies defaults; All floor-drop colors assigns all types. These choices never create resources or override per-type eligibility.
 
@@ -129,6 +133,12 @@ In the ESP config tab, **Floor-drop text sizes** provides a separate 0.5–4.0 s
 Existing configs without the new keys initialize every drop-type and party-member size from the saved `esp.textScale` value, preserving their prior appearance. Each independent value then saves in `esp.floor.<type>.textScale` or `esp.teammate.textScale`. Changing the other-label scale does not change them. Text-size settings do not affect colors, source tracking or mode requirements.
 
 ## Last updated
+
+2026-10-26 — Gem floor-drop ESP now follows Gemzie’s current-mode completion state, including completed checks and remote proof, before manual enable overrides.
+
+2026-10-25 — Added independent outside-biome visibility for all floor types, defaulting rewards to biome-only and quest drops to cross-biome.
+
+2026-10-25 — Sparkle coin ESP also supports profitable Gimmiegold when its shiny is already shared, using the existing cached top ten and toggle. Floor visibility controls, incense eligibility and mode completion are unchanged.
 
 2026-10-24 — Starting-item announcement delay begins on the system hotspot message, not biome entry. Early unreporting Forest visitors contribute one inferred food as documented in [bird completion](../BIRD_COMPLETION.md).
 

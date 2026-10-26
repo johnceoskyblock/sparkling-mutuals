@@ -17,7 +17,8 @@ class SafariFeatureDefaultsTest {
         }
         for (key in listOf("progressHud", "missingPanel", "highlightBeeNests", "removeDarkness", "sparklingAlert", "sparklingPartyAnnouncer"))
             assertEquals("true", properties.getProperty(key), key)
-        for (key in listOf("countUniqueOnly", "catchCountPanel")) assertEquals("false", properties.getProperty(key), key)
+        assertEquals("true", properties.getProperty("countUniqueOnly"))
+        assertEquals("false", properties.getProperty("catchCountPanel"))
         assertEquals("1", properties.getProperty("showWhere"))
     }
 }

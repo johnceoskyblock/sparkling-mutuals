@@ -10,14 +10,14 @@ class SafariTicketSelectTest {
         val config = net.johnceo.sparklingmutuals.config.ConfigManager
         config.init(dir)
         assertTrue(config.autoSelectSafariTicket)
-        assertEquals(0, config.safariTicketPreference)
+        assertEquals(1, config.safariTicketPreference)
         val settings = net.johnceo.sparklingmutuals.config.SafariSettings()
         settings.safari.entry.autoSelectTicket = false
-        settings.safari.ticketPreference = 1
+        settings.safari.ticketPreference = 0
         settings.apply()
         config.init(dir)
         assertFalse(config.autoSelectSafariTicket)
-        assertEquals(1, config.safariTicketPreference)
+        assertEquals(0, config.safariTicketPreference)
         assertFalse(java.nio.file.Files.readString(dir.resolve("sparkling-mutuals.properties")).contains("hideyhoQuestClicks"))
     }
 

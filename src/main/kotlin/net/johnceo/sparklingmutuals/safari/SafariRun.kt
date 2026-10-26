@@ -55,18 +55,27 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
     fun sparklingBroadcast(raw: String, now: Long = System.currentTimeMillis()) {
         val match = RunTally.sparkling.matchEntire(raw) ?: return
         val species = SafariRoster.named(match.groupValues[2].trim())?.name ?: return
-        sparklingCaptures.capture(species, match.groupValues[1], broadcast = true, at = now)
+        confirmedSparklingCapture(species, match.groupValues[1], broadcast = true, at = now)
+    }
+    private fun confirmedSparklingCapture(species: String, player: String?, broadcast: Boolean, at: Long) {
+        if (!sparklingCaptures.capture(species, player, broadcast, at)) return
+        val biome = SafariRoster.named(species)?.biome ?: return
+        val retired = sparklingParticles.captured(biome, at)
+        net.johnceo.sparklingmutuals.safari.sparkling.SparklingEncounters.captured(species, retired)
     }
     private var liveBees = 0
     val beeNestCountKnown get() = foundNests > 0 && (nestSitesUnknown == 0 || nestsChecked)
     private val beePopulationAccountsForNests get() = beeNestCountKnown && count("Honeybug") + liveBees >= foundNests
-    val nestsResolved get() = nestsChecked || beePopulationAccountsForNests
+    val nestsResolved get() = nestsChecked || honeybugLocalCheck || beePopulationAccountsForNests
     private var honeybugLocalCheck = false
-    private fun refreshNestChecking() {
-        if (lastBiome == SafariBiome.FOREST || nestsChecked) honeybugLocalCheck = nestsResolved
+    private fun refreshNestChecking(renderConfirmed: Boolean = false) {
+        // Only a fresh render sample may establish population proof. Block-survey updates can
+        // otherwise mix a newly recorded catch with the previous scan's still-visible bee count.
+        if (lastBiome == SafariBiome.FOREST || nestsChecked)
+            honeybugLocalCheck = honeybugLocalCheck || nestsChecked || renderConfirmed && beePopulationAccountsForNests
         sparklingChecks.nestEvidence(honeybugLocalCheck)
     }
-    fun liveHoneybugs(amount: Int) { liveBees = amount; refreshNestChecking() }
+    fun liveHoneybugs(amount: Int) { liveBees = amount.coerceAtLeast(0); refreshNestChecking(renderConfirmed = true) }
     var hadFourIncense = false
         private set
     private var firstInventoryAt: Long? = null
@@ -86,7 +95,7 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
         sparklingChecks.inventory(stacks)
         sparklingChecks.startingCoins(resources.startingCount(FloorDropType.COIN))
         if (endedAt == null && firstInventoryAt != null) birds.startingInventory(stacks, now - firstInventoryAt!!)
-        if (stacks.filter { SafariRules.strip(it.first).trim() == "Soothing Incense" }.sumOf { it.second.coerceAtLeast(0) } >= 4)
+        if (personalCount("Doomspiral") == 0 && stacks.filter { SafariRules.strip(it.first).trim() == "Soothing Incense" }.sumOf { it.second.coerceAtLeast(0) } >= 4)
             hadFourIncense = true
     }
     var brokenMounds = 0
@@ -541,8 +550,9 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
     }
     fun observedCount(species: String) = observedCritters[species]?.size ?: 0
     fun record(catch: SafariCatch, now: Long = System.currentTimeMillis(), self: String? = null) {
-        if (catch.sparkling) sparklingCaptures.capture(catch.critter.name, if (catch.personal) self else catch.catcherName, broadcast = false, at = now)
+        if (catch.sparkling) confirmedSparklingCapture(catch.critter.name, if (catch.personal) self else catch.catcherName, broadcast = false, at = now)
         lastPopulationCapture[catch.critter.name] = now
+        if (self != null) localPlayer(self)
         catchEvents.add(catch)
         resources.capture(catch.critter.name)
         if (!catch.personal && catch.critter.biome !in visited) priorLootShare.add(catch.critter.biome)
@@ -558,6 +568,12 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
     }
     fun count(name: String) = counts[name] ?: 0
     fun personalCount(name: String) = personal[name] ?: 0
+    fun playerCount(species: String, player: String) = catches.count {
+        it.critter.name == species && (if (it.personal) localPlayerName else it.catcherName).equals(player, true)
+    }
+    fun catchers(biome: SafariBiome) = catches.filter { it.critter.biome == biome }
+        .mapNotNull { if (it.personal) localPlayerName else it.catcherName }.distinctBy { it.lowercase() }
+    val observedUniqueClears = mutableSetOf<SafariBiome>()
     fun elapsed(now: Long) = ((endedAt ?: now) - startedAt).coerceAtLeast(0)
     fun complete(critter: SafariCritter, unique: Boolean, fullClear: Boolean = false) = count(critter.name) >= critter.required(unique, fullClear)
     fun progress(critters: List<SafariCritter>, unique: Boolean, fullClear: Boolean = false) = critters.count { complete(it, unique, fullClear) }

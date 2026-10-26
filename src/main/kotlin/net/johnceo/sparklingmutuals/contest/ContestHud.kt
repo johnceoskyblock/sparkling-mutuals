@@ -30,10 +30,13 @@ object ContestHud {
         if (!ContestTracker.isActive()) return
         if (!SkyblockSidebar.inSkyblock(client)) return
 
+        val window = client.window
+        val bounds = ContestConfig.layoutFor(window.guiScaledWidth, window.guiScaledHeight)
+            .bounds(window.guiScaledWidth, window.guiScaledHeight, WIDTH, HEIGHT)
         renderAt(
             graphics,
-            ContestConfig.hudX,
-            ContestConfig.hudY,
+            bounds.x,
+            bounds.y,
             false
         )
     }
@@ -52,8 +55,10 @@ object ContestHud {
         y: Int,
         preview: Boolean
     ) {
-        val scale = ContestConfig.hudScale
         val client = Minecraft.getInstance()
+        val window = client.window
+        val scale = ContestConfig.layoutFor(window.guiScaledWidth, window.guiScaledHeight)
+            .effectiveScale(window.guiScaledWidth, window.guiScaledHeight, WIDTH, HEIGHT)
 
         graphics.pose().pushMatrix()
         graphics.pose().translate(x.toFloat(), y.toFloat())

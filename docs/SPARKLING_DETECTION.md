@@ -30,7 +30,9 @@ There is no player-distance/current-biome filter, but origins must be finite, Y 
 
 After the next name/skin scan, an unidentified location may show SPARKLING! / Critter Unknown locally. Unknown detections never send party chat; a party notice is eligible only after the species is identified. The world label and HUD retain last-seen coordinates through unloading/travel. Debug output identifies source=wax_on; source terminology does not appear in title/party text.
 
-Only an independent name/skin positive within three blocks retires an anonymous waypoint. It also clears its unknown banner. Known detections take priority in the scan and can send the one named notice for that species in the run. Unrelated catches/reports cannot identify an anonymous marker.
+An independent name/skin positive within three blocks retires an anonymous waypoint and clears its unknown banner. Known detections take priority in the scan and can send the one named notice for that species in the run. A confirmed Sparkling capture also clears existing anonymous particle locations in that species' biome: moving critters can leave several old particle points far from the eventual named detection. This cleanup does not assign a guessed species or a capture to those points. Other biomes and separately identified live detections remain intact; ordinary catches and biome reports do not clear particle sightings.
+
+The server's global Sparkling-catch message, personal capture and loot-share reward share the existing capture deduplication. The same capture clears stale presentation once, including the matching banner/queued notice. A second echo cannot erase a subsequently detected location. Particle-only activity in the captured biome is ignored for 1.5 seconds to absorb the final capture burst; subsequent activity can create a fresh waypoint, including at an old position.
 
 ### Notification controls and retention
 
@@ -88,7 +90,15 @@ Live checks remain pending for delayed skin updates, real-player exclusion, cros
 
 Only the actual `SPARKLING <Critter>! (<Biome> <Coordinates>)` detection notice uses the detection keyword in mod-authored party text. Lookup results use Shiny/Shinies, streak replies use shiny, and completion-time supply reminders use Shiny. Party-only achievement names and echoed downtime reasons replace sparkling/sparkle with shiny while their local wording remains unchanged. Command help lists `!since` and `!since unique`. Legacy incoming discovery-result headings remain recognized for compatibility.
 
+## Ordinary check ESP
+
+Automatic Sparkling checks do not create ordinary critter ESP or start a ten-second per-UUID linger. Removing those highlights does not disable scanning, retained UUID evidence, progress updates, detection alerts or actual Sparkling waypoints. Needed Wumpa/Doomspiral captures, uncaught Icy prerequisites for Wumpa, interaction/source helpers, and enabled profitable-shard highlighting retain their separate rules. Unique and Full Clear capture ESP is unchanged.
+
 ## Last updated
+
+2026-10-26 — Removed check-only ordinary ESP and per-UUID lifetime bookkeeping, including Driftling’s unlimited check highlight.
+
+2026-10-25 — Fixed persistent Unknown Sparkling rows after the confirmed Foxtrot capture. Capture cleanup clears same-biome anonymous trails, absorbs the final particle burst and deduplicates global/reward echoes while preserving other biomes and later sightings.
 
 2026-10-21 — Reserved party detection keywords for actual sightings; changed non-detection party wording without changing local text or API requests.
 

@@ -380,11 +380,10 @@ object SafariEsp {
                 }
             }
         }
-        val floor = SafariEspConfig.groups.getValue("floor")
         val incenseIds = SafariFloorDrops.state.incenseDropIds(dropPredictor.knownDrops)
         val selectedDrops = predictedDrops.filter { drop ->
             drop.actual == null && (0..2).all { client.level?.getEntity(drop.id + it)?.isRemoved == false } &&
-                SafariEspRules.visible(true, SafariFloorDrops.selected(drop, incenseIds), floor.onlyInBiome, playerBiome, drop.biome)
+                SafariEspRules.visible(true, SafariFloorDrops.selected(drop, incenseIds), SafariEspConfig.dropOnlyInBiome(drop.type), playerBiome, drop.biome)
         }
         val tiles = selectedDrops.map { it.marker() to SafariEspConfig.rgb(SafariEspConfig.dropColor(it.type!!)) }
         tiles.forEach { (tile, color) -> frame(AABB(tile.x.toDouble(), tile.y + 1.0, tile.z.toDouble(), tile.x + 1.0, tile.y + 1.0, tile.z + 1.0), color) }

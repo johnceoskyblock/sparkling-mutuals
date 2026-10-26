@@ -12,9 +12,11 @@ class SparklingParticleLocations {
             (this.x - x) * (this.x - x) + (this.y - y) * (this.y - y) + (this.z - z) * (this.z - z)
     }
     private val locations = mutableListOf<Location>()
+    private val quietUntil = mutableMapOf<SafariBiome, Long>()
     fun observe(inSafari: Boolean, waxOn: Boolean, x: Double, y: Double, z: Double, now: Long): Location? {
         if (!inSafari || !waxOn || !x.isFinite() || !y.isFinite() || !z.isFinite() || y !in 0.0..160.0) return null
         val biome = SafariEspRules.biomeAt(x, z) ?: return null
+        if (now < (quietUntil[biome] ?: Long.MIN_VALUE)) return null
         val old = locations.filter { it.biome == biome && it.distanceSquared(x, y, z) <= 9.0 }
             .minByOrNull { it.distanceSquared(x, y, z) }
         if (old != null) {
@@ -28,4 +30,12 @@ class SparklingParticleLocations {
     fun identify(x: Double, y: Double, z: Double): List<UUID> =
         locations.filter { it.distanceSquared(x, y, z) <= 9.0 }.onEach { it.identified = true }.map { it.id }
     fun unknown() = locations.filterNot { it.identified }
+    /** Moving critters leave anonymous trails; a confirmed catch clears the old trail in its biome. */
+    fun captured(biome: SafariBiome, now: Long): List<UUID> {
+        val retired = locations.filter { it.biome == biome && it.seenAt <= now }
+        locations.removeAll(retired.toSet())
+        // Ignore the short final particle burst, without permanently hiding future sightings.
+        quietUntil[biome] = now + 1500
+        return retired.map { it.id }
+    }
 }

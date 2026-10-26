@@ -11,6 +11,17 @@ object ContestConfig {
     var hudX = 10
     var hudY = 10
     var hudScale = 1.0f
+    val layout = net.johnceo.sparklingmutuals.hud.HudLayout(0f, 0f)
+    private var legacyLayout = true
+    fun layoutFor(width: Int, height: Int) = layout.also {
+        if (legacyLayout) {
+            it.x = hudX.toFloat() / width.coerceAtLeast(1)
+            it.y = hudY.toFloat() / height.coerceAtLeast(1)
+            it.scale = hudScale
+        }
+    }
+    fun editLayout(width: Int, height: Int) { layoutFor(width, height); legacyLayout = false }
+    fun resetLayout() { layout.load(FreshInstallDefaults.contest(), "contest"); legacyLayout = false }
 
     var trackContest = true
     var autoContestDowntime = true
@@ -30,6 +41,7 @@ object ContestConfig {
 
     private fun load() {
         Properties().apply {
+            if (!Files.exists(configPath)) putAll(FreshInstallDefaults.contest())
             if (Files.exists(configPath)) Files.newInputStream(configPath).use(::load)
 
             hudX = getProperty("hudX", "10").toIntOrNull() ?: 10
@@ -39,6 +51,8 @@ object ContestConfig {
                 ?.takeIf(Float::isFinite)
                 ?.coerceIn(0.15f, 2.0f)
                 ?: 1.0f
+            legacyLayout = !containsKey("hud.contest.x") || !containsKey("hud.contest.y")
+            layout.load(this, "contest")
 
             trackContest = getProperty("trackContest", "true").toBoolean()
             autoContestDowntime = getProperty("autoContestDowntime", "true").toBooleanStrictOrNull() ?: true
@@ -70,6 +84,7 @@ object ContestConfig {
             setProperty("hudX", hudX.toString())
             setProperty("hudY", hudY.toString())
             setProperty("hudScale", hudScale.toString())
+            if (!legacyLayout) layout.save(this, "contest")
             setProperty("trackContest", trackContest.toString())
             setProperty("autoContestDowntime", autoContestDowntime.toString())
             setProperty("contestWarnEnabled", contestWarnEnabled.toString())
