@@ -16,8 +16,28 @@ class RunTally {
     var lootShares = 0
     val party = linkedSetOf<String>()
     var ownSparklings = 0
+    var safariEssence = -1
+    var summaryShards = -1
+    var huntingXp = -1L
+    private var inSummary = false
+    var allTypesAt: Long? = null
+        private set
 
-    fun line(text: String, self: String) {
+    fun summaryLine(text: String): Boolean {
+        if (text == "SAFARI REWARD SUMMARY") { inSummary = true; return true }
+        if (!inSummary) return false
+        val match = summaryReward.matchEntire(text) ?: return false
+        val amount = match.groupValues[1].replace(",", "").toLongOrNull() ?: return false
+        when (match.groupValues[2]) {
+            "Shards" -> summaryShards = amount.coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
+            "Safari Essence" -> safariEssence = amount.coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
+            "Hunting Exp" -> huntingXp = amount
+        }
+        return true
+    }
+
+    fun line(text: String, self: String, at: Long? = null) {
+        if (summaryLine(text)) return
         if (text == MACAW_BONUS) { feathers++; return }
         sparkling.matchEntire(text)?.let { match ->
             val player = match.groupValues[1]
@@ -28,6 +48,7 @@ class RunTally {
         val catch = SafariCatch.parse(text) ?: return
         val critter = catch.critter.name
         party += critter
+        if (party.size == net.johnceo.sparklingmutuals.safari.SafariRoster.all.size && allTypesAt == null && at != null) allTypesAt = at
         if (catch.personal) { caught++; catches.merge(critter, 1, Int::plus) } else lootShares++
         if (critter == "Macaw") macaws++
         if ("Shard" in text) shards.merge(critter, quantity.find(text)?.groupValues?.get(1)?.toInt() ?: 1, Int::plus)
@@ -35,6 +56,7 @@ class RunTally {
     }
 
     companion object {
+        private val summaryReward = Regex("^\\+([0-9,]+) (Shards|Safari Essence|Hunting Exp)$")
         const val MACAW_BONUS = "MACAW! You found a bonus Rainbow Feather!"
         /** "gained 2x Cavernfish Shard": the quantity, read off the shard itself. */
         val quantity = Regex("""(\d+)x [A-Za-z' ]+? Shard""")

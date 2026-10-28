@@ -35,12 +35,23 @@ class RunRecord(
     var splits: MutableMap<String, Long> = linkedMapOf(),
     /** Rebuilt from old logs: only observable splits/counts, with estimates explicitly marked. */
     var imported: Boolean = false,
-    /** Shards and Rainbow Feathers at bazaar prices when the run ended; -1 until prices load. */
+    /** Shards, Rainbow Feathers and known summary essence at Bazaar prices; -1 until prices load. */
     var coins: Long = -1,
     /** Original ticket timestamp helps match a hotspot-based import to its live-recorded run. */
     var ticketAt: Long = 0,
     var coinsEstimated: Boolean = false,
     var modeEstimated: Boolean = false,
+    /** Actual end-of-run summary amounts; negative means absent from the available evidence. */
+    var safariEssence: Int = -1,
+    var summaryShards: Int = -1,
+    var huntingXp: Long = -1,
+    var hotspot: String = "",
+    /** Essence already included in coins, or negative until a cached essence quote is available. */
+    var essenceCoins: Long = -1,
+    /** Live confirmation that bird spawning was checked; null means older history did not record this proof. */
+    var macawChecked: Boolean? = null,
+    /** First time all 37 types were caught or loot-shared, measured from run start. */
+    var allTypesMillis: Long = -1,
 ) {
     fun hasSparkling() = sparklings.isNotEmpty()
 }
@@ -55,4 +66,7 @@ class SparklingEntry(
     var tickets: Int? = null,
     /** The first occurrence in available logs is an estimate, not a historical API discovery lookup. */
     var uniqueEstimated: Boolean = false,
+    /** Original log location; optional for older/live entries and revalidated before opening. */
+    var logFile: String = "",
+    var logLine: Int = 0,
 )

@@ -127,7 +127,7 @@ class SafariPersonalBests {
     }
     fun recordUnique(biome: SafariBiome, run: SafariRun, now: Long): String? {
         if (run.endedAt != null || now < run.startedAt || biome in run.uniqueBiomeClears ||
-            biome.critters.any { run.personalCount(it.name) == 0 }) return null
+            biome.critters.any { run.personalCount(it.name) == 0 && !run.uniqueUnavailable(it.name) }) return null
         run.uniqueBiomeClears.add(biome)
         return recordBiome(biome, run, now, BiomePbType.UNIQUE)
     }

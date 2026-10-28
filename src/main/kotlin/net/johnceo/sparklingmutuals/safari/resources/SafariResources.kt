@@ -32,14 +32,6 @@ data class StartingResourceReminder(val type: FloorDropType, val quantity: Int, 
 
 /** Shared item parser; new runs broadcast compact starting quantities, later reminders are local titles. */
 data class StartingResourceNotice(val items: List<StartingResourceReminder>) {
-    internal fun namedNeeds(party: PartySparklingState, nameOf: (String) -> String?): List<Pair<List<String>, List<String>>>? {
-        val species = items.flatMap { it.missing }.distinct()
-        val missing = species.associateWith { party.missingMembers(it).sorted() }
-        val names = missing.values.flatten().distinct().associateWith { nameOf(it) ?: return null }
-        return species.groupBy { missing.getValue(it) }.map { (members, critters) ->
-            members.map { names.getValue(it) } to critters
-        }
-    }
     fun startingTexts(): List<String> = listOf("[SM] Starting items: " +
         items.joinToString("; ") { "${it.quantity}x ${it.type.label}" })
     val text get() = "[SM] Unused floor drops: " + items.groupBy { it.destination }.values.joinToString("; ") { group ->

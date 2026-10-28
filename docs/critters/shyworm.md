@@ -49,7 +49,7 @@ None. No species-specific resource or structure gate is used.
 | Ordinary ESP | Unique: until first shared capture. Full Clear: eligible uncaught models. Sparkling: no ordinary model ESP solely for automatic checking. Settings and model validity still apply. |
 | Source helpers | Hidden height/path/rest timer are estimates. Connected body-piece contact estimates stay separate from critter identity; see [capture guide](../CAPTURE_SHOT_RECORDING.md). |
 | Automatic completion announcements | Shared local whole-biome/report-readiness gates in [mode rules](../../SAFARI_LOGIC.md). |
-| PB eligibility | Personal Unique: own catch of every species. Full Clear: personal captures/local proof. Party Unique: separate shared-capture/absence predicate; progress alone is insufficient. |
+| PB eligibility | Personal Unique: own catch of each spawned species; proven zero-spawn types exempt. Full Clear: personal captures/local proof. Party Unique: separate shared-capture/absence predicate; progress alone is insufficient. |
 
 ## Party reports and late entry
 
@@ -85,7 +85,22 @@ Independent live body-contact validation remains pending; supplied clip/focused 
 
 Population guarantees and capsule success/escape claims from supplied notes were not live revalidated; see [audit D2](../IMPLEMENTATION_AUDIT.md#d2).
 
+## Captured model cleanup
+
+Underground or unpaired heads do not count as live remaining population. Surface evidence is required before retaining a last-seen location. Confirmed captures retire an associated UUID family. If the capture cannot identify a UUID, uncertain absent/hidden locations are discarded through the following packet-settling scans; this is visual cleanup, not an inferred capture. A surviving worm can be observed again when it resurfaces, including under the same UUID. Personal and loot-share captures both trigger cleanup. Capture-transition observations do not inflate required captures during the 2.5-second settling window.
+
 ## Last updated
+
+2026-10-28 - Fixed late-entry model ghosts and capture cleanup.
+
+
+2026-10-28 — Suppress retained last-seen markers after confirmed capture completion. Body-segment hits can identify a head only through an unambiguous bounded component; captures retire replacement UUID aliases, and stale captured models cannot recreate markers. Uncaught cooldown markers still persist.
+
+2026-10-27 — Personal Unique PBs exempt positively proven zero-spawn types.
+
+2026-10-27 — Entity disappearance now retains a visual-only last-seen box at the observed surface height, without an eight-second expiry. The same UUID returning or one unambiguous nearby replacement surface UUID replaces the marker with live ESP. An associated confirmed capture removes it, and run/world resets clear all retained markers. Existing mode and biome visibility settings still apply.
+
+2026-10-27 — Underground loaded Shyworms retain their ESP at the previously observed surface height after name-tag expiry. This visual fallback adds no completion/contact evidence. Capture retirement, unloading and run resets remove the marker.
 
 2026-10-26 — Removed ordinary ESP added solely for automatic Sparkling checks and its per-UUID linger. Capture/source and profitable-highlight exceptions remain separate.
 

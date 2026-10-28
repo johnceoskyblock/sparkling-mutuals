@@ -7,8 +7,8 @@ import net.johnceo.sparklingmutuals.safari.completion.SafariFullClear
 object CommandHelp {
     private val party = listOf(
         PartyCommandKind.MUTUALS to "Shared sparkling discoveries",
-        PartyCommandKind.MISSING to "Missing sparkling discoveries",
-        PartyCommandKind.TICKETS to "Safari ticket counts",
+        PartyCommandKind.MISSING to "Your missing sparkling discoveries (optional IGN for another player)",
+        PartyCommandKind.TICKETS to "Your Safari ticket counts (optional IGN; !ticket also works)",
         PartyCommandKind.SINCE_SPARKLING to "Recorded runs since your last credited party sparkling",
         PartyCommandKind.SINCE_UNIQUE to "Recorded runs since your last credited unique party sparkling",
         PartyCommandKind.PB_DOOM to "Solo Doomspiral PB (add duo, IGN, or IGN duo)",
@@ -24,8 +24,8 @@ object CommandHelp {
         "/sm" to "Settings",
         "/sm help" to "List local and party commands for the active mode",
         "/sm gui" to "Move and resize HUDs",
-        "/rates" to "Expected runs per Sparkling from cached party checks (hover for details)",
-        "/profitablecritters" to "Top ten critters by estimated coins per run (cached prices)",
+        "/rates" to "Expected runs per Sparkling for the active mode (hover for details; cached data)",
+        "/profits <basic|economy|premium|first-class>" to "Top ten by shards + essence/run; /profit also works (cached prices)",
         "/captures" to "Current or last run captures",
         "/sparkling [IGN|party|IGNs]" to "Sparkling card, or shared sparklings",
         "/sm history" to "Runs, bests, sparklings, achievements, stats",
@@ -40,7 +40,7 @@ object CommandHelp {
     )
     /** Party chat words other mods' users can say that this mod reacts to, without a lookup reply. */
     private val partyWords = listOf("!dt [reason]" to "Downtime after this run; say r when ready")
-    private fun available(mode: SafariMode) = party.map { (kind, description) -> PartyCommand(kind, if (kind in listOf(PartyCommandKind.MISSING, PartyCommandKind.TICKETS)) "<IGN>" else "") to description }
+    private fun available(mode: SafariMode) = party.map { (kind, description) -> PartyCommand(kind, if (kind in listOf(PartyCommandKind.MISSING, PartyCommandKind.TICKETS)) "[IGN]" else "") to description }
         .filter { it.first.allowed(mode) }
     fun localLines(mode: SafariMode = SafariFullClear.mode) = listOf("§6Sparkling Mutuals — Commands", "§eParty chat commands") +
         available(mode).map { (command, description) -> "§6${command.text} §7— $description" } +

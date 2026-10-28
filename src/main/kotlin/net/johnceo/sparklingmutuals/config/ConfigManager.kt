@@ -15,17 +15,22 @@ object ConfigManager {
     var highlightTeammates = true
     var showTeammateNames = true
     var partyCommandsEnabled = true
+    var announceStartingItems = false
     var useCloudApi = true
     var fullClearMode = false
     var sparklingMode = false
     var sparklingProfitableShardEsp = true
     var profitableShardEsp = true
+    var uniqueHotspotAnnouncer = false
+    var fullClearHotspotAnnouncer = false
+    var sparklingHotspotAnnouncer = false
     var timesaveOnly = true
     var warpAlertsEnabled = false
     var warpDelaySeconds = 25
     var hideyhoAutoAccept = true
     var autoSelectSafariTicket = true
     var safariTicketPreference = 0
+    var profitsTicketMode = 0
     var hideyhoInsideOutside = true
     var hideHauntedPaintings = true
     var shinyDetection = true
@@ -39,6 +44,9 @@ object ConfigManager {
     var showSnooperWalls = true
     var showMoundStats = false
     var removeDarkness = true
+    var clearWater = true
+    var waterOpacity = 60
+        set(value) { field = value.coerceIn(0, 100) }
     var sparklingAlert = true
     var sparklingSound = "minecraft:block.amethyst_block.chime"
     var sparklingSoundVolume = 100
@@ -72,10 +80,10 @@ object ConfigManager {
     var capsuleHideDistance = 2f
     var showWhere = 1
     val personalBests = SafariPersonalBests()
-    private val flags = mapOf(::highlightTeammates to true, ::showTeammateNames to true, ::partyCommandsEnabled to true, ::useCloudApi to true, ::fullClearMode to false, ::sparklingMode to false, ::sparklingProfitableShardEsp to true, ::profitableShardEsp to true, ::timesaveOnly to true, ::warpAlertsEnabled to false,
+    private val flags = mapOf(::announceStartingItems to false, ::uniqueHotspotAnnouncer to false, ::fullClearHotspotAnnouncer to false, ::sparklingHotspotAnnouncer to false, ::highlightTeammates to true, ::showTeammateNames to true, ::partyCommandsEnabled to true, ::useCloudApi to true, ::fullClearMode to false, ::sparklingMode to false, ::sparklingProfitableShardEsp to true, ::profitableShardEsp to true, ::timesaveOnly to true, ::warpAlertsEnabled to false,
         ::hideyhoAutoAccept to true, ::autoSelectSafariTicket to true, ::hideyhoInsideOutside to true, ::hideHauntedPaintings to true, ::shinyDetection to true,
         ::progressHud to true, ::countUniqueOnly to false, ::missingPanel to true,
-        ::highlightBeeNests to true, ::removeDarkness to true, ::sparklingAlert to true,
+        ::highlightBeeNests to true, ::removeDarkness to true, ::clearWater to true, ::sparklingAlert to true,
         ::sparklingPartyAnnouncer to true, ::catchCountPanel to false, ::autoClicker to true, ::candleHitbox to true, ::holdManagerOnKick to true, ::downtimeCommand to true, ::honeyHives to true, ::phantomleafSolver to true, ::runHistory to true, ::achievements to true, ::achievementSound to true, ::achievementsToParty to false, ::runCoinsInstaSell to false,
         ::hideCaptureChat to true, ::hideGroundCapsules to true, ::hideFlyingCapsules to true,
         ::experimentalCapsulePath to true, ::showCapsuleGuideThroughTerrain to true, ::gemzieGemAutoSelect to true,
@@ -100,7 +108,9 @@ object ConfigManager {
         flags.forEach { (property, default) -> property.set(properties.getProperty(property.name)?.toBooleanStrictOrNull() ?: default) }
         warpDelaySeconds = properties.getProperty("warpDelaySeconds", "25").toIntOrNull()?.coerceIn(1, 86400) ?: 25
         safariTicketPreference = properties.getProperty("safariTicketPreference")?.toIntOrNull()?.takeIf { it in 0..1 } ?: 0
+        profitsTicketMode = properties.getProperty("profitsTicketMode")?.toIntOrNull()?.takeIf { it in 0..3 } ?: 0
         showWhere = properties.getProperty("showWhere")?.toIntOrNull()?.takeIf { it in 0..2 } ?: 1
+        waterOpacity = properties.getProperty("waterOpacity")?.toIntOrNull() ?: 60
         capsuleHideDistance = validCapsuleDistance(properties.getProperty("capsuleHideDistance")?.toFloatOrNull())
         capsulePathWidth = validCapsulePathWidth(properties.getProperty("capsulePathWidth")?.toFloatOrNull())
         SafariHud.load(properties)
@@ -125,7 +135,9 @@ object ConfigManager {
             flags.forEach { (property, _) -> setProperty(property.name, property.get().toString()) }
             setProperty("warpDelaySeconds", warpDelaySeconds.toString())
             setProperty("safariTicketPreference", safariTicketPreference.coerceIn(0, 1).toString())
+            setProperty("profitsTicketMode", profitsTicketMode.coerceIn(0, 3).toString())
             setProperty("showWhere", showWhere.coerceIn(0, 2).toString())
+            setProperty("waterOpacity", waterOpacity.toString())
             setProperty("capsuleHideDistance", validCapsuleDistance(capsuleHideDistance).toString())
             setProperty("capsulePathWidth", validCapsulePathWidth(capsulePathWidth).toString())
             SafariHud.save(this)

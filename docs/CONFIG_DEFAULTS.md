@@ -126,6 +126,13 @@ Startup normalizes legacy `pb.*` keys from the general file and the earlier `Spa
 
 ## Last updated
 
+2026-10-28 - Water opacity defaults to 60%. Announce starting quest items defaults off. Saved settings take precedence over these defaults.
+
+
+2026-10-27 — Shortened config descriptions, removed repeated help for obvious controls, and renamed the profitable ESP label. The connect message names each mode without explaining it. Saved keys, defaults and behavior are unchanged.
+
+2026-10-27 — Renamed Party commands to Party Interactions and added an independent Announce starting quest items toggle, enabled by default for existing and fresh installs unless explicitly disabled. ESP now owns all floor-drop color controls and the persisted party member highlight/name color (green by default); the duplicate bulk floor-drop color editor in Customization was removed without changing saved colors.
+
 2026-10-26 — Bundled sanitized author preferences for fresh installations only. Added adaptive HUD reference sizing and normalized contest placements; preserved existing config files and legacy layout behavior.
 
 2026-10-25 — Replaced the shared floor biome restriction with independent per-type visibility switches. Quest drops default to cross-biome visibility; XP/Essence/Shard defaults to current-biome only.

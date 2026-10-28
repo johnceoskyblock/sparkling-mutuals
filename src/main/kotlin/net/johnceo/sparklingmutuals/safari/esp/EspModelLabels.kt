@@ -4,6 +4,7 @@ data class EspModelLabel(val id: java.util.UUID, val species: String, val distan
 class EspModelLabels {
     private data class Binding(val species: String, val label: java.util.UUID, var visible: Boolean, var seenAt: Long)
     private val bindings = mutableMapOf<java.util.UUID, Binding>()
+    private val missingNearby = mutableSetOf<java.util.UUID>()
     /** Once paired, retain label identity instead of adopting another nearby critter's name tag. */
     fun observe(id: java.util.UUID, species: String, labels: List<EspModelLabel>, now: Long) {
         val nearby = labels.filter { it.species == species && it.distanceSquared in 0.0..9.0 }
@@ -14,12 +15,28 @@ class EspModelLabels {
         nearby.firstOrNull { it.id == binding.label && (!binding.visible || it.visible) }?.let {
             binding.visible = binding.visible || it.visible
             binding.seenAt = now
+            missingNearby.remove(id)
         }
+    }
+    /** Nearby loss is evidence against a leftover model; distant tag unloading is not. */
+    fun observeRange(id: java.util.UUID, species: String, distanceSquared: Double, now: Long) {
+        if (species == "Chuckwalla" && distanceSquared <= 32.0 * 32 &&
+            label(id) != null && !current(id, now)) missingNearby.add(id)
+    }
+    /** Visual fallback only: never supplies capture, contact or completion evidence. */
+    fun visualCurrent(id: java.util.UUID, species: String, distanceSquared: Double, now: Long,
+        hiddenHeight: Double? = null): Boolean = when (species) {
+        "Chuckwalla" -> SafariEspRules.chuckwallaCurrent(label(id) != null, current(id, now), visible(id)) ||
+            distanceSquared > 32.0 * 32 && id !in missingNearby
+        "Shyworm" -> hiddenHeight != null || current(id, now)
+        else -> current(id, now)
     }
     // Unknown models remain conservative; a known label gets four scan intervals of packet grace.
     fun current(id: java.util.UUID, now: Long) = bindings[id]?.let { now - it.seenAt in 0..1000 } ?: true
+    /** Completion cannot treat the legacy unknown-label fallback as positive evidence. */
+    fun confirmed(id: java.util.UUID, now: Long) = label(id) != null && current(id, now)
     fun visible(id: java.util.UUID) = bindings[id]?.visible == true
     fun label(id: java.util.UUID) = bindings[id]?.label
-    fun release(id: java.util.UUID) { bindings.remove(id) }
-    fun reset() { bindings.clear() }
+    fun release(id: java.util.UUID) { bindings.remove(id); missingNearby.remove(id) }
+    fun reset() { bindings.clear(); missingNearby.clear() }
 }

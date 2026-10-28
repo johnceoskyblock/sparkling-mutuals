@@ -1,6 +1,12 @@
 # Sparkling rate estimate
 
-`/rates` estimates the party's average Sparkling-mode check opportunities per run using cached discoveries. It works as a local command in any mode without switching modes or changing completion requirements.
+`/rates` estimates check opportunities for the active Sparkle, Unique or Full Clear mode. It is local only and does not change modes or completion requirements. Hover shows the selected mode and calculation breakdown.
+
+## Mode behavior
+
+- **Sparkle:** retain the original needed-biome, passive-scan and needed-manual-check rules below. A species needs checking if at least one party member lacks its shiny discovery.
+- **Unique:** visit every biome and count incidental passive/boat detections. For manual species already shared by everyone, count one check to obtain the required unique, capped by the species average rather than inventing a guaranteed spawn. If someone needs its shiny, count its full average instead. If any bird shiny is needed, count all three bird averages; otherwise count one per bird type, subject to the same cap. These are minimum planned encounters; random bird feeding and multi-critter sources may reveal additional critters.
+- **Full Clear:** count every species using Full Party averages, regardless of discoveries. No cached party discovery data is required for this mode. Boat species are included once, not again in biome totals.
 
 Example when every species needs checking:
 
@@ -12,7 +18,7 @@ Both numbers display to two decimal places, but the calculation uses unrounded a
 
 ## Source and baseline
 
-Use **Critters Per Run!A3:A42 and C3:C42** from the user-supplied `Expected Runs for Diamond Emblem.xlsx` and `Expected Runs for Diamond Emblem (1).xlsx`. Both workbooks have identical **Lazy Party** averages. Their sum is 144.994135774 expected critters per run, reproducing the supplied 14.12 baseline. The Full Party column totals 149.435288032 and gives 13.70 runs; it remains the input for `/profitablecritters`, not this command.
+Use **Critters Per Run!A3:A42 and C3:C42** from the user-supplied `Expected Runs for Diamond Emblem.xlsx` and `Expected Runs for Diamond Emblem (1).xlsx` for Sparkle and Unique planning. Both workbooks have identical Lazy Party averages. Counting all of these yields 144.994135774 expected critters per run, or 14.12 runs. Full Clear uses column B Full Party averages: 149.435288032 checks and 13.70 runs. The Full Party column is also the source for `/profits`.
 
 Both average sets are bundled in [average_critter_spawns.json](../src/main/resources/assets/sparkling-mutuals/data/average_critter_spawns.json). The spreadsheets are not needed at runtime. These are expected check counts, not actual current entities, guaranteed spawns or capture quotas. Do not multiply this count by the 1.5025 shard-yield assumption used for profitable critters.
 
@@ -49,7 +55,7 @@ With all discoveries shared, no biome requires entry, but the six boat detection
 
 ## Cache and network behavior
 
-Read only the currently verified party roster and retained per-member discovery cache. Do not call `withPartyInfo`, a profile loader, a cache initializer, Bazaar refresh, or any HTTP method. If the roster is unknown or any member lacks a baseline, show a local unavailable-data message instead of guessing or starting requests. Accepted no-discovery profiles are valid zero-discovery baselines, as with mode requirements.
+Sparkle and Unique read only the currently verified party roster and retained per-member discovery cache. Full Clear skips discovery/roster lookup entirely. Do not call `withPartyInfo`, a profile loader, a cache initializer, Bazaar refresh, or any HTTP method. For modes requiring discoveries, unknown rosters or missing baselines show a local unavailable-data message. Accepted no-discovery profiles are valid zero-discovery baselines, as with mode requirements.
 
 Adding/removing members and locally credited catches affect the next estimate through existing cache updates. There is no stored or periodically polled rate result. No party message is sent.
 
@@ -58,6 +64,8 @@ Adding/removing members and locally credited catches affect the next estimate th
 Automated coverage checks the full 14.12 baseline, category separation, the six boat exceptions, omission of completed biomes and shared manual sources, grouped bird spawning, unavailable party data and two-decimal formatting. Live checks: run in a party with loaded baselines, hover for the breakdown, change party membership or catch a needed Sparkling and run again, and confirm the command itself adds no fetches.
 
 ## Last updated
+
+2026-10-27 — `/rates` now follows the active mode: original filtered Sparkle plan, all-biome Unique plan with one shared manual encounter, or all Full Party spawns in Full Clear. Hover identifies the mode. No extra API requests.
 
 2026-10-25 — Renamed the local rate command to `/rates`; no new API requests. `/profitablecritters` now ranks ten results by estimated coins per run.
 

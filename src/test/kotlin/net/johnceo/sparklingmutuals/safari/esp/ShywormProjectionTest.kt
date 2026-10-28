@@ -160,17 +160,71 @@ class ShywormProjectionTest {
         p.reconcile(3250)
         assertNull(p.timer(id, 3250))
     }
-    @Test fun `unloading and run reset remove projection and timer state`() {
+    @Test fun `unloading retains cooldown marker until same UUID returns capture or run reset`() {
         val p = ShywormProjection()
         p.observe(id, -100.0, 50.0, 20.0, true, 0)
         p.chat("The Shyworm hid back into the ground.", 250)
         p.observe(id, -100.0, 1.0, 20.0, false, 500); p.reconcile(500)
         assertNotNull(p.timer(id, 500))
         p.retain(emptySet())
-        assertNull(p.hiddenHeight(id)); assertNull(p.timer(id, 750))
+        assertEquals(ShywormMarker(id, -100.0, 50.0, 20.0), p.missingMarkers().single())
+        p.reconcile(20000)
+        assertEquals(1, p.missingMarkers().size) // No expiry at the end of the eight-second rest.
+        p.observe(id, -100.0, 50.0, 20.0, true, 20250)
+        assertTrue(p.missingMarkers().isEmpty())
+        p.retain(emptySet())
+        p.caught(id)
+        assertTrue(p.missingMarkers().isEmpty())
+        assertNull(p.hiddenHeight(id))
         p.reset()
         p.observe(id, -100.0, 1.0, 20.0, false, 1000); p.reconcile(1000)
         assertNull(p.hiddenHeight(id)); assertNull(p.timer(id, 1000)); assertNull(p.path(id, 1000))
+    }
+    @Test fun `a unique nearby replacement UUID removes only its own retained marker`() {
+        val p = ShywormProjection()
+        val other = UUID.randomUUID()
+        p.observe(id, -100.0, 50.0, 20.0, true, 0)
+        p.observe(other, -120.0, 50.0, 20.0, true, 0)
+        p.retain(emptySet())
+        p.observe(UUID.randomUUID(), -100.0, 50.0, 20.0, true, 10000)
+        assertEquals(listOf(other), p.missingMarkers().map { it.id })
+        p.reset()
+        assertTrue(p.missingMarkers().isEmpty())
+    }
+    @Test fun `a captured worm cannot return as a stale model or a replacement UUID marker`() {
+        val p=ShywormProjection(); val replacement=UUID.randomUUID()
+        p.observe(id,-100.0,50.0,20.0,true,0)
+        p.retain(emptySet())
+        p.observe(replacement,-100.0,50.0,20.0,true,10000)
+        p.retain(emptySet())
+        assertEquals(listOf(replacement),p.missingMarkers().map { it.id })
+        p.caught(id)
+        assertTrue(p.missingMarkers().isEmpty())
+        p.observe(id,-100.0,50.0,20.0,true,11000)
+        p.observe(replacement,-100.0,50.0,20.0,true,11000)
+        p.retain(emptySet())
+        assertTrue(p.missingMarkers().isEmpty())
+        p.reset()
+        p.observe(replacement,-100.0,50.0,20.0,true,12000)
+        p.retain(emptySet())
+        assertEquals(1,p.missingMarkers().size)
+    }
+    @Test fun `body hits resolve only an unambiguous connected Shyworm head`() {
+        val head=UUID.randomUUID();val body=UUID.randomUUID();val tail=UUID.randomUUID();val other=UUID.randomUUID()
+        val parts=listOf(ShywormPart(head,0.0,50.0,0.0,true),ShywormPart(body,1.0,50.0,0.0,false),
+            ShywormPart(tail,2.0,50.0,0.0,false),ShywormPart(other,20.0,50.0,0.0,true))
+        assertEquals(head,ShywormProjection.headForPart(tail,parts))
+        assertNull(ShywormProjection.headForPart(UUID.randomUUID(),parts))
+        assertNull(ShywormProjection.headForPart(tail,parts+ShywormPart(UUID.randomUUID(),3.0,50.0,0.0,true)))
+        assertNull(ShywormProjection.headForPart(tail,parts.filterNot { it.id==head }))
+    }
+    @Test fun `confirmed full capture proof suppresses old markers while an uncaught remainder does not`() {
+        val run=SafariRun(0)
+        repeat(7) { run.record(net.johnceo.sparklingmutuals.safari.SafariCatch(SafariRoster.named("Shyworm")!!)) }
+        run.updateCaptureEvidence(net.johnceo.sparklingmutuals.safari.SafariBiome.CAVERN,emptySet(),allWallsChecked=false)
+        assertTrue(run.captureComplete("Shyworm"))
+        run.updateCaptureEvidence(net.johnceo.sparklingmutuals.safari.SafariBiome.CAVERN,setOf("Shyworm"),allWallsChecked=false)
+        assertFalse(run.captureComplete("Shyworm"))
     }
     @Test fun `next clockwise side is warned before corner emergence`() {
         val p = ShywormProjection()
@@ -219,5 +273,25 @@ class ShywormProjectionTest {
         assertEquals(1.0, next.maxX - next.minX, .001); assertEquals(7.0, next.maxZ - next.minZ, .001)
         p.observe(id, -99.0, 48.0, 20.0, true, 500)
         assertEquals(next.height, p.path(id, 500)!!.height)
+    }
+    @Test fun `unassociated catch drops uncertain markers and permits real cooldown return`() {
+        val p=ShywormProjection(); val live=UUID.randomUUID()
+        p.observe(id,-100.0,50.0,20.0,true,0)
+        p.observe(live,-120.0,50.0,20.0,true,0)
+        p.retain(setOf(live))
+        assertEquals(1,p.missingMarkers().size)
+        p.unassociatedCapture(1000)
+        assertTrue(p.missingMarkers().isEmpty())
+        p.retain(emptySet())
+        p.reconcileCapture(1250,emptySet())
+        assertTrue(p.missingMarkers().isEmpty())
+        p.observe(id,-100.0,50.0,20.0,true,3000)
+        p.retain(emptySet())
+        p.reconcileCapture(3000,emptySet())
+        assertEquals(listOf(id),p.missingMarkers().map { it.id })
+        p.reset()
+        p.observe(id,-100.0,1.0,20.0,false,4000)
+        p.retain(emptySet())
+        assertTrue(p.missingMarkers().isEmpty())
     }
 }

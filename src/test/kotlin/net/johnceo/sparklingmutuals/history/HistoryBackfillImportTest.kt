@@ -16,12 +16,51 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 
 class HistoryBackfillImportTest {
+    @Test fun `file imports verify owner skip foreign and unidentified logs and dedupe copied archives`() {
+        val owned = listOf(line("13:00:00", ticket), line("13:00:01", capture), line("13:01:00", "SAFARI REWARD SUMMARY")).joinToString("\n")
+        Files.writeString(dir.resolve("2026-10-10-1.log"), owned)
+        Files.writeString(dir.resolve("2026-10-10-2.log"), owned.replace("Setting user: Local", "Setting user: Other"))
+        Files.writeString(dir.resolve("2026-10-10-3.log"), owned.lineSequence().filterNot { "Setting user:" in it }.joinToString("\n"))
+        Files.writeString(dir.resolve("2026-10-10-4.log"), owned)
+        val result = LogImporter.read(dir, "Local").join()
+        assertEquals(2, result.skippedAccounts)
+        assertTrue(result.failures.isEmpty())
+        assertEquals(1, result.runs.size)
+        assertEquals(1, result.runs.single().caught)
+        val saved = mutableListOf<RunRecord>()
+        assertEquals(1, HistoryMerge.merge(saved, result.runs))
+        assertEquals(0, HistoryMerge.merge(saved, LogImporter.read(dir, "Local").join().runs))
+    }
+    @Test fun `modern log prefixes preserve exact summary rewards observed mode hotspot and reported split time`() {
+        val parser = parse(line("12:59:00", "[SM] Unique run mode on.", "[Render thread/INFO] (Minecraft) [System] [CHAT]"),
+            line("13:00:00", ticket), line("13:00:02", "HOTSPOT! Your Hunting Hotspot is the Haunted Biome!"),
+            line("13:00:03", capture), line("13:00:45", "Party > Friend: fd"),
+            line("13:00:50", "Party > [VIP+] Friend: Cavern completed in 0m 45.25s! (1/4)"),
+            line("13:01:00", "SAFARI REWARD SUMMARY"), line("13:01:01", "+2 Shards"),
+            line("13:01:01", "+350 Safari Essence"), line("13:01:02", "+239,781 Hunting Exp"))
+        val run = parser.runs.single()
+        assertEquals("UNIQUE", run.mode); assertFalse(run.modeEstimated)
+        assertEquals("Haunted", run.hotspot)
+        assertEquals(2, run.summaryShards); assertEquals(350, run.safariEssence); assertEquals(239781L, run.huntingXp)
+        assertEquals(45250L, run.splits["Cavern"])
+        assertEquals(43000L, run.splits["Forest"])
+    }
+    @Test fun `import keeps time of 37th type separately from summary time`() {
+        val lines = mutableListOf(line("13:00:00",ticket))
+        net.johnceo.sparklingmutuals.safari.SafariRoster.all.forEachIndexed { index, critter ->
+            lines += line("13:00:%02d".format(index+1),"CAPTURE! You caught a ${critter.name} and gained 1x ${critter.name} Shard!")
+        }
+        lines += line("13:10:00","SAFARI REWARD SUMMARY")
+        val run = parse(*lines.toTypedArray()).runs.single()
+        assertEquals(37000L,run.allTypesMillis); assertEquals(600000L,run.length)
+    }
     @TempDir lateinit var dir: Path
     private val day = LocalDate.of(2026, 10, 10)
     private val ticket = "[NPC] Safari Manager: Looks good to me. Have fun out there!"
     private val capture = "CAPTURE! You caught a Cavernfish and gained 2x Cavernfish Shard!"
     private fun at(h: Int, m: Int, s: Int = 0) = day.atTime(h,m,s).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
-    private fun line(time: String, body: String, prefix: String = "[Render thread/INFO] [System] [CHAT]") = "[$time] $prefix $body"
+    private fun line(time: String, body: String, prefix: String = "[Render thread/INFO] [System] [CHAT]") =
+        "[$time] [Render thread/INFO] Setting user: Local\n[$time] $prefix $body"
     private fun parse(vararg lines: String) = LogImporter.Parser("Local").apply { read(lines.joinToString("\n").reader().buffered(), day) }
 
     @Test fun `HTML prefix variants and found broadcasts rebuild both histories with summary duration`() {
@@ -74,7 +113,7 @@ class HistoryBackfillImportTest {
         Files.writeString(dir.resolve("2026-10-10-1.log"), listOf(line("13:00:00", ticket),line("13:00:01",capture),line("13:01:00","SAFARI REWARD SUMMARY")).joinToString("\n"))
         GZIPOutputStream(Files.newOutputStream(dir.resolve("2026-10-10-2.log.gz"))).bufferedWriter().use { it.write(listOf(line("14:00:00",ticket),line("14:00:01",capture),line("14:01:00","SAFARI REWARD SUMMARY")).joinToString("\n")) }
         Files.writeString(dir.resolve("latest.log"), line("15:00:00", "SPARKLING! Local found a SPARKLING Wumpa!"))
-        Files.writeString(dir.resolve("chat.json"), """{"entries":[{"at":${at(16,0)},"player":"Friend","critter":"Gemzie"}]}""")
+        Files.writeString(dir.resolve("chat.json"), """{"owner":"Local","entries":[{"at":${at(16,0)},"player":"Friend","critter":"Gemzie"}]}""")
         Files.writeString(dir.resolve("broken.log.gz"), "not a gzip")
         Files.writeString(dir.resolve("ignore.txt"), "irrelevant")
         val result = LogImporter.read(dir,"Local").join()
@@ -157,7 +196,7 @@ class HistoryBackfillImportTest {
     }
     @Test fun `chat JSON handles message fields and external epoch or ISO timestamps for both histories`() {
         val parser = LogImporter.Parser("Local")
-        val json = """{"entries":[
+        val json = """{"owner":"Local","entries":[
             {"timestamp":${at(13,0)/1000},"message":"[System] [CHAT] $ticket"},
             {"at":${at(13,0,1)},"text":"$capture"},
             {"epochMillis":${at(13,0,2)},"content":"SPARKLING! Friend found a SPARKLING Hideyho!"},

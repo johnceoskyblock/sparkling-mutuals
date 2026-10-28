@@ -54,6 +54,10 @@ object SparklingLog {
 
     fun onTicket() { if (HistoryServerPolicy.allows()) { data.ticketsSinceSparkling++; save() } }
 
+    /** Called after the pre-import backup; unavailable/deleted logs cannot remove saved records. */
+    fun reconcileImport(found: List<SparklingEntry>, alpha: List<SparklingEntry>): Int =
+        net.johnceo.sparklingmutuals.history.importing.HistoryImportRepair.sparklings(data.entries, found, alpha)
+
     /** Adds catches found elsewhere (old logs), skipping any already here. Returns how many were added. */
     fun importEntries(found: List<SparklingEntry>, ticketTimes: List<Long> = emptyList()): Int {
         val added = SparklingHistoryMerge.merge(data.entries, found, ticketTimes)

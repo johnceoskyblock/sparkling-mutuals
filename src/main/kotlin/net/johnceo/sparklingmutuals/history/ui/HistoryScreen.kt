@@ -13,6 +13,7 @@ import net.johnceo.sparklingmutuals.history.PlaytimeReader
 import net.johnceo.sparklingmutuals.history.ProfitDays
 import net.johnceo.sparklingmutuals.history.RunHistory
 import net.johnceo.sparklingmutuals.history.RunRecord
+import net.johnceo.sparklingmutuals.history.HistoryQueries
 import net.johnceo.sparklingmutuals.history.SparklingLog
 import net.johnceo.sparklingmutuals.safari.SafariBiome
 import net.johnceo.sparklingmutuals.safari.SafariRoster
@@ -20,6 +21,7 @@ import net.johnceo.sparklingmutuals.safari.SafariRules
 import net.johnceo.sparklingmutuals.safari.completion.BiomePbType
 import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.gui.screens.Screen
+import net.minecraft.client.gui.components.EditBox
 import net.minecraft.client.input.MouseButtonEvent
 import net.minecraft.network.chat.Component
 
@@ -33,7 +35,7 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
         RUNS("Runs", 0xFF55CC66.toInt()), BESTS("Bests", 0xFF55DDDD.toInt()), SPARKLINGS("Sparklings", 0xFFFF77DD.toInt()),
         ACHIEVEMENTS("Achievements", 0xFFFFAA22.toInt()), STATS("Stats", 0xFF7799FF.toInt()), PROFIT("Profit", 0xFFFFD84A.toInt())
     }
-    private enum class RunSort(val label: String) { NEWEST("Newest"), OLDEST("Oldest"), FASTEST("Fastest"), LONGEST("Longest"), CAUGHT("Most caught"), COINS("Most coins"), PARTY("Party dex"), YOU("Your dex") }
+    private enum class RunSort(val label: String) { NEWEST("Newest"), OLDEST("Oldest"), FASTEST("Fastest"), LONGEST("Longest"), CAUGHT("Most caught"), COINS("Most coins"), PARTY("Coverage"), YOU("Caught types") }
     private enum class Filter(val label: String) { ALL("All"), UNLOCKED("Unlocked"), LOCKED("Locked") }
     private enum class AchievementSort(val label: String) { DEFAULT("Unlocked first"), RARITY_UP("Rarity: low"), RARITY_DOWN("Rarity: high"), CLOSEST("Closest"), RECENT("Recent"), NAME("Name") }
     private class Hit(val x: Int, val y: Int, val w: Int, val h: Int, val action: () -> Unit) {
@@ -50,6 +52,32 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
     private var achievementSort = AchievementSort.DEFAULT
     private var listTop = 0; private var listBottom = 0; private var listRows = 1; private var listSize = 0
     private var px = 0; private var py = 0; private var pw = 0; private var ph = 0
+    private var runQuery = ""
+    private var pendingRunJump = false
+    private var critterQuery = ""
+    private lateinit var runSearch: EditBox
+    private lateinit var critterSearch: EditBox
+    private data class ScrollHandle(val tab: Tab, val x: Int, val track: HistoryScrollTrack)
+    private var scrollHandle: ScrollHandle? = null
+    private var draggingScroll: Tab? = null
+    private var scrollGrab = 0.0
+
+    override fun init() {
+        runSearch = EditBox(font, 0, 0, 180, 16, Component.literal("Search run number")).also {
+            it.setMaxLength(20); it.value = runQuery; it.setHint(Component.literal("Jump to run #"))
+            it.setResponder { query ->
+                runQuery = query; pendingRunJump = true
+                val target = RunHistory.runs.getOrNull(HistoryQueries.runIndex(RunHistory.runs, query))
+                if (target != null && !target.hasSparkling()) sparklingRunsOnly = false
+            }
+            addWidget(it)
+        }
+        critterSearch = EditBox(font, 0, 0, 180, 16, Component.literal("Search critter")).also {
+            it.setMaxLength(40); it.value = critterQuery; it.setHint(Component.literal("Search critter, e.g. Fluffling"))
+            it.setResponder { query -> critterQuery = query; scroll[Tab.SPARKLINGS] = 0 }
+            addWidget(it)
+        }
+    }
 
     override fun onClose() { minecraft.smSetScreen(parent) }
     override fun isPauseScreen() = false
@@ -57,20 +85,32 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
     override fun extractRenderState(g: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, delta: Float) {
         super.extractRenderState(g, mouseX, mouseY, delta)
         hits.clear()
+        scrollHandle = null
+        if (draggingScroll != tab) draggingScroll = null
         pw = minOf(640, width - 20); ph = minOf(340, height - 50)
         px = (width - pw) / 2; py = (height - ph) / 2 + 12
+        runSearch.visible = tab == Tab.RUNS; critterSearch.visible = tab == Tab.SPARKLINGS
+        if (!runSearch.visible) runSearch.isFocused = false
+        if (!critterSearch.visible) critterSearch.isFocused = false
         tabs(g, mouseX, mouseY)
         g.fill(px, py, px + pw, py + ph, BACKGROUND)
         g.outline(px, py, pw, ph, BORDER)
         when (tab) {
             Tab.RUNS -> runs(g, mouseX, mouseY)
-            Tab.BESTS -> bests(g)
+            Tab.BESTS -> bests(g, mouseX, mouseY)
             Tab.SPARKLINGS -> sparklings(g, mouseX, mouseY)
             Tab.ACHIEVEMENTS -> achievements(g, mouseX, mouseY)
-            Tab.STATS -> stats(g)
+            Tab.STATS -> stats(g, mouseX, mouseY)
             Tab.PROFIT -> profit(g, mouseX, mouseY)
         }
         button(g, mouseX, mouseY, px + pw - 66, py + ph - 20, 58, "Close", ::onClose)
+        if (tab == Tab.RUNS) {
+            runSearch.x = px + 8; runSearch.y = py + 32; runSearch.width = minOf(220, pw - 16)
+            runSearch.extractRenderState(g, mouseX, mouseY, delta)
+        } else if (tab == Tab.SPARKLINGS) {
+            critterSearch.x = px + 8; critterSearch.y = py + 22; critterSearch.width = maxOf(60, (pw * .60f).toInt() - 16)
+            critterSearch.extractRenderState(g, mouseX, mouseY, delta)
+        }
     }
 
     private fun tabs(g: GuiGraphicsExtractor, mx: Int, my: Int) {
@@ -118,13 +158,35 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
         "${all.size} Kept".let { g.text(font, it, px + pw - 8 - font.width(it), py + 6, MUTED) }
         centred(g, "§f${all.size} Runs  §8·  §f${hours(all.sumOf { it.length })} Played  §8·  §f" +
             "%,d".format(all.sumOf { it.caught }) + " Caught  §8·  §e" + BazaarPrices.format(all.sumOf { maxOf(0L, it.coins) }) + " Coins", px + pw / 2, py + 19, TEXT)
-        val headers = listOf("Run", "When", "Length", "Party", "You", "Caught", "Coins")
+        val headers = listOf("Run", "When", "Length", "Coverage", "Types", "Caught", "Coins")
         val at = floatArrayOf(.08f, .24f, .40f, .52f, .63f, .74f, .88f)
-        val headerY = py + 33
-        headers.forEachIndexed { i, h -> centred(g, h, px + Math.round(pw * at[i]), headerY, 0xFFDDDDDD.toInt()) }
+        val headerY = py + 54
+        headers.forEachIndexed { i, h ->
+            val x = px + Math.round(pw * at[i])
+            centred(g, h, x, headerY, 0xFFDDDDDD.toInt())
+            val help = when (h) {
+                "Coverage" -> "Types caught or loot-shared."
+                "Types" -> "Types you caught yourself."
+                "Caught" -> "Your catches, including repeats."
+                "Coins" -> "Reward value before fees and ticket costs."
+                "Length" -> "Recorded run duration."
+                "Per hour" -> "Reward value divided by recorded run time."
+                "Best run" -> "Highest reward value that day."
+                else -> ""
+            }
+            if (help.isNotEmpty()) tip(g, mx, my, x - font.width(h) / 2 - 3, headerY - 1, font.width(h) + 6, ROW, h, help)
+        }
         listTop = headerY + 12; listBottom = py + ph - 48; listRows = maxOf(1, (listBottom - listTop) / ROW); listSize = runs.size
+        if (pendingRunJump) {
+            val index = HistoryQueries.runIndex(runs, runQuery)
+            if (index >= 0) {
+                selectedRun = index
+                scroll[Tab.RUNS] = (index - listRows / 2).coerceIn(0, maxOf(0, runs.size - listRows))
+            }
+            pendingRunJump = false
+        }
         val offset = clampScroll(Tab.RUNS)
-        if (runs.isEmpty()) centred(g, if (all.isEmpty()) "No runs saved yet: finish a Safari run, or /sm history import." else "No runs with a sparkling yet.",
+        if (runs.isEmpty()) centred(g, if (all.isEmpty()) "No runs saved yet: finish a Safari run, or /sm history import." else "No runs match the current filters.",
             px + pw / 2, listTop + 20, MUTED)
         for (i in 0 until listRows) {
             val index = offset + i
@@ -153,22 +215,26 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
             else centred(g, "§7No sparklings this run", px + pw / 2, detailY, MUTED)
             val splits = SafariBiome.entries.mapNotNull { b -> detail.splits[b.label]?.let { "§f${b.label} §b${pbTime(it)}" } }
             val extra = "§7Macaws §f${detail.macaws}  §7Rainbow Feathers §f${detail.feathers}  §7Loot shares §f${detail.lootShares}  §7Tickets §f${detail.tickets}" +
+                (if (detail.safariEssence >= 0) "  §7Essence §f${detail.safariEssence}" else "") +
+                (if (detail.summaryShards >= 0) "  §7Shards §f${detail.summaryShards}" else "") +
                 if (detail.imported) "  §8(from logs${if (detail.modeEstimated || detail.coinsEstimated) "; mode/profit estimated" else ""})" else "  §7Party §f${detail.partySize}"
             centred(g, if (splits.isEmpty()) extra else splits.joinToString(" §8· "), px + pw / 2, detailY + 11, TEXT)
-            if (splits.isNotEmpty() && mx in px until px + pw && my in detailY until detailY + 22)
-                g.setComponentTooltipForNextFrame(font, listOf(Component.literal(extra)), mx, my)
-        } else if (runs.isNotEmpty()) centred(g, "§8Click a run for its sparklings and splits", px + pw / 2, detailY + 5, DIM)
+            if (mx in px until px + pw && my in detailY until detailY + 22)
+                g.setComponentTooltipForNextFrame(font, listOfNotNull(Component.literal(extra),
+                    detail.hotspot.takeIf { it.isNotEmpty() }?.let { Component.literal("Hotspot: $it") },
+                    detail.huntingXp.takeIf { it >= 0 }?.let { Component.literal("Hunting XP: %,d".format(it)) }), mx, my)
+        } else if (runs.isNotEmpty()) centred(g, "§8Click a run for details", px + pw / 2, detailY + 5, DIM)
         val fy = py + ph - 20
         toggle(g, mx, my, px + pw / 2 - 150, fy, "Sparkling Runs", sparklingRunsOnly) { sparklingRunsOnly = !sparklingRunsOnly; selectedRun = -1; scroll[Tab.RUNS] = 0 }
-        button(g, mx, my, px + pw / 2 - 30, fy, 110, "Sort: ${runSort.label}") { runSort = RunSort.entries[(runSort.ordinal + 1) % RunSort.entries.size]; selectedRun = -1 }
+        button(g, mx, my, px + pw / 2 - 30, fy, 110, "Sort: ${runSort.label}") { runSort = RunSort.entries[(runSort.ordinal + 1) % RunSort.entries.size]; selectedRun = -1; pendingRunJump = runQuery.isNotBlank() }
     }
 
     // ------------------------------------------------------------------ bests
 
-    private fun bests(g: GuiGraphicsExtractor) {
+    private fun bests(g: GuiGraphicsExtractor, mx: Int, my: Int) {
         val bests = ConfigManager.personalBests
-        g.text(font, "Personal Bests", px + 8, py + 6, GOLD)
-        g.text(font, "§7Times from the start of the run.", px + 8, py + 18, MUTED)
+        g.text(font, "Personal bests", px + 8, py + 6, GOLD)
+        g.text(font, "§7From run start · Hover for details", px + 8, py + 18, MUTED)
         val left = px + 16
         val labelW = maxOf(font.width("Doomspiral"), font.width("Haunted"))
         val timeW = maxOf(font.width("9:42.000"), font.width("Full Clear"))
@@ -181,39 +247,61 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
             g.text(font, biome.label, left, y, biome.color)
             cell(g, bests.time(biome.label, BiomePbType.FULL_CLEAR), colA, y, 0xFF55FF55.toInt())
             cell(g, bests.time(biome.label, BiomePbType.UNIQUE), colB, y, 0xFF55DDDD.toInt())
+            tip(g, mx, my, colA - timeW / 2, y - 1, timeW, ROW,
+                "Your ${biome.label} Full Clear PB", "Your captures and clear checks; one Macaw minimum.")
+            tip(g, mx, my, colB - timeW / 2, y - 1, timeW, ROW,
+                "Your ${biome.label} Unique PB", "Catch each spawned type yourself. Proven non-spawns exempt; no loot shares.")
             y += ROW + 1
         }
         y += 6
-        g.text(font, "Boss", left, y, 0xFFDDDDDD.toInt()); centred(g, "Solo", colA, y, 0xFFDDDDDD.toInt()); centred(g, "Duo", colB, y, 0xFFDDDDDD.toInt())
+        g.text(font, "Boss", left, y, 0xFFDDDDDD.toInt()); centred(g, "Solo", colA, y, 0xFFDDDDDD.toInt()); centred(g, "Assisted", colB, y, 0xFFDDDDDD.toInt())
         y += 13
         for (boss in listOf("Doomspiral", "Wumpa")) {
             g.text(font, boss, left, y, SafariRoster.color(boss))
             cell(g, bests.time(boss), colA, y, 0xFF55FF55.toInt())
             cell(g, bests.time(boss, duo = true), colB, y, 0xFF55DDDD.toInt())
+            val soloRule = if (boss == "Doomspiral") "Hold four incense before your Doomspiral catch." else
+                "Catch all eight other Icy types yourself before Wumpa."
+            tip(g, mx, my, colA - timeW / 2, y - 1, timeW, ROW, "Your $boss Solo PB", soloRule, "Timed from run start.")
+            tip(g, mx, my, colB - timeW / 2, y - 1, timeW, ROW, "Your $boss Assisted PB",
+                "Your catch without confirmed Solo requirements. Includes older unclassified PBs.", soloRule)
             y += ROW + 1
         }
         val rx = colB + timeW / 2 + 14
         var ry = py + 36
-        g.text(font, "Run Records §8(best in one run)", rx, ry, 0xFFDDDDDD.toInt())
+        g.text(font, "Single-run records", rx, ry, 0xFFDDDDDD.toInt())
         ry += 13
         val runs = RunHistory.runs
         val all = SafariRoster.all.size
-        fun record(label: String, value: String?, run: RunRecord?) {
-            g.text(font, "§7$label", rx, ry, MUTED)
+        fun record(label: String, value: String?, run: RunRecord?, explanation: String) {
+            val hovered = mx in rx until px + pw - 10 && my in ry - 1 until ry + ROW
+            if (hovered) g.fill(rx - 2, ry - 1, px + pw - 10, ry + ROW, 0x18FFFFFF)
             val shown = if (value == null) "§8-" else "§f$value" + (run?.let { " §8(#${it.number})" } ?: "")
+            g.text(font, cut("§7", label, (px + pw - 22 - rx - font.width(shown)).coerceAtLeast(0)), rx, ry, MUTED)
             g.text(font, shown, px + pw - 12 - font.width(shown), ry, TEXT)
+            tip(g, mx, my, rx - 2, ry - 1, px + pw - rx - 8, ROW, label, explanation,
+                if (run != null) "Click to jump to run #${run.number}." + if (run.imported) " This record comes from imported logs." else "" else "")
+            if (run != null) hits += Hit(rx - 2, ry - 1, px + pw - rx - 8, ROW) {
+                tab = Tab.RUNS; runQuery = "#${run.number}"; runSearch.value = runQuery
+                pendingRunJump = true
+                if (!run.hasSparkling()) sparklingRunsOnly = false
+            }
             ry += ROW + 1
         }
-        runs.filter { it.party >= all }.minByOrNull { it.length }.let { record("Fastest full run", it?.let { r -> clock(r.length) }, it) }
-        runs.maxByOrNull { it.caught }.let { record("Most caught", it?.caught?.toString(), it) }
-        runs.filter { it.coins >= 0 }.maxByOrNull { it.coins }.let { record("Most coins", it?.let { r -> BazaarPrices.format(r.coins) }, it) }
-        runs.maxByOrNull { it.you }.let { record("Best own dex", it?.let { r -> "${r.you}/$all" }, it) }
-        runs.filter { it.hasSparkling() }.maxByOrNull { it.sparklings.size }.let { record("Sparklings", it?.sparklings?.size?.toString(), it) }
-        runs.filter { it.macaws > 0 }.maxByOrNull { it.macaws }.let { record("Macaws", it?.macaws?.toString(), it) }
+        runs.filter { HistoryQueries.allTypesTime(it) != null }.minByOrNull { HistoryQueries.allTypesTime(it)!! }.let { record("Fastest 37/37", it?.let { r -> clock(HistoryQueries.allTypesTime(r)!!) }, it,
+            "Time to the 37th caught or loot-shared type. Older records may use total run time.") }
+        runs.maxByOrNull { it.caught }.let { record("Most caught", it?.caught?.toString(), it, "Your catches in one run, including repeats. No loot shares.") }
+        runs.filter { it.coins >= 0 }.maxByOrNull { it.coins }.let { record("Highest run value", it?.let { r -> BazaarPrices.format(r.coins) }, it, "Your rewards, including loot shares. Before fees and ticket costs; imports may be estimated.") }
+        runs.maxByOrNull { it.you }.let { record("Most types", it?.let { r -> "${r.you}/$all" }, it, "Types you caught yourself in one run. No loot shares.") }
+        runs.filter { it.hasSparkling() }.maxByOrNull { it.sparklings.size }.let { record("Sparklings", it?.sparklings?.size?.toString(), it, "Your party's sparkling catches in one run.") }
+        runs.filter { it.macaws > 0 }.maxByOrNull { it.macaws }.let { record("Macaws", it?.macaws?.toString(), it, "Your catches and loot-shared Macaws in one run.") }
         ry += 6
         g.text(font, "Luck", rx, ry, 0xFFDDDDDD.toInt()); ry += 13
-        record("Dry streak", "${Achievements.longestDrySparkling} runs", null)
-        record("Macaw drought", "${Achievements.longestMacawDrought} runs", null)
+        val luck = HistoryQueries.liveLuck(runs)
+        record("Sparkling dry streak", "${luck.sparklingDryStreak} runs".takeIf { luck.runs > 0 }, null,
+            "Longest party dry streak. Live runs only; imports break the streak.")
+        record("Macaw drought", "${luck.macawDrought} runs".takeIf { luck.macawRuns > 0 }, null,
+            "Longest streak without a caught or loot-shared Macaw. Requires confirmed bird-food use. Imports and unchecked runs break it.")
     }
     private fun cell(g: GuiGraphicsExtractor, time: Long?, x: Int, y: Int, colour: Int) =
         centred(g, time?.let(::pbTime) ?: "-", x, y, if (time == null) DIM else colour)
@@ -222,11 +310,11 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
 
     private fun sparklings(g: GuiGraphicsExtractor, mx: Int, my: Int) {
         val self = minecraft.player?.name?.string.orEmpty()
-        val entries = SparklingLog.entries.filter { !mineOnly || it.player.equals(self, true) }
+        val entries = SparklingLog.entries.filter { (!mineOnly || it.player.equals(self, true)) && HistoryQueries.matchesCritter(it, critterQuery) }
         val listW = Math.round(pw * .60f)
         g.text(font, "Sparkling History", px + 8, py + 6, PINK)
         "${entries.size} catch${if (entries.size == 1) "" else "es"}".let { g.text(font, it, px + listW - font.width(it), py + 6, MUTED) }
-        val y0 = py + 22
+        val y0 = py + 44
         g.text(font, "When", px + 10, y0, 0xFFDDDDDD.toInt()); g.text(font, "Player", px + 60, y0, 0xFFDDDDDD.toInt())
         listTop = y0 + 12; listBottom = py + ph - 26; listRows = maxOf(1, (listBottom - listTop) / ROW); listSize = entries.size
         val offset = clampScroll(Tab.SPARKLINGS)
@@ -234,16 +322,17 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
         val critterX = px + 60 + 8 + maxOf(font.width("Player"), entries.drop(offset).take(40).maxOfOrNull { font.width(it.player) } ?: 0)
         g.text(font, "Critter", critterX, y0, 0xFFDDDDDD.toInt())
         "Tickets".let { g.text(font, it, px + listW - font.width(it), y0, 0xFFDDDDDD.toInt()) }
-        if (entries.isEmpty()) g.text(font, "§7No sparklings recorded yet. Old logs: /sm history import", px + 10, listTop + 6, MUTED)
+        if (entries.isEmpty()) g.text(font, "§7No catches match the current filters.", px + 10, listTop + 6, MUTED)
         for (i in 0 until listRows) {
             val entry = entries.getOrNull(offset + i) ?: break
             val y = listTop + i * ROW
             val when_ = Instant.ofEpochMilli(entry.at).atZone(ZoneId.systemDefault())
-            if (mx in px + 4 until px + listW + 4 && my in y - 1 until y + ROW - 1) {
+            val hover = mx in px + 4 until px + listW + 4 && my in y - 1 until y + ROW - 1
+            if (hover) {
                 g.fill(px + 4, y - 1, px + listW + 4, y + ROW - 1, 0x18FFFFFF)
                 g.setComponentTooltipForNextFrame(font, listOfNotNull(Component.literal("§f" + FULL.format(when_)),
                     entry.tickets?.let { Component.literal("§7Took §e$it§7 tickets since the last §6§lSPARKLING") },
-                    if (entry.uniqueEstimated) Component.literal("§8First-seen status estimated from available logs") else null), mx, my)
+                    if (entry.uniqueEstimated) Component.literal("§8First-seen estimate from logs") else null), mx, my)
             }
             g.text(font, "§7" + DAY_SHORT.format(when_), px + 10, y, MUTED)
             g.text(font, "§b" + entry.player, px + 60, y, TEXT)
@@ -255,7 +344,7 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
         // Your dex, by biome, in two columns; shrunk to fit a short window.
         val dx = px + listW + 16
         val dex = Achievements.ownDex()
-        g.text(font, "Your Sparkling Dex", dx, py + 6, GOLD)
+        g.text(font, "Sparkling dex", dx, py + 6, GOLD)
         "${dex.size}/${SafariRoster.all.size}".let { g.text(font, it, px + pw - 10 - font.width(it), py + 6, TEXT) }
         val biomes = SafariBiome.entries
         val half = (biomes.size + 1) / 2
@@ -328,16 +417,16 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
             }
             val sideW = if (side == null) 0 else maxOf(font.width(side), if (a.hasProgress && !has) 70 else 0)
             val textW = right - sideW - 10 - (px + 14)
-            val name = cut(if (hidden) "§8§l" else if (has) a.tier.code + "§l" else "§7§l", if (hidden) "???" else a.name, textW)
+            val name = cut(if (hidden) "§8§l" else if (has) a.tier.code + "§l" else "§7§l", if (hidden) "???" else a.name,
+                textW.coerceAtLeast(0))
             g.text(font, name, px + 14, y + 2, TEXT)
             val tierLabel = (if (has || !hidden) a.tier.code else "§8") + a.tier.name
-            if (shownWidth(name) + 8 + font.width(tierLabel) <= textW) g.text(font, tierLabel, px + 14 + shownWidth(name) + 8, y + 2, TEXT)
-            val description = if (hidden) "Secret achievement: keep playing to find out." else a.description
+            val description = if (hidden) "Secret achievement." else a.description
             g.text(font, cut(if (hidden) "§8" else "§7", description, textW), px + 14, y + 12, MUTED)
             if (has) g.text(font, side!!, right - font.width(side), y + 7, TEXT)
             else if (side != null) { g.text(font, side, right - font.width(side), y + 2, MUTED); bar(g, right - sideW, y + 13, sideW, 4, progress.toDouble() / a.goal, a.tier.argb) }
-            if (mx in px + 6 until px + pw - 12 && my in y until y + rowH - 2) g.setComponentTooltipForNextFrame(font,
-                listOf(Component.literal(if (hidden) "§8§l???" else a.tier.code + "§l" + a.name), Component.literal(tierLabel), Component.literal("§7$description")), mx, my)
+            tip(g, mx, my, px + 6, y, pw - 18, rowH - 2, if (hidden) "???" else a.name, tierLabel, description,
+                if (hidden) "" else Achievements.explanation(a))
         }
         scrollbar(g, offset, px + pw - 8)
         val fy = py + ph - 20
@@ -347,40 +436,51 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
 
     // ------------------------------------------------------------------ stats
 
-    private fun stats(g: GuiGraphicsExtractor) {
+    private fun stats(g: GuiGraphicsExtractor, mx: Int, my: Int) {
         val runs = RunHistory.runs
         val played = runs.sumOf { it.length }
         val all = SafariRoster.all.size
         val self = minecraft.player?.name?.string.orEmpty()
         val byCritter = linkedMapOf<String, Int>().also { m -> runs.forEach { r -> r.catches.forEach { (c, n) -> m.merge(c, n, Int::plus) } } }
-        g.text(font, "Stats", px + 8, py + 6, GOLD)
+        g.text(font, "Stats §8· hover rows for details", px + 8, py + 6, GOLD)
         val rows = listOf(
-            "Runs" to "%,d".format(runs.size),
-            "Time on runs" to hours(played),
-            "Safari playtime" to if (PlaytimeReader.minutes > 0) hours(PlaytimeReader.safariMillis()) else "§7open /playtime → Safari",
-            "Average run" to if (runs.isEmpty()) "-" else clock(played / runs.size),
-            "Full clears (37/37)" to "${runs.count { it.party >= all }}",
-            "Critters caught" to "%,d".format(runs.sumOf { it.caught }),
-            "Loot shares" to "%,d".format(runs.sumOf { it.lootShares }),
-            "Shards" to "%,d".format(runs.sumOf { r -> r.shards.values.sum() }),
-            "Rainbow Feathers" to "${runs.sumOf { it.feathers }}",
-            "Shard + feather value" to "§e" + BazaarPrices.format(runs.sumOf { maxOf(0L, it.coins) }) +
-                if (played > 0) " §7· " + BazaarPrices.format(runs.sumOf { maxOf(0L, it.coins) } * 3_600_000L / played) + "/h" else "",
-            "Tickets (in runs)" to "%,d".format(runs.sumOf { it.tickets }),
-            "Sparklings (you / seen)" to "${SparklingLog.entries.count { it.player.equals(self, true) }} / ${SparklingLog.entries.size}",
-            "Sparkling dex" to "${Achievements.ownDex().size}/$all",
-            "Tickets since sparkling" to "${SparklingLog.ticketsSinceSparkling}",
-            "Macaws" to "${runs.sumOf { it.macaws }}" + if (runs.isEmpty()) "" else " §7· ${runs.count { it.macaws > 0 } * 100 / runs.size}% of runs",
-            "Runs since a Macaw" to "${Achievements.runsSinceMacaw}",
-            "Contests completed" to "${Achievements.contestsCompleted}")
-        val s = fit(rows.size * ROW, py + ph - 26 - (py + 22))
+            Triple("Saved runs", "%,d".format(runs.size), "Live and imported runs; excludes runs over 30m."),
+            Triple("Recorded run time", hours(played), "Total known time in saved runs."),
+            Triple("Safari playtime", if (PlaytimeReader.minutes > 0) hours(PlaytimeReader.safariMillis()) else "§7open /playtime → Safari",
+                "Safari /playtime plus newer saved runs."),
+            Triple("Average run (<10m)", HistoryQueries.averageLength(runs)?.let(::clock) ?: "-",
+                "Known run times under 10m, including imports."),
+            Triple("37/37 runs", "${runs.count { it.party >= all }}", "Runs with all 37 types caught or loot-shared."),
+            Triple("Captures", "%,d".format(runs.sumOf { it.caught }), "Your catches in saved runs, including repeats. No loot shares."),
+            Triple("Loot-shared catches", "%,d".format(runs.sumOf { it.lootShares }), "Teammate catches that gave you loot share."),
+            Triple("Shards received", "%,d".format(runs.sumOf { r -> if (r.summaryShards >= 0) r.summaryShards else r.shards.values.sum() }), "Your shards, including loot shares. Uses summary totals when available."),
+            Triple("Feathers received", "${runs.sumOf { it.feathers }}", "Your Rainbow Feathers, including loot shares and Macaw bonuses."),
+            Triple("Essence received (known)", "%,d".format(runs.sumOf { maxOf(0, it.safariEssence).toLong() }), "Your recorded summary essence. Unknown amounts excluded."),
+            Triple("Reward value", "§e" + BazaarPrices.format(runs.sumOf { maxOf(0L, it.coins) }) +
+                (if (played > 0) " §7· " + BazaarPrices.format(runs.sumOf { maxOf(0L, it.coins) } * 3_600_000L / played) + "/h" else ""),
+                "Your shards, feathers and known essence before fees and ticket costs. Includes loot shares and import estimates."),
+            Triple("Tickets used (recorded)", "%,d".format(runs.sumOf { it.tickets }), "Confirmed ticket uses in saved runs. Missing logs may undercount."),
+            Triple("Sparklings (caught / seen)", "${SparklingLog.entries.count { it.player.equals(self, true) }} / ${SparklingLog.entries.size}", "You: personal catches. Seen: all recorded party catches, including imports."),
+            Triple("Sparkling dex", "${Achievements.ownDex().size}/$all", "Your caught types plus cached profile discoveries."),
+            Triple("Tickets since last sparkling", "${SparklingLog.ticketsSinceSparkling}", "Ticket uses since the last recorded party sparkling."),
+            Triple("Macaws", "${runs.sumOf { it.macaws }}" + (if (runs.isEmpty()) "" else " §7· ${runs.count { it.macaws > 0 } * 100 / runs.size}% of runs"), "Your catches and loot-shared Macaws. Percentage: runs with at least one."),
+            Triple("Runs since Macaw", "${Achievements.runsSinceMacaw}", "Runs since a caught or loot-shared Macaw. Includes imports."),
+            Triple("Contests completed", "${Achievements.contestsCompleted}", "Contests where you met your ticket target."))
+        val rowWidth = rows.maxOf { (label, value) -> font.width(label) + font.width(value) + 12 }
+        val s = minOf(fit(rows.size * ROW, py + ph - 26 - (py + 22)),
+            (pw * .50f - 24) / rowWidth.coerceAtLeast(1)).coerceAtLeast(.35f)
         val valueX = Math.round((pw * .50f - 12) / s)
         val pose = g.pose()
         pose.pushMatrix(); pose.translate((px + 12).toFloat(), (py + 22).toFloat()); pose.scale(s, s)
         rows.forEachIndexed { i, (label, value) ->
+            val rowY = py + 22 + i * ROW * s
+            if (mx >= px + 10 && mx < px + pw * .50f && my >= rowY && my < rowY + ROW * s)
+                g.fill(-2, i * ROW - 1, valueX + 2, (i + 1) * ROW, 0x18FFFFFF)
             g.text(font, "§7$label", 0, i * ROW, MUTED); g.text(font, "§f$value", valueX - font.width(value), i * ROW, TEXT)
         }
         pose.popMatrix()
+        rows.forEachIndexed { i, row -> tip(g, mx, my, px + 10, py + 22 + (i * ROW * s).toInt(),
+            (pw * .50f - 10).toInt(), maxOf(1, (ROW * s).toInt()), row.first, row.third) }
         val bx = px + Math.round(pw * .56f)
         g.text(font, "Most caught", bx, py + 22, 0xFFDDDDDD.toInt())
         val top = byCritter.entries.sortedByDescending { it.value }
@@ -394,6 +494,8 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
             val w = maxOf(1, Math.round(barW * entry.value.toFloat() / max))
             g.fill(barX, by + 1, barX + w, by + 8, SafariRoster.color(entry.key) and 0xFFFFFF or 0xC0000000.toInt())
             g.text(font, "§7" + "%,d".format(entry.value), barX + w + 4, by, MUTED)
+            tip(g, mx, my, bx, by - 1, px + pw - bx - 10, ROW, entry.key,
+                "%,d personal catches. Repeats included; no loot shares.".format(entry.value))
             by += 11
         }
         if (top.isEmpty()) g.text(font, "§7Nothing yet.", bx, by, MUTED)
@@ -413,7 +515,21 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
         val headers = listOf("Day", "Runs", "Time", "Coins", "Per hour", "Best run")
         val at = floatArrayOf(.10f, .26f, .40f, .55f, .71f, .87f)
         val headerY = py + 33
-        headers.forEachIndexed { i, h -> centred(g, h, px + Math.round(pw * at[i]), headerY, 0xFFDDDDDD.toInt()) }
+        headers.forEachIndexed { i, h ->
+            val x = px + Math.round(pw * at[i])
+            centred(g, h, x, headerY, 0xFFDDDDDD.toInt())
+            val help = when (h) {
+                "Coverage" -> "Types caught or loot-shared."
+                "Types" -> "Types you caught yourself."
+                "Caught" -> "Your catches, including repeats."
+                "Coins" -> "Reward value before fees and ticket costs."
+                "Length" -> "Recorded run duration."
+                "Per hour" -> "Reward value divided by recorded run time."
+                "Best run" -> "Highest reward value that day."
+                else -> ""
+            }
+            if (help.isNotEmpty()) tip(g, mx, my, x - font.width(h) / 2 - 3, headerY - 1, font.width(h) + 6, ROW, h, help)
+        }
         listTop = headerY + 12; listBottom = py + ph - 26; listRows = maxOf(1, (listBottom - listTop) / ROW); listSize = days.size
         val offset = clampScroll(Tab.PROFIT)
         if (!BazaarPrices.ready() && runs.any { it.coins < 0 }) centred(g, "§7Loading bazaar prices...", px + pw / 2, listTop + 20, MUTED)
@@ -432,7 +548,7 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
         scrollbar(g, offset, px + pw - 8)
         button(g, mx, my, px + 8, py + ph - 20, 140, if (ConfigManager.runCoinsInstaSell) "Price: insta-sell" else "Price: sell offer") {
             ConfigManager.runCoinsInstaSell = !ConfigManager.runCoinsInstaSell; ConfigManager.save()
-            RunHistory.runs.forEach { it.coins = BazaarPrices.value(it.shards, it.feathers) }; RunHistory.save()
+            RunHistory.reprice()
         }
     }
 
@@ -456,12 +572,31 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
         g.fill(x, y, x + w, y + h, 0x60000000)
         g.fill(x, y, x + Math.round(w * fraction.coerceIn(0.0, 1.0)).toInt(), y + h, colour)
     }
+    /** Wrap explanations to the viewport and preserve the full meaning of shortened row labels. */
+    private fun tip(g: GuiGraphicsExtractor, mx: Int, my: Int, x: Int, y: Int, w: Int, h: Int, vararg lines: String) {
+        if (mx !in x until x + w || my !in y until y + h) return
+        val wrapped = mutableListOf<Component>()
+        val maxWidth = minOf(300, width - 24).coerceAtLeast(80)
+        lines.filter(String::isNotBlank).forEachIndexed { index, raw ->
+            val color = if (index == 0) 0xFFD700 else 0xDDDDDD
+            var part = ""
+            for (word in SafariRules.strip(raw).split(Regex("\\s+"))) {
+                val next = if (part.isEmpty()) word else "$part $word"
+                if (part.isNotEmpty() && font.width(next) > maxWidth) {
+                    wrapped += Component.literal(part).withStyle { it.withColor(color) }; part = word
+                } else part = next
+            }
+            if (part.isNotEmpty()) wrapped += Component.literal(part).withStyle { it.withColor(color) }
+        }
+        g.setComponentTooltipForNextFrame(font, wrapped, mx, my)
+    }
     private fun scrollbar(g: GuiGraphicsExtractor, offset: Int, x: Int) {
-        if (listSize <= listRows) return
-        val track = listBottom - listTop
-        val thumb = maxOf(10, track * listRows / listSize)
-        val top = listTop + (track - thumb) * offset / maxOf(1, listSize - listRows)
-        g.fill(x, listTop, x + 2, listBottom, 0x40FFFFFF); g.fill(x, top, x + 2, top + thumb, 0xC0E8A33A.toInt())
+        val track = HistoryScrollTrack(listTop, listBottom, listRows, listSize)
+        if (!track.scrollable) return
+        scrollHandle = ScrollHandle(tab, x, track)
+        val top = track.thumbTop(offset)
+        g.fill(x - 2, listTop, x + 4, listBottom, 0x40FFFFFF)
+        g.fill(x - 2, top, x + 4, top + track.thumbHeight, if (draggingScroll == tab) GOLD else 0xC0E8A33A.toInt())
     }
     private fun clampScroll(t: Tab): Int { val value = (scroll[t] ?: 0).coerceIn(0, maxOf(0, listSize - listRows)); scroll[t] = value; return value }
     private fun centred(g: GuiGraphicsExtractor, text: String, cx: Int, y: Int, colour: Int) = g.text(font, text, cx - font.width(text) / 2, y, colour)
@@ -487,8 +622,27 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
     }
 
     override fun mouseClicked(event: MouseButtonEvent, doubleClick: Boolean): Boolean {
+        if (event.button() == 0) scrollHandle?.takeIf { it.tab == tab &&
+            event.x() >= it.x - 4 && event.x() < it.x + 6 && event.y() >= it.track.top && event.y() < it.track.bottom }?.let { handle ->
+            val top = handle.track.thumbTop(scroll[tab] ?: 0)
+            scrollGrab = if (event.y() >= top && event.y() < top + handle.track.thumbHeight) event.y() - top else handle.track.thumbHeight / 2.0
+            draggingScroll = tab
+            scroll[tab] = handle.track.offsetAt(event.y(), scrollGrab)
+            return true
+        }
         if (event.button() == 0) hits.toList().firstOrNull { it.contains(event.x(), event.y()) }?.let { it.action(); return true }
         return super.mouseClicked(event, doubleClick)
+    }
+    override fun mouseDragged(event: MouseButtonEvent, dx: Double, dy: Double): Boolean {
+        if (event.button() == 0 && draggingScroll == tab) {
+            scrollHandle?.takeIf { it.tab == tab }?.let { scroll[tab] = it.track.offsetAt(event.y(), scrollGrab) }
+            return true
+        }
+        return super.mouseDragged(event, dx, dy)
+    }
+    override fun mouseReleased(event: MouseButtonEvent): Boolean {
+        if (event.button() == 0 && draggingScroll != null) { draggingScroll = null; return true }
+        return super.mouseReleased(event)
     }
     override fun mouseScrolled(mouseX: Double, mouseY: Double, scrollX: Double, scrollY: Double): Boolean {
         if (scrollY == 0.0) return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY)

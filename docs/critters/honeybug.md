@@ -49,7 +49,7 @@ Classify actual nests/hives in the initial loaded survey. Punching records sourc
 | Ordinary ESP | Unique stops after one shared catch. Full Clear keeps eligible uncaught bees. Sparkling shows no ordinary bee ESP. |
 | Source helpers | Full Clear retains unpunched nest helpers until shared verified capture quota or individual punches. Unique/Sparkling use local nest proof/trusted fd and discovery gates, separately from the row. |
 | Automatic completion announcements | Shared local whole-biome/report-readiness gates in [mode rules](../../SAFARI_LOGIC.md). Forest also requires initial-clearer status and 6 separate local food pickups. |
-| PB eligibility | Personal Unique: own catch of every species. Full Clear: personal captures/local proof. Party Unique: separate shared-capture/absence predicate; progress alone is insufficient. |
+| PB eligibility | Personal Unique: own catch of each spawned species; proven zero-spawn types exempt. Full Clear: personal captures/local proof. Party Unique: separate shared-capture/absence predicate; progress alone is insufficient. |
 
 ## Party reports and late entry
 
@@ -78,6 +78,8 @@ Existing coverage: [HoneybugModeEvidenceTest](../../src/test/kotlin/net/johnceo/
 Population guarantees and capsule success/escape claims from supplied notes were not live revalidated; see [audit D2](../IMPLEMENTATION_AUDIT.md#d2).
 
 ## Last updated
+
+2026-10-27 — Personal Unique PBs exempt positively proven zero-spawn types.
 
 2026-10-25 — Retain confirmed local Honeybug render/source checks instead of overwriting completion on unloading. Outside Forest trusts fd; inside trusts local proof. New nest demand reopens checking, and fresh render samples prevent stale capture/render mixtures from latching completion.
 

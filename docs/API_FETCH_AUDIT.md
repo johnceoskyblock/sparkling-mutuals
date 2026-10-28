@@ -26,10 +26,11 @@ Mode discovery loading is active inside Safari in every mode, or outside Safari 
 | `!ticket` / `!tickets` | Same one-shot behavior as missing. Reads current ticket data through the ordinary profile path, with separate Mojang IGN lookup. |
 | `/sparkling`, `/sparkling <IGN>`, comparison lists | One profile lookup per distinct requested player per invocation, with uncached Mojang IGN resolution. No command cooldown or automatic retry. Uses the ordinary shared HTTP cache. |
 | `/sparkling party` | One profile lookup per party UUID per invocation, using the ordinary shared HTTP cache. Labels reuse the existing asynchronous party-name resolver and its one-minute name cache, including members outside the tab list. A failed name lookup displays an explicit unavailable-name label instead of a raw UUID. |
-| Sparkling catch / history uniqueness | **No API fetch.** Uses and updates the retained party discovery snapshot as described above. Imported history also does not fetch. |
+| Sparkling catch / history uniqueness | **No API fetch.** Uses and updates the retained party discovery snapshot as described above. An explicit history import may separately request one selected-profile lookup for a total comparison (see below). |
+| `/sm history import` / Import History from Logs | One optional profile lookup for the active account after the scan; uses the ordinary shared 60-second transport cache, no automatic retry. No IGN lookup, per-log fetches, or price fetches. API totals only inform a comparison and never drive deletions. |
 | Bazaar prices | One request at history initialization, then lazily as valuation needs it; **at most once every three hours**, including after a failed attempt. Failures retain existing prices. One in flight; 20-second request timeout. Public endpoint, no shared/personal key. |
 
-`!m`, `!since`, PB commands, command help, starting-item messages, completion checks and supply reminders do not independently fetch SkyBlock data. `/rates` reads the verified roster and retained party discoveries only; it never requests roster or profile data. `/profitablecritters` reads already-cached Bazaar quotes without triggering even a normal refresh; it never adds HTTP requests. `getHoneyRefills()` exists but has no production callers; hive waypoints do not request API refill data.
+`!m`, `!since`, PB commands, command help, starting-item messages, completion checks and supply reminders do not independently fetch SkyBlock data. `/rates` reads the verified roster and retained party discoveries only; it never requests roster or profile data. `/profit` and `/profits` read already-cached Bazaar quotes without triggering even a normal refresh; it never adds HTTP requests. `getHoneyRefills()` exists but has no production callers; hive waypoints do not request API refill data.
 
 ## Transport and service boundaries
 
@@ -56,6 +57,8 @@ Sources under `src/main/kotlin/net/johnceo/sparklingmutuals/`: `api/PartyDiscove
 Focused automated coverage exercises retained members, joining/leaving members, local catch credits, delayed API results, partial failures, provider invalidation and the three-hour Bazaar boundary. Live roster and server-message timing remain Minecraft checks.
 
 ## Last updated
+
+2026-10-27 — Added one optional cached selected-profile comparison per explicit history import; no retry or per-file lookup.
 
 2026-10-25 — Renamed the local rate command to `/rates`; no new API requests. `/profitablecritters` now ranks ten results by estimated coins per run.
 

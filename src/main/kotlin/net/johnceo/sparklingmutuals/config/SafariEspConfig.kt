@@ -57,9 +57,14 @@ object SafariEspConfig {
     val floorTextScales = FloorDropType.entries.associateWith { DEFAULT_TEXT_SCALE }.toMutableMap()
     fun dropTextScale(type: FloorDropType) = validTextScale(floorTextScales[type] ?: textScale)
     fun dropLabelWorldScale(type: FloorDropType) = .025f * dropTextScale(type)
+    val scrappyFoodColors = net.johnceo.sparklingmutuals.safari.esp.ScrappyFood.entries.associateWith { defaultColor(it.defaultRgb) }.toMutableMap()
+    var scrappyTextScale = DEFAULT_TEXT_SCALE
+        set(value) { field = validTextScale(value) }
+    val scrappyLabelWorldScale get() = .025f * scrappyTextScale
     var teammateTextScale = DEFAULT_TEXT_SCALE
         set(value) { field = validTextScale(value) }
     val teammateLabelWorldScale get() = .025f * teammateTextScale
+    var teammateColor = defaultColor(0xFF55FF55.toInt())
     var rewardDrops = false
     val floorOnlyInBiome = FloorDropType.entries.associateWith { it == FloorDropType.GENERIC }.toMutableMap()
     fun dropOnlyInBiome(type: FloorDropType?) = floorOnlyInBiome[type] ?: true
@@ -95,7 +100,12 @@ object SafariEspConfig {
                 ?.toBooleanStrictOrNull() ?: (type == FloorDropType.GENERIC)
         }
         textScale = properties.getProperty("esp.textScale")?.toFloatOrNull() ?: DEFAULT_TEXT_SCALE
+        scrappyTextScale = properties.getProperty("esp.scrappy.textScale")?.toFloatOrNull() ?: DEFAULT_TEXT_SCALE
+        scrappyFoodColors.keys.forEach { food ->
+            scrappyFoodColors[food] = validColor(properties.getProperty("esp.scrappy.${food.name.lowercase()}.color"), defaultColor(food.defaultRgb))
+        }
         teammateTextScale = properties.getProperty("esp.teammate.textScale")?.toFloatOrNull() ?: textScale
+        teammateColor = validColor(properties.getProperty("esp.teammate.color"), defaultColor(0xFF55FF55.toInt()))
         floorTextScales.keys.forEach { type ->
             floorTextScales[type] = validTextScale(properties.getProperty("esp.floor.${type.name.lowercase()}.textScale")?.toFloatOrNull() ?: textScale)
         }
@@ -120,8 +130,11 @@ object SafariEspConfig {
         floorOnlyInBiome.forEach { (type, value) ->
             properties.setProperty("esp.floor.${type.name.lowercase()}.onlyInBiome", value.toString())
         }
+        properties.setProperty("esp.scrappy.textScale", scrappyTextScale.toString())
+        scrappyFoodColors.forEach { (food,color) -> properties.setProperty("esp.scrappy.${food.name.lowercase()}.color",color) }
         properties.setProperty("esp.textScale", textScale.toString())
         properties.setProperty("esp.teammate.textScale", teammateTextScale.toString())
+        properties.setProperty("esp.teammate.color", teammateColor)
         floorTextScales.forEach { (type, _) ->
             properties.setProperty("esp.floor.${type.name.lowercase()}.textScale", dropTextScale(type).toString())
         }

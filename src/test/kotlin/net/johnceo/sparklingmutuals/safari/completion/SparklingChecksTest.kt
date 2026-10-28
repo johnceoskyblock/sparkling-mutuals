@@ -24,7 +24,7 @@ class SparklingChecksTest {
     private fun party(needs: Set<String>) = PartySparklingState().apply {
         select(setOf("one")); accept(setOf("one"), mapOf("one" to SafariRoster.all.map { it.name }.toSet() - needs))
     }
-    @Test fun `any Wumpa capture checks all Icy species only in Sparkling mode`() {
+    @Test fun `any Wumpa capture checks Icy and supplies shared Unique prerequisite proof`() {
         ConfigManager.init(dir)
         SafariFullClear.select(SafariMode.SPARKLING)
         val icy = SafariBiome.ICY
@@ -41,7 +41,7 @@ class SparklingChecksTest {
             }
             assertTrue(SafariPanels.missingCritters(run, icy, state).isEmpty())
             assertEquals("id", run.completion.announcement(run, icy, SafariMode.SPARKLING, state))
-            assertEquals(1, run.completed(SafariMode.UNIQUE, icy.critters, state))
+            assertEquals(icy.critters.size, run.completed(SafariMode.UNIQUE, icy.critters, state))
             assertFalse(run.captureComplete("Billygoat"))
             assertFalse(run.sparklingComplete("Gazer", state))
             run.visitBiome(SafariBiome.FOREST)

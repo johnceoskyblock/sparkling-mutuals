@@ -17,9 +17,9 @@ Each saved switch controls its own blockers. **Hold either physical Shift key** 
 
 ## Optional ticket auto-selection
 
-**Safari helpers → Safari entry → Auto-select Safari ticket** is on by default. Directly below it, **Preferred ticket** offers **First Class** (default preference) or **Basic**. After a permitted Manager interaction by a verified non-leader in a party, the helper waits for the exact `Critter Safari Entry` menu and all four ticket controls. It chooses the preferred available tier: First Class → Premium → Economy → Basic, or Basic → Economy → Premium → First Class. Existing saved off choices are preserved.
+**Safari helpers → Safari entry → Auto-select Safari ticket** is on by default. Directly below it, **Preferred ticket** offers **First Class** or **Basic** (fresh-install preference; existing choices are preserved). Only inside the actual Safari island (coordinates plus current Safari area evidence, or `safari` mode while sidebar data is absent), for a verified non-leader in a party, the helper detects the exact `Critter Safari Entry` menu and all four ticket controls. It chooses the preferred available tier: First Class → Premium → Economy → Basic, or Basic → Economy → Premium → First Class. Existing saved off choices are preserved.
 
-Availability comes from menu lore counts or explicit usable/unavailable text, not guessed API balances or item stack counts. Unknown availability waits rather than spending another ticket. A short menu-loading delay precedes selection. While auto-selection is handling the menu, its contents/background are hidden and mouse clicks are ignored; the actual server menu stays open for the normal guarded selection. The menu becomes visible if entry is blocked, all tiers are unavailable, or loading/selection takes more than two seconds. Escape remains available. Every automated selection calls the normal guard and container-input path; readiness/presence blocks continue to hold selection unless Shift is physically held. The helper clicks at most once per opened menu. A new world/connection, disabled toggle, or 15-second expiry cancels the pending Manager interaction. It does not initiate Manager interactions or spend tickets for party leaders/solo players.
+Availability comes from menu lore counts or explicit usable/unavailable text, not guessed API balances or item stack counts. Unknown availability waits rather than spending another ticket. A short menu-loading delay precedes selection. While auto-selection is handling the menu, its contents/background are hidden and mouse clicks are ignored; the actual server menu stays open for the normal guarded selection. The menu becomes visible if entry is blocked, all tiers are unavailable, or loading/selection takes more than two seconds. Escape remains available. Every automated selection calls the normal guard and container-input path; readiness/presence blocks continue to hold selection unless Shift is physically held. The helper clicks at most once per opened menu. A new world/connection resets menu state. Selection and screen hiding share the Safari-island gate, with no chat trigger or 15-second arm timeout. A manual click after the menu becomes visible cancels automation for that menu. On Torrhus Canyon, other islands, or unknown location, the menu stays visible and accepts normal manual clicks through the existing entry guard. It does not initiate Manager interactions or spend tickets for party leaders/solo players.
 
 ## Implemented behavior
 
@@ -62,7 +62,21 @@ Both switches persist in the [general configuration](CONFIG_DEFAULTS.md). Presen
 - Events and identity: [SafariPartyInput](../src/main/kotlin/net/johnceo/sparklingmutuals/safari/automation/SafariPartyInput.kt); actual boundary callbacks: [SafariManagerMixin](../src/main/kotlin/net/johnceo/sparklingmutuals/mixin/SafariManagerMixin.kt), registered in [mixins](../src/main/resources/sparkling-mutuals.mixins.json); startup/tick/reset: [SparklingMutuals](../src/main/kotlin/net/johnceo/sparklingmutuals/SparklingMutuals.kt).
 - Existing secondary coverage: [EntryBoundaryTest](../src/test/kotlin/net/johnceo/sparklingmutuals/safari/automation/EntryBoundaryTest.kt), [EntryGuardStateTest](../src/test/kotlin/net/johnceo/sparklingmutuals/safari/automation/EntryGuardStateTest.kt), [EntryPartyInboxTest](../src/test/kotlin/net/johnceo/sparklingmutuals/safari/automation/EntryPartyInboxTest.kt), [SafariManagerGuardTest](../src/test/kotlin/net/johnceo/sparklingmutuals/safari/automation/SafariManagerGuardTest.kt). No local runtime suites, mixin startup or live packet capture ran for this documentation audit; CI results are separate. Live checks remain needed on all supported targets: repeated entry attempts with missing/late members; each intercepted route, hand and GUI input; Shift/release; unknown roster; kick-pause expiry/restart; transfers; independent holders; unrelated controls.
 
+## Ticket selection trigger
+
+Detect the exact entry menu directly inside a verified Safari instance. Neither a local entry notice nor Manager click is required. The log showed that entry notices name the party leader, so local-name matching could leave non-leaders unarmed. Menu detection also survives delayed roster, sidebar and Mod API data. Torrhus conversion menus remain visible and manual. Only known non-leaders can auto-select, and every selection still passes the entry guard.
+
 ## Last updated
+
+2026-10-28 - Replaced entry-message arming with direct Safari ticket-menu detection.
+
+
+2026-10-28 - Armed ticket selection from the local Safari entry message.
+
+
+2026-10-28 — Ticket auto-selection and menu hiding now require current Safari area text, mapped Safari coordinates, Mod API Safari mode and a verified party non-leader. Revalidate for arming, clicks and hiding; stale mode packets cannot activate it on Torrhus. Conversion menus remain visible/manual there. Entry-guard rules are unchanged.
+
+2026-10-26 — Restricted ticket automation and menu hiding to the actual Safari island; Torrhus ticket menus remain manual and visible.
 
 2026-10-26 — Torrhus guard reasons now identify contest requests per player. A confirmed leader party warp starts the twenty-second release for other contest holds; see [contest/downtime](CONTEST_DOWNTIME.md).
 

@@ -48,7 +48,7 @@ None. No species-specific resource or structure gate is used.
 | Ordinary ESP | Unique: until first shared capture. Full Clear: eligible uncaught models. Sparkling: no ordinary model ESP solely for automatic checking. Settings and model validity still apply. |
 | Source helpers | None. |
 | Automatic completion announcements | Shared local whole-biome/report-readiness gates in [mode rules](../../SAFARI_LOGIC.md). |
-| PB eligibility | Personal Unique: own catch of every species. Full Clear: personal captures/local proof. Party Unique: separate shared-capture/absence predicate; progress alone is insufficient. |
+| PB eligibility | Personal Unique: own catch of each spawned species; proven zero-spawn types exempt. Full Clear: personal captures/local proof. Party Unique: separate shared-capture/absence predicate; progress alone is insufficient. |
 
 ## Party reports and late entry
 
@@ -72,7 +72,23 @@ Existing coverage: [SafariFullClearProgressTest](../../src/test/kotlin/net/johnc
 
 Population guarantees and capsule success/escape claims from supplied notes were not live revalidated; see [audit D2](../IMPLEMENTATION_AUDIT.md#d2).
 
+## Food ESP
+
+Food is inferred from the reported ordering of the three armadillo entity IDs: lowest = Wheat, middle = Fish, highest = Lily Pad. This pattern was observed across four runs; it still needs broader live validation. Nametag IDs are not used.
+
+Until all three armadillos have been observed, the unidentified color is used without text. Once assigned, foods persist through unloading and captures until the next run. Existing mode and capture visibility rules still apply.
+
+Customization > Critter colors > Cavern critter colors > Scrappy ESP contains separate Wheat (yellow), Fish (red), Lily Pad (green), and unidentified colors, plus a shared Scrappy text size.
+
 ## Last updated
+
+2026-10-28 - Unidentified Scrappys show no food label.
+
+
+2026-10-28 - Added food labels, food colors, and Scrappy text size using the reported armadillo ID ordering.
+
+
+2026-10-27 — Personal Unique PBs exempt positively proven zero-spawn types.
 
 2026-10-26 — Removed ordinary ESP added solely for automatic Sparkling checks and its per-UUID linger. Capture/source and profitable-highlight exceptions remain separate.
 

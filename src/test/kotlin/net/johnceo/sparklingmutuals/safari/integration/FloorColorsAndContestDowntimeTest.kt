@@ -21,7 +21,7 @@ class FloorColorsAndContestDowntimeTest {
         assertTrue(SafariEspConfig.floorColors.filterKeys { it != FloorDropType.GENERIC }.values.all { it == legacy })
         assertEquals(0xFF6D6D75.toInt(), SafariEspConfig.rgb(SafariEspConfig.dropColor(FloorDropType.GENERIC)))
         val settings = SafariEspSettings()
-        val customization = CustomizationSettings(settings.floorColors)
+        val customization = CustomizationSettings()
         settings.floorColors.coin = "0:255:255:215:0"
         settings.floorColors.incense = "0:255:100:0:255"
         settings.floorColors.lime = "invalid"
@@ -35,10 +35,10 @@ class FloorColorsAndContestDowntimeTest {
         assertEquals("0:255:100:0:255", SafariEspConfig.dropColor(FloorDropType.INCENSE))
         assertEquals(10, SafariEspConfig.floorColors.size)
         customization.selectedHex = "#112233"
-        assertTrue(customization.floor.setSelected())
         settings.apply(); customization.apply()
-        assertEquals(SafariEspConfig.floorColor, SafariEspConfig.dropColor(FloorDropType.COIN))
-        assertEquals(SafariEspConfig.floorColor, SafariEspConfig.dropColor(FloorDropType.INCENSE))
+        assertEquals("0:255:255:215:0", SafariEspConfig.dropColor(FloorDropType.COIN))
+        assertEquals("0:255:100:0:255", SafariEspConfig.dropColor(FloorDropType.INCENSE))
+        assertFalse(customization.waypoints.javaClass.fields.any { it.name == "floor" })
         SafariEspConfig.floorColor = "0:255:9:8:7"
         assertTrue(SafariEspConfig.floorColors.values.all { it == "0:255:9:8:7" })
     }

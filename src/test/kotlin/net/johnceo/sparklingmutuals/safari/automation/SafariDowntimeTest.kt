@@ -132,7 +132,7 @@ class SafariDowntimeTest {
         assertTrue(SafariDowntime.localNotice().contains("Friend (food), Leader (contest), Me (contest)"))
     }
     @Test fun `any ticket mention clears only its senders downtime request`() {
-        for (message in listOf("ticket", "got my TICKET", "two tickets ready", "Ticket earned!")) {
+        for (message in listOf("ticket", "got my TICKET", "two tickets ready", "Ticket earned!", "First-Class Ticket earned!")) {
             SafariDowntime.reset()
             SafariDowntime.chat("Party > Farmer: !dt food", false, "Me")
             SafariDowntime.chat("Party > Friend: !dt contest", false, "Me")

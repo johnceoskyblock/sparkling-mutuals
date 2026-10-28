@@ -87,7 +87,7 @@ object SafariPanels {
         else if (complete) 0xFF55FF55.toInt() else 0xFFFF5555.toInt()
     fun captures(run: SafariRun?, biome: SafariBiome) = HudPanel("${biome.label} captures", biome.color, buildList {
         biome.critters.forEach { val count = run?.count(it.name) ?: 0
-            add(HudRow(it.name, "$count", it.color, captureColor(run?.fullClearComplete(it.name) == true,
+            add(HudRow(it.name, if (run?.inferredCapture(it.name) == true) "\u22651" else "$count", it.color, captureColor(run?.fullClearComplete(it.name) == true,
                 run?.hasCaptureEvidence(biome) == true || run?.fullClearReportReceived(biome) == true ||
                     it.name == "Honeybug" && run?.beeNestCountKnown == true ||
                     it.name in SafariFullClear.fixedCaptureTargets && count > 0))) }

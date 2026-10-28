@@ -34,7 +34,7 @@ The audit follows owners through event registration/callers, mode/configuration 
 
 ### d14
 
-**Party Unique PB proof differs from progress.** [SafariPersonalBests.recordPartyUnique](../src/main/kotlin/net/johnceo/sparklingmutuals/safari/completion/SafariPersonalBests.kt) uses shared catches or `uniqueUnavailable`, rather than `uniqueComplete`. Resolved unseen Rockmite/Snoozle can satisfy that PB path without cd, and a caught source species does not receive progress's extra source gate there. Personal Unique PB instead requires every species' personal capture, with no unseen-species waiver. The mode guide documents these separate consumers without claiming a unified completion rule.
+**Party Unique PB proof differs from progress.** [SafariPersonalBests.recordPartyUnique](../src/main/kotlin/net/johnceo/sparklingmutuals/safari/completion/SafariPersonalBests.kt) uses shared catches or `uniqueUnavailable`, rather than `uniqueComplete`. Resolved unseen Rockmite/Snoozle can satisfy that PB path without cd, and a caught source species does not receive progress's extra source gate there. Personal Unique PB requires a personal capture of every spawned species; the same positively proven absence predicate exempts non-spawns. The mode guide documents these separate consumers without claiming a unified completion rule.
 
 ### d17
 
@@ -50,7 +50,7 @@ The audit follows owners through event registration/callers, mode/configuration 
 
 ### d7
 
-**Unknown imported duration may satisfy speed achievements.** [HistoryBackfill](../src/main/kotlin/net/johnceo/sparklingmutuals/history/importing/HistoryBackfill.kt) stores zero length when an end is unavailable. [Achievements.checkRun](../src/main/kotlin/net/johnceo/sparklingmutuals/history/Achievements.kt) grants speed awards when the party count is sufficient and length is below 180,000/150,000 ms, without a positive-known-duration guard. Rechecking imported records can therefore treat an unknown duration as fast. This is a static risk finding; no new live reproduction or behavior change is claimed.
+**Speed achievement timing repaired (2026-10-27).** The first capture/loot-share completing 37 types now records an elapsed timestamp, including in log imports. Speed awards use that timestamp; a known positive run duration is only a conservative legacy fallback. Unknown zero duration does not qualify.
 
 ### d10
 
@@ -93,5 +93,7 @@ The eight completed/superseded multi-version and capture-shot plan/specification
 The PR records the final inventory/disposition map, representative before/after cases, local file/heading checks, the 37-page schema check and documentation-only diff inspection. See [source synchronization](SOURCE_SYNC.md) for the distinction between dates, hashes, reviewed commits and validation. The all-document hash manifest is deliberately not re-recorded to imply the suspected defects were implemented or tested.
 
 ## Last updated
+
+2026-10-27 — Personal Unique PBs exempt positively proven zero-spawn types.
 
 2026-10-19 (America/New_York) — Consolidated static documentation discrepancies and retained implementation/server uncertainties at the reviewed revision above. No live validation or gameplay fixes in this audit.

@@ -30,7 +30,7 @@ Any verified current party member may send `!dt [reason]`. Requests during an ac
 
 Each sender releases only their own outstanding request by a party message containing `ticket` (case-insensitive, for any reason), or an accepted affirmative readiness message. Accepted examples: `r`, `rdy`, `ready`, `I'm ready`, `ready to go`, `ready when you are`, punctuation/case variants, short r-spam and a single adjacent-key typo such as `r/`, `rrr`, `rt` or `er`. Questions, `nr`, `not ready`, `almost ready`, `I will be ready`, `party`, `red` and `brb` do not count. The same parser is used while identity verification is pending.
 
-A current Miria scoreboard tier of **Uncommon or higher**, observed at least ten seconds into the window, establishes local contest completion. This immediately clears only the local player's **contest** request. With known party membership of more than one, it also sends exact party text **Ticket earned!**, once per player/window. Receiving that verified party text can release its sender's hold for any reason. Therefore local scoreboard detection and receiving a ticket-containing party message have different scopes. Higher tiers and profile refreshes cannot repeat the announcement in that window.
+Under Miria Contest, **Ticket mode** selects Basic (default: Uncommon or higher, announcing **Ticket earned!**) or First-Class (Legendary / 5,000 points, announcing **First-Class Ticket earned!**). The announcer is always enabled, including with the contest HUD disabled. Current Miria scoreboard evidence at least ten seconds into the window establishes the selected target, clears only the local contest hold, and announces with known party membership of more than one. Announcements are deduplicated per player/window/target: changing to First-Class can announce the higher reward, while changing back cannot repeat an already announced Basic reward. Contest warnings and hive completion visibility follow the selected target. Received ticket-containing party messages retain their existing readiness behavior. The selector persists in the contest config and is independent of the automatic Safari entry ticket preference.
 
 ### Combined reminder
 
@@ -48,7 +48,7 @@ Reports wait for the destination, stagger by party UUID order and suppress a mat
 
 Settings persist; requests, warning state and automatic-request observation state are in memory. Same-party transfers retain requests and activate banked holds; the party inbox discards old-instance kick context. Confirmed departures prune only that member; party replacement, disband or disabling downtime clears requests. Unknown member names remain held by UUID until resolved.
 
-Profile scope changes reset contest completion, tier, points and warnings, but do not reset the automatic transition observer or per-player/window announcement deduplication. A new window clears completion/warning state and permits a new ticket announcement. The announcement state is not disk-backed across full client restarts.
+Contest completion, tier, score and warnings are retained in memory per account/profile and absolute contest window. A temporary missing scope during a kick/disconnect hides the current state without deleting it; returning to the same scope restores it. Another account/profile starts with its own evidence. Lower reconnect scoreboard placeholders cannot reduce the retained score. A new contest window invalidates old progress. Automatic-request observation and announcement deduplication still survive reconnects, preventing a second ticket message. These states are not disk-backed across full client restarts.
 
 ## Edge cases
 
@@ -64,6 +64,10 @@ Profile scope changes reset contest completion, tier, points and warnings, but d
 - Existing secondary coverage: [ContestTicketAndAutoWarpTest](../src/test/kotlin/net/johnceo/sparklingmutuals/contest/ContestTicketAndAutoWarpTest.kt), [SafariDowntimeTest](../src/test/kotlin/net/johnceo/sparklingmutuals/safari/automation/SafariDowntimeTest.kt), [DowntimeAnnouncementTest](../src/test/kotlin/net/johnceo/sparklingmutuals/safari/automation/DowntimeAnnouncementTest.kt). No tests or live session ran in this audit. Live checks should cross starts with each role/setting, earn tiers across rollovers, exercise multiple independent holders, transfers, staggered reports and same-window profile refreshes.
 
 ## Last updated
+
+2026-10-27 — Retain same-window contest progress across kicks, disconnects and temporary profile loss; isolate accounts/profiles and reject lower scoreboard placeholders after reconnect.
+
+2026-10-27 — Added always-enabled Basic / First-Class contest ticket announcement targets and persisted Miria Contest selector.
 
 2026-10-26 — Confirmed leader party warps in Torrhus start all other contest timers together; readiness remains an early release and local guard messages show contest-specific reasons.
 

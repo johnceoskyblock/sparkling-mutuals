@@ -5,21 +5,67 @@ import kotlin.math.abs
 
 data class ShywormPath(val minX: Double, val minZ: Double, val maxX: Double, val maxZ: Double, val height: Double)
 data class ShywormTimer(val text: String, val color: Int)
+data class ShywormMarker(val id: UUID, val x: Double, val y: Double, val z: Double)
+data class ShywormPart(val id: UUID, val x: Double, val y: Double, val z: Double, val head: Boolean)
 class ShywormProjection {
+    companion object {
+        /** A body hit identifies a head only when its bounded connected component has exactly one head. */
+        fun headForPart(hit: UUID, parts: List<ShywormPart>): UUID? {
+            if (parts.size > 64 || parts.none { it.id == hit }) return null
+            val seen = mutableSetOf(hit); val queue = ArrayDeque<UUID>(); queue.add(hit)
+            while (queue.isNotEmpty()) {
+                val next = queue.removeFirst()
+                val part = parts.first { it.id == next }
+                parts.filter { it.id !in seen &&
+                    (it.x-part.x)*(it.x-part.x)+(it.y-part.y)*(it.y-part.y)+(it.z-part.z)*(it.z-part.z) <= 1.75*1.75 }
+                    .forEach { seen.add(it.id); queue.add(it.id) }
+            }
+            return parts.filter { it.head && it.id in seen }.singleOrNull()?.id
+        }
+    }
+    private val aliases = mutableMapOf<UUID, UUID>()
+    private val retired = mutableSetOf<UUID>()
+    private fun identity(id: UUID): UUID {
+        var current = id
+        repeat(64) { current = aliases[current] ?: return current }
+        return current
+    }
     private data class Worm(var x: Double, var y: Double, var z: Double, var height: Double?,
         var visible: Boolean = false, var visibleAt: Long? = null, var hiddenAt: Long? = null,
         var dx: Int = 0, var dz: Int = 0, var cornerX: Double = x, var cornerZ: Double = z,
         var movedAt: Long = Long.MIN_VALUE, var restAt: Long? = null, var groundHeight: Double? = null,
         val startX: Double = x, val startZ: Double = z, var firstDx: Int = 0, var firstDz: Int = 0,
-        var returnedToStart: Boolean = false)
+        var returnedToStart: Boolean = false, var missing: Boolean = false)
     private val worms = mutableMapOf<UUID, Worm>()
     private data class Rest(val at: Long, val playerX: Double, val playerZ: Double)
     private val rests = mutableListOf<Rest>()
+    private var discardMissingUntil = Long.MIN_VALUE
+    /** An unassociated confirmed catch invalidates uncertain absent locations, not live critters.
+     * Do not retire these UUIDs: a real cooldown worm may still return with the same identity. */
+    fun unassociatedCapture(now: Long) {
+        discardMissingUntil = now + 1250
+        worms.entries.removeAll { it.value.missing }
+    }
+    fun reconcileCapture(now: Long, active: Set<UUID>) {
+        if (now <= discardMissingUntil) worms.entries.removeAll { it.key !in active }
+    }
     private val restMessages = setOf("The Shyworm hid back into the ground.",
         "The Shyworm saw a player and fled!", "The Shyworm fled because it was startled!")
     fun observe(id: UUID, x: Double, y: Double, z: Double, visible: Boolean, now: Long) {
-        if (!listOf(x, y, z).all(Double::isFinite)) return
+        if (!listOf(x, y, z).all(Double::isFinite) || id in aliases || id in retired || identity(id) in retired) return
+        if (id !in worms && !visible) return
+        // A cooldown can replace the entity UUID. Only a unique nearby surface return replaces a marker.
+        if (id !in worms && visible && y > 2) {
+            val matches = worms.filter { (_, w) -> w.missing && w.height != null &&
+                (w.x - x) * (w.x - x) + (w.z - z) * (w.z - z) <= 2.25 && abs(w.height!! - y) <= 3 }
+            if (matches.size == 1) {
+                val previous = matches.keys.single()
+                worms.remove(previous); aliases[previous] = id
+            }
+        }
         val w = worms.getOrPut(id) { Worm(x, y, z, null) }
+        if (w.missing) { w.restAt = null; w.returnedToStart = false }
+        w.missing = false
         val mx = x - w.x; val mz = z - w.z
         val changed = maxOf(abs(mx), abs(mz)) > .02
         val atStart = abs(x - w.startX) <= .15 && abs(z - w.startZ) <= .15
@@ -110,6 +156,17 @@ class ShywormProjection {
             maxOf(startZ, endZ) + if (dz == 0) .5 else 0.0, height)
     }
 
-    fun retain(ids: Set<UUID>) { worms.keys.retainAll(ids) }
-    fun reset() { worms.clear(); rests.clear() }
+    /** Missing entities are cooldown locations, not evidence of a capture or remaining population. */
+    fun retain(ids: Set<UUID>) { worms.forEach { (id, worm) -> if (id !in ids) worm.missing = true } }
+    fun missingMarkers(): List<ShywormMarker> = worms.mapNotNull { (id, w) ->
+        w.height?.takeIf { w.missing }?.let { ShywormMarker(id, w.x, it, w.z) }
+    }
+    fun caught(id: UUID): Set<UUID> {
+        val current = identity(id)
+        val family = aliases.keys.filter { identity(it) == current }.toSet() + id + current
+        retired.addAll(family)
+        family.forEach { worms.remove(it) }
+        return family
+    }
+    fun reset() { worms.clear(); rests.clear(); aliases.clear(); retired.clear(); discardMissingUntil = Long.MIN_VALUE }
 }

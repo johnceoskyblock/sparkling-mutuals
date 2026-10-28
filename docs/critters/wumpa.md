@@ -49,7 +49,7 @@ Icy prerequisite captures and Icebreaker opportunities are described by [message
 | Ordinary ESP | Unique stops after first shared catch; Full Clear keeps eligible uncaught models. Sparkling requires needed discovery and no shared boss catch. Needed Sparkling Wumpa also forces Icy priority before first shared catch; settings still gate rendering. |
 | Source helpers | Icebreaker prediction supplies neither capture nor boss completion. |
 | Automatic completion announcements | Shared local whole-biome/report-readiness gates in [mode rules](../../SAFARI_LOGIC.md). |
-| PB eligibility | Personal Unique: own catch of every species. Full Clear: personal captures/local proof. Party Unique: separate shared-capture/absence predicate; progress alone is insufficient. Boss Solo needs own captures of every other Icy species; own boss catch may update Duo. Ordinary attributed loot share can record Observed time only; Sparkling boss text misses the current dedicated PB matcher ([D15](../IMPLEMENTATION_AUDIT.md#d15)). |
+| PB eligibility | Personal Unique: own catch of each spawned species; proven zero-spawn types exempt. Full Clear: personal captures/local proof. Party Unique: separate shared-capture/absence predicate; progress alone is insufficient. Boss Solo needs own captures of every other Icy species; own boss catch may update Duo. Ordinary attributed loot share can record Observed time only; Sparkling boss text misses the current dedicated PB matcher ([D15](../IMPLEMENTATION_AUDIT.md#d15)). |
 
 ## Party reports and late entry
 
@@ -75,6 +75,15 @@ Existing coverage: [SafariPersonalBestTest](../../src/test/kotlin/net/johnceo/sp
 
 Population guarantees and capsule success/escape claims from supplied notes were not live revalidated; see [audit D2](../IMPLEMENTATION_AUDIT.md#d2).
 
+## Wumpa prerequisite evidence
+
+The exact server message `The Wumpa has awoken.` or a confirmed Wumpa catch proves at least one shared capture of every other Icy species. Missing individual catch events receive a derived lower bound of one, shown as >=1 in the capture panel. Real catch messages replace this inferred minimum rather than adding another capture. This proof supports Unique completion but never personal catches, catcher attribution, fabricated catch/history events, or Full Clear quantities above one. Awakening does not count as catching Wumpa.
+
 ## Last updated
+
+2026-10-28 - Added Wumpa awakening/capture proof for missing shared Icy capture events.
+
+
+2026-10-27 — Personal Unique PBs exempt positively proven zero-spawn types.
 
 2026-10-19 (America/New_York) — Uniform species reference; audited evidence, modes, display and lifecycle. Reviewed source: `93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee`; no local runtime source changes reviewed. See [revision convention](../DOCUMENTATION_GUIDE.md).

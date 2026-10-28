@@ -27,7 +27,7 @@ object ContestTracker {
 
     private val TIER_ROW = Regex("""^\s*([A-Za-z]+)\s+with\s+(\S+)""")
 
-    private val completeTiers = ContestTicketState.earnedTiers
+    private var selectedTicketMode = ContestConfig.ticketMode
     private val ticketNotices = ContestTicketState()
 
     private val downtime = ContestDowntimeState()
@@ -41,13 +41,28 @@ object ContestTracker {
     private var scope: String? = null
 
     private val warnedMinutes = linkedSetOf<Int>()
+    private data class Progress(val window: Long, val seconds: Int, val complete: Boolean,
+        val completedWindow: Long, val points: Int, val tier: String, val warnings: Set<Int>, val ticketMode: Int)
+    private val retained = mutableMapOf<String, Progress>()
 
     /** Completion and sidebar evidence belong to one player/profile, including while tracking is disabled. */
-    fun selectScope(owner: String?) {
+    fun selectScope(owner: String?, now: java.time.LocalDateTime = java.time.LocalDateTime.now()) {
         if (scope == owner) return
+        val currentWindow = absoluteWindow(now)
+        scope?.takeIf { windowKey == currentWindow }?.let {
+            retained[it] = Progress(windowKey, secondsIntoWindow, complete, completedWindow, points, tier,
+                warnedMinutes.toSet(), selectedTicketMode)
+        }
+        retained.entries.removeIf { it.value.window != currentWindow }
         scope = owner
         complete = false; completedWindow = -1L; windowKey = -1L
         points = -1; tier = ""; tickCounter = 0; warnedMinutes.clear()
+        owner?.let(retained::get)?.let { saved ->
+            windowKey = saved.window; secondsIntoWindow = saved.seconds
+            complete = saved.complete; completedWindow = saved.completedWindow
+            points = saved.points; tier = saved.tier; warnedMinutes.addAll(saved.warnings)
+            selectedTicketMode = saved.ticketMode
+        }
     }
 
     fun onClientTick(client: Minecraft) {
@@ -57,6 +72,10 @@ object ContestTracker {
         tickCounter = 0
 
         rollWindow()
+        if (selectedTicketMode != ContestConfig.ticketMode) {
+            selectedTicketMode = ContestConfig.ticketMode
+            complete = false; completedWindow = -1L; warnedMinutes.clear()
+        }
         if (downtime.poll(windowKey, secondsIntoWindow, ContestConfig.autoContestDowntime,
                 SkyblockSidebar.inSkyblock(client), PartyManager.hasInfo &&
                     PartyManager.getMembers().size > 1,
@@ -109,25 +128,30 @@ object ContestTracker {
         val match = MiriaContestFilter.miriaLines(SkyblockSidebar.lines(client)).firstNotNullOfOrNull { line ->
             TIER_ROW.find(line)?.takeIf { isTierName(it.groupValues[1]) }
         } ?: return
-        tier = match.groupValues[1]
-        points = parseInt(match.groupValues[2])
+        if (!observeScore(match.groupValues[1], parseInt(match.groupValues[2]))) return
 
         if (
             tier.isNotEmpty() &&
             !complete &&
             secondsIntoWindow >= STALE_GUARD_SECONDS &&
-            tier.uppercase() in completeTiers
+            ContestTicketState.earned(tier, ContestConfig.firstClassTicket, points)
         ) {
             complete = true
             completedWindow = windowKey
             val player = client.player ?: return
             SafariDowntime.ticketEarned(player.name.string)
-            if (ticketNotices.claim(player.uuid.toString(), windowKey, tier, secondsIntoWindow) &&
+            if (ticketNotices.claim(player.uuid.toString(), windowKey, tier, secondsIntoWindow, ContestConfig.firstClassTicket, points) &&
                 PartyManager.hasInfo &&
                 PartyManager.getMembers().size > 1)
-                client.connection?.sendCommand("pc Ticket earned!")
+                client.connection?.sendCommand("pc ${ContestTicketState.message(ContestConfig.firstClassTicket)}")
             println("Sparkling Mutuals: Contest complete — $tier with $points")
         }
+    }
+    /** Contest points increase within a profile/window; reconnect placeholders must not replace them. */
+    internal fun observeScore(observedTier: String, observedPoints: Int): Boolean {
+        if (observedPoints < 0 || observedPoints < points) return false
+        tier = observedTier; points = observedPoints
+        return true
     }
 
     private fun maybeWarn(client: Minecraft) {
@@ -188,7 +212,7 @@ object ContestTracker {
         client.gui.smSetTitle(Component.literal("§c§lINCOMPLETE!"))
         client.gui.smSetSubtitle(
             Component.literal(
-                "§e${formatRemaining(remaining)} left to reach Uncommon"
+                "§e${formatRemaining(remaining)} left to reach ${if (ContestConfig.firstClassTicket) "Legendary" else "Uncommon"}"
             )
         )
     }
@@ -196,7 +220,8 @@ object ContestTracker {
     /**
      * Completion belongs to the observed profile and contest window; ticket detection continues with the HUD off.
      */
-    fun isComplete(): Boolean = completeFor(complete, completedWindow, absoluteWindow(java.time.LocalDateTime.now()))
+    fun isComplete(): Boolean = selectedTicketMode == ContestConfig.ticketMode &&
+        completeFor(complete, completedWindow, absoluteWindow(java.time.LocalDateTime.now()))
     fun completeFor(complete: Boolean, seenWindow: Long, currentWindow: Long) = complete && seenWindow == currentWindow
 
     /** The contest a completion belongs to, read together with it: unique across days, null while incomplete. */
@@ -218,7 +243,7 @@ object ContestTracker {
 
     private fun isTierName(word: String): Boolean {
         val upper = word.uppercase()
-        return upper == "COMMON" || upper in completeTiers
+        return upper == "COMMON" || upper in ContestTicketState.earnedTiers
     }
 
     private fun parseInt(token: String): Int {

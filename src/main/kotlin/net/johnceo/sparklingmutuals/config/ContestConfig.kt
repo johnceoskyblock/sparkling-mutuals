@@ -25,6 +25,8 @@ object ContestConfig {
 
     var trackContest = true
     var autoContestDowntime = true
+    var ticketMode = 0 // Basic = 0, First-Class = 1; independent of entry ticket preference.
+    val firstClassTicket get() = ticketMode == 1
     var contestWarnEnabled = true
     var contestWarnMinutes = "5, 3, 1"
     var contestWarnTitle = true
@@ -56,6 +58,7 @@ object ContestConfig {
 
             trackContest = getProperty("trackContest", "true").toBoolean()
             autoContestDowntime = getProperty("autoContestDowntime", "true").toBooleanStrictOrNull() ?: true
+            ticketMode = getProperty("ticketMode", "0").toIntOrNull()?.takeIf { it in 0..1 } ?: 0
             contestWarnEnabled = getProperty("contestWarnEnabled", "true").toBoolean()
             contestWarnMinutes = getProperty("contestWarnMinutes", "5, 3, 1")
             contestWarnTitle = getProperty("contestWarnTitle", "true").toBoolean()
@@ -87,6 +90,7 @@ object ContestConfig {
             if (!legacyLayout) layout.save(this, "contest")
             setProperty("trackContest", trackContest.toString())
             setProperty("autoContestDowntime", autoContestDowntime.toString())
+            setProperty("ticketMode", ticketMode.toString())
             setProperty("contestWarnEnabled", contestWarnEnabled.toString())
             setProperty("contestWarnMinutes", contestWarnMinutes)
             setProperty("contestWarnTitle", contestWarnTitle.toString())

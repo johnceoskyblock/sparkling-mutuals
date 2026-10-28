@@ -103,7 +103,7 @@ data class PartyCommand(val kind: PartyCommandKind, val ign: String = "", val du
         private val names = (SafariRoster.all.map { Regex.escape(it.name) } + "All Birds").joinToString("|")
         private val lookupResult = Regex("^(?:None|None\\. :skull:|All\\. :skull:|(?:$names)(?:, (?:$names))*)$", RegexOption.IGNORE_CASE)
         private val bossLookup = Regex("""^!pb\s+(doom|wumpa|forest|haunted|icy|cavern)\s+([A-Za-z0-9_]{1,16})(?:\s+(duo|party))?$""", RegexOption.IGNORE_CASE)
-        private val lookup = Regex("""^!(missing|tickets?)\s+([A-Za-z0-9_]{1,16})$""", RegexOption.IGNORE_CASE)
+        private val lookup = Regex("""^!(missing|tickets?)(?:\s+([A-Za-z0-9_]{1,16}))?$""", RegexOption.IGNORE_CASE)
         private val since = Regex("""^!since(?:\s+(unique))?$""", RegexOption.IGNORE_CASE)
         private val missingRun = Regex("""^!m(?:\s+(\S+))?$""", RegexOption.IGNORE_CASE)
         fun fromChat(text: String): PartyRequest? {
@@ -136,7 +136,7 @@ data class PartyCommand(val kind: PartyCommandKind, val ign: String = "", val du
                     else {
                         val match = lookup.matchEntire(chat.body) ?: return null
                         PartyCommand(if (match.groupValues[1].equals("missing", true))
-                            PartyCommandKind.MISSING else PartyCommandKind.TICKETS, match.groupValues[2])
+                            PartyCommandKind.MISSING else PartyCommandKind.TICKETS, match.groupValues[2].ifBlank { chat.sender })
                     }
                 }
             }

@@ -130,4 +130,22 @@ class UniqueAbsentCritterTest {
         assertTrue(SafariHelperRules.needed("Snoozle", SafariMode.UNIQUE, run, state))
         assertTrue(SafariHelperRules.showNests(SafariMode.UNIQUE, run, state), "a needed Sparkling Honeybug keeps its independent nest work")
     }
+    @Test fun `cleared sources supersede an old mound snapshot after leaving Cavern`() {
+        val run=SafariRun(0);val state=party()
+        val mound=Triple(-100,40,50)
+        run.visitBiome(SafariBiome.CAVERN)
+        run.moundSurvey.scan(setOf(mound)) { true }
+        run.updateCaptureEvidence(SafariBiome.CAVERN,setOf("Rockmite Mound"),false)
+        run.observeCavernSources(true,true,false)
+        run.visitBiome(SafariBiome.HAUNTED)
+        assertFalse(run.uniqueUnavailable("Rockmite"))
+        assertFalse(run.uniqueUnavailable("Snoozle"))
+        run.moundSurvey.scan(emptySet()) { true }
+        run.observeCavernSources(false,false,true)
+        assertTrue(run.uniqueComplete("Rockmite",state))
+        assertTrue(run.uniqueComplete("Snoozle",state))
+        assertEquals(0,run.count("Rockmite"));assertEquals(0,run.count("Snoozle"))
+        run.observeCritter(1,"Snoozle")
+        assertFalse(run.uniqueComplete("Snoozle",state))
+    }
 }

@@ -3,10 +3,37 @@ package net.johnceo.sparklingmutuals.commands
 import net.johnceo.sparklingmutuals.safari.PartySparklingState
 import net.johnceo.sparklingmutuals.safari.SafariBiome
 import net.johnceo.sparklingmutuals.safari.SafariRoster
+import net.johnceo.sparklingmutuals.safari.SafariMode
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class SparklingRatesTest {
+    @Test fun `Unique visits every biome and includes one shared manual species but all needed checks`() {
+        val shared = SparklingRates.estimate(party(), mode = SafariMode.UNIQUE)
+        assertEquals(SafariBiome.entries, shared.biomes)
+        assertEquals(all, shared.boat.keys + shared.passive.keys + shared.manual.keys)
+        assertTrue(shared.manual.values.all { it == 1.0 })
+        assertEquals(1.0, shared.manual["Rockmite"])
+        assertEquals(1.0, shared.manual["Snoozle"])
+        assertEquals(1.0, shared.manual["Bluebird"])
+        val needed = SparklingRates.estimate(party("Rockmite", "Macaw"), mode = SafariMode.UNIQUE)
+        assertEquals(CritterSpawnAverages.lazyParty["Rockmite"], needed.manual["Rockmite"])
+        for (bird in listOf("Bluebird", "Parakeet", "Macaw"))
+            assertEquals(CritterSpawnAverages.lazyParty[bird], needed.manual[bird])
+        assertTrue(needed.checkedPerRun > shared.checkedPerRun)
+        assertTrue(SparklingRates.breakdown(shared).startsWith("Mode: Unique"))
+    }
+    @Test fun `Full Clear uses all full party spawns without discovery data or double counting boat species`() {
+        val result = SparklingRates.estimate(PartySparklingState(), mode = SafariMode.FULL_CLEAR)
+        assertEquals(all, result.boat.keys + result.passive.keys + result.manual.keys)
+        assertEquals(SafariBiome.entries, result.biomes)
+        assertTrue((result.boat.keys intersect result.manual.keys).isEmpty())
+        assertTrue((result.boat.keys intersect result.passive.keys).isEmpty())
+        assertEquals(CritterSpawnAverages.fullParty.values.sum(), result.checkedPerRun, 1e-8)
+        assertEquals(149.435288032, result.checkedPerRun, 1e-8)
+        assertEquals(CritterSpawnAverages.fullParty["Gimmiegold"], result.manual["Gimmiegold"])
+        assertTrue(SparklingRates.breakdown(result).contains("Full Party spawn averages"))
+    }
     private val all = SafariRoster.all.map { it.name }.toSet()
     private fun party(vararg missing: String) = PartySparklingState().apply {
         select(setOf("me", "friend"))

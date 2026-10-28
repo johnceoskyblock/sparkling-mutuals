@@ -48,7 +48,7 @@ Bag of Seeds, Wriggleworm and Yogi Berry create feeding opportunities. Starting 
 | Ordinary ESP | Standard mode/discovery/model filters. Unique stops after its own first catch even if spawning remains pending. Sparkling checks add no ordinary model ESP; enabled profitable highlighting remains separate. |
 | Source helpers | Food-drop highlights follow [FLOOR_DROPS](FLOOR_DROPS.md); hiding a marker does not use food. |
 | Automatic completion announcements | Any Forest entrant may report complete qualified spawning/source proof without a personal pickup quota if no fd was received. All other local active-mode gates still apply; see [bird reporting](../BIRD_COMPLETION.md#sending-fd). |
-| PB eligibility | Personal Unique: own catch of every species. Full Clear: personal captures/local proof. Party Unique: separate shared-capture/absence predicate; progress alone is insufficient. |
+| PB eligibility | Personal Unique: own catch of each spawned species; proven zero-spawn types exempt. Full Clear: personal captures/local proof. Party Unique: separate shared-capture/absence predicate; progress alone is insufficient. |
 
 ## Party reports and late entry
 
@@ -75,6 +75,8 @@ Existing coverage: [SafariBirdLedgerTest](../../src/test/kotlin/net/johnceo/spar
 Population guarantees and capsule success/escape claims from supplied notes were not live revalidated; see [audit D2](../IMPLEMENTATION_AUDIT.md#d2).
 
 ## Last updated
+
+2026-10-27 — Personal Unique PBs exempt positively proven zero-spawn types.
 
 2026-10-26 — Removed check-only ordinary ESP and its per-UUID linger; capture/source and profitable highlighting retain their own rules.
 

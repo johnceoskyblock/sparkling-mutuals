@@ -11,6 +11,10 @@ Boss and unique biome records use local run start time. They use successful capt
 - A new boss time improves only its classified bucket. Legacy unrestricted personal boss records remain in Duo. Legacy observed Doomspiral records migrate to Solo; legacy observed Wumpa records remain Duo because they have no prerequisite attribution.
 - Ordinary and explicitly SPARKLING boss capture/reward messages support the same classification.
 
+## Personal Unique biome PBs
+
+Catch each spawned type personally. Bluebird, Parakeet, Macaw, Rockmite and Snoozle may be waived only when `uniqueUnavailable` positively proves they never spawned. Missing or unloaded entities alone are not proof. A type captured by a teammate is not an absent spawn and still requires a personal catch. Recheck after captures and absence-confirming scans, so the final proof can stop the timer without a new capture. Full Clear and boss PB rules are unchanged.
+
 ## Observed unique biome PBs
 
 Capture attribution is retained throughout the run, including the local player's identity. When the party first secures at least one of every biome type, the observed unique timer stops. Species positively proven absent use the existing unique-mode absence rules. Checks also run after scans that establish absence.
@@ -35,5 +39,7 @@ Current mode restrictions remain: boss commands are available in Unique/Sparkle,
 All categories persist in `sparkling-mutuals-pbs.properties`, with case-insensitive player lookup. Existing migration from older PB config locations remains automatic. Observed categories have independent keys ending in `Millis` so migration can preserve the faster duplicate record.
 
 ## Last updated
+
+2026-10-27 — Personal Unique PBs now exempt positively proven non-spawns and recheck after scans.
 
 2026-10-26 — Added attributed Solo/Party observed unique biome records, split observed bosses into Solo/Duo, and froze local Doom incense eligibility at capture.

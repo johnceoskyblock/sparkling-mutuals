@@ -105,13 +105,21 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
     var endedAt: Long? = null
     var lastBiome: SafariBiome? = null
     private val counts = mutableMapOf<String, Int>()
+    private var wumpaPrerequisitesConfirmed = false
+    /** Server awakening is proof of shared captures, with no personal attribution or invented events. */
+    fun recordWumpaSpawn(text: String) {
+        if (SafariRules.strip(text) == "The Wumpa has awoken.") wumpaPrerequisitesConfirmed = true
+    }
+    private fun icyCaptureProof(name: String) = wumpaPrerequisitesConfirmed && name != "Wumpa" &&
+        SafariRoster.named(name)?.biome == SafariBiome.ICY
+    fun inferredCapture(name: String) = (counts[name] ?: 0) == 0 && icyCaptureProof(name)
     private val personal = mutableMapOf<String, Int>()
     private val catchEvents = mutableListOf<SafariCatch>()
     val catches: List<SafariCatch> get() = catchEvents.toList()
     private val populationClock = checkClock
     private val settlingRemainders = mutableSetOf<String>()
     private val lastPopulationCapture = mutableMapOf<String, Long>()
-    private fun populationSettling(species: String) = species in setOf("Driftling", "Chuckwalla") &&
+    private fun populationSettling(species: String) = species in setOf("Driftling", "Chuckwalla", "Flitter", "Shyworm") &&
         lastPopulationCapture[species]?.let { populationClock() - it in 0..2500 } == true
     private val knownPopulation = mutableMapOf<String, Int>()
     /** Current uncaptured UUIDs, never the union of pre/post-escape identities. */
@@ -369,10 +377,12 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
             return forestBirdsSurveyed && !encountered(name) && birds.spawnedCount(name) == 0 &&
                 (name != "Macaw" || !birds.hasMacaws(count(name), nearbyMacaws)) && birds.feedingResolved
         }
-        val remaining = nearby[SafariBiome.CAVERN] ?: return false
+        // Mounds and walls are retained Safari-wide. Positive cleared-source proof does not
+        // require entering Cavern or waiting for a party report when nothing ever spawned.
+        val remaining = nearby[SafariBiome.CAVERN].orEmpty()
         if (encountered(name) || name in remaining) return false
         return when (name) {
-            "Rockmite" -> allMoundsBroken && !remainingMounds && "Rockmite Mound" !in remaining
+            "Rockmite" -> allMoundsBroken && !remainingMounds
             "Snoozle" -> wallsChecked && !remainingWalls
             else -> false
         }
@@ -428,7 +438,7 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
         macawsInRange: Int = if ("Macaw" in speciesInRange) 1 else 0,
         playerX: Double? = null, playerZ: Double? = null, nestsPunched: Int = 0, nestsFound: Int = nestsPunched) {
         nearby[biome] = speciesInRange
-        for (name in listOf("Driftling", "Chuckwalla")) {
+        for (name in listOf("Driftling", "Chuckwalla", "Flitter", "Shyworm")) {
             if (SafariRoster.named(name)?.biome == biome) {
                 if (name in speciesInRange && populationSettling(name)) settlingRemainders.add(name)
                 else settlingRemainders.remove(name)
@@ -550,6 +560,7 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
     }
     fun observedCount(species: String) = observedCritters[species]?.size ?: 0
     fun record(catch: SafariCatch, now: Long = System.currentTimeMillis(), self: String? = null) {
+        if (catch.critter.name == "Wumpa") wumpaPrerequisitesConfirmed = true
         if (catch.sparkling) confirmedSparklingCapture(catch.critter.name, if (catch.personal) self else catch.catcherName, broadcast = false, at = now)
         lastPopulationCapture[catch.critter.name] = now
         if (self != null) localPlayer(self)
@@ -566,7 +577,7 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
         if (found) rockmiteMounds++
         return true
     }
-    fun count(name: String) = counts[name] ?: 0
+    fun count(name: String) = maxOf(counts[name] ?: 0, if (icyCaptureProof(name)) 1 else 0)
     fun personalCount(name: String) = personal[name] ?: 0
     fun playerCount(species: String, player: String) = catches.count {
         it.critter.name == species && (if (it.personal) localPlayerName else it.catcherName).equals(player, true)

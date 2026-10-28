@@ -53,9 +53,9 @@ object JoinWelcome {
                 .append(text(" ──────", SafariTheme.ACCENT)),
             text("  ").append(command("/sm", "Open settings")).append(" Settings   ")
                 .append(command("/sm help", "Show available local and party commands")).append(" Commands"),
-            text("  ").append(command("/unique", "Select Unique mode")).append("  Each type + needed shiny checks"),
-            text("  ").append(command("/fc", "Select Full Clear mode")).append("  Full clear (1 Macaw minimum)"),
-            text("  ").append(command("/sparkle", "Select Sparkle mode")).append("  Check shinies your party needs"),
+            text("  ").append(command("/unique", "Select Unique mode")).append("  Unique run mode."),
+            text("  ").append(command("/fc", "Select Full Clear mode")).append("  Full clear run mode."),
+            text("  ").append(command("/sparkle", "Select Sparkle mode")).append("  Sparkle run mode."),
             text("  ").append(command("/sm gui", "Move and resize HUDs")).append(" HUD layout   ")
                 .append(command("/sm history", "Open runs, bests and stats")).append(" History"),
             text("────────────────────────────────", SafariTheme.ACCENT)

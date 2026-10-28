@@ -19,7 +19,7 @@ object SafariEspRules {
     fun labelSpecies(raw: String) = SafariRules.strip(raw).let { SafariRules.sparklingSpecies(it) ?: SafariRoster.named(it)?.name }
     fun thrownSpecies(text: String) = throwMessage.matchEntire(text)?.groupValues?.get(1)?.let(::labelSpecies)
     fun escapedSpecies(text: String) = escapeMessage.matchEntire(text)?.groupValues?.get(1)?.let(::labelSpecies)
-    fun profitableEsp(species: String, enabled: Boolean) = enabled &&
+    fun profitableEsp(species: String, enabled: Boolean) = enabled && species != "Rockmite" &&
         species in net.johnceo.sparklingmutuals.commands.ProfitableCritters.cachedSpecies()
     fun neededForRun(species: String, mound: Boolean, run: SafariRun?, fullClear: Boolean, profitable: Boolean = true,
         party: PartySparklingState? = null) =
@@ -39,6 +39,8 @@ object SafariEspRules {
         return false // Automatic checking needs no ordinary critter highlight or per-UUID linger.
     }
     fun captureModel(type: String) = type.endsWith("display") || type == "armor_stand"
+    /** Structures are sources, not uncaught critters. Every actual critter needs a live species label. */
+    fun requiresCaptureLabel(species: String, type: String) = !(species == "Rockmite" && type == "item_display")
     fun requiresModelLabel(species: String, type: String) = captureModel(type) && !(species == "Rockmite" && type == "item_display")
     fun modelVisible(x: Float, y: Float, z: Float) = listOf(x, y, z).all { it.isFinite() } &&
         maxOf(kotlin.math.abs(x), kotlin.math.abs(y), kotlin.math.abs(z)) > .001f
@@ -99,6 +101,11 @@ object SafariEspRules {
     fun driftlingCurrent(labelBound: Boolean, labelCurrent: Boolean, labelVisible: Boolean,
         motionCurrent: Boolean, movementObserved: Boolean): Boolean =
         (!labelBound || labelCurrent) && motionCurrent && movementObserved
+    /** Static late-loaded Flitter skins are leftovers unless a visible live tag confirms them. */
+    fun flitterCurrent(labelBound: Boolean, labelCurrent: Boolean, labelVisible: Boolean, moving: Boolean) =
+        labelBound && labelCurrent && labelVisible || moving
+    fun shywormCurrent(labelBound: Boolean, labelCurrent: Boolean, surfaceY: Double) =
+        surfaceY > 2 && labelBound && labelCurrent
     /** Chuckwalla is stationary, so a texture/hidden custom name cannot establish that it remains uncaught. */
     fun chuckwallaCurrent(labelBound: Boolean, labelCurrent: Boolean, labelVisible: Boolean) =
         labelBound && labelCurrent && labelVisible

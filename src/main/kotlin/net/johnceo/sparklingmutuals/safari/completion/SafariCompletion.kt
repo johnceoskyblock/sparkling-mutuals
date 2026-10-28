@@ -10,8 +10,6 @@ import net.johnceo.sparklingmutuals.safari.SafariBiome
 import net.johnceo.sparklingmutuals.safari.SafariMode
 import net.johnceo.sparklingmutuals.safari.SafariRun
 import net.johnceo.sparklingmutuals.safari.SafariSparklingMode
-import net.johnceo.sparklingmutuals.safari.SafariEntryPresence
-import net.johnceo.sparklingmutuals.safari.automation.SafariPartyInput
 import net.minecraft.client.Minecraft
 import net.minecraft.client.resources.sounds.SimpleSoundInstance
 import net.minecraft.core.registries.BuiltInRegistries
@@ -48,9 +46,6 @@ object SafariCompletion {
         }
         if (client.connection != null && PartyManager.hasInfo && PartyManager.getMembers().size > 1 &&
             now - sentAt >= 1500 && run.partyResourceReminders.dispatch(now, party,
-                { id -> client.connection?.onlinePlayers?.firstOrNull {
-                    SafariEntryPresence.normalize(it.profile.id.toString()) == SafariEntryPresence.normalize(id)
-                }?.profile?.name ?: SafariPartyInput.nameOf(id) },
                 { message -> client.connection!!.sendCommand("pc $message") })) sentAt = now
         if (client.connection != null && queue.isNotEmpty() && now - sentAt >= 3000) {
             val (area, word) = queue.removeFirst()

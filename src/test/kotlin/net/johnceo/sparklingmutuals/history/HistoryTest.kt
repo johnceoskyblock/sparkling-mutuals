@@ -113,13 +113,14 @@ class HistoryTest {
             "[00:10:00] [Render thread/INFO]: [CHAT] [NPC] Safari Manager: Looks good to me. Have fun out there!",
             "[00:10:30] [Render thread/INFO]: [CHAT] CAPTURE! You caught a Cavernfish and gained a Cavernfish Shard!",
             "[00:11:00] [Render thread/INFO]: [CHAT] Sending to server mini1A...").joinToString("\n")
-        val parser = LogImporter.Parser("Me")
+        val parser = LogImporter.Parser("Me", requireOwner = false)
         parser.read(log.reader().buffered(), LocalDate.of(2026, 10, 10))
         assertEquals(LocalDate.of(2026, 10, 11).atTime(0, 10).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(), parser.runs.single().start)
         assertEquals(60_000L, parser.runs.single().length)
     }
     @Test fun `a copied latest log preserves its final run`(@TempDir folder: Path) {
         Files.writeString(folder.resolve("latest.log"), listOf(
+            "[12:59:59] [Render thread/INFO]: Setting user: Me",
             "[13:00:00] [Render thread/INFO]: [CHAT] [NPC] Safari Manager: Looks good to me. Have fun out there!",
             "[13:00:30] [Render thread/INFO]: [CHAT] CAPTURE! You caught a Cavernfish and gained a Cavernfish Shard!").joinToString("\n"))
         val result = LogImporter.read(folder, "Me", includeLatest = true, newerThan = -1).join()
@@ -156,7 +157,7 @@ class HistoryTest {
             "[13:02:00] [Render thread/INFO]: [CHAT] Sending to server mini143BE...",
             "[13:03:00] [Render thread/INFO]: [CHAT] [NPC] Safari Manager: You already gave me your ticket, bud.",
             "[13:04:00] [Render thread/INFO]: [CHAT] Sending to server mini1A...").joinToString("\n")
-        val parser = LogImporter.Parser("Me")
+        val parser = LogImporter.Parser("Me", requireOwner = false)
         parser.read(log.reader().buffered(), LocalDate.of(2026, 10, 10))
         assertEquals(1, parser.runs.size, "a run with nothing caught isn't kept")
         val run = parser.runs[0]
@@ -174,16 +175,16 @@ class HistoryTest {
         val added = HistoryMerge.merge(runs, listOf(RunRecord(start = 1_000_000, caught = 3, imported = true),
             RunRecord(start = 1_100_000, caught = 4, imported = true)))
         assertEquals(0, added)
-        assertEquals(listOf(0, 0), runs.map { it.caught }, "Existing imported records are preserved")
+        assertEquals(listOf(4, 3), runs.map { it.caught }, "Matched imported records gain missing capture data without duplication")
         assertEquals(listOf(2, 1), runs.map { it.number })
     }
     @Test fun `a run still open at the end of latest log is left for live recording`() {
         val log = listOf(
             "[13:00:00] [Render thread/INFO]: [CHAT] [NPC] Safari Manager: Looks good to me. Have fun out there!",
             "[13:00:30] [Render thread/INFO]: [CHAT] CAPTURE! You caught a Cavernfish and gained a Cavernfish Shard!").joinToString("\n")
-        val live = LogImporter.Parser("Me").apply { read(log.reader().buffered(), LocalDate.of(2026, 10, 10), closeAtEnd = false) }
+        val live = LogImporter.Parser("Me", requireOwner = false).apply { read(log.reader().buffered(), LocalDate.of(2026, 10, 10), closeAtEnd = false) }
         assertTrue(live.runs.isEmpty())
-        val archived = LogImporter.Parser("Me").apply { read(log.reader().buffered(), LocalDate.of(2026, 10, 10)) }
+        val archived = LogImporter.Parser("Me", requireOwner = false).apply { read(log.reader().buffered(), LocalDate.of(2026, 10, 10)) }
         assertEquals(1, archived.runs.size)
     }
     @Test fun `latest log's start day accounts for midnight`() {
@@ -209,7 +210,7 @@ class HistoryTest {
             RunRecord(start = 5_030_000, caught = 9, imported = true), RunRecord(start = 100_000, imported = true)))
         assertEquals(1, added)
         assertSame(live, runs.first { it.start == 1_000_000L })
-        assertEquals(1, runs.first { it.start == 5_000_000L }.caught)
+        assertEquals(9, runs.first { it.start == 5_000_000L }.caught)
         assertEquals(listOf(3, 2, 1), runs.map { it.number })
     }
     @Test fun `achievement definitions are unique and teammates' broadcasts aren't your Emerald Dye`() {

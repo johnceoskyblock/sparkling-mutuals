@@ -83,6 +83,7 @@ object SafariTracking {
         }
         if (SafariAssist.inSafari) {
             ensureRun(client)
+            ledger.current?.recordWumpaSpawn(text)
             ledger.current?.sparklingBroadcast(text, now)
             ledger.current?.entry?.chat(text)
             ledger.current?.startingAnnouncement?.observeHotspot(text, now)
@@ -110,12 +111,7 @@ object SafariTracking {
         ensureRun(client)
         ledger.current!!.record(catch, now, client.player!!.name.string)
         checkPartyUnique(client, catch.critter.biome, now)
-        if (catch.personal) {
-            SafariEsp.caught(catch.critter.name)
-            ConfigManager.personalBests.recordUnique(catch.critter.biome, ledger.current!!, now)?.let { notice ->
-                ConfigManager.save(); client.player?.sendSystemMessage(LocalChat.component(notice))
-            }
-        }
+        SafariEsp.caught(catch.critter.name, catch.personal)
         ConfigManager.personalBests.captureFeedback(text, ledger.current!!, now, client.player!!.name.string)?.let { feedback ->
             if (feedback.changed) ConfigManager.save()
             client.player?.sendSystemMessage(LocalChat.component(feedback.notice))
@@ -133,7 +129,12 @@ object SafariTracking {
         run.inventoryEvidence((0 until player.inventory.containerSize).map { player.inventory.getItem(it) }
             .filterNot { it.isEmpty }.map { it.hoverName.string to it.count }, now)
         if (PartyManager.hasInfo && PartyManager.getMembers().size > 1) {
-            run.startingAnnouncement.dispatch(now, SafariSparklingMode.state) { message ->
+            val hotspotEnabled = when (SafariFullClear.mode) {
+                SafariMode.UNIQUE -> ConfigManager.uniqueHotspotAnnouncer
+                SafariMode.FULL_CLEAR -> ConfigManager.fullClearHotspotAnnouncer
+                SafariMode.SPARKLING -> ConfigManager.sparklingHotspotAnnouncer
+            }
+            run.startingAnnouncement.dispatch(now, SafariSparklingMode.state, hotspotEnabled, ConfigManager.announceStartingItems) { message ->
                 connection.sendCommand("pc $message")
                 // Apply our own contribution now; the server's party echo is deduplicated.
                 run.resources.partyNotice("Party > ${player.name.string}: $message")
@@ -168,6 +169,9 @@ object SafariTracking {
     /** Party Unique PBs are checked after catches and after scans (absence evidence), see recordPartyUnique. */
     fun checkPartyUnique(client: Minecraft, biome: SafariBiome, now: Long = System.currentTimeMillis()) {
         val run = ledger.current ?: return
+        ConfigManager.personalBests.recordUnique(biome, run, now)?.let { notice ->
+            ConfigManager.save(); client.player?.sendSystemMessage(LocalChat.component(notice))
+        }
         if (ConfigManager.personalBests.recordObservedUnique(biome, run, now)) ConfigManager.save()
         if (SafariFullClear.mode != SafariMode.UNIQUE) return
         ConfigManager.personalBests.recordPartyUnique(biome, run, now)?.let { notice ->

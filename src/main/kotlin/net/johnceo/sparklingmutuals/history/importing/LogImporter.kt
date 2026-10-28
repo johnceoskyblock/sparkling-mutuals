@@ -33,12 +33,13 @@ object LogImporter {
 
     data class Failure(val file: String, val reason: String)
     class Result(val runs: List<RunRecord>, val sparklings: List<SparklingEntry>, val files: Int, val newest: Long,
-        val failures: List<Failure> = emptyList(), val ticketTimes: List<Long> = emptyList())
+        val failures: List<Failure> = emptyList(), val ticketTimes: List<Long> = emptyList(), val skippedAccounts: Int = 0,
+        val alphaRuns: List<RunRecord> = emptyList(), val alphaSparklings: List<SparklingEntry> = emptyList())
     private data class LogFile(val path: Path, val day: LocalDate, val order: Int, val modified: Long)
     fun defaultLogs(): Path = FabricLoader.getInstance().gameDir.resolve("logs")
 
     /** Client-independent parser. Histories are rebuilt chronologically across all supplied files. */
-    class Parser(private val self: String) {
+    class Parser(private val self: String, private val requireOwner: Boolean = true) {
         private val events = mutableListOf<HistoryBackfill.Event>()
         private var serial = 0
         private var cached: HistoryBackfill.Rebuilt? = null
@@ -46,13 +47,15 @@ object LogImporter {
         val runs get() = result().runs
         val sparklings get() = result().sparklings
         val ticketTimes get() = result().tickets
+        val alphaRuns get() = result().alphaRuns
+        val alphaSparklings get() = result().alphaSparklings
         fun read(reader: BufferedReader, startDay: LocalDate, closeAtEnd: Boolean = true, source: String = "log-${serial++}") {
             // Commit only completely read files: a broken gzip must not leave half a file's events behind.
-            val read = HistoryBackfill.log(reader, startDay, source, active = !closeAtEnd)
+            val read = HistoryBackfill.log(reader, startDay, source, active = !closeAtEnd, expectedSelf = self.takeIf { requireOwner })
             events.addAll(read); cached = null
         }
         fun readJson(reader: BufferedReader, startDay: LocalDate, source: String = "json-${serial++}") {
-            val read = HistoryBackfill.json(reader, startDay, source)
+            val read = HistoryBackfill.json(reader, startDay, source, expectedSelf = self.takeIf { requireOwner })
             events.addAll(read); cached = null
         }
         fun handle(text: String, at: Long) {
@@ -99,7 +102,7 @@ object LogImporter {
         CompletableFuture.supplyAsync({
             val logs = files(folder, includeLatest, newerThan)
             filesTotal = logs.size; filesDone = 0
-            val parser = Parser(self); val failures = mutableListOf<Failure>()
+            val parser = Parser(self); val failures = mutableListOf<Failure>(); var skippedAccounts = 0
             for (file in logs) {
                 try {
                     val json = file.path.toString().endsWith(".json", true)
@@ -111,12 +114,53 @@ object LogImporter {
                             else parser.read(reader, day, closeAtEnd = !active, source = file.path.toAbsolutePath().normalize().toString())
                         }
                     }
+                } catch (_: HistoryBackfill.OwnerMismatch) {
+                    skippedAccounts++
                 } catch (error: Exception) {
                     failures += Failure(file.path.fileName.toString(), error.message ?: error.javaClass.simpleName)
                     logger.warn("Couldn't import {}", file.path.fileName, error)
                 } finally { filesDone++ }
             }
-            Result(parser.runs, parser.sparklings, logs.size, logs.maxOfOrNull { it.modified } ?: 0L, failures, parser.ticketTimes)
+            Result(parser.runs, parser.sparklings, logs.size, logs.maxOfOrNull { it.modified } ?: 0L, failures, parser.ticketTimes, skippedAccounts, parser.alphaRuns, parser.alphaSparklings)
+        }, executor)
+
+    data class CatchLog(val path: Path, val lines: List<String>, val line: Int)
+
+    /** Locate the original server announcement, never a player-written detection alert or another account's log. */
+    fun findCatch(entry: SparklingEntry, self: String, folder: Path = defaultLogs()): CompletableFuture<CatchLog?> =
+        CompletableFuture.supplyAsync({
+            val day = Instant.ofEpochMilli(entry.at).atZone(ZoneId.systemDefault()).toLocalDate()
+            val preferred = runCatching { Path.of(entry.logFile) }.getOrNull()?.takeIf { entry.logFile.isNotBlank() && Files.isRegularFile(it) }
+            val nearby = if (Files.isDirectory(folder)) files(folder, true, -1).filter { file ->
+                !file.path.toString().endsWith(".json", true) &&
+                    (!dated.matches(file.path.fileName.toString()) || kotlin.math.abs(java.time.temporal.ChronoUnit.DAYS.between(day, file.day)) <= 1)
+            }.sortedBy { kotlin.math.abs(java.time.temporal.ChronoUnit.DAYS.between(day, it.day)) }.map { it.path } else emptyList()
+            val candidates = (listOfNotNull(preferred) + nearby).distinct()
+            var best: CatchLog? = null; var distance = Long.MAX_VALUE
+            for (path in candidates) {
+                if (!path.toString().endsWith(".log", true) && !path.toString().endsWith(".log.gz", true)) continue
+                runCatching {
+                    val match = dated.matchEntire(path.fileName.toString())
+                    val start = match?.let { LocalDate.of(it.groupValues[1].toInt(), it.groupValues[2].toInt(), it.groupValues[3].toInt()) }
+                        ?: inferredStartDay(path, Files.getLastModifiedTime(path).toMillis())
+                    val text = Files.newInputStream(path).use { raw ->
+                        (if (path.toString().endsWith(".gz", true)) GZIPInputStream(raw) else raw).bufferedReader(Charsets.UTF_8).use { it.readText() }
+                    }
+                    val events = HistoryBackfill.log(text.reader().buffered(), start, path.toString(), active = false, expectedSelf = self)
+                    val event = events.filter { !it.alpha && kotlin.math.abs(it.at - entry.at) <= 10_000 }.filter { event ->
+                        net.johnceo.sparklingmutuals.history.RunTally.sparkling.matchEntire(event.text)?.let {
+                            it.groupValues[1].equals(entry.player, true) && it.groupValues[2].trim().equals(entry.critter, true)
+                        } == true
+                    }.minByOrNull { kotlin.math.abs(it.at - entry.at) }
+                    if (event != null && kotlin.math.abs(event.at - entry.at) < distance) {
+                        distance = kotlin.math.abs(event.at - entry.at)
+                        best = CatchLog(path.toAbsolutePath().normalize(), text.lineSequence().toList(), event.ordinal)
+                    }
+                }
+                // Log timestamps have second precision; a match in that second cannot be improved usefully.
+                if (distance < 1000) break
+            }
+            best
         }, executor)
 
     /** Shared by the command and settings button. Parsing is off-thread; merging is serialized on the client. */
@@ -126,11 +170,21 @@ object LogImporter {
         if (!busy.compareAndSet(false, true)) return tell("[SM] A history import is already running.")
         filesTotal = 0; filesDone = 0; progressTicks = 0
         val self = client.player?.name?.string.orEmpty()
+        val owner = client.player?.uuid
+        if (owner == null || self.isBlank()) { busy.set(false); return tell("[SM] Join the account whose history you want to import first.") }
         tell("[SM] Importing run and sparkling history from $folder. Progress is shown above your hotbar.")
         val reference = RunHistory.runs.map { RunRecord(caught = it.caught, lootShares = it.lootShares, party = it.party,
-            feathers = it.feathers, sparklings = it.sparklings.toMutableList(), coins = it.coins) }
-        read(folder, self).thenApply { result ->
-            result.runs.forEach { it.coins = HistoryEstimates.coins(it, reference) }
+            feathers = it.feathers, sparklings = it.sparklings.toMutableList(), coins = it.coins, essenceCoins = it.essenceCoins) }
+        val quotes = net.johnceo.sparklingmutuals.history.BazaarPrices.cachedPrices
+        val instaSell = net.johnceo.sparklingmutuals.config.ConfigManager.runCoinsInstaSell
+        // Manual import always rescans all eligible files, including logs imported previously.
+        var apiTotal: Long? = null
+        read(folder, self, includeLatest = true, newerThan = -1).thenApply { result ->
+            result.runs.forEach { HistoryEstimates.assignCoins(it, reference, quotes, instaSell) }
+            // Optional comparison only: API lag, incomplete logs and profile changes must never drive deletions.
+            if (net.johnceo.sparklingmutuals.api.HypixelApi.provider.enabled) apiTotal = runCatching {
+                net.johnceo.sparklingmutuals.api.HypixelApi.getSafariProfile(owner.toString()).totalCaptured
+            }.getOrNull()
             result
         }.whenComplete { result, error -> client.execute {
             try {
@@ -138,14 +192,20 @@ object LogImporter {
                     logger.warn("History import failed", error)
                     tell("[SM] History import failed; see latest.log.")
                     client.player?.sendOverlayMessage(Component.literal("§cHistory import failed"))
+                } else if (client.player?.uuid != owner) {
+                    tell("[SM] Import cancelled because the active account changed. No history was merged.")
                 } else {
                     HistoryStore.backup("runs"); HistoryStore.backup("sparklings")
+                    val removedRuns = RunHistory.reconcileImport(result.runs, result.alphaRuns)
+                    val removedSparks = SparklingLog.reconcileImport(result.sparklings, result.alphaSparklings)
                     val runs = RunHistory.importRuns(result.runs)
                     val sparks = SparklingLog.importEntries(result.sparklings, result.ticketTimes)
                     val earned = Achievements.afterImport()
+                    apiTotal?.let { total -> tell("[SM] $self: ${SparklingLog.entries.size} saved party catches; API total $total. " +
+                        "Totals are a cross-check only; records without log evidence are kept.") }
                     client.player?.sendOverlayMessage(Component.literal("§aHistory import complete"))
-                    tell("[SM] Scanned ${result.files} files: added §e$runs§r runs and §e$sparks§r sparklings. " +
-                        "Existing records were kept." + (if (result.failures.isNotEmpty()) " §c${result.failures.size} files failed; see latest.log." else "") +
+                    tell("[SM] Scanned ${result.files} files: added §e$runs§r runs, updated §e${RunHistory.lastImportUpdated}§r existing runs, and added §e$sparks§r sparklings. " +
+                        "Removed $removedRuns Alpha/duplicate runs and $removedSparks Alpha/duplicate catches confirmed by scanned logs. ${result.skippedAccounts} files skipped for a different or unverifiable account." + (if (result.failures.isNotEmpty()) " §c${result.failures.size} files failed; see latest.log." else "") +
                         (if (earned > 0) " §6$earned achievements unlocked!" else ""))
                 }
             } catch (failure: Exception) {
