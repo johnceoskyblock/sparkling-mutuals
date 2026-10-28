@@ -47,7 +47,7 @@ class ShywormProjection {
         worms.entries.removeAll { it.value.missing }
     }
     fun reconcileCapture(now: Long, active: Set<UUID>) {
-        if (now <= discardMissingUntil) worms.entries.removeAll { it.key !in active }
+        if (now <= discardMissingUntil) worms.entries.removeAll { it.value.missing && it.key !in active }
     }
     private val restMessages = setOf("The Shyworm hid back into the ground.",
         "The Shyworm saw a player and fled!", "The Shyworm fled because it was startled!")

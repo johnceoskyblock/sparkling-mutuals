@@ -69,4 +69,21 @@ class LitterbugTimerTest {
         val projection = LitterbugProjection(); projection.observe(id, 1.0, 1000)
         assertEquals("8.0s", marker(projection, 0).text)
     }
+    @Test fun `unloaded wall bug retains its timer until a confirmed capture or resurfacing`() {
+        val p=LitterbugProjection()
+        p.observe(id,13.4,73.0,-66.8,0)
+        p.observe(id,13.4,1.0,-66.8,1000)
+        p.retain(emptySet(),2500)
+        assertEquals("6.5s",p.missingMarkers(2500).single().marker.text)
+        assertEquals("Moving soon..",p.missingMarkers(15000).single().marker.text)
+        p.observe(id,13.4,73.0,-66.8,16000)
+        assertTrue(p.missingMarkers(16000).isEmpty())
+        p.observe(id,13.4,1.0,-66.8,17000)
+        p.retain(emptySet(),17500)
+        p.caught(id)
+        assertTrue(p.missingMarkers(18000).isEmpty())
+        p.observe(id,13.4,1.0,-66.8,19000)
+        p.retain(emptySet(),19500)
+        assertTrue(p.missingMarkers(20000).isEmpty(),"a retired model cannot revive its timer")
+    }
 }

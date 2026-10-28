@@ -7,7 +7,7 @@ class EspMotion {
     private data class Sample(val x: Double, val y: Double, val z: Double, val since: Long, val nearby: Boolean, val hidden: Boolean = false, val moved: Boolean = false, val movedAt: Long? = null)
     private val samples = mutableMapOf<UUID, Sample>()
     companion object {
-        val movingSpecies = setOf("Flitter", "Driftling", "Foxtrot", "Bluebird", "Parakeet", "Macaw", "Solsnatcher",
+        val movingSpecies = setOf("Shyworm", "Flitter", "Driftling", "Foxtrot", "Bluebird", "Parakeet", "Macaw", "Solsnatcher",
             "Litterbug", "Tepid", "Mantis Shrimp", "Nozzlenose", "Gemzie", "Shuddersquid")
     }
     fun observe(id: UUID, species: String, x: Double, y: Double, z: Double, distanceSquared: Double, now: Long) {

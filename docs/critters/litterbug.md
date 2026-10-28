@@ -72,7 +72,14 @@ Existing coverage: [SafariFullClearProgressTest](../../src/test/kotlin/net/johnc
 
 Population guarantees and capsule success/escape claims from supplied notes were not live revalidated; see [audit D2](../IMPLEMENTATION_AUDIT.md#d2).
 
+## Persistent visual ESP
+
+Wall/cooldown ESP is visual-only and survives expired name tags. The last observed hidden position retains its eight-second timer even if the model unloads; resurfacing replaces that marker. Confirmed associated captures retire the cached marker and model UUID. Unassociated catches discard uncertain missing locations without inventing captures.
+
 ## Last updated
+
+2026-10-28 - Restored cooldown/distance visual persistence separately from completion checks.
+
 
 2026-10-27 — Personal Unique PBs exempt positively proven zero-spawn types.
 

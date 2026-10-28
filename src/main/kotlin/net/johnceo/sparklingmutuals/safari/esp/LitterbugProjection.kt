@@ -4,14 +4,36 @@ import java.util.UUID
 import kotlin.math.abs
 
 /** Display-only emergence heights; entity positions and capture evidence remain untouched. */
+data class LitterbugLocation(val id: UUID, val x: Double, val y: Double, val z: Double, val marker: LitterbugMarker)
+
 data class LitterbugMarker(val height: Double, val text: String, val color: Int)
 
 class LitterbugProjection {
+    private data class Position(val x: Double, val y: Double, val z: Double)
+    private val positions=mutableMapOf<UUID,Position>()
+    private val missing=mutableSetOf<UUID>()
+    private val retired=mutableSetOf<UUID>()
+    private var discardMissingUntil=Long.MIN_VALUE
+    fun observe(id: UUID, x: Double, y: Double, z: Double, now: Long) {
+        if (id in retired || !listOf(x,y,z).all(Double::isFinite)) return
+        positions[id]=Position(x,y,z); missing.remove(id); observe(id,y,now)
+    }
+    fun retain(ids: Set<UUID>, now: Long) {
+        missing.addAll(positions.keys.filter { it !in ids })
+        if (now <= discardMissingUntil) missing.toList().forEach(::forget)
+    }
+    fun missingMarkers(now: Long) = missing.mapNotNull { id ->
+        val p=positions[id] ?: return@mapNotNull null
+        hiddenMarker(id,p.x,p.y,p.z,now)?.let { LitterbugLocation(id,p.x,p.y,p.z,it) }
+    }
+    private fun forget(id: UUID) { positions.remove(id); missing.remove(id); heights.remove(id); hiddenSince.remove(id) }
+    fun caught(id: UUID) { retired.add(id); forget(id) }
+    fun unassociatedCapture(now: Long) { discardMissingUntil=now+1250; missing.toList().forEach(::forget) }
     private val heights = mutableMapOf<UUID, Double>()
     private val hiddenSince = mutableMapOf<UUID, Long>()
     private fun hidden(y: Double) = y.isFinite() && abs(y - 1) <= .01
     fun observe(id: UUID, y: Double, now: Long = System.currentTimeMillis()) {
-        if (!y.isFinite()) return
+        if (id in retired || !y.isFinite()) return
         if (y > 2) heights[id] = y
         if (hidden(y)) hiddenSince.putIfAbsent(id, now) else hiddenSince.remove(id)
     }
@@ -33,5 +55,5 @@ class LitterbugProjection {
             when { remaining == 0L -> -1; remaining > 5000 -> 0xFF55FF55.toInt()
                 remaining > 2000 -> 0xFFFFFF55.toInt(); else -> 0xFFFF5555.toInt() })
     }
-    fun reset() { heights.clear(); hiddenSince.clear() }
+    fun reset() { heights.clear(); hiddenSince.clear(); positions.clear(); missing.clear(); retired.clear(); discardMissingUntil=Long.MIN_VALUE }
 }

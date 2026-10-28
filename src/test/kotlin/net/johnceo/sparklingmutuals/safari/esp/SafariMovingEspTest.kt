@@ -6,12 +6,25 @@ import org.junit.jupiter.api.Test
 
 class SafariMovingEspTest {
     @Test fun `legacy display applies to all requested moving species while sparkling keeps lifecycle checks`() {
-        for (species in EspMotion.movingSpecies) {
+        // Shyworm uses its own surface/underground visual gate, rather than the generic linger rule.
+        for (species in EspMotion.movingSpecies.filter { it != "Shyworm" }) {
             assertTrue(SafariEspRules.renderCurrent(species, false, true, false, false), species)
             assertFalse(SafariEspRules.renderCurrent(species, true, true, false, false), species)
             assertTrue(SafariEspRules.renderCurrent(species, true, true, true, true), species)
             assertFalse(SafariEspRules.renderCurrent(species, false, false, true, true), species)
         }
+    }
+    @Test fun `Shyworm records movement for surface evidence while retaining its separate cooldown visual rule`() {
+        val id = UUID.randomUUID()
+        val motion = EspMotion()
+        assertTrue("Shyworm" in EspMotion.movingSpecies)
+        motion.observe(id, "Shyworm", -100.0, 50.0, 25.0, 100.0, 0)
+        motion.observe(id, "Shyworm", -99.0, 50.0, 25.0, 100.0, 500)
+        assertTrue(motion.movementObserved(id))
+        assertTrue(motion.recentMovement(id, 500))
+        assertFalse(motion.recentMovement(id, 2500))
+        assertTrue(SafariEspRules.renderCurrent("Shyworm", true, true, false, false))
+        assertFalse(SafariEspRules.renderCurrent("Shyworm", true, false, true, true))
     }
     @Test fun `Driftling keeps ESP when its known name tag stops rendering at distance`() {
         val model = UUID.randomUUID()

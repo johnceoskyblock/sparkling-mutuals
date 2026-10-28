@@ -294,4 +294,15 @@ class ShywormProjectionTest {
         p.retain(emptySet())
         assertTrue(p.missingMarkers().isEmpty())
     }
+    @Test fun `another unmatched capture does not erase a loaded underground worm`() {
+        val p=ShywormProjection()
+        p.observe(id,-100.0,50.0,20.0,true,0)
+        p.observe(id,-100.0,1.0,20.0,false,1000)
+        p.retain(setOf(id))
+        p.unassociatedCapture(1500)
+        p.reconcileCapture(1750,emptySet())
+        assertEquals(50.0,p.hiddenHeight(id))
+        p.caught(id)
+        assertNull(p.hiddenHeight(id))
+    }
 }

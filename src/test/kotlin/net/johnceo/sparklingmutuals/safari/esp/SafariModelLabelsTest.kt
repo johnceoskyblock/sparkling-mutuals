@@ -254,4 +254,28 @@ class SafariModelLabelsTest {
             assertTrue(labels.confirmed(model,1500),mob.name)
         }
     }
+    @Test fun `Litterbug wall timer and known distant visuals outlive labels without completion evidence`() {
+        val labels=EspModelLabels()
+        for (species in listOf("Litterbug","Shyworm","Flitter","Gemzie")) {
+            labels.observe(model,species,listOf(tag(species)),0)
+            assertFalse(labels.confirmed(model,9000))
+            assertTrue(labels.visualCurrent(model,species,6400.0,9000,73.0.takeIf { species in setOf("Litterbug","Shyworm") }),species)
+        }
+        assertTrue(labels.visualCurrent(model,"Litterbug",100.0,9000,73.0))
+        assertFalse(labels.confirmed(model,9000))
+    }
+    @Test fun `bound capsule label identifies one capture and escape restores original binding`() {
+        val labels=EspModelLabels();val second=UUID.randomUUID()
+        labels.observe(model,"Litterbug",listOf(tag("Litterbug")),0)
+        labels.captureState(model,"CAPTURING Litterbug",1000)
+        assertEquals(model,labels.captureCandidate("Litterbug",2000))
+        assertNull(labels.captureCandidate("Shyworm",2000))
+        labels.observe(second,"Litterbug",listOf(tag("Litterbug",id=UUID.randomUUID())),0)
+        labels.captureState(second,"CAPTURING Litterbug",1000)
+        assertNull(labels.captureCandidate("Litterbug",2000),"two simultaneous captures must not be guessed")
+        labels.observe(second,"Litterbug",listOf(tag("Litterbug",id=labels.label(second)!!)),2250)
+        assertEquals(model,labels.captureCandidate("Litterbug",2250))
+        labels.release(model)
+        assertNull(labels.captureCandidate("Litterbug",2250))
+    }
 }

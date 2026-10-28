@@ -154,10 +154,14 @@ object SafariEsp {
     fun escaped(species: String) { captures.escaped(species, System.currentTimeMillis())?.let(modelLabels::release);contactRevision++ }
     fun caught(species: String, personal: Boolean = true) {
         contactRevision++
-        val id = if (personal) captures.caught(species, System.currentTimeMillis()) else null
-        if (species == "Shyworm" && id != null) shyworms.caught(id).forEach(captures::retire)
+        val now=System.currentTimeMillis()
+        val id = (if (personal) captures.caught(species, now) else null) ?: modelLabels.captureCandidate(species,now)
+        if (id != null) { captures.retire(id); modelLabels.release(id) }
+        if (species == "Litterbug" && id != null) litterbugs.caught(id)
+        if (species == "Shyworm" && id != null) shyworms.caught(id).forEach { captures.retire(it); modelLabels.release(it) }
         if (id == null) {
-            if (species == "Shyworm") shyworms.unassociatedCapture(System.currentTimeMillis())
+            if (species == "Shyworm") shyworms.unassociatedCapture(now)
+            if (species == "Litterbug") litterbugs.unassociatedCapture(now)
             if (personal && targets.any { it.species == species && trackedModel(it) })
                 logger.info("Capture of {} had no throw/model association; checking name-tag lifecycle instead.", species)
             return
@@ -202,7 +206,7 @@ object SafariEsp {
         targets.forEach { target ->
             val e = target.entity
             motion.observe(e.uuid, target.species, e.x, e.y, e.z, client.player!!.distanceToSqr(e), now)
-            if (target.species == "Litterbug") litterbugs.observe(e.uuid, e.y, now)
+            if (target.species == "Litterbug") litterbugs.observe(e.uuid, e.x, e.y, e.z, now)
         }
         targets.filter { SafariEspRules.requiresCaptureLabel(it.species, it.entity.type.toShortString()) }.forEach { target ->
             val nearby = labels[target.species].orEmpty().filter { it.distanceToSqr(target.entity) <= 9 }
@@ -213,6 +217,9 @@ object SafariEsp {
             modelLabels.observe(target.entity.uuid, target.species, candidates.map {
                 EspModelLabel(it.uuid, target.species, it.distanceToSqr(target.entity), it.isCustomNameVisible)
             }, now)
+            modelLabels.captureState(target.entity.uuid, entities.firstOrNull {
+                it.uuid == modelLabels.label(target.entity.uuid)
+            }?.customName?.string, now)
             modelLabels.observeRange(target.entity.uuid, target.species, client.player!!.distanceToSqr(target.entity), now)
         }
         SafariTracking.ledger.current?.takeIf { it.fullClearReportReceived(SafariBiome.CAVERN) }?.let { run ->
@@ -229,12 +236,14 @@ object SafariEsp {
                         modelLabels.visible(e.uuid), modelLabels.current(e.uuid, now), e.position(), describe(e))
                 }
         }
+        litterbugs.retain(targets.filter { it.species == "Litterbug" }.map { it.entity.uuid }.toSet(),now)
         val worms = targets.filter { it.species == "Shyworm" }
         shyworms.retain(worms.map { it.entity.uuid }.toSet())
         worms.forEach {
             val e = it.entity
             shyworms.observe(e.uuid, e.x, e.y, e.z,
-                live(it, client), now)
+                e.y > 2 && (modelLabels.confirmed(e.uuid,now) || motion.recentMovement(e.uuid,now) ||
+                    modelLabels.label(e.uuid) != null && client.player!!.distanceToSqr(e) > 32.0*32), now)
         }
         shyworms.reconcile(now)
         shyworms.reconcileCapture(now, worms.filter { live(it, client) }.map { it.entity.uuid }.toSet())
@@ -263,9 +272,8 @@ object SafariEsp {
         rememberAim(client)
     }
     private fun trackedModel(target: Target) = SafariEspRules.requiresModelLabel(target.species, target.entity.type.toShortString())
-    /** Only the two explicit visual fallbacks may outlive strict name-tag validation. */
-    private fun drawable(target: Target, client: Minecraft) = live(target, client) ||
-        target.species in setOf("Chuckwalla", "Shyworm") && live(target, client, forEsp = true)
+    /** Rendering may retain visual proof; remaining-capture observations always use strict live(). */
+    private fun drawable(target: Target, client: Minecraft) = live(target, client, forEsp = true)
     /** Read-only model/capture validity, independent of ESP mode and visibility switches. */
     internal fun contactCurrent(entity: Entity, species: String, client: Minecraft): Boolean =
         entity !is Player && live(Target(entity,species,false),client)
@@ -281,17 +289,24 @@ object SafariEsp {
             !modelLabels.confirmed(entity.uuid, now)) return false
         val moving = motion.current(entity.uuid, now)
         val visualLabel = if (forEsp) modelLabels.visualCurrent(entity.uuid, target.species,
-            client.player!!.distanceToSqr(entity), now, shyworms.hiddenHeight(entity.uuid)) else false
+            client.player!!.distanceToSqr(entity), now, when(target.species) {
+                "Shyworm" -> shyworms.hiddenHeight(entity.uuid)
+                "Litterbug" -> litterbugs.hiddenHeight(entity.uuid,entity.x,entity.y,entity.z)
+                else -> null
+            }) else false
         val labeled = !trackedModel(target) || if (forEsp) visualLabel else modelLabels.current(entity.uuid, now)
-        if (forEsp && target.species == "Shyworm" && !labeled) return false
+        if (forEsp && target.species in setOf("Shyworm", "Litterbug") && !labeled) return false
         if (!forEsp && target.species == "Shyworm" && !SafariEspRules.shywormCurrent(
                 modelLabels.label(entity.uuid) != null, labeled, entity.y)) return false
-        if (target.species == "Flitter" && !SafariEspRules.flitterCurrent(
+        if (!forEsp && target.species == "Flitter" && !SafariEspRules.flitterCurrent(
                 modelLabels.label(entity.uuid) != null, labeled, modelLabels.visible(entity.uuid),
                 motion.recentMovement(entity.uuid, now))) return false
-        if (target.species == "Driftling" && !SafariEspRules.driftlingCurrent(
+        if (!forEsp && target.species == "Driftling" && !SafariEspRules.driftlingCurrent(
                 modelLabels.label(entity.uuid) != null, labeled, modelLabels.visible(entity.uuid),
                 motion.recentMovement(entity.uuid, now), motion.movementObserved(entity.uuid))) return false
+        if (forEsp && target.species in setOf("Flitter", "Driftling") &&
+            !modelLabels.confirmed(entity.uuid,now) && !motion.recentMovement(entity.uuid,now) &&
+            !(client.player!!.distanceToSqr(entity) > 32.0*32 && modelLabels.label(entity.uuid) != null && visualLabel)) return false
         if (target.species == "Chuckwalla" && !(if (forEsp) visualLabel else SafariEspRules.chuckwallaCurrent(
                 modelLabels.label(entity.uuid) != null, labeled, modelLabels.visible(entity.uuid)))) return false
         return if (forEsp) SafariEspRules.renderCurrent(target.species, ConfigManager.sparklingMode, current, moving, labeled,
@@ -415,6 +430,21 @@ object SafariEsp {
                         frame(AABB(it.minX, y, it.minZ, it.maxX, y, it.maxZ), 0xFFFF0000.toInt())
                     }
                 }
+            }
+        }
+        val litterbugMob=SafariRoster.named("Litterbug")!!
+        val litterbugGroup=SafariEspConfig.groups.getValue("haunted")
+        val retainedBugNeeded=if(ConfigManager.sparklingMode)
+            SafariEspRules.neededForSparkling("Litterbug",false,SafariSparklingMode.state,ConfigManager.sparklingProfitableShardEsp,SafariTracking.ledger.current)
+        else SafariEspRules.neededForRun("Litterbug",false,SafariTracking.ledger.current,ConfigManager.fullClearMode,ConfigManager.profitableShardEsp,SafariSparklingMode.state)
+        if(retainedBugNeeded && SafariTracking.ledger.current?.captureComplete("Litterbug") != true &&
+            SafariEspConfig.entityEnabled("Litterbug",false) &&
+            SafariEspRules.visible(true,litterbugGroup.enabled,litterbugGroup.onlyInBiome,playerBiome,litterbugMob.biome)) {
+            for(location in litterbugs.missingMarkers(now)) {
+                if(captures.hidden(location.id)) continue
+                val box=AABB(location.x-.4,location.marker.height,location.z-.4,location.x+.4,location.marker.height+.8,location.z+.4)
+                frame(box,SafariEspConfig.rgb(SafariEspConfig.entityColor("Litterbug",false)))
+                timers.add(Triple(location.marker.text,location.marker.color,box))
             }
         }
         val wormMob = SafariRoster.named("Shyworm")!!
