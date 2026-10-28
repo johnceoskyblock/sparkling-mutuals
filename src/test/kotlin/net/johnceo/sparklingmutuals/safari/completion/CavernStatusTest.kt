@@ -32,18 +32,17 @@ class CavernStatusTest {
             it.label.contains("snoozles", true) || it.label.startsWith("Snooper walls")
         })
     }
-    @Test fun `surveyed empty mounds retain plain Rockmite and never add absence prose`() {
+    @Test fun `surveyed empty mounds waive absent Rockmite and a revealed spawn restores its row`() {
         ConfigManager.init(dir)
         val run = SafariRun(0)
         repeat(9) { run.recordMound("The mound falls apart, but nothing is inside...") }
         assertFalse(SafariPanels.missing(run, SafariBiome.CAVERN, false, 0).rows.any { it.label == "No rockmites this run" })
         run.recordMound("The mound falls apart, but nothing is inside...")
         run.moundSurvey.scan(emptySet()) { true }
-        assertEquals(SafariRoster.named("Rockmite")!!.color, SafariPanels.missing(run, SafariBiome.CAVERN, false, 0).rows.first {
-            it.label == "Rockmite"
-        }.color)
+        assertFalse(SafariPanels.missing(run, SafariBiome.CAVERN, false, 0).rows.any { it.label == "Rockmite" })
         assertTrue(run.allMoundsBroken)
         run.recordMound("The mound fell apart, revealing a Rockmite hidden inside!")
+        assertEquals(SafariRoster.named("Rockmite")!!.color, SafariPanels.missing(run, SafariBiome.CAVERN, false, 0).rows.first { it.label == "Rockmite" }.color)
         assertFalse(SafariPanels.missing(run, SafariBiome.CAVERN, false, 0).rows.any { it.label == "No rockmites this run" })
     }
     @Test fun `Rockmite form colors save separately`() {

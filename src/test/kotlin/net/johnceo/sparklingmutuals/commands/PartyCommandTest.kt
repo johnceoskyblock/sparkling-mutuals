@@ -10,8 +10,20 @@ class PartyCommandTest {
         assertEquals("!tickets JohnCEO", PartyCommand.fromChat("Party > Farmer: !TICKET JohnCEO")?.command?.text)
         assertEquals("!commands", PartyCommand.fromChat("Party > [VIP] Farmer: !commands")?.command?.text)
         for (line in listOf("Guild > Farmer: !mutuals", "Party > Farmer: I typed !mutuals",
-            "Party > Farmer: !tickets Farmer extra", "Party > Farmer: !missing", "!commands")) {
+            "Party > Farmer: !tickets Farmer extra", "Party > Farmer: !missing Farmer extra", "!commands")) {
             assertNull(PartyCommand.fromChat(line), line)
+        }
+    }
+    @Test fun `missing and ticket aliases without names target the requesting party member`() {
+        for ((text, kind) in listOf("!ticket" to PartyCommandKind.TICKETS, "!tickets" to PartyCommandKind.TICKETS,
+            "!missing" to PartyCommandKind.MISSING)) {
+            val request = PartyCommand.fromChat("Party > [MVP++] Friend: $text")!!
+            assertEquals("Friend", request.command.ign)
+            assertEquals(kind, request.command.kind)
+            assertEquals("Friend", request.command.forResponder("ModUser").ign)
+            val explicit = PartyCommand.fromChat("Party > Friend: $text Friend")!!
+            assertEquals(request.token, explicit.token)
+            assertEquals("Other", PartyCommand.fromChat("Party > Friend: $text Other")!!.command.ign)
         }
     }
 

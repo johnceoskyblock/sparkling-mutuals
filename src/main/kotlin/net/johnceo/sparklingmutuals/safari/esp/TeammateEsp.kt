@@ -11,7 +11,7 @@ import net.minecraft.world.entity.player.Player
 
 /** Noamm-style outlines and distance-scaled names, using SkyBlock party UUIDs rather than dungeon classes. */
 object TeammateEsp {
-    const val COLOR = 0xFF55FF55.toInt()
+    val COLOR get() = SafariEspConfig.rgb(SafariEspConfig.teammateColor)
     fun isTeammate(entity: Entity): Boolean {
         val client = Minecraft.getInstance()
         return entity is Player && !entity.isRemoved && client.level?.getEntity(entity.id) === entity &&

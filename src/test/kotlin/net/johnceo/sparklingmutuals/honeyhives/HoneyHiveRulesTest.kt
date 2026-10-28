@@ -8,6 +8,47 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class HoneyHiveRulesTest {
+    @Test fun `disconnect retains contest score and completion for the same profile and window only`() {
+        val names = listOf("scope", "complete", "completedWindow", "windowKey", "secondsIntoWindow", "points", "tier", "tickCounter", "selectedTicketMode")
+        val fields = names.associateWith { ContestTracker.javaClass.getDeclaredField(it).apply { isAccessible = true } }
+        val previous = fields.mapValues { it.value.get(ContestTracker) }
+        @Suppress("UNCHECKED_CAST")
+        val retained = ContestTracker.javaClass.getDeclaredField("retained").apply { isAccessible = true }.get(ContestTracker) as MutableMap<Any, Any>
+        val oldRetained = retained.toMap()
+        @Suppress("UNCHECKED_CAST")
+        val warnings = ContestTracker.javaClass.getDeclaredField("warnedMinutes").apply { isAccessible = true }.get(ContestTracker) as MutableSet<Int>
+        val oldWarnings = warnings.toSet()
+        try {
+            val now = java.time.LocalDateTime.now()
+            val window = ContestTracker.absoluteWindow(now)
+            ContestTracker.selectScope("retention-user.profile-a", now)
+            fields.getValue("windowKey").set(ContestTracker, window)
+            fields.getValue("selectedTicketMode").set(ContestTracker, net.johnceo.sparklingmutuals.config.ContestConfig.ticketMode)
+            assertTrue(ContestTracker.observeScore("Legendary", 7200))
+            fields.getValue("complete").set(ContestTracker, true)
+            fields.getValue("completedWindow").set(ContestTracker, window)
+            warnings.add(3)
+            ContestTracker.selectScope(null, now)
+            assertEquals(-1, ContestTracker.currentPoints())
+            ContestTracker.selectScope("retention-user.profile-a", now)
+            assertEquals(7200, ContestTracker.currentPoints())
+            assertEquals("Legendary", ContestTracker.currentTier())
+            assertTrue(ContestTracker.isComplete()); assertTrue(3 in warnings)
+            assertFalse(ContestTracker.observeScore("Common", 0))
+            assertEquals(7200, ContestTracker.currentPoints())
+            assertTrue(ContestTracker.observeScore("Legendary", 7300))
+            ContestTracker.selectScope("another-user.profile-a", now)
+            assertEquals(-1, ContestTracker.currentPoints()); assertFalse(ContestTracker.isComplete())
+            ContestTracker.selectScope("retention-user.profile-a", now)
+            assertEquals(7300, ContestTracker.currentPoints())
+            ContestTracker.selectScope(null, now.plusMinutes(20))
+            ContestTracker.selectScope("retention-user.profile-a", now.plusMinutes(20))
+            assertEquals(-1, ContestTracker.currentPoints()); assertFalse(ContestTracker.isComplete())
+        } finally {
+            fields.forEach { (name, field) -> field.set(ContestTracker, previous.getValue(name)) }
+            retained.clear(); retained.putAll(oldRetained); warnings.clear(); warnings.addAll(oldWarnings)
+        }
+    }
     @Test fun `only catalogued hives render and saved decorative or phantom positions are removed without losing timers`() {
         val real = "-705,92,225"
         val tree = "-542,119,298"

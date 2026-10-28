@@ -48,6 +48,8 @@ See [API fetch audit](API_FETCH_AUDIT.md) for every current HTTP trigger, client
 
 ## Last updated
 
+2026-10-27 — `!missing`, `!ticket` and `!tickets` accept an omitted IGN and resolve it to the verified party-chat sender, never the responding mod user. Explicit-name queries remain supported. Omitted and explicit self queries share the same request fingerprint and existing cooldowns; lookup/cache behavior is unchanged.
+
 2026-10-22 — Listed individual birds in timesave discovery replies, including partial missing/shared bird sets.
 
 2026-10-21 — Retained party discovery baselines and local catch credits; only new members fetch. Personal stats now refresh every thirty minutes, Bazaar every three hours, and party profile cards resolve IGNs.

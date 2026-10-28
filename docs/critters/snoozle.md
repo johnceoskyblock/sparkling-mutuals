@@ -49,7 +49,7 @@ Resolve all five Snooper walls. Only third-stage wall dialogue confirms destruct
 | Ordinary ESP | Unique stops ordinary released-critter ESP after first shared catch. Full Clear keeps eligible uncaught models. Sparkling checks add no ordinary released-Snoozle ESP; wall helpers retain their separate rules. |
 | Source helpers | Separate outstanding-source footer and highlights follow [panel rules](../MISSING_PANEL.md). Unique helper need after a catch is discovery-gated although progress still needs source proof. |
 | Automatic completion announcements | Shared local whole-biome/report-readiness gates in [mode rules](../../SAFARI_LOGIC.md). |
-| PB eligibility | Personal Unique: own catch of every species. Full Clear: personal captures/local proof. Party Unique: separate shared-capture/absence predicate; progress alone is insufficient. |
+| PB eligibility | Personal Unique: own catch of each spawned species; proven zero-spawn types exempt. Full Clear: personal captures/local proof. Party Unique: separate shared-capture/absence predicate; progress alone is insufficient. |
 
 ## Party reports and late entry
 
@@ -77,7 +77,16 @@ Existing coverage: [UniquePartyReportTest](../../src/test/kotlin/net/johnceo/spa
 
 Population guarantees and capsule success/escape claims from supplied notes were not live revalidated; see [audit D2](../IMPLEMENTATION_AUDIT.md#d2).
 
+## Unique zero-spawn completion
+
+In Unique mode, positively confirmed cleared sources (all mounds broken for Rockmite, all Snoozle walls broken for Snoozle) waive the capture requirement if that species has never been seen or captured and none are currently detected. Retained source proof works from any biome without a completion report or a prior Cavern critter scan. Unknown or remaining sources do not count as cleared. A later positive sighting reopens the capture requirement. No catch is added to history or counters.
+
 ## Last updated
+
+2026-10-28 - Allowed retained cleared-source proof to confirm zero spawns Safari-wide in Unique mode.
+
+
+2026-10-27 — Personal Unique PBs exempt positively proven zero-spawn types.
 
 2026-10-26 — Removed check-only ordinary ESP and its per-UUID linger; capture/source and profitable highlighting retain their own rules.
 

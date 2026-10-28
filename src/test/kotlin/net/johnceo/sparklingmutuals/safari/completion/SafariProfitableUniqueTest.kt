@@ -16,11 +16,40 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 
 class SafariProfitableUniqueTest : net.johnceo.sparklingmutuals.safari.esp.ProfitableEspPriceFixture() {
+    @Test fun `only Rockmite is excluded from profitable ESP while Snoozle remains eligible`() {
+        val quote = net.johnceo.sparklingmutuals.history.BazaarPrices
+        prices(listOf("Rockmite", "Snoozle").associate { quote.shardId(it) to doubleArrayOf(100000.0, 100000.0) })
+        val listed = net.johnceo.sparklingmutuals.commands.ProfitableCritters.cachedSpecies()
+        assertEquals(setOf("Rockmite", "Snoozle"), listed)
+        for (species in listed) {
+            assertEquals(species == "Snoozle", SafariEspRules.profitableEsp(species, true))
+            val run = SafariRun(0)
+            assertTrue(SafariEspRules.neededForRun(species, false, run, false, true))
+            run.record(SafariCatch(SafariRoster.named(species)!!))
+            assertEquals(species == "Snoozle", SafariEspRules.neededForRun(species, false, run, false, true))
+            assertTrue(SafariEspRules.neededForRun(species, false, run, true, true))
+        }
+    }
+    @Test fun `cached ticket choice updates combined revenue and ESP without fetching`() {
+        val ranking = net.johnceo.sparklingmutuals.commands.ProfitableCritters
+        val quotes = net.johnceo.sparklingmutuals.history.BazaarPrices
+        prices(SafariRoster.all.associate { quotes.shardId(it.name) to doubleArrayOf(100.0, 100.0) } +
+            (quotes.SAFARI_ESSENCE to doubleArrayOf(50.0, 50.0)))
+        val basic = ranking.cachedTop()
+        ConfigManager.profitsTicketMode = 3
+        val firstClass = ranking.cachedTop()
+        assertNotSame(basic, firstClass)
+        assertEquals(firstClass.map { it.name }.toSet(), ranking.cachedSpecies())
+        for (entry in firstClass) {
+            assertEquals(entry.averageSpawns * ranking.baseEssence(entry.name) * 1.5, entry.essencePerRun, 1e-8)
+            assertEquals(entry.shardCoinsPerRun + entry.essencePerRun * 50, entry.coinsPerRun, 1e-8)
+        }
+        assertSame(firstClass, ranking.cachedTop())
+    }
     @Test fun `ESP matches the command top ten and refreshes for prices and sell preference without a fetch`() {
         val ranking = net.johnceo.sparklingmutuals.commands.ProfitableCritters
         val quote = net.johnceo.sparklingmutuals.history.BazaarPrices
         prices(SafariRoster.all.associate { quote.shardId(it.name) to when (it.name) {
-            "Scrappy", "Rockmite", "Troodon" -> doubleArrayOf(1e12, 1e12)
             "Wumpa" -> doubleArrayOf(1e9, 1.0)
             "Nozzlenose" -> doubleArrayOf(1.0, 1e9)
             else -> doubleArrayOf(100.0, 100.0)
@@ -37,8 +66,9 @@ class SafariProfitableUniqueTest : net.johnceo.sparklingmutuals.safari.esp.Profi
             val expected = top.map { it.name }.toSet()
             for (critter in SafariRoster.all) {
                 val run = SafariRun(0).apply { record(SafariCatch(critter)) }
-                assertEquals(critter.name in expected, SafariEspRules.neededForRun(critter.name, false, run, false, true), critter.name)
-                assertEquals(critter.name in expected, SafariEspRules.neededForSparkling(critter.name, false, party, true, run, java.util.UUID.randomUUID(), 0), critter.name)
+                val highlight = critter.name in expected && critter.name != "Rockmite"
+                assertEquals(highlight, SafariEspRules.neededForRun(critter.name, false, run, false, true), critter.name)
+                assertEquals(highlight, SafariEspRules.neededForSparkling(critter.name, false, party, true, run, java.util.UUID.randomUUID(), 0), critter.name)
                 assertFalse(SafariEspRules.profitableEsp(critter.name, false))
             }
         }

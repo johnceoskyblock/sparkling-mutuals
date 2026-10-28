@@ -63,7 +63,14 @@ object SparklingCommand {
                     })
             )
             dispatcher.register(ClientCommands.literal("rates").executes { SparklingRates.show(it.source) })
-            dispatcher.register(ClientCommands.literal("profitablecritters").executes { ProfitableCritters.show(it.source) })
+            for (alias in listOf("profit", "profits")) {
+                val command = ClientCommands.literal(alias).executes { ProfitableCritters.show(it.source) }
+                for (ticket in net.johnceo.sparklingmutuals.safari.SafariTicketType.entries) {
+                    val name = if (ticket == net.johnceo.sparklingmutuals.safari.SafariTicketType.FIRST_CLASS) "first-class" else ticket.name.lowercase()
+                    command.then(ClientCommands.literal(name).executes { ProfitableCritters.show(it.source, ticket) })
+                }
+                dispatcher.register(command)
+            }
             dispatcher.register(ClientCommands.literal("captures").executes { open { CatchCountScreen() } })
             dispatcher.register(ClientCommands.literal("unique").executes { mode(it.source, SafariMode.UNIQUE) })
             dispatcher.register(ClientCommands.literal("sparkle").executes { mode(it.source, SafariMode.SPARKLING) })

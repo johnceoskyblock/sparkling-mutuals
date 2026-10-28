@@ -37,7 +37,7 @@ class SparklingCaptureRequirementTest {
             assertEquals(1, run.completed(mode, listOf(species), state), species.name)
             assertFalse(SafariPanels.missing(run, species.biome, mode == SafariMode.UNIQUE, 2, party = state).rows.any { it.label == species.name }, species.name)
             val targets = species.biome.critters.size
-            val checked = if (mode == SafariMode.SPARKLING && species.name == "Wumpa") targets else 1
+            val checked = if (species.name == "Wumpa") targets else 1
             assertEquals("$checked/$targets", SafariPanels.progress(run, true, 0, state).rows.single { it.label == species.biome.label }.value, species.name)
             run.visitBiome(SafariBiome.entries.first { it != species.biome }); run.visitBiome(species.biome)
             assertEquals(1, run.completed(mode, listOf(species), state), "completion persists on reentry")

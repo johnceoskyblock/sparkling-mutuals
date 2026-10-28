@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory
 object BazaarPrices {
     private const val URL = "https://api.hypixel.net/v2/skyblock/bazaar"
     const val FEATHER = "RAINBOW_FEATHER"
+    const val SAFARI_ESSENCE = "ESSENCE_SAFARI"
     private val logger = LoggerFactory.getLogger("sparkling-mutuals/bazaar")
     private val client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build()
     private val cache = BazaarPriceCache(System::currentTimeMillis, ::fetchPrices)
@@ -31,7 +32,7 @@ object BazaarPrices {
             val read = runCatching {
                 check(error == null && response.statusCode() == 200) { error?.message ?: "HTTP ${response.statusCode()}" }
                 JsonParser.parseString(response.body()).asJsonObject.getAsJsonObject("products").entrySet()
-                    .filter { it.key.startsWith("SHARD_") || it.key == FEATHER }
+                    .filter { it.key.startsWith("SHARD_") || it.key == FEATHER || it.key == SAFARI_ESSENCE }
                     .associate { (id, product) -> product.asJsonObject.getAsJsonObject("quick_status").let {
                         id to doubleArrayOf(it.get("sellPrice").asDouble, it.get("buyPrice").asDouble) } }
             }.onFailure { logger.warn("Bazaar lookup failed: {}", it.message) }.getOrDefault(emptyMap())

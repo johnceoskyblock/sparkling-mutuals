@@ -143,7 +143,14 @@ Full Clear still requires actual minimum captures, known Honeybug nest totals, s
 
 Each client can send one unused starting-item reminder batch per run after a local clear, even if a peer sent that biome report first. A report for a different biome alone never arms that client's reminder.
 
+## Positive labels for remaining captures
+
+Every actual critter, including native Minecraft mobs, must have an associated current species label before contributing to remaining-capture observations or local population targets. A texture, movement, or registered entity alone cannot establish that it still needs capturing. Label identity persists, with a one-second packet grace; missing labels expire rather than blocking a biome forever. This does not infer a capture: minimum capture counts and existing coverage/source requirements still apply. Rockmite mound displays, bee nests, and Snoozle walls remain separate structure sources. Existing explicit visual-only cooldown/distance helpers do not supply remaining-capture evidence.
+
 ## Last updated
+
+2026-10-28 - Required positive current labels for remaining-capture evidence Safari-wide.
+
 
 2026-10-25 — Honeybug local checking proof now retains after a complete fresh render; fd remains an outside-Forest override only, and expanded nest evidence reopens local work.
 

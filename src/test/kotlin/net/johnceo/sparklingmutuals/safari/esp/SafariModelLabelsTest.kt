@@ -14,6 +14,35 @@ class SafariModelLabelsTest {
     private fun tag(species: String = "Driftling", id: UUID = label, distance: Double = 1.0, visible: Boolean = true) =
         EspModelLabel(id, species, distance, visible)
 
+    @Test fun `distant Chuckwalla visuals survive tag range but nearby lost tags stay rejected`() {
+        val labels = EspModelLabels()
+        assertTrue(labels.visualCurrent(model, "Chuckwalla", 10000.0, 0))
+        assertFalse(labels.visualCurrent(model, "Chuckwalla", 100.0, 0))
+        labels.observe(model, "Chuckwalla", listOf(tag("Chuckwalla")), 0)
+        labels.observeRange(model, "Chuckwalla", 10000.0, 2000)
+        assertFalse(labels.current(model, 2000)) // Completion still needs fresh evidence.
+        assertTrue(labels.visualCurrent(model, "Chuckwalla", 10000.0, 2000))
+        labels.observeRange(model, "Chuckwalla", 100.0, 2000)
+        assertFalse(labels.visualCurrent(model, "Chuckwalla", 100.0, 2000))
+        assertFalse(labels.visualCurrent(model, "Chuckwalla", 10000.0, 2000))
+        labels.observe(model, "Chuckwalla", listOf(tag("Chuckwalla")), 2250)
+        assertTrue(labels.visualCurrent(model, "Chuckwalla", 100.0, 2250))
+    }
+
+    @Test fun `underground Shyworm keeps visual height after label expiry without reviving completion evidence`() {
+        val labels = EspModelLabels()
+        val worms = ShywormProjection()
+        labels.observe(model, "Shyworm", listOf(tag("Shyworm")), 0)
+        worms.observe(model, -100.0, 58.65, 20.0, true, 0)
+        worms.observe(model, -100.0, 1.0, 20.0, false, 250)
+        assertFalse(labels.current(model, 2000))
+        assertEquals(58.65, worms.hiddenHeight(model))
+        assertTrue(labels.visualCurrent(model, "Shyworm", 100.0, 2000, worms.hiddenHeight(model)))
+        assertFalse(labels.visualCurrent(model, "Shyworm", 100.0, 2000))
+        worms.caught(model)
+        assertNull(worms.hiddenHeight(model))
+    }
+
     @Test fun `registered head model stops counting when its known critter label disappears`() {
         val labels = EspModelLabels()
         labels.observe(model, "Driftling", listOf(tag()), 0)
@@ -152,21 +181,22 @@ class SafariModelLabelsTest {
         assertFalse(SafariEspRules.chuckwallaCurrent(true, false, true))
         assertTrue(SafariEspRules.chuckwallaCurrent(true, true, true))
     }
-    @Test fun `capture transition does not permanently increase Driftling or Chuckwalla target`() {
-        for (species in listOf("Driftling", "Chuckwalla")) {
+    @Test fun `capture transition does not permanently increase cavern model targets`() {
+        for (species in listOf("Driftling", "Chuckwalla", "Flitter", "Shyworm")) {
             var now = 0L
+            val zone = net.johnceo.sparklingmutuals.safari.completion.CavernCompletionZones.zones.getValue(species)
             val run = SafariRun(0) { now }
             run.visitBiome(SafariBiome.CAVERN)
             repeat(6) { run.record(SafariCatch(SafariRoster.named(species)!!, false), now) }
             run.partyFullClear("Party > Friend: cd")
             now = 500
             run.observePopulation(listOf(species to model))
-            run.updateCaptureEvidence(SafariBiome.CAVERN, setOf(species), false, playerX = -120.0, playerZ = 45.0)
+            run.updateCaptureEvidence(SafariBiome.CAVERN, setOf(species), false, playerX = zone.x, playerZ = zone.z)
             assertFalse(run.fullClearMissingComplete(species), "positive remaining evidence still blocks during transition")
             assertFalse(run.fullClearComplete(species))
             now = 3000
             run.observePopulation(emptyList())
-            run.updateCaptureEvidence(SafariBiome.CAVERN, emptySet(), false, playerX = -120.0, playerZ = 45.0)
+            run.updateCaptureEvidence(SafariBiome.CAVERN, emptySet(), false, playerX = zone.x, playerZ = zone.z)
             assertTrue(run.fullClearMissingComplete(species), "capture plus old head must not become a permanent seventh capture")
             run.observePopulation(listOf(species to java.util.UUID.randomUUID()))
             run.updateCaptureEvidence(SafariBiome.CAVERN, setOf(species), false)
@@ -187,5 +217,41 @@ class SafariModelLabelsTest {
         assertFalse(run.captureComplete("Driftling"))
         labels.reset()
         assertTrue(labels.current(model, 1250))
+    }
+    @Test fun `late Flitter ghost never inflates completion but real movement and visible tags work`() {
+        val labels = EspModelLabels(); val motion = EspMotion(); val run = SafariRun(0)
+        repeat(6) { run.record(SafariCatch(SafariRoster.named("Flitter")!!)) }
+        fun active(now: Long) = SafariEspRules.flitterCurrent(labels.label(model) != null,
+            labels.current(model, now), labels.visible(model), motion.recentMovement(model, now))
+        motion.observe(model,"Flitter",-84.0,45.0,62.0,2500.0,0)
+        assertFalse(active(0))
+        labels.observe(model,"Flitter",listOf(tag("Flitter",visible=false)),0)
+        assertFalse(active(0))
+        run.observePopulation(if(active(0)) listOf("Flitter" to model) else emptyList())
+        run.updateCaptureEvidence(SafariBiome.CAVERN, emptySet(), false, playerX=-84.0,playerZ=62.0)
+        assertTrue(run.captureComplete("Flitter"))
+        assertTrue(run.fullClearMissingComplete("Flitter"))
+        motion.observe(model,"Flitter",-83.0,45.0,62.0,2500.0,250)
+        assertTrue(active(250))
+        assertFalse(active(2500))
+        labels.observe(model,"Flitter",listOf(tag("Flitter")),2750)
+        assertTrue(active(2750))
+        assertFalse(SafariEspRules.shywormCurrent(true,true,1.0))
+        assertFalse(SafariEspRules.shywormCurrent(false,true,50.0))
+        assertTrue(SafariEspRules.shywormCurrent(true,true,50.0))
+    }
+    @Test fun `every critter requires positive label evidence including native mobs and moving models`() {
+        for (mob in SafariEspRules.mobs) for (descriptor in mob.identifiers) {
+            val labels = EspModelLabels()
+            val structure = mob.name == "Rockmite" && descriptor.type == "item_display"
+            assertEquals(!structure, SafariEspRules.requiresCaptureLabel(mob.name, descriptor.type), mob.name)
+            assertFalse(labels.confirmed(model, 0), mob.name)
+            labels.observe(model,mob.name,listOf(tag(mob.name)),0)
+            assertTrue(labels.confirmed(model,500),mob.name)
+            // Same grace window as existing label lifecycle; unloaded tags cannot remain positive forever.
+            assertFalse(labels.confirmed(model,1250),mob.name)
+            labels.observe(model,mob.name,listOf(tag(mob.name)),1500)
+            assertTrue(labels.confirmed(model,1500),mob.name)
+        }
     }
 }

@@ -48,7 +48,7 @@ None. No species-specific resource or structure gate is used.
 | Ordinary ESP | Unique: until first shared capture. Full Clear: eligible uncaught models. Sparkling: no ordinary model ESP solely for automatic checking. Settings and model validity still apply. |
 | Source helpers | None. |
 | Automatic completion announcements | Shared local whole-biome/report-readiness gates in [mode rules](../../SAFARI_LOGIC.md). |
-| PB eligibility | Personal Unique: own catch of every species. Full Clear: personal captures/local proof. Party Unique: separate shared-capture/absence predicate; progress alone is insufficient. |
+| PB eligibility | Personal Unique: own catch of each spawned species; proven zero-spawn types exempt. Full Clear: personal captures/local proof. Party Unique: separate shared-capture/absence predicate; progress alone is insufficient. |
 
 ## Party reports and late entry
 
@@ -72,7 +72,16 @@ Existing coverage: [SafariFullClearProgressTest](../../src/test/kotlin/net/johnc
 
 Population guarantees and capsule success/escape claims from supplied notes were not live revalidated; see [audit D2](../IMPLEMENTATION_AUDIT.md#d2).
 
+## Captured model cleanup
+
+Flitter models require a current visible species tag or recent actual movement. A stationary orphaned model loaded after a catch is excluded from ESP and local population/completion scans. Capture-transition observations do not inflate required captures during the 2.5-second packet settling window.
+
 ## Last updated
+
+2026-10-28 - Fixed late-entry model ghosts and capture cleanup.
+
+
+2026-10-27 — Personal Unique PBs exempt positively proven zero-spawn types.
 
 2026-10-26 — Removed ordinary ESP added solely for automatic Sparkling checks and its per-UUID linger. Capture/source and profitable-highlight exceptions remain separate.
 

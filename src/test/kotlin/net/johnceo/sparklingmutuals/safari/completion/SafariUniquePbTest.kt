@@ -36,6 +36,21 @@ class SafariUniquePbTest {
         assertEquals(bests.trackedResponse("Friend", "Forest"), restored.trackedResponse("friend", "Forest"))
         assertEquals(bests.trackedResponse("Friend", "Forest", true), restored.trackedResponse("friend", "Forest", true))
     }
+    @Test fun `personal unique PB exempts only a proven absent species and can finish on a scan`() {
+        val bests = SafariPersonalBests()
+        val run = SafariRun(1000)
+        run.visitBiome(SafariBiome.CAVERN)
+        SafariBiome.CAVERN.critters.filter { it.name != "Snoozle" }.forEach { run.record(SafariCatch(it)) }
+        assertNull(bests.recordUnique(SafariBiome.CAVERN,run,30000))
+        run.updateCaptureEvidence(SafariBiome.CAVERN,emptySet(),allWallsChecked=true)
+        assertNotNull(bests.recordUnique(SafariBiome.CAVERN,run,31000))
+        assertEquals(30000L,bests.time("Cavern",BiomePbType.UNIQUE))
+        val shared = SafariRun(1000)
+        shared.visitBiome(SafariBiome.CAVERN)
+        SafariBiome.CAVERN.critters.filter { it.name != "Snoozle" }.forEach { shared.record(SafariCatch(it,it.name != "Rockmite")) }
+        shared.updateCaptureEvidence(SafariBiome.CAVERN,emptySet(),allWallsChecked=true)
+        assertNull(SafariPersonalBests().recordUnique(SafariBiome.CAVERN,shared,31000))
+    }
     @Test fun `each biome requires every unique personally even if loot shares fill the display`() {
         for (biome in SafariBiome.entries) {
             val run = SafariRun(1000)

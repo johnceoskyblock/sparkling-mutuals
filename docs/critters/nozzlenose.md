@@ -48,7 +48,7 @@ None. No species-specific resource or structure gate is used.
 | Ordinary ESP | Unique: until first shared capture. Full Clear: eligible uncaught models. Sparkling: no ordinary model ESP solely for automatic checking. Settings and model validity still apply. Needed Sparkling Wumpa forces this Icy species until its first shared catch; entity/group/biome settings still gate it. |
 | Source helpers | None. |
 | Automatic completion announcements | Shared local whole-biome/report-readiness gates in [mode rules](../../SAFARI_LOGIC.md). |
-| PB eligibility | Personal Unique: own catch of every species. Full Clear: personal captures/local proof. Party Unique: separate shared-capture/absence predicate; progress alone is insufficient. |
+| PB eligibility | Personal Unique: own catch of each spawned species; proven zero-spawn types exempt. Full Clear: personal captures/local proof. Party Unique: separate shared-capture/absence predicate; progress alone is insufficient. |
 
 ## Party reports and late entry
 
@@ -72,7 +72,16 @@ Existing coverage: [SafariFullClearProgressTest](../../src/test/kotlin/net/johnc
 
 Population guarantees and capsule success/escape claims from supplied notes were not live revalidated; see [audit D2](../IMPLEMENTATION_AUDIT.md#d2).
 
+## Wumpa prerequisite evidence
+
+The exact server message `The Wumpa has awoken.` or a confirmed Wumpa catch proves at least one shared capture of every other Icy species. Missing individual catch events receive a derived lower bound of one, shown as >=1 in the capture panel. Real catch messages replace this inferred minimum rather than adding another capture. This proof supports Unique completion but never personal catches, catcher attribution, fabricated catch/history events, or Full Clear quantities above one. Awakening does not count as catching Wumpa.
+
 ## Last updated
+
+2026-10-28 - Added Wumpa awakening/capture proof for missing shared Icy capture events.
+
+
+2026-10-27 — Personal Unique PBs exempt positively proven zero-spawn types.
 
 2026-10-26 — Removed ordinary ESP added solely for automatic Sparkling checks and its per-UUID linger. Capture/source and profitable-highlight exceptions remain separate.
 

@@ -26,7 +26,8 @@ class UniquePartyReportTest {
             assertFalse(run.uniqueComplete(species.name, state))
             run.record(SafariCatch(species, false))
             assertTrue(run.uniqueComplete(species.name, state), species.name)
-            assertEquals("1/${species.biome.critters.size}", SafariPanels.progress(run, true, 0, state).rows.single { it.label == species.biome.label }.value)
+            val completed = if (species.name == "Wumpa") species.biome.critters.size else 1
+            assertEquals("$completed/${species.biome.critters.size}", SafariPanels.progress(run, true, 0, state).rows.single { it.label == species.biome.label }.value)
             assertFalse(SafariPanels.missing(run, species.biome, true, 0, party = state).rows.any { it.label == species.name })
         }
     }
@@ -62,7 +63,7 @@ class UniquePartyReportTest {
         assertEquals(SafariBiome.FOREST, run.lastBiome)
     }
 
-    @Test fun `global source proof checks without catches and cd confirms only an unseen zero spawn`() {
+    @Test fun `global cleared source proof completes unseen zero spawns without needing cd`() {
         val run = SafariRun(0); val state = party()
         run.visitBiome(SafariBiome.HAUNTED)
         run.moundSurvey.scan(setOf(Triple(-100, 40, 50))) { true }
@@ -70,7 +71,9 @@ class UniquePartyReportTest {
         run.observeCavernSources(false, false, true)
         for (name in listOf("Rockmite", "Snoozle")) {
             assertTrue(run.sparklingComplete(name, state))
-            assertFalse(run.uniqueComplete(name, state))
+            assertTrue(run.uniqueComplete(name, state))
+            assertTrue(run.uniqueComplete(name, state, localOnly = true))
+            assertTrue(run.uniqueUnavailable(name))
         }
         report(run, SafariBiome.CAVERN)
         for (name in listOf("Rockmite", "Snoozle")) {

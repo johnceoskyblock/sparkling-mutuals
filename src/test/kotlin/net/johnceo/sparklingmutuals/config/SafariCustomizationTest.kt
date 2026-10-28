@@ -118,7 +118,7 @@ class SafariCustomizationTest {
     @Test fun `customization offers every existing critter color exactly once`() {
         ConfigManager.init(dir)
         val choices = CustomizationSettings()
-        val names = listOf(choices.cavern, choices.forest, choices.icy, choices.haunted).flatMap { group -> group.javaClass.fields.toList() }.filter { it.type == ColorChoice::class.java }.map {
+        val names = listOf(choices.cavern, choices.forest, choices.icy, choices.haunted).flatMap { group -> group.javaClass.fields.toList() }.filter { it.type == ColorChoice::class.java || it.type == ScrappyAppearanceSettings::class.java }.map {
             it.getAnnotation(io.github.notenoughupdates.moulconfig.annotations.ConfigOption::class.java).name
         }
         SafariRoster.all.filter { it.name != "Rockmite" }.forEach { assertEquals(1, names.count { name -> name == "${it.name} ESP" }) }
@@ -126,8 +126,8 @@ class SafariCustomizationTest {
     }
     @Test fun `warnings live in their accordion and mode-owned structure controls are absent`() {
         fun names(type: Class<*>) = type.fields.mapNotNull { it.getAnnotation(io.github.notenoughupdates.moulconfig.annotations.ConfigOption::class.java)?.name }
-        assertEquals(setOf("Contest HUD and tracking", "Auto !dt contest", "Honeyhive beacons", "Warning"), names(SafariSettings.Miria::class.java).toSet())
-        assertTrue(names(SafariSettings.Unique::class.java).contains("Critter ESP for profitable shards"))
+        assertEquals(setOf("Ticket mode", "Contest HUD and tracking", "Auto !dt contest", "Honeyhive beacons", "Warning"), names(SafariSettings.Miria::class.java).toSet())
+        assertTrue(names(SafariSettings.Unique::class.java).contains("Profitable critter ESP"))
         assertEquals(setOf("5 minute warning", "3 minute warning", "1 minute warning", "No contest warnings", "Warning titles", "Sound volume", "Warning sound", "Save sound"), names(SafariSettings.Warning::class.java).toSet())
         assertEquals(setOf("Command help", "Move and resize HUDs"), names(SafariSettings.General::class.java).toSet())
         assertFalse(names(SafariSettings.Party::class.java).contains("Command help"))

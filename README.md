@@ -30,7 +30,7 @@ HM API and MoulConfig are bundled. Player profile lookups use a Hypixel API key 
 | Capture review | `/captures` for current/last-run captures |
 | History and achievements | `/sm history`, `/sm history import`, `/sm achievements`; [history/import/profit rules](docs/HISTORY_IMPORT.md) |
 | Sparkling rates | `/rates`; [cached-party checks and rate estimates](docs/SPARKLING_RATES.md) |
-| Profitable critters | `/profitablecritters`; [cached-price ranking and estimates](docs/PROFITABLE_CRITTERS.md) |
+| Profitable critters | `/profit <ticket>` or `/profits <ticket>`; [shard + essence ranking](docs/PROFITABLE_CRITTERS.md) |
 | Party streaks | `!since`, `!since unique`; [credit and participation](docs/SINCE_COMMAND.md) |
 | Contest and readiness | [Miria/downtime](docs/CONTEST_DOWNTIME.md), [Safari entry guard and Shift override](docs/SAFARI_ENTRY_GUARD.md) |
 | Canyon and warp | [Honeyhives](docs/HONEYHIVES.md), [warp reminders and automatic warp](docs/WARP_ALERTS.md) |
@@ -41,8 +41,8 @@ The guide is a visual estimate, not guaranteed flight, impact or capture physics
 
 | Command | Purpose |
 | --- | --- |
-| `!mutual` / `!mutuals`, `!missing <IGN>` | Shared time-saving discoveries or missing discoveries |
-| `!tickets <IGN>` | Safari ticket counts |
+| `!mutual` / `!mutuals`, `!missing [IGN]` | Shared time-saving discoveries or missing discoveries; omitted IGN means the sender |
+| `!ticket [IGN]` / `!tickets [IGN]` | Safari ticket counts; omitted IGN means the sender |
 | `!m [biome]` | Current-run remaining work |
 | `!dt [reason]`, `r` | Request downtime or release your own readiness hold |
 | `!pb <biome>`, `!pb doom`, `!pb wumpa` | Active-mode biome or boss bests; [solo/duo and observed unique variants](docs/PERSONAL_BESTS.md) are in command help |
@@ -71,6 +71,8 @@ Press Tab to complete current-party IGNs in `/sparkling`, including successive c
 - Licensing and attribution: [LICENSE](LICENSE) and [third-party notices](licenses).
 
 ## Last updated
+
+2026-10-27 — Added ticket-specific `/profit` and `/profits` shard + essence ranking; `!missing` and `!ticket(s)` now default to the sender when no IGN is supplied.
 
 2026-10-25 — Renamed the local rate command to `/rates`; no new API requests. `/profitablecritters` now ranks ten results by estimated coins per run.
 

@@ -6,6 +6,37 @@ import org.junit.jupiter.api.Test
 import java.util.UUID
 
 class StartingResourceAnnouncementTest {
+    @Test fun `starting item opt out keeps hotspot announcement and resource accounting independent`() {
+        val run = SafariRun(0)
+        run.inventoryEvidence(listOf("Bag of Seeds" to 1), 0)
+        val sent = mutableListOf<String>()
+        val delivery = run.startingAnnouncement
+        delivery.observeHotspot("HOTSPOT! Your Hunting Hotspot is the Cavern Biome!", 0)
+        assertTrue(delivery.dispatch(500, party("Macaw"), true, false, sent::add))
+        assertFalse(delivery.dispatch(2500, party("Macaw"), true, false, sent::add))
+        assertEquals(listOf("[SM] Hotspot: Cavern"), sent)
+        assertEquals(1, run.resources.startingCount(FloorDropType.SEEDS))
+        assertTrue(delivery.dispatch(3000, party("Macaw"), true, true, sent::add))
+        assertEquals("[SM] Starting items: 1x Bag of Seeds", sent.last())
+    }
+    @Test fun `optional hotspot is sent once before starting items without waiting for API readiness`() {
+        val run = SafariRun(0)
+        run.inventoryEvidence(listOf("Bag of Seeds" to 1), 0)
+        val sent = mutableListOf<String>()
+        val delivery = run.startingAnnouncement
+        delivery.observeHotspot("Party > Friend: HOTSPOT! Your Hunting Hotspot is the Forest Biome!", 0)
+        assertFalse(delivery.dispatch(1000, party("Macaw"), true, sent::add))
+        delivery.observeHotspot("HOTSPOT! Your Hunting Hotspot is the Forest Biome!", 1000)
+        assertFalse(delivery.dispatch(1499, PartySparklingState(), true, sent::add))
+        assertTrue(delivery.dispatch(1500, PartySparklingState(), true, sent::add))
+        assertEquals(listOf("[SM] Hotspot: Forest"), sent)
+        assertFalse(delivery.dispatch(2999, party("Macaw"), true, sent::add))
+        assertTrue(delivery.dispatch(3000, party("Macaw"), true, sent::add))
+        assertEquals("[SM] Starting items: 1x Bag of Seeds", sent.last())
+        delivery.observeHotspot("HOTSPOT! Your Hunting Hotspot is the Haunted Biome!", 3500)
+        assertFalse(delivery.dispatch(5000, party("Macaw"), true, sent::add))
+        assertEquals(2, sent.size)
+    }
     @Test fun `starting report lists quantities and remains compatible with resource accounting`() {
         val source = SafariResources().apply {
             inventory(listOf("Bag of Seeds" to 2, "Yogi Berry" to 1, "Shining Coin" to 1), initial = true)

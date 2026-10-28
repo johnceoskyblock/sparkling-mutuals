@@ -107,6 +107,7 @@ object SparklingMutuals : ModInitializer {
             SafariTracking.render(graphics)
             SparklingEncounters.render(graphics)
             SmallAlerts.render(graphics)
+            net.johnceo.sparklingmutuals.hud.MaxWin.render(graphics)
         }
     }
 
@@ -118,6 +119,7 @@ object SparklingMutuals : ModInitializer {
         HoneyHives.tick(client)
         PhantomleafSolver.tick(client)
         SafariAssist.onClientTick(client)
+        net.johnceo.sparklingmutuals.safari.ClearWater.tick(client)
         SafariTracking.onClientTick(client)
         RunHistory.tick(client)
         Achievements.tick(client)
@@ -130,6 +132,7 @@ object SparklingMutuals : ModInitializer {
         SafariEsp.tick(client)
         SafariBiomeClearTracking.tick(client)
         SafariInventoryAlerts.tick(client)
+        net.johnceo.sparklingmutuals.hud.MaxWin.tick(client)
         HideyhoQuest.onClientTick(client)
         HideyhoSpotter.onClientTick(client)
         SafariDowntime.onClientTick(client)
@@ -140,6 +143,8 @@ object SparklingMutuals : ModInitializer {
     }
 
     private fun resetSession() {
+        net.johnceo.sparklingmutuals.safari.ClearWater.reset()
+        net.johnceo.sparklingmutuals.hud.MaxWin.reset()
         JoinWelcome.reset()
         PhantomleafSolver.reset()
         CapsulePreview.reset()

@@ -44,6 +44,11 @@ class EspCaptureMemory {
         recent.entries.removeAll { it.value.id == attempt.id }
         return attempt.id
     }
+    fun retire(id: java.util.UUID) {
+        captured.add(id)
+        pending.removeAll { it.id == id }
+        recent.entries.removeAll { it.value.id == id }
+    }
     fun hidden(id: java.util.UUID) = id in captured
     fun reset() { pending.clear(); captured.clear(); recent.clear(); input.clear() }
 }

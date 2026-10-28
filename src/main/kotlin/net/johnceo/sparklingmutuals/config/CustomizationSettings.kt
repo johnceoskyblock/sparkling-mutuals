@@ -7,7 +7,7 @@ import net.minecraft.client.Minecraft
 /** One shared hex selection; color actions never change feature toggles. */
 class ColorChoice(private val read: () -> String, private val write: (String) -> Unit, private val selection: () -> String) {
     @JvmField @ConfigOption(name = "Color", desc = "Choose a color.") @ConfigEditorColour var color = read()
-    @JvmField @ConfigOption(name = "Apply selected color", desc = "Use the hex color at the top of this tab.")
+    @JvmField @ConfigOption(name = "Apply selected color", desc = "Apply the hex color above.")
     @ConfigEditorButton(buttonText = "Set Color") val setColor = Runnable {
         if (setSelected()) ConfigManager.save()
         else Minecraft.getInstance().player?.sendSystemMessage(LocalChat.component("[SM] Enter a hex color such as #55FF55."))
@@ -26,13 +26,13 @@ class ColorChoice(private val read: () -> String, private val write: (String) ->
 }
 
 class PanelAppearanceSettings(private val style: PanelStyle, selection: () -> String) {
-    @JvmField @ConfigOption(name = "Border", desc = "Draw a border around this panel.")
+    @JvmField @ConfigOption(name = "Border", desc = "")
     @ConfigEditorBoolean var borderEnabled = style.borderEnabled
     @JvmField @ConfigOption(name = "Border color", desc = "") @Accordion
     val border = ColorChoice({ style.borderColor }, { style.borderColor = it }, selection)
     @JvmField @ConfigOption(name = "Background color", desc = "") @Accordion
     val background = ColorChoice({ style.backgroundColor }, { style.backgroundColor = it }, selection)
-    @JvmField @ConfigOption(name = "Background transparency", desc = "0% is opaque; 100% is invisible.")
+    @JvmField @ConfigOption(name = "Background transparency", desc = "0% solid; 100% invisible.")
     @ConfigEditorSlider(minValue = 0f, maxValue = 100f, minStep = 1f)
     var transparency = style.transparency
     fun apply(): Boolean {
@@ -42,12 +42,12 @@ class PanelAppearanceSettings(private val style: PanelStyle, selection: () -> St
     }
 }
 
-class CustomizationSettings(private val dropSettings: FloorDropColorSettings? = null) {
-    @JvmField @ConfigOption(name = "Selected hex color", desc = "Enter #RRGGBB, then press Set Color for each item.")
+class CustomizationSettings {
+    @JvmField @ConfigOption(name = "Selected hex color", desc = "Enter #RRGGBB, then use Set Color.")
     @ConfigEditorText var selectedHex = AppearanceConfig.selectedHex
     @JvmField @ConfigOption(name = "Tracking HUDs", desc = "") @Accordion val huds = TrackingAppearanceSettings({ selectedHex })
     @JvmField @ConfigOption(name = "Alert HUDs", desc = "") @Accordion val alertHuds = AlertAppearanceSettings({ selectedHex })
-    @JvmField @ConfigOption(name = "Highlights and waypoints", desc = "") @Accordion val waypoints = WaypointAppearanceSettings(dropSettings, { selectedHex })
+    @JvmField @ConfigOption(name = "Highlights and waypoints", desc = "") @Accordion val waypoints = WaypointAppearanceSettings({ selectedHex })
     @JvmField @ConfigOption(name = "Critter colors", desc = "") @Accordion val critters = CritterAppearanceSettings({ selectedHex })
     val progress get() = huds.progress
     val missing get() = huds.missing
@@ -64,7 +64,6 @@ class CustomizationSettings(private val dropSettings: FloorDropColorSettings? = 
     val sparklingHighlights get() = waypoints.sparklingHighlights
     val beeNests get() = waypoints.beeNests
     val snooperWalls get() = waypoints.snooperWalls
-    val floor get() = waypoints.floor
     val forest get() = critters.forest
     val cavern get() = critters.cavern
     val icy get() = critters.icy
@@ -140,16 +139,16 @@ open class AppearanceSettingsGroup {
 
 class TrackingAppearanceSettings(private val selection: () -> String) : AppearanceSettingsGroup() {
     private fun panel(id: String) = PanelAppearanceSettings(AppearanceConfig.panels.getValue(id), selection)
-    @JvmField @ConfigOption(name = "Progress HUD", desc = "Border and background.") @Accordion val progress = panel("progress")
-    @JvmField @ConfigOption(name = "Missing panel HUD", desc = "Border and background.") @Accordion val missing = panel("missing")
-    @JvmField @ConfigOption(name = "Biome captures HUD", desc = "Border and background.") @Accordion val captures = panel("captures")
-    @JvmField @ConfigOption(name = "Miria contest HUD", desc = "Border and background.") @Accordion val miria = panel("miria")
-    @JvmField @ConfigOption(name = "Nearby sparklings HUD", desc = "Border and background.") @Accordion val sparklings = panel("sparklings")
+    @JvmField @ConfigOption(name = "Progress HUD", desc = "") @Accordion val progress = panel("progress")
+    @JvmField @ConfigOption(name = "Missing panel HUD", desc = "") @Accordion val missing = panel("missing")
+    @JvmField @ConfigOption(name = "Biome captures HUD", desc = "") @Accordion val captures = panel("captures")
+    @JvmField @ConfigOption(name = "Miria contest HUD", desc = "") @Accordion val miria = panel("miria")
+    @JvmField @ConfigOption(name = "Nearby sparklings HUD", desc = "") @Accordion val sparklings = panel("sparklings")
 }
 
 class AlertAppearanceSettings(private val selection: () -> String) : AppearanceSettingsGroup() {
     private fun panel(id: String) = PanelAppearanceSettings(AppearanceConfig.panels.getValue(id), selection)
-    @JvmField @ConfigOption(name = "Sparkling alert HUD", desc = "Border and background.") @Accordion val alert = panel("alert")
+    @JvmField @ConfigOption(name = "Sparkling alert HUD", desc = "") @Accordion val alert = panel("alert")
     @JvmField @ConfigOption(name = "All Gems alert HUD", desc = "") @Accordion val gems = panel("gems")
     @JvmField @ConfigOption(name = "All Bird Food alert HUD", desc = "") @Accordion val birdFood = panel("bird_food")
     @JvmField @ConfigOption(name = "All Incense alert HUD", desc = "") @Accordion val incense = panel("incense")
@@ -159,15 +158,13 @@ class AlertAppearanceSettings(private val selection: () -> String) : AppearanceS
     @JvmField @ConfigOption(name = "Warp reminder HUD", desc = "") @Accordion val warp = panel("warp")
 }
 
-class WaypointAppearanceSettings(private val dropSettings: FloorDropColorSettings?, private val selection: () -> String) : AppearanceSettingsGroup() {
+class WaypointAppearanceSettings(private val selection: () -> String) : AppearanceSettingsGroup() {
     @JvmField @ConfigOption(name = "Sparkling highlights and alerts", desc = "") @Accordion val sparklingHighlights = ColorChoice(
         { AppearanceConfig.sparklingColor }, { AppearanceConfig.sparklingColor = it }, selection)
     @JvmField @ConfigOption(name = "Bee nest waypoints", desc = "") @Accordion val beeNests = ColorChoice(
         { AppearanceConfig.nestColor }, { AppearanceConfig.nestColor = it }, selection)
-    @JvmField @ConfigOption(name = "Snooper wall waypoints", desc = "") @Accordion val snooperWalls = ColorChoice(
+    @JvmField @ConfigOption(name = "Snoozle wall waypoints", desc = "") @Accordion val snooperWalls = ColorChoice(
         { AppearanceConfig.snooperColor }, { AppearanceConfig.snooperColor = it }, selection)
-    @JvmField @ConfigOption(name = "All floor-drop colors", desc = "Changing this color sets every drop type. Individual colors are in the ESP tab.") @Accordion val floor = ColorChoice(
-        { SafariEspConfig.floorColor }, { SafariEspConfig.setAllDropColors(it); dropSettings?.reload() }, selection)
 }
 
 class CritterAppearanceSettings(private val selection: () -> String) : AppearanceSettingsGroup() {
@@ -180,8 +177,34 @@ class CritterAppearanceSettings(private val selection: () -> String) : Appearanc
 open class BiomeColorSettings(private val selection: () -> String) {
     protected fun mob(name: String) = ColorChoice({ SafariEspConfig.mobs.getValue(name).color },
         { SafariEspConfig.mobs.getValue(name).color = it }, selection)
-    fun apply(): Boolean = javaClass.fields.filter { it.type == ColorChoice::class.java }
-        .map { (it.get(this) as ColorChoice).apply() }.any { it }
+    fun apply(): Boolean = javaClass.fields.map { field ->
+        when (val option = field.get(this)) {
+            is ColorChoice -> option.apply()
+            is ScrappyAppearanceSettings -> option.apply()
+            else -> false
+        }
+    }.any { it }
+}
+
+class ScrappyAppearanceSettings(private val selection: () -> String) {
+    private fun food(value: net.johnceo.sparklingmutuals.safari.esp.ScrappyFood) = ColorChoice(
+        { SafariEspConfig.scrappyFoodColors.getValue(value) }, { SafariEspConfig.scrappyFoodColors[value]=it }, selection)
+    @JvmField @ConfigOption(name="Wheat",desc="") @Accordion
+    val wheat = food(net.johnceo.sparklingmutuals.safari.esp.ScrappyFood.WHEAT)
+    @JvmField @ConfigOption(name="Fish",desc="") @Accordion
+    val fish = food(net.johnceo.sparklingmutuals.safari.esp.ScrappyFood.FISH)
+    @JvmField @ConfigOption(name="Lily Pad",desc="") @Accordion
+    val lilyPad = food(net.johnceo.sparklingmutuals.safari.esp.ScrappyFood.LILY_PAD)
+    @JvmField @ConfigOption(name="Unidentified",desc="Until all three Scrappys are identified.") @Accordion
+    val unknown = ColorChoice({ SafariEspConfig.mobs.getValue("Scrappy").color }, { SafariEspConfig.mobs.getValue("Scrappy").color=it },selection)
+    @JvmField @ConfigOption(name="Text size",desc="1 = original size.")
+    @ConfigEditorSlider(minValue=.5f,maxValue=4f,minStep=.25f)
+    var textScale = SafariEspConfig.scrappyTextScale
+    fun apply(): Boolean {
+        val changed = SafariEspConfig.scrappyTextScale != SafariEspConfig.validTextScale(textScale)
+        SafariEspConfig.scrappyTextScale = textScale
+        return listOf(wheat.apply(),fish.apply(),lilyPad.apply(),unknown.apply(),changed).any { it }
+    }
 }
 
 class CavernColorSettings(selection: () -> String) : BiomeColorSettings(selection) {
@@ -193,7 +216,7 @@ class CavernColorSettings(selection: () -> String) : BiomeColorSettings(selectio
     @JvmField @ConfigOption(name = "Rockmite silverfish ESP", desc = "") @Accordion val rockmite = mob("Rockmite")
     @JvmField @ConfigOption(name = "Rockmite mound ESP", desc = "") @Accordion val rockmiteMound = ColorChoice(
         { SafariEspConfig.rockmiteMoundColor }, { SafariEspConfig.rockmiteMoundColor = it }, selection)
-    @JvmField @ConfigOption(name = "Scrappy ESP", desc = "") @Accordion val scrappy = mob("Scrappy")
+    @JvmField @ConfigOption(name = "Scrappy ESP", desc = "") @Accordion val scrappy = ScrappyAppearanceSettings(selection)
     @JvmField @ConfigOption(name = "Snoozle ESP", desc = "") @Accordion val snoozle = mob("Snoozle")
     @JvmField @ConfigOption(name = "Gemzie ESP", desc = "") @Accordion val gemzie = mob("Gemzie")
 }

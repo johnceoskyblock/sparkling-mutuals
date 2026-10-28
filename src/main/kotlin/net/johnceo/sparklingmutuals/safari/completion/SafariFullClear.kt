@@ -47,8 +47,7 @@ object SafariFullClear {
         SafariMode.FULL_CLEAR -> "[SM] Full clear mode on."
         SafariMode.UNIQUE -> "[SM] Unique run mode on."
     }
-    fun modeLines() = listOf(modeMessage()) + if (mode == SafariMode.SPARKLING)
-        listOf("Make sure you have an API key set up for sparkling mode to work correctly.") else emptyList()
+    fun modeLines() = listOf(modeMessage())
     fun toggle(): Boolean {
         setEnabled(!ConfigManager.fullClearMode)
         return ConfigManager.fullClearMode

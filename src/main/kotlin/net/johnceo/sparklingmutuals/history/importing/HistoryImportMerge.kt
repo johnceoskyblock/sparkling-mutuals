@@ -7,11 +7,23 @@ import net.johnceo.sparklingmutuals.history.SparklingEntry
 
 /** Nearest-nine median estimate used by the supplied run backfiller. */
 object HistoryEstimates {
+    /** Exact logged items where complete, otherwise preserve the requested historical median estimate. */
+    fun assignCoins(run: RunRecord, reference: List<RunRecord>, quotes: Map<String, DoubleArray>, instaSell: Boolean) {
+        fun quoted(id: String) = quotes[id]?.getOrNull(if (instaSell) 0 else 1)?.let { it.isFinite() && it > 0 } == true
+        val covered = if (run.summaryShards >= 0) run.shards.values.sum() == run.summaryShards else run.shards.isNotEmpty()
+        if (quotes.isNotEmpty() && covered && run.shards.keys.all { quoted(net.johnceo.sparklingmutuals.history.BazaarPrices.shardId(it)) } &&
+            (run.feathers == 0 || quoted(net.johnceo.sparklingmutuals.history.BazaarPrices.FEATHER))) {
+            run.coins = net.johnceo.sparklingmutuals.history.BazaarPrices.value(run.shards, run.feathers, quotes, instaSell)
+            run.coinsEstimated = false
+        } else {
+            run.coins = coins(run, reference); run.coinsEstimated = true
+        }
+    }
     fun coins(run: RunRecord, reference: List<RunRecord>): Long {
         val similar = reference.filter { it.coins > 0 && it.caught >= 0 }.sortedBy {
             abs(it.caught - run.caught) * 1.5 + abs(it.lootShares - run.lootShares) * .65 +
                 abs(it.party - run.party) * .5 + abs(it.sparklings.size - run.sparklings.size) * 10 + abs(it.feathers - run.feathers) * 3
-        }.take(9).map { it.coins }.sorted()
+        }.take(9).map { it.coins - maxOf(0L, it.essenceCoins) }.sorted()
         return similar.getOrNull(similar.size / 2) ?: 0
     }
 }
@@ -36,7 +48,11 @@ object SparklingHistoryMerge {
         val matchedFound = mutableSetOf<Int>()
         val matchedSaved = java.util.Collections.newSetFromMap(java.util.IdentityHashMap<SparklingEntry, Boolean>())
         candidates.sortedBy { it.distance }.forEach {
-            if (it.found !in matchedFound && it.saved !in matchedSaved) { matchedFound += it.found; matchedSaved += it.saved }
+            if (it.found !in matchedFound && it.saved !in matchedSaved) {
+                matchedFound += it.found; matchedSaved += it.saved
+                val source = found[it.found]
+                if (source.logFile.isNotBlank()) { it.saved.logFile = source.logFile; it.saved.logLine = source.logLine }
+            }
         }
         val added = java.util.Collections.newSetFromMap(java.util.IdentityHashMap<SparklingEntry, Boolean>())
         val latestAdded = mutableMapOf<String, Long>()

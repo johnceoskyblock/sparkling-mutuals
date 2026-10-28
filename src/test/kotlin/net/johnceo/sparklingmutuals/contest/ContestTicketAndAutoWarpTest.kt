@@ -6,6 +6,19 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class ContestTicketAndAutoWarpTest {
+    @Test fun `First-Class waits for legendary and switching targets cannot repeat an earned notice`() {
+        val tickets = ContestTicketState()
+        assertFalse(tickets.claim("Me", 10, "Uncommon", 30, true, 1000))
+        assertFalse(tickets.claim("Me", 10, "Epic", 40, true, 4999))
+        assertFalse(tickets.claim("Me", 10, "Legendary", 9, true, 5000))
+        assertTrue(tickets.claim("Me", 10, "Uncommon", 30))
+        assertTrue(tickets.claim("Me", 10, "Legendary", 60, true, 5000))
+        assertFalse(tickets.claim("me", 10, "Mythic", 70, true, 6000))
+        assertFalse(tickets.claim("Me", 10, "Legendary", 80))
+        assertTrue(tickets.claim("Me", 11, "Legendary", 60, true, 5000))
+        assertEquals("Ticket earned!", ContestTicketState.message(false))
+        assertEquals("First-Class Ticket earned!", ContestTicketState.message(true))
+    }
     @Test fun `a later active run in the same world cannot inherit an earlier warp`() {
         val timer = WarpAlertTimer()
         val firstRun = net.johnceo.sparklingmutuals.safari.SafariRun(0)

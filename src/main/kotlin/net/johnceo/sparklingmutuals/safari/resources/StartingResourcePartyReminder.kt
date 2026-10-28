@@ -16,17 +16,14 @@ class StartingResourcePartyReminder(private val resources: SafariResources) {
         active = true; nextAt = now + 1500; message = null; queued.clear()
     }
 
-    fun dispatch(now: Long, party: PartySparklingState, nameOf: (String) -> String?, send: (String) -> Unit): Boolean {
+    fun dispatch(now: Long, party: PartySparklingState, send: (String) -> Unit): Boolean {
         if (!active || now < nextAt || !party.ready) return false
         val notice = resources.startingNotice(party)
         if (notice == null) { active = false; queued.clear(); return false }
-        val reasons = (notice.namedNeeds(party, nameOf) ?: return false).map { (members, critters) ->
-            val players = members.joinToString(", ")
-            "$players still ${if (members.size == 1) "needs" else "need"} Shiny ${critters.joinToString(", ")}"
-        }
+        val needed = notice.items.flatMap { it.missing }.distinct().joinToString(", ")
         val items = notice.items.joinToString(", ") { "${it.quantity}x ${it.type.label}" }
-        val current = "Need to use: $items; ${reasons.joinToString("; ")}. Please wait."
-        // Rebuild if quantities or discovery/name information changed while a longer message was pending.
+        val current = "Need to use: $items; Someone needs Shiny $needed. Please wait."
+        // Rebuild if quantities or discovery information changed while a longer message was pending.
         if (current != message && sentOnce) { active = false; queued.clear(); return false }
         if (current != message) { message = current; queued.clear(); queued.addAll(PartyReplyChunks.split(current)) }
         send(queued.first())
