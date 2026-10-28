@@ -89,7 +89,14 @@ Population guarantees and capsule success/escape claims from supplied notes were
 
 Underground or unpaired heads do not count as live remaining population. Surface evidence is required before retaining a last-seen location. Confirmed captures retire an associated UUID family. If the capture cannot identify a UUID, uncertain absent/hidden locations are discarded through the following packet-settling scans; this is visual cleanup, not an inferred capture. A surviving worm can be observed again when it resurfaces, including under the same UUID. Personal and loot-share captures both trigger cleanup. Capture-transition observations do not inflate required captures during the 2.5-second settling window.
 
+## Persistent visual ESP
+
+Surface evidence for visual height may come from confirmed labels, real movement, or a previously bound distant label. Underground/cooldown visuals remain separate from strict remaining-capture evidence. An unrelated unassociated capture no longer clears loaded underground worms. Bound labels that transition into CAPTURING can associate a later confirmed catch, allowing precise UUID-family cleanup. Ambiguous absent locations still clear conservatively after an unmatched catch.
+
 ## Last updated
+
+2026-10-28 - Restored cooldown/distance visual persistence separately from completion checks.
+
 
 2026-10-28 - Fixed late-entry model ghosts and capture cleanup.
 
