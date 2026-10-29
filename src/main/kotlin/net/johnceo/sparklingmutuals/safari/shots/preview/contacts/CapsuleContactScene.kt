@@ -83,9 +83,7 @@ object CapsuleContactScene {
         val level=world as? net.minecraft.client.multiplayer.ClientLevel ?: return
         packet.getEntity(level)?.let{entityChanged(it.id)}
     }
-    private val collectionRules=net.johnceo.sparklingmutuals.safari.shots.preview.CapsulePreviewRules(allowExtendedPreview=false)
-    fun probeEligible(client:Minecraft)=collectionRules.evaluate(net.johnceo.sparklingmutuals.safari.shots.preview.CapsulePreview.collectionState(client))==net.johnceo.sparklingmutuals.safari.shots.preview.CapsulePreviewAvailability.AVAILABLE
-    fun reset() { cache.reset();world=null;slots=null;validation.reset();entityCount=-1;unsupported=false;unsupportedSurface=false;wormKeys=emptySet();wormAssociationDirty=false;bodyDiscoveryPending=true;bodyEpoch=0;bodySweepEpoch=-1;wormWitnesses.clear();wormWitnessOverflow=false;metadataChecks.reset();metadataOverflow=false;discoveryRestarts=0;metadataQueued=0;metadataHandled=0;completedSweeps=0;partSupport=emptyMap();priority=null;collectionRules.reset();revision++ }
+    fun reset() { cache.reset();world=null;slots=null;validation.reset();entityCount=-1;unsupported=false;unsupportedSurface=false;wormKeys=emptySet();wormAssociationDirty=false;bodyDiscoveryPending=true;bodyEpoch=0;bodySweepEpoch=-1;wormWitnesses.clear();wormWitnessOverflow=false;metadataChecks.reset();metadataOverflow=false;discoveryRestarts=0;metadataQueued=0;metadataHandled=0;completedSweeps=0;partSupport=emptyMap();priority=null;revision++ }
     fun tick(client:Minecraft,enabled:Boolean) {
         val level=client.level
         if(!enabled || !SafariAssist.inSafari || level==null || client.player==null) { reset();return }
@@ -94,7 +92,6 @@ object CapsuleContactScene {
         val player=client.player!!
         priority=ContactTargetPriority(ContactCurveSampler.sample(vector(player.eyePosition),vector(player.lookAngle),player.xRot.toDouble()))
         if(entityCount!=level.entityCount) { invalidateDiscovery();entityCount=level.entityCount }
-        collectionRules.tick(level,net.johnceo.sparklingmutuals.safari.shots.preview.CapsulePreview.collectionState(client))
         // Preserve the whole association graph independently of solver retention, including
         // connectors displaced by unrelated targets. At most 64 extra inspections per tick.
         for((key,previous) in wormWitnesses.toMap()) {
@@ -162,23 +159,20 @@ object CapsuleContactScene {
         if(client.level?.entityCount!=entityCount) { invalidateDiscovery();entityCount=client.level?.entityCount ?: -1 }
         if(espRevision!=SafariEsp.contactRevision) { validation.invalidate();espRevision=SafariEsp.contactRevision;revision++ }
     }
-    fun snapshot(client:Minecraft,eye:ShotVector,aim:ShotVector,pitch:Double):ContactSceneSnapshot = snapshot(client,eye,aim,pitch,true)
-    /** Recorder probes retain their existing collision model; visual mound hulls are display estimates only. */
-    fun calibrationSnapshot(client:Minecraft,eye:ShotVector,aim:ShotVector,pitch:Double):ContactSceneSnapshot = snapshot(client,eye,aim,pitch,false)
-    private fun snapshot(client:Minecraft,eye:ShotVector,aim:ShotVector,pitch:Double,visualSurfaces:Boolean):ContactSceneSnapshot {
+    fun snapshot(client:Minecraft,eye:ShotVector,aim:ShotVector,pitch:Double):ContactSceneSnapshot {
         refreshRevision(client)
         val (discovered,cachedCoverage)=cache.snapshot()
         // A changed off-path part/head can make an otherwise unchanged path ambiguous.
         // Rebuild after the next bounded tick refresh rather than doing extra render-thread inspections.
         val support=if(wormAssociationDirty || bodyDiscoveryPending || metadataChecks.size>0) emptyMap() else partSupport
-        val targets=discovered.filter{(!it.bodyPart || it.key in support) && (visualSurfaces || it.surface==null)}
+        val targets=discovered.filter{!it.bodyPart || it.key in support}
         val omittedBody=discovered.any{it.bodyPart && it.key !in support}
-        var coverage=if(unsupported || omittedBody || visualSurfaces && unsupportedSurface) ContactCoverage(false,cachedCoverage.reasons+"unsupported_proxy") else cachedCoverage
+        var coverage=if(unsupported || omittedBody || unsupportedSurface) ContactCoverage(false,cachedCoverage.reasons+"unsupported_proxy") else cachedCoverage
         val curve=ContactCurveSampler.sample(eye,aim,pitch)
         if(client.level!==world || client.player==null) return ContactSceneSnapshot(ContactTrace(emptyList(),null,ContactStop.UNLOADED,emptySet()),emptyList(),ContactCoverage(false,setOf("scan_pending")),tick)
         val details=ArrayList<ContactTerrainDetail>()
         var firstWaterParameter=Double.POSITIVE_INFINITY
-        var trace=CapsuleContactSolver.trace(curve,targets,coverage){a,b->segment(client,a,b,details,visualSurfaces){firstWaterParameter=minOf(firstWaterParameter,it)}}
+        var trace=CapsuleContactSolver.trace(curve,targets,coverage){a,b->segment(client,a,b,details,true){firstWaterParameter=minOf(firstWaterParameter,it)}}
         val primary=trace.primary
         if(primary?.targetKey!=null) {
             val target=targets.firstOrNull{it.key==primary.targetKey}
@@ -190,7 +184,7 @@ object CapsuleContactScene {
                 trace=trace.copy(primary=null,stop=ContactStop.TARGET_COVERAGE,warnings=trace.warnings+coverage.reasons)
             }
         }
-        if(visualSurfaces && trace.primary?.kind==ContactKind.TERRAIN) {
+        if(trace.primary?.kind==ContactKind.TERRAIN) {
             val patch=surfacePatch(client,trace.primary.position,targets)
             trace=trace.copy(surfacePatch=patch ?: emptyList(),warnings=if(patch==null)trace.warnings+"shape_limit" else trace.warnings)
         }

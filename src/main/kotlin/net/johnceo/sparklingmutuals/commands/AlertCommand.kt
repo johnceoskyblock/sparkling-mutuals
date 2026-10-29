@@ -16,18 +16,18 @@ object AlertCommand {
 
         ClientCommandRegistrationCallback.EVENT.register { dispatcher, _ ->
             dispatcher.register(
-                ClientCommands.literal("alert")
+                ClientCommands.literal("warping")
                     .executes {
                         val enabled = AlertManager.toggleAlert()
                         it.source.sendFeedback(
-                            LocalChat.component("[SM] Warp alerts and automatic /p warp ${if (enabled) "on" else "off"}.")
+                            LocalChat.component("[SM] Sparkle warping ${if (enabled) "on" else "off"}.")
                         )
                         1
                     }
             )
 
             dispatcher.register(
-                ClientCommands.literal("alertdelay")
+                ClientCommands.literal("warpingdelay")
                     .then(
                         ClientCommands.argument(
                             "seconds",
@@ -36,7 +36,7 @@ object AlertCommand {
                             val seconds = it.getArgument("seconds", Int::class.java)
                             AlertManager.setDelay(seconds)
                             it.source.sendFeedback(
-                                LocalChat.component("[SM] Warp reminder delay: ${seconds}s.")
+                                LocalChat.component("[SM] Warping delay: ${seconds}s.")
                             )
                             1
                         }

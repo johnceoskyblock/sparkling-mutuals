@@ -2,6 +2,8 @@
 
 ## Last updated
 
+2026-10-29 — Retired shot recording tools; retained the live projection collision-cache packet observer.
+
 2026-10-21 (America/New_York) — Read both Prism instances’ available latest/archived logs and reviewed the mod’s packet-related hooks. No networking behavior was changed.
 
 ## Confirmed local incidents
@@ -20,7 +22,7 @@ The Skyblock trace fails in `IdDispatchCodec.decode` via `PacketDecoder.decode`,
 
 ## Source review
 
-- ShotPacketMixin and SafariParticleMixin observe already-decoded typed game packets after vanilla handler thread handoff; they do not register raw numeric vanilla packet IDs or replace the packet decoder.
+- CapsuleContactPacketMixin and SafariParticleMixin observe already-decoded typed game packets after vanilla handler thread handoff; they do not register raw numeric vanilla packet IDs or replace the packet decoder.
 - PartyManager/SafariIsland use the Hypixel Mod API’s custom payload/event interfaces, not a replacement vanilla packet registry.
 - The entry guard cancels selected outgoing gameplay interactions, not protocol-transition acknowledgements.
 - Ticket/gem selection uses vanilla container/use-item methods; Hideyho acceptance forwards the server-supplied action. No source in the reviewed mod hooks replaces IdDispatchCodec, PacketDecoder, or the configuration/play transition.

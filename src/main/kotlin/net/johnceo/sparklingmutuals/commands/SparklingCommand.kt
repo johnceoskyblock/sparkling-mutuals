@@ -33,7 +33,6 @@ object SparklingCommand {
         ClientCommandRegistrationCallback.EVENT.register { dispatcher, _ ->
             dispatcher.register(
                 ClientCommands.literal("sm")
-                    .apply { ShotCommands.register(this) }
                     .executes { open(::SafariConfigScreen) }
                     .then(ClientCommands.literal("config").executes { open(::SafariConfigScreen) })
                     .then(ClientCommands.literal("help").executes { context ->

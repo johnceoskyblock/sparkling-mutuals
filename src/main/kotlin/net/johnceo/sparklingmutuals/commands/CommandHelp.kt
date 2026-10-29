@@ -34,8 +34,9 @@ object CommandHelp {
         "/fc" to "Full clear mode",
         "/unique" to "Unique run mode",
         "/sparkle" to "Sparkling run mode",
-        "/alert" to "Toggle warp alert and automatic /p warp",
-        "/alertdelay <seconds>" to "Warp alert / auto-warp delay",
+        "/warping" to "Toggle delayed /p warp",
+        "/warpingdelay <seconds>" to "Set warp delay",
+        "/autoparty" to "Toggle Sparkling Warp List invitations",
         "/apikey <key>" to "Set API key"
     )
     /** Party chat words other mods' users can say that this mod reacts to, without a lookup reply. */

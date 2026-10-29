@@ -73,6 +73,6 @@ class SafariModeAndInteractionIntegrationTest {
         assertFalse(ConfigManager.candleHitbox)
         assertTrue(SafariSettings.Warp::class.java.fields.mapNotNull {
             it.getAnnotation(io.github.notenoughupdates.moulconfig.annotations.ConfigOption::class.java)?.desc
-        }.any { it.contains("before entry closes") })
+        }.any { it.contains("before the scheduled warp") })
     }
 }

@@ -16,7 +16,7 @@ Open `/sm` for settings. Fresh installs use [bundled main defaults](../src/main/
 
 | Setting | Saved key | Default |
 | --- | --- | --- |
-| Warp reminder | `warpAlertsEnabled` | Off |
+| Sparkle Warping | `warpAlertsEnabled` | Off |
 | Coins at insta-sell | `runCoinsInstaSell` | Off (sell-offer valuation) |
 | Achievements to party | `achievementsToParty` | Off |
 | XP / Essence / Shard floor drops | `esp.floor.rewards.enabled` | On, current biome only |
@@ -47,7 +47,7 @@ Moving controls does not rename saved keys. Collapsed groups save their current 
 
 | Numeric/text control | Default | Implemented load validation |
 | --- | --- | --- |
-| Warp delay | 25 seconds | Parsed integer clamps to 1–86400; missing/unparseable → 25. |
+| Warp delay | 23 seconds | Parsed integer clamps to 1–86400; missing/unparseable → 23. |
 | Capsule path width | 3 | Finite values clamp to 1–5; missing/unparseable/non-finite → 3. |
 | Show guide through terrain | On | Strict saved boolean; invalid/missing → on. |
 | Flying capsule distance | 2 blocks | Finite values clamp to 0.5–6; missing/unparseable/non-finite → 2. |
@@ -73,8 +73,8 @@ Startup and mode changes apply an ESP preset enabling all groups, species and Ro
 
 **Safari helpers → Gemzie gem auto-select** uses the independent saved key `gemzieGemAutoSelect`. It defaults on for missing/malformed values, preserves an explicit off choice, and is not changed by mode presets. It selects a whole hotbar gem for one fresh top-face Gemzie podium interaction; see [Gemzie](critters/gemzie.md#whole-gem-selection-helper). It does not move inventory/offhand items or add completion evidence.
 
-- [Capture projections](CAPTURE_SHOT_RECORDING.md#experimental-capsule-path) has one enable switch, independent of recording and capsule hiding. Missing/invalid saved enable values are on. The obsolete `allowUncalibratedCapsuleEstimates` and `hud.capsule_status.*` keys are ignored and omitted on save; no projection status HUD is offered.
-- [Warp reminder](WARP_ALERTS.md) controls both the alert and automatic `/p warp`; changing its switch/delay cancels pending work.
+- [Capture projections](CAPTURE_PROJECTIONS.md#controls) has one enable switch, independent of capsule hiding. Missing/invalid saved enable values are on. The obsolete `allowUncalibratedCapsuleEstimates` and `hud.capsule_status.*` keys are ignored and omitted on save; no projection status HUD is offered.
+- [Sparkle Warping](WARP_ALERTS.md) controls both the alert and automatic `/p warp`; changing its switch/delay cancels pending work.
 - [Automatic contest downtime](CONTEST_DOWNTIME.md) defaults on independently of HUD/tracking. [Guard Safari entry](SAFARI_ENTRY_GUARD.md) and **!dt downtime** retain independent saved switches and stage-specific behavior.
 - History's **History** button precedes **Import History from Logs**. There is no startup-import scan/toggle; old auto-import keys are ignored. See [history, import and achievements](HISTORY_IMPORT.md).
 - **Missing / Unchecked panel** shares `missingPanel` and its HUD layout across modes. Sparkling labels it **Unchecked** for every biome; Unique and Full Clear use Missing.
@@ -104,7 +104,7 @@ Other ESP text scale applies to critter timers, nest labels and unknown sparklin
 | `sparkling-mutuals-contest.properties` | Contest HUD, warnings and automatic downtime. |
 | `sparkling-mutuals-pbs.properties` | Boss solo/duo, biome Full Clear/Unique, party Unique, observed-member records and selected biome category. |
 
-General/PB writes use temporary replacement and atomic moves where supported. Contest saves use their own properties writer. Settings controls apply booleans/presets and save text fields through the settings screen lifecycle; independent feature state such as running timers or recording is not restored by setting persistence.
+General/PB writes use temporary replacement and atomic moves where supported. Contest saves use their own properties writer. Settings controls apply booleans/presets and save text fields through the settings screen lifecycle; independent feature state such as running timers is not restored by setting persistence.
 
 ### Personal best storage and migration
 
@@ -129,6 +129,14 @@ Startup normalizes legacy `pb.*` keys from the general file and the earlier `Spa
 Each mode dropdown has independent Hide critter ESP and Hide floor-drop ESP toggles, both off by default. They gate rendering only, including retained critter markers, and never disable scanning or requirements. Turning on either hide toggle disables that mode's profitable-critter ESP (Unique/Sparkle). Party Interactions > Auto biome reports defaults on and controls automatic fd/cd/id/hd messages without disabling progress tracking.
 
 ## Last updated
+
+2026-10-29 - Fresh installations seed the maintainer-supplied JohnFounder Warp List (115 ordered name assignments). Existing configuration files keep their saved or empty lists; Auto-party remains off by default.
+
+2026-10-29 — Removed development shot recording controls and offline tooling; production projection settings remain supported.
+
+2026-10-29 — Added the enabled-by-default Doomspiral throw HUD. Emergence delay defaults to 98 server ticks with a 4-tick throw lead; both are saved and adjustable.
+
+2026-10-29 — Sparkle Warping defaults to a 23-second delay. Auto-party defaults off; Warp List names are saved in the main properties file. Existing saved delays remain unchanged.
 
 2026-10-28 - Added mode-specific visual ESP hides, an auto biome report setting, and non-redundant Icy announcements.
 

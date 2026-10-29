@@ -137,7 +137,7 @@ class ConfigTest {
         Files.writeString(dir.resolve("sparkling-mutuals.properties"), "apiKey=example-key\n")
         ConfigManager.init(dir)
         assertEquals("example-key", ConfigManager.apiKey)
-        assertEquals(25, ConfigManager.warpDelaySeconds)
+        assertEquals(23, ConfigManager.warpDelaySeconds)
         assertFalse(ConfigManager.warpAlertsEnabled)
         assertTrue(ConfigManager.partyCommandsEnabled)
     }
@@ -155,7 +155,7 @@ class ConfigTest {
         assertFalse(ConfigManager.partyCommandsEnabled)
         Files.writeString(dir.resolve("sparkling-mutuals.properties"), "warpDelaySeconds=invalid\n")
         ConfigManager.init(dir)
-        assertEquals(25, ConfigManager.warpDelaySeconds)
+        assertEquals(23, ConfigManager.warpDelaySeconds)
     }
 
     @Test

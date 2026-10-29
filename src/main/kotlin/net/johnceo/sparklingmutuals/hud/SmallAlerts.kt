@@ -25,7 +25,7 @@ class TimedHudAlerts {
 object SmallAlerts {
     private val notices = TimedHudAlerts()
     val titles get() = mapOf(SafariHud.RUN_COMPLETE to ConfigManager.runCompleteTitle, SafariHud.GEMS to "ALL GEMS READY!", SafariHud.BIRD_FOOD to "ALL BIRD FOOD COLLECTED!",
-        SafariHud.INCENSE to "ALL INCENSE READY!", SafariHud.WARP to "WARP REMINDER")
+        SafariHud.INCENSE to "ALL INCENSE READY!", SafariHud.WARP to "Warping Now")
     fun previews() = titles.keys.associateWith(::preview)
     fun preview(hud: SafariHud) = HudPanel(titles.getValue(hud), color(hud), emptyList())
     private fun color(hud: SafariHud) = if (hud == SafariHud.RUN_COMPLETE)

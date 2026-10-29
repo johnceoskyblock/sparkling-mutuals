@@ -52,7 +52,7 @@ class SafariVisibilityHelpTest {
         assertTrue(lines.any { it == "Party chat commands" })
         assertTrue(lines.any { it == "Local commands" })
         for (command in listOf("!mutual", "!missing", "!ticket", "!pb doom", "!pb wumpa", "!commands",
-            "/sm", "/sm gui", "/captures", "/fc", "/unique", "/alert", "/alertdelay", "/apikey")) {
+            "/sm", "/sm gui", "/captures", "/fc", "/unique", "/warping", "/warpingdelay", "/autoparty", "/apikey")) {
             assertTrue(lines.any { it.startsWith(command) && it.contains(" — ") }, command)
         }
     }

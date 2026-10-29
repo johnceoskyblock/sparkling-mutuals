@@ -35,6 +35,7 @@ class ContestGui(private val parent: Screen? = null) : Screen(Component.literal(
         })
         val run = SafariPanels.previewRun()
         val panels = mapOf(
+            SafariHud.DOOM_THROW to net.johnceo.sparklingmutuals.safari.DoomspiralThrowTimer.preview(),
             SafariHud.PROGRESS to SafariPanels.progress(run, ConfigManager.countUniqueOnly, 49000),
             SafariHud.MISSING to SafariPanels.missing(run, SafariBiome.FOREST, ConfigManager.countUniqueOnly, 3),
             SafariHud.CAPTURES to SafariPanels.captures(run, SafariBiome.FOREST),

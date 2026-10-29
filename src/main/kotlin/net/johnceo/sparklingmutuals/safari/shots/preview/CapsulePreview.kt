@@ -9,7 +9,7 @@ import net.johnceo.sparklingmutuals.safari.shots.preview.contacts.*
 import net.minecraft.client.Minecraft
 import net.minecraft.core.component.DataComponents
 
-/** Passive view of the local player; never starts recording or changes a throw. */
+/** Passive view of the local player; never changes a throw. */
 object CapsulePreview {
     private val rules=CapsulePreviewRules()
     private var world: Any?=null
@@ -24,8 +24,7 @@ object CapsulePreview {
     fun tick(client: Minecraft) {
         world=client.level
         rules.tick(world,currentState(client))
-        CapsuleContactScene.tick(client,ConfigManager.experimentalCapsulePath ||
-            net.johnceo.sparklingmutuals.safari.shots.ShotRecorder.status().recording)
+        CapsuleContactScene.tick(client,ConfigManager.experimentalCapsulePath)
     }
     fun reset() { CapsulePreviewRenderer.clearPending();world=null;rules.reset();frames.reset();CapsuleContactScene.reset() }
     internal fun currentState(client: Minecraft): CapsulePreviewState? {
@@ -40,19 +39,19 @@ object CapsulePreview {
             ShotVariant.fromId(itemId),client.options.cameraType.isFirstPerson,p.onGround(),
             p.isShiftKeyDown,p.isSprinting,p.isSwimming,p.abilities.flying,p.isPassenger,
             ConfigManager.hideFlyingCapsules,ConfigManager.hideGroundCapsules,client.smScreen!=null,
-            client.options.smHideGui,p.xRot.toDouble(),ShotPacketCompat.vector(p.position()),ShotPacketCompat.vector(p.deltaMovement),
+            client.options.smHideGui,p.xRot.toDouble(),CapsuleGeometryCompat.vector(p.position()),CapsuleGeometryCompat.vector(p.deltaMovement),
             true,p.isInWater,p.isInLava)
     }
     internal fun frame(client:Minecraft):CapsulePreviewFrame? {
         val state=currentState(client);val available=availability(state)
         val p=client.player ?: return null
-        if(available!=CapsulePreviewAvailability.AVAILABLE) { frames.reset();return CapsulePreviewFrameBuilder.build(available,ShotPacketCompat.vector(p.eyePosition),ShotPacketCompat.vector(p.lookAngle)) }
+        if(available!=CapsulePreviewAvailability.AVAILABLE) { frames.reset();return CapsulePreviewFrameBuilder.build(available,CapsuleGeometryCompat.vector(p.eyePosition),CapsuleGeometryCompat.vector(p.lookAngle)) }
         val partial=client.deltaTracker.getGameTimeDeltaPartialTick(false)
-        val eye=ShotPacketCompat.vector(p.getEyePosition(partial))
+        val eye=CapsuleGeometryCompat.vector(p.getEyePosition(partial))
         // Local-player aim uses current rotations; view APIs may substitute a detached camera's angles.
-        val aim=ShotPacketCompat.vector(p.lookAngle)
+        val aim=CapsuleGeometryCompat.vector(p.lookAngle)
         val level=client.level ?: return null
-        val camera=ShotPacketCompat.vector(client.gameRenderer.smCamera.position())
+        val camera=CapsuleGeometryCompat.vector(client.gameRenderer.smCamera.position())
         CapsuleContactScene.refreshRevision(client)
         val view=listOf(state,eye,aim,camera,ConfigManager.capsulePathWidth,CapsuleContactScene.revision,SafariEsp.contactRevision)
         return frames.resolve(level,view) {

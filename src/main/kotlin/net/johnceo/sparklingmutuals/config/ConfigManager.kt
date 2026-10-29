@@ -44,7 +44,11 @@ object ConfigManager {
     var sparklingHotspotAnnouncer = false
     var timesaveOnly = true
     var warpAlertsEnabled = false
-    var warpDelaySeconds = 25
+    var warpDelaySeconds = 23
+    var autoParty = false
+    var doomspiralThrowTimer = true
+    var doomspiralEmergenceTicks = 98
+    var doomspiralThrowLeadTicks = 4
     var hideyhoAutoAccept = true
     var autoSelectSafariTicket = true
     var safariTicketPreference = 0
@@ -98,7 +102,7 @@ object ConfigManager {
     var capsuleHideDistance = 2f
     var showWhere = 1
     val personalBests = SafariPersonalBests()
-    private val flags = mapOf(::autoBiomeReports to true, ::uniqueHideCritterEsp to false, ::uniqueHideFloorDropEsp to false,
+    private val flags = mapOf(::doomspiralThrowTimer to true, ::autoParty to false, ::autoBiomeReports to true, ::uniqueHideCritterEsp to false, ::uniqueHideFloorDropEsp to false,
         ::fullClearHideCritterEsp to false, ::fullClearHideFloorDropEsp to false,
         ::sparklingHideCritterEsp to false, ::sparklingHideFloorDropEsp to false, ::announceStartingItems to false, ::uniqueHotspotAnnouncer to false, ::fullClearHotspotAnnouncer to false, ::sparklingHotspotAnnouncer to false, ::highlightTeammates to true, ::showTeammateNames to true, ::partyCommandsEnabled to true, ::useCloudApi to true, ::fullClearMode to false, ::sparklingMode to false, ::sparklingProfitableShardEsp to true, ::profitableShardEsp to true, ::timesaveOnly to true, ::warpAlertsEnabled to false,
         ::hideyhoAutoAccept to true, ::autoSelectSafariTicket to true, ::hideyhoInsideOutside to true, ::hideHauntedPaintings to true, ::shinyDetection to true,
@@ -128,13 +132,16 @@ object ConfigManager {
         flags.forEach { (property, default) -> property.set(properties.getProperty(property.name)?.toBooleanStrictOrNull() ?: default) }
         if (uniqueHideCritterEsp || uniqueHideFloorDropEsp) profitableShardEsp=false
         if (sparklingHideCritterEsp || sparklingHideFloorDropEsp) sparklingProfitableShardEsp=false
-        warpDelaySeconds = properties.getProperty("warpDelaySeconds", "25").toIntOrNull()?.coerceIn(1, 86400) ?: 25
+        warpDelaySeconds = properties.getProperty("warpDelaySeconds", "23").toIntOrNull()?.coerceIn(1, 86400) ?: 23
         safariTicketPreference = properties.getProperty("safariTicketPreference")?.toIntOrNull()?.takeIf { it in 0..1 } ?: 0
         profitsTicketMode = properties.getProperty("profitsTicketMode")?.toIntOrNull()?.takeIf { it in 0..3 } ?: 0
         showWhere = properties.getProperty("showWhere")?.toIntOrNull()?.takeIf { it in 0..2 } ?: 1
         waterOpacity = properties.getProperty("waterOpacity")?.toIntOrNull() ?: 60
         capsuleHideDistance = validCapsuleDistance(properties.getProperty("capsuleHideDistance")?.toFloatOrNull())
         capsulePathWidth = validCapsulePathWidth(properties.getProperty("capsulePathWidth")?.toFloatOrNull())
+        net.johnceo.sparklingmutuals.alerts.WarpList.load(properties)
+        doomspiralEmergenceTicks = properties.getProperty("doomspiralEmergenceTicks")?.toIntOrNull()?.coerceIn(1, 600) ?: 98
+        doomspiralThrowLeadTicks = properties.getProperty("doomspiralThrowLeadTicks")?.toIntOrNull()?.coerceIn(0, 40) ?: 4
         SafariHud.load(properties)
         personalBestConfig = PersonalBestConfig(configPath)
         personalBestConfig.load(properties, personalBests)
@@ -156,12 +163,15 @@ object ConfigManager {
             setProperty("sparklingSoundVolume", sparklingSoundVolume.coerceIn(0, 100).toString())
             flags.forEach { (property, _) -> setProperty(property.name, property.get().toString()) }
             setProperty("warpDelaySeconds", warpDelaySeconds.toString())
+            setProperty("doomspiralEmergenceTicks", doomspiralEmergenceTicks.coerceIn(1, 600).toString())
+            setProperty("doomspiralThrowLeadTicks", doomspiralThrowLeadTicks.coerceIn(0, 40).toString())
             setProperty("safariTicketPreference", safariTicketPreference.coerceIn(0, 1).toString())
             setProperty("profitsTicketMode", profitsTicketMode.coerceIn(0, 3).toString())
             setProperty("showWhere", showWhere.coerceIn(0, 2).toString())
             setProperty("waterOpacity", waterOpacity.toString())
             setProperty("capsuleHideDistance", validCapsuleDistance(capsuleHideDistance).toString())
             setProperty("capsulePathWidth", validCapsulePathWidth(capsulePathWidth).toString())
+            net.johnceo.sparklingmutuals.alerts.WarpList.save(this)
             SafariHud.save(this)
             SafariEspConfig.save(this)
             AppearanceConfig.save(this)

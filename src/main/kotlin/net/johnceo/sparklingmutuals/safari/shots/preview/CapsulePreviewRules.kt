@@ -30,24 +30,22 @@ private fun ShotVector.finite() = x.isFinite() && y.isFinite() && z.isFinite()
 
 enum class CapsulePreviewAvailability { HIDDEN, STAND_STILL, TESTED_ANGLE_ONLY, VIEW_UNAVAILABLE, HIDING_UNAVAILABLE, AVAILABLE }
 
-/** Strict collection retains stationary history; expanded display accepts current motion. */
-class CapsulePreviewRules(private val allowExtendedPreview: Boolean = true) {
+/** Controls visible aiming geometry; no recorder-specific eligibility gates. */
+class CapsulePreviewRules {
     private var world: Any? = null
     private var previous: ShotVector? = null
     private var stableTicks = 0
 
     fun reset() { world = null; previous = null; stableTicks = 0 }
 
-    private fun expanded(s: CapsulePreviewState) = allowExtendedPreview && s.allowUncalibratedEstimates
-    private fun viewAllowed(s: CapsulePreviewState) = s.firstPerson || allowExtendedPreview
-    private fun hidingAllowed(s: CapsulePreviewState) = allowExtendedPreview || !s.hideFlying && !s.hideGround
+    private fun expanded(s: CapsulePreviewState) = s.allowUncalibratedEstimates
     private fun supportedCapsule(s: CapsulePreviewState) = s.capsule==ShotVariant.ORDINARY ||
         expanded(s) && s.capsule==ShotVariant.MASTERFUL
     private fun motionAllowed(s: CapsulePreviewState) = s.position.finite() && s.velocity.finite() &&
         !s.inLava && !s.flying && !s.riding && (expanded(s) || s.stationaryForCalibration)
     private fun within(a: ShotVector, b: ShotVector) = abs(a.x-b.x) <= .001 && abs(a.y-b.y) <= .001 && abs(a.z-b.z) <= .001
     private fun physicalEligibility(s: CapsulePreviewState) = s.enabled && s.inSafari && supportedCapsule(s) &&
-        viewAllowed(s) && hidingAllowed(s) && motionAllowed(s) && angle(s)
+        motionAllowed(s) && angle(s)
     private fun angle(s:CapsulePreviewState) = s.pitch.isFinite() && s.pitch in
         (if(s.allowUncalibratedEstimates) -90.0..90.0 else -10.0..1.0)
 
@@ -66,8 +64,6 @@ class CapsulePreviewRules(private val allowExtendedPreview: Boolean = true) {
         val s = state ?: run { stableTicks = 0; return CapsulePreviewAvailability.HIDDEN }
         if (!physicalEligibility(s)) { stableTicks = 0; previous = null }
         if (!s.enabled || !s.inSafari || !supportedCapsule(s) || s.screenOpen || s.hudHidden) return CapsulePreviewAvailability.HIDDEN
-        if (!viewAllowed(s)) return CapsulePreviewAvailability.VIEW_UNAVAILABLE
-        if (!hidingAllowed(s)) return CapsulePreviewAvailability.HIDING_UNAVAILABLE
         if (!motionAllowed(s) || !expanded(s) && previous?.let { !within(it, s.position) } == true) {
             stableTicks = 0
             return CapsulePreviewAvailability.STAND_STILL

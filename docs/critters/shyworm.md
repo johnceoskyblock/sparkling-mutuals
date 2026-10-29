@@ -47,7 +47,7 @@ None. No species-specific resource or structure gate is used.
 | Missing/unchecked row | Unique uses its capture/source predicate. Sparkling lists needed unresolved checks. Full Clear needs local capture/absence proof, separately from report-based progress. See [panel rules](../MISSING_PANEL.md). |
 | Counters | None in the species row; capture panel shows actual shared catches. |
 | Ordinary ESP | Unique: until first shared capture. Full Clear: eligible uncaught models. Sparkling: no ordinary model ESP solely for automatic checking. Settings and model validity still apply. |
-| Source helpers | Hidden height/path/rest timer are estimates. Connected body-piece contact estimates stay separate from critter identity; see [capture guide](../CAPTURE_SHOT_RECORDING.md). |
+| Source helpers | Hidden height/path/rest timer are estimates. Connected body-piece contact estimates stay separate from critter identity; see [capture guide](../CAPTURE_PROJECTIONS.md). |
 | Automatic completion announcements | Shared local whole-biome/report-readiness gates in [mode rules](../../SAFARI_LOGIC.md). |
 | PB eligibility | Personal Unique: own catch of each spawned species; proven zero-spawn types exempt. Full Clear: personal captures/local proof. Party Unique: separate shared-capture/absence predicate; progress alone is insufficient. |
 

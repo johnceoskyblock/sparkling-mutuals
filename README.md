@@ -23,7 +23,7 @@ HM API and MoulConfig are bundled. Player profile lookups use a Hypixel API key 
 | Modes | `/sparkle`, `/unique`, `/fc`; [mode goals and separate completion outcomes](SAFARI_LOGIC.md) |
 | Species and resources | [All 37 critters](docs/critters/README.md), [captures/checks/reports](docs/critters/TRACKING.md), [floor drops](docs/critters/FLOOR_DROPS.md) |
 | Progress and helpers | [Missing/Unchecked panels and highlights](docs/MISSING_PANEL.md), [Forest birds](docs/BIRD_COMPLETION.md), [Sparkling detection](docs/SPARKLING_DETECTION.md) |
-| Capsule aiming guide | One **Capture projections** switch, terrain rings and possible-critter diamonds; [controls, limits and optional recorder](docs/CAPTURE_SHOT_RECORDING.md) |
+| Capsule aiming guide | One **Capture projections** switch, terrain rings and possible-critter diamonds; [controls and behavior](docs/CAPTURE_PROJECTIONS.md) |
 | Gemzie gem selection | Select the matching whole hotbar gem on a fresh podium click; [helper controls and limits](docs/critters/gemzie.md#whole-gem-selection-helper) |
 | Settings | `/sm`; [defaults, mode presets and saved-setting caveats](docs/CONFIG_DEFAULTS.md) |
 | HUD layout | `/sm gui`; drag and scroll to move/resize supported HUDs. Projection status text has been removed. |
@@ -49,8 +49,8 @@ The guide is a visual estimate, not guaranteed flight, impact or capture physics
 | `!commands` | Available party commands in the active mode |
 | `/sm help` | Local and party command list for the active mode |
 | `/sparkling [IGN\|party\|IGNs]` | Player cards and discovery comparison |
-| `/alert`, `/alertdelay <seconds>` | Optional warp reminder controls |
-| `/sm shots`, `/sm debug` | Explicit local recording controls or tracking diagnostics; review logs/exports before sharing |
+| `/warping`, `/warpingdelay <seconds>`, `/autoparty` | Sparkle Warping and optional Warp List invitations |
+| `/sm debug` | Local tracking diagnostics; review logs before sharing |
 
 Press Tab to complete current-party IGNs in `/sparkling`, including successive comparison names, and name arguments for `!missing`, `!ticket`/`!tickets` and `!pb doom`/`!pb wumpa` and biome PB lookups. Party-chat forms such as `/pc !missing Jo` and `/p chat !tickets Jo` are supported. Matching ignores case; suggestions resolve verified party names even for members absent from the current tab list, without fetching SkyBlock discovery data.
 
@@ -71,6 +71,8 @@ Press Tab to complete current-party IGNs in `/sparkling`, including successive c
 - Licensing and attribution: [LICENSE](LICENSE) and [third-party notices](licenses).
 
 ## Last updated
+
+2026-10-29 - Updated Sparkle Warping commands and retired development shot recording.
 
 2026-10-27 — Added ticket-specific `/profit` and `/profits` shard + essence ranking; `!missing` and `!ticket(s)` now default to the sender when no IGN is supplied.
 

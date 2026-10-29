@@ -63,6 +63,16 @@ Captures and qualified UUID checks persist through unloading/travel. Retained lo
 
 Fade-away without a boss catch leaves Sparkling Doomspiral pending. Loot share supplies the check, not a personal Solo PB.
 
+## Capsule throw tick timer
+
+Safari helpers > Capture tools contains **Doomspiral capsule throw tick timer** (on by default). The exact system line `Something stirs in the Haunted Biome...` starts one countdown per run, only inside Safari. The HUD is visible only when a living, loaded warden is within 10 blocks of the player (3D entity-position distance). The countdown continues while hidden, so moving into range does not restart it. Quoted party chat and overlay messages cannot trigger it.
+
+The default emergence delay is **98 server ticks**, with a **4-tick throw lead**, giving a 94-tick countdown. Both values are adjustable and saved custom values are preserved. Projectile flight time depends on distance and connection timing.
+
+The timer passively counts nonzero server ping packets, following the clock approach inspected in NoammAddons 1.3.1's Storm PY timer (CC0). Vanilla ping processing and pong responses remain unchanged. No new packets are sent. Seconds are displayed as ticks / 20; actual elapsed time stretches under server lag. At zero it shows **THROW NOW** for up to 40 server ticks. This is a visual cue; it never throws a capsule or supplies capture evidence.
+
+A confirmed shared Doomspiral capture clears the cue. Disabling it, leaving Safari, ending/changing runs, changing world/connection or disconnecting clears the timer. Duplicate trigger messages cannot restart it within the same uninterrupted run context. Move/resize its independent HUD using `/sm gui`; panel styling is under Customization > Tracking HUDs > Doomspiral throw timer HUD.
+
 ## Implementation and validation
 
 [Shared source/caller map](TRACKING.md#source-and-validation-references) covers capture/event registration, scanner, mode predicates, UI/report consumers, PBs and resets. Species entries: `Doomspiral` in `SafariFullClear.minimum` and `SafariEspRules.mobs`; [SafariCompletionZones.uuidMinimums](../../src/main/kotlin/net/johnceo/sparklingmutuals/safari/completion/SafariCompletionZones.kt).
@@ -76,6 +86,12 @@ Existing coverage: [SafariPersonalBestTest](../../src/test/kotlin/net/johnceo/sp
 Population guarantees and capsule success/escape claims from supplied notes were not live revalidated; see [audit D2](../IMPLEMENTATION_AUDIT.md#d2).
 
 ## Last updated
+
+2026-10-29 — Updated emergence/throw-lead defaults to 98/4 ticks.
+
+2026-10-29 — Restricted the throw countdown HUD to within 10 blocks of a loaded warden; ticking and HUD-editor preview are unchanged.
+
+2026-10-29 — Added the server-tick capsule throw HUD, adjustable provisional 75-tick emergence estimate and 3-tick throw lead.
 
 2026-10-27 — Personal Unique PBs exempt positively proven zero-spawn types.
 
