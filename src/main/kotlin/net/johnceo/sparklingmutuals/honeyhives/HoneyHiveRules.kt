@@ -32,17 +32,15 @@ object HoneyHiveRules {
     fun savedRefills(saved: java.util.Properties, now: Long): Map<String, Map<String, Long>> {
         if (saved.getProperty("tracking.version") != "2") return emptyMap()
         val result = mutableMapOf<String, MutableMap<String, Long>>()
-        val exactLootKeys = mutableSetOf<Pair<String, String>>()
         saved.stringPropertyNames().forEach { name ->
             parseLoot(name, saved.getProperty(name), "refill")
                 ?.takeIf { (owner, key, at) -> !owner.endsWith(".unknown") && key != REMOVED_HIVE && now < at }
                 ?.let { (owner, key, at) -> result.getOrPut(owner) { mutableMapOf() }.merge(key, at, ::maxOf) }
         }
-        // Exact recorded loots take precedence over older visual-derived deadline values.
+        // Restore exact loot deadlines first, then apply any saved current-hologram correction below.
         saved.stringPropertyNames().forEach { name ->
             parseLoot(name, saved.getProperty(name), "looted")?.let { (owner, key, at) ->
                 if (!owner.endsWith(".unknown") && key != REMOVED_HIVE && at >= 0 && at <= Long.MAX_VALUE - REFILL_MILLIS) {
-                    exactLootKeys.add(owner to key)
                     val times = result.getOrPut(owner) { mutableMapOf() }
                     if (at + REFILL_MILLIS > now) times[key] = at + REFILL_MILLIS else times.remove(key)
                 }
@@ -50,7 +48,7 @@ object HoneyHiveRules {
         }
         saved.stringPropertyNames().forEach { name ->
             parseLoot(name, saved.getProperty(name), "observedRefill")?.let { (owner, key, at) ->
-                if (!owner.endsWith(".unknown") && key != REMOVED_HIVE && owner to key !in exactLootKeys) {
+                if (!owner.endsWith(".unknown") && key != REMOVED_HIVE) {
                     val times = result.getOrPut(owner) { mutableMapOf() }
                     if (at > now) times[key] = at else times.remove(key)
                 }

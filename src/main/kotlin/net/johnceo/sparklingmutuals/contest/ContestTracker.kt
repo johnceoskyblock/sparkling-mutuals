@@ -6,7 +6,6 @@ import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.round
-import net.johnceo.sparklingmutuals.LocalChat
 import net.johnceo.sparklingmutuals.config.ContestConfig
 import net.johnceo.sparklingmutuals.hud.SkyblockSidebar
 import net.johnceo.sparklingmutuals.party.PartyManager
@@ -169,13 +168,6 @@ object ContestTracker {
         if (due.isEmpty()) return
         warnedMinutes.addAll(due)
         // Joining late produces one warning instead of all elapsed warnings at once.
-        client.player?.sendSystemMessage(
-                    LocalChat.component(
-                        "§b[Sparkling Mutuals] §c§lContest not complete§r — " +
-                                "${formatRemaining(remaining)} left."
-                    )
-        )
-
         playSound(client)
 
         if (ContestConfig.contestWarnTitle) {

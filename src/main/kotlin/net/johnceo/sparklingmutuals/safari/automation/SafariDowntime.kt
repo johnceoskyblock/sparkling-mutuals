@@ -1,6 +1,5 @@
 package net.johnceo.sparklingmutuals.safari.automation
 
-import net.johnceo.sparklingmutuals.LocalChat
 import net.johnceo.sparklingmutuals.hud.SkyblockSidebar
 import net.johnceo.sparklingmutuals.commands.PartyChat
 import net.johnceo.sparklingmutuals.party.PartyManager
@@ -74,10 +73,8 @@ object SafariDowntime {
             }
             val existing = requests.keys.firstOrNull { it.equals(chat.sender, true) }
             requests[existing ?: chat.sender] = reason
-            tell("[SM] ${chat.sender} requested ${if (reason.equals("contest", true)) "contest" else "downtime"}" +
-                (if (reason.isEmpty() || reason.equals("contest", true)) "" else ": $reason") + if (inSafari) " (after this run)." else ".")
             return if (!inSafari) {
-                if (active) { tell(localNotice()); summary() } else leftSafari(self)
+                if (active) summary() else leftSafari(self)
             } else null
         }
         if (ticketMessage(chat.body)) {
@@ -86,10 +83,8 @@ object SafariDowntime {
         }
         if (readyMessage(chat.body)) {
             val key = requests.keys.firstOrNull { it.equals(chat.sender, true) } ?: return null
-            val reason = requests.remove(key)
-            val wasActive = active
+            requests.remove(key)
             if (requests.isEmpty()) active = false
-            tell("[SM] ${chat.sender} is ready." + if (active) " Waiting for ${waitingFor()}." else if (wasActive) " ${holdLabel(reason)} cleared." else " Request cancelled.")
         }
         return null
     }
@@ -126,16 +121,13 @@ object SafariDowntime {
         }
         if (requests.isEmpty()) active = false
         if (requests.values.none { it.equals("contest", true) }) contestTravelAt.clear()
-        if (released.isNotEmpty()) tell("[SM] Contest cleared for ${released.joinToString(", ", transform = ::displayName)} after 20 seconds in Torrhus." +
-            if (requests.isNotEmpty()) " Waiting for ${waitingFor()}." else "")
     }
 
     /** Party readiness is sender-specific for every reason; local scoreboard still calls ticketEarned. */
     fun ready(player: String): Boolean {
         val key = requests.keys.firstOrNull { it.equals(player, true) } ?: return false
-        val reason = requests.remove(key)
+        requests.remove(key)
         if (requests.isEmpty()) active = false
-        tell("[SM] $key is ready." + if (active) " Waiting for ${waitingFor()}." else " ${holdLabel(reason)} cleared.")
         return true
     }
     /** A connection transfer invalidates run context, not the same party's requests. */
@@ -149,7 +141,6 @@ object SafariDowntime {
             ?: return false
         requests.remove(key)
         if (requests.isEmpty()) active = false
-        tell("[SM] $key earned a ticket. " + if (active) "Waiting for ${waitingFor()}." else "Contest cleared.")
         return true
     }
 
@@ -158,17 +149,13 @@ object SafariDowntime {
     /** Party membership notices. Returns whether the line was one, so it isn't read as chat. */
     private fun partyChanged(line: String): Boolean {
         if (partyGone.any { it.matches(line) }) {
-            if (requests.isNotEmpty()) tell("[SM] Party changed. Requests cleared.")
             clear()
             return true
         }
         val name = departed.firstNotNullOfOrNull { it.matchEntire(line) }?.groupValues?.get(1) ?: return false
         val key = requests.keys.firstOrNull { it.equals(name, true) } ?: return true
-        val reason = requests.remove(key)
-        val released = active && requests.isEmpty()
+        requests.remove(key)
         if (requests.isEmpty()) active = false
-        tell("[SM] $key left. ${holdLabel(reason)} request removed." +
-            if (released) " ${holdLabel(reason)} cleared." else if (active) " Waiting for ${waitingFor()}." else "")
         return true
     }
 
@@ -179,7 +166,6 @@ object SafariDowntime {
         if (requests.isEmpty()) return null
         if (!active) {
             active = true; announcementDue = true
-            tell(localNotice())
         }
         if (!announcementDue) return null
         announcementDue = false
@@ -233,7 +219,6 @@ object SafariDowntime {
     }
 
     fun holders() = requests.keys.joinToString(", ", transform = ::displayName)
-    private fun holdLabel(reason: String?) = if (reason.equals("contest", true)) "Contest" else "Downtime"
     fun waitingFor() = requests.entries.joinToString(", ") { (key, reason) ->
         "${displayName(key)} (${reason.ifBlank { "downtime" }.take(60)})"
     }
@@ -242,5 +227,4 @@ object SafariDowntime {
     fun reset() { clear() }
 
     private fun send(message: String) { Minecraft.getInstance().player?.connection?.sendCommand("pc $message") }
-    private fun tell(text: String) { Minecraft.getInstance()?.player?.sendSystemMessage(LocalChat.component(text)) }
 }

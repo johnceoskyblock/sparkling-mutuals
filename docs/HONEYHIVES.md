@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Show personal loot-ready Honeyhives during an incomplete Miria contest. Confirmed personal loot timestamps determine readiness for exactly one hour, including across relogs. Waypoints return automatically at expiry; nearby status holograms are a fallback for hives without a recorded personal loot. Block honey levels never determine readiness.
+Show personal loot-ready Honeyhives during an incomplete Miria contest. Out of hologram range, saved personal loot/corrected deadlines determine readiness, including across relogs. Waypoints return automatically at expiry. Nearby current status holograms override that saved state and persist the correction for later distant viewing. Block honey levels never determine readiness.
 
 ## Controls and defaults
 
@@ -16,8 +16,8 @@ Show personal loot-ready Honeyhives during an incomplete Miria contest. Confirme
 | --- | --- | --- |
 | A `HIVE!`-prefixed system response correlated with a recent eligible hive click | Saves the local receipt timestamp; hides the beacon until that timestamp + 3,600,000 ms. | Five-second ordered click/chat correlation; not a server timestamp. |
 | A correlated `QUEEN BEE!`-prefixed response | Clears cooldown/correction and marks the hive full immediately. | Supports Queen-before-loot ordering; unmatched responses select no hive. |
-| Unambiguously associated `Click to loot!` | Confirms availability only when no active timer remains. | Cannot shorten a saved cooldown; requires a current loaded nest and matched personal carrier. |
-| Unambiguously associated `Refill in: ...` | Supplies a fallback deadline only without an exact personal loot timestamp. | Cannot change a recorded loot + one hour or a confirmed Queen Bee refill; parsed total must be 0–3,600,000 ms. |
+| Unambiguously associated `Click to loot!` | Confirms availability and clears stale saved cooldown/loot state. | Requires a current loaded nest and unambiguously matched personal carrier. |
+| Unambiguously associated `Refill in: ...` | Corrects and persists the deadline even when an old loot timestamp or Queen Bee flag exists. | Parsed total must be 0–3,600,000 ms; round-off jitter is coalesced to avoid repeated writes. |
 | No recognized label, unloaded data or honey level 0–5 | Retains the saved timer/full state. | A hive without a deadline is provisionally available. |
 
 The [message reference](critters/MESSAGES.md) owns exact server wording. Recognition here is prefix-based for loot/Queen chat, not a requirement for one exact reward suffix. Party quotes do not satisfy the system prefix.
@@ -34,13 +34,13 @@ The bundled `hive_7` position is **(-705, 92, 225)**. Saved **(-704, 92, 225)** 
 
 `config/sparkling-mutuals-honeyhives.properties` stores the bundled positions and per-player/profile state. On upgrade, saved positions outside the catalogue and their associated state are removed, with the original file backed up as `sparkling-mutuals-honeyhives.properties.pre-waypoint-cleanup.bak`. Valid known-hive timers and scopes remain intact. On relog, only that player's last confirmed profile scope can resume while waiting for the explicit profile-ID line. With no known profile, fresh observations use a provisional scope; confirmation promotes correlated personal loot/Queen evidence, not arbitrary provisional hologram corrections.
 
-Version-2 fallback `refill` deadlines remain usable. Exact `looted` timestamps rebuild one-hour deadlines on load and take precedence over `observedRefill` values. Only explicit `queenFull` markers from correlated Queen Bee messages bypass that timer. Legacy `full` markers mixed hologram observations and actual procs, so they no longer override cooldowns; the pre-migration file is backed up as `.pre-timer-priority.bak`. A fresh confirmed loot/Queen event clears old corrections, while the original loot timestamp remains available for reference. Loading and periodic maintenance prune expired deadlines; losing loaded visuals does not reset an unexpired timer. World changes clear visible/click-correlation state, not saved cooldowns. Disconnect forgets the current profile, retaining its saved scope for resumption.
+Version-2 fallback `refill` deadlines remain usable. Exact `looted` timestamps rebuild one-hour deadlines on load, then saved `observedRefill` hologram corrections take precedence. Explicit `queenFull` markers from correlated Queen Bee messages bypass the timer until a new loot or current nearby hologram corrects it. Legacy `full` markers mixed hologram observations and actual procs, so they no longer override cooldowns; the pre-migration file is backed up as `.pre-timer-priority.bak`. A fresh confirmed loot/Queen event clears old corrections, and a confirmed ready hologram clears stale loot timestamps. Loading and periodic maintenance prune expired deadlines; losing loaded visuals does not reset an unexpired timer. World changes clear visible/click-correlation state, not saved cooldowns. Disconnect forgets the current profile, retaining its saved scope for resumption.
 
 ## Edge cases
 
 - Multiple eligible clicks use ordered correlation; Queen-before-loot requires a single pending click when no recent loot exists. This is a client heuristic, not verified server ownership.
 - Honey level 5 cannot clear a saved cooldown; honey level 0 cannot extend an expired one.
-- A stale full/countdown label cannot shorten a recorded personal cooldown or undo a confirmed Queen Bee refill. Full waypoints return automatically at the one-hour boundary, without needing a fresh hologram sample. A new confirmed loot starts a new hour and clears the Queen Bee exception.
+- Loot/Queen Bee chat wins over a possibly stale hologram for two seconds, allowing the server label to update. Afterwards the current hologram is authoritative. Without a current label, saved deadlines return waypoints automatically at expiry. A new confirmed loot starts a fresh hour and discards older corrections.
 - Hologram layout, personal visibility and server response ordering remain live-server uncertainties. No API refill lookup is wired into this helper's current readiness path.
 
 ## Source and validation references
@@ -50,6 +50,8 @@ Version-2 fallback `refill` deadlines remain usable. Exact `looted` timestamps r
 - Existing secondary coverage: [HoneyHiveTrackerTest](../src/test/kotlin/net/johnceo/sparklingmutuals/honeyhives/HoneyHiveTrackerTest.kt), [HoneyHiveRulesTest](../src/test/kotlin/net/johnceo/sparklingmutuals/honeyhives/HoneyHiveRulesTest.kt), [HiveObservationAndHudPreviewTest](../src/test/kotlin/net/johnceo/sparklingmutuals/honeyhives/HiveObservationAndHudPreviewTest.kt). No tests or live session ran in this audit. Live validation should compare relog, Queen-first response, entrance level-0 hives, persisted hologram corrections, scope changes and the migrated hive position.
 
 ## Last updated
+
+2026-10-29 — Fixed recorded loot timestamps permanently suppressing hologram corrections. Saved times remain the distant fallback; current nearby labels override and persist, including across relogs. Added a two-second post-chat stale-label grace and coalesced countdown jitter.
 
 2026-10-26 — Recorded loot + one hour is authoritative across relogs; automatic readiness returns at expiry. Separated confirmed Queen Bee markers from legacy visual full state and prevented holograms from changing known personal timers.
 
