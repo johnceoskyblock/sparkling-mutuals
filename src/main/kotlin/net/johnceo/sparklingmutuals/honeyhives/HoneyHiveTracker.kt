@@ -11,10 +11,11 @@ class HoneyHiveTracker(private var refillAt: MutableMap<String, Long>, private v
     private val clicks = ArrayDeque<Click>()
     private var lastLoot: Click? = null
     private var queenBeforeLoot: Click? = null
+    private val confirmedAt = mutableMapOf<String, Long>()
     private fun lootDeadline(key: String) = lootedAt[key]?.takeIf { it in 0..Long.MAX_VALUE - HoneyHiveRules.REFILL_MILLIS }
         ?.plus(HoneyHiveRules.REFILL_MILLIS)
     fun state(key: String, now: Long) = HoneyHiveRules.state(now,
-        if (key !in queenFull) lootDeadline(key) ?: refillAt[key] else refillAt[key])
+        observedRefills[key] ?: if (key !in queenFull) lootDeadline(key) ?: refillAt[key] else refillAt[key])
 
     fun click(key: String, now: Long) {
         expire(now)
@@ -37,6 +38,7 @@ class HoneyHiveTracker(private var refillAt: MutableMap<String, Long>, private v
                 if (queen != null) {
                     queenBeforeLoot = null
                     lootedAt[queen.key] = now
+                    confirmedAt[queen.key] = now
                     return true // This response belongs to the loot whose refill arrived first.
                 }
                 val click = clicks.firstOrNull { it.eligible } ?: return false
@@ -64,35 +66,43 @@ class HoneyHiveTracker(private var refillAt: MutableMap<String, Long>, private v
             else -> return false
         }
         confirmedKeys.add(key)
+        confirmedAt[key] = now
         return true
     }
 
-    /** A recorded loot owns its entire hour; labels may confirm readiness only after that hour. */
+    /** Nearby server holograms correct saved timers; blocks never establish readiness. */
     @Suppress("UNUSED_PARAMETER")
     fun observe(key: String, label: String?, honeyLevel: Int? = null, now: Long): Boolean {
         val status = label?.let(SafariRules::strip)?.replace('\u00a0', ' ')?.trim() ?: return false
         val countdown = countdownMillis(status)
-        val exact = lootDeadline(key)
-        if (key in queenFull) return false // Only a new confirmed loot can consume a confirmed instant refill.
-        if (exact != null && (now < exact || countdown != null)) return false
-        if (exact == null && status.equals("Click to loot!", true) && refillAt[key]?.let { now < it } == true) return false
+        // Chat is immediate; allow the old hologram two seconds to catch up after a loot or Queen Bee proc.
+        if (confirmedAt[key]?.let { now - it in 0 until SERVER_GRACE } == true) return false
         val previous = refillAt[key]
         val fullBefore = key in queenFull
+        val lootBefore = lootedAt[key]
+        val observedBefore = observedRefills[key]
         when {
             status.equals("Click to loot!", true) -> {
                 refillAt.remove(key)
+                observedRefills.remove(key)
+                lootedAt.remove(key)
+                queenFull.remove(key)
                 clicks.filter { it.key == key }.forEach { it.eligible = true }
             }
             countdown != null -> {
-                refillAt[key] = now + countdown; observedRefills[key] = now + countdown
+                val deadline = now + countdown.coerceAtLeast(1000)
+                // Countdown rounding and one-tick arrival jitter must not rewrite the file every scan.
+                val stable = observedBefore?.takeIf { it > now && kotlin.math.abs(it - deadline) <= 1500 } ?: deadline
+                refillAt[key] = stable; observedRefills[key] = stable
                 queenFull.remove(key)
             }
             else -> return false
         }
-        return previous != refillAt[key] || fullBefore != (key in queenFull)
+        return previous != refillAt[key] || fullBefore != (key in queenFull) ||
+            lootBefore != lootedAt[key] || observedBefore != observedRefills[key]
     }
 
-    fun resetSession() { clicks.clear(); lastLoot = null; queenBeforeLoot = null; }
+    fun resetSession() { clicks.clear(); lastLoot = null; queenBeforeLoot = null; confirmedAt.clear() }
 
     /** The profile join line can arrive between a click, loot and Queen Bee messages. */
     fun promote(times: MutableMap<String, Long>, full: MutableSet<String>, loots: MutableMap<String, Long> = mutableMapOf(), observations: MutableMap<String, Long> = mutableMapOf()) {

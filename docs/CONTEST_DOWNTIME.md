@@ -12,7 +12,7 @@ Track Miria's contest window, warn while incomplete, and coordinate party readin
 | **Auto !dt contest** | On | Allows one automatic leader request at a newly observed contest start. |
 | **5 / 3 / 1 minute warning** | All on | Selects warning thresholds while below Uncommon. |
 | Warning title/sound | On; `minecraft:block.bell.use`, volume 100 | Local incomplete-contest warning. |
-| **Party commands → !dt downtime** | On | Records readiness requests and holds Torrhus entry. |
+| **Party Interactions → Respect !dt requests** | On | Records readiness requests and holds Torrhus entry. |
 
 Contest controls persist in `config/sparkling-mutuals-contest.properties`; downtime and [Honeyhive beacons](HONEYHIVES.md) use the general configuration. Ticket detection continues independently of HUD/tracking, warnings, beacons and automatic requests. **Hold either physical Shift key** to bypass the current entry interaction without clearing requests.
 
@@ -38,11 +38,15 @@ Contest-only readiness also has a travel fallback: after the exact server notice
 
 A server-confirmed `SkyBlock Party Warp (N players)` while the local player is party leader in Torrhus also starts the twenty-second timer for every other outstanding contest requester at once. Per-member FOLLOW notices are not required for that warp path. The leader's own hold still releases through their ticket/readiness evidence. A quoted header, a non-leader client, or a warp in Safari/another location cannot start these timers. Repeated confirmations do not extend an already-running timer. Earlier readiness/ticket messages still release individual members immediately; food and other manual reasons are not timed out. UUID-to-name resolution retains deadlines.
 
-Entry-block messages list each player with their reason, such as `Alex (contest), Steve (food)`. Contest-only local notices and completion messages say **Contest**, rather than labeling the request as generic downtime. Manual downtime keeps its own label.
+Entry-block messages list each player with their reason, such as `Alex (contest), Steve (food)`. No unsolicited local notices accompany these changes; holds and release rules remain unchanged.
 
 On returning to Torrhus, clients coordinate one party message naming all outstanding requesters and reasons, even if the reporting client requested no downtime: `Downtime requested: Alex (food); Steve (contest); Bob (no reason)`.
 
-Reports wait for the destination, stagger by party UUID order and suppress a matching report already heard, including one heard inside Safari. Resume/departure/ticket changes update pending content. Long reasons share the available message budget and use `...` truncation to preserve names. Local notices list holders and explain the Shift override. A ready message does not clear unrelated missing-member or kick guards.
+Reports wait for the destination, stagger by party UUID order and suppress a matching report already heard, including one heard inside Safari. Resume/departure/ticket changes update pending content. Long reasons share the available message budget and use `...` truncation to preserve names. Automatic local request, ready, ticket, timeout, departure and party-reset notices are silent. Attempting a blocked entry still explains the current holders and Shift override. A ready message does not clear unrelated missing-member or kick guards.
+
+## Chat volume
+
+Automatic `!dt contest`, the coordinated combined party reminder on returning to Torrhus and the ticket-earned party announcement remain. Routine local bookkeeping notices have been removed. Contest warnings retain their existing title/sound controls; the automatic warning chat line is also removed. No new API requests are introduced.
 
 ## Lifecycle and persistence
 
@@ -64,6 +68,8 @@ Contest completion, tier, score and warnings are retained in memory per account/
 - Existing secondary coverage: [ContestTicketAndAutoWarpTest](../src/test/kotlin/net/johnceo/sparklingmutuals/contest/ContestTicketAndAutoWarpTest.kt), [SafariDowntimeTest](../src/test/kotlin/net/johnceo/sparklingmutuals/safari/automation/SafariDowntimeTest.kt), [DowntimeAnnouncementTest](../src/test/kotlin/net/johnceo/sparklingmutuals/safari/automation/DowntimeAnnouncementTest.kt). No tests or live session ran in this audit. Live checks should cross starts with each role/setting, earn tiers across rollovers, exercise multiple independent holders, transfers, staggered reports and same-window profile refreshes.
 
 ## Last updated
+
+2026-10-29 — Renamed the receiver toggle to Respect !dt requests and removed unsolicited local downtime bookkeeping messages without changing requests, readiness, timers or party announcements.
 
 2026-10-27 — Retain same-window contest progress across kicks, disconnects and temporary profile loss; isolate accounts/profiles and reject lower scoreboard placeholders after reconnect.
 

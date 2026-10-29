@@ -177,9 +177,11 @@ object HoneyHives {
             ConfigManager.honeyHives, onTorrhus, profile != null, profile == null, visible.size)
         hives.values.filter { player.distanceToSqr(it.x + .5, it.y + .5, it.z + .5) <= 96.0 * 96.0 }.forEach { hive ->
             val pos = BlockPos(hive.x, hive.y, hive.z)
-            logger.info("Hive pos={} loaded={} block={} refillAt={} queenFull={}", hive.key, world.hasChunkAt(pos),
+            logger.info("Hive pos={} loaded={} block={} refillAt={} queenFull={} lootedAt={} observedRefill={} state={}", hive.key, world.hasChunkAt(pos),
                 if (world.hasChunkAt(pos)) world.getBlockState(pos) else null,
-                scope?.let { refillAt[it]?.get(hive.key) }, scope?.let { queenFull[it]?.contains(hive.key) })
+                scope?.let { refillAt[it]?.get(hive.key) }, scope?.let { queenFull[it]?.contains(hive.key) },
+                scope?.let { lootedAt[it]?.get(hive.key) }, scope?.let { observedRefills[it]?.get(hive.key) },
+                tracker?.state(hive.key, System.currentTimeMillis()))
         }
         world.entitiesForRendering().filter { !it.isRemoved && world.getEntity(it.id) === it && player.distanceToSqr(it) <= 96.0 * 96.0 }.forEach { entity ->
             val raw = if (entity is Display.TextDisplay) entity.text.string else entity.customName?.string

@@ -105,7 +105,7 @@ class SafariSettings : Config() {
         @ConfigEditorBoolean var startingItems = ConfigManager.announceStartingItems
         @JvmField @ConfigOption(name = "Respond to party commands", desc = "Reply to supported !commands.")
         @ConfigEditorBoolean var enabled = ConfigManager.partyCommandsEnabled
-        @JvmField @ConfigOption(name = "!dt downtime", desc = "Block entry until ready. Contest holds expire after 20s in Torrhus. Shift bypasses.")
+        @JvmField @ConfigOption(name = "Respect !dt requests", desc = "Block entry for downtime requests. Hold Shift to bypass.")
         @ConfigEditorBoolean var downtime = ConfigManager.downtimeCommand
 
     }
@@ -115,7 +115,7 @@ class SafariSettings : Config() {
         var ticketMode = ContestConfig.ticketMode
         @JvmField @ConfigOption(name = "Contest HUD and tracking", desc = "")
         @ConfigEditorBoolean var enabled = ContestConfig.trackContest
-        @JvmField @ConfigOption(name = "Auto !dt contest", desc = "Party leaders send !dt contest when a contest starts.")
+        @JvmField @ConfigOption(name = "Auto !dt contest", desc = "As leader, request a contest break when a contest starts.")
         @ConfigEditorBoolean var autoContestDowntime = ContestConfig.autoContestDowntime
         @JvmField @ConfigOption(name = "Honeyhive beacons", desc = "Show ready Torrhus hives until your contest target is met.")
         @ConfigEditorBoolean var honeyHives = ConfigManager.honeyHives
@@ -183,7 +183,7 @@ class SafariSettings : Config() {
         @ConfigEditorButton(runnableId = 12, buttonText = "Warp List") var list = false
         @JvmField @ConfigOption(name = "Auto warping", desc = "/warping toggles. Timer starts when you leave the boat.")
         @ConfigEditorBoolean var enabled = ConfigManager.warpAlertsEnabled
-        @JvmField @ConfigOption(name = "Delay in seconds", desc = "1–86,400 seconds.")
+        @JvmField @ConfigOption(name = "Delay in seconds", desc = "")
         @ConfigEditorText var delay = ConfigManager.warpDelaySeconds.toString()
         @JvmField @ConfigOption(name = "Save delay", desc = "")
         @ConfigEditorButton(runnableId = 6, buttonText = "Save delay") var saveDelay = false
