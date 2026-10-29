@@ -22,6 +22,24 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
     fun excludeFromHistory() { historyExcluded = true }
     val entry = SafariEntryEvidence()
     val resources = SafariResources()
+    val birdFoodCheck = net.johnceo.sparklingmutuals.safari.resources.BirdFoodSparklingCheck()
+    var biomeAtThirtySeconds: SafariBiome? = null
+        private set
+    private var thirtySecondSampled = false
+    private var lastBiomeSample: Pair<Long,SafariBiome?>? = null
+    private var firstForestVisit: Long? = null
+    fun sampleBiome(now: Long, biome: SafariBiome?) {
+        if(thirtySecondSampled || now < startedAt) return
+        val mark=startedAt+30000
+        if(now >= mark) {
+            biomeAtThirtySeconds=if(now == mark) biome else lastBiomeSample
+                ?.takeIf { it.first in (mark-1000)..mark && now-mark <= 1000 }?.second
+            thirtySecondSampled=true
+        }
+        lastBiomeSample=now to biome
+    }
+    val trustLateForestNestReport get() = remoteForestReport && (firstForestVisit ?: Long.MIN_VALUE) > startedAt+30000
+
     val gimmiegoldCheck = net.johnceo.sparklingmutuals.safari.completion.GimmiegoldSparklingCheck()
     private var localPlayerName: String? = null
     fun localPlayer(name: String) { localPlayerName = name }
@@ -66,7 +84,7 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
     private var liveBees = 0
     val beeNestCountKnown get() = foundNests > 0 && (nestSitesUnknown == 0 || nestsChecked)
     private val beePopulationAccountsForNests get() = beeNestCountKnown && count("Honeybug") + liveBees >= foundNests
-    val nestsResolved get() = nestsChecked || honeybugLocalCheck || beePopulationAccountsForNests
+    val nestsResolved get() = trustLateForestNestReport || nestsChecked || honeybugLocalCheck || beePopulationAccountsForNests
     private var honeybugLocalCheck = false
     private fun refreshNestChecking(renderConfirmed: Boolean = false) {
         // Only a fresh render sample may establish population proof. Block-survey updates can
@@ -92,6 +110,7 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
         gimmiegoldCheck.inventory(stacks.filter { SafariRules.strip(it.first).trim() == "Shining Coin" }.sumOf { it.second.coerceAtLeast(0) })
         syncGimmiegoldContributions()
         birds.inventory(stacks)
+        birdFoodCheck.inventory(stacks,now)
         sparklingChecks.inventory(stacks)
         sparklingChecks.startingCoins(resources.startingCount(FloorDropType.COIN))
         if (endedAt == null && firstInventoryAt != null) birds.startingInventory(stacks, now - firstInventoryAt!!)
@@ -160,11 +179,12 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
         }
         return (target - count(name)).coerceAtLeast(0)
     }
-    val birdFoodLeftToUse: Int get() { syncBirdContributions(); return birds.foodLeftToUse }
+    val knownBirdFoodLeftToUse: Int? get() = birdFoodCheck.leftToUse
+    val birdFoodLeftToUse: Int get() { syncBirdContributions(); return birdFoodCheck.leftToUse ?: 0 }
     fun birdSpawnsComplete(localOnly: Boolean = false): Boolean {
         syncBirdContributions()
-        return if (lastBiome == SafariBiome.FOREST) birds.feedingResolved else !localOnly &&
-            (birds.feedingResolved || birds.remoteReady || birds.hasReport && birds.capturesComplete(::count))
+        return if (lastBiome == SafariBiome.FOREST) birdFoodCheck.complete else !localOnly &&
+            (birdFoodCheck.complete || birds.hasReport && resources.heldCount(FloorDropType.SEEDS)+resources.heldCount(FloorDropType.WORM)+resources.heldCount(FloorDropType.BERRY) == 0)
     }
     fun hasUnusedStartingForBiome(biome: SafariBiome, party: PartySparklingState) =
         resources.startingNotice(party)?.items?.any { it.destination == biome } == true
@@ -246,7 +266,8 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
         return count(name) >= maxOf(fixed ?: minimum, if (name == "Gimmiegold") 0 else fullClearObservedTargets[name] ?: 0)
     }
     private val inheritedBiomes = mutableSetOf<SafariBiome>()
-    fun visitBiome(biome: SafariBiome) {
+    fun visitBiome(biome: SafariBiome, now: Long = startedAt) {
+        if(biome == SafariBiome.FOREST && firstForestVisit == null) firstForestVisit=now
         if (lastBiome != biome) {
             partyFullClears.remove(biome); communalClears.remove(biome)
             sparklingChecks.reenter(biome)
@@ -307,7 +328,7 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
             if (name in birdSpecies) {
                 syncBirdContributions()
                 val held = listOf(FloorDropType.SEEDS, FloorDropType.WORM, FloorDropType.BERRY).any { resources.heldCount(it) > 0 }
-                return !held && (birds.reportCoversTarget || birds.capturesComplete(::count))
+                return !held
             }
             if (name == "Gimmiegold") {
                 syncGimmiegoldContributions()
@@ -409,6 +430,7 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
     val nestCaptureQuotaMet get() = beeNestCountKnown && count("Honeybug") >= honeybugCaptureTarget
     /** Full Clear cannot trust reports or rendered bees to retire unpunched source work. */
     fun nestCounterNeeded(mode: SafariMode, party: PartySparklingState): Boolean {
+        if (trustLateForestNestReport) return false
         if (mode == SafariMode.FULL_CLEAR) return !nestsChecked && !nestCaptureQuotaMet
         if (nestsResolved || honeybugRemoteComplete) return false
         return when (mode) {
@@ -420,7 +442,7 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
     /** Block evidence updates immediately, including when the entity scanner has no fresh snapshot. */
     fun updateNestEvidence(checked: Boolean, punched: Int, found: Int = punched, unknown: Int? = null) {
         val expanded = found > foundNests
-        nestsChecked = checked || nestsChecked && !expanded
+        nestsChecked = trustLateForestNestReport || checked || nestsChecked && !expanded
         punchedNests = maxOf(punchedNests, punched.coerceAtLeast(0))
         foundNests = maxOf(foundNests, found.coerceAtLeast(0))
         if (unknown != null) nestSitesUnknown = minOf(nestSitesUnknown ?: Int.MAX_VALUE, unknown.coerceAtLeast(0))
@@ -476,11 +498,13 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
     fun scanBirdSources(dropsRemaining: Int, live: List<String> = emptyList(), qualified: Boolean = lastBiome == SafariBiome.FOREST) {
         syncBirdContributions()
         birds.floor(dropsRemaining)
+        birdFoodCheck.floor(dropsRemaining)
         if (!qualified || lastBiome != SafariBiome.FOREST) return
         forestBirdsSurveyed = true
         nearbyMacaws = live.count { it == "Macaw" }
         sightings.addAll(live.filter { it in birdSpecies })
         birds.render(::count, live)
+        birdFoodCheck.population(birds.accountedFeedings)
         resources.scan(SafariBiome.FOREST, birds.accountedFeedings)
     }
     fun hasCaptureEvidence(biome: SafariBiome) = biome in nearby

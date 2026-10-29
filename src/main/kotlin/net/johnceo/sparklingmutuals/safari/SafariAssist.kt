@@ -51,7 +51,7 @@ object SafariAssist {
 
     private fun renderParticleLocations(context: net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext) {
         val client = Minecraft.getInstance()
-        if (!inSafari || !ConfigManager.shinyDetection || client.player == null || client.options.smHideGui) return
+        if (ConfigManager.hideCritterEsp() || !inSafari || !ConfigManager.shinyDetection || client.player == null || client.options.smHideGui) return
         val points = SafariTracking.ledger.current?.sparklingParticles?.unknown().orEmpty()
         val color = net.johnceo.sparklingmutuals.config.SafariEspConfig.rgb(
             net.johnceo.sparklingmutuals.config.AppearanceConfig.sparklingColor)
@@ -131,7 +131,7 @@ object SafariAssist {
     @JvmStatic fun isHighlighted(id: Int): Boolean {
         val client = Minecraft.getInstance()
         val player = client.player ?: return false
-        return ConfigManager.shinyDetection && inSafari && shinies.any {
+        return !ConfigManager.hideCritterEsp() && ConfigManager.shinyDetection && inSafari && shinies.any {
             !it.body.isRemoved && (it.body.id == id || it.label.id == id)
         }
     }

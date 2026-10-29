@@ -65,7 +65,7 @@ object SafariPanels {
                 add(HudRow("Bee nests to punch", "$nests", HudRow.GOLD, HudRow.GRAY))
             if (biome == SafariBiome.FOREST && (mode == SafariMode.UNIQUE || sparkling &&
                     listOf("Bluebird", "Parakeet", "Macaw").any(party::needs) && run?.birdSpawnsComplete() != true))
-                add(HudRow("Bird food left to use", "${run?.birdFoodLeftToUse ?: 9}", HudRow.GOLD, HudRow.GRAY))
+                add(HudRow("Bird food left to use", run?.knownBirdFoodLeftToUse?.toString() ?: "?", HudRow.GOLD, HudRow.GRAY))
             if (biome == SafariBiome.CAVERN) {
                 if (SafariHelperRules.needed("Snoozle", mode, run, party) && walls.states.isNotEmpty() && !walls.allBroken)
                     add(HudRow("Snooper walls to break", walls.remaining, HudRow.GOLD, HudRow.GRAY))

@@ -1,5 +1,7 @@
 package net.johnceo.sparklingmutuals.safari.structures
 
+import net.johnceo.sparklingmutuals.config.ConfigManager
+
 import net.johnceo.sparklingmutuals.compat.*
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents
@@ -30,7 +32,7 @@ object BeeNests {
     private var lastRenderedMarkers = 0
     private val logger = LoggerFactory.getLogger("sparkling-mutuals/nests")
     private val handledByParty get() = SafariTracking.ledger.current?.let {
-        if (SafariFullClear.mode == net.johnceo.sparklingmutuals.safari.SafariMode.FULL_CLEAR) it.nestCaptureQuotaMet
+        if (SafariFullClear.mode == net.johnceo.sparklingmutuals.safari.SafariMode.FULL_CLEAR) it.nestCaptureQuotaMet || it.trustLateForestNestReport
         else it.partyNestsHandled
     } == true
     val unpunchedCount get() = if (handledByParty) 0 else survey.remaining.size
@@ -59,6 +61,7 @@ object BeeNests {
         syncRun()
     }
     private fun syncRun() {
+        if(SafariTracking.ledger.current?.trustLateForestNestReport == true) survey.acceptPartyClear()
         SafariTracking.ledger.current?.updateNestEvidence(survey.allChecked, survey.punchedCount,
             survey.nestCount, survey.unverified.size)
     }
@@ -85,7 +88,7 @@ object BeeNests {
         lastRenderedMarkers = 0
         val client = Minecraft.getInstance()
         val level = client.level ?: return
-        if (client.player == null || client.options.smHideGui || !SafariAssist.inSafari) return
+        if (ConfigManager.hideCritterEsp() || client.player == null || client.options.smHideGui || !SafariAssist.inSafari) return
         val camera = client.gameRenderer.smCamera.position()
         val markers = when {
             SafariAssist.biome == SafariBiome.FOREST &&

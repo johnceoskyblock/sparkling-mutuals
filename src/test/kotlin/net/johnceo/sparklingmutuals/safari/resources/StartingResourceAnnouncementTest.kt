@@ -236,7 +236,7 @@ class StartingResourceAnnouncementTest {
         }
     }
 
-    @Test fun `early extra demand invalidates old fd and hd without manufacturing captures`() {
+    @Test fun `party extras retain remote bird proof but reopen coin population demand without captures`() {
         val run = SafariRun(0)
         run.localPlayer("Me")
         run.visitBiome(SafariBiome.CAVERN)
@@ -247,7 +247,7 @@ class StartingResourceAnnouncementTest {
         assertTrue(run.sparklingComplete("Bluebird", party("Bluebird")))
         assertTrue(run.sparklingComplete("Gimmiegold", party("Gimmiegold")))
         SafariMessages.forRun("Party > Friend: [SM] Starting items: 2x Bag of Seeds; 1x Shining Coin", run, true)
-        assertFalse(run.sparklingComplete("Bluebird", party("Bluebird")))
+        assertTrue(run.sparklingComplete("Bluebird", party("Bluebird")))
         assertFalse(run.sparklingComplete("Gimmiegold", party("Gimmiegold")))
         assertEquals(0, run.count("Gimmiegold"))
         run.partyFullClear("Party > Clearer: hd")

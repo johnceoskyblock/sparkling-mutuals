@@ -63,7 +63,7 @@ class HelperFooterConditionsTest {
         assertFalse(food(party()))
         assertFalse(food(party("Honeybug")))
         for (bird in listOf("Bluebird", "Parakeet", "Macaw")) assertTrue(food(party(bird)), bird)
-        run.birds.inventory(emptyList())
+        run.inventoryEvidence(emptyList(), 10000)
         run.scanBirdSources(0, List(9) { "Bluebird" }, qualified = true)
         assertFalse(food(party("Parakeet")), "resolved food work should not linger")
     }

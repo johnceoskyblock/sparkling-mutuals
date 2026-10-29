@@ -106,15 +106,17 @@ Outside the current biome, a party completion report is trusted even after an ea
 
 ## Party command: !m
 
-Any party member may request `!m` or `!m <biome>` (including c/f/i/h). A mod client only answers while inside the requested biome; bare `!m` selects that client's current biome. Queued answers are discarded if the responder leaves the biome, run, world or mode. Existing command cooldowns, party-response deduplication and chunk pacing apply; this command makes no API requests.
+Any party member may request `!m` or `!m <biome>` (including c/f/i/h). Only a client whose observed biome at the run's 30-second mark matches the request answers. Bare `!m` selects that assigned biome, even after travel. Before the checkpoint, or if it was missed, the client does not reply. Queued answers are discarded after a run, world or mode change. Existing command cooldowns, party-response deduplication and chunk pacing apply; this command makes no API requests.
 
-- **Full Clear:** concise `Critter: remaining` entries use known populations where available, otherwise the species minimum, minus shared captures. Honeybug uses the retained nest-derived target; birds use known spawn totals with the one-Macaw exception. Zero or negative remainders are omitted. Cavern also lists rendered `Mounds` and `Snoozle Walls`; Forest lists food left to use.
-- **Unique:** uncaught species only, preserving proven zero-spawn exceptions. Extra check notes appear only for species the party needs shiny. If shiny Honeybug is needed, always include `Make sure to clear all nests`, even after catching one.
-- **Sparkle:** outstanding checks only for needed species: nests, mounds, Snoozle Walls, bird food and checking birds, Shining Coins and checking Gimmiegolds, Wumpa/Doomspiral captures, and remaining species checks. Completed checks are omitted.
+- **Full Clear:** positive `Critter: remaining` capture deficits, known Cavern mound/wall counts and Forest food remaining.
+- **Unique:** `Uniques left to capture` lists uncaught species with proven zero-spawn exceptions, followed by the same needed source notes as Sparkle.
+- **Sparkle:** only known, positive remaining work for needed discoveries: mounds, Snoozle walls, unopened Gemzie chamber, bird food, bee nests, Gazers and Shining Coins. Icy has no extra source notes. Unknown counts and generic check-spawns/loading messages are omitted.
 
-The compact party reply uses `Missing <Biome>: ...`, `Done` when nothing remains, and ordinary `shiny` wording rather than the detection-alert keyword. Unknown discovery data is reported as loading rather than complete. The GUI missing panel keeps its existing presentation; the command now has its own mode-aware formatter.
+The compact reply uses `Missing <Biome>: ...`, semicolons between tasks and `None` when no tasks can be listed. `None` describes this known-task reply and does not certify completion when discovery/source evidence is unknown. The GUI missing panel retains its own presentation. Its bird-food footer shows `?` until both floor and held food are known, rather than displaying an inferred baseline or a false zero.
 
 ## Last updated
+
+2026-10-29 - Documented checkpoint-based party replies and known-source-only output.
 
 2026-10-25 — Sparkle now includes needed-Gimmiegold coins, needed-Gazer checks and needed-bird food counters alongside the existing discovery-gated mound, wall and nest helpers.
 

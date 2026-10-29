@@ -12,6 +12,7 @@ import net.johnceo.sparklingmutuals.safari.resources.FloorPickup
 /** Run-owned check evidence, independent of captures and personal bests. */
 class SparklingChecks(private val clock: () -> Long = System::currentTimeMillis) {
     private var gemzieChamberOpenedAt: Long? = null
+    val gemzieChamberOpened get() = gemzieChamberOpenedAt != null
     private fun gemzieChamberChecked() = gemzieChamberOpenedAt?.let { clock() - it >= 5000L } == true
     private val completed = mutableSetOf<String>()
     private val partyCompleted = mutableSetOf<String>()

@@ -392,6 +392,7 @@ object SafariEsp {
         val now = System.currentTimeMillis()
         val timers = mutableListOf<Triple<String, Int, AABB>>()
         targets = targets.filter { drawable(it, client) }
+        if (!ConfigManager.hideCritterEsp()) {
         for (target in targets) {
             val e = target.entity
             val mob = SafariRoster.named(target.species)!!
@@ -465,8 +466,9 @@ object SafariEsp {
                 timers.add(Triple("Shyworm (last seen)", SafariEspConfig.rgb(SafariEspConfig.entityColor("Shyworm", false)), box))
             }
         }
+        }
         val incenseIds = SafariFloorDrops.state.incenseDropIds(dropPredictor.knownDrops)
-        val selectedDrops = predictedDrops.filter { drop ->
+        val selectedDrops = if (ConfigManager.hideFloorDropEsp()) emptyList() else predictedDrops.filter { drop ->
             drop.actual == null && (0..2).all { client.level?.getEntity(drop.id + it)?.isRemoved == false } &&
                 SafariEspRules.visible(true, SafariFloorDrops.selected(drop, incenseIds), SafariEspConfig.dropOnlyInBiome(drop.type), playerBiome, drop.biome)
         }

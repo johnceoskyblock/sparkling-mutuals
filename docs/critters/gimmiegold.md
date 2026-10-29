@@ -83,7 +83,14 @@ Population guarantees and capsule success/escape claims from supplied notes were
 
 Unique and Full Clear keep Shining Coin waypoints for every remaining drop throughout the run, even when no party member needs its Sparkling variant. Sparkling mode retains the discovery-needs gate. Pickup tracking removes collected drops normally. This is an ESP-only rule: Unique capture/check requirements and Full Clear minimum/capture rules remain unchanged.
 
+## Coins-left display
+
+Coins left to use is the known remaining floor-coin slots plus this client's held coins. When both are zero the counter is zero even if teammates reported unused coins. Qualified Gimmiegold population/checking and capture requirements are separate from this display counter.
+
 ## Last updated
+
+2026-10-29 - Simplified known-source replies and local Sparkling source requirements.
+
 
 2026-10-27 — Personal Unique PBs exempt positively proven zero-spawn types.
 

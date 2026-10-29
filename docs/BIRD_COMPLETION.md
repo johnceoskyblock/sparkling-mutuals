@@ -12,7 +12,7 @@ A **feeding opportunity** is the ledger's unit of expected bird population: one 
 
 ## Implemented rules
 
-### Expected population
+### Expected capture population
 
 Expected opportunities are **max(9, personally collected Forest food quantity) + local extra food + reported extra food + inferred unreported starting food**. Early discovery-gated starting-item reports supply remote contributions before clearing completes; later unused-resource local titles remain, and a separately paced party follow-up after a local biome report names which members still need the related Sparklings without adding source contributions again. Nine is the implemented baseline. Local extras include starting inventory/grants and pickups outside Forest, avoiding overlap with early pickup messages. Accepted party notices use sender/type maxima; the local sender's notice overlaps local extras. The first available inventory sample starts the three-second starting-inventory window.
 
@@ -22,7 +22,7 @@ Qualified population is:
 
 Bluebird catches + live Bluebirds + Parakeet catches + live Parakeets + floor((Macaw catches + live Macaws) / 2).
 
-Attraction chat establishes no food use, bird spawn, species total or Macaw pair. Complete active non-food reward triples are excluded from remaining food markers; food and partial/unknown groups still block. This marker scan operates Safari-wide, including the boat and other biomes, independently of selected ESP.
+Exact bird-attracted system messages confirm one pending local food use each, including one for a Macaw pair. They do not establish captures or the Full Clear population total. Complete active non-food reward triples are excluded from remaining food markers; food and partial/unknown groups still block. This marker scan operates Safari-wide, including the boat and other biomes, independently of selected ESP.
 
 The ledger retains maximum qualified species populations (captures + current renders). It retains a qualified total only when no floor food or held food remains. Incomplete scans do not accumulate separate UUID populations. New food pickup clears retained total proof; known remaining/held food blocks it, and increased demand can exceed it. Forest reentry clears the current total while retaining previously verified proof and species requirements.
 
@@ -30,7 +30,7 @@ The ledger retains maximum qualified species populations (captures + current ren
 
 | Mode | Inside Forest | Outside Forest |
 | --- | --- | --- |
-| Sparkling | Local feedingResolved: sampled zero floor food, zero held food and current/retained qualified population reaching expected opportunities | Earned local proof, or accepted fd covering current demand with no known food blockers; a retained report plus sufficient actual captures can cover increased demand |
+| Sparkling | Sampled zero floor/held food and no pending local food-use confirmations; require observed consumption or nine accounted feedings | Earned local food proof, or accepted fd with no held food; party-reported extras do not raise this checking demand |
 | Unique | Sparkling spawning requirement plus each bird's shared catch; waive any bird with completed local proof that the species never spawned | Remote fd plus each bird catch, with an unencountered zero-spawn exception for each bird; still-held needed starting food blocks the source completion |
 | Full Clear | Shared captures meet the capture formula below, with no known food blockers | The same actual capture formula; fd supplies no captures |
 
@@ -42,7 +42,7 @@ All three birds share the Full Clear capture result. Confirmed Sparkling bird ca
 
 ### Sending fd
 
-Any Forest entrant can automatically send fd once qualified shared captures plus currently rendered birds establish the expected spawning, sampled held/remaining food is zero, and every other selected-mode Forest requirement passes. No personal pickup quota or initial-clearer classification is required. This allows a late entrant to report even when somebody else collected and used all the food before that entrant arrived, including before any birds were caught. An already received fd suppresses an automatic echo.
+With Auto biome reports enabled, a Forest entrant can send fd once local food-use/source proof and every other selected-mode Forest requirement pass. Local bird checking follows the rules above; Full Clear retains the shared capture formula. No personal pickup quota or initial-clearer classification is required. This allows a late entrant to report even when somebody else collected and used all the food before that entrant arrived, including before any birds were caught. An already received fd suppresses an automatic echo.
 
 The independent All Bird Food alert still requires three of each food; it is not a reporting gate.
 
@@ -52,7 +52,7 @@ Inventory is sampled before queuing and before dispatch decisions. Queued report
 
 - Proven zero-spawn Bluebird, Parakeet or Macaw can waive that Unique catch; Full Clear's formula can also complete with no Macaws when the other captures cover demand.
 - A remote fd can waive Unique's last Macaw catch outside Forest once Bluebird and Parakeet are caught; it does not prove a personal Macaw capture.
-- Additional food changes demand without adding captures. An old report whose recorded target is too small cannot alone waive that new demand.
+- Additional food changes Full Clear capture demand without adding captures. Party-reported extras do not reopen local Sparkling food checks; newly held local food or remaining floor food still blocks them.
 - Disabling bird ESP does not disable evidence collection. Capsule replacement UUIDs are not accumulated as feeding opportunities; current-population observations still depend on correct loaded entity identity.
 
 For a local Unique Forest clearer, no catch of a bird species is required if that species has never been seen or caught and qualified population/source evidence resolves all food opportunities. This includes party-reported unused starting food. Remaining food markers, held food or insufficient accounted population block the waiver. That species’ row then disappears and fd may send when every other Forest requirement is complete. A later sighting of that species revokes the zero-spawn waiver.
@@ -64,7 +64,7 @@ For a local Unique Forest clearer, no catch of a bird species is required if tha
 - Seven Bluebird catches and two live Parakeets, zero floor/held food, and a qualified nine-opportunity observation can satisfy Sparkling without a Parakeet catch. Unique still needs one; Full Clear needs the required Parakeet catches.
 - A qualified population of six Bluebirds, two Parakeets and two Macaws represents nine opportunities. Six Bluebird catches, two Parakeet catches and one Macaw catch can satisfy Full Clear while the second Macaw remains.
 - A late entrant with bird loot shares can send fd after local population/source proof and the other active-mode requirements pass, provided no fd was received.
-- One reported extra food raises the baseline target from nine to ten. Repeating the same sender/type notice does not add another opportunity.
+- One reported extra food raises the Full Clear capture target from nine to ten. Repeating the same sender/type notice does not add another opportunity.
 
 ## Source and validation references
 
@@ -85,9 +85,16 @@ Live-server confirmation remains pending for baseline population, Safari-wide ma
 
 While outside Forest, Unique trusts fd after each bird's first catch, or waives an unencountered bird as a zero spawn. Bluebird and Parakeet are now eligible for the same remote zero-spawn exception as Macaw. A prior Forest visit does not prevent this trust. Inside Forest, local feeding/source proof remains required. Full Clear retains its actual bird capture formula in every biome.
 
-Outside-Forest Sparkling checks accept fd covering the current feeding target, ignoring old floor-marker scans, while still requiring no held food. Later starting-food contributions increase demand and require a fresh report or enough actual capture proof. Needed starting food still held by this client blocks its destination completion/report.
+Outside-Forest Sparkling checks accept fd while requiring no held food. Later party-reported starting-food contributions do not reopen this source check; Full Clear capture demand still tracks them. Needed starting food still held by this client blocks its destination completion/report.
+
+## Local Sparkling food proof
+
+Sparkling bird checks use Forest floor-food markers and this client's inventory, without party-reported starting food or inferred teammate food increasing that source demand. After an inventory decrease of N food, wait for N exact bird-attracted system messages. Two Macaws is one food-use confirmation, not two. Matching messages just before the inventory packet are retained briefly. With no personal food-use batch observed, the existing late-entry proof of nine accounted feedings remains available. Own capture counts and Full Clear capture bookkeeping remain separate.
 
 ## Last updated
+
+2026-10-29 - Simplified known-source replies and local Sparkling source requirements.
+
 
 2026-10-24 — Expanded bird population/food-use coverage to 40 blocks and added one provisional starting food for unreporting early Forest visitors, replaced by real starting reports.
 

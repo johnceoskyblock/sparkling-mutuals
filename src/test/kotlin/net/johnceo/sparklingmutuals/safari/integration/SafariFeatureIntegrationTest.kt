@@ -49,7 +49,9 @@ class SafariFeatureIntegrationTest {
         }
         inspect(SafariSettings())
         assertTrue(switches.size >= 40, "Inspect nested GUI options, including panel borders")
-        val exceptions = setOf("history.instaSell", "history.toParty", "warp.enabled", "esp.floorDrops.visibility.generic", "esp.floorDrops.visibility.icebreaker", "miria.warning.five", "modes.unique.hotspot", "modes.fullClear.hotspot", "modes.sparkling.hotspot", "party.startingItems")
+        val exceptions = setOf("history.instaSell", "history.toParty", "warp.enabled", "esp.floorDrops.visibility.generic", "esp.floorDrops.visibility.icebreaker", "miria.warning.five", "modes.unique.hotspot", "modes.fullClear.hotspot", "modes.sparkling.hotspot", "party.startingItems",
+            "modes.unique.hideCritters", "modes.unique.hideDrops", "modes.fullClear.hideCritters",
+            "modes.fullClear.hideDrops", "modes.sparkling.hideCritters", "modes.sparkling.hideDrops")
         val modes = setOf("modes.unique.enabled", "modes.fullClear.enabled", "modes.sparkling.enabled")
         switches.filterKeys { it !in modes }.forEach { (name, value) -> assertEquals(name !in exceptions && !name.endsWith(".borderEnabled"), value, name) }
         assertEquals(1, modes.count { switches[it] == true })

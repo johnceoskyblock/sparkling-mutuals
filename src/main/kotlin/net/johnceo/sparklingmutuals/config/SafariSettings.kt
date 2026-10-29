@@ -65,12 +65,20 @@ class SafariSettings : Config() {
         }
     }
     class FullClear {
+        @JvmField @ConfigOption(name = "Hide critter ESP", desc = "Visual only; tracking stays active.")
+        @ConfigEditorBoolean var hideCritters = ConfigManager.fullClearHideCritterEsp
+        @JvmField @ConfigOption(name = "Hide floor-drop ESP", desc = "Visual only; tracking stays active.")
+        @ConfigEditorBoolean var hideDrops = ConfigManager.fullClearHideFloorDropEsp
         @JvmField @ConfigOption(name = "Hotspot announcer", desc = "Announce your hotspot before starting items.")
         @ConfigEditorBoolean var hotspot = ConfigManager.fullClearHotspotAnnouncer
         @JvmField @ConfigOption(name = "Full clear mode", desc = "Catch all spawns; one Macaw minimum.")
         @ConfigEditorBoolean var enabled = SafariFullClear.mode == SafariMode.FULL_CLEAR
     }
     class Sparkling {
+        @JvmField @ConfigOption(name = "Hide critter ESP", desc = "Visual only; tracking stays active.")
+        @ConfigEditorBoolean var hideCritters = ConfigManager.sparklingHideCritterEsp
+        @JvmField @ConfigOption(name = "Hide floor-drop ESP", desc = "Visual only; tracking stays active.")
+        @ConfigEditorBoolean var hideDrops = ConfigManager.sparklingHideFloorDropEsp
         @JvmField @ConfigOption(name = "Hotspot announcer", desc = "Announce your hotspot before starting items.")
         @ConfigEditorBoolean var hotspot = ConfigManager.sparklingHotspotAnnouncer
         @JvmField @ConfigOption(name = "Sparkling Mode", desc = "Check sparklings your party needs.")
@@ -79,6 +87,10 @@ class SafariSettings : Config() {
         @ConfigEditorBoolean var profitable = ConfigManager.sparklingProfitableShardEsp
     }
     class Unique {
+        @JvmField @ConfigOption(name = "Hide critter ESP", desc = "Visual only; tracking stays active.")
+        @ConfigEditorBoolean var hideCritters = ConfigManager.uniqueHideCritterEsp
+        @JvmField @ConfigOption(name = "Hide floor-drop ESP", desc = "Visual only; tracking stays active.")
+        @ConfigEditorBoolean var hideDrops = ConfigManager.uniqueHideFloorDropEsp
         @JvmField @ConfigOption(name = "Hotspot announcer", desc = "Announce your hotspot before starting items.")
         @ConfigEditorBoolean var hotspot = ConfigManager.uniqueHotspotAnnouncer
         @JvmField @ConfigOption(name = "Unique mode", desc = "Catch each type and check needed sparklings.")
@@ -87,7 +99,9 @@ class SafariSettings : Config() {
         @ConfigEditorBoolean var profitable = ConfigManager.profitableShardEsp
     }
     class Party {
-        @JvmField @ConfigOption(name = "Announce starting quest items", desc = "List your starting items in party chat after leaving the boat.")
+        @JvmField @ConfigOption(name = "Auto biome reports", desc = "Send fd, cd, id and hd when completed.")
+        @ConfigEditorBoolean var biomeReports = ConfigManager.autoBiomeReports
+        @JvmField @ConfigOption(name = "Announce starting quest items", desc = "Announce starting items and unused-item reminders in party chat.")
         @ConfigEditorBoolean var startingItems = ConfigManager.announceStartingItems
         @JvmField @ConfigOption(name = "Respond to party commands", desc = "Reply to supported !commands.")
         @ConfigEditorBoolean var enabled = ConfigManager.partyCommandsEnabled
@@ -399,8 +413,13 @@ class SafariSettings : Config() {
         ConfigManager.save()
     }
     fun apply(notifyMode: Boolean = false) {
+        if (modes.unique.hideCritters || modes.unique.hideDrops) modes.unique.profitable=false
+        if (modes.sparkling.hideCritters || modes.sparkling.hideDrops) modes.sparkling.profitable=false
         if (warp.enabled != ConfigManager.warpAlertsEnabled) AlertManager.toggleAlert()
-        val changes = listOf(ConfigManager::announceStartingItems to party.startingItems, ConfigManager::uniqueHotspotAnnouncer to modes.unique.hotspot, ConfigManager::fullClearHotspotAnnouncer to modes.fullClear.hotspot, ConfigManager::sparklingHotspotAnnouncer to modes.sparkling.hotspot, ConfigManager::phantomleafSolver to miscEndgame.phantomleafSolver, ConfigManager::highlightTeammates to safari.highlightTeammates, ConfigManager::showTeammateNames to safari.showTeammateNames, ConfigManager::profitableShardEsp to modes.unique.profitable, ConfigManager::sparklingProfitableShardEsp to modes.sparkling.profitable, ConfigManager::partyCommandsEnabled to party.enabled, ConfigManager::downtimeCommand to party.downtime, ConfigManager::useCloudApi to api.cloud, ConfigManager::hideHauntedPaintings to safari.paintings,
+        val changes = listOf(ConfigManager::autoBiomeReports to party.biomeReports,
+            ConfigManager::uniqueHideCritterEsp to modes.unique.hideCritters, ConfigManager::uniqueHideFloorDropEsp to modes.unique.hideDrops,
+            ConfigManager::fullClearHideCritterEsp to modes.fullClear.hideCritters, ConfigManager::fullClearHideFloorDropEsp to modes.fullClear.hideDrops,
+            ConfigManager::sparklingHideCritterEsp to modes.sparkling.hideCritters, ConfigManager::sparklingHideFloorDropEsp to modes.sparkling.hideDrops, ConfigManager::announceStartingItems to party.startingItems, ConfigManager::uniqueHotspotAnnouncer to modes.unique.hotspot, ConfigManager::fullClearHotspotAnnouncer to modes.fullClear.hotspot, ConfigManager::sparklingHotspotAnnouncer to modes.sparkling.hotspot, ConfigManager::phantomleafSolver to miscEndgame.phantomleafSolver, ConfigManager::highlightTeammates to safari.highlightTeammates, ConfigManager::showTeammateNames to safari.showTeammateNames, ConfigManager::profitableShardEsp to modes.unique.profitable, ConfigManager::sparklingProfitableShardEsp to modes.sparkling.profitable, ConfigManager::partyCommandsEnabled to party.enabled, ConfigManager::downtimeCommand to party.downtime, ConfigManager::useCloudApi to api.cloud, ConfigManager::hideHauntedPaintings to safari.paintings,
             ConfigManager::shinyDetection to safari.shiny, ConfigManager::hideyhoAutoAccept to safari.hideyhoAutoAccept, ConfigManager::autoSelectSafariTicket to safari.autoSelectTicket, ConfigManager::hideyhoInsideOutside to safari.hideyhoInsideOutside,
             ConfigManager::progressHud to tracking.progress,
             ConfigManager::experimentalCapsulePath to safari.experimentalCapsulePath,

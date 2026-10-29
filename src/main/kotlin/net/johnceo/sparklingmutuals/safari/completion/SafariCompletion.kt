@@ -30,10 +30,10 @@ object SafariCompletion {
                 .filterNot { it.isEmpty }.map { it.hoverName.string to it.count }, now)
         }
         SafariBiome.entries.forEach { area ->
-            run.completion.announcement(run, area, mode, party)?.let { queue.addLast(area to it) }
+            run.completion.announcement(run, area, mode, party, ConfigManager.autoBiomeReports)?.let { queue.addLast(area to it) }
         }
         // Revalidate queued completions after contradictory local evidence or a mode change.
-        queue.removeAll { (area, _) -> !run.canReportBiome(area, party) || area != biome || mode == SafariMode.SPARKLING && !party.ready || run.completed(mode,
+        queue.removeAll { (area, _) -> !ConfigManager.autoBiomeReports || !run.completion.reportAllowed(run,area,mode,party) || !run.canReportBiome(area, party) || area != biome || mode == SafariMode.SPARKLING && !party.ready || run.completed(mode,
             area.critters.filter { mode != SafariMode.SPARKLING || party.needs(it.name) }, party, localOnly = true) !=
             area.critters.count { mode != SafariMode.SPARKLING || party.needs(it.name) } }
         run.completion.armSharedClearReminder(run, biome, mode, party, now)
@@ -44,7 +44,7 @@ object SafariCompletion {
                 .withStyle { it.withColor(SafariTheme.ACCENT).withBold(true) })
             client.gui.smSetSubtitle(net.minecraft.network.chat.Component.literal(reminder.detail))
         }
-        if (client.connection != null && PartyManager.hasInfo && PartyManager.getMembers().size > 1 &&
+        if (ConfigManager.announceStartingItems && client.connection != null && PartyManager.hasInfo && PartyManager.getMembers().size > 1 &&
             now - sentAt >= 1500 && run.partyResourceReminders.dispatch(now, party,
                 { message -> client.connection!!.sendCommand("pc $message") })) sentAt = now
         if (client.connection != null && queue.isNotEmpty() && now - sentAt >= 3000) {

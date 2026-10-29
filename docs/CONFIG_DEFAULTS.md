@@ -124,7 +124,14 @@ Startup normalizes legacy `pb.*` keys from the general file and the earlier `Spa
 - Appearance: [SafariEspConfig](../src/main/kotlin/net/johnceo/sparklingmutuals/config/SafariEspConfig.kt), [SafariEspSettings](../src/main/kotlin/net/johnceo/sparklingmutuals/config/SafariEspSettings.kt); HUD: [SafariHud](../src/main/kotlin/net/johnceo/sparklingmutuals/hud/HudLayout.kt).
 - Existing secondary coverage: [ConfigTest](../src/test/kotlin/net/johnceo/sparklingmutuals/config/ConfigTest.kt), [SafariSettingsTest](../src/test/kotlin/net/johnceo/sparklingmutuals/config/SafariSettingsTest.kt), [SafariCustomizationTest](../src/test/kotlin/net/johnceo/sparklingmutuals/config/SafariCustomizationTest.kt), [SafariFeatureDefaultsTest](../src/test/kotlin/net/johnceo/sparklingmutuals/config/SafariFeatureDefaultsTest.kt). No tests or live settings session ran in this audit. Reopen/restart, migration failure recovery and preset transitions require their appropriate runtime checks.
 
+## Mode visuals and automatic reports
+
+Each mode dropdown has independent Hide critter ESP and Hide floor-drop ESP toggles, both off by default. They gate rendering only, including retained critter markers, and never disable scanning or requirements. Turning on either hide toggle disables that mode's profitable-critter ESP (Unique/Sparkle). Party Interactions > Auto biome reports defaults on and controls automatic fd/cd/id/hd messages without disabling progress tracking.
+
 ## Last updated
+
+2026-10-28 - Added mode-specific visual ESP hides, an auto biome report setting, and non-redundant Icy announcements.
+
 
 2026-10-28 - Water opacity defaults to 60%. Announce starting quest items defaults off. Saved settings take precedence over these defaults.
 

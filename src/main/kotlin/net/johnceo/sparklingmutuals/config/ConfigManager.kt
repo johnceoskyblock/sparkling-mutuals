@@ -4,6 +4,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.util.Properties
 import net.johnceo.sparklingmutuals.hud.SafariHud
+import net.johnceo.sparklingmutuals.safari.SafariMode
 import net.johnceo.sparklingmutuals.safari.completion.SafariFullClear
 import net.johnceo.sparklingmutuals.safari.completion.SafariPersonalBests
 import net.minecraft.resources.Identifier
@@ -16,6 +17,23 @@ object ConfigManager {
     var showTeammateNames = true
     var partyCommandsEnabled = true
     var announceStartingItems = false
+    var autoBiomeReports = true
+    var uniqueHideCritterEsp = false
+    var uniqueHideFloorDropEsp = false
+    var fullClearHideCritterEsp = false
+    var fullClearHideFloorDropEsp = false
+    var sparklingHideCritterEsp = false
+    var sparklingHideFloorDropEsp = false
+    fun hideCritterEsp(mode: SafariMode = SafariFullClear.mode) = when(mode) {
+        SafariMode.UNIQUE -> uniqueHideCritterEsp
+        SafariMode.FULL_CLEAR -> fullClearHideCritterEsp
+        SafariMode.SPARKLING -> sparklingHideCritterEsp
+    }
+    fun hideFloorDropEsp(mode: SafariMode = SafariFullClear.mode) = when(mode) {
+        SafariMode.UNIQUE -> uniqueHideFloorDropEsp
+        SafariMode.FULL_CLEAR -> fullClearHideFloorDropEsp
+        SafariMode.SPARKLING -> sparklingHideFloorDropEsp
+    }
     var useCloudApi = true
     var fullClearMode = false
     var sparklingMode = false
@@ -80,7 +98,9 @@ object ConfigManager {
     var capsuleHideDistance = 2f
     var showWhere = 1
     val personalBests = SafariPersonalBests()
-    private val flags = mapOf(::announceStartingItems to false, ::uniqueHotspotAnnouncer to false, ::fullClearHotspotAnnouncer to false, ::sparklingHotspotAnnouncer to false, ::highlightTeammates to true, ::showTeammateNames to true, ::partyCommandsEnabled to true, ::useCloudApi to true, ::fullClearMode to false, ::sparklingMode to false, ::sparklingProfitableShardEsp to true, ::profitableShardEsp to true, ::timesaveOnly to true, ::warpAlertsEnabled to false,
+    private val flags = mapOf(::autoBiomeReports to true, ::uniqueHideCritterEsp to false, ::uniqueHideFloorDropEsp to false,
+        ::fullClearHideCritterEsp to false, ::fullClearHideFloorDropEsp to false,
+        ::sparklingHideCritterEsp to false, ::sparklingHideFloorDropEsp to false, ::announceStartingItems to false, ::uniqueHotspotAnnouncer to false, ::fullClearHotspotAnnouncer to false, ::sparklingHotspotAnnouncer to false, ::highlightTeammates to true, ::showTeammateNames to true, ::partyCommandsEnabled to true, ::useCloudApi to true, ::fullClearMode to false, ::sparklingMode to false, ::sparklingProfitableShardEsp to true, ::profitableShardEsp to true, ::timesaveOnly to true, ::warpAlertsEnabled to false,
         ::hideyhoAutoAccept to true, ::autoSelectSafariTicket to true, ::hideyhoInsideOutside to true, ::hideHauntedPaintings to true, ::shinyDetection to true,
         ::progressHud to true, ::countUniqueOnly to false, ::missingPanel to true,
         ::highlightBeeNests to true, ::removeDarkness to true, ::clearWater to true, ::sparklingAlert to true,
@@ -106,6 +126,8 @@ object ConfigManager {
         runCompleteVolume = properties.getProperty("runCompleteVolume")?.toIntOrNull()?.coerceIn(0, 100) ?: 100
         sparklingSoundVolume = properties.getProperty("sparklingSoundVolume")?.toIntOrNull()?.coerceIn(0, 100) ?: 100
         flags.forEach { (property, default) -> property.set(properties.getProperty(property.name)?.toBooleanStrictOrNull() ?: default) }
+        if (uniqueHideCritterEsp || uniqueHideFloorDropEsp) profitableShardEsp=false
+        if (sparklingHideCritterEsp || sparklingHideFloorDropEsp) sparklingProfitableShardEsp=false
         warpDelaySeconds = properties.getProperty("warpDelaySeconds", "25").toIntOrNull()?.coerceIn(1, 86400) ?: 25
         safariTicketPreference = properties.getProperty("safariTicketPreference")?.toIntOrNull()?.takeIf { it in 0..1 } ?: 0
         profitsTicketMode = properties.getProperty("profitsTicketMode")?.toIntOrNull()?.takeIf { it in 0..3 } ?: 0

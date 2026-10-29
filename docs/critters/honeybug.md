@@ -77,7 +77,14 @@ Existing coverage: [HoneybugModeEvidenceTest](../../src/test/kotlin/net/johnceo/
 
 Population guarantees and capsule success/escape claims from supplied notes were not live revalidated; see [audit D2](../IMPLEMENTATION_AUDIT.md#d2).
 
+## Late Forest reports
+
+If Forest was first entered after 30 seconds, a party fd is trusted as punched-nest source proof, including when received while inside Forest. Nest ESP and remaining-nest counts then clear; later loaded nest sites inherit that report. The original early Forest clearer still uses local evidence. No Honeybug catches are fabricated and capture minima remain enforced.
+
 ## Last updated
+
+2026-10-29 - Simplified known-source replies and local Sparkling source requirements.
+
 
 2026-10-27 — Personal Unique PBs exempt positively proven zero-spawn types.
 

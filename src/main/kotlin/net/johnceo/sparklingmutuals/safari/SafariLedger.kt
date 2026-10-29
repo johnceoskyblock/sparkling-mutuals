@@ -14,7 +14,7 @@ class SafariLedger {
     fun confirmEntry(now: Long) = arrive(now)
     fun update(location: SafariLocation, biome: SafariBiome?, now: Long) {
         when (location) {
-            SafariLocation.INSIDE -> { arrive(now); if (biome != null) current!!.visitBiome(biome) }
+            SafariLocation.INSIDE -> { arrive(now); current!!.sampleBiome(now,biome); if (biome != null) current!!.visitBiome(biome,now) }
             SafariLocation.ENTRANCE, SafariLocation.OUTSIDE -> leave(now)
             SafariLocation.UNKNOWN -> Unit
         }

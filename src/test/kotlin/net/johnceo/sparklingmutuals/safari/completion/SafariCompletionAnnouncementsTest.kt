@@ -26,13 +26,13 @@ class SafariCompletionAnnouncementsTest {
     private fun caught(run: SafariRun, name: String) = run.record(SafariCatch(SafariRoster.named(name)!!))
     private fun unique() { ConfigManager.fullClearMode = false; ConfigManager.sparklingMode = false }
 
-    @Test fun `Unique announces Haunted and Icy completion instead of suppressing it`() {
+    @Test fun `Unique announces Haunted but does not repeat Icy after Wumpa capture`() {
         for ((biome, word) in listOf(SafariBiome.HAUNTED to "hd", SafariBiome.ICY to "id")) {
             val run = SafariRun(0)
             run.visitBiome(biome)
             biome.critters.forEach { caught(run, it.name) }
             run.updateCaptureEvidence(biome, emptySet(), true)
-            assertEquals(word, run.completion.announcement(run, biome, SafariMode.UNIQUE, party()))
+            assertEquals(if (biome == SafariBiome.ICY) null else word, run.completion.announcement(run, biome, SafariMode.UNIQUE, party()))
             assertNull(run.completion.announcement(run, biome, SafariMode.UNIQUE, party()))
         }
     }
@@ -181,13 +181,13 @@ class SafariCompletionAnnouncementsTest {
         assertTrue(run.uniqueUnavailable("Rockmite")); assertTrue(run.uniqueUnavailable("Snoozle"))
     }
     @Test fun `completion announcement is once per biome across mode switches`() {
-        val run = SafariRun(0); val state = party("Wumpa")
-        run.visitBiome(SafariBiome.ICY)
-        SafariBiome.ICY.critters.forEach { caught(run, it.name) }
-        run.updateCaptureEvidence(SafariBiome.ICY, emptySet(), false)
-        run.sparklingChecks.scan(SafariBiome.ICY, -110.0, -78.0, emptyList())
-        assertEquals("id", run.completion.announcement(run, SafariBiome.ICY, SafariMode.UNIQUE, state))
-        assertNull(run.completion.announcement(run, SafariBiome.ICY, SafariMode.SPARKLING, state))
+        val run = SafariRun(0); val state = party("Doomspiral")
+        run.visitBiome(SafariBiome.HAUNTED)
+        SafariBiome.HAUNTED.critters.forEach { caught(run, it.name) }
+        run.updateCaptureEvidence(SafariBiome.HAUNTED, emptySet(), false)
+        run.sparklingChecks.scan(SafariBiome.HAUNTED, -4.0, -64.0, emptyList())
+        assertEquals("hd", run.completion.announcement(run, SafariBiome.HAUNTED, SafariMode.UNIQUE, state))
+        assertNull(run.completion.announcement(run, SafariBiome.HAUNTED, SafariMode.SPARKLING, state))
     }
     @Test fun `remote cd overrides old source observations until local reentry`() {
         val run = SafariRun(0); val state = party("Rockmite", "Snoozle")
@@ -202,33 +202,57 @@ class SafariCompletionAnnouncementsTest {
     }
     @Test fun `an unsent completion can retry after a mode switch cancels it`() {
         val run = SafariRun(0); val state = party()
-        run.visitBiome(SafariBiome.ICY)
-        SafariBiome.ICY.critters.forEach { caught(run, it.name) }
-        run.updateCaptureEvidence(SafariBiome.ICY, emptySet(), false)
-        run.sparklingChecks.scan(SafariBiome.ICY, -110.0, -78.0, emptyList())
-        assertEquals("id", run.completion.announcement(run, SafariBiome.ICY, SafariMode.UNIQUE, state))
-        assertNull(run.completion.announcement(run, SafariBiome.ICY, SafariMode.FULL_CLEAR, state))
-        assertEquals("id", run.completion.announcement(run, SafariBiome.ICY, SafariMode.UNIQUE, state), "the canceled queue reservation must not count as a sent announcement")
+        run.visitBiome(SafariBiome.HAUNTED)
+        SafariBiome.HAUNTED.critters.forEach { caught(run, it.name) }
+        run.updateCaptureEvidence(SafariBiome.HAUNTED, emptySet(), false)
+        run.sparklingChecks.scan(SafariBiome.HAUNTED, -4.0, -64.0, emptyList())
+        assertEquals("hd", run.completion.announcement(run, SafariBiome.HAUNTED, SafariMode.UNIQUE, state))
+        assertNull(run.completion.announcement(run, SafariBiome.HAUNTED, SafariMode.FULL_CLEAR, state))
+        assertEquals("hd", run.completion.announcement(run, SafariBiome.HAUNTED, SafariMode.UNIQUE, state), "the canceled queue reservation must not count as a sent announcement")
     }
     @Test fun `an actually sent completion is not repeated after later contradictions`() {
         val run = SafariRun(0); val state = party()
-        run.visitBiome(SafariBiome.ICY)
-        SafariBiome.ICY.critters.forEach { caught(run, it.name) }
-        run.updateCaptureEvidence(SafariBiome.ICY, emptySet(), false)
-        run.sparklingChecks.scan(SafariBiome.ICY, -110.0, -78.0, emptyList())
-        assertEquals("id", run.completion.announcement(run, SafariBiome.ICY, SafariMode.UNIQUE, state))
-        run.completion.sent(SafariBiome.ICY)
-        assertNull(run.completion.announcement(run, SafariBiome.ICY, SafariMode.FULL_CLEAR, state))
-        assertNull(run.completion.announcement(run, SafariBiome.ICY, SafariMode.UNIQUE, state))
+        run.visitBiome(SafariBiome.HAUNTED)
+        SafariBiome.HAUNTED.critters.forEach { caught(run, it.name) }
+        run.updateCaptureEvidence(SafariBiome.HAUNTED, emptySet(), false)
+        run.sparklingChecks.scan(SafariBiome.HAUNTED, -4.0, -64.0, emptyList())
+        assertEquals("hd", run.completion.announcement(run, SafariBiome.HAUNTED, SafariMode.UNIQUE, state))
+        run.completion.sent(SafariBiome.HAUNTED)
+        assertNull(run.completion.announcement(run, SafariBiome.HAUNTED, SafariMode.FULL_CLEAR, state))
+        assertNull(run.completion.announcement(run, SafariBiome.HAUNTED, SafariMode.UNIQUE, state))
     }
-    @Test fun `Sparkling biome with no remaining discovery needs can announce after a local survey`() {
+    @Test fun `Sparkling Icy with no discovery needs does not announce an empty checklist`() {
         val run = SafariRun(0)
         assertNull(run.completion.announcement(run, SafariBiome.ICY, SafariMode.SPARKLING, party()))
         run.visitBiome(SafariBiome.ICY)
         run.updateCaptureEvidence(SafariBiome.ICY, emptySet(), false)
         run.sparklingChecks.scan(SafariBiome.ICY, -110.0, -78.0, emptyList())
-        assertEquals("id", run.completion.announcement(run, SafariBiome.ICY, SafariMode.SPARKLING, party()))
+        assertNull(run.completion.announcement(run, SafariBiome.ICY, SafariMode.SPARKLING, party()))
         val unknown = SafariRun(0).apply { updateCaptureEvidence(SafariBiome.ICY, emptySet(), false) }
         assertNull(unknown.completion.announcement(unknown, SafariBiome.ICY, SafariMode.SPARKLING, PartySparklingState()))
+    }
+    @Test fun `Icy reporting only covers non-Wumpa Sparkle work and full clear remains reportable`() {
+        val run=SafariRun(0)
+        assertTrue(run.completion.reportAllowed(run,SafariBiome.ICY,SafariMode.SPARKLING,party("Tepid")))
+        assertFalse(run.completion.reportAllowed(run,SafariBiome.ICY,SafariMode.SPARKLING,party("Wumpa","Tepid")))
+        assertFalse(run.completion.reportAllowed(run,SafariBiome.ICY,SafariMode.SPARKLING,party()))
+        run.visitBiome(SafariBiome.ICY)
+        run.updateCaptureEvidence(SafariBiome.ICY,emptySet(),false)
+        run.sparklingChecks.scan(SafariBiome.ICY,-73.0,-46.0,List(6) { "Tepid" to UUID.randomUUID() })
+        assertEquals("id",run.completion.announcement(run,SafariBiome.ICY,SafariMode.SPARKLING,party("Tepid")))
+        caught(run,"Wumpa")
+        assertFalse(run.completion.reportAllowed(run,SafariBiome.ICY,SafariMode.UNIQUE,party()))
+        assertFalse(run.completion.reportAllowed(run,SafariBiome.ICY,SafariMode.SPARKLING,party("Tepid")))
+        assertTrue(run.completion.reportAllowed(run,SafariBiome.ICY,SafariMode.FULL_CLEAR,party("Wumpa")))
+        assertNull(run.completion.announcement(run,SafariBiome.ICY,SafariMode.SPARKLING,party("Tepid")))
+    }
+    @Test fun `report opt out does not reserve completion or alter capture progress`() {
+        val run=SafariRun(0);run.visitBiome(SafariBiome.HAUNTED)
+        SafariBiome.HAUNTED.critters.forEach { caught(run,it.name) }
+        run.updateCaptureEvidence(SafariBiome.HAUNTED,emptySet(),true)
+        val before=run.completed(SafariMode.UNIQUE,SafariBiome.HAUNTED.critters,party())
+        assertNull(run.completion.announcement(run,SafariBiome.HAUNTED,SafariMode.UNIQUE,party(),enabled=false))
+        assertEquals(before,run.completed(SafariMode.UNIQUE,SafariBiome.HAUNTED.critters,party()))
+        assertEquals("hd",run.completion.announcement(run,SafariBiome.HAUNTED,SafariMode.UNIQUE,party(),enabled=true))
     }
 }
