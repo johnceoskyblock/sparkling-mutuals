@@ -54,11 +54,11 @@ The audit follows owners through event registration/callers, mode/configuration 
 
 ### d10
 
-**External-prediction final-error naming can overstate coverage.** [analyze.py](../tools/capture_shots/analyze.py) passes only time-matched errors to [models.residual_stats](../tools/capture_shots/models.py), which labels the last element `last_observed_error`. If the final observation has no prediction, that value belongs to the last matched observation, not necessarily the trace's final observation. Read `uncovered_observations` alongside it. This previously deferred minor remains unfixed; it is not endpoint error.
+The offline prediction-reporting tool was retired on 2026-10-29; its historical final-error naming issue no longer applies to shipped tooling.
 
 ### d11
 
-**Recorder inspection budgeting is not a strict whole-tick 256 bound.** [ShotObservationAdapter.tick](../src/main/kotlin/net/johnceo/sparklingmutuals/safari/shots/ShotObservationAdapter.kt) computes bootstrap allowance as `256 - cache.entries().size`, then samples the post-discovery cache. Newly discovered entries can be inspected again in that tick; additional range-refresh work also exists. The historical claim of at most 256 total inspections is stronger than this composition guarantees (bootstrap plus a newly populated 80-entry cache can reach 336). This previously deferred minor remains recorded without changing code or increasing export caps. Contact-scene budgets are separate.
+The development recorder was retired on 2026-10-29; its historical inspection-budget issue no longer applies. Live projection contact-cache budgets remain separate.
 
 ### d15
 
@@ -76,7 +76,7 @@ The audit follows owners through event registration/callers, mode/configuration 
 
 ### d12
 
-**Capture projections remain conditional geometry.** The fixed ordinary-capsule spatial curve is not a server-time simulation. Masterful/movement/water previews, launch extrapolation, current-position critter proxies, Shyworm multipart association, mound display surfaces and first-contact ordering are implementation hypotheses. Native rendering checks and narrow historical position residuals do not establish target selection, server hitboxes or guaranteed capture. Optional Iris compatibility was exercised on 26.1.2 with specific shader packs; it does not certify every pack. [The capture guide](CAPTURE_SHOT_RECORDING.md) owns the contracts and limits.
+**Capture projections remain conditional geometry.** The fixed ordinary-capsule spatial curve is not a server-time simulation. Masterful/movement/water previews, launch extrapolation, current-position critter proxies, Shyworm multipart association, mound display surfaces and first-contact ordering are implementation hypotheses. Native rendering checks and narrow historical position residuals do not establish target selection, server hitboxes or guaranteed capture. Optional Iris compatibility was exercised on 26.1.2 with specific shader packs; it does not certify every pack. [The capture guide](CAPTURE_PROJECTIONS.md) owns the contracts and limits.
 
 ### d16
 
@@ -84,7 +84,7 @@ The audit follows owners through event registration/callers, mode/configuration 
 
 ## Consolidation and outstanding work
 
-The eight completed/superseded multi-version and capture-shot plan/specification pages are removed. Their current behavior lives in [multi-version builds](MULTI_VERSION_BUILDS.md), [capture recording/preview](CAPTURE_SHOT_RECORDING.md), [configuration](CONFIG_DEFAULTS.md), the [manual scenarios](IMPLEMENTATION_TEST_CHECKLIST.md), checked schemas and existing source/tests. Historical approvals, execution restrictions and superseded designs remain recoverable in Git history at the reviewed revision; they are not current instructions. The duplicated AI handoff is consolidated into [contributing](../CONTRIBUTING.md) and [source synchronization](SOURCE_SYNC.md).
+The eight completed/superseded multi-version and capture-shot plan/specification pages are removed. Their current behavior lives in [multi-version builds](MULTI_VERSION_BUILDS.md), [capture recording/preview](CAPTURE_PROJECTIONS.md), [configuration](CONFIG_DEFAULTS.md), the [manual scenarios](IMPLEMENTATION_TEST_CHECKLIST.md), checked schemas and existing source/tests. Historical approvals, execution restrictions and superseded designs remain recoverable in Git history at the reviewed revision; they are not current instructions. The duplicated AI handoff is consolidated into [contributing](../CONTRIBUTING.md) and [source synchronization](SOURCE_SYNC.md).
 
 [Gemzie auto-selection (#64)](https://github.com/johnceoskyblock/sparkling-mutuals/issues/64) is a pending proposal, not implemented by this documentation audit. Its separate design approval is not inferred from #65. Unresolved defects above require their own authorized follow-up; this cleanup does not create runtime fixes or a release. Durable template automation, if desired, is separate work; only temporary read-only checks are used here.
 

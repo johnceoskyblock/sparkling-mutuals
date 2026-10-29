@@ -53,6 +53,7 @@ object AlertManager {
         SafariTracking.ensureRun(client)
         val run = SafariTracking.ledger.current ?: return
         val scheduledGeneration = expiry.arm(run)
+        SparkleAutoParty.start(client, System.currentTimeMillis() + getDelay() * 1000L)
         pendingAlert = scheduler.schedule({
             client.execute {
                 val ready = client.connection === connection && client.level === level && client.player != null &&
@@ -67,6 +68,7 @@ object AlertManager {
     }
 
     private fun triggerAlert() {
+        SparkleAutoParty.stop()
         val minecraft = Minecraft.getInstance()
         if (minecraft.player == null || !isEnabled()) return
 
@@ -76,6 +78,7 @@ object AlertManager {
 
     fun cancelPendingAlert() {
         expiry.cancel()
+        SparkleAutoParty.stop()
         pendingAlert?.cancel(false)
         pendingAlert = null
         SmallAlerts.clear(SafariHud.WARP)

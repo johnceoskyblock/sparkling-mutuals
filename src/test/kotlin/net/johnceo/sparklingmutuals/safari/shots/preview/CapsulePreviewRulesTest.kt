@@ -13,16 +13,6 @@ class CapsulePreviewRulesTest {
             assertEquals(CapsulePreviewAvailability.AVAILABLE,r.evaluate(s))
         }
     }
-    @Test fun `third person moving Masterful display does not relax recorder view restriction`() {
-        val s=eligible().copy(firstPerson=false,allowUncalibratedEstimates=true,capsule=ShotVariant.MASTERFUL,
-            onGround=false,velocity=ShotVector(.2,.3,.1))
-        assertEquals(CapsulePreviewAvailability.AVAILABLE,CapsulePreviewRules().tick(Any(),s))
-        val strict=CapsulePreviewRules(allowExtendedPreview=false);val w=Any();val ordinary=eligible().copy(allowUncalibratedEstimates=true)
-        strict.tick(w,ordinary);strict.tick(w,ordinary)
-        assertEquals(CapsulePreviewAvailability.VIEW_UNAVAILABLE,strict.evaluate(ordinary.copy(firstPerson=false)))
-        assertEquals(CapsulePreviewAvailability.STAND_STILL,strict.tick(w,ordinary))
-        assertEquals(CapsulePreviewAvailability.AVAILABLE,strict.tick(w,ordinary))
-    }
     @Test fun `expanded preview remains available across ground and airborne movement`() {
         val s=eligible().copy(allowUncalibratedEstimates=true)
         val r=CapsulePreviewRules();val w=Any();r.tick(w,s)
@@ -51,18 +41,6 @@ class CapsulePreviewRulesTest {
         assertEquals(CapsulePreviewAvailability.HIDDEN,r.evaluate(s.copy(capsule=null)))
         assertEquals(CapsulePreviewAvailability.AVAILABLE,r.tick(w,s.copy(sprinting=true,velocity=ShotVector(.3,.2,.1),onGround=false)))
     }
-    @Test fun `strict collection remains stationary ordinary even with expanded preview opt in`() {
-        val s=eligible().copy(allowUncalibratedEstimates=true,pitch=35.0)
-        val r=CapsulePreviewRules(allowExtendedPreview=false);val w=Any()
-        assertEquals(CapsulePreviewAvailability.STAND_STILL,r.tick(w,s))
-        assertEquals(CapsulePreviewAvailability.AVAILABLE,r.tick(w,s))
-        assertEquals(CapsulePreviewAvailability.HIDDEN,r.evaluate(s.copy(capsule=ShotVariant.MASTERFUL)))
-        for(moving in listOf(s.copy(velocity=ShotVector(.2,0.0,0.0)),s.copy(sprinting=true),s.copy(sneaking=true),s.copy(onGround=false))) {
-            assertEquals(CapsulePreviewAvailability.STAND_STILL,r.tick(w,moving))
-            assertEquals(CapsulePreviewAvailability.STAND_STILL,r.tick(w,s))
-            assertEquals(CapsulePreviewAvailability.AVAILABLE,r.tick(w,s))
-        }
-    }
     @Test fun `expanded preview rejects unsupported modes and nonfinite motion`() {
         val s=eligible().copy(allowUncalibratedEstimates=true)
         for(blocked in listOf(s.copy(flying=true),s.copy(riding=true),
@@ -70,23 +48,6 @@ class CapsulePreviewRulesTest {
             val r=CapsulePreviewRules();r.tick(Any(),s)
             assertEquals(CapsulePreviewAvailability.STAND_STILL,r.evaluate(blocked))
         }
-    }
-    @Test fun `expanded water preview allows swimming without relaxing strict collection or opt out`() {
-        for(variant in listOf(ShotVariant.ORDINARY,ShotVariant.MASTERFUL)) {
-            val s=eligible().copy(allowUncalibratedEstimates=true,capsule=variant,swimming=true,onGround=false,
-                velocity=ShotVector(.1,.02,.1))
-            assertEquals(CapsulePreviewAvailability.AVAILABLE,CapsulePreviewRules().tick(Any(),s))
-            assertNotEquals(CapsulePreviewAvailability.AVAILABLE,CapsulePreviewRules(allowExtendedPreview=false).tick(Any(),s))
-            assertNotEquals(CapsulePreviewAvailability.AVAILABLE,CapsulePreviewRules().tick(Any(),s.copy(allowUncalibratedEstimates=false)))
-        }
-    }
-    @Test fun `standing in water stays uncalibrated and cannot produce strict collection stability`() {
-        val s=eligible().copy(allowUncalibratedEstimates=true,inWater=true)
-        assertEquals(CapsulePreviewAvailability.AVAILABLE,CapsulePreviewRules().tick(Any(),s))
-        assertEquals("Water",s.estimateLabel)
-        val strict=CapsulePreviewRules(allowExtendedPreview=false);val w=Any()
-        repeat(3){assertNotEquals(CapsulePreviewAvailability.AVAILABLE,strict.tick(w,s))}
-        assertNotEquals(CapsulePreviewAvailability.AVAILABLE,ready().evaluate(s.copy(allowUncalibratedEstimates=false)))
     }
     @Test fun `lava remains unsupported with expanded water preview enabled`() {
         for(water in listOf(false,true)) {
@@ -116,18 +77,6 @@ class CapsulePreviewRulesTest {
                 assertEquals(CapsulePreviewAvailability.AVAILABLE,r.tick(w,hidden))
                 assertEquals(CapsulePreviewAvailability.AVAILABLE,r.evaluate(state))
             }
-        }
-    }
-    @Test fun `strict recorder probes still reject hiding and require fresh stable ticks after it clears`() {
-        for(hideGround in listOf(false,true)) for(hideFlying in listOf(false,true)) {
-            if(!hideGround && !hideFlying) continue
-            val r=CapsulePreviewRules(allowExtendedPreview=false);val w=Any();val state=eligible()
-            r.tick(w,state);r.tick(w,state)
-            val hidden=state.copy(hideGround=hideGround,hideFlying=hideFlying)
-            assertEquals(CapsulePreviewAvailability.HIDING_UNAVAILABLE,r.evaluate(hidden))
-            assertEquals(CapsulePreviewAvailability.HIDING_UNAVAILABLE,r.tick(w,hidden))
-            assertEquals(CapsulePreviewAvailability.STAND_STILL,r.tick(w,state))
-            assertEquals(CapsulePreviewAvailability.AVAILABLE,r.tick(w,state))
         }
     }
     @Test fun `extended use cannot bank strict stability or survive world loss`() {

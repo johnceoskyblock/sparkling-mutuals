@@ -22,6 +22,7 @@ class SafariConfigScreen(private val settings: SafariSettings = SafariSettings()
     companion object {
         private fun context(settings: SafariSettings): GuiContext {
             val processor = MoulConfigProcessor.withDefaults(settings)
+            processor.registerConfigEditor(StandaloneDescription::class.java) { option, _ -> StandaloneDescriptionEditor(option) }
             ConfigProcessorDriver(processor).apply { checkExpose = false }.processConfig(settings)
             return GuiContext(GuiElementComponent(MoulConfigEditor(processor)))
         }

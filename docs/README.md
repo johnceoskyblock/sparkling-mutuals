@@ -19,7 +19,7 @@ Players: start with [installation and controls](../README.md). Contributors: rea
 | Contest and Canyon | [Contest/downtime](CONTEST_DOWNTIME.md), [Honeyhives](HONEYHIVES.md) |
 | Misc Endgame Features | [Garden Phantomleaf Solver](PHANTOMLEAF_SOLVER.md) |
 | History | [History, imports, achievements and profit](HISTORY_IMPORT.md), [credited party streaks](SINCE_COMMAND.md) |
-| Capsule guide and evidence | [Capture projections and recording](CAPTURE_SHOT_RECORDING.md), [standalone tools](../tools/capture_shots/README.md) |
+| Capsule aiming guide | [Capture projections](CAPTURE_PROJECTIONS.md) |
 | Development | [Contribution workflow](../CONTRIBUTING.md), [multi-version builds](MULTI_VERSION_BUILDS.md), [source synchronization](SOURCE_SYNC.md) |
 | Validation | [Manual scenarios](IMPLEMENTATION_TEST_CHECKLIST.md), [audit discrepancies](IMPLEMENTATION_AUDIT.md) |
 | Requests and release notes | [GitHub Issues](https://github.com/johnceoskyblock/sparkling-mutuals/issues), [GitHub Releases](https://github.com/johnceoskyblock/sparkling-mutuals/releases) |

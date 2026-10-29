@@ -15,7 +15,7 @@ class HiveObservationAndHudPreviewTest {
         ConfigManager.runCompleteTitle = "Finished custom safari"
         val previews = SmallAlerts.previews()
         val expected = mapOf(SafariHud.GEMS to "ALL GEMS READY!", SafariHud.BIRD_FOOD to "ALL BIRD FOOD COLLECTED!",
-            SafariHud.INCENSE to "ALL INCENSE READY!", SafariHud.RUN_COMPLETE to "Finished custom safari", SafariHud.WARP to "WARP REMINDER")
+            SafariHud.INCENSE to "ALL INCENSE READY!", SafariHud.RUN_COMPLETE to "Finished custom safari", SafariHud.WARP to "Warping Now")
         expected.forEach { (hud, title) ->
             val panel = previews.getValue(hud)
             assertEquals(title, panel.title)

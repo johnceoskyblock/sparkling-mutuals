@@ -26,7 +26,7 @@ class SafariSettings : Config() {
     @JvmField @Category(name = "Party Interactions", desc = "") val party = Party()
     @JvmField @Category(name = "Miria contest", desc = "") val miria = Miria()
     @JvmField @Category(name = "History", desc = "") val history = History()
-    @JvmField @Category(name = "Warp reminders", desc = "") val warp = Warp()
+    @JvmField @Category(name = "Sparkle Warping", desc = "") val warp = Warp()
     @JvmField @Category(name = "Safari helpers", desc = "") val safari = Safari()
     @JvmField @Category(name = "Safari progress", desc = "") val tracking = Tracking()
     @JvmField @Category(name = "API key", desc = "") val api = Api()
@@ -175,14 +175,20 @@ class SafariSettings : Config() {
         @ConfigEditorBoolean var toParty = ConfigManager.achievementsToParty
     }
     class Warp {
-        @JvmField @ConfigOption(name = "Warp reminder", desc = "Alert and /p warp after the delay, before entry closes.")
+        @JvmField @ConfigOption(name = "Sparkle warping", desc = "Sparkle warping is a method to enable players to get sparkling critters without using a ticket. The best way to do this is to have all players in the party who are \"leeching\" to leave skyblock and wait in the prototype lobby. Then, when you have auto warping turned on via /warping command toggle, it will auto warp the players in the prototype lobby into your safari run at the set delayed time. The delay time depends on the user, but best results are when you set the timer to 23 seconds. Make sure all players are in the prototype lobby before the warp or else some players may not get into the run.")
+        @StandaloneDescription var description = false
+        @JvmField @ConfigOption(name = "Auto-party", desc = "Invite Warp List players, one every 2s, before the scheduled warp. /autoparty toggles.")
+        @ConfigEditorBoolean var autoParty = ConfigManager.autoParty
+        @JvmField @ConfigOption(name = "Warp List", desc = "Names to invite for each Sparkling critter.")
+        @ConfigEditorButton(runnableId = 12, buttonText = "Warp List") var list = false
+        @JvmField @ConfigOption(name = "Auto warping", desc = "/warping toggles. Timer starts when you leave the boat.")
         @ConfigEditorBoolean var enabled = ConfigManager.warpAlertsEnabled
         @JvmField @ConfigOption(name = "Delay in seconds", desc = "1–86,400 seconds.")
         @ConfigEditorText var delay = ConfigManager.warpDelaySeconds.toString()
         @JvmField @ConfigOption(name = "Save delay", desc = "")
         @ConfigEditorButton(runnableId = 6, buttonText = "Save delay") var saveDelay = false
-        @JvmField @ConfigOption(name = "Default delay", desc = "Reset to 25 seconds.")
-        @ConfigEditorButton(runnableId = 5, buttonText = "Reset to 25s") var reset = false
+        @JvmField @ConfigOption(name = "Default delay", desc = "Reset to 23 seconds.")
+        @ConfigEditorButton(runnableId = 5, buttonText = "Reset to 23s") var reset = false
     }
     class Safari {
         @JvmField @ConfigOption(name = "Safari entry", desc = "") @Accordion val entry = SafariEntrySettings()
@@ -268,6 +274,12 @@ class SafariSettings : Config() {
         var ticketPreference = ConfigManager.safariTicketPreference
     }
     class SafariCaptureSettings {
+        @JvmField @ConfigOption(name = "Doomspiral capsule throw tick timer", desc = "Shows within 10 blocks of Doomspiral. Move and resize with /sm gui.")
+        @ConfigEditorBoolean var doomTimer = ConfigManager.doomspiralThrowTimer
+        @JvmField @ConfigOption(name = "Doomspiral emergence ticks", desc = "Default: 98 server ticks.")
+        @ConfigEditorSlider(minValue = 1f, maxValue = 600f, minStep = 1f) var doomTicks = ConfigManager.doomspiralEmergenceTicks
+        @JvmField @ConfigOption(name = "Doomspiral throw lead ticks", desc = "Show THROW NOW this many ticks early for capsule travel. Depends on distance.")
+        @ConfigEditorSlider(minValue = 0f, maxValue = 40f, minStep = 1f) var doomLead = ConfigManager.doomspiralThrowLeadTicks
         @JvmField @ConfigOption(name = "Capture projections", desc = "Show capsule paths and estimated hits. Turn view bobbing off.")
         @ConfigEditorBoolean var experimentalCapsulePath = ConfigManager.experimentalCapsulePath
         @JvmField @ConfigOption(name = "Capsule path width", desc = "")
@@ -375,19 +387,20 @@ class SafariSettings : Config() {
                 client.player?.sendSystemMessage(LocalChat.component(CommandHelp.localLines().joinToString("\n")))
             }
             4 -> client.execute { client.smSetScreen(ApiKeyScreen(client.smScreen)) }
-            5 -> { warp.delay = "25"; saveDelay() }
+            5 -> { warp.delay = "23"; saveDelay() }
             6 -> saveDelay()
             7 -> saveSound()
             8 -> { apply(); client.execute { client.smSetScreen(CatchCountScreen(client.smScreen)) } }
             9 -> { apply(); if (saveSparklingSound()) SparklingEncounters.playSound(client) }
             10 -> { apply(); client.execute { client.smSetScreen(HistoryScreen(client.smScreen)) } }
+            12 -> { apply(); client.execute { client.smSetScreen(net.johnceo.sparklingmutuals.alerts.WarpListScreen(client.smScreen)) } }
             11 -> { apply(); client.execute {
                 client.smSetScreen(null)
                 LogImporter.runImport(LogImporter.defaultLogs())
             } }
         }
     }
-    override fun isValidRunnable(id: Int) = id in 1..11
+    override fun isValidRunnable(id: Int) = id in 1..12
     private fun saveDelay() {
         val seconds = warp.delay.trim().toIntOrNull()
         if (seconds == null || seconds !in 1..86400) feedback("Enter a delay from 1 to 86400 seconds.")
@@ -416,7 +429,7 @@ class SafariSettings : Config() {
         if (modes.unique.hideCritters || modes.unique.hideDrops) modes.unique.profitable=false
         if (modes.sparkling.hideCritters || modes.sparkling.hideDrops) modes.sparkling.profitable=false
         if (warp.enabled != ConfigManager.warpAlertsEnabled) AlertManager.toggleAlert()
-        val changes = listOf(ConfigManager::autoBiomeReports to party.biomeReports,
+        val changes = listOf(ConfigManager::doomspiralThrowTimer to safari.capture.doomTimer, ConfigManager::autoParty to warp.autoParty, ConfigManager::autoBiomeReports to party.biomeReports,
             ConfigManager::uniqueHideCritterEsp to modes.unique.hideCritters, ConfigManager::uniqueHideFloorDropEsp to modes.unique.hideDrops,
             ConfigManager::fullClearHideCritterEsp to modes.fullClear.hideCritters, ConfigManager::fullClearHideFloorDropEsp to modes.fullClear.hideDrops,
             ConfigManager::sparklingHideCritterEsp to modes.sparkling.hideCritters, ConfigManager::sparklingHideFloorDropEsp to modes.sparkling.hideDrops, ConfigManager::announceStartingItems to party.startingItems, ConfigManager::uniqueHotspotAnnouncer to modes.unique.hotspot, ConfigManager::fullClearHotspotAnnouncer to modes.fullClear.hotspot, ConfigManager::sparklingHotspotAnnouncer to modes.sparkling.hotspot, ConfigManager::phantomleafSolver to miscEndgame.phantomleafSolver, ConfigManager::highlightTeammates to safari.highlightTeammates, ConfigManager::showTeammateNames to safari.showTeammateNames, ConfigManager::profitableShardEsp to modes.unique.profitable, ConfigManager::sparklingProfitableShardEsp to modes.sparkling.profitable, ConfigManager::partyCommandsEnabled to party.enabled, ConfigManager::downtimeCommand to party.downtime, ConfigManager::useCloudApi to api.cloud, ConfigManager::hideHauntedPaintings to safari.paintings,
@@ -437,7 +450,8 @@ class SafariSettings : Config() {
         val customizationChanged = customization.apply()
         val distance = ConfigManager.validCapsuleDistance(safari.capsuleHideDistance)
         val pathWidth = ConfigManager.validCapsulePathWidth(safari.capsulePathWidth)
-        val generalChanged = ConfigManager.waterOpacity != safari.visibility.waterOpacity.coerceIn(0, 100) || ConfigManager.capsulePathWidth != pathWidth || espChanged || customizationChanged || changes.any { (property, value) -> property.get() != value } ||
+        val generalChanged = ConfigManager.doomspiralEmergenceTicks != safari.capture.doomTicks.coerceIn(1, 600) ||
+            ConfigManager.doomspiralThrowLeadTicks != safari.capture.doomLead.coerceIn(0, 40) || ConfigManager.waterOpacity != safari.visibility.waterOpacity.coerceIn(0, 100) || ConfigManager.capsulePathWidth != pathWidth || espChanged || customizationChanged || changes.any { (property, value) -> property.get() != value } ||
             ConfigManager.safariTicketPreference != safari.ticketPreference || ConfigManager.showWhere != tracking.where || ConfigManager.capsuleHideDistance != distance ||
             ConfigManager.runCompleteVolume != safari.alerts.runVolume.coerceIn(0, 100) || ConfigManager.sparklingSoundVolume != safari.alerts.volume.coerceIn(0, 100)
         changes.forEach { (property, value) -> property.set(value) }
@@ -446,6 +460,8 @@ class SafariSettings : Config() {
         ConfigManager.capsuleHideDistance = distance
         ConfigManager.waterOpacity = safari.visibility.waterOpacity
         ConfigManager.capsulePathWidth = pathWidth
+        ConfigManager.doomspiralEmergenceTicks = safari.capture.doomTicks.coerceIn(1, 600)
+        ConfigManager.doomspiralThrowLeadTicks = safari.capture.doomLead.coerceIn(0, 40)
         ConfigManager.runCompleteVolume = safari.alerts.runVolume.coerceIn(0, 100)
         ConfigManager.sparklingSoundVolume = safari.alerts.volume.coerceIn(0, 100)
         if (generalChanged) ConfigManager.save()

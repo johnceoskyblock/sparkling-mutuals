@@ -68,7 +68,9 @@ object SparklingMutuals : ModInitializer {
         ApiKeyCommand.register()
         SparklingCommand.register()
         SparklingLookup.register()
+        net.johnceo.sparklingmutuals.safari.DoomspiralThrowTimer.register()
         AlertCommand.register()
+        net.johnceo.sparklingmutuals.alerts.SparkleAutoParty.register()
     }
 
     private fun registerFeatures() {
@@ -90,7 +92,6 @@ object SparklingMutuals : ModInitializer {
         TeammateEsp.register()
         SafariIsland.register()
         SafariManagerGuard.register()
-        net.johnceo.sparklingmutuals.safari.shots.ShotRecorder.register()
         CapsulePreview.register()
     }
 
@@ -107,13 +108,16 @@ object SparklingMutuals : ModInitializer {
             SafariTracking.render(graphics)
             SparklingEncounters.render(graphics)
             SmallAlerts.render(graphics)
+            net.johnceo.sparklingmutuals.safari.DoomspiralThrowTimer.render(graphics)
             net.johnceo.sparklingmutuals.hud.MaxWin.render(graphics)
         }
     }
 
     private fun onClientTick(client: Minecraft) {
+        net.johnceo.sparklingmutuals.safari.DoomspiralThrowTimer.tick(client)
         JoinWelcome.tick(client)
         PartyManager.onClientTick(client)
+        net.johnceo.sparklingmutuals.alerts.SparkleAutoParty.tick(client)
         PartyCommands.onClientTick(client)
         ContestTracker.onClientTick(client)
         HoneyHives.tick(client)
@@ -138,17 +142,16 @@ object SparklingMutuals : ModInitializer {
         SafariDowntime.onClientTick(client)
         SafariManagerGuard.onClientTick(client)
         net.johnceo.sparklingmutuals.safari.automation.SafariTicketSelect.tick(client)
-        net.johnceo.sparklingmutuals.safari.shots.ShotRecorder.tick(client)
         CapsulePreview.tick(client)
     }
 
     private fun resetSession() {
         net.johnceo.sparklingmutuals.safari.ClearWater.reset()
         net.johnceo.sparklingmutuals.hud.MaxWin.reset()
+        net.johnceo.sparklingmutuals.safari.DoomspiralThrowTimer.reset()
         JoinWelcome.reset()
         PhantomleafSolver.reset()
         CapsulePreview.reset()
-        net.johnceo.sparklingmutuals.safari.shots.ShotRecorder.disconnect()
         PartyCommands.reset()
         PartyManager.reset()
         SafariSparklingMode.reset()

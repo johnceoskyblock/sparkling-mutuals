@@ -57,7 +57,8 @@ enum class SafariHud(private val defaultLabel: String, val layout: HudLayout) {
     BIRD_FOOD("All Bird Food alert", HudLayout(.30f, .18f, 1.5f)),
     INCENSE("All Incense alert", HudLayout(.34f, .26f, 1.5f)),
     RUN_COMPLETE("Run completion alert", HudLayout(.35f, .42f, 1.5f)),
-    WARP("Warp reminder", HudLayout(.37f, .34f, 1.5f));
+    WARP("Warping Now", HudLayout(.37f, .34f, 1.5f)),
+    DOOM_THROW("Doomspiral throw timer", HudLayout(.40f, .56f, 1.5f));
     val label get() = if (this == MISSING && net.johnceo.sparklingmutuals.config.ConfigManager.sparklingMode)
         "Unchecked critters" else defaultLabel
     companion object {

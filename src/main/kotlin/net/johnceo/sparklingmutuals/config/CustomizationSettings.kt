@@ -139,6 +139,7 @@ open class AppearanceSettingsGroup {
 
 class TrackingAppearanceSettings(private val selection: () -> String) : AppearanceSettingsGroup() {
     private fun panel(id: String) = PanelAppearanceSettings(AppearanceConfig.panels.getValue(id), selection)
+    @JvmField @ConfigOption(name = "Doomspiral throw timer HUD", desc = "") @Accordion val doomThrow = panel("doom_throw")
     @JvmField @ConfigOption(name = "Progress HUD", desc = "") @Accordion val progress = panel("progress")
     @JvmField @ConfigOption(name = "Missing panel HUD", desc = "") @Accordion val missing = panel("missing")
     @JvmField @ConfigOption(name = "Biome captures HUD", desc = "") @Accordion val captures = panel("captures")
@@ -155,7 +156,7 @@ class AlertAppearanceSettings(private val selection: () -> String) : AppearanceS
     @JvmField @ConfigOption(name = "Run completion alert HUD", desc = "") @Accordion val runComplete = panel("run_complete")
     @JvmField @ConfigOption(name = "Run completion text color", desc = "") @Accordion val runCompleteText = ColorChoice(
         { AppearanceConfig.runCompleteColor }, { AppearanceConfig.runCompleteColor = it }, selection)
-    @JvmField @ConfigOption(name = "Warp reminder HUD", desc = "") @Accordion val warp = panel("warp")
+    @JvmField @ConfigOption(name = "Warping HUD", desc = "") @Accordion val warp = panel("warp")
 }
 
 class WaypointAppearanceSettings(private val selection: () -> String) : AppearanceSettingsGroup() {

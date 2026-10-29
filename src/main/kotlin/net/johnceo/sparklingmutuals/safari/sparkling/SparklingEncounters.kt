@@ -68,6 +68,7 @@ object SparklingEncounters {
         if (banner?.let { it.name == name || it.unknown && it.id in ids } == true) banner = null
     }
     fun observe(id: UUID, name: String, biome: SafariBiome, pos: BlockPos, unknown: Boolean = false) {
+        if (!unknown) net.johnceo.sparklingmutuals.alerts.SparkleAutoParty.detected(name)
         val where = "${biome.label} ${pos.x} ${pos.y} ${pos.z}"
         val notice = SparklingNotice(id, name, where, unknown)
         if (memory.alert(id, ConfigManager.sparklingAlert, name)) {
