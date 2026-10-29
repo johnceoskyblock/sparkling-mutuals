@@ -20,7 +20,7 @@ class GimmiegoldSparklingCheck {
     private fun reopenDemand() { validated = false; seenAtCapture.clear() }
     /** Uncollected slots and unused coins both remain work; loading is not a zero count. */
     val leftToUse: Int? get() = held?.takeIf { floors.isNotEmpty() }?.let {
-        maxOf(remaining + it, (required - population).coerceAtLeast(0))
+        remaining + it
     }
 
     /** A disappeared marker is collected only when its location can still be observed. */

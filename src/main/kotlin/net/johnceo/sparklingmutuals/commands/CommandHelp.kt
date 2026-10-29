@@ -17,7 +17,7 @@ object CommandHelp {
         PartyCommandKind.PB_CAVERN to "Cavern biome PB (IGN for observed unique; IGN party for shared)",
         PartyCommandKind.PB_ICY to "Icy biome PB (IGN for observed unique; IGN party for shared)",
         PartyCommandKind.PB_HAUNTED to "Haunted biome PB (IGN for observed unique; IGN party for shared)",
-        PartyCommandKind.MISSING_RUN to "What's left in your biome (or c/f/i/h; responders must be there)",
+        PartyCommandKind.MISSING_RUN to "Known tasks for your biome at 30s (or c/f/i/h)",
         PartyCommandKind.HELP to "Command list"
     )
     private val local = listOf(

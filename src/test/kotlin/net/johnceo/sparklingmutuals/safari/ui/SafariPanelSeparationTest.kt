@@ -38,9 +38,9 @@ class SafariPanelSeparationTest {
             assertFalse(run.uniqueComplete(name, party), "source gates still apply to progress for $name")
         }
         val rows = SafariPanels.missing(run, SafariBiome.FOREST, true, 3, party = party).rows
-        assertEquals("9", rows.first { it.label == "Bird food left to use" }.value)
-        run.birds.inventory(listOf("Bag of Seeds" to 2))
-        run.birds.scan(2, 7)
+        assertEquals("?", rows.first { it.label == "Bird food left to use" }.value)
+        run.inventoryEvidence(listOf("Bag of Seeds" to 2), 10000)
+        run.scanBirdSources(2)
         assertEquals("4", SafariPanels.missing(run, SafariBiome.FOREST, true, 3, party = party).rows
             .first { it.label == "Bird food left to use" }.value)
     }

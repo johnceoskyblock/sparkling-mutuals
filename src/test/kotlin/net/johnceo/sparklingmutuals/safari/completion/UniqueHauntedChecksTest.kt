@@ -57,7 +57,7 @@ class UniqueHauntedChecksTest {
         assertTrue(complete(run, "Gazer", state), "unloading must retain qualified checks")
     }
 
-    @Test fun `coin footer includes uncollected floor slots held coins and unfulfilled party extras`() {
+    @Test fun `coin footer counts local floor and held coins separately from party population demand`() {
         val state = party("Gimmiegold")
         val run = SafariRun(0).apply { visitBiome(SafariBiome.HAUNTED); localPlayer("Me") }
         run.inventoryEvidence(emptyList(), 0)
@@ -77,7 +77,8 @@ class UniqueHauntedChecksTest {
         assertEquals(0, run.coinsLeftToUse)
         assertNull(footer(run, state, "Coins left to use"))
         run.resources.partyNotice("Party > Friend: [SM] Starting items: 2x Shining Coin")
-        assertEquals("2", footer(run, state, "Coins left to use")?.value)
+        assertEquals(0, run.coinsLeftToUse)
+        assertEquals("0", footer(run, state, "Coins left to use")?.value)
         assertFalse(complete(run, "Gimmiegold", state))
         run.scanGimmiegolds(List(6) { UUID.randomUUID() }, true)
         assertTrue(complete(run, "Gimmiegold", state))

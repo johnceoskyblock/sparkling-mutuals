@@ -63,7 +63,9 @@ class UniqueCompletionTest {
         assertTrue(complete(run, "Bluebird", state))
         repeat(10) { run.birds.pickup("FLOOR DROP! Bag of Seeds", SafariBiome.FOREST) }
         run.sparklingChecks.scan(SafariBiome.FOREST, 3.0, 47.0, emptyList(), nestsChecked = true, birdsSpawned = run.birds.accountedFeedings >= run.birds.feedingTarget)
-        assertFalse(complete(run, "Bluebird", state), "new food needs fresh population evidence")
+        assertTrue(complete(run, "Bluebird", state), "capture-ledger demand does not reopen local Sparkling food proof")
+        run.inventoryEvidence(listOf("Bag of Seeds" to 1), 11000)
+        assertFalse(complete(run, "Bluebird", state), "newly held local food does reopen the source requirement")
     }
     @Test fun `Unique local completion announces once and never echoes remote completion`() {
         val run = SafariRun(0); val state = party()
@@ -128,13 +130,13 @@ class UniqueCompletionTest {
         assertFalse(rows.any { it.label == "Snoozle" })
         assertTrue(rows.any { it.label == "Mounds to break" })
     }
-    @Test fun `Unique Icy and Haunted announce done when local conditions are met`() {
+    @Test fun `Unique Haunted reports completion while caught Wumpa suppresses redundant Icy report`() {
         for (biome in listOf(SafariBiome.ICY, SafariBiome.HAUNTED)) {
             val run = SafariRun(0)
             run.visitBiome(biome)
             biome.critters.forEach { caught(run, it.name) }
             run.updateCaptureEvidence(biome, emptySet(), true)
-            assertEquals(if (biome == SafariBiome.ICY) "id" else "hd", run.completion.announcement(run, biome, SafariMode.UNIQUE, party()))
+            assertEquals(if (biome == SafariBiome.ICY) null else "hd", run.completion.announcement(run, biome, SafariMode.UNIQUE, party()))
         }
     }
 }

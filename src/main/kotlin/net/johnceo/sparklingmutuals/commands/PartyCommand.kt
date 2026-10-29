@@ -38,8 +38,8 @@ data class PartyCommand(val kind: PartyCommandKind, val ign: String = "", val du
         else -> mode != SafariMode.SPARKLING
     }
     /** `!m` describes the run in progress, so only clients inside the Safari answer it. */
-    fun answerable(inSafari: Boolean = SafariAssist.inSafari, currentBiome: SafariBiome? = SafariAssist.biome) =
-        kind != PartyCommandKind.MISSING_RUN || inSafari && currentBiome != null && (biome == null || biome == currentBiome)
+    fun answerable(inSafari: Boolean = SafariAssist.inSafari, currentBiome: SafariBiome? = SafariAssist.biome, responderBiome: SafariBiome? = net.johnceo.sparklingmutuals.safari.SafariTracking.ledger.current?.biomeAtThirtySeconds) =
+        kind != PartyCommandKind.MISSING_RUN || inSafari && responderBiome != null && (biome == null || biome == responderBiome)
     // Streak replies describe each responding client; explicit PB queries retain their requested IGN.
     fun forResponder(name: String) = if (isSince || pbName != null && !trackedPlayer)
         copy(ign = name) else this

@@ -21,10 +21,18 @@ class SafariCompletionEvents {
     }
     /** Completion feedback belongs to each client even when a peer sent the shared biome report first. */
     fun armSharedClearReminder(run: SafariRun, biome: SafariBiome, mode: SafariMode, party: PartySparklingState, now: Long) {
-        if ((biome in announced || run.uniqueReportReceived(biome)) && locallyComplete(run, biome, mode, party))
+        if ((biome in announced || run.uniqueReportReceived(biome) || biome == SafariBiome.ICY && run.count("Wumpa") > 0) && locallyComplete(run, biome, mode, party))
             run.partyResourceReminders.afterBiomeReport(now)
     }
-    fun announcement(run: SafariRun, biome: SafariBiome, mode: SafariMode, party: PartySparklingState): String? {
+    fun reportAllowed(run: SafariRun, biome: SafariBiome, mode: SafariMode, party: PartySparklingState): Boolean {
+        if (biome != SafariBiome.ICY || mode == SafariMode.FULL_CLEAR) return true
+        if (run.count("Wumpa") > 0) return false
+        if (mode == SafariMode.SPARKLING)
+            return party.ready && !party.needs("Wumpa") && biome.critters.any { it.name != "Wumpa" && party.needs(it.name) }
+        return true
+    }
+    fun announcement(run: SafariRun, biome: SafariBiome, mode: SafariMode, party: PartySparklingState, enabled: Boolean = true): String? {
+        if (!enabled || !reportAllowed(run,biome,mode,party)) { pending.remove(biome); return null }
         if (!run.canReportBiome(biome, party)) { pending.remove(biome); return null }
         if (run.lastBiome != biome) { pending.remove(biome); return null }
         if ((mode == SafariMode.UNIQUE || biome == SafariBiome.FOREST || biome == SafariBiome.HAUNTED) &&

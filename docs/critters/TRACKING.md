@@ -147,7 +147,14 @@ Each client can send one unused starting-item reminder batch per run after a loc
 
 Every actual critter, including native Minecraft mobs, must have an associated current species label before contributing to remaining-capture observations or local population targets. A texture, movement, or registered entity alone cannot establish that it still needs capturing. Label identity persists, with a one-second packet grace; missing labels expire rather than blocking a biome forever. This does not infer a capture: minimum capture counts and existing coverage/source requirements still apply. Rockmite mound displays, bee nests, and Snoozle walls remain separate structure sources. Existing explicit visual-only cooldown/distance helpers do not supply remaining-capture evidence.
 
+## Missing command ownership and output
+
+!m replies only come from a client assigned to the requested biome at the run's 30-second mark. That assignment persists after travel; before the checkpoint or when the checkpoint was not observed, this client does not reply. Bare !m selects the responder's checkpoint biome. Sparkling source notes are limited to known remaining mounds, Snoozle walls, unopened Gemzie chamber, bird food, bee nests, Gazers, and coins, filtered to party needs. Icy has no extra Sparkling notes. Unique prefixes the uncaught type list with Uniques left to capture; Full Clear keeps positive minimum-capture deficits. Unknown counts and generic check-spawns/loading notes are omitted.
+
 ## Last updated
+
+2026-10-29 - Simplified known-source replies and local Sparkling source requirements.
+
 
 2026-10-28 - Required positive current labels for remaining-capture evidence Safari-wide.
 

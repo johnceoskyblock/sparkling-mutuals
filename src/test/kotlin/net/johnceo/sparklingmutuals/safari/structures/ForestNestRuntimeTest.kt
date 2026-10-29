@@ -33,7 +33,7 @@ class ForestNestRuntimeTest {
             birds.pickup("FLOOR DROP! $food", SafariBiome.FOREST)
         }
         repeat(9) { birds.renderBird("Bluebird") }
-        birds.inventory(emptyList())
+        inventoryEvidence(emptyList(), 10000)
         scanRenderedBirds()
         updateCaptureEvidence(SafariBiome.FOREST, emptySet(), false)
     }

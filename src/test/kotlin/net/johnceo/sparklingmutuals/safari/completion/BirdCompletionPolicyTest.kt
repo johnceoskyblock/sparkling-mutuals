@@ -75,13 +75,13 @@ class BirdCompletionPolicyTest {
         run.inventoryEvidence(listOf("Yogi Berry" to 1), 20000)
         assertFalse(run.fullClearComplete("Bluebird")); assertFalse(run.sparklingComplete("Macaw", state))
     }
-    @Test fun `unused starting food notices add deduplicated expected spawns and invalidate older fd`() {
+    @Test fun `party food notices keep capture demand but do not invalidate local or remote Sparkling proof`() {
         val run = run(SafariBiome.CAVERN); val state = party()
         run.partyFullClear("Party > Friend: fd")
         repeat(3) { run.resources.partyNotice("Party > Other: [SM] Unused starting item: 2x Yogi Berry -> Forest (Other)") }
-        assertFalse(run.sparklingComplete("Bluebird", state)); assertEquals(11, run.birds.feedingTarget)
+        assertTrue(run.sparklingComplete("Bluebird", state)); run.birdFoodLeftToUse; assertEquals(11, run.birds.feedingTarget)
         run.visitBiome(SafariBiome.FOREST)
-        run.scanBirdSources(0, live(blue = 10)); assertFalse(run.sparklingComplete("Bluebird", state))
+        run.scanBirdSources(0, live(blue = 10)); assertTrue(run.sparklingComplete("Bluebird", state))
         run.scanBirdSources(0, live(blue = 11)); assertTrue(run.sparklingComplete("Bluebird", state))
     }
     @Test fun `fd requires local spawning and no held food rather than a personal pickup quota`() {
@@ -93,6 +93,8 @@ class BirdCompletionPolicyTest {
         run.inventoryEvidence(listOf("Wriggleworm" to 1), 20000)
         assertNull(run.completion.announcement(run, SafariBiome.FOREST, SafariMode.SPARKLING, state))
         run.inventoryEvidence(emptyList(), 20000)
+        assertNull(run.completion.announcement(run, SafariBiome.FOREST, SafariMode.SPARKLING, state))
+        run.birdFoodCheck.spawn("A Bluebird was attracted to the Birdfeeder!",20001)
         run.scanBirdSources(0, live(blue = 9))
         assertEquals("fd", run.completion.announcement(run, SafariBiome.FOREST, SafariMode.SPARKLING, state))
         val late = run(SafariBiome.CAVERN)
@@ -117,16 +119,16 @@ class BirdCompletionPolicyTest {
         run.visitBiome(SafariBiome.FOREST)
         run.updateCaptureEvidence(SafariBiome.FOREST, emptySet(), false)
         run.scanBirdSources(0, live(blue = 10))
-        assertNull(run.completion.announcement(run, SafariBiome.FOREST, SafariMode.SPARKLING, party()))
-        run.scanBirdSources(0, live(blue = 11))
         assertEquals("fd", run.completion.announcement(run, SafariBiome.FOREST, SafariMode.SPARKLING, party()))
+        run.scanBirdSources(0, live(blue = 11))
+        assertNull(run.completion.announcement(run, SafariBiome.FOREST, SafariMode.SPARKLING, party()))
     }
     @Test fun `outside captures can account for extra food after an older fd without treating fd as captures`() {
         val run = run(SafariBiome.CAVERN)
         run.partyFullClear("Party > Friend: fd")
         run.resources.partyNotice("Party > Other: [SM] Use: 1x Yogi Berry")
         catch(run, "Bluebird", 9)
-        assertFalse(run.sparklingComplete("Bluebird", party()))
+        assertTrue(run.sparklingComplete("Bluebird", party()))
         catch(run, "Bluebird")
         assertTrue(run.sparklingComplete("Bluebird", party()))
         assertTrue(run.fullClearComplete("Bluebird"))
@@ -189,7 +191,7 @@ class BirdCompletionPolicyTest {
         run.scanBirdSources(0, qualified = false)
         assertTrue(run.birdSpawnsComplete())
         run.resources.partyNotice("Party > Other: [SM] Use: 1x Yogi Berry")
-        assertFalse(run.birdSpawnsComplete(), "new demand cannot be waived by the old nine-bird proof")
+        assertTrue(run.birdSpawnsComplete(), "party notices do not reopen local Sparkling food requirements")
         catch(run, "Bluebird")
         run.scanBirdSources(0)
         assertTrue(run.birdSpawnsComplete())

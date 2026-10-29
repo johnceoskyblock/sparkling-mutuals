@@ -134,6 +134,9 @@ Existing configs without the new keys initialize every drop-type and party-membe
 
 ## Last updated
 
+2026-10-29 - Announce starting quest items also controls post-completion Need to use party reminders. Turning it off suppresses both party messages; local tracking remains active.
+
+
 2026-10-28 - Condensed Need to use reminders to Someone needs, with each species listed once and no name-resolution delay.
 
 

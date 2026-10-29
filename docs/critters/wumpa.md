@@ -79,7 +79,14 @@ Population guarantees and capsule success/escape claims from supplied notes were
 
 The exact server message `The Wumpa has awoken.` or a confirmed Wumpa catch proves at least one shared capture of every other Icy species. Missing individual catch events receive a derived lower bound of one, shown as >=1 in the capture panel. Real catch messages replace this inferred minimum rather than adding another capture. This proof supports Unique completion but never personal catches, catcher attribution, fabricated catch/history events, or Full Clear quantities above one. Awakening does not count as catching Wumpa.
 
+## Mode visuals and automatic reports
+
+Unique and Sparkle modes suppress automatic id after Wumpa is caught. Sparkle mode sends id only when no party member needs Wumpa and another Icy species needs checking. Full Clear retains ordinary biome reporting. Local supply reminders can still follow locally completed Icy work even when the redundant id is suppressed.
+
 ## Last updated
+
+2026-10-28 - Added mode-specific visual ESP hides, an auto biome report setting, and non-redundant Icy announcements.
+
 
 2026-10-28 - Added Wumpa awakening/capture proof for missing shared Icy capture events.
 

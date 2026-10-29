@@ -83,6 +83,7 @@ object SafariTracking {
         }
         if (SafariAssist.inSafari) {
             ensureRun(client)
+            ledger.current?.birdFoodCheck?.spawn(text,now)
             ledger.current?.recordWumpaSpawn(text)
             ledger.current?.sparklingBroadcast(text, now)
             ledger.current?.entry?.chat(text)
