@@ -17,7 +17,7 @@ class SparklingChecks(private val clock: () -> Long = System::currentTimeMillis)
     private val completed = mutableSetOf<String>()
     private val partyCompleted = mutableSetOf<String>()
     fun locallyChecked(name: String) = if (requiresCapture(name)) (captured[name] ?: 0) > 0
-        else name in completed || name == "Gemzie" && gemzieChamberChecked()
+        else name in completed || name == "Gazer" && checkCount(name) >= 4 || name == "Gemzie" && gemzieChamberChecked()
     fun partyChecked(name: String) = name in partyCompleted
     fun cavernSourceEvidence(moundsCleared: Boolean, wallsCleared: Boolean) {
         if (moundsCleared) completed.add("Rockmite")
@@ -64,6 +64,7 @@ class SparklingChecks(private val clock: () -> Long = System::currentTimeMillis)
     // Remember qualified UUID sightings for the run. Capture baselines prevent counting
     // a previously seen critter again when its later catch arrives without a UUID.
     private val seenAtCaptureCount = mutableMapOf<String, MutableMap<UUID, Int>>()
+    private var gazerPopulationChecked = 0
     private fun retainedCheckCount(name: String): Int {
         val catches = captured[name] ?: 0
         val firstSeen = seenAtCaptureCount[name].orEmpty().values
@@ -71,8 +72,11 @@ class SparklingChecks(private val clock: () -> Long = System::currentTimeMillis)
             baseline + firstSeen.count { it >= baseline }
         } ?: 0)
     }
-    fun checkCount(name: String) = if (name == "Gemzie" && gemzieChamberChecked()) maxOf(3, retainedCheckCount(name))
-        else retainedCheckCount(name)
+    fun checkCount(name: String) = when {
+        name == "Gazer" -> maxOf(gazerPopulationChecked, retainedCheckCount(name)).coerceAtMost(4)
+        name == "Gemzie" && gemzieChamberChecked() -> maxOf(3, retainedCheckCount(name))
+        else -> retainedCheckCount(name)
+    }
     fun localScan(biome: SafariBiome) { partyCompleted.removeAll(biome.critters.map { it.name }.toSet()) }
     fun reenter(biome: SafariBiome) {
         if (biome == SafariBiome.HAUNTED) { goldEnvironmentReady = false; confirmedCoinSource = false }
@@ -117,7 +121,13 @@ class SparklingChecks(private val clock: () -> Long = System::currentTimeMillis)
                 seenAtCaptureCount.getOrPut(name) { mutableMapOf() }.putIfAbsent(uuid, captured[name] ?: 0)
             }
         }
-        fun total(name: String) = retainedCheckCount(name)
+        if (biome == SafariBiome.HAUNTED) {
+            // A fast catch can arrive before that Gazer ever enters a scan. Current uncaptured
+            // models are disjoint from confirmed captures; historical UUIDs alone cannot prove that.
+            gazerPopulationChecked = maxOf(gazerPopulationChecked,
+                (captured["Gazer"] ?: 0) + observed["Gazer"].orEmpty().size).coerceAtMost(4)
+        }
+        fun total(name: String) = if (name == "Gazer") checkCount(name) else retainedCheckCount(name)
         fun enough(name: String, amount: Int = 1) = total(name) >= amount
         fun check(name: String, ready: Boolean) { if (ready) completed.add(name) else completed.remove(name) }
         SafariCompletionZones.forBiome(biome).forEach { (name, zone) ->

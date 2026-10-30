@@ -21,6 +21,32 @@ class GazerRetainedChecksTest {
     }
     private fun scan(run: SafariRun, vararg ids: UUID) = run.sparklingChecks.scan(SafariBiome.HAUNTED,
         -4.0, -64.0, ids.map { "Gazer" to it })
+    @Test fun `instant unobserved catch plus three previously seen live Gazers completes four checks`() {
+        ConfigManager.init(dir)
+        val run = SafariRun(0)
+        val live = List(3) { UUID.randomUUID() }
+        scan(run, *live.toTypedArray())
+        assertEquals(3, run.sparklingChecks.checkCount("Gazer"))
+        run.record(SafariCatch(SafariRoster.named("Gazer")!!))
+        scan(run, *live.toTypedArray())
+        assertEquals(4, run.sparklingChecks.checkCount("Gazer"))
+        assertTrue(run.sparklingComplete("Gazer", party()))
+        assertEquals("4/4 checked", SafariPanels.fixedCounter("Gazer", run, SafariMode.SPARKLING, party()))
+        scan(run)
+        run.sparklingChecks.reenter(SafariBiome.HAUNTED)
+        scan(run)
+        assertEquals(4, run.sparklingChecks.checkCount("Gazer"))
+        assertFalse(run.captureComplete("Gazer"), "Four checks must not fabricate four captures")
+    }
+    @Test fun `one capture and only two live Gazers do not prove all four`() {
+        val run = SafariRun(0)
+        val live = List(3) { UUID.randomUUID() }
+        scan(run, *live.toTypedArray())
+        run.record(SafariCatch(SafariRoster.named("Gazer")!!))
+        scan(run, live[1], live[2])
+        assertEquals(3, run.sparklingChecks.checkCount("Gazer"))
+        assertFalse(run.sparklingComplete("Gazer", party()))
+    }
     @Test fun `four Gazers seen separately retain four checked when unloaded and after biome reentry`() {
         val run = SafariRun(0)
         val ids = List(4) { UUID.randomUUID() }

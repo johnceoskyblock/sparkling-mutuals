@@ -89,11 +89,11 @@ Outside-Forest Sparkling checks accept fd while requiring no held food. Later pa
 
 ## Local Sparkling food proof
 
-Sparkling bird checks use Forest floor-food markers and this client's inventory, without party-reported starting food or inferred teammate food increasing that source demand. After an inventory decrease of N food, wait for N exact bird-attracted system messages. Two Macaws is one food-use confirmation, not two. Matching messages just before the inventory packet are retained briefly. With no personal food-use batch observed, the existing late-entry proof of nine accounted feedings remains available. Own capture counts and Full Clear capture bookkeeping remain separate.
+Sparkling bird checks use Forest floor-food markers and this client's inventory, without party-reported starting food or inferred teammate food increasing that source demand. After an inventory decrease of N food, wait for N exact bird-attracted system messages. Two Macaws is one food-use confirmation, not two. Matching messages just before the inventory packet are retained briefly. With no personal food-use batch observed, the existing late-entry proof of nine accounted feedings remains available. If a spawn announcement is missed, a fresh qualified Forest scan can also finish the check when shared captures plus currently rendered birds cover all known feeding opportunities (nine floor foods plus known starting extras), with no floor or inventory food left. Macaw pairs count as one feeding. This fallback never uses historical UUID totals or an out-of-radius scan. New inventory food, another consumption batch, or newly remaining floor food clears the old population proof. Verified proof otherwise survives unloading. Own capture counts and Full Clear capture bookkeeping remain separate.
 
 ## Last updated
 
-2026-10-29 - Simplified known-source replies and local Sparkling source requirements.
+2026-10-29 - Recover missed bird spawn announcements using qualified, fully accounted population evidence; log pending confirmations and the fallback target in /sm debug.
 
 
 2026-10-24 — Expanded bird population/food-use coverage to 40 blocks and added one provisional starting food for unreporting early Forest visitors, replaced by real starting reports.
