@@ -47,7 +47,7 @@ Moving controls does not rename saved keys. Collapsed groups save their current 
 
 | Numeric/text control | Default | Implemented load validation |
 | --- | --- | --- |
-| Warp delay | 23 seconds | Parsed integer clamps to 1–86400; missing/unparseable → 23. |
+| Warp delay | 25 seconds | Parsed integer clamps to 1–86400; missing/unparseable → 25. |
 | Capsule path width | 3 | Finite values clamp to 1–5; missing/unparseable/non-finite → 3. |
 | Show guide through terrain | On | Strict saved boolean; invalid/missing → on. |
 | Flying capsule distance | 2 blocks | Finite values clamp to 0.5–6; missing/unparseable/non-finite → 2. |
@@ -129,6 +129,8 @@ Startup normalizes legacy `pb.*` keys from the general file and the earlier `Spa
 Each mode dropdown has independent Hide critter ESP and Hide floor-drop ESP toggles, both off by default. They gate rendering only, including retained critter markers, and never disable scanning or requirements. Turning on either hide toggle disables that mode's profitable-critter ESP (Unique/Sparkle). Party Interactions > Auto biome reports defaults on and controls automatic fd/cd/id/hd messages without disabling progress tracking.
 
 ## Last updated
+
+2026-10-30 — Sparkle Warping uses a 25-second fresh/reset delay, Solo leader mode, empty Duo runner and Leech off. Existing saved delays stay unchanged.
 
 2026-10-29 - Fresh installations seed the maintainer-supplied JohnFounder Warp List (115 ordered name assignments). Existing configuration files keep their saved or empty lists; Auto-party remains off by default.
 

@@ -9,6 +9,24 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 
 class ConfigTest {
+    @Test fun `each new warp setting persists when changed on its own`() {
+        ConfigManager.init(dir); ContestConfig.init(dir)
+        SafariSettings().apply()
+        ConfigManager.save()
+        SafariSettings().apply { warp.mode = 1 }.apply()
+        ConfigManager.init(dir)
+        assertEquals(1, ConfigManager.sparkleWarpMode)
+        SafariSettings().apply { warp.duo = "Runner_123" }.apply()
+        ConfigManager.init(dir)
+        assertEquals("Runner_123", ConfigManager.warpDuo)
+        assertEquals(1, ConfigManager.sparkleWarpMode)
+        SafariSettings().apply { warp.leech = true }.apply()
+        ConfigManager.init(dir)
+        assertTrue(ConfigManager.leechMode)
+        SafariSettings().apply { warp.leech = false }.apply()
+        ConfigManager.init(dir)
+        assertFalse(ConfigManager.leechMode)
+    }
     @Test fun `curated defaults exclude account data and never replace existing configs`() {
         val defaults = FreshInstallDefaults.main()
         assertFalse(defaults.containsKey("apiKey"))
@@ -137,7 +155,7 @@ class ConfigTest {
         Files.writeString(dir.resolve("sparkling-mutuals.properties"), "apiKey=example-key\n")
         ConfigManager.init(dir)
         assertEquals("example-key", ConfigManager.apiKey)
-        assertEquals(23, ConfigManager.warpDelaySeconds)
+        assertEquals(25, ConfigManager.warpDelaySeconds)
         assertFalse(ConfigManager.warpAlertsEnabled)
         assertTrue(ConfigManager.partyCommandsEnabled)
     }
@@ -147,15 +165,24 @@ class ConfigTest {
         ConfigManager.init(dir)
         ConfigManager.warpAlertsEnabled = true
         ConfigManager.warpDelaySeconds = 28
+        ConfigManager.sparkleWarpMode = 1
+        ConfigManager.warpDuo = "Runner"
+        ConfigManager.leechMode = true
         ConfigManager.partyCommandsEnabled = false
         ConfigManager.save()
         ConfigManager.init(dir)
         assertTrue(ConfigManager.warpAlertsEnabled)
         assertEquals(28, ConfigManager.warpDelaySeconds)
+        assertEquals(1, ConfigManager.sparkleWarpMode)
+        assertEquals("Runner", ConfigManager.warpDuo)
+        assertTrue(ConfigManager.leechMode)
         assertFalse(ConfigManager.partyCommandsEnabled)
         Files.writeString(dir.resolve("sparkling-mutuals.properties"), "warpDelaySeconds=invalid\n")
         ConfigManager.init(dir)
-        assertEquals(23, ConfigManager.warpDelaySeconds)
+        assertEquals(25, ConfigManager.warpDelaySeconds)
+        assertEquals(0, ConfigManager.sparkleWarpMode)
+        assertEquals("", ConfigManager.warpDuo)
+        assertFalse(ConfigManager.leechMode)
     }
 
     @Test

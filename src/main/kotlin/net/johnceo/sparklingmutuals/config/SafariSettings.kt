@@ -175,20 +175,26 @@ class SafariSettings : Config() {
         @ConfigEditorBoolean var toParty = ConfigManager.achievementsToParty
     }
     class Warp {
-        @JvmField @ConfigOption(name = "Sparkle warping", desc = "Sparkle warping is a method to enable players to get sparkling critters without using a ticket. The best way to do this is to have all players in the party who are \"leeching\" to leave skyblock and wait in the prototype lobby. Then, when you have auto warping turned on via /warping command toggle, it will auto warp the players in the prototype lobby into your safari run at the set delayed time. The delay time depends on the user, but best results are when you set the timer to 23 seconds. Make sure all players are in the prototype lobby before the warp or else some players may not get into the run.")
+        @JvmField @ConfigOption(name = "Sparkle warping", desc = "Let leechers join a Safari without using a ticket. Enable /warping and leave it on: a cycle starts only when you are solo or leading a party of three or fewer. Choose Solo or Duo. After an active cycle, Solo disbands the party when you return from Safari to Torrhus. Duo keeps your /duo runner and removes the leechers. Enter the next run and leave the boat: optional Auto-party invites players from your Warp List for visible Sparkling critters during the first 19 seconds. At 19 seconds, previous leechers are invited into remaining spots. The party warps when the delay ends (25 seconds by default), even if invites filled all four spots. Runs starting with four players are left alone. Leechers can enable /leech to accept all party invites automatically, leaving their current party first. Leechers no longer need to wait in the Prototype Lobby.")
         @StandaloneDescription var description = false
-        @JvmField @ConfigOption(name = "Auto-party", desc = "Invite Warp List players, one every 2s, before the scheduled warp. /autoparty toggles.")
+        @JvmField @ConfigOption(name = "Leader mode", desc = "Solo keeps only you. Duo keeps you and your selected runner.")
+        @ConfigEditorDropdown(values = ["Solo", "Duo"]) var mode = ConfigManager.sparkleWarpMode
+        @JvmField @ConfigOption(name = "Duo runner", desc = "/duo <IGN> selects this runner and switches to Duo mode.")
+        @ConfigEditorText var duo = ConfigManager.warpDuo
+        @JvmField @ConfigOption(name = "Auto-party", desc = "Prioritize Warp List players for detected Sparklings until 19s. /autoparty toggles.")
         @ConfigEditorBoolean var autoParty = ConfigManager.autoParty
         @JvmField @ConfigOption(name = "Warp List", desc = "Names to invite for each Sparkling critter.")
         @ConfigEditorButton(runnableId = 12, buttonText = "Warp List") var list = false
         @JvmField @ConfigOption(name = "Auto warping", desc = "/warping toggles. Timer starts when you leave the boat.")
         @ConfigEditorBoolean var enabled = ConfigManager.warpAlertsEnabled
+        @JvmField @ConfigOption(name = "Leech", desc = "/leech toggles. Accept every party invite, leaving your current party first. Works independently of Auto warping.")
+        @ConfigEditorBoolean var leech = ConfigManager.leechMode
         @JvmField @ConfigOption(name = "Delay in seconds", desc = "")
         @ConfigEditorText var delay = ConfigManager.warpDelaySeconds.toString()
         @JvmField @ConfigOption(name = "Save delay", desc = "")
         @ConfigEditorButton(runnableId = 6, buttonText = "Save delay") var saveDelay = false
-        @JvmField @ConfigOption(name = "Default delay", desc = "Reset to 23 seconds.")
-        @ConfigEditorButton(runnableId = 5, buttonText = "Reset to 23s") var reset = false
+        @JvmField @ConfigOption(name = "Default delay", desc = "Reset to 25 seconds.")
+        @ConfigEditorButton(runnableId = 5, buttonText = "Reset to 25s") var reset = false
     }
     class Safari {
         @JvmField @ConfigOption(name = "Safari entry", desc = "") @Accordion val entry = SafariEntrySettings()
@@ -387,7 +393,7 @@ class SafariSettings : Config() {
                 client.player?.sendSystemMessage(LocalChat.component(CommandHelp.localLines().joinToString("\n")))
             }
             4 -> client.execute { client.smSetScreen(ApiKeyScreen(client.smScreen)) }
-            5 -> { warp.delay = "23"; saveDelay() }
+            5 -> { warp.delay = "25"; saveDelay() }
             6 -> saveDelay()
             7 -> saveSound()
             8 -> { apply(); client.execute { client.smSetScreen(CatchCountScreen(client.smScreen)) } }
@@ -428,6 +434,15 @@ class SafariSettings : Config() {
     fun apply(notifyMode: Boolean = false) {
         if (modes.unique.hideCritters || modes.unique.hideDrops) modes.unique.profitable=false
         if (modes.sparkling.hideCritters || modes.sparkling.hideDrops) modes.sparkling.profitable=false
+        val duoName=warp.duo.trim().takeIf { Regex("[A-Za-z0-9_]{1,16}").matches(it) }.orEmpty()
+        val warpConfigurationChanged = warp.mode.coerceIn(0,1) != ConfigManager.sparkleWarpMode ||
+            duoName != ConfigManager.warpDuo || warp.leech != ConfigManager.leechMode
+        if (warpConfigurationChanged) {
+            ConfigManager.sparkleWarpMode=warp.mode.coerceIn(0,1)
+            ConfigManager.warpDuo=duoName
+            ConfigManager.leechMode=warp.leech
+            net.johnceo.sparklingmutuals.alerts.SparkleWarping.configurationChanged()
+        }
         if (warp.enabled != ConfigManager.warpAlertsEnabled) AlertManager.toggleAlert()
         val changes = listOf(ConfigManager::doomspiralThrowTimer to safari.capture.doomTimer, ConfigManager::autoParty to warp.autoParty, ConfigManager::autoBiomeReports to party.biomeReports,
             ConfigManager::uniqueHideCritterEsp to modes.unique.hideCritters, ConfigManager::uniqueHideFloorDropEsp to modes.unique.hideDrops,
@@ -450,7 +465,7 @@ class SafariSettings : Config() {
         val customizationChanged = customization.apply()
         val distance = ConfigManager.validCapsuleDistance(safari.capsuleHideDistance)
         val pathWidth = ConfigManager.validCapsulePathWidth(safari.capsulePathWidth)
-        val generalChanged = ConfigManager.doomspiralEmergenceTicks != safari.capture.doomTicks.coerceIn(1, 600) ||
+        val generalChanged = warpConfigurationChanged || ConfigManager.doomspiralEmergenceTicks != safari.capture.doomTicks.coerceIn(1, 600) ||
             ConfigManager.doomspiralThrowLeadTicks != safari.capture.doomLead.coerceIn(0, 40) || ConfigManager.waterOpacity != safari.visibility.waterOpacity.coerceIn(0, 100) || ConfigManager.capsulePathWidth != pathWidth || espChanged || customizationChanged || changes.any { (property, value) -> property.get() != value } ||
             ConfigManager.safariTicketPreference != safari.ticketPreference || ConfigManager.showWhere != tracking.where || ConfigManager.capsuleHideDistance != distance ||
             ConfigManager.runCompleteVolume != safari.alerts.runVolume.coerceIn(0, 100) || ConfigManager.sparklingSoundVolume != safari.alerts.volume.coerceIn(0, 100)
