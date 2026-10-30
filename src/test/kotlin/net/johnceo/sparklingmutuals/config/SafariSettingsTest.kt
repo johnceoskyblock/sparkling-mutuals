@@ -16,11 +16,11 @@ class SafariSettingsTest {
         assertFalse(settings.party.startingItems)
         settings.party.startingItems = true
         settings.esp.teammateColor = "0:255:100:80:200"
-        assertFalse(settings.modes.unique.hotspot)
-        assertFalse(settings.modes.fullClear.hotspot)
-        assertFalse(settings.modes.sparkling.hotspot)
-        settings.modes.unique.hotspot = true
-        settings.modes.sparkling.hotspot = true
+        assertFalse(settings.party.hotspot.unique)
+        assertFalse(settings.party.hotspot.fullClear)
+        assertFalse(settings.party.hotspot.sparkling)
+        settings.party.hotspot.unique = true
+        settings.party.hotspot.sparkling = true
         settings.miria.ticketMode = 1
         settings.miria.three = false
         settings.safari.paintings = false
