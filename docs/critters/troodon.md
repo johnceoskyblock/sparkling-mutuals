@@ -75,6 +75,8 @@ Population guarantees and capsule success/escape claims from supplied notes were
 
 ## Last updated
 
+2026-10-30 — Pending captures stay matched to visible population until the model count falls, including head/capsule UUID replacements lasting beyond 2.5 seconds. This prevents a lingering captured Troodon from creating a fourth required capture.
+
 2026-10-30 — Capture-transition population protection now covers Troodon, preventing old models from increasing the three-capture target while disappearing.
 
 2026-10-27 — Personal Unique PBs exempt positively proven zero-spawn types.
