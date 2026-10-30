@@ -10,6 +10,24 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class SafariPersonalBestTest {
+    @Test fun `named self boss queries reuse personal records instead of worse observed records`() {
+        val bests=SafariPersonalBests()
+        bests.load(Properties().apply {
+            setProperty("pb.solo.wumpaMillis","48913")
+            setProperty("pb.duo.wumpaMillis","45000")
+            setProperty("pb.solo.doomspiralMillis","30000")
+            setProperty("pb.party._cj.name","_cj")
+            setProperty("pb.party._cj.times.solo.WumpaMillis","54234")
+        })
+        assertEquals("_cj's Wumpa Observed PB: 0:54.234",bests.trackedResponse("_cj","Wumpa"))
+        for (species in listOf("Wumpa","Doomspiral")) for (duo in listOf(false,true)) {
+            val reply=bests.trackedResponse("_CJ",species,duo,localName="_cj")
+            assertEquals(bests.response("_cj",species,duo),reply)
+            val command=PartyCommand.fromChat("Party > Friend: !pb ${if(species=="Wumpa") "wumpa" else "doom"} _cj${if(duo) " duo" else ""}")!!.command
+            assertTrue(command.matchesResponse(reply),reply)
+        }
+        assertEquals("_cj's Wumpa Observed PB: 0:54.234",bests.trackedResponse("_cj","Wumpa",localName="Other"))
+    }
     private fun soloRun(start: Long) = SafariRun(start).apply {
         inventoryEvidence(listOf("Soothing Incense" to 4))
         SafariBiome.ICY.critters.filter { it.name != "Wumpa" }.forEach { record(SafariCatch(it)) }

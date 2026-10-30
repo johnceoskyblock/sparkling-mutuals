@@ -198,8 +198,10 @@ class DocumentedSafariRulesTest {
     }
 
     @Test fun `additional verified population survives an unload but escape replacement adds no quota`() {
-        val run = SafariRun(0)
-        caught(run, "Foxtrot", 6)
+        var now = 0L
+        val run = SafariRun(0) { now }
+        repeat(6) { run.record(SafariCatch(SafariRoster.named("Foxtrot")!!), now) }
+        now = 3000 // The new sighting follows the capture-settling window.
         run.observePopulation(listOf("Foxtrot" to UUID.randomUUID()))
         run.updateCaptureEvidence(SafariBiome.FOREST, emptySet(), false, playerX = 3.0, playerZ = 47.0)
         assertFalse(run.captureComplete("Foxtrot"))

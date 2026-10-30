@@ -138,7 +138,7 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
     private val populationClock = checkClock
     private val settlingRemainders = mutableSetOf<String>()
     private val lastPopulationCapture = mutableMapOf<String, Long>()
-    private fun populationSettling(species: String) = species in setOf("Driftling", "Chuckwalla", "Flitter", "Shyworm") &&
+    private fun populationSettling(species: String) =
         lastPopulationCapture[species]?.let { populationClock() - it in 0..2500 } == true
     private val knownPopulation = mutableMapOf<String, Int>()
     /** Current uncaptured UUIDs, never the union of pre/post-escape identities. */
@@ -460,11 +460,10 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
         macawsInRange: Int = if ("Macaw" in speciesInRange) 1 else 0,
         playerX: Double? = null, playerZ: Double? = null, nestsPunched: Int = 0, nestsFound: Int = nestsPunched) {
         nearby[biome] = speciesInRange
-        for (name in listOf("Driftling", "Chuckwalla", "Flitter", "Shyworm")) {
-            if (SafariRoster.named(name)?.biome == biome) {
-                if (name in speciesInRange && populationSettling(name)) settlingRemainders.add(name)
-                else settlingRemainders.remove(name)
-            }
+        for (critter in biome.critters) {
+            val name = critter.name
+            if (name in speciesInRange && populationSettling(name)) settlingRemainders.add(name)
+            else settlingRemainders.remove(name)
         }
         speciesInRange.filter { it != "Macaw" && SafariRoster.named(it) != null }.forEach { name ->
             if (!populationSettling(name) && (biome in biomeReports || name in SafariFullClear.fixedCaptureTargets))
@@ -484,12 +483,14 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
                     count(name) >= SafariFullClear.minimum(name)) {
                     zoneScanConfirmed.add(name)
                     missingScanConfirmed.add(name)
+                    lastPopulationCapture.remove(name)
                 }
             }
             SafariCompletionZones.uuidMinimums.filterKeys { SafariRoster.named(it)?.biome == biome }.forEach { (name, minimum) ->
                 if (name !in speciesInRange && count(name) >= minimum) {
                     zoneScanConfirmed.add(name)
                     missingScanConfirmed.add(name)
+                    lastPopulationCapture.remove(name)
                 }
             }
         }
@@ -508,6 +509,13 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
         resources.scan(SafariBiome.FOREST, birds.accountedFeedings)
     }
     fun hasCaptureEvidence(biome: SafariBiome) = biome in nearby
+    fun captureDebug(biome: SafariBiome) = biome.critters.associate { critter ->
+        val name=critter.name
+        name to ("captured=${count(name)} minimum=${SafariFullClear.minimum(name)} known=${knownPopulation[name]} " +
+            "reportTarget=${fullClearObservedTargets[name]} remaining=${name in nearby[biome].orEmpty()} " +
+            "zoneConfirmed=${name in zoneScanConfirmed} missingZoneConfirmed=${name in missingScanConfirmed} " +
+            "settling=${populationSettling(name)} complete=${fullClearComplete(name)}")
+    }
     /** Local checklist proof can advance progress without a party report. */
     fun fullClearMissingComplete(name: String): Boolean {
         if (name == "Hideyho") return count(name) >= SafariFullClear.minimum(name)

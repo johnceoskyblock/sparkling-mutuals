@@ -34,11 +34,15 @@ For each player with captures in that biome, store a Solo unique record if they 
 
 Current mode restrictions remain: boss commands are available in Unique/Sparkle, biome commands in Unique/Full Clear. Named biome queries always refer to observed unique records. Player name autocomplete includes named biome queries.
 
+When a named boss query targets the responding mod user, it returns their personal Solo/Duo PB, exactly as the unnamed command does. Other clients still return their observed record for that player; those records may differ because they did not witness every run. Older personal records do not need an observed entry to answer self-queries.
+
 ## Persistence
 
 All categories persist in `sparkling-mutuals-pbs.properties`, with case-insensitive player lookup. Existing migration from older PB config locations remains automatic. Observed categories have independent keys ending in `Millis` so migration can preserve the faster duplicate record.
 
 ## Last updated
+
+2026-10-30 — Named self boss queries read the personal PB instead of a separate, potentially older observed table.
 
 2026-10-27 — Personal Unique PBs now exempt positively proven non-spawns and recheck after scans.
 

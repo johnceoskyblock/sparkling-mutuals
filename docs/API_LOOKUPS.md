@@ -16,6 +16,8 @@ Timesave `!missing` lists each missing bird by name; `!mutual`/`!mutuals` lists 
 
 Mode requirements and `!mutuals` use the same retained discovery baselines. Roster additions fetch only new members; removals drop that member from the calculation immediately and retain everyone else. A new run or mode switch reuses loaded data. Server-confirmed catches update participating members locally and cannot be overwritten by a delayed API result. Discovery caches are scoped to account, provider and Alpha/main realm and survive ordinary server transfers. Process restart, provider/account/realm changes, or leaving and rejoining the party require appropriate fresh baselines.
 
+Successful existing profile/discovery reads also merge discoveries into current members' mode cache. This includes `/sparkling`, `/sparkling party`, `!missing` and scheduled personal stats; it adds no requests or retry timers. A lookup can repair an old missing-discovery baseline without changing modes. Older responses cannot erase discoveries or locally observed catches. Unrelated players and other API providers cannot update the active party cache. Results must still belong to the cache entry present when their request began; account/realm resets, provider changes and leaving/rejoining reject older observations. `/sm debug` lists each member's cached missing discoveries, using available IGNs without a name lookup.
+
 Live history uniqueness now uses the pre-catch cached discovery set without another API call. If the baseline is unavailable, the flag stays unconfirmed. Personal stats refresh normally every thirty minutes, and Bazaar attempts are throttled to three hours, including failures. `/sparkling party` uses the existing UUID/name resolver instead of UUID fragments. Explicit `!missing`, ticket and profile-card fetch behavior is unchanged.
 
 ## Retry behavior
@@ -47,6 +49,8 @@ Test in Sparkling mode without toggling modes: let a request fail, restore API a
 See [API fetch audit](API_FETCH_AUDIT.md) for every current HTTP trigger, client cache, cooldown and retry scope. The inventory describes the current reduced-fetch policy.
 
 ## Last updated
+
+2026-10-30 — Existing successful profile reads repair retained party discoveries without extra API requests; debug identifies cached missing discoveries by member.
 
 2026-10-27 — `!missing`, `!ticket` and `!tickets` accept an omitted IGN and resolve it to the verified party-chat sender, never the responding mod user. Explicit-name queries remain supported. Omitted and explicit self queries share the same request fingerprint and existing cooldowns; lookup/cache behavior is unchanged.
 

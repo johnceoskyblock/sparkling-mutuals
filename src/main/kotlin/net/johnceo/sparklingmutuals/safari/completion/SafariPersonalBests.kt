@@ -22,7 +22,10 @@ class SafariPersonalBests {
         }
         return changed
     }
-    @Synchronized fun trackedResponse(player: String, species: String, duo: Boolean = false): String {
+    @Synchronized fun trackedResponse(player: String, species: String, duo: Boolean = false, localName: String? = null): String {
+        // A player's own boss PB is authoritative; the observed table can predate their personal record.
+        if (species in setOf("Wumpa", "Doomspiral") && player.equals(localName, true))
+            return response(localName!!, species, duo)
         val record = partyBests[playerKey(player)]
         val biome = SafariBiome.entries.any { it.label == species }
         val key = if (biome) "${if (duo) "uniqueParty" else "unique"}.$species" else "${if (duo) "duo" else "solo"}.$species"

@@ -321,6 +321,13 @@ object SafariEsp {
         SafariAssist.diagnostics().forEach { logger.info("{}", it) }
         logger.info("Safari ESP diagnostics: biome={}, fullClear={}, collected={}", SafariAssist.biome,
             ConfigManager.fullClearMode, SafariRoster.all.associate { it.name to (SafariTracking.run?.count(it.name) ?: 0) })
+        SafariAssist.biome?.let { biome -> SafariTracking.run?.captureDebug(biome)?.forEach { (name, evidence) ->
+            logger.info("Full clear evidence: {} {}", name, evidence)
+        } }
+        logger.info("Party discovery cache: {}", SafariSparklingMode.state.debug { id ->
+            client.connection?.onlinePlayers?.firstOrNull { it.profile.id.toString() == id }?.profile?.name
+                ?: net.johnceo.sparklingmutuals.safari.automation.SafariPartyInput.nameOf(id) ?: id
+        })
         SafariTracking.run?.let { logger.info("Gimmiegold completion: {} coinDropMarkers={}", it.sparklingChecks.gimmiegoldDebug(), observations().hauntedCoinDropsRemaining) }
         SafariTracking.run?.let { logger.info("Gimmiegold Sparkling check: {}", it.gimmiegoldCheck.debug()) }
         SafariTracking.run?.let { logger.info("Forest birds: {} canReportFd={}", it.birds.debug(), it.canReportBiome(SafariBiome.FOREST)) }

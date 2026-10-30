@@ -25,6 +25,19 @@ class PartyDiscoveryCache {
     @Synchronized fun known(uuid: String, source: ApiProvider): Set<String>? =
         if (provider != source) null else entries[id(uuid)]?.let { entry -> entry.value?.plus(entry.earned) }
 
+    /** Entry identity survives ordinary refreshes, but not removal, provider or account/realm resets. */
+    @Synchronized fun observationToken(uuid: String, source: ApiProvider): Any? =
+        if (provider == source && id(uuid) in members) entries.getOrPut(id(uuid), ::Entry) else null
+
+    /** Reuse successful profile reads made elsewhere; discoveries only grow within this membership. */
+    @Synchronized fun observe(uuid: String, source: ApiProvider, discoveries: Set<String>, token: Any? = null) {
+        val member = id(uuid)
+        if (provider != source || member !in members) return
+        if (token != null && entries[member] !== token) return
+        val entry = entries.getOrPut(member, ::Entry)
+        entry.value = entry.value.orEmpty() + discoveries.map(::key)
+    }
+
     /** Returns pre-catch discovery sets for history, then grants the species to every participating member. */
     @Synchronized fun caught(roster: Set<String>, species: String, source: ApiProvider, participants: Set<String> = roster): Map<String, Set<String>?> {
         select(roster, source)
@@ -49,9 +62,9 @@ class PartyDiscoveryCache {
             try {
                 val read = fetch().map(::key).toSet()
                 val merged = synchronized(this) {
-                    entry.value = read
+                    entry.value = entry.value.orEmpty() + read
                     entry.pending = null
-                    read + entry.earned
+                    entry.value!! + entry.earned
                 }
                 future.complete(merged)
             } catch (error: Throwable) {
