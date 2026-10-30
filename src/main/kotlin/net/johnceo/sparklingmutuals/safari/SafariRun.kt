@@ -138,12 +138,23 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
     private val populationClock = checkClock
     private val settlingRemainders = mutableSetOf<String>()
     private val lastPopulationCapture = mutableMapOf<String, Long>()
+    private val populationLiveCounts = mutableMapOf<String, Int>()
+    private val populationCaptureDebt = mutableMapOf<String, Int>()
     private fun populationSettling(species: String) =
-        lastPopulationCapture[species]?.let { populationClock() - it in 0..2500 } == true
+        (populationCaptureDebt[species] ?: 0) > 0 ||
+            lastPopulationCapture[species]?.let { populationClock() - it in 0..2500 } == true
     private val knownPopulation = mutableMapOf<String, Int>()
     /** Current uncaptured UUIDs, never the union of pre/post-escape identities. */
     fun observePopulation(live: List<Pair<String, java.util.UUID>>) {
         val remaining = live.filterNot { sparklingCaptures.resolved(it.second) }
+        val liveCounts = remaining.groupBy({ it.first }, { it.second }).mapValues { it.value.distinct().size }
+        // Head/capsule UUIDs can change without a critter disappearing. Match catches to a fall in
+        // the visible population, rather than letting an old model become an extra critter on a timer.
+        (populationLiveCounts.keys + liveCounts.keys).forEach { name ->
+            val removed = ((populationLiveCounts[name] ?: 0) - (liveCounts[name] ?: 0)).coerceAtLeast(0)
+            populationCaptureDebt[name] = ((populationCaptureDebt[name] ?: 0) - removed).coerceAtLeast(0)
+        }
+        populationLiveCounts.clear(); populationLiveCounts.putAll(liveCounts)
         settlingRemainders.clear()
         settlingRemainders.addAll(remaining.map { it.first }.filter(::populationSettling))
         remaining.groupBy({ it.first }, { it.second }).forEach { (name, ids) ->
@@ -514,7 +525,7 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
         name to ("captured=${count(name)} minimum=${SafariFullClear.minimum(name)} known=${knownPopulation[name]} " +
             "reportTarget=${fullClearObservedTargets[name]} remaining=${name in nearby[biome].orEmpty()} " +
             "zoneConfirmed=${name in zoneScanConfirmed} missingZoneConfirmed=${name in missingScanConfirmed} " +
-            "settling=${populationSettling(name)} complete=${fullClearComplete(name)}")
+            "settling=${populationSettling(name)} captureDebt=${populationCaptureDebt[name] ?: 0} complete=${fullClearComplete(name)}")
     }
     /** Local checklist proof can advance progress without a party report. */
     fun fullClearMissingComplete(name: String): Boolean {
@@ -595,6 +606,8 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
         if (catch.critter.name == "Wumpa") wumpaPrerequisitesConfirmed = true
         if (catch.sparkling) confirmedSparklingCapture(catch.critter.name, if (catch.personal) self else catch.catcherName, broadcast = false, at = now)
         lastPopulationCapture[catch.critter.name] = now
+        populationCaptureDebt[catch.critter.name] = minOf(populationLiveCounts[catch.critter.name] ?: 0,
+            (populationCaptureDebt[catch.critter.name] ?: 0) + 1)
         if (self != null) localPlayer(self)
         catchEvents.add(catch)
         resources.capture(catch.critter.name)

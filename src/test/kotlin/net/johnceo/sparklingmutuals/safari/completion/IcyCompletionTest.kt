@@ -11,6 +11,34 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class IcyCompletionTest : net.johnceo.sparklingmutuals.safari.esp.ProfitableEspPriceFixture() {
+    @Test fun `captured head models that linger beyond the grace period never become a fourth critter`() {
+        for (species in listOf("Mantis Shrimp","Troodon")) {
+            var now=0L
+            val run=SafariRun(0) { now }
+            run.visitBiome(SafariBiome.ICY)
+            var live=List(3) { species to UUID.randomUUID() }
+            run.observePopulation(live)
+            repeat(3) {
+                now+=10000
+                run.record(SafariCatch(SafariRoster.named(species)!!),now)
+                now+=5000 // Longer than the previous time-only guard.
+                live=List(3-it) { species to UUID.randomUUID() } // Capsule transformations replace IDs.
+                run.observePopulation(live)
+                run.updateCaptureEvidence(SafariBiome.ICY,setOf(species),false,playerX=-73.0,playerZ=-46.0)
+                assertFalse(run.fullClearComplete(species))
+                run.observePopulation(live.drop(1))
+            }
+            run.updateCaptureEvidence(SafariBiome.ICY,emptySet(),false,playerX=-73.0,playerZ=-46.0)
+            assertTrue(run.fullClearMissingComplete(species),run.captureDebug(SafariBiome.ICY).toString())
+            assertTrue(run.fullClearComplete(species))
+            run.observePopulation(listOf(species to UUID.randomUUID()))
+            run.updateCaptureEvidence(SafariBiome.ICY,setOf(species),false,playerX=-73.0,playerZ=-46.0)
+            assertFalse(run.fullClearComplete(species),"A newly seen remainder still requires a catch")
+            run.observePopulation(emptyList())
+            run.updateCaptureEvidence(SafariBiome.ICY,emptySet(),false,playerX=-73.0,playerZ=-46.0)
+            assertFalse(run.fullClearComplete(species),"Unloading the new remainder is not a capture")
+        }
+    }
     @Test fun `four shrimp captures cannot be added to the same four lingering models`() {
         var now=0L
         val run=SafariRun(0) { now }

@@ -153,6 +153,8 @@ Every actual critter, including native Minecraft mobs, must have an associated c
 
 ## Last updated
 
+2026-10-30 — Capture reconciliation now survives the timeout and head/capsule UUID changes: pending captures are matched against decreases in the visible species population before model-count estimates can grow again. Positive remainders still block completion. Debug includes the pending capture count (`captureDebt`). This extends the earlier 2.5-second guard, which alone did not prevent inferred fourth Shrimp/Troodon targets.
+
 2026-10-30 — All critters now defer population-target increases for 2.5 seconds after a capture, including Mantis Shrimp and Troodon. Positive remaining models still block completion; a qualified empty scan ends the transition so a genuinely new sighting can raise the target immediately. Debug logs show per-species captures, inferred targets, remaining models and scan confirmation.
 
 2026-10-29 - Simplified known-source replies and local Sparkling source requirements.

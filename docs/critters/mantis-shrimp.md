@@ -75,6 +75,8 @@ Population guarantees and capsule success/escape claims from supplied notes were
 
 ## Last updated
 
+2026-10-30 — Pending captures stay matched to visible population until the model count falls, including head/capsule UUID replacements lasting beyond 2.5 seconds. This prevents a lingering captured Shrimp from creating a fourth required capture.
+
 2026-10-30 — Captured models cannot inflate the inferred Full Clear target during the 2.5-second capture transition. Remaining models and qualified local scans still gate completion.
 
 2026-10-27 — Personal Unique PBs exempt positively proven zero-spawn types.
