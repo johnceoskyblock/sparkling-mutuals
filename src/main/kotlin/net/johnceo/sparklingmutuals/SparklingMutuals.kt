@@ -71,6 +71,7 @@ object SparklingMutuals : ModInitializer {
         net.johnceo.sparklingmutuals.safari.DoomspiralThrowTimer.register()
         AlertCommand.register()
         net.johnceo.sparklingmutuals.alerts.SparkleAutoParty.register()
+        net.johnceo.sparklingmutuals.alerts.SparkleWarping.register()
     }
 
     private fun registerFeatures() {
@@ -117,6 +118,7 @@ object SparklingMutuals : ModInitializer {
         net.johnceo.sparklingmutuals.safari.DoomspiralThrowTimer.tick(client)
         JoinWelcome.tick(client)
         PartyManager.onClientTick(client)
+        net.johnceo.sparklingmutuals.alerts.SparkleWarping.tick(client)
         net.johnceo.sparklingmutuals.alerts.SparkleAutoParty.tick(client)
         PartyCommands.onClientTick(client)
         ContestTracker.onClientTick(client)
@@ -156,6 +158,7 @@ object SparklingMutuals : ModInitializer {
         PartyManager.reset()
         SafariSparklingMode.reset()
         AlertManager.cancelPendingAlert()
+        net.johnceo.sparklingmutuals.alerts.SparkleWarping.reset()
         SafariAssist.reset()
         HideyhoQuest.reset()
         HideyhoSpotter.reset()

@@ -1,54 +1,56 @@
 # Sparkle Warping
 
-## Purpose
+Sparkle Warping brings leechers into a Safari without using their tickets. Enable `/warping` and choose Solo or Duo in the Sparkle Warping tab. Leechers can stay in SkyBlock; the previous Prototype Lobby workflow is no longer required.
 
-An enabled warp reminder shows a local **Warping Now** alert and sends `/p warp` once after a Safari Hunting Hotspot. Sending the command does not establish that the server accepted or completed a warp.
+## Leader cycle
 
-## Controls and defaults
+A cycle starts at the Hunting Hotspot message (leaving the boat), only for a confirmed solo player or party leader with fewer than four party members. Unknown party information waits for the existing party lookup. A normal run starting with four players does not start a timer or cleanup cycle, so the feature can remain enabled.
+
+1. During the first 19 seconds, optional Auto-party invites saved Warp List players for positively identified visible Sparkling critters. Unknown particle detections do not invite.
+2. From 19 seconds, pending Warp List candidates give way to the previous leechers. Only remaining spots are filled, with at most four players including the leader and Duo runner.
+3. At the configured delay (25 seconds by default), show **Warping Now** and send `/p warp` once. Players invited during this window can bring the party to four without cancelling that warp. Sending the command does not prove server acceptance.
+4. When the leader returns from this active Safari cycle to Torrhus Canyon or Springs, save the current leechers and prepare the next run. **Solo** sends `/p disband`. **Duo** keeps the selected runner and sends `/p kick <IGN>` for each other member. The leader must still hold leadership; incomplete roster/name information waits rather than guessing. No cleanup happens for a normal four-player run that never started a cycle.
+
+Choose the Duo runner with `/duo <IGN>`; this also selects Duo mode. The same IGN can be edited in the tab. Duo cleanup requires that runner to be in the party, and the delayed warp also requires the runner to remain a member. Switch the dropdown to Solo to run alone.
+
+Invitations are sent one at a time, two seconds apart. Joined/current members are skipped. The previous leecher list is session memory, replaced when the next disband/kick cycle has players to remove; an empty cleanup does not erase it. A disconnect clears it. Existing invites follow Hypixel's normal expiry.
+
+## Leech
+
+`/leech` or the Leech toggle enables automatic acceptance of **any** genuine Hypixel party invite. If already in a party, send `/p leave`, wait for leave/roster confirmation, then `/p accept <inviter>`. If solo, accept immediately once party state is known. A newer invite replaces the pending target; turning Leech off, disconnecting or a 15-second timeout cancels pending acceptance. Player-chat quotes cannot trigger it.
+
+Leech works in Hypixel lobbies as well as SkyBlock and does not require `/warping` or Auto-party. While Leech is enabled, this client does not run the leader cycle. It defaults off.
+
+## Controls and persistence
 
 | Control | Default | Effect |
 | --- | --- | --- |
-| `/warping` or **Sparkle Warping** switch | Off | Enables both the alert and automatic command. |
-| `/warpingdelay <seconds>` or settings delay | 23 seconds | Accepts 1–86400 seconds; changing it cancels the pending timer. |
+| `/warping` / Auto warping | Off | Enable the leader cycle; safe to leave enabled in normal full-party runs. |
+| Leader mode | Solo | Disband after an active cycle, or keep the Duo runner. |
+| `/duo <IGN>` / Duo runner | Empty | Save the runner; the command also chooses Duo. |
+| `/autoparty` / Auto-party | Off | Prioritize detected critters' Warp List players before 19 seconds. Returning leechers are invited even with this off. |
+| `/leech` / Leech | Off | Accept party invites, leaving the current party first. |
+| `/warpingdelay <seconds>` / Delay | 25 seconds | Range 1–86400. Existing saved custom delays, including 23 seconds, stay unchanged. Reset uses 25. |
 
-Explicit saved choices use the general [configuration file](CONFIG_DEFAULTS.md). Enabling the switch waits for the next Hotspot; it does not revive a cancelled timer.
+A delay below 19 seconds ends before returning-leecher invitations can begin. The tab explains the cycle and keeps the normal full-width description text.
 
-## Implemented behavior
+Timers bind to the Safari run, world and client connection. Repeated Hotspot triggers replace the previous timer. Disabling warping, changing its delay/mode/runner, enabling Leech, disconnecting, a stale run/world, or lost leadership stops pending actions. Invitations stop on a manual/confirmed party warp. Cleanup is only attempted on return to Torrhus after an eligible active cycle, never just on login or in other areas.
 
-The non-overlay Fabric GAME-message listener accepts an exact Hunting Hotspot system line for Forest, Cavern, Icy or Haunted, after the shared trusted-message filtering. Player-chat quotes cannot schedule it; exact text belongs to [Messages](critters/MESSAGES.md).
+No new ShinyHunter/profile requests are introduced. Party membership uses the existing Hypixel Mod API roster; verified names use loaded profiles, the existing name cache or the existing asynchronous name resolver. Mode, runner, toggles, delay and Warp List persist in the main configuration. Run timers, cleanup queues, leecher lists and pending invites do not persist.
 
-Scheduling ensures a run exists and binds the timer to that run object, client connection and client world. The latest accepted Hotspot cancels and replaces any pending timer. At expiry, the client must still have a player, the feature enabled, Safari detection active and the same unended run, connection and world. A generation token makes the expiry action single-use. The alert and command share this decision; there is no separate leadership check. Normal server party permissions apply.
+## Warp List
 
-## Lifecycle and persistence
-
-The switch and delay persist; timers do not. Toggling the switch, changing the delay or disconnecting cancels the timer and clears the Warp alert. A changed world, connection, ended run or replacement run fails the expiry check, including a new run in the same world. No new timer is inherited from an earlier run.
-
-## Edge cases
-
-- A nonleader may send the command; success depends on the server.
-- Overlay text and quoted Hotspots do not start or replace timers.
-- A stale scheduled callback cannot consume a newer timer.
-- A visible alert proves the local expiry action, not successful party transport.
-
-## Source and validation references
-
-- Registration/reset: [SparklingMutuals](../src/main/kotlin/net/johnceo/sparklingmutuals/SparklingMutuals.kt), `registerFeatures` and `resetSession`.
-- Trigger, context checks and output: [AlertManager](../src/main/kotlin/net/johnceo/sparklingmutuals/alerts/AlertManager.kt); single-use generation: [WarpAlertTimer](../src/main/kotlin/net/johnceo/sparklingmutuals/alerts/WarpAlertTimer.kt); commands: [AlertCommand](../src/main/kotlin/net/johnceo/sparklingmutuals/commands/AlertCommand.kt).
-- Existing secondary coverage: [AlertDefaultsTest](../src/test/kotlin/net/johnceo/sparklingmutuals/config/AlertDefaultsTest.kt), [SafariAlertGhostTest](../src/test/kotlin/net/johnceo/sparklingmutuals/safari/integration/SafariAlertGhostTest.kt). No test or Minecraft session was run for this documentation audit. Live checks should cover expiry/replacement, every cancellation route, both settings controls, quoted triggers and server warp permissions.
-
-## Auto-party and Warp List
-
-`/autoparty` and the Auto-party toggle (off by default) enable invitations from the saved Warp List. Its editor contains the 26 supported critters, with ordered space-separated IGNs under each. Invalid names are omitted; repeated names are invited at most once in a warp window.
-
-A known positive Sparkling detection queues that critter's names independently of alert and party-announcer switches. Unknown particle detections do not invite. Invitations require an active `/warping` timer in the same Safari run, world and connection. Existing parties require the local player to be leader; a confirmed solo player can create a party. Unknown rosters wait for the existing party lookup.
-
-One `/p <IGN>` is sent every two seconds. Players already known to be in the party are skipped, and the next name is tried whether or not the preceding invitation was accepted. Repeated detections do not restart a list. Other detected critters append their names in detection order. The scheduled warp deadline, a sent warp command, a server warp notice, cancellation, leaving Safari or disconnect stops invitations. Invitations already sent remain subject to Hypixel's normal expiry.
+The editor retains the 26 supported critters and ordered IGN lists. Invalid names are omitted; repeated names are invited at most once per window. Disabling Auto-party only stops pre-19-second candidates, not returning leechers.
 
 **Import CSV** in the Warp List editor replaces all saved entries immediately. Row 1 supplies case-insensitive critter headers; only rows 2-11 supply names, in order. Blank or invalid IGN cells and unsupported columns are ignored, and duplicates within a critter are removed. Missing or empty critter columns clear their old entries. CSV quoting and UTF-8 BOMs are supported. Cancelling, an unreadable file, malformed rows 1-11, duplicate critter headers or no supported headers leaves the current list unchanged. Content after row 11 is never parsed.
 
-No new profile or ShinyHunter API requests are introduced. Warp List entries and the toggle persist in the main properties file; pending invitations do not. Existing saved warp delays are preserved; new installations and Reset use 23 seconds.
+## Validation
+
+Focused tests cover Solo/Duo cleanup selection, missing/invalid runners, leader/capacity gating, the 19-second phase boundary, spaced invitations and deadline expiry, exact multiline invitation parsing, leave-before-accept, cancellation/expiry, and settings persistence. Server-side party permissions, transport and invite acceptance need live Hypixel testing.
 
 ## Last updated
+
+2026-10-30 — Solo/Duo leader cycles, previous-leecher fallback from 19 seconds, 25-second fresh/reset delay, `/duo` and `/leech`. Only parties smaller than four start cycles; filling the party through invites still permits the scheduled warp.
 
 2026-10-29 - Fresh installations seed the maintainer-supplied JohnFounder Warp List (115 ordered name assignments). Existing configuration files keep their saved or empty lists; Auto-party remains off by default.
 

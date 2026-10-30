@@ -44,8 +44,11 @@ object ConfigManager {
     var sparklingHotspotAnnouncer = false
     var timesaveOnly = true
     var warpAlertsEnabled = false
-    var warpDelaySeconds = 23
+    var warpDelaySeconds = 25
     var autoParty = false
+    var sparkleWarpMode = 0
+    var warpDuo = ""
+    var leechMode = false
     var doomspiralThrowTimer = true
     var doomspiralEmergenceTicks = 98
     var doomspiralThrowLeadTicks = 4
@@ -132,7 +135,10 @@ object ConfigManager {
         flags.forEach { (property, default) -> property.set(properties.getProperty(property.name)?.toBooleanStrictOrNull() ?: default) }
         if (uniqueHideCritterEsp || uniqueHideFloorDropEsp) profitableShardEsp=false
         if (sparklingHideCritterEsp || sparklingHideFloorDropEsp) sparklingProfitableShardEsp=false
-        warpDelaySeconds = properties.getProperty("warpDelaySeconds", "23").toIntOrNull()?.coerceIn(1, 86400) ?: 23
+        warpDelaySeconds = properties.getProperty("warpDelaySeconds", "25").toIntOrNull()?.coerceIn(1, 86400) ?: 25
+        sparkleWarpMode = properties.getProperty("sparkleWarpMode", "0").toIntOrNull()?.coerceIn(0,1) ?: 0
+        warpDuo = properties.getProperty("warpDuo", "").trim().takeIf { Regex("[A-Za-z0-9_]{1,16}").matches(it) }.orEmpty()
+        leechMode = properties.getProperty("leechMode", "false").toBoolean()
         safariTicketPreference = properties.getProperty("safariTicketPreference")?.toIntOrNull()?.takeIf { it in 0..1 } ?: 0
         profitsTicketMode = properties.getProperty("profitsTicketMode")?.toIntOrNull()?.takeIf { it in 0..3 } ?: 0
         showWhere = properties.getProperty("showWhere")?.toIntOrNull()?.takeIf { it in 0..2 } ?: 1
@@ -163,6 +169,9 @@ object ConfigManager {
             setProperty("sparklingSoundVolume", sparklingSoundVolume.coerceIn(0, 100).toString())
             flags.forEach { (property, _) -> setProperty(property.name, property.get().toString()) }
             setProperty("warpDelaySeconds", warpDelaySeconds.toString())
+            setProperty("sparkleWarpMode", sparkleWarpMode.toString())
+            setProperty("warpDuo", warpDuo)
+            setProperty("leechMode", leechMode.toString())
             setProperty("doomspiralEmergenceTicks", doomspiralEmergenceTicks.coerceIn(1, 600).toString())
             setProperty("doomspiralThrowLeadTicks", doomspiralThrowLeadTicks.coerceIn(0, 40).toString())
             setProperty("safariTicketPreference", safariTicketPreference.coerceIn(0, 1).toString())

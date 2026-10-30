@@ -37,6 +37,8 @@ object CommandHelp {
         "/warping" to "Toggle delayed /p warp",
         "/warpingdelay <seconds>" to "Set warp delay",
         "/autoparty" to "Toggle Sparkling Warp List invitations",
+        "/duo <IGN>" to "Choose your runner and use Duo sparkle warping",
+        "/leech" to "Toggle accepting all party invites, leaving your current party first",
         "/apikey <key>" to "Set API key"
     )
     /** Party chat words other mods' users can say that this mod reacts to, without a lookup reply. */

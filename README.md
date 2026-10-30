@@ -50,6 +50,7 @@ The guide is a visual estimate, not guaranteed flight, impact or capture physics
 | `/sm help` | Local and party command list for the active mode |
 | `/sparkling [IGN\|party\|IGNs]` | Player cards and discovery comparison |
 | `/warping`, `/warpingdelay <seconds>`, `/autoparty` | Sparkle Warping and optional Warp List invitations |
+| `/duo <IGN>`, `/leech` | Select your Duo runner; toggle auto-accepting party invites |
 | `/sm debug` | Local tracking diagnostics; review logs before sharing |
 
 Press Tab to complete current-party IGNs in `/sparkling`, including successive comparison names, and name arguments for `!missing`, `!ticket`/`!tickets` and `!pb doom`/`!pb wumpa` and biome PB lookups. Party-chat forms such as `/pc !missing Jo` and `/p chat !tickets Jo` are supported. Matching ignores case; suggestions resolve verified party names even for members absent from the current tab list, without fetching SkyBlock discovery data.

@@ -25,6 +25,7 @@ object AlertManager {
 
     private var pendingAlert: ScheduledFuture<*>? = null
     private val expiry = WarpAlertTimer()
+    private var scheduleRevision = 0L
 
     fun toggleAlert(): Boolean {
         ConfigManager.warpAlertsEnabled = !ConfigManager.warpAlertsEnabled
@@ -52,31 +53,42 @@ object AlertManager {
         val level = client.level ?: return
         SafariTracking.ensureRun(client)
         val run = SafariTracking.ledger.current ?: return
-        val scheduledGeneration = expiry.arm(run)
-        SparkleAutoParty.start(client, System.currentTimeMillis() + getDelay() * 1000L)
-        pendingAlert = scheduler.schedule({
-            client.execute {
-                val ready = client.connection === connection && client.level === level && client.player != null &&
-                    isEnabled() && SafariAssist.inSafari &&
-                    SafariTracking.ledger.current?.let { it.endedAt == null } == true
-                if (expiry.consume(scheduledGeneration, ready, SafariTracking.ledger.current)) {
-                    pendingAlert = null
-                    triggerAlert()
+        val revision = scheduleRevision
+        val startedAt = System.currentTimeMillis()
+        val deadline = startedAt + getDelay() * 1000L
+        net.johnceo.sparklingmutuals.party.PartyManager.withPartyInfo {
+            if (revision != scheduleRevision || client.connection !== connection || client.level !== level ||
+                SafariTracking.ledger.current !== run || !isEnabled() ||
+                !SparkleWarpPolicy.canStart(SparkleWarping.canLead(client),net.johnceo.sparklingmutuals.party.PartyManager.getMembers().size) ||
+                System.currentTimeMillis() >= deadline) return@withPartyInfo
+            val scheduledGeneration = expiry.arm(run)
+            SparkleWarping.beginRun()
+            SparkleAutoParty.start(client, deadline, startedAt)
+            pendingAlert = scheduler.schedule({
+                client.execute {
+                    val ready = client.connection === connection && client.level === level && client.player != null &&
+                        isEnabled() && SparkleWarping.canWarp(client) && SafariAssist.inSafari &&
+                        SafariTracking.ledger.current?.let { it.endedAt == null } == true
+                    if (expiry.consume(scheduledGeneration, ready, SafariTracking.ledger.current)) {
+                        pendingAlert = null
+                        triggerAlert()
+                    }
                 }
-            }
-        }, getDelay().toLong(), TimeUnit.SECONDS)
+            }, (deadline-System.currentTimeMillis()).coerceAtLeast(0), TimeUnit.MILLISECONDS)
+        }
     }
 
     private fun triggerAlert() {
         SparkleAutoParty.stop()
         val minecraft = Minecraft.getInstance()
-        if (minecraft.player == null || !isEnabled()) return
+        if (minecraft.player == null || !isEnabled() || !SparkleWarping.canWarp(minecraft)) return
 
         SmallAlerts.show(SafariHud.WARP)
         minecraft.connection?.sendCommand("p warp")
     }
 
     fun cancelPendingAlert() {
+        scheduleRevision++
         expiry.cancel()
         SparkleAutoParty.stop()
         pendingAlert?.cancel(false)
