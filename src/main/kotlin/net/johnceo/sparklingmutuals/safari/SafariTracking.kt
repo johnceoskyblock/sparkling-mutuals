@@ -130,11 +130,7 @@ object SafariTracking {
         run.inventoryEvidence((0 until player.inventory.containerSize).map { player.inventory.getItem(it) }
             .filterNot { it.isEmpty }.map { it.hoverName.string to it.count }, now)
         if (PartyManager.hasInfo && PartyManager.getMembers().size > 1) {
-            val hotspotEnabled = when (SafariFullClear.mode) {
-                SafariMode.UNIQUE -> ConfigManager.uniqueHotspotAnnouncer
-                SafariMode.FULL_CLEAR -> ConfigManager.fullClearHotspotAnnouncer
-                SafariMode.SPARKLING -> ConfigManager.sparklingHotspotAnnouncer
-            }
+            val hotspotEnabled = net.johnceo.sparklingmutuals.hud.HotspotAssignmentAlert.enabled()
             run.startingAnnouncement.dispatch(now, SafariSparklingMode.state, hotspotEnabled, ConfigManager.announceStartingItems) { message ->
                 connection.sendCommand("pc $message")
                 // Apply our own contribution now; the server's party echo is deduplicated.

@@ -130,6 +130,8 @@ Each mode dropdown has independent Hide critter ESP and Hide floor-drop ESP togg
 
 ## Last updated
 
+2026-10-30 — Hotspot announcer toggles now live under Party Interactions → Hotspot announcer. Existing per-mode keys and off defaults are preserved; each toggle controls actual-hotspot chat plus assigned-biome alerts.
+
 2026-10-30 — Sparkle Warping uses a 25-second fresh/reset delay, Solo leader mode, empty Duo runner and Leech off. Existing saved delays stay unchanged.
 
 2026-10-29 - Fresh installations seed the maintainer-supplied JohnFounder Warp List (115 ordered name assignments). Existing configuration files keep their saved or empty lists; Auto-party remains off by default.
