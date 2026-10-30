@@ -74,6 +74,8 @@ Population guarantees and capsule success/escape claims from supplied notes were
 
 ## Last updated
 
+2026-10-29 — Gazer checks use the maximum of retained UUID evidence and confirmed shared captures plus current rendered uncaptured Gazers, capped at four. This covers instant catches before UUID observation. Proven progress is retained through unloading/reentry; Full Clear still requires actual captures.
+
 2026-10-27 — Personal Unique PBs exempt positively proven zero-spawn types.
 
 2026-10-26 — Removed ordinary ESP added solely for automatic Sparkling checks and its per-UUID linger. Capture/source and profitable-highlight exceptions remain separate.

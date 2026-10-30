@@ -5,6 +5,33 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class BirdFoodSparklingCheckTest {
+    @Test fun `qualified full population recovers missed final spawn messages without trusting partial or remote scans`() {
+        val run=SafariRun(0)
+        run.localPlayer("me");run.visitBiome(SafariBiome.FOREST)
+        run.inventoryEvidence(emptyList(),0)
+        run.resources.partyNotice("Party > Friend: [SM] Starting items: 2x Yogi Berry")
+        run.inventoryEvidence(listOf("Bag of Seeds" to 3),10000)
+        run.scanBirdSources(0)
+        run.inventoryEvidence(emptyList(),11000)
+        assertEquals(3,run.birdFoodCheck.pendingSpawns)
+        run.scanBirdSources(0,List(12) { "Bluebird" },qualified=false)
+        assertFalse(run.birdSpawnsComplete())
+        run.scanBirdSources(0,List(10) { "Bluebird" })
+        assertFalse(run.birdSpawnsComplete(),"Known extras must also be covered by the population fallback")
+        run.scanBirdSources(0,List(8) { "Bluebird" }+List(4) { "Parakeet" })
+        assertTrue(run.birdSpawnsComplete())
+        assertTrue(run.canReportBiome(SafariBiome.FOREST))
+        run.scanBirdSources(0)
+        assertTrue(run.birdSpawnsComplete(),"Verified proof survives birds leaving render")
+        run.inventoryEvidence(listOf("Yogi Berry" to 1),12000)
+        assertFalse(run.birdSpawnsComplete())
+        run.inventoryEvidence(emptyList(),13000)
+        assertFalse(run.birdSpawnsComplete(),"A new food batch must not reuse old population proof")
+        run.birdFoodCheck.spawn("A Bluebird was attracted to the Birdfeeder!",13100)
+        assertTrue(run.birdSpawnsComplete())
+        run.scanBirdSources(1,List(12) { "Bluebird" })
+        assertFalse(run.birdSpawnsComplete(),"Remaining floor food still blocks completion")
+    }
     @Test fun `final stack consumption waits for one spawn message per food not per Macaw`() {
         val check=BirdFoodSparklingCheck()
         check.floor(1);check.inventory(listOf("Bag of Seeds" to 3),0)

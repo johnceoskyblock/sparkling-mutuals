@@ -198,7 +198,7 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
         val targets = SafariBiome.FOREST.critters.filter { mode != SafariMode.SPARKLING || party.needs(it.name) }
         val missing = targets.filter { completed(mode, listOf(it), party, localOnly = true) == 0 }.map { it.name }
         return "mode=$mode reportReceived=${SafariBiome.FOREST in biomeReports} suppliesReady=${birds.reportSuppliesReady} " +
-            "spawnProof=${birdSpawnsComplete(localOnly = true)} partyReady=${party.ready} " +
+            "spawnProof=${birdSpawnsComplete(localOnly = true)} ${birdFoodCheck.debug()} partyReady=${party.ready} " +
             "currentBiome=$lastBiome scanKnown=${hasCaptureEvidence(SafariBiome.FOREST)} missing=$missing"
     }
     private val partyFullClears = mutableSetOf<SafariBiome>()
@@ -504,7 +504,7 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
         nearbyMacaws = live.count { it == "Macaw" }
         sightings.addAll(live.filter { it in birdSpecies })
         birds.render(::count, live)
-        birdFoodCheck.population(birds.accountedFeedings)
+        birdFoodCheck.population(birds.accountedFeedings, birds.feedingTarget)
         resources.scan(SafariBiome.FOREST, birds.accountedFeedings)
     }
     fun hasCaptureEvidence(biome: SafariBiome) = biome in nearby
