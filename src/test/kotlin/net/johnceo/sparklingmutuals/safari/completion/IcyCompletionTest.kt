@@ -11,6 +11,45 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class IcyCompletionTest : net.johnceo.sparklingmutuals.safari.esp.ProfitableEspPriceFixture() {
+    @Test fun `four shrimp captures cannot be added to the same four lingering models`() {
+        var now=0L
+        val run=SafariRun(0) { now }
+        run.visitBiome(SafariBiome.ICY)
+        val shrimp=SafariRoster.named("Mantis Shrimp")!!
+        val live=List(4) { shrimp.name to UUID.randomUUID() }
+        run.observePopulation(live)
+        now=1000
+        repeat(4) { run.record(SafariCatch(shrimp),now) }
+        now=1500
+        run.observePopulation(live)
+        run.updateCaptureEvidence(SafariBiome.ICY,setOf(shrimp.name),false,playerX=-73.0,playerZ=-46.0)
+        assertFalse(run.fullClearComplete(shrimp.name),"Remaining labelled models still block during transition")
+        now=4000
+        run.observePopulation(emptyList())
+        run.updateCaptureEvidence(SafariBiome.ICY,emptySet(),false,playerX=-73.0,playerZ=-46.0)
+        assertTrue(run.fullClearMissingComplete(shrimp.name))
+        assertTrue(run.fullClearComplete(shrimp.name))
+        run.observePopulation(listOf(shrimp.name to UUID.randomUUID()))
+        run.updateCaptureEvidence(SafariBiome.ICY,setOf(shrimp.name),false,playerX=-73.0,playerZ=-46.0)
+        assertFalse(run.fullClearComplete(shrimp.name),"A genuinely remaining fifth shrimp must still be caught")
+    }
+    @Test fun `captured Troodon models cannot inflate the fixed three target`() {
+        var now=0L
+        val run=SafariRun(0) { now }
+        run.visitBiome(SafariBiome.ICY)
+        val live=List(3) { "Troodon" to UUID.randomUUID() }
+        run.observePopulation(live)
+        now=1000
+        repeat(3) { run.record(SafariCatch(SafariRoster.named("Troodon")!!),now) }
+        run.observePopulation(live)
+        run.updateCaptureEvidence(SafariBiome.ICY,setOf("Troodon"),false,playerX=-73.0,playerZ=-46.0)
+        assertFalse(run.fullClearComplete("Troodon"))
+        now=4000
+        run.observePopulation(emptyList())
+        run.updateCaptureEvidence(SafariBiome.ICY,emptySet(),false,playerX=-73.0,playerZ=-46.0)
+        assertTrue(run.fullClearMissingComplete("Troodon"))
+        assertTrue(run.fullClearComplete("Troodon"))
+    }
     private val points=mapOf("Tepid" to (-73.0 to -46.0), "Strongarm" to (-107.0 to -56.0),
         "Polaris" to (-110.0 to -78.0), "Shuddersquid" to (-127.0 to -48.0),
         "Nozzlenose" to (-73.0 to -46.0), "Mantis Shrimp" to (-73.0 to -46.0),

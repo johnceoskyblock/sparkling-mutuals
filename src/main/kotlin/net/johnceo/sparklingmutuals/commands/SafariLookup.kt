@@ -17,6 +17,8 @@ object SafariLookup {
     }
     fun selectParty(members: Set<String>, provider: ApiProvider = HypixelApi.provider) = cache.select(members, provider)
     fun known(uuid: String, provider: ApiProvider = HypixelApi.provider) = cache.known(uuid, provider)
+    fun discoveryObservation(uuid: String, provider: ApiProvider) = cache.observationToken(uuid, provider)
+    fun observeDiscoveries(uuid: String, provider: ApiProvider, discoveries: Set<String>, token: Any) = cache.observe(uuid, provider, discoveries, token)
     fun caught(members: Set<String>, species: String, participants: Set<String> = members) =
         cache.caught(members, species, HypixelApi.provider, participants)
     private val timesaves = linkedMapOf("ROCKMITE" to "Rockmite", "SNOOZLE" to "Snoozle",
@@ -47,8 +49,8 @@ object SafariLookup {
     }
 
     fun run(command: PartyCommand, members: List<String>, localName: String = "You"): String = when (command.kind) {
-        PartyCommandKind.PB_DOOM -> if (command.trackedPlayer) ConfigManager.personalBests.trackedResponse(command.ign, "Doomspiral", command.duo) else ConfigManager.personalBests.response(localName, "Doomspiral", command.duo)
-        PartyCommandKind.PB_WUMPA -> if (command.trackedPlayer) ConfigManager.personalBests.trackedResponse(command.ign, "Wumpa", command.duo) else ConfigManager.personalBests.response(localName, "Wumpa", command.duo)
+        PartyCommandKind.PB_DOOM -> if (command.trackedPlayer) ConfigManager.personalBests.trackedResponse(command.ign, "Doomspiral", command.duo, localName) else ConfigManager.personalBests.response(localName, "Doomspiral", command.duo)
+        PartyCommandKind.PB_WUMPA -> if (command.trackedPlayer) ConfigManager.personalBests.trackedResponse(command.ign, "Wumpa", command.duo, localName) else ConfigManager.personalBests.response(localName, "Wumpa", command.duo)
         PartyCommandKind.PB_FOREST -> if (command.trackedPlayer) ConfigManager.personalBests.trackedResponse(command.ign, "Forest", command.duo) else ConfigManager.personalBests.response(localName, "Forest")
         PartyCommandKind.PB_HAUNTED -> if (command.trackedPlayer) ConfigManager.personalBests.trackedResponse(command.ign, "Haunted", command.duo) else ConfigManager.personalBests.response(localName, "Haunted")
         PartyCommandKind.PB_ICY -> if (command.trackedPlayer) ConfigManager.personalBests.trackedResponse(command.ign, "Icy", command.duo) else ConfigManager.personalBests.response(localName, "Icy")

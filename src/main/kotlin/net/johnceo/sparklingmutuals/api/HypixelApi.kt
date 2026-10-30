@@ -25,7 +25,11 @@ object HypixelApi {
     }
 
     fun getSparklingCritters(playerUuid: String, profileUuid: String): Set<String> = data {
-        SafariProfile.discoveriesFrom(getMember(playerUuid, profileUuid))
+        val source = provider
+        val observation = net.johnceo.sparklingmutuals.commands.SafariLookup.discoveryObservation(playerUuid, source)
+        SafariProfile.discoveriesFrom(getMember(playerUuid, profileUuid)).also {
+            if (source == provider && observation != null) net.johnceo.sparklingmutuals.commands.SafariLookup.observeDiscoveries(playerUuid, source, it, observation)
+        }
     }
 
     fun getPlayerUuid(username: String): String {
@@ -50,7 +54,11 @@ object HypixelApi {
     }
 
     fun getSafariProfile(playerUuid: String): SafariProfile = data {
-        SafariProfile.from(getMember(playerUuid, getCurrentProfileUuid(playerUuid)))
+        val source = provider
+        val observation = net.johnceo.sparklingmutuals.commands.SafariLookup.discoveryObservation(playerUuid, source)
+        SafariProfile.from(getMember(playerUuid, getCurrentProfileUuid(playerUuid))).also {
+            if (source == provider && observation != null) net.johnceo.sparklingmutuals.commands.SafariLookup.observeDiscoveries(playerUuid, source, it.discoveries, observation)
+        }
     }
 
     /** Hive id -> when it refills, for hives looted in the last hour on any session. */

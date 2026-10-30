@@ -36,11 +36,13 @@ class MissingRunCommandTest {
         accept(setOf("local"), mapOf("local" to net.johnceo.sparklingmutuals.safari.SafariRoster.all.map { it.name }.toSet() - needed.toSet()))
     }
     @Test fun `full clear reply uses minimum or known populations and rendered source counts`() {
-        val run = net.johnceo.sparklingmutuals.safari.SafariRun(0)
-        run.record(net.johnceo.sparklingmutuals.safari.SafariCatch.parse("CAPTURE! You caught a Nozzlenose!")!!)
+        var now = 0L
+        val run = net.johnceo.sparklingmutuals.safari.SafariRun(0) { now }
+        run.record(net.johnceo.sparklingmutuals.safari.SafariCatch.parse("CAPTURE! You caught a Nozzlenose!")!!, now)
         fun left(biome: SafariBiome) = SafariMissingReply.requirements(run, biome,
             net.johnceo.sparklingmutuals.safari.SafariMode.FULL_CLEAR, party(), 2, "3")
         assertTrue("Nozzlenose: 1" in left(SafariBiome.ICY))
+        now = 3000 // A genuinely additional population, after capture models have settled.
         run.observePopulation(listOf("Nozzlenose" to java.util.UUID.randomUUID(), "Nozzlenose" to java.util.UUID.randomUUID()))
         assertTrue("Nozzlenose: 2" in left(SafariBiome.ICY))
         run.updateNestEvidence(false, 1, found = 5, unknown = 0)

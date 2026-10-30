@@ -81,7 +81,7 @@ data class PartyCommand(val kind: PartyCommandKind, val ign: String = "", val du
             PartyCommandKind.HELP -> body.startsWith("[SM] Commands: ")
             PartyCommandKind.MISSING_RUN -> body.startsWith(SafariMissingReply.prefix(biome), true)
             else -> Regex(
-                "^${if (ign.isEmpty()) "[A-Za-z0-9_]{1,16}" else Regex.escape(ign)}'s ${pbName}${if (trackedPlayer) " Observed${if (duo && kind in listOf(PartyCommandKind.PB_DOOM, PartyCommandKind.PB_WUMPA)) " Duo" else ""}" else if (duo) " Duo" else ""}${if (kind in listOf(PartyCommandKind.PB_FOREST, PartyCommandKind.PB_HAUNTED, PartyCommandKind.PB_ICY, PartyCommandKind.PB_CAVERN)) { if (trackedPlayer) " Unique Run${if (duo) " Party" else ""}" else "(?: (?:Full Clear|Unique Run))?" } else ""} PB: (?:\\d+:\\d{2}\\.\\d{3}|Not recorded yet)(?: \\| Party PB: \\d+:\\d{2}\\.\\d{3})?$",
+                "^${if (ign.isEmpty()) "[A-Za-z0-9_]{1,16}" else Regex.escape(ign)}'s ${pbName}${if (trackedPlayer) "${if (kind in listOf(PartyCommandKind.PB_DOOM, PartyCommandKind.PB_WUMPA)) "(?: Observed)?" else " Observed"}${if (duo && kind in listOf(PartyCommandKind.PB_DOOM, PartyCommandKind.PB_WUMPA)) " Duo" else ""}" else if (duo) " Duo" else ""}${if (kind in listOf(PartyCommandKind.PB_FOREST, PartyCommandKind.PB_HAUNTED, PartyCommandKind.PB_ICY, PartyCommandKind.PB_CAVERN)) { if (trackedPlayer) " Unique Run${if (duo) " Party" else ""}" else "(?: (?:Full Clear|Unique Run))?" } else ""} PB: (?:\\d+:\\d{2}\\.\\d{3}|Not recorded yet)(?: \\| Party PB: \\d+:\\d{2}\\.\\d{3})?$",
                 RegexOption.IGNORE_CASE).matches(body)
         }
     }

@@ -28,5 +28,8 @@ class PartySparklingState {
     fun needs(species: String) = !everyoneHas(species)
     fun missingMembers(species: String): List<String> = if (!ready) emptyList() else
         members.filter { key(species) !in individual.getValue(it) }
+    fun debug(name: (String) -> String): String = "ready=$ready members=" + members.associate { id ->
+        name(id) to individual[id]?.let { found -> SafariRoster.all.filter { key(it.name) !in found }.map { it.name } }
+    }.toString() + " (missing discoveries per member)"
     fun reset() { members = emptySet(); shared = null; provider = null; individual = emptyMap() }
 }
