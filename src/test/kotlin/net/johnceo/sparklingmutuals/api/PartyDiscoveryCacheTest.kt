@@ -9,6 +9,34 @@ import java.util.concurrent.TimeUnit
 
 class PartyDiscoveryCacheTest {
     private val provider = ApiProvider.capture("", true)
+    @Test fun `warping disbands retain cached discoveries and expected leecher requirements without repeated HTTP`() {
+        val cache=PartyDiscoveryCache()
+        val party=linkedSetOf("me","leechA","leechB","leechC")
+        cache.select(party,provider)
+        party.forEach { who -> cache.load(who,provider) { if(who == "me") setOf("DOOMSPIRAL") else emptySet() } }
+        cache.retain(party,provider)
+        repeat(3) {
+            cache.select(setOf("me"),provider)
+            assertNotNull(cache.known("leechA",provider))
+            assertEquals(emptySet<String>(),cache.load("leechA",provider) { fail("Reserved members remain readable while a command selects the actual solo roster") })
+            val expected=net.johnceo.sparklingmutuals.alerts.SparkleWarpPolicy.requirementRoster(setOf("me"),party)
+            cache.select(expected,provider)
+            val state=PartySparklingState()
+            state.select(expected,provider)
+            assertTrue(state.accept(expected,expected.associateWith { who -> cache.load(who,provider) { fail("Reparty must reuse cached discoveries") } },provider))
+            assertTrue(state.needs("Doomspiral"),"Incense remains needed for the returning leechers")
+            cache.caught(setOf("me"),"Doomspiral",provider)
+            assertFalse("DOOMSPIRAL" in cache.known("leechA",provider)!!,"Expected members outside the run do not get catch credit")
+            cache.select(party,provider)
+            party.forEach { who -> cache.load(who,provider) { fail("Joining again must not fetch") } }
+        }
+        cache.select(setOf("me"),provider)
+        cache.retain(emptySet(),provider)
+        assertNull(cache.known("leechA",provider))
+        cache.retain(party,provider)
+        cache.clear()
+        assertTrue(cache.retainedMembers(provider).isEmpty())
+    }
 
     @Test fun `delayed profile observations cannot cross membership provider or account realm resets`() {
         val cache = PartyDiscoveryCache()

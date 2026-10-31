@@ -35,10 +35,11 @@ object CommandHelp {
         "/unique" to "Unique run mode",
         "/sparkle" to "Sparkling run mode",
         "/warping" to "Toggle delayed /p warp",
+        "/start" to "Enable/restart sparkle warping and prepare the current party",
         "/warpingdelay <seconds>" to "Set warp delay",
         "/autoparty" to "Toggle Sparkling Warp List invitations",
         "/duo <IGN>" to "Choose your runner and use Duo sparkle warping",
-        "/leech" to "Toggle accepting all party invites, leaving your current party first",
+        "/leech" to "Toggle accepting whitelisted invites, leaving your current party first",
         "/apikey <key>" to "Set API key"
     )
     /** Party chat words other mods' users can say that this mod reacts to, without a lookup reply. */

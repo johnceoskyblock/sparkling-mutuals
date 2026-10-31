@@ -105,14 +105,16 @@ object SafariManagerGuard {
         val guard = ConfigManager.holdManagerOnKick
         val downtime = SafariDowntime.entryHold
         val active = activeRun(client)
-        val blocked = (guard || ConfigManager.downtimeCommand) && EntryGuardDecision.block(stage(),
+        val warpContestHold = stage() in setOf(EntryStage.TORRHUS,EntryStage.SAFARI) && !active &&
+            net.johnceo.sparklingmutuals.alerts.SparkleWarping.contestPaused(client)
+        val blocked = warpContestHold && !shiftDown(client) || (guard || ConfigManager.downtimeCommand) && EntryGuardDecision.block(stage(),
             downtime, guard && kick.active, !guard || presence.ready,
             when (stage()) {
                 EntryStage.TORRHUS -> ConfigManager.downtimeCommand && SafariPartyInput.pendingDowntime
                 EntryStage.SAFARI -> guard && SafariPartyInput.pendingKick
                 else -> SafariPartyInput.pending
             }, shiftDown(client))
-        val reason = when (stage()) {
+        val reason = if (warpContestHold) "Reach Uncommon in the contest before the next warp run" else when (stage()) {
             EntryStage.TORRHUS -> if (SafariPartyInput.overflowReadiness) "Everyone must say r or Ticket earned! in party chat"
                 else if (SafariPartyInput.pendingDowntime) "Checking party readiness" else "Waiting for ${SafariDowntime.waitingFor()}"
             EntryStage.UNKNOWN -> "Waiting for server info"

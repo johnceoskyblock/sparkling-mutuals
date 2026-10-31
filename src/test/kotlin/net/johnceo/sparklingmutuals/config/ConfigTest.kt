@@ -168,6 +168,7 @@ class ConfigTest {
         ConfigManager.sparkleWarpMode = 1
         ConfigManager.warpDuo = "Runner"
         ConfigManager.leechMode = true
+        ConfigManager.leechWhitelist = "Leader Friend"
         ConfigManager.partyCommandsEnabled = false
         ConfigManager.save()
         ConfigManager.init(dir)
@@ -176,13 +177,15 @@ class ConfigTest {
         assertEquals(1, ConfigManager.sparkleWarpMode)
         assertEquals("Runner", ConfigManager.warpDuo)
         assertTrue(ConfigManager.leechMode)
+        assertEquals("Leader Friend",ConfigManager.leechWhitelist)
         assertFalse(ConfigManager.partyCommandsEnabled)
         Files.writeString(dir.resolve("sparkling-mutuals.properties"), "warpDelaySeconds=invalid\n")
         ConfigManager.init(dir)
         assertEquals(25, ConfigManager.warpDelaySeconds)
         assertEquals(0, ConfigManager.sparkleWarpMode)
         assertEquals("", ConfigManager.warpDuo)
-        assertFalse(ConfigManager.leechMode)
+        assertTrue(ConfigManager.leechMode)
+        assertEquals("JohnCEO _cj Rqach",ConfigManager.leechWhitelist)
     }
 
     @Test

@@ -53,12 +53,16 @@ object SafariSparklingMode {
             PartyManager.requestPartyInfo()
         }
         // A confirmed empty roster is solo. Unknown membership cannot be treated as solo.
-        val members = PartyManager.withLocal(client.player!!.uuid.toString())
-        if (members == null) {
+        val actualMembers = PartyManager.withLocal(client.player!!.uuid.toString())
+        if (actualMembers == null) {
+            if (net.johnceo.sparklingmutuals.alerts.SparkleWarping.retainingRequirements(client)) {
+                PartyManager.requestPartyInfo();return
+            }
             if (roster.isNotEmpty()) { invalidate(); roster = emptySet(); state.reset() }
             PartyManager.requestPartyInfo()
             return
         }
+        val members = net.johnceo.sparklingmutuals.alerts.SparkleWarping.requirementMembers(client,actualMembers)
         if (members != roster) { invalidate(); roster = members; warning = null }
         SafariLookup.selectParty(members, currentProvider)
         state.select(members, currentProvider)
@@ -81,7 +85,9 @@ object SafariSparklingMode {
                 // This worker is finished even if a transient roster refresh makes its result unusable.
                 task = null
                 if (client.connection !== connection || HypixelApi.provider != currentProvider) return@execute
-                if (client.player?.uuid?.toString()?.let(PartyManager::withLocal) != members) {
+                if (client.player?.uuid?.toString()?.let(PartyManager::withLocal)?.let {
+                        net.johnceo.sparklingmutuals.alerts.SparkleWarping.requirementMembers(client,it)
+                    } != members) {
                     retry.failed(System.currentTimeMillis(), currentProvider)
                     return@execute
                 }
@@ -112,9 +118,11 @@ object SafariSparklingMode {
             uuid == self.uuid.toString() || client.connection?.getPlayerInfo(java.util.UUID.fromString(uuid)) != null
         }
         val before = SafariLookup.caught(members, species, participants)
-        state.select(members)
-        val updated = members.mapNotNull { id -> SafariLookup.known(id)?.let { id to it } }.toMap()
-        state.accept(members, updated)
+        HypixelApi.recordSparkling(participants,species)
+        val requirements=net.johnceo.sparklingmutuals.alerts.SparkleWarping.requirementMembers(client,members)
+        state.select(requirements)
+        val updated = requirements.mapNotNull { id -> SafariLookup.known(id)?.let { id to it } }.toMap()
+        state.accept(requirements, updated)
         if (!net.johnceo.sparklingmutuals.history.HistoryServerPolicy.alpha(client))
             net.johnceo.sparklingmutuals.history.OwnStats.sparkling(species)
         val key = species.uppercase(java.util.Locale.ROOT).replace(' ', '_')

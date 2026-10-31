@@ -12,16 +12,44 @@ import net.johnceo.sparklingmutuals.honeyhives.Hive
 
 object HypixelApi {
     private val client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build()
+    private val profileCache=TimedLookupCache<Pair<ApiProvider,String>,JsonObject>()
+    private val nameCache=TimedLookupCache<String,String>()
+    private val discoveryUpdates=ProfileDiscoveryOverlay<Pair<ApiProvider,String>>()
 
     /** Lookups go through Shiny Hunter's shared API when no key of your own is set. */
     val provider get() = ApiProvider.capture()
     val usingCloud get() = provider.cloud
 
-    private fun profiles(uuid: String): JsonObject =
-        if (usingCloud) CloudApi.profiles(uuid) else get("https://api.hypixel.net/v2/skyblock/profiles?uuid=$uuid")
+    private fun profiles(uuid: String, fresh: Boolean = false): JsonObject {
+        val id=uuid.replace("-","").lowercase(java.util.Locale.ROOT)
+        val source=provider
+        val key=source to id
+        val read={
+            val body=if (source.cloud) CloudApi.profiles(id) else get("https://api.hypixel.net/v2/skyblock/profiles?uuid=$id")
+            val selected=CloudProfiles.selectedProfileId(body) ?: throw ApiFailure.dataUnavailable()
+            SafariProfile.discoveriesFrom(CloudProfiles.member(body,id,selected) ?: throw ApiFailure.dataUnavailable())
+            body
+        }
+        val body=if (fresh) read().also { profileCache.put(key,it) } else profileCache.load(key,read)
+        return discoveryUpdates.apply(key,id,body)
+    }
+    fun clearProfileCache() { profileCache.clear();discoveryUpdates.clear() }
+    fun recordSparkling(participants: Set<String>,species: String) {
+        val source=provider
+        participants.forEach { uuid ->
+            val id=uuid.replace("-","").lowercase(java.util.Locale.ROOT)
+            val key=source to id
+            val baseline=profileCache.peek(key)?.let { body ->
+                CloudProfiles.selectedProfileId(body)?.let { CloudProfiles.member(body,id,it) }
+            }?.get("safari")?.takeIf { it.isJsonObject }?.asJsonObject?.get("total_captured_sparkling_critters")?.takeIf {
+                it.isJsonPrimitive && it.asJsonPrimitive.isNumber
+            }?.asLong
+            discoveryUpdates.caught(key,species,baseline)
+        }
+    }
 
-    fun getCurrentProfileUuid(uuid: String): String = data {
-        CloudProfiles.selectedProfileId(profiles(uuid)) ?: throw ApiFailure.dataUnavailable()
+    fun getCurrentProfileUuid(uuid: String, fresh: Boolean = false): String = data {
+        CloudProfiles.selectedProfileId(profiles(uuid,fresh)) ?: throw ApiFailure.dataUnavailable()
     }
 
     fun getSparklingCritters(playerUuid: String, profileUuid: String): Set<String> = data {
@@ -32,7 +60,7 @@ object HypixelApi {
         }
     }
 
-    fun getPlayerUuid(username: String): String {
+    fun getPlayerUuid(username: String): String = nameCache.load(username.lowercase(java.util.Locale.ROOT)) {
         val response = send(HttpRequest.newBuilder()
             .uri(URI.create("https://api.mojang.com/users/profiles/minecraft/$username")))
         if (response.statusCode() == 204 || response.statusCode() == 404) {
@@ -41,7 +69,7 @@ object HypixelApi {
         if (response.statusCode() == 429) throw ApiFailure(ApiFailureKind.RATE_LIMIT,
             "Player lookup request limit reached. Try again shortly.")
         if (response.statusCode() != 200) throw ApiFailure.unavailable()
-        return try { JsonParser.parseString(response.body()).asJsonObject.get("id").asString }
+        try { JsonParser.parseString(response.body()).asJsonObject.get("id").asString }
         catch (_: Exception) { throw ApiFailure.unavailable() }
     }
 
@@ -63,17 +91,13 @@ object HypixelApi {
 
     /** Hive id -> when it refills, for hives looted in the last hour on any session. */
     fun getHoneyRefills(playerUuid: String): HoneyRefills = data {
-        val profile = getCurrentProfileUuid(playerUuid)
-        HoneyRefills(profile, HoneyRefills.read(getMember(playerUuid, profile)))
+        val body=profiles(playerUuid,fresh=true)
+        val profile=CloudProfiles.selectedProfileId(body) ?: throw ApiFailure.dataUnavailable()
+        HoneyRefills(profile,HoneyRefills.read(CloudProfiles.member(body,playerUuid,profile) ?: throw ApiFailure.dataUnavailable()))
     }
 
     private fun getMember(playerUuid: String, profileUuid: String): JsonObject = data {
-        val member = playerUuid.replace("-", "")
-        // The shared API serves only the profiles list (cached), so the member is read from there.
-        if (usingCloud) CloudProfiles.member(profiles(playerUuid), playerUuid, profileUuid) ?: throw ApiFailure.dataUnavailable()
-        else get("https://api.hypixel.net/v2/skyblock/profile?profile=$profileUuid")
-            .getAsJsonObject("profile")?.getAsJsonObject("members")
-            ?.getAsJsonObject(member) ?: throw ApiFailure.dataUnavailable()
+        CloudProfiles.member(profiles(playerUuid),playerUuid,profileUuid) ?: throw ApiFailure.dataUnavailable()
     }
 
     private fun get(url: String): JsonObject {

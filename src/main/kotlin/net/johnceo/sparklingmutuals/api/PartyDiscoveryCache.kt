@@ -12,27 +12,35 @@ class PartyDiscoveryCache {
     }
     private var provider: ApiProvider? = null
     private var members = emptySet<String>()
+    private var retained = emptySet<String>()
     private val entries = mutableMapOf<String, Entry>()
     private fun id(uuid: String) = uuid.replace("-", "").lowercase(Locale.ROOT)
     private fun key(species: String) = species.uppercase(Locale.ROOT).replace(' ', '_')
 
     @Synchronized fun select(roster: Set<String>, source: ApiProvider) {
-        if (provider != source) { entries.clear(); provider = source }
+        if (provider != source) { entries.clear(); retained=emptySet(); provider = source }
         members = roster.map(::id).toSet()
-        entries.keys.retainAll(members)
+        entries.keys.retainAll(members + retained)
     }
+    /** Planned warping members survive the intentional disband, but are not automatically participants. */
+    @Synchronized fun retain(roster: Set<String>, source: ApiProvider) {
+        if (provider != source) { entries.clear(); members=emptySet(); provider=source }
+        retained=roster.map(::id).toSet()
+        entries.keys.retainAll(members + retained)
+    }
+    @Synchronized fun retainedMembers(source: ApiProvider): Set<String> = if (provider == source) retained.toSet() else emptySet()
 
     @Synchronized fun known(uuid: String, source: ApiProvider): Set<String>? =
         if (provider != source) null else entries[id(uuid)]?.let { entry -> entry.value?.plus(entry.earned) }
 
-    /** Entry identity survives ordinary refreshes, but not removal, provider or account/realm resets. */
+    /** Entry identity survives refreshes and reserved disbands, but not unreserved removal or scope resets. */
     @Synchronized fun observationToken(uuid: String, source: ApiProvider): Any? =
-        if (provider == source && id(uuid) in members) entries.getOrPut(id(uuid), ::Entry) else null
+        if (provider == source && (id(uuid) in members || id(uuid) in retained)) entries.getOrPut(id(uuid), ::Entry) else null
 
     /** Reuse successful profile reads made elsewhere; discoveries only grow within this membership. */
     @Synchronized fun observe(uuid: String, source: ApiProvider, discoveries: Set<String>, token: Any? = null) {
         val member = id(uuid)
-        if (provider != source || member !in members) return
+        if (provider != source || member !in members && member !in retained) return
         if (token != null && entries[member] !== token) return
         val entry = entries.getOrPut(member, ::Entry)
         entry.value = entry.value.orEmpty() + discoveries.map(::key)
@@ -52,7 +60,7 @@ class PartyDiscoveryCache {
         val future: CompletableFuture<Set<String>>
         val owner: Boolean
         synchronized(this) {
-            check(provider == source && member in members) { "Party changed during discovery lookup" }
+            check(provider == source && (member in members || member in retained)) { "Party changed during discovery lookup" }
             entry = entries.getOrPut(member, ::Entry)
             entry.value?.let { return it + entry.earned }
             owner = entry.pending == null
@@ -79,5 +87,5 @@ class PartyDiscoveryCache {
         }
     }
 
-    @Synchronized fun clear() { entries.clear(); members = emptySet(); provider = null }
+    @Synchronized fun clear() { entries.clear(); members = emptySet(); retained=emptySet(); provider = null }
 }

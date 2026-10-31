@@ -69,17 +69,13 @@ object SparkleAutoParty {
             SafariTracking.ledger.current?.endedAt != null) { stop(); return }
         val now = System.currentTimeMillis()
         if (now >= invitations.deadline) { stop(); return }
+        if (SparkleWarping.preparingParty) return
         if (!PartyManager.hasInfo) { PartyManager.requestPartyInfo(); return }
         val player = client.player ?: return
         val members = PartyManager.getMembers().toSet()
         // A confirmed solo player can create a party; existing parties require leadership.
         if (!SparkleWarping.canLead(client)) { stop(); return }
         if (ConfigManager.sparkleWarpMode == 1 && ConfigManager.warpDuo.isBlank()) { stop();return }
-        if (SparkleWarpPolicy.returningPhase(windowStartedAt,now) && !returningQueued) {
-            invitations.discardPending()
-            invitations.add("returning leechers",SparkleWarping.returningPlayers())
-            returningQueued=true
-        }
         if (!SparkleWarpPolicy.returningPhase(windowStartedAt,now) && !ConfigManager.autoParty) invitations.discardPending()
         val names = client.connection?.onlinePlayers.orEmpty()
             .filter { it.profile.id.toString() in members }.map { it.profile.name.lowercase() }.toSet()
@@ -87,6 +83,14 @@ object SparkleAutoParty {
             .map(String::lowercase)
         val present=names + cached + joined + player.name.string.lowercase()
         if (ConfigManager.sparkleWarpMode == 1 && ConfigManager.warpDuo.lowercase() !in present) return
+        if (SparkleWarpPolicy.returningPhase(windowStartedAt,now)) {
+            invitations.discardPending()
+            if (!returningQueued) SparkleWarpPolicy.returningCommand(SparkleWarping.returningPlayers(),present,members.size)?.let {
+                client.connection?.sendCommand(it)
+                returningQueued=true
+            }
+            return
+        }
         if (maxOf(members.size,present.size) >= SparkleWarpPolicy.PARTY_SIZE) return
         invitations.next(now, present)?.let {
             client.connection?.sendCommand("p $it")

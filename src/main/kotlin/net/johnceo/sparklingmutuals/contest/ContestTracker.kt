@@ -212,6 +212,10 @@ object ContestTracker {
     /**
      * Completion belongs to the observed profile and contest window; ticket detection continues with the HUD off.
      */
+    /** Warp cycles require only the Basic ticket, independently of the announcer's ticket mode. */
+    fun hasUncommon(): Boolean = windowKey == absoluteWindow(java.time.LocalDateTime.now()) &&
+        secondsIntoWindow >= 10 && ContestTicketState.earned(tier, false, points)
+
     fun isComplete(): Boolean = selectedTicketMode == ContestConfig.ticketMode &&
         completeFor(complete, completedWindow, absoluteWindow(java.time.LocalDateTime.now()))
     fun completeFor(complete: Boolean, seenWindow: Long, currentWindow: Long) = complete && seenWindow == currentWindow

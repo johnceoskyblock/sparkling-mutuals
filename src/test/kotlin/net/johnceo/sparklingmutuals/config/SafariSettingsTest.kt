@@ -27,7 +27,10 @@ class SafariSettingsTest {
         settings.safari.shiny = false
         settings.party.enabled = false
         settings.warp.enabled = true
+        settings.warp.whitelist = "Leader, Friend; leader"
         settings.apply()
+        assertFalse(net.johnceo.sparklingmutuals.alerts.SparkleWarping.preparingParty,
+            "Enabling must not prepare or disband the party; /start does that")
         ConfigManager.init(dir)
         ContestConfig.init(dir)
         assertTrue(ContestConfig.firstClassTicket)
@@ -41,6 +44,7 @@ class SafariSettingsTest {
         assertFalse(ConfigManager.shinyDetection)
         assertFalse(ConfigManager.partyCommandsEnabled)
         assertTrue(ConfigManager.warpAlertsEnabled)
+        assertEquals("Leader Friend",ConfigManager.leechWhitelist)
         assertEquals(listOf(1), ContestConfig.warningMinutes())
         settings.miria.five = false
         settings.miria.ticketMode = 0
@@ -49,6 +53,18 @@ class SafariSettingsTest {
         ContestConfig.init(dir)
         assertFalse(ContestConfig.firstClassTicket)
         assertTrue(ContestConfig.warningMinutes().isEmpty())
+        settings.warp.enabled = false
+        settings.apply()
+        assertFalse(net.johnceo.sparklingmutuals.alerts.SparkleWarping.preparingParty,
+            "Disabling must cancel a pending party preparation")
+        net.johnceo.sparklingmutuals.alerts.AlertManager.startCycle()
+        assertTrue(ConfigManager.warpAlertsEnabled)
+        assertTrue(net.johnceo.sparklingmutuals.alerts.SparkleWarping.preparingParty)
+        net.johnceo.sparklingmutuals.alerts.SparkleWarping.cancelSetup()
+        net.johnceo.sparklingmutuals.alerts.AlertManager.startCycle()
+        assertTrue(net.johnceo.sparklingmutuals.alerts.SparkleWarping.preparingParty,
+            "/start must prepare the party even if warping is already enabled")
+        net.johnceo.sparklingmutuals.alerts.SparkleWarping.cancelSetup()
     }
     @Test fun `Safari palette is scoped to our settings rendering`() {
         val libraryGrey = 0xFF202026.toInt()
