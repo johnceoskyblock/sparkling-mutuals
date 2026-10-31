@@ -31,6 +31,7 @@ object AlertManager {
         ConfigManager.warpAlertsEnabled = !ConfigManager.warpAlertsEnabled
         ConfigManager.save()
         cancelPendingAlert()
+        SparkleWarping.cancelSetup()
         return ConfigManager.warpAlertsEnabled
     }
 
@@ -38,6 +39,13 @@ object AlertManager {
         ConfigManager.warpDelaySeconds = seconds.coerceIn(1, 86400)
         ConfigManager.save()
         cancelPendingAlert()
+    }
+    /** Explicit restart works even when the master toggle is already enabled. */
+    fun startCycle() {
+        ConfigManager.warpAlertsEnabled = true
+        ConfigManager.save()
+        cancelPendingAlert()
+        SparkleWarping.prepareOnEnable()
     }
 
     fun onInitialize() {
@@ -58,7 +66,7 @@ object AlertManager {
         val deadline = startedAt + getDelay() * 1000L
         net.johnceo.sparklingmutuals.party.PartyManager.withPartyInfo {
             if (revision != scheduleRevision || client.connection !== connection || client.level !== level ||
-                SafariTracking.ledger.current !== run || !isEnabled() ||
+                SafariTracking.ledger.current !== run || !isEnabled() || SparkleWarping.contestPaused(client) ||
                 !SparkleWarpPolicy.canStart(SparkleWarping.canLead(client),net.johnceo.sparklingmutuals.party.PartyManager.getMembers().size) ||
                 System.currentTimeMillis() >= deadline) return@withPartyInfo
             val scheduledGeneration = expiry.arm(run)

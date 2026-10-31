@@ -8,7 +8,21 @@ object SparkleWarpPolicy {
     const val PARTY_SIZE = 4
     fun canStart(leader: Boolean, members: Int) = leader && members in 0 until PARTY_SIZE
     fun returningPhase(startedAt: Long, now: Long) = now-startedAt >= RETURN_AT
+    fun requirementRoster(actual: Set<String>, returning: Set<String>): Set<String> {
+        fun id(value: String)=value.replace("-","").lowercase()
+        val present=actual.map(::id).toSet()
+        return actual + returning.filter { id(it) !in present }.take((PARTY_SIZE-actual.size).coerceAtLeast(0))
+    }
+    fun contestPause(enabled: Boolean, leech: Boolean, leader: Boolean?, ticketEarned: Boolean) =
+        enabled && !leech && leader != false && !ticketEarned
     private val ign = Regex("[A-Za-z0-9_]{1,16}")
+    fun inviteAllowed(name: String, whitelist: String) = ign.matches(name) && WarpList.parse(whitelist).any { it.equals(name,true) }
+    fun returningCommand(names: List<String>, present: Set<String>, memberCount: Int): String? {
+        val members=present.map(String::lowercase).toSet()
+        val slots=(PARTY_SIZE-maxOf(memberCount,members.size)).coerceAtLeast(0)
+        val missing=names.filter { ign.matches(it) && it.lowercase() !in members }.distinctBy(String::lowercase).take(slots)
+        return missing.takeIf { it.isNotEmpty() }?.joinToString(" ",prefix="p ")
+    }
     data class Cleanup(val leechers: List<String>, val commands: List<String>)
     fun cleanup(mode: SparkleWarpMode, self: String, duo: String, members: List<String>): Cleanup? {
         if (mode == SparkleWarpMode.DUO && (!ign.matches(duo) || duo.equals(self,true) || members.none { it.equals(duo,true) })) return null

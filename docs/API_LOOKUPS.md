@@ -12,13 +12,15 @@ Per-member discovery sets are retained alongside their intersection. Completion-
 
 ## Retained party data
 
+Sparkle Warping reserves the saved party's discovery entries before intentional disband/kicks. Leech-enabled clients reserve their party entries as well. Rejoining these same members reuses the existing baseline and locally earned discoveries, with no new fetch just because of repartying. Only new or never-loaded members fetch. The warping leader's mode roster includes actual members plus expected returning members in the available slots (maximum four), so needed ESP remains enabled while leechers are temporarily absent. These expected members are not granted catches unless actually participating. Normal non-warping requirements still drop removed players immediately. Reservations are session-only and respect account/provider/Alpha scope changes.
+
 Timesave `!missing` lists each missing bird by name; `!mutual`/`!mutuals` lists each bird shared by every party member. Bluebird, Parakeet and Macaw are no longer collapsed into `All Birds`, so partial discoveries remain visible. Bird-food spawning and completion rules still treat the birds as a shared source group. Older `All Birds` replies remain recognized for mixed-version parties.
 
-Mode requirements and `!mutuals` use the same retained discovery baselines. Roster additions fetch only new members; removals drop that member from the calculation immediately and retain everyone else. A new run or mode switch reuses loaded data. Server-confirmed catches update participating members locally and cannot be overwritten by a delayed API result. Discovery caches are scoped to account, provider and Alpha/main realm and survive ordinary server transfers. Process restart, provider/account/realm changes, or leaving and rejoining the party require appropriate fresh baselines.
+Mode requirements and `!mutuals` use the same retained discovery baselines. Roster additions fetch only new members; removals drop that member from the calculation immediately and retain everyone else. A new run or mode switch reuses loaded data. Server-confirmed catches update participating members locally and cannot be overwritten by a delayed API result. Discovery caches are scoped to account, provider and Alpha/main realm and survive ordinary server transfers. Process restart, provider/account/realm changes, require fresh baselines. Ordinary rejoining within 60 minutes reuses the general profile cache.
 
 Successful existing profile/discovery reads also merge discoveries into current members' mode cache. This includes `/sparkling`, `/sparkling party`, `!missing` and scheduled personal stats; it adds no requests or retry timers. A lookup can repair an old missing-discovery baseline without changing modes. Older responses cannot erase discoveries or locally observed catches. Unrelated players and other API providers cannot update the active party cache. Results must still belong to the cache entry present when their request began; account/realm resets, provider changes and leaving/rejoining reject older observations. `/sm debug` lists each member's cached missing discoveries, using available IGNs without a name lookup.
 
-Live history uniqueness now uses the pre-catch cached discovery set without another API call. If the baseline is unavailable, the flag stays unconfirmed. Personal stats refresh normally every thirty minutes, and Bazaar attempts are throttled to three hours, including failures. `/sparkling party` uses the existing UUID/name resolver instead of UUID fragments. Explicit `!missing`, ticket and profile-card fetch behavior is unchanged.
+Live history uniqueness now uses the pre-catch cached discovery set without another API call. If the baseline is unavailable, the flag stays unconfirmed. Personal stats refresh normally every thirty minutes, and Bazaar attempts are throttled to three hours, including failures. `/sparkling party` uses the existing UUID/name resolver instead of UUID fragments. Explicit `!missing` and profile cards reuse successful profile reads for 60 minutes. Ticket queries retain short transport-cache freshness.
 
 ## Retry behavior
 
@@ -50,6 +52,8 @@ See [API fetch audit](API_FETCH_AUDIT.md) for every current HTTP trigger, client
 
 ## Last updated
 
+2026-10-31 — Managed Sparkle Warping and Leech party reservations reuse cached discoveries across repartying; expected returning members retain applicable mode requirements.
+
 2026-10-30 — Existing successful profile reads repair retained party discoveries without extra API requests; debug identifies cached missing discoveries by member.
 
 2026-10-27 — `!missing`, `!ticket` and `!tickets` accept an omitted IGN and resolve it to the verified party-chat sender, never the responding mod user. Explicit-name queries remain supported. Omitted and explicit self queries share the same request fingerprint and existing cooldowns; lookup/cache behavior is unchanged.
@@ -71,3 +75,5 @@ See [API fetch audit](API_FETCH_AUDIT.md) for every current HTTP trigger, client
 2026-10-19 - Extended zero-discovery party requirements to unavailable profile/member data and verified independent starting-drop reports from multiple mod users.
 
 2026-10-19 - Added one-minute failed-request recovery, valid empty-discovery profiles, and finished-worker cleanup during party changes.
+
+Successful profile/discovery reads and IGN-to-UUID lookups are reused for 60 minutes, including after repartying. Simultaneous reads share one request. Failed lookups are not cached; background failures keep their one-minute retry. Observed catches update participating players’ discovery lists locally. Current mode discovery baselines remain cached while members are active or reserved for warping. Ticket and Honeyhive queries bypass the hour-long profile cache and retain the existing short transport-cache freshness. No periodic request is added by cache expiry. Account/provider/Alpha scope changes prevent cross-scope profile reuse.

@@ -4,6 +4,20 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class SparkleWarpPolicyTest {
+    @Test fun `planned leechers fill open requirement slots and contest pause belongs only to the warping leader`() {
+        val saved=linkedSetOf("Leader","Runner","LeechA","LeechB")
+        assertEquals(saved,SparkleWarpPolicy.requirementRoster(linkedSetOf("Leader","Runner"),saved))
+        assertEquals(setOf("Leader","Runner","Priority","LeechA"),
+            SparkleWarpPolicy.requirementRoster(linkedSetOf("Leader","Runner","Priority"),saved))
+        val full=linkedSetOf("Leader","Runner","Priority","New")
+        assertEquals(full,SparkleWarpPolicy.requirementRoster(full,saved))
+        assertTrue(SparkleWarpPolicy.contestPause(true,false,true,false))
+        assertTrue(SparkleWarpPolicy.contestPause(true,false,null,false))
+        assertFalse(SparkleWarpPolicy.contestPause(true,false,true,true))
+        assertFalse(SparkleWarpPolicy.contestPause(false,false,true,false))
+        assertFalse(SparkleWarpPolicy.contestPause(true,false,false,false))
+        assertFalse(SparkleWarpPolicy.contestPause(true,true,true,false))
+    }
     @Test fun `solo disbands and remembers others while duo keeps its selected runner`() {
         val members=listOf("Leader","Runner","LeechA","LeechB")
         val solo=SparkleWarpPolicy.cleanup(SparkleWarpMode.SOLO,"leader","",members)!!
@@ -26,16 +40,20 @@ class SparkleWarpPolicyTest {
         invites.add("Flitter",listOf("Priority","Other"))
         assertEquals("Priority",invites.next(1000,emptySet()))
         invites.discardPending()
-        invites.add("returning leechers",listOf("OldA","OldB","OldC"))
-        assertEquals("OldA",invites.next(19000,setOf("Priority")))
-        assertNull(invites.next(20999,setOf("Priority","OldA")))
-        assertEquals("OldB",invites.next(21000,setOf("Priority","OldA")))
-        assertEquals("OldC",invites.next(23000,setOf("Priority","OldA","OldB")))
+        assertNull(invites.next(19000,emptySet()),"Returning players bypass the paced Warp List queue")
+        assertEquals("p OldA OldB OldC",SparkleWarpPolicy.returningCommand(listOf("OldA","OldB","OldC"),setOf("Leader"),1))
+        assertEquals("p OldA OldB",SparkleWarpPolicy.returningCommand(listOf("OldA","OldB","OldC"),setOf("Leader","Priority"),2))
+        assertEquals("p OldB",SparkleWarpPolicy.returningCommand(listOf("OldA","OldB","oldb","Bad Name"),setOf("Leader","Runner","OldA"),3))
+        assertNull(SparkleWarpPolicy.returningCommand(listOf("OldA"),setOf("Leader","Runner","Third","Fourth"),4))
         assertNull(invites.next(25000,emptySet()))
     }
     @Test fun `leech accepts actual multiline server invitations but never player quotes`() {
         val invite="-----------------------------------------------------\\n[MVP++] _cj has invited you to join their party!\\nYou have 60 seconds to accept. Click here to join!\\n-----------------------------------------------------"
         assertEquals("_cj",SparkleWarpPolicy.inviter(invite))
+        assertTrue(SparkleWarpPolicy.inviteAllowed("_CJ","JohnCEO, _cj; JohnFounder"))
+        assertFalse(SparkleWarpPolicy.inviteAllowed("NotListed","JohnCEO _cj"))
+        assertFalse(SparkleWarpPolicy.inviteAllowed("John","JohnCEO"))
+        assertFalse(SparkleWarpPolicy.inviteAllowed("JohnCEO",""))
         assertNull(SparkleWarpPolicy.inviter("Party > Friend: [MVP++] _cj has invited you to join their party!"))
         assertNull(SparkleWarpPolicy.inviter("[MVP+] _cj: Other has invited you to join their party!"))
         val pending=LeechInvitation()

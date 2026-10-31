@@ -13,9 +13,12 @@ object SafariLookup {
     @Synchronized fun useAccount(identity: String): Boolean {
         if (account == identity) return false
         cache.clear(); account = identity
+        HypixelApi.clearProfileCache()
         return true
     }
     fun selectParty(members: Set<String>, provider: ApiProvider = HypixelApi.provider) = cache.select(members, provider)
+    fun retainWarpParty(members: Set<String>) = cache.retain(members,HypixelApi.provider)
+    fun retainedWarpParty(): Set<String> = cache.retainedMembers(HypixelApi.provider)
     fun known(uuid: String, provider: ApiProvider = HypixelApi.provider) = cache.known(uuid, provider)
     fun discoveryObservation(uuid: String, provider: ApiProvider) = cache.observationToken(uuid, provider)
     fun observeDiscoveries(uuid: String, provider: ApiProvider, discoveries: Set<String>, token: Any) = cache.observe(uuid, provider, discoveries, token)
@@ -69,7 +72,7 @@ object SafariLookup {
         }
         PartyCommandKind.TICKETS -> {
             val uuid = HypixelApi.getPlayerUuid(command.ign)
-            val tickets = HypixelApi.getSafariTickets(uuid, HypixelApi.getCurrentProfileUuid(uuid))
+            val tickets = HypixelApi.getSafariTickets(uuid, HypixelApi.getCurrentProfileUuid(uuid,fresh=true))
             "${command.ign}: Basic (${tickets["basic"]}), Economy (${tickets["economy"]}), " +
                 "Premium (${tickets["premium"]}), First-Class (${tickets["first_class"]}), Total (${tickets.values.sum()})"
         }

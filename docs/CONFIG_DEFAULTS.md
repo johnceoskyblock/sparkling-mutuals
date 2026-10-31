@@ -130,6 +130,12 @@ Each mode dropdown has independent Hide critter ESP and Hide floor-drop ESP togg
 
 ## Last updated
 
+2026-10-31 — Warp List starts blank for every critter on fresh installs. Existing saved lists remain unchanged.
+
+2026-10-31 — Leech defaults on; default whitelist: `JohnCEO _cj Rqach`. Applies when the corresponding settings are absent; explicit saved values remain unchanged.
+
+2026-10-31 — Added an empty-by-default Leech invite whitelist; `/leech` only accepts approved IGNs. Warping pauses new run entry until the selected contest ticket is earned.
+
 2026-10-30 — Hotspot announcer toggles now live under Party Interactions → Hotspot announcer. Existing per-mode keys and off defaults are preserved; each toggle controls actual-hotspot chat plus assigned-biome alerts.
 
 2026-10-30 — Sparkle Warping uses a 25-second fresh/reset delay, Solo leader mode, empty Duo runner and Leech off. Existing saved delays stay unchanged.
@@ -170,3 +176,5 @@ Each mode dropdown has independent Hide critter ESP and Hide floor-drop ESP togg
 
 
 2026-10-19 (America/New_York) — Audited loaded defaults, saved choices, presets, appearance and PB migration against source `93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee`. See [documentation conventions](DOCUMENTATION_GUIDE.md).
+
+Successful profile/discovery reads and IGN-to-UUID lookups are reused for 60 minutes, including after repartying. Simultaneous reads share one request. Failed lookups are not cached; background failures keep their one-minute retry. Observed catches update participating players’ discovery lists locally. Current mode discovery baselines remain cached while members are active or reserved for warping. Ticket and Honeyhive queries bypass the hour-long profile cache and retain the existing short transport-cache freshness. No periodic request is added by cache expiry. Account/provider/Alpha scope changes prevent cross-scope profile reuse.
