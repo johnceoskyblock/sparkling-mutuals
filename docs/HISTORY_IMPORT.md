@@ -151,3 +151,5 @@ Missing messages/dates cannot be reconstructed, and close run starts can be ambi
 2026-10-21 — History uniqueness uses pre-catch party cache data; personal stats refresh every thirty minutes and Bazaar attempts every three hours.
 
 2026-10-19 (America/New_York) — Audited live history, import, UI, achievements and persistence against source `93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee`. See [documentation conventions](DOCUMENTATION_GUIDE.md) and [consolidated discrepancies](IMPLEMENTATION_AUDIT.md).
+
+2026-11-02 — See ACHIEVEMENTS.md for the new achievement catalog and migration. Credited imported sparklings contribute per-type multi-dex counts and duplicate streaks. Macaw drought requires new explicit nine-food usage/no-spawn proof; unknown older/imported rows do not qualify. No unavailable historical dye counts are inferred beyond an existing one-dye unlock.

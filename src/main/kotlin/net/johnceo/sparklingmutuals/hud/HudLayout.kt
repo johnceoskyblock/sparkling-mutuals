@@ -52,9 +52,12 @@ class HudLayout(private val defaultX: Float, private val defaultY: Float, privat
 
 enum class SafariHud(private val defaultLabel: String, val layout: HudLayout) {
     PROGRESS("Safari progress", HudLayout(.015f, .22f)), MISSING("Missing critters", HudLayout(.72f, .22f)),
+    OBJECTIVES("Biome Objectives", HudLayout(.72f, .62f)),
     CAPTURES("Biome captures", HudLayout(.39f, .22f)), SPARKLINGS("Nearby sparklings", HudLayout(.015f, .72f)),
+    BANNER("Safari Banner", HudLayout(.40f, .34f, 1.4f)),
     GEMS("All Gems alert", HudLayout(.36f, .10f, 1.5f)),
     BIRD_FOOD("All Bird Food alert", HudLayout(.30f, .18f, 1.5f)),
+    COINS("All Coins alert", HudLayout(.34f, .30f, 1.5f)),
     INCENSE("All Incense alert", HudLayout(.34f, .26f, 1.5f)),
     RUN_COMPLETE("Run completion alert", HudLayout(.35f, .42f, 1.5f)),
     WARP("Warping Now", HudLayout(.37f, .34f, 1.5f)),

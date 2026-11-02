@@ -22,6 +22,7 @@ object RunHistory {
     private val tally get() = session.tally
     private val splits get() = session.splits
     private val tickets get() = session.tickets
+    private val essenceLine=Regex("^Safari Essence: ([0-9,]+)$")
     private var ticks = 0
     private var finishedSummary: Pair<RunRecord, RunTally>? = null
     private var finishedSummaryAt = 0L
@@ -64,17 +65,32 @@ object RunHistory {
         }
     }
 
+    /** HUD estimate reads only the existing cache; rendering never triggers a request. */
+    fun liveProfit(run: SafariRun): Long {
+        if(session.active!==run) return data.runs.firstOrNull { it.start==run.startedAt }?.coins ?: 0L
+        val earnedEssence=if(tally.safariEssence>=0) tally.safariEssence else tally.liveEssence
+        if(tally.shards.isEmpty() && tally.feathers==0 && earnedEssence<=0) return 0L
+        val prices=BazaarPrices.cachedPrices
+        val value=BazaarPrices.value(tally.shards,tally.feathers,table=prices)
+        if(value<0) return -1L
+        val essence=prices[BazaarPrices.SAFARI_ESSENCE]?.getOrNull(if(ConfigManager.runCoinsInstaSell) 0 else 1) ?: 0.0
+        return value+Math.round(earnedEssence*essence)
+    }
+
     fun onTicket() { if (HistoryServerPolicy.allows()) session.onTicket(SafariTracking.ledger.current) }
 
     fun tick(client: Minecraft) {
         HistoryServerPolicy.allows(client)
         session.sync(SafariTracking.ledger.current) { finish(it, client) }
         val current = session.active ?: return
+        if(current.endedAt==null) net.johnceo.sparklingmutuals.hud.SkyblockSidebar.lines(client).firstNotNullOfOrNull { line ->
+            essenceLine.matchEntire(line.trim())?.groupValues?.get(1)?.replace(",","")?.toIntOrNull()
+        }?.let(tally::observeEssence)
         if (++ticks % 10 != 0) return
         val now = System.currentTimeMillis()
         val party = SafariSparklingMode.state
         for (biome in SafariBiome.entries) if (biome.label !in splits &&
-            current.completed(SafariFullClear.mode, biome.critters, party) == biome.critters.size)
+            current.biomeComplete(SafariFullClear.mode, biome, party))
             splits[biome.label] = now - current.startedAt
     }
 
@@ -94,6 +110,8 @@ object RunHistory {
             macaws = tally.macaws, splits = LinkedHashMap(splits), safariEssence = tally.safariEssence,
             summaryShards = tally.summaryShards, huntingXp = tally.huntingXp, hotspot = run.entry.hotspot?.label.orEmpty(),
             macawChecked = run.count("Macaw") > 0 || run.birds.feedingResolved,
+            allBirdFoodUsed = run.birds.allNineFloorFoodUsed,
+            macawsSeen = maxOf(run.count("Macaw"),run.birds.spawnedCount("Macaw")),
             allTypesMillis = tally.allTypesAt?.let { (it - run.startedAt).coerceAtLeast(0) } ?: -1)
         // A manual import during this run may have read it from latest.log already; the live record replaces that.
         val imported = HistoryMerge.removeLiveDuplicate(data.runs, record)

@@ -25,19 +25,19 @@ class TimedHudAlerts {
 object SmallAlerts {
     private val notices = TimedHudAlerts()
     val titles get() = mapOf(SafariHud.RUN_COMPLETE to ConfigManager.runCompleteTitle, SafariHud.GEMS to "ALL GEMS READY!", SafariHud.BIRD_FOOD to "ALL BIRD FOOD COLLECTED!",
-        SafariHud.INCENSE to "ALL INCENSE READY!", SafariHud.WARP to "Warping Now")
-    fun previews() = titles.keys.associateWith(::preview)
+        SafariHud.COINS to "ALL COINS COLLECTED!", SafariHud.INCENSE to "ALL INCENSE READY!", SafariHud.WARP to "Warping Now")
+    fun previews() = mapOf(SafariHud.BANNER to SafariBanners.previewPanel())
     fun preview(hud: SafariHud) = HudPanel(titles.getValue(hud), color(hud), emptyList())
     private fun color(hud: SafariHud) = if (hud == SafariHud.RUN_COMPLETE)
         SafariEspConfig.rgb(AppearanceConfig.runCompleteColor)
         else if (hud == SafariHud.WARP) 0xFFFF5555.toInt() else 0xFF55FF55.toInt()
-    fun show(hud: SafariHud) = notices.show(hud, titles.getValue(hud), color(hud), System.currentTimeMillis())
-    fun clear(hud: SafariHud) = notices.clear(hud)
-    fun resetInventory() = titles.keys.filter { it != SafariHud.WARP && it != SafariHud.RUN_COMPLETE }.forEach(::clear)
-    fun render(graphics: GuiGraphicsExtractor) {
-        val active = notices.active(System.currentTimeMillis())
-        val client = Minecraft.getInstance()
-        if (client.player == null || client.options.smHideGui || client.smScreen is ContestGui) return
-        active.forEach { (hud, notice) -> HudPanel(notice.text, notice.color, emptyList()).draw(graphics, hud) }
+    private fun kind(hud: SafariHud) = when(hud) {
+        SafariHud.GEMS -> BannerKind.GEMS;SafariHud.BIRD_FOOD -> BannerKind.BIRD_FOOD;SafariHud.COINS -> BannerKind.COINS
+        SafariHud.INCENSE -> BannerKind.INCENSE;SafariHud.RUN_COMPLETE -> BannerKind.RUN_COMPLETE;SafariHud.WARP -> BannerKind.WARP
+        else -> null
     }
+    fun show(hud: SafariHud) { kind(hud)?.let { SafariBanners.fire(it) } }
+    fun clear(hud: SafariHud) { notices.clear(hud);kind(hud)?.let(SafariBanners::clear) }
+    fun resetInventory() = titles.keys.filter { it != SafariHud.WARP && it != SafariHud.RUN_COMPLETE }.forEach(::clear)
+    fun render(graphics: GuiGraphicsExtractor) = SafariBanners.render(graphics)
 }

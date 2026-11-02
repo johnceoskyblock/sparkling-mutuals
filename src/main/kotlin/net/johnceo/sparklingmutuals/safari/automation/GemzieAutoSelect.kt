@@ -33,7 +33,7 @@ object GemzieAutoSelect {
         val gem=GemzieSelection.target(click) ?: return false
         if(!level.hasChunkAt(pos) || !player.isWithinBlockInteractionRange(pos,0.0) || !level.worldBorder.isWithinBounds(pos)) return false
         val inventory=player.inventory
-        val stacks=if(fresh) (0..8).map { snapshot(inventory.getItem(it)) } else emptyList()
+        val stacks=(0..8).map { snapshot(inventory.getItem(it)) }
         return action.handle(click,inventory.selectedSlot,stacks,fresh,
             select={ inventory.selectedSlot=it },
             use=dispatch@ {

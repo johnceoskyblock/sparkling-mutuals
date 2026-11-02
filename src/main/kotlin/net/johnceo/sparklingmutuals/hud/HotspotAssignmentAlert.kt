@@ -17,11 +17,9 @@ object HotspotAssignmentAlert {
     private val pending=ArrayDeque<Pair<String,SafariBiome>>()
     private var shown: SafariBiome?=null
     private var shownAt=0L
-    fun enabled(mode: SafariMode = SafariFullClear.mode) = when(mode) {
-        SafariMode.UNIQUE -> ConfigManager.uniqueHotspotAnnouncer
-        SafariMode.FULL_CLEAR -> ConfigManager.fullClearHotspotAnnouncer
-        SafariMode.SPARKLING -> ConfigManager.sparklingHotspotAnnouncer
-    }
+    private val wins=mutableMapOf<String,Int>()
+    private var sessionRoster: Set<String>?=null
+    fun enabled() = ConfigManager.hotspotAnnouncer
     fun register() {
         ClientReceiveMessageEvents.GAME.register { message, overlay ->
             if (!overlay) Minecraft.getInstance().execute { receive(message.string) }
@@ -32,7 +30,7 @@ object HotspotAssignmentAlert {
     }
     private fun sync(): SafariRun? {
         val current=SafariTracking.ledger.current
-        if (current !== run) { reset();run=current }
+        if (current !== run) { resetRun();run=current }
         return current
     }
     private fun receive(raw: String) {
@@ -49,6 +47,9 @@ object HotspotAssignmentAlert {
         assignments.begin(player.name.string,actual,now)
         if (!enabled()) { shown=null;return }
         val roster=PartyManager.withLocal(player.uuid.toString()) ?: return
+        if (sessionRoster != roster.toSet()) {
+            sessionRoster=roster.toSet();wins.clear()
+        }
         val identities=roster.mapNotNull { id ->
             val name=if (id == player.uuid.toString()) player.name.string else
                 client.connection?.onlinePlayers?.firstOrNull { it.profile.id.toString() == id }?.profile?.name ?: SafariPartyInput.nameOf(id)
@@ -96,5 +97,6 @@ object HotspotAssignmentAlert {
         centered(title,height/2f-client.font.lineHeight*scale,scale,color)
         centered("Assigned biome · Hotspot: ${run?.entry?.hotspot?.label}",height/2f+12, minOf(1.5f,(width-20f)/client.font.width("Assigned biome · Hotspot: Haunted")),(alpha shl 24) or 0xFFFFFF)
     }
-    fun reset() { run=null;assignments=HotspotAssignments();pending.clear();shown=null;shownAt=0 }
+    private fun resetRun() { run=null;assignments=HotspotAssignments(wins);pending.clear();shown=null;shownAt=0 }
+    fun reset() { resetRun();wins.clear();sessionRoster=null }
 }

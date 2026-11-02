@@ -16,6 +16,55 @@ import org.junit.jupiter.api.io.TempDir
 
 class SafariPanelSeparationTest {
     @TempDir lateinit var dir: Path
+    @Test fun `remote biome completion waits for report in every mode despite complete capture evidence`() {
+        ConfigManager.init(dir)
+        val party=net.johnceo.sparklingmutuals.safari.PartySparklingState().apply {
+            select(setOf("me"));accept(setOf("me"),mapOf("me" to SafariRoster.all.map { it.name }.toSet()))
+        }
+        for(mode in net.johnceo.sparklingmutuals.safari.SafariMode.entries) {
+            val run=SafariRun(0)
+            run.visitBiome(SafariBiome.CAVERN)
+            SafariBiome.HAUNTED.critters.forEach { critter -> repeat(10) { run.record(SafariCatch(critter)) } }
+            // For Sparkle mode, require Haunted rather than selecting an empty checklist.
+            val required=if(mode==net.johnceo.sparklingmutuals.safari.SafariMode.SPARKLING)
+                net.johnceo.sparklingmutuals.safari.PartySparklingState().apply {
+                    select(setOf("me"));accept(setOf("me"),mapOf("me" to emptySet()))
+                } else party
+            assertFalse(run.biomeComplete(mode,SafariBiome.HAUNTED,required),mode.name)
+            run.partyFullClear("Party > Friend: hd")
+            assertTrue(run.biomeComplete(mode,SafariBiome.HAUNTED,required),mode.name)
+        }
+        val icy=SafariRun(0).apply { visitBiome(SafariBiome.HAUNTED);record(SafariCatch(SafariRoster.named("Wumpa")!!)) }
+        assertTrue(icy.biomeComplete(net.johnceo.sparklingmutuals.safari.SafariMode.UNIQUE,SafariBiome.ICY,party))
+    }
+    @Test fun `progress keeps incomplete crosses and restores biome icons when complete`() {
+        ConfigManager.init(dir)
+        val run=SafariRun(0)
+        val party=net.johnceo.sparklingmutuals.safari.PartySparklingState().apply {
+            select(setOf("me"));accept(setOf("me"),mapOf("me" to SafariRoster.all.map { it.name }.toSet()))
+        }
+        assertEquals(net.johnceo.sparklingmutuals.hud.UiIcons.Kind.CROSS,
+            SafariPanels.progress(run,true,0,party).rows.first { it.label=="Forest" }.displayIcon)
+        run.visitBiome(SafariBiome.CAVERN)
+        SafariBiome.FOREST.critters.forEach { run.record(SafariCatch(it)) }
+        run.partyFullClear("Party > Friend: fd")
+        val row=SafariPanels.progress(run,true,0,party).rows.first { it.label=="Forest" }
+        assertEquals("9/9",row.value)
+        assertEquals(net.johnceo.sparklingmutuals.hud.UiIcons.Kind.LEAF,row.displayIcon)
+        val missing=SafariPanels.missing(SafariRun(0),SafariBiome.FOREST,true,3)
+        assertFalse(missing.rows.any { it.label=="Bee nests" || it.label.contains("food",true) })
+        val objectives=SafariPanels.objectives(SafariRun(0),SafariBiome.FOREST,true,3)
+        assertEquals("Biome Objectives",objectives.title)
+        assertTrue(objectives.rows.none { row -> SafariRoster.named(row.label)!=null })
+        assertTrue(objectives.rows.all { it.color==net.johnceo.sparklingmutuals.hud.ObjectivePalette.color(it.label) })
+        assertTrue(objectives.rows.map { it.color }.distinct().size>1)
+        assertTrue(missing.rows.filter { it.label in SafariBiome.FOREST.critters.map { c -> c.name } }
+            .none { it.displayIcon==net.johnceo.sparklingmutuals.hud.UiIcons.Kind.CROSS })
+        assertEquals(net.johnceo.sparklingmutuals.hud.UiIcons.Kind.NEST,
+            SafariPanels.objectives(SafariRun(0),SafariBiome.FOREST,true,3).rows.first { it.label=="Bee nests" }.displayIcon)
+        for(label in listOf("Snoozle walls","Mounds","Coins left to use","Gazers left"))
+            assertNotNull(net.johnceo.sparklingmutuals.hud.UiIcons.forLabel(label),label)
+    }
     @Test fun `Unique missing panel removes ordinary species after its first catch`() {
         ConfigManager.init(dir)
         val run = SafariRun(0)
@@ -37,11 +86,11 @@ class SafariPanelSeparationTest {
             assertFalse(SafariPanels.missingCritters(run, critter.biome, party).any { it.name == name })
             assertFalse(run.uniqueComplete(name, party), "source gates still apply to progress for $name")
         }
-        val rows = SafariPanels.missing(run, SafariBiome.FOREST, true, 3, party = party).rows
+        val rows = SafariPanels.objectives(run, SafariBiome.FOREST, true, 3, party = party).rows
         assertEquals("?", rows.first { it.label == "Bird food left to use" }.value)
         run.inventoryEvidence(listOf("Bag of Seeds" to 2), 10000)
         run.scanBirdSources(2)
-        assertEquals("4", SafariPanels.missing(run, SafariBiome.FOREST, true, 3, party = party).rows
+        assertEquals("4", SafariPanels.objectives(run, SafariBiome.FOREST, true, 3, party = party).rows
             .first { it.label == "Bird food left to use" }.value)
     }
     @Test fun `scanned empty mounds complete Rockmite only after revealed critters are caught`() {

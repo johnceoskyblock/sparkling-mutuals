@@ -72,7 +72,7 @@ class SafariModeAndInteractionIntegrationTest {
         settings.apply(); ConfigManager.init(dir)
         assertFalse(ConfigManager.candleHitbox)
         assertTrue(SafariSettings.Warp::class.java.fields.mapNotNull {
-            it.getAnnotation(io.github.notenoughupdates.moulconfig.annotations.ConfigOption::class.java)?.desc
+            it.getAnnotation(net.johnceo.sparklingmutuals.config.ConfigOption::class.java)?.desc
         }.any { it.contains("Warp List") && it.contains("19s") })
     }
 }

@@ -1,7 +1,11 @@
 package net.johnceo.sparklingmutuals.contest
 
+import com.mojang.blaze3d.platform.InputConstants
 import net.johnceo.sparklingmutuals.compat.*
 import net.johnceo.sparklingmutuals.config.AppearanceConfig
+import net.johnceo.sparklingmutuals.config.HudConfigLinks
+import net.johnceo.sparklingmutuals.config.SettingsTarget
+import net.johnceo.sparklingmutuals.config.SafariConfigScreen
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.config.ContestConfig
 import net.johnceo.sparklingmutuals.config.SafariTheme
@@ -13,7 +17,7 @@ import net.johnceo.sparklingmutuals.safari.SafariAssist
 import net.johnceo.sparklingmutuals.safari.SafariBiome
 import net.johnceo.sparklingmutuals.safari.ui.SafariPanels
 import net.minecraft.client.gui.GuiGraphicsExtractor
-import net.minecraft.client.gui.components.Button
+import net.johnceo.sparklingmutuals.config.ThemedButton as Button
 import net.minecraft.client.gui.screens.Screen
 import net.minecraft.client.input.MouseButtonEvent
 import net.minecraft.network.chat.Component
@@ -21,7 +25,7 @@ import net.minecraft.network.chat.Component
 /** All HUDs have previews even when disabled or outside Safari, following v0.9.0's editor. */
 class ContestGui(private val parent: Screen? = null) : Screen(Component.literal("Sparkling Mutuals HUDs")) {
     private data class Preview(val label: String, val layout: HudLayout, val width: Int, val height: Int,
-        val draw: (GuiGraphicsExtractor, Int, Int) -> Unit)
+        val target: SettingsTarget, val draw: (GuiGraphicsExtractor, Int, Int) -> Unit)
     private val previews = mutableListOf<Preview>()
     private val miria = ContestConfig.layout
     private var dragging: Preview? = null
@@ -29,8 +33,8 @@ class ContestGui(private val parent: Screen? = null) : Screen(Component.literal(
     private var offsetY = 0.0
     override fun init() {
         ContestConfig.editLayout(width, height)
-        previews.clear()
-        previews.add(Preview("Miria contest", miria, ContestHud.WIDTH, ContestHud.HEIGHT) { g, x, y ->
+        previews.clear();dragging=null
+        previews.add(Preview("Miria contest", miria, ContestHud.WIDTH, ContestHud.previewHeight, HudConfigLinks.contest) { g, x, y ->
             ContestConfig.hudScale = miria.scale; ContestHud.renderPreview(g, x, y)
         })
         val run = SafariPanels.previewRun()
@@ -38,12 +42,15 @@ class ContestGui(private val parent: Screen? = null) : Screen(Component.literal(
             SafariHud.DOOM_THROW to net.johnceo.sparklingmutuals.safari.DoomspiralThrowTimer.preview(),
             SafariHud.PROGRESS to SafariPanels.progress(run, ConfigManager.countUniqueOnly, 49000),
             SafariHud.MISSING to SafariPanels.missing(run, SafariBiome.FOREST, ConfigManager.countUniqueOnly, 3),
+            SafariHud.OBJECTIVES to SafariPanels.objectivesPreview(),
             SafariHud.CAPTURES to SafariPanels.captures(run, SafariBiome.FOREST),
             SafariHud.SPARKLINGS to SafariAssist.nearbyPanel(preview = true)!!) + SmallAlerts.previews()
-        SafariHud.entries.forEach { hud ->
+        SafariHud.entries.filter { it !in SmallAlerts.titles.keys }.forEach { hud ->
             val panel = panels.getValue(hud)
-            previews.add(Preview(hud.label, hud.layout, panel.width(font::width), panel.height) { g, x, y ->
-                panel.draw(g, x, y, hud.layout.effectiveScale(width, height, panel.width(font::width), panel.height),
+            previews.add(Preview(hud.label, hud.layout, panel.width(font::width), panel.height, HudConfigLinks.target(hud)) { g, x, y ->
+                if (hud == SafariHud.BANNER) net.johnceo.sparklingmutuals.hud.SafariBanners.renderPreview(g,x,y,
+                    hud.layout.effectiveScale(width,height,panel.width(font::width),panel.height))
+                else panel.draw(g, x, y, hud.layout.effectiveScale(width, height, panel.width(font::width), panel.height),
                     AppearanceConfig.panels.getValue(hud.name.lowercase())) })
         }
         addRenderableWidget(Button.builder(Component.literal("Reset positions")) {
@@ -67,15 +74,26 @@ class ContestGui(private val parent: Screen? = null) : Screen(Component.literal(
                 graphics.fill(box.x - 1, box.y + box.height, box.x + box.width + 1, box.y + box.height + 1, gold)
                 graphics.fill(box.x - 1, box.y, box.x, box.y + box.height, gold)
                 graphics.fill(box.x + box.width, box.y, box.x + box.width + 1, box.y + box.height, gold)
-                graphics.text(font, "${preview.label} · ${(preview.layout.scale * 100).toInt()}%", box.x, (box.y - 11).coerceAtLeast(0), gold, true)
+                val label=font.split(Component.literal("${preview.label} · ${(preview.layout.scale * 100).toInt()}%"),(width-16).coerceAtLeast(1))
+                label.forEachIndexed { i,line ->
+                    val x=box.x.coerceIn(8,maxOf(8,width-8-font.width(line)))
+                    graphics.text(font,line,x,(box.y-label.size*10-1).coerceAtLeast(0)+i*10,gold,true)
+                }
             }
         }
-        graphics.centeredText(font, Component.literal("Drag any HUD · Scroll over it to resize · ESC to save"), width / 2, height - 38, -1)
+        val instructions=font.split(Component.literal("Drag to move · Scroll to resize · Right-click for settings · Esc to save"),(width-16).coerceAtLeast(1))
+        instructions.forEachIndexed { i,line -> graphics.text(font,line,(width-font.width(line))/2,height-30-instructions.size*10+i*10,-1,true) }
         super.extractRenderState(graphics, mouseX, mouseY, delta)
     }
     override fun mouseClicked(event: MouseButtonEvent, doubleClick: Boolean): Boolean {
         if (super.mouseClicked(event, doubleClick)) return true
-        if (event.button() != 0) return false
+        if(event.button()==InputConstants.MOUSE_BUTTON_RIGHT) {
+            val target=hovered(event.x(),event.y()) ?: return false
+            dragging=null;save()
+            minecraft.smSetScreen(SafariConfigScreen(initialTarget=target.target,returnTo=this))
+            return true
+        }
+        if (event.button() != InputConstants.MOUSE_BUTTON_LEFT) return false
         dragging = hovered(event.x(), event.y()) ?: return false
         val box = bounds(dragging!!)
         offsetX = event.x() - box.x; offsetY = event.y() - box.y
@@ -83,12 +101,12 @@ class ContestGui(private val parent: Screen? = null) : Screen(Component.literal(
     }
     override fun mouseDragged(event: MouseButtonEvent, dx: Double, dy: Double): Boolean {
         val target = dragging ?: return super.mouseDragged(event, dx, dy)
-        if (event.button() != 0) return false
+        if (event.button() != InputConstants.MOUSE_BUTTON_LEFT) return false
         target.layout.move(event.x() - offsetX, event.y() - offsetY, width, height, target.width, target.height)
         return true
     }
     override fun mouseReleased(event: MouseButtonEvent): Boolean {
-        if (event.button() == 0 && dragging != null) { dragging = null; save(); return true }
+        if (event.button() == InputConstants.MOUSE_BUTTON_LEFT && dragging != null) { dragging = null; save(); return true }
         return super.mouseReleased(event)
     }
     override fun mouseScrolled(mouseX: Double, mouseY: Double, horizontalAmount: Double, verticalAmount: Double): Boolean {
@@ -102,6 +120,6 @@ class ContestGui(private val parent: Screen? = null) : Screen(Component.literal(
         ContestConfig.hudX = box.x; ContestConfig.hudY = box.y; ContestConfig.hudScale = miria.scale
         ContestConfig.save(); ConfigManager.save()
     }
-    override fun onClose() { save(); minecraft.smSetScreen(parent) }
+    override fun onClose() { save(); minecraft.smSetScreen(if(parent is SafariConfigScreen) parent.freshForReturn() else parent) }
     override fun isPauseScreen() = false
 }

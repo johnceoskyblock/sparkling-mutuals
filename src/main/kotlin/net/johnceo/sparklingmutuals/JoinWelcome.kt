@@ -47,10 +47,13 @@ object JoinWelcome {
             it.withClickEvent(ClickEvent.RunCommand(value))
                 .withHoverEvent(HoverEvent.ShowText(text(description)))
         }
-        val lines = listOf(
-            text("────── ", SafariTheme.ACCENT)
+        val heading = text("────── ", SafariTheme.ACCENT)
                 .append(text("Sparkling Mutuals", SafariTheme.CHAT_ACCENT).withStyle { it.withBold(true) })
-                .append(text(" ──────", SafariTheme.ACCENT)),
+                .append(text(" ──────", SafariTheme.ACCENT))
+        val font=Minecraft.getInstance().font
+        val divider="─".repeat((font.width(heading)+font.width("─")/2)/font.width("─").coerceAtLeast(1))
+        val lines = listOf(
+            heading,
             text("  ").append(command("/sm", "Open settings")).append(" Settings   ")
                 .append(command("/sm help", "Show available local and party commands")).append(" Commands"),
             text("  ").append(command("/unique", "Select Unique mode")).append("  Unique run mode."),
@@ -58,7 +61,7 @@ object JoinWelcome {
             text("  ").append(command("/sparkle", "Select Sparkle mode")).append("  Sparkle run mode."),
             text("  ").append(command("/sm gui", "Move and resize HUDs")).append(" HUD layout   ")
                 .append(command("/sm history", "Open runs, bests and stats")).append(" History"),
-            text("────────────────────────────────", SafariTheme.ACCENT)
+            text(divider, SafariTheme.ACCENT)
         )
         return Component.empty().also { block ->
             lines.forEachIndexed { index, line ->

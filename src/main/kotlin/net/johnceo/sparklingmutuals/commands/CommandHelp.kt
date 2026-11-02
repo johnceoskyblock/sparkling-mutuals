@@ -3,54 +3,46 @@ package net.johnceo.sparklingmutuals.commands
 import net.johnceo.sparklingmutuals.safari.SafariMode
 import net.johnceo.sparklingmutuals.safari.completion.SafariFullClear
 
-/** Help lists actual commands available in the selected mode. */
+/** Local slash-command help and the separate mode-aware party command reply. */
 object CommandHelp {
     private val party = listOf(
-        PartyCommandKind.MUTUALS to "Shared sparkling discoveries",
-        PartyCommandKind.MISSING to "Your missing sparkling discoveries (optional IGN for another player)",
-        PartyCommandKind.TICKETS to "Your Safari ticket counts (optional IGN; !ticket also works)",
-        PartyCommandKind.SINCE_SPARKLING to "Recorded runs since your last credited party sparkling",
-        PartyCommandKind.SINCE_UNIQUE to "Recorded runs since your last credited unique party sparkling",
-        PartyCommandKind.PB_DOOM to "Solo Doomspiral PB (add duo, IGN, or IGN duo)",
-        PartyCommandKind.PB_WUMPA to "Solo Wumpa PB (add duo, IGN, or IGN duo)",
-        PartyCommandKind.PB_FOREST to "Forest biome PB (IGN for observed unique; IGN party for shared)",
-        PartyCommandKind.PB_CAVERN to "Cavern biome PB (IGN for observed unique; IGN party for shared)",
-        PartyCommandKind.PB_ICY to "Icy biome PB (IGN for observed unique; IGN party for shared)",
-        PartyCommandKind.PB_HAUNTED to "Haunted biome PB (IGN for observed unique; IGN party for shared)",
-        PartyCommandKind.MISSING_RUN to "Known tasks for your biome at 30s (or c/f/i/h)",
-        PartyCommandKind.HELP to "Command list"
+        PartyCommandKind.MUTUALS, PartyCommandKind.MISSING, PartyCommandKind.TICKETS,
+        PartyCommandKind.SINCE_SPARKLING, PartyCommandKind.SINCE_UNIQUE,
+        PartyCommandKind.PB_DOOM, PartyCommandKind.PB_WUMPA, PartyCommandKind.PB_FOREST,
+        PartyCommandKind.PB_CAVERN, PartyCommandKind.PB_ICY, PartyCommandKind.PB_HAUNTED,
+        PartyCommandKind.MISSING_RUN, PartyCommandKind.HELP
     )
     private val local = listOf(
         "/sm" to "Settings",
-        "/sm help" to "List local and party commands for the active mode",
+        "/sm help" to "Commands",
         "/sm gui" to "Move and resize HUDs",
-        "/rates" to "Expected runs per Sparkling for the active mode (hover for details; cached data)",
-        "/profits <basic|economy|premium|first-class>" to "Top ten by shards + essence/run; /profit also works (cached prices)",
-        "/captures" to "Current or last run captures",
-        "/sparkling [IGN|party|IGNs]" to "Sparkling card, or shared sparklings",
-        "/sm history" to "Runs, bests, sparklings, achievements, stats",
-        "/sm history import" to "Rebuild past runs from your logs",
-        "/sm debug" to "Save entity diagnostics",
+        "/unique" to "Unique mode",
         "/fc" to "Full clear mode",
-        "/unique" to "Unique run mode",
-        "/sparkle" to "Sparkling run mode",
-        "/warping" to "Toggle delayed /p warp",
-        "/start" to "Enable/restart sparkle warping and prepare the current party",
-        "/warpingdelay <seconds>" to "Set warp delay",
-        "/autoparty" to "Toggle Sparkling Warp List invitations",
-        "/duo <IGN>" to "Choose your runner and use Duo sparkle warping",
-        "/leech" to "Toggle accepting whitelisted invites, leaving your current party first",
-        "/apikey <key>" to "Set API key"
+        "/sparkle" to "Sparkle mode",
+        "/sparkling [IGN|party]" to "Sparkling collections",
+        "/captures" to "Run captures",
+        "/rates" to "Expected runs per sparkling",
+        "/profits [ticket]" to "Top 10 coins/run; /profit also works",
+        "/hotspot" to "Toggle hotspot assignments",
+        "/sm history" to "Runs, sparklings, bests and stats",
+        "/sm history import" to "Import logs",
+        "/warping" to "Toggle auto warp",
+        "/start" to "Start the warping cycle",
+        "/warpingdelay <seconds>" to "Warp delay",
+        "/autoparty" to "Toggle Warp List invites",
+        "/duo <IGN>" to "Select your Duo runner",
+        "/leech" to "Toggle whitelisted invite acceptance",
+        "/apikey <key>" to "Optional personal API key",
+        "/sm debug" to "Save diagnostics"
     )
-    /** Party chat words other mods' users can say that this mod reacts to, without a lookup reply. */
-    private val partyWords = listOf("!dt [reason]" to "Downtime after this run; say r when ready")
-    private fun available(mode: SafariMode) = party.map { (kind, description) -> PartyCommand(kind, if (kind in listOf(PartyCommandKind.MISSING, PartyCommandKind.TICKETS)) "[IGN]" else "") to description }
-        .filter { it.first.allowed(mode) }
-    fun localLines(mode: SafariMode = SafariFullClear.mode) = listOf("§6Sparkling Mutuals — Commands", "§eParty chat commands") +
-        available(mode).map { (command, description) -> "§6${command.text} §7— $description" } +
-        partyWords.map { (command, description) -> "§6$command §7— $description" } +
-        listOf("§eLocal commands") + local.map { (command, description) -> "§6$command §7— $description" } +
-        listOf("§7<IGN> = Minecraft username. Party commands use /pc.")
+    private fun available(mode: SafariMode) = party.map { kind ->
+        PartyCommand(kind, if (kind in listOf(PartyCommandKind.MISSING, PartyCommandKind.TICKETS)) "[IGN]" else "")
+    }.filter { it.allowed(mode) }
+
+    @Suppress("UNUSED_PARAMETER")
+    fun localLines(mode: SafariMode = SafariFullClear.mode) = listOf("§6Sparkling Mutuals — Commands") +
+        local.map { (command, description) -> "§6$command §7— $description" }
+
     fun partyReply(mode: SafariMode = SafariFullClear.mode) = "[SM] Commands: Party: " +
-        available(mode).joinToString(", ") { it.first.text } + if (mode != SafariMode.FULL_CLEAR) ", !pb doom duo, !pb wumpa duo, !pb doom <IGN>, !pb wumpa <IGN>" else ""
+        available(mode).joinToString(", ") { it.text } + if (mode != SafariMode.FULL_CLEAR) ", !pb doom duo, !pb wumpa duo, !pb doom <IGN>, !pb wumpa <IGN>" else ""
 }

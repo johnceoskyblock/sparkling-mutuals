@@ -50,6 +50,10 @@ class RunRecord(
     var essenceCoins: Long = -1,
     /** Live confirmation that bird spawning was checked; null means older history did not record this proof. */
     var macawChecked: Boolean? = null,
+    /** Explicit nine-floor-food usage proof. Reports and older unknown rows cannot qualify droughts. */
+    var allBirdFoodUsed: Boolean? = null,
+    /** Includes rendered/spawned Macaws, even when none was captured. */
+    var macawsSeen: Int? = null,
     /** First time all 37 types were caught or loot-shared, measured from run start. */
     var allTypesMillis: Long = -1,
 ) {

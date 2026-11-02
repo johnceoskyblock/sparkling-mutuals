@@ -41,12 +41,12 @@ class ForestMidRunAndEspScaleTest {
         val types = net.johnceo.sparklingmutuals.safari.resources.FloorDropType.entries
         types.forEach { assertEquals(3f, SafariEspConfig.dropTextScale(it)) }
         assertEquals(3f, SafariEspConfig.teammateTextScale)
-        val settings = net.johnceo.sparklingmutuals.config.SafariEspSettings()
-        settings.floorTextSizes.coin = 4f
-        settings.floorTextSizes.incense = .5f
-        settings.teammateTextScale = 1.25f
-        settings.textScale = 2f
-        assertTrue(settings.apply())
+        val settings = net.johnceo.sparklingmutuals.config.SafariSettings()
+        settings.esp.floorTextSizes.coin = 4f
+        settings.esp.floorTextSizes.incense = .5f
+        settings.safari.teammates.textScale = 1.25f
+        settings.esp.textScale = 2f
+        settings.apply()
         val saved = Properties().also(SafariEspConfig::save)
         SafariEspConfig.load(Properties())
         SafariEspConfig.load(saved)

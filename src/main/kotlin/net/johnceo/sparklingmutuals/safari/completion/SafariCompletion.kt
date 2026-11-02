@@ -54,9 +54,8 @@ object SafariCompletion {
             run.resourceReminders.afterBiomeClear(now)
             run.partyResourceReminders.afterBiomeReport(now)
         }
-        if (run.completion.alert(run, mode, party, ConfigManager.runCompleteAlert)) {
+        if (run.completion.alert(run, mode, party, true)) {
             SmallAlerts.show(SafariHud.RUN_COMPLETE)
-            playSound(client)
         }
     }
     fun playSound(client: Minecraft) {

@@ -95,28 +95,28 @@ class SafariSparklingModeTest : net.johnceo.sparklingmutuals.safari.esp.Profitab
     @Test fun `Modes settings switch presets once and keep independent profitable toggles`() {
         ConfigManager.init(dir)
         val settings = SafariSettings()
-        settings.modes.sparkling.enabled = true
+        net.johnceo.sparklingmutuals.safari.completion.SafariFullClear.select(net.johnceo.sparklingmutuals.safari.SafariMode.SPARKLING)
         settings.modes.sparkling.profitable = false
         settings.apply(); settings.apply()
         assertTrue(ConfigManager.sparklingMode)
-        assertFalse(settings.modes.unique.enabled)
+        assertFalse(net.johnceo.sparklingmutuals.safari.completion.SafariFullClear.mode == net.johnceo.sparklingmutuals.safari.SafariMode.UNIQUE)
         assertFalse(ConfigManager.sparklingProfitableShardEsp)
         assertTrue(ConfigManager.profitableShardEsp)
         assertTrue(SafariEspConfig.mobs.values.all { it.enabled })
         settings.esp.forest = false
         settings.apply()
         assertFalse(SafariEspConfig.groups.getValue("forest").onlyInBiome)
-        settings.modes.fullClear.enabled = true
+        net.johnceo.sparklingmutuals.safari.completion.SafariFullClear.select(net.johnceo.sparklingmutuals.safari.SafariMode.FULL_CLEAR)
         settings.apply(); settings.apply()
         assertTrue(ConfigManager.fullClearMode)
         assertFalse(ConfigManager.sparklingMode)
-        assertFalse(settings.modes.sparkling.enabled)
-        settings.modes.unique.enabled = true
+        assertFalse(ConfigManager.sparklingMode)
+        net.johnceo.sparklingmutuals.safari.completion.SafariFullClear.select(net.johnceo.sparklingmutuals.safari.SafariMode.UNIQUE)
         settings.apply()
         assertEquals(SafariMode.UNIQUE, SafariFullClear.mode)
     }
     @Test fun `sparkling command help and config categories are discoverable`() {
-        val names = SafariSettings::class.java.fields.mapNotNull { it.getAnnotation(io.github.notenoughupdates.moulconfig.annotations.Category::class.java)?.name }
+        val names = SafariSettings::class.java.fields.mapNotNull { it.getAnnotation(net.johnceo.sparklingmutuals.config.Category::class.java)?.name }
         assertTrue("Modes" in names)
         assertTrue(net.johnceo.sparklingmutuals.commands.CommandHelp.localLines().any { it.startsWith("§6/sparkle ") })
         assertFalse(net.johnceo.sparklingmutuals.commands.CommandHelp.partyReply().contains("/sparkle"))

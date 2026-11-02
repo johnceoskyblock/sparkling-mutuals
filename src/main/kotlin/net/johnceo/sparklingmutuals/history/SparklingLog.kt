@@ -13,12 +13,15 @@ import net.minecraft.client.Minecraft
 object SparklingLog {
     class Data(var entries: MutableList<SparklingEntry> = mutableListOf(), var ticketsSinceSparkling: Int = 0)
     private var data = Data()
+    var revision=0L
+        private set
     val entries: List<SparklingEntry> get() = data.entries
     /** Tickets the party has used since anyone's last sparkling. */
     val ticketsSinceSparkling get() = data.ticketsSinceSparkling
 
     fun register() {
         data = HistoryStore.load("sparklings", Data::class.java, ::Data).also { d -> d.entries.sortByDescending { it.at } }
+        revision++
         if (SparklingUniqueness.reconcile(data.entries)) {
             runCatching { HistoryStore.backup("sparklings", "pre-unique-repair") }
                 .onSuccess { save() }
@@ -34,8 +37,11 @@ object SparklingLog {
         val player = match.groupValues[1]
         val critter = SafariRoster.named(match.groupValues[2].trim())?.name ?: match.groupValues[2].trim()
         val wasKnown = net.johnceo.sparklingmutuals.safari.SafariSparklingMode.caught(player, critter)
-        if (!HistoryServerPolicy.allows()) return
         val entry = SparklingEntry(System.currentTimeMillis(), player, critter, tickets = data.ticketsSinceSparkling)
+        val unique = SparklingUniqueness.isNew(entry, data.entries, wasKnown)
+        entry.unique=unique
+        net.johnceo.sparklingmutuals.hud.SpecialCatchAlert.caught(player,critter,unique)
+        if (!HistoryServerPolicy.allows()) return
         data.ticketsSinceSparkling = 0
         data.entries.add(0, entry)
         save()
@@ -43,6 +49,9 @@ object SparklingLog {
         val own = player.equals(client.player?.name?.string, true)
         Achievements.onSparkling(entry, own)
         markUnique(entry, own, wasKnown)
+        if (net.johnceo.sparklingmutuals.config.ConfigManager.sparklingCatchCount &&
+            net.johnceo.sparklingmutuals.safari.SafariAssist.inSafari)
+            client.player?.sendSystemMessage(SparklingCatchCount.component(entry,data.entries))
     }
 
     /** Compare the pre-catch party snapshot; never fetch a delayed API response to verify a live catch. */
@@ -68,5 +77,5 @@ object SparklingLog {
     /** Which catch of this critter an entry was, counting everyone's. */
     fun numberOf(entry: SparklingEntry) = data.entries.count { it.critter.equals(entry.critter, true) && it.at <= entry.at }
 
-    fun save() = HistoryStore.save("sparklings", data)
+    fun save() = HistoryStore.save("sparklings", data).also { revision++ }
 }

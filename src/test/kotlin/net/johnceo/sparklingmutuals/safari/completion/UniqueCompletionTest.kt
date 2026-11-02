@@ -128,7 +128,7 @@ class UniqueCompletionTest {
         val rows = SafariPanels.missing(run, SafariBiome.CAVERN, true, 0, mounds = 2, party = state).rows
         assertFalse(rows.any { it.label == "Rockmite" })
         assertFalse(rows.any { it.label == "Snoozle" })
-        assertTrue(rows.any { it.label == "Mounds to break" })
+        assertTrue(SafariPanels.objectives(run, SafariBiome.CAVERN, true, 0, mounds = 2, party = state).rows.any { it.label == "Mounds" })
     }
     @Test fun `Unique Haunted reports completion while caught Wumpa suppresses redundant Icy report`() {
         for (biome in listOf(SafariBiome.ICY, SafariBiome.HAUNTED)) {

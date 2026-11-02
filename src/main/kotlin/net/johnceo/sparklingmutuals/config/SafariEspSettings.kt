@@ -1,12 +1,14 @@
 package net.johnceo.sparklingmutuals.config
 
-import io.github.notenoughupdates.moulconfig.annotations.*
 import net.johnceo.sparklingmutuals.safari.resources.FloorDropType
 
 /** Modes own targets; these switches only control where their highlights appear. */
 class SafariEspSettings {
-    @JvmField @ConfigOption(name = "Party member highlight color", desc = "Outlines and name labels.")
-    @ConfigEditorColour var teammateColor = SafariEspConfig.teammateColor
+    @JvmField @ConfigOption(name = "Critter colors", desc = "") @Accordion
+    var critterColors = CritterAppearanceSettings { AppearanceConfig.selectedHex }
+    @JvmField @ConfigOption(name = "Highlights and waypoints", desc = "") @Accordion
+    var waypointColors = WaypointAppearanceSettings { AppearanceConfig.selectedHex }
+    var teammateColor = SafariEspConfig.teammateColor
     @JvmField @ConfigOption(name = "Floor drops", desc = "") @Accordion val floorDrops = FloorDropEspSettings()
     @JvmField @ConfigOption(name = "Other text sizes", desc = "") @Accordion val labels = EspLabelSettings()
     @JvmField @ConfigOption(name = "Critter biome limits", desc = "") @Accordion val biomes = EspBiomeSettings()
@@ -34,17 +36,12 @@ class SafariEspSettings {
         get() = biomes.haunted
         set(value) { biomes.haunted = value }
     fun apply(): Boolean {
-        val color = SafariEspConfig.validColor(teammateColor, SafariEspConfig.teammateColor)
-        val teammateColorChanged = color != SafariEspConfig.teammateColor
-        SafariEspConfig.teammateColor = color
         val scale = SafariEspConfig.validTextScale(textScale)
         val colorsChanged = floorColors.apply()
         val sizesChanged = floorTextSizes.apply()
         val visibilityChanged = floorDrops.visibility.apply()
-        val teammateScale = SafariEspConfig.validTextScale(teammateTextScale)
-        var changed = teammateColorChanged || colorsChanged || sizesChanged || visibilityChanged || SafariEspConfig.textScale != scale ||
-            SafariEspConfig.teammateTextScale != teammateScale || SafariEspConfig.rewardDrops != rewardDrops
-        SafariEspConfig.teammateTextScale = teammateScale
+        var changed = colorsChanged || sizesChanged || visibilityChanged || SafariEspConfig.textScale != scale ||
+            SafariEspConfig.rewardDrops != rewardDrops
         SafariEspConfig.rewardDrops = rewardDrops
         SafariEspConfig.textScale = scale
         mapOf("forest" to forest, "cavern" to cavern, "icy" to icy, "haunted" to haunted).forEach { (key, value) ->
@@ -57,13 +54,13 @@ class SafariEspSettings {
 }
 
 class FloorDropEspSettings {
-    @JvmField @ConfigOption(name = "XP / Essence / Shard floor drops", desc = "Highlight reward floor drops.")
+    @JvmField @ConfigOption(name = "XP / Essence / Shard floor drops", desc = "")
     @ConfigEditorBoolean var rewardDrops = SafariEspConfig.rewardDrops
-    @JvmField @ConfigOption(name = "Show outside current biome", desc = "Mode and collection rules still apply.")
+    @JvmField @ConfigOption(name = "Show outside current biome", desc = "")
     @Accordion val visibility = FloorDropVisibilitySettings()
     @JvmField @ConfigOption(name = "Floor-drop text sizes", desc = "1 = original size.")
     @Accordion val floorTextSizes = FloorDropScaleSettings()
-    @JvmField @ConfigOption(name = "Floor-drop colors", desc = "Outlines, fills and labels.")
+    @JvmField @ConfigOption(name = "Floor-drop colors", desc = "")
     @Accordion val floorColors = FloorDropColorSettings()
 }
 
@@ -86,7 +83,7 @@ class FloorDropVisibilitySettings {
     @ConfigEditorBoolean var incense = !SafariEspConfig.dropOnlyInBiome(FloorDropType.INCENSE)
     @JvmField @ConfigOption(name = "Shining Coin", desc = "")
     @ConfigEditorBoolean var coin = !SafariEspConfig.dropOnlyInBiome(FloorDropType.COIN)
-    @JvmField @ConfigOption(name = "XP / Essence / Shard", desc = "Requires reward floor-drop ESP.")
+    @JvmField @ConfigOption(name = "XP / Essence / Shard", desc = "")
     @ConfigEditorBoolean var generic = !SafariEspConfig.dropOnlyInBiome(FloorDropType.GENERIC)
     fun apply(): Boolean {
         val values = mapOf(FloorDropType.SEEDS to seeds, FloorDropType.WORM to worm, FloorDropType.BERRY to berry,
@@ -104,11 +101,9 @@ class FloorDropVisibilitySettings {
 }
 
 class EspLabelSettings {
-    @JvmField @ConfigOption(name = "Other ESP text scale", desc = "Critter timers, nests and unknown sparklings.")
+    @JvmField @ConfigOption(name = "Other ESP text scale", desc = "Timers, nests and unknown sparklings.")
     @ConfigEditorSlider(minValue = .5f, maxValue = 4f, minStep = .25f)
     var textScale = SafariEspConfig.textScale
-    @JvmField @ConfigOption(name = "Party member text scale", desc = "1 = original size.")
-    @ConfigEditorSlider(minValue = .5f, maxValue = 4f, minStep = .25f)
     var teammateTextScale = SafariEspConfig.teammateTextScale
 }
 

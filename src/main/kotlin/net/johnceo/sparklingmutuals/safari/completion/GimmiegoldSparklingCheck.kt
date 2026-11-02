@@ -2,7 +2,7 @@ package net.johnceo.sparklingmutuals.safari.completion
 
 import java.util.UUID
 
-/** Coin-source slots, extra party coins and retained qualified checks, owned by one Safari run. */
+/** Coin-source slots, own starting coins and retained qualified checks, owned by one Safari run. */
 class GimmiegoldSparklingCheck {
     private val floors = linkedMapOf<Int, Boolean>()
     private var held: Int? = null
@@ -37,10 +37,9 @@ class GimmiegoldSparklingCheck {
         held = amount.coerceAtLeast(0)
         if (held != 0) validated = false
     }
-    /** Notices overlap this player's known starting coins, and repeated notices overlap themselves. */
+    /** Only local starting coins add to the floor-source requirement. Party notices are informational. */
     fun contributions(starting: Int, localPlayer: String?, notices: Map<String, Int>) {
-        val ownNotice = notices.entries.firstOrNull { it.key.equals(localPlayer, true) }?.value ?: 0
-        val total = maxOf(starting, ownNotice) + notices.filterKeys { !it.equals(localPlayer, true) }.values.sum()
+        val total = starting
         if (extras != total) reopenDemand()
         extras = total
     }

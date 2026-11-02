@@ -14,15 +14,15 @@ A **feeding opportunity** is the ledger's unit of expected bird population: one 
 
 ### Expected capture population
 
-Expected opportunities are **max(9, personally collected Forest food quantity) + local extra food + reported extra food + inferred unreported starting food**. Early discovery-gated starting-item reports supply remote contributions before clearing completes; later unused-resource local titles remain, and a separately paced party follow-up after a local biome report names which members still need the related Sparklings without adding source contributions again. Nine is the implemented baseline. Local extras include starting inventory/grants and pickups outside Forest, avoiding overlap with early pickup messages. Accepted party notices use sender/type maxima; the local sender's notice overlaps local extras. The first available inventory sample starts the three-second starting-inventory window.
+Expected opportunities are **max(9, personally collected Forest food quantity) + own extra food**. Own extras include starting inventory/grants and pickups outside Forest, avoiding overlap with early pickup messages. The first available inventory sample starts the three-second starting-inventory window. Teammate starting-item messages, unused-item messages and early visits never raise bird-food requirements.
 
-During the first 30 seconds from run arrival, a loaded party teammate in mapped Forest within 20 blocks of the 40-block scan radius (60 horizontal blocks from X/Z 6/51) contributes one inferred starting food if they have not sent a parsed `[SM] Starting items:` report. The local player is excluded. Repeated sightings, departure/reentry and sightings after 30 seconds add nothing further. Any later starting report replaces this estimate with its actual food quantities; a report listing only coins removes the food estimate. This is a conservative heuristic, not proof that the teammate actually owns food. It raises the shared feeding target without fabricating a pickup, capture or usage event.
+The feeder ledger records exact server bird-attracted messages as food uses, with two Macaws per Macaw event. Slot 22 of the Birdfeeder menu supplies its current food type/count. Inventory snapshots include carried cursor items. The Missing/Unchecked panel shows each food type left, known feed in the feeder and observed birds spawned, with food icons. Remaining feeder contents block local spawning completion.
 
 Qualified population is:
 
 Bluebird catches + live Bluebirds + Parakeet catches + live Parakeets + floor((Macaw catches + live Macaws) / 2).
 
-Exact bird-attracted system messages confirm one pending local food use each, including one for a Macaw pair. They do not establish captures or the Full Clear population total. Complete active non-food reward triples are excluded from remaining food markers; food and partial/unknown groups still block. This marker scan operates Safari-wide, including the boat and other biomes, independently of selected ESP.
+Exact bird-attracted system messages confirm one pending local food use each, including one for a Macaw pair. They establish spawned species counts and food-use events, but never captures. Complete active non-food reward triples are excluded from remaining food markers; food and partial/unknown groups still block. This marker scan operates Safari-wide, including the boat and other biomes, independently of selected ESP.
 
 The ledger retains maximum qualified species populations (captures + current renders). It retains a qualified total only when no floor food or held food remains. Incomplete scans do not accumulate separate UUID populations. New food pickup clears retained total proof; known remaining/held food blocks it, and increased demand can exceed it. Forest reentry clears the current total while retaining previously verified proof and species requirements.
 
@@ -55,9 +55,7 @@ Inventory is sampled before queuing and before dispatch decisions. Queued report
 - Additional food changes Full Clear capture demand without adding captures. Party-reported extras do not reopen local Sparkling food checks; newly held local food or remaining floor food still blocks them.
 - Disabling bird ESP does not disable evidence collection. Capsule replacement UUIDs are not accumulated as feeding opportunities; current-population observations still depend on correct loaded entity identity.
 
-For a local Unique Forest clearer, no catch of a bird species is required if that species has never been seen or caught and qualified population/source evidence resolves all food opportunities. This includes party-reported unused starting food. Remaining food markers, held food or insufficient accounted population block the waiver. That species’ row then disappears and fd may send when every other Forest requirement is complete. A later sighting of that species revokes the zero-spawn waiver.
-
-For a local Unique Forest clearer, no catch of a bird species is required if that species has never been seen or caught and qualified population/source evidence resolves all food opportunities. This includes party-reported unused starting food. Remaining food markers, held food or insufficient accounted population block the waiver. That species’ row then disappears and fd may send when every other Forest requirement is complete. A later sighting of that species revokes the zero-spawn waiver.
+For a local Unique Forest clearer, no catch of a bird species is required if that species has never been seen or caught and qualified population/source evidence resolves all food opportunities. Only own starting food increases this local requirement; teammate supplies remain informational. Remaining food markers, held food or insufficient accounted population block the waiver. That species’ row then disappears and fd may send when every other Forest requirement is complete. A later sighting of that species revokes the zero-spawn waiver.
 
 ## Examples
 
@@ -93,6 +91,9 @@ Sparkling bird checks use Forest floor-food markers and this client's inventory,
 
 ## Last updated
 
+2026-11-01 — Local-only food source requirements; feeder contents, spawn-event ledger and food icons.
+
+
 2026-10-29 - Recover missed bird spawn announcements using qualified, fully accounted population evidence; log pending confirmations and the fallback target in /sm debug.
 
 
@@ -100,9 +101,9 @@ Sparkling bird checks use Forest floor-food markers and this client's inventory,
 
 2026-10-22 — Remote fd can waive unseen zero-spawn birds in Unique; current Forest retains local spawning proof.
 
-2026-10-20 — All three bird types support zero-spawn completion: Unique requires resolved feeding (including known party extras), qualified Forest survey and no catch/sighting of that species. Full Clear retains the actual-population capture formula, which allows zero Bluebirds/Parakeets when the other captures cover all feeding opportunities. No catches are fabricated.
+2026-10-20 — All three bird types support zero-spawn completion: Unique requires resolved feeding (including own extras), qualified Forest survey and no catch/sighting of that species. Full Clear retains the actual-population capture formula, which allows zero Bluebirds/Parakeets when the other captures cover all feeding opportunities. No catches are fabricated.
 
-2026-10-20 — Unique bird rows disappear after their first shared capture. Proven no-Macaw absence still waives its row. Forest shows Bird food left to use below the nest footer: the greater of unresolved feeding demand (including reported party extras) and known held plus remaining floor food. This is inferred from captures/render evidence, not a direct server usage counter; spawning/progress/report gates remain independent.
+2026-10-20 — Unique bird rows disappear after their first shared capture. Proven no-Macaw absence still waives its row. Forest shows Bird food left to use below the nest footer: the greater of unresolved feeding demand (including own extra food) and known held plus remaining floor food. This is inferred from captures/render evidence, not a direct server usage counter; spawning/progress/report gates remain independent.
 
 2026-10-20 - Named completion-time party wait reminders reuse current starting-food quantities without counting them twice.
 

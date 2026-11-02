@@ -1,6 +1,6 @@
 package net.johnceo.sparklingmutuals.history
 
-import io.github.notenoughupdates.moulconfig.annotations.ConfigEditorButton
+import net.johnceo.sparklingmutuals.config.ConfigEditorButton
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.LocalDate
@@ -190,7 +190,7 @@ class HistoryBackfillImportTest {
     @Test fun `History GUI has ordered shared import action and no launch import switch`() {
         ConfigManager.init(dir)
         val buttons=SafariSettings.History::class.java.fields.mapNotNull { it.getAnnotation(ConfigEditorButton::class.java) }
-        assertEquals(listOf("History","Import History from Logs"),buttons.take(2).map { it.buttonText })
+        assertEquals(listOf("History","Import logs"),buttons.take(2).map { it.buttonText })
         assertEquals(listOf(10,11),buttons.take(2).map { it.runnableId })
         assertFalse(SafariSettings.History::class.java.fields.any { it.name=="autoImport" })
     }

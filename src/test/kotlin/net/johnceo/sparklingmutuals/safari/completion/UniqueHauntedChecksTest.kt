@@ -23,7 +23,7 @@ class UniqueHauntedChecksTest {
     private fun complete(run: SafariRun, name: String, state: PartySparklingState) =
         run.completed(SafariMode.UNIQUE, listOf(SafariRoster.named(name)!!), state) == 1
     private fun footer(run: SafariRun, state: PartySparklingState, label: String) =
-        SafariPanels.missing(run, SafariBiome.HAUNTED, true, 0, party = state).rows.singleOrNull { it.label == label }
+        SafariPanels.objectives(run, SafariBiome.HAUNTED, true, 0, party = state).rows.singleOrNull { it.label == label }
 
     @Test fun `Haunted catches leave the checklist but needed discoveries keep progress and reports pending`() {
         val state = party("Gazer", "Gimmiegold")
@@ -35,7 +35,7 @@ class UniqueHauntedChecksTest {
         assertFalse(complete(run, "Gimmiegold", state))
         assertEquals(SafariBiome.HAUNTED.critters.size - 2, run.completed(SafariMode.UNIQUE, SafariBiome.HAUNTED.critters, state))
         assertNull(run.completion.announcement(run, SafariBiome.HAUNTED, SafariMode.UNIQUE, state))
-        assertEquals("3", footer(run, state, "Gazers left to check")?.value)
+        assertEquals("3", footer(run, state, "Gazers left")?.value)
         assertEquals("?", footer(run, state, "Coins left to use")?.value)
         run.partyFullClear("Party > Friend: hd")
         assertFalse(complete(run, "Gazer", state), "local Haunted checking cannot be replaced by an hd")
@@ -48,11 +48,11 @@ class UniqueHauntedChecksTest {
         caught(run, "Gazer")
         val seen = List(3) { "Gazer" to UUID.randomUUID() }
         repeat(2) { run.sparklingChecks.scan(SafariBiome.HAUNTED, -4.0, -64.0, seen.take(2)) }
-        assertEquals("1", footer(run, state, "Gazers left to check")?.value)
+        assertEquals("1", footer(run, state, "Gazers left")?.value)
         assertFalse(complete(run, "Gazer", state))
         run.sparklingChecks.scan(SafariBiome.HAUNTED, -4.0, -64.0, seen)
         assertTrue(complete(run, "Gazer", state))
-        assertNull(footer(run, state, "Gazers left to check"))
+        assertNull(footer(run, state, "Gazers left"))
         run.sparklingChecks.scan(SafariBiome.HAUNTED, -4.0, -64.0, emptyList())
         assertTrue(complete(run, "Gazer", state), "unloading must retain qualified checks")
     }
@@ -78,8 +78,8 @@ class UniqueHauntedChecksTest {
         assertNull(footer(run, state, "Coins left to use"))
         run.resources.partyNotice("Party > Friend: [SM] Starting items: 2x Shining Coin")
         assertEquals(0, run.coinsLeftToUse)
-        assertEquals("0", footer(run, state, "Coins left to use")?.value)
-        assertFalse(complete(run, "Gimmiegold", state))
+        assertNull(footer(run, state, "Coins left to use"))
+        assertTrue(complete(run, "Gimmiegold", state), "Teammate starting items do not reopen local coin objectives")
         run.scanGimmiegolds(List(6) { UUID.randomUUID() }, true)
         assertTrue(complete(run, "Gimmiegold", state))
         assertNull(footer(run, state, "Coins left to use"))
@@ -106,7 +106,7 @@ class UniqueHauntedChecksTest {
             assertTrue(complete(run, name, state))
         }
         assertNull(footer(run, state, "Coins left to use"))
-        assertNull(footer(run, state, "Gazers left to check"))
+        assertNull(footer(run, state, "Gazers left"))
         assertFalse(complete(SafariRun(1), "Gazer", party("Gazer")))
     }
 
@@ -118,12 +118,12 @@ class UniqueHauntedChecksTest {
             ConfigManager.sparklingMode = mode == SafariMode.SPARKLING
             if (mode == SafariMode.FULL_CLEAR) {
                 assertNull(footer(run, state, "Coins left to use"))
-                assertNull(footer(run, state, "Gazers left to check"))
+                assertNull(footer(run, state, "Gazers left"))
             } else {
                 assertEquals("?", footer(run, state, "Coins left to use")?.value)
-                assertEquals("4", footer(run, state, "Gazers left to check")?.value)
+                assertEquals("4", footer(run, state, "Gazers left")?.value)
                 assertNull(footer(run, party("Gazer"), "Coins left to use"))
-                assertNull(footer(run, party("Gimmiegold"), "Gazers left to check"))
+                assertNull(footer(run, party("Gimmiegold"), "Gazers left"))
             }
         }
     }

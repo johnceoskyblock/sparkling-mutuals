@@ -47,12 +47,10 @@ class SafariVisibilityHelpTest {
             SafariBiome.entries.forEach { assertTrue(SafariVisibility.biomePanels(where, true, true, it)) }
         }
     }
-    @Test fun `local help has separate sections and readable descriptions for every command`() {
+    @Test fun `local help contains only slash commands with brief descriptions`() {
         val lines = CommandHelp.localLines(SafariMode.UNIQUE).map(SafariRules::strip)
-        assertTrue(lines.any { it == "Party chat commands" })
-        assertTrue(lines.any { it == "Local commands" })
-        for (command in listOf("!mutual", "!missing", "!ticket", "!pb doom", "!pb wumpa", "!commands",
-            "/sm", "/sm gui", "/captures", "/fc", "/unique", "/warping", "/warpingdelay", "/autoparty", "/apikey")) {
+        assertTrue(lines.drop(1).all { it.startsWith("/") && !it.contains("!") })
+        for (command in listOf("/sm", "/sm gui", "/captures", "/fc", "/unique", "/warping", "/warpingdelay", "/autoparty", "/apikey")) {
             assertTrue(lines.any { it.startsWith(command) && it.contains(" — ") }, command)
         }
     }

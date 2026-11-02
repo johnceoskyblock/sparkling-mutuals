@@ -24,13 +24,13 @@ class HelperFooterConditionsTest {
         ConfigManager.fullClearMode = mode == SafariMode.FULL_CLEAR
         ConfigManager.sparklingMode = mode == SafariMode.SPARKLING
         return listOf(SafariBiome.FOREST, SafariBiome.CAVERN).flatMap {
-            SafariPanels.missing(run, it, mode == SafariMode.UNIQUE, 3, 2,
+            SafariPanels.objectives(run, it, mode == SafariMode.UNIQUE, 3, 2,
                 WallSummary(List(5) { WallState.INTACT }), state).rows
         }.map { it.label }.toSet()
     }
     @Test fun `source footers follow each modes first catch and missing discovery rules independently`() {
         ConfigManager.init(dir)
-        val helpers = mapOf("Honeybug" to "Bee nests to punch", "Snoozle" to "Snooper walls to break", "Rockmite" to "Mounds to break")
+        val helpers = mapOf("Honeybug" to "Bee nests", "Snoozle" to "Snoozle walls", "Rockmite" to "Mounds")
         val run = SafariRun(0)
         assertTrue(labels(run, SafariMode.UNIQUE, party()).containsAll(helpers.values))
         helpers.keys.forEach { run.record(SafariCatch(SafariRoster.named(it)!!)) }
@@ -48,12 +48,13 @@ class HelperFooterConditionsTest {
         run.updateNestEvidence(true, 3, 3, 0)
         repeat(3) { run.observeCritter(it, "Honeybug", java.util.UUID(0, it.toLong())) }
         ConfigManager.fullClearMode = true
-        val forest = SafariPanels.missing(run, SafariBiome.FOREST, false, 0).rows
-        assertFalse(forest.any { it.label == "Bee nests to punch" })
-        val cavern = SafariPanels.missing(run, SafariBiome.CAVERN, false, 0, 0, WallSummary(List(5) { WallState.BROKEN })).rows
-        assertFalse(cavern.any { it.label in setOf("Snooper walls to break", "Mounds to break") || it.label.startsWith("No ") })
-        val haunted = SafariPanels.missing(run, SafariBiome.HAUNTED, false, 0).rows
-        assertEquals(1, haunted.count { it.label == "Gazer" })
+        val forest = SafariPanels.objectives(run, SafariBiome.FOREST, false, 0).rows
+        assertFalse(forest.any { it.label == "Bee nests" })
+        val cavern = SafariPanels.objectives(run, SafariBiome.CAVERN, false, 0, 0, WallSummary(List(5) { WallState.BROKEN })).rows
+        assertFalse(cavern.any { it.label in setOf("Snoozle walls", "Mounds") || it.label.startsWith("No ") })
+        val haunted = SafariPanels.objectives(run, SafariBiome.HAUNTED, false, 0).rows
+        assertEquals(0, haunted.count { it.label == "Gazer" })
+        assertEquals(1, SafariPanels.missing(run, SafariBiome.HAUNTED, false, 0).rows.count { it.label == "Gazer" })
         assertFalse(haunted.any { it.label.startsWith("Gazers") })
     }
     @Test fun `Sparkling bird food counter appears for any needed bird and disappears after feeding completes`() {

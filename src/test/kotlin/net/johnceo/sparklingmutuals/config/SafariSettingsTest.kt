@@ -8,19 +8,27 @@ import org.junit.jupiter.api.io.TempDir
 
 class SafariSettingsTest {
     @TempDir lateinit var dir: Path
-    @Test fun `MoulConfig view applies and persists toggles and independent warnings`() {
+    @Test fun `HUD contest visibility saves independently from contest tracking`() {
+        ConfigManager.init(dir);ContestConfig.init(dir)
+        val settings=SafariSettings()
+        settings.tracking.contestTimer=false
+        settings.apply()
+        ContestConfig.init(dir)
+        assertFalse(ContestConfig.showContestTimer)
+        assertTrue(ContestConfig.trackContest)
+        assertEquals("HUDs",SettingsCatalog(SafariSettings()).pages[7].name)
+        val next=SafariSettings();next.tracking.contestTimer=true;next.apply()
+        ContestConfig.init(dir);assertTrue(ContestConfig.showContestTimer)
+    }
+    @Test fun `Native view applies and persists toggles and independent warnings`() {
         ConfigManager.init(dir)
         ContestConfig.init(dir)
         assertEquals(0, ContestConfig.ticketMode)
         val settings = SafariSettings()
         assertFalse(settings.party.startingItems)
         settings.party.startingItems = true
-        settings.esp.teammateColor = "0:255:100:80:200"
-        assertFalse(settings.party.hotspot.unique)
-        assertFalse(settings.party.hotspot.fullClear)
-        assertFalse(settings.party.hotspot.sparkling)
-        settings.party.hotspot.unique = true
-        settings.party.hotspot.sparkling = true
+        settings.safari.teammates.color = "0:255:100:80:200"
+        ConfigManager.hotspotAnnouncer = true
         settings.miria.ticketMode = 1
         settings.miria.three = false
         settings.safari.paintings = false
@@ -37,9 +45,7 @@ class SafariSettingsTest {
         assertTrue(ConfigManager.announceStartingItems)
         assertEquals("0:255:100:80:200", SafariEspConfig.teammateColor)
         assertEquals(0xFF6450C8.toInt(), net.johnceo.sparklingmutuals.safari.esp.TeammateEsp.COLOR)
-        assertTrue(ConfigManager.uniqueHotspotAnnouncer)
-        assertFalse(ConfigManager.fullClearHotspotAnnouncer)
-        assertTrue(ConfigManager.sparklingHotspotAnnouncer)
+        assertTrue(ConfigManager.hotspotAnnouncer)
         assertFalse(ConfigManager.hideHauntedPaintings)
         assertFalse(ConfigManager.shinyDetection)
         assertFalse(ConfigManager.partyCommandsEnabled)
@@ -65,13 +71,6 @@ class SafariSettingsTest {
         assertTrue(net.johnceo.sparklingmutuals.alerts.SparkleWarping.preparingParty,
             "/start must prepare the party even if warping is already enabled")
         net.johnceo.sparklingmutuals.alerts.SparkleWarping.cancelSetup()
-    }
-    @Test fun `Safari palette is scoped to our settings rendering`() {
-        val libraryGrey = 0xFF202026.toInt()
-        assertEquals(libraryGrey, SafariTheme.color(libraryGrey))
-        SafariTheme.begin()
-        try { assertEquals(0xFF19191E.toInt(), SafariTheme.color(libraryGrey)) } finally { SafariTheme.end() }
-        assertEquals(libraryGrey, SafariTheme.color(libraryGrey))
     }
     @Test fun `bundled 0_9 area table identifies Haunted and rejects outside coordinates`() {
         assertEquals(4, SafariAreaMap.biomeAt(-4.0, 71.0, -79.0))

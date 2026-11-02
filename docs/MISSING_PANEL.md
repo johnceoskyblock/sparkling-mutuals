@@ -1,4 +1,4 @@
-# Missing, Unchecked and progress panels
+# Missing, Unchecked, objectives and progress panels
 
 ## Scope
 
@@ -22,9 +22,9 @@ A **missing row** is an unfinished species entry, not an inventory/capture total
 
 Full Clear progress can use remote report/capture minima or fixed capture targets while a local missing row remains. A report alone cannot remove that row. Conversely, local capture/source/qualified absence proof can advance both without a report. Qualified absence proof is retained after travel until positive remaining evidence revokes it.
 
-In Unique mode, locally proven zero-spawn Bluebird, Parakeet, Macaw, Rockmite and Snoozle are removed from the species list. Each bird requires resolved bird feeding including known party extras and no encounter. Rockmite/Snoozle require fully resolved mounds/walls and a local Cavern absence scan with no encounter. Their absence also counts toward progress and local biome announcements; actual capture counts remain zero.
+In Unique mode, locally proven zero-spawn Bluebird, Parakeet, Macaw, Rockmite and Snoozle are removed from the species list. Each bird requires resolved bird feeding including own starting food and no encounter. Rockmite/Snoozle require fully resolved mounds/walls and a local Cavern absence scan with no encounter. Their absence also counts toward progress and local biome announcements; actual capture counts remain zero.
 
-Plain species names use their species colors. Species rows stay plain; outstanding source/check work appears in separate footers. When no species remain, Sparkling says **All checked!**; Full Clear says **All caught and checked!**. Unique says **All caught!** while source/progress work remains, then **All caught and checked!** once progress also completes. A separate source footer may still appear below that sentence.
+Plain species names use their species colors. Species rows stay plain; outstanding source/check work appears in the separate **Biome Objectives** HUD. The species panel title shows its biome and remaining species count; a completed biome has an empty species list. Biome Objectives can still show outstanding work after the species list clears.
 
 In Sparkling, title/editor label is **Unchecked** in every biome. Unique/Full Clear use the existing Missing setting/editor position; the panel title itself uses the biome and “Biome — N left”. Changing mode preserves saved position/settings.
 
@@ -54,18 +54,18 @@ Sparkling ordinary ESP normally requires the discovery and uses a ten-second per
 
 Highest priority: while the party needs Wumpa, every Icy species with zero shared catches is selected before normal mode/timeout eligibility. Its own first catch ends that override only for that species; group/entity/biome controls still apply. A Wumpa catch can complete all Icy Sparkling checks without supplying other species' first catches, so their forced ordinary ESP may remain while Wumpa discovery state is still needed.
 
-### Source footers and helpers
+### Biome Objectives (former source footers)
 
 | Footer | Full Clear | Unique | Sparkling |
 | --- | --- | --- | --- |
-| Bird food left to use | Not shown | Remaining feeding demand including known party extras; at least known held plus floor food | Same count, only when Bluebird, Parakeet or Macaw is needed and feeding remains unresolved |
-| Bee nests to punch | Until all nests checked or captures reach known nest quota; fd/live bees alone do not suppress it | Until locally resolved or trusted fd; after first Honeybug catch, keep only if its discovery is needed | Only when Honeybug is needed and local/trusted checking remains unresolved |
-| Snooper walls to break | Known wall state exists and not all five broken | Snoozle incomplete and either uncaught or discovery needed | Needed incomplete Snoozle |
-| Mounds to break | Positive remaining mound count | Rockmite incomplete and either uncaught or discovery needed | Needed incomplete Rockmite |
+| Bird food left to use | Until local feeding resolves | Remaining feeding demand including own starting food; at least known held plus floor food | Same count, only when Bluebird, Parakeet or Macaw is needed and feeding remains unresolved |
+| Bee nests | Until all nests checked or captures reach known nest quota; fd/live bees alone do not suppress it | Until locally resolved or trusted fd; after first Honeybug catch, keep only if its discovery is needed | Only when Honeybug is needed and local/trusted checking remains unresolved |
+| Snoozle walls | Known wall state exists and not all five broken | Snoozle incomplete and either uncaught or discovery needed | Needed incomplete Snoozle |
+| Mounds | Positive remaining mound count | Rockmite incomplete and either uncaught or discovery needed | Needed incomplete Rockmite |
 | Coins left to use | Not shown | Only when Gimmiegold is needed and local coin checking remains: uncollected floor slots/held coins and outstanding required spawns; ? while catalog/inventory is unknown | Same needed-Gimmiegold counter until local checking resolves |
-| Gazers left to check | Not shown | Only when Gazer is needed and unresolved: four minus retained reconciled sightings/catches | Same needed-Gazer counter until local checking resolves |
+| Gazers left | Not shown | Only when Gazer is needed and unresolved: four minus retained reconciled sightings/catches | Same needed-Gazer counter until local checking resolves |
 
-Footers appear beneath the species list with gray counts. Unknown wall coverage is preserved. Resolved sources disappear; a punched nest loses its individual waypoint immediately. The nest count helper and nest highlight use the same mode eligibility, while actual waypoint presence depends on unpunched known nests. A helper can remain after the species row clears.
+The former footers now appear in a separate **Biome Objectives** panel, with icons, pastel objective-type labels and white counts; zero remaining rows are omitted. Missing/Unchecked contains no objective rows. The panel hides when no applicable objectives remain. Forest omits an empty feeder and hides its food and spawned-bird rows when feeding resolves. A still-required nest survey with no known positive count displays ? rather than disappearing. Unknown wall coverage is preserved. Resolved sources disappear; a punched nest loses its individual waypoint immediately. The nest count helper and nest highlight use the same mode eligibility, while actual waypoint presence depends on unpunched known nests. A helper can remain after the species row clears.
 
 In Unique, Haunted footers remain after their first catches remove the species rows. Unique and Sparkle Haunted footers disappear after the needed checks resolve. Sparkle shows coin, Gazer, mound, Snoozle-wall, bird-food and bee-nest counters only for the corresponding needed discovery (any needed bird enables bird food); resolved source work hides its counter. Unique Rockmite silverfish ESP ends on the first catch; mound ESP stays on before that catch or while anyone still needs its discovery. A new run restores first-catch eligibility. Ordinary ESP, detected Sparkling glow and source helpers have independent render/config gates; [SAFARI_LOGIC](../SAFARI_LOGIC.md) and [detection](SPARKLING_DETECTION.md) distinguish their outcomes.
 
@@ -130,10 +130,20 @@ The compact reply uses `Missing <Biome>: ...`, semicolons between tasks and `Non
 
 2026-10-21 — Hideyho Full Clear now treats the confirmed quest reward as terminal completion: remove its missing row and allow green capture/progress state without NPC absence or additional model-derived captures.
 
-2026-10-20 — All three bird types support zero-spawn completion: Unique requires resolved feeding (including known party extras), qualified Forest survey and no catch/sighting of that species. Full Clear retains the actual-population capture formula, which allows zero Bluebirds/Parakeets when the other captures cover all feeding opportunities. No catches are fabricated.
+2026-10-20 — All three bird types support zero-spawn completion: Unique requires resolved feeding (including own starting food), qualified Forest survey and no catch/sighting of that species. Full Clear retains the actual-population capture formula, which allows zero Bluebirds/Parakeets when the other captures cover all feeding opportunities. No catches are fabricated.
 
 2026-10-20 — Unique is a capture checklist independent of source progress. Added Forest bird-food footer; empty Unique checklist says All caught! while progress still has work.
 
 2026-10-19 - Documented local Unique zero-spawn row removal, progress and biome reports for Macaw, Rockmite and Snoozle.
 
 2026-10-19 (America/New_York) — Replaced duplicate species quotas with UI ownership and explicit row/progress/helper distinctions. Reviewed source: 93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee; static source/caller review, no live Minecraft validation.
+
+## Last updated
+
+2026-11-02 — Moved source footers into an independent Biome Objectives HUD, adapted from SafariUtils PartyObjectiveHud (MIT). Existing mode/party requirements and completion evidence remain unchanged. Toggle under HUDs; drag/resize with `/sm gui`; style under Customization → Tracking HUDs. New panel style starts from the saved Missing style, then persists independently.
+
+2026-11-02 — Biome Objectives remains one HUD. Its objective types now use distinct pastel palettes (food types, nests, coins, Gazers, gems, walls and mounds); its heading and optional border still identify the current biome.
+
+## Last updated
+
+2026-11-02 — Completed Missing/Unchecked and Biome Objectives panels hide when there are no rows. Completed objectives disappear individually; Forest food types, feeder contents and spawned birds use horizontal icon/count groups. Objectives title includes the current biome icon. Progress reads Completed in Unique/Full Clear and Checked in Sparkle. Biome completion requires qualified local clearing while inside or a received/sent report while outside; retained remote species evidence alone cannot finish a biome. Wumpa capture retains its Icy exception. Unneeded Sparkle biomes require no work. Existing capture/check minima still apply to reports.

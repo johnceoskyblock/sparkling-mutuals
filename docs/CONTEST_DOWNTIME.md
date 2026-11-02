@@ -8,7 +8,8 @@ Track Miria's contest window, warn while incomplete, and coordinate party readin
 
 | Control in `/sm` settings | Default | Effect |
 | --- | --- | --- |
-| **Miria contest → Contest HUD and tracking** | On | Enables contest HUD/tracking presentation and warning processing. |
+| **Miria contest → Contest tracking** | On | Enables contest tracking and warnings. |
+| **HUDs → HUDs → Safari contest timer** | On | Shows the timer and score without affecting tracking or ticket logic. |
 | **Auto !dt contest** | On | Allows one automatic leader request at a newly observed contest start. |
 | **5 / 3 / 1 minute warning** | All on | Selects warning thresholds while below Uncommon. |
 | Warning title/sound | On; `minecraft:block.bell.use`, volume 100 | Local incomplete-contest warning. |
@@ -40,13 +41,11 @@ A server-confirmed `SkyBlock Party Warp (N players)` while the local player is p
 
 Entry-block messages list each player with their reason, such as `Alex (contest), Steve (food)`. No unsolicited local notices accompany these changes; holds and release rules remain unchanged.
 
-On returning to Torrhus, clients coordinate one party message naming all outstanding requesters and reasons, even if the reporting client requested no downtime: `Downtime requested: Alex (food); Steve (contest); Bob (no reason)`.
-
-Reports wait for the destination, stagger by party UUID order and suppress a matching report already heard, including one heard inside Safari. Resume/departure/ticket changes update pending content. Long reasons share the available message budget and use `...` truncation to preserve names. Automatic local request, ready, ticket, timeout, departure and party-reset notices are silent. Attempting a blocked entry still explains the current holders and Shift override. A ready message does not clear unrelated missing-member or kick guards.
+With an outstanding contest request, queue `[Reminder] Everyone get your ticket!`. Only the current party leader sends it, after Torrhus Canyon is confirmed. A request made while already in Torrhus is eligible immediately. Send once per request cycle; readiness/ticket resolution cancels an unsent reminder. Regular downtime and named request details remain local and no longer produce verbose party summaries. Entry holds, Shift overrides and release timers are unchanged.
 
 ## Chat volume
 
-Automatic `!dt contest`, the coordinated combined party reminder on returning to Torrhus and the ticket-earned party announcement remain. Routine local bookkeeping notices have been removed. Contest warnings retain their existing title/sound controls; the automatic warning chat line is also removed. No new API requests are introduced.
+Automatic `!dt contest`, the leader-only ticket reminder in Torrhus and the ticket-earned party announcement remain. Routine local bookkeeping notices have been removed. Contest warnings retain their existing title/sound controls; the automatic warning chat line is also removed. No new API requests are introduced.
 
 ## Lifecycle and persistence
 
@@ -68,6 +67,9 @@ Contest completion, tier, score and warnings are retained in memory per account/
 - Existing secondary coverage: [ContestTicketAndAutoWarpTest](../src/test/kotlin/net/johnceo/sparklingmutuals/contest/ContestTicketAndAutoWarpTest.kt), [SafariDowntimeTest](../src/test/kotlin/net/johnceo/sparklingmutuals/safari/automation/SafariDowntimeTest.kt), [DowntimeAnnouncementTest](../src/test/kotlin/net/johnceo/sparklingmutuals/safari/automation/DowntimeAnnouncementTest.kt). No tests or live session ran in this audit. Live checks should cross starts with each role/setting, earn tiers across rollovers, exercise multiple independent holders, transfers, staggered reports and same-window profile refreshes.
 
 ## Last updated
+
+2026-11-01 — Independent contest HUD visibility; short leader-only ticket reminders replace verbose party summaries.
+
 
 2026-10-29 — Renamed the receiver toggle to Respect !dt requests and removed unsolicited local downtime bookkeeping messages without changing requests, readiness, timers or party announcements.
 

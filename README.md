@@ -14,7 +14,7 @@ A Fabric client mod for Hypixel SkyBlock Safari, Sparkling discoveries, party co
 
 Current release: **[v3.5.0](https://github.com/johnceoskyblock/sparkling-mutuals/releases/tag/v3.5.0)**, with `sparkling-mutuals-3.5.0+mc26.1.2.jar`, `sparkling-mutuals-3.5.0+mc26.2.jar` and `sparkling-mutuals-3.5.0+mc26.3.jar`. Install only the file matching your Minecraft version and remove the older Sparkling Mutuals JAR before updating.
 
-HM API and MoulConfig are bundled. Player profile lookups use a Hypixel API key or the optional Shiny Hunter shared API. Keep keys and local authentication files private. Release notes and the availability of published assets belong to their [release descriptions](https://github.com/johnceoskyblock/sparkling-mutuals/releases).
+HM API is bundled. Settings use a native workspace adapted from SafariUtils. Player profile lookups use a Hypixel API key or the optional Shiny Hunter shared API. Keep keys and local authentication files private. Release notes and the availability of published assets belong to their [release descriptions](https://github.com/johnceoskyblock/sparkling-mutuals/releases).
 
 ### Play
 
@@ -47,7 +47,7 @@ The guide is a visual estimate, not guaranteed flight, impact or capture physics
 | `!dt [reason]`, `r` | Request downtime or release your own readiness hold |
 | `!pb <biome>`, `!pb doom`, `!pb wumpa` | Active-mode biome or boss bests; [solo/duo and observed unique variants](docs/PERSONAL_BESTS.md) are in command help |
 | `!commands` | Available party commands in the active mode |
-| `/sm help` | Local and party command list for the active mode |
+| `/sm help` | Slash command list |
 | `/sparkling [IGN\|party\|IGNs]` | Player cards and discovery comparison |
 | `/warping`, `/warpingdelay <seconds>`, `/autoparty` | Sparkle Warping and optional Warp List invitations |
 | `/duo <IGN>`, `/leech` | Select your Duo runner; toggle auto-accepting party invites |
@@ -67,7 +67,7 @@ Press Tab to complete current-party IGNs in `/sparkling`, including successive c
 
 - JavaBetter contributed player cards, cloud lookups, party helpers, honeyhives, history, achievements and profit tracking; GamingLegend123 contributed the Shiny Hunter icon.
 - Adapted work: [CritterMod v0.9.0](https://github.com/MrCloudy2/critterMod/tree/v0.9.0), [ShinyHunter](https://github.com/javabetter/ShinyHunter), [Nebulune](https://github.com/Gaeritag/Nebulune), and [SkyHanni 9.1.0](https://github.com/hannibal002/SkyHanni/tree/9.1.0).
-- Settings: [MoulConfig](https://github.com/NotEnoughUpdates/MoulConfig).
+- Settings workspace, HUD symbols and catch celebrations: [SafariUtils](https://github.com/Serkosea/safariutils) (MIT).
 - Phantomleaf Solver: adapted from [SkyHanni](https://github.com/SkyHanniStudios/SkyHanni/blob/b3543887dfb80d95ff9880b3f610167ac2c104f2/src/main/java/at/hannibal2/skyhanni/features/garden/greenhouse/PhantomleafSolver.kt) under LGPL-2.1; open `/sm` → Misc Endgame Features. See [feature guide](docs/PHANTOMLEAF_SOLVER.md).
 - Licensing and attribution: [LICENSE](LICENSE) and [third-party notices](licenses).
 

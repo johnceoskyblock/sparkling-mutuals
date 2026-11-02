@@ -71,7 +71,9 @@ Late entry or missing the earliest groups can establish the wrong anchor. Group 
 
 The server system message `HOTSPOT! Your Hunting Hotspot is ...` marks boat departure and starts a 0.5-second delay. Entering a mapped biome does not start this timer; repeated hotspot messages do not restart it. Player chat cannot trigger it. Sample inventory on the boat as well as during clearing. With known multi-player party membership and ready party discovery data, send one compact party report containing only still-held starting food/coins whose related Sparkling discovery is missing. Example: `[SM] Starting items: 2x Bag of Seeds; 1x Shining Coin`. This opening report lists only unused starting items and quantities. It waits for ready discovery data to select relevant items, but does not wait for IGNs. Missing species appear once in the follow-up after a local biome completion report, without naming members. Older reports with named or generic `(Party needs ...)` suffixes remain accepted. If only a bird is needed, send only the food. If neither category is needed, send nothing. A member with no profile/Safari discovery data counts as zero discoveries and needs both Gimmiegold and all birds. Every mod user independently reports their own unused starting resources; another user's report does not suppress it. Actual loading/network errors still postpone the decision. There is no empty/zero announcement. See [API fallback and retries](../API_LOOKUPS.md).
 
-Each sender/type quantity is a retained maximum, overlapping the local grant/inventory and its own echo. Early reports update the bird/coin contribution totals directly, not the old delayed-notice outstanding ledger. Repeating an early report, or a later legacy notice for that same sender/type, does not add the quantity again. Floor pickups are separate from starting inventory. An unknown area is not boat departure; a new run owns a fresh schedule. A client that misses the system hotspot message cannot infer the departure time.
+Starting-item messages remain useful announcements only. Bird and Gimmiegold requirements use floor sources plus this client's own starting inventory/grants, never teammate starting-item or unused-resource quantities. A new run owns a fresh announcement schedule.
+
+All Coins Alert fires once after all registered Shining Coin floor sources resolve, independently of whether the coins have been used. Gem floor-drop ESP excludes confirmed placed podium colors; All Gems readiness remembers earlier acquired/placed colors. See [Gemzie](gemzie.md).
 
 ### Unused starting food/coin reminders
 
@@ -133,6 +135,9 @@ In the ESP config tab, **Floor-drop text sizes** provides a separate 0.5–4.0 s
 Existing configs without the new keys initialize every drop-type and party-member size from the saved `esp.textScale` value, preserving their prior appearance. Each independent value then saves in `esp.floor.<type>.textScale` or `esp.teammate.textScale`. Changing the other-label scale does not change them. Text-size settings do not affect colors, source tracking or mode requirements.
 
 ## Last updated
+
+2026-11-01 — Local-only bird/coin requirements, placed-gem filtering and All Coins alert.
+
 
 2026-10-29 - Announce starting quest items also controls post-completion Need to use party reminders. Turning it off suppresses both party messages; local tracking remains active.
 

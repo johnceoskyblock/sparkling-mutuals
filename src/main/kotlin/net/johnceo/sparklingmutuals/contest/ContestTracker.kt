@@ -167,12 +167,8 @@ object ContestTracker {
         val due = ContestConfig.warningMinutes().filter { remaining <= it * 60 && it !in warnedMinutes }
         if (due.isEmpty()) return
         warnedMinutes.addAll(due)
-        // Joining late produces one warning instead of all elapsed warnings at once.
-        playSound(client)
-
-        if (ContestConfig.contestWarnTitle) {
-            showTitle(client, remaining)
-        }
+        // Banner warnings own their sound/title; the tracker still retains warning state.
+        // SafariBanners samples the same configured thresholds once per contest.
     }
 
     private fun playSound(client: Minecraft) {

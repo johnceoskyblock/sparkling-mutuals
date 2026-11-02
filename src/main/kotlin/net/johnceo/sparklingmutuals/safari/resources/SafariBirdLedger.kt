@@ -15,12 +15,24 @@ class SafariBirdLedger {
     private var currentPopulation: Int? = null
     private var verifiedPopulation = 0
     private var heldFoods: Int? = null
+    private val heldByType=mutableMapOf<String,Int>()
+    private val spawned=mutableMapOf<String,Int>()
+    var spawnEvents=0
+        private set
+    var feederFood: String?=null
+        private set
+    var feederCount=0
+        private set
+    fun feeder(name: String?, count: Int) { feederFood=name;feederCount=count.coerceAtLeast(0) }
+    fun held(name: String)=heldByType[name] ?: 0
+    fun remaining(name: String)=(if(floorDropsRemaining == 0) 0 else maxOf(0,3-(forest[name] ?: 0)))+held(name)
+
     private var reportedExtras = 0
     private val inferredFood = mutableSetOf<String>()
     private var inferredExtras = 0
     /** One provisional food per unreporting teammate; later starting reports replace the estimate. */
     fun earlyVisitor(name: String, elapsed: Long, nearBirds: Boolean, hasStartingReport: Boolean) {
-        if (elapsed in 0..30000 && nearBirds && !hasStartingReport) inferredFood.add(name.lowercase())
+        // Teammate supplies are intentionally not part of local source requirements.
     }
     private var reportedTarget: Int? = null
     private var announced = false
@@ -48,10 +60,12 @@ class SafariBirdLedger {
     /** Includes uncollected food and known party extras; render evidence estimates food already used. */
     val foodLeftToUse get() = maxOf(0, feedingTarget - maxOf(accountedFeedings, verifiedPopulation),
         (heldFoods ?: 0) + (floorDropsRemaining ?: 0))
-    val accountedFeedings get() = currentPopulation ?: 0
+    val accountedFeedings get() = maxOf(currentPopulation ?: 0,spawnEvents)
     val knownFoodUnresolved get() = (heldFoods ?: 0) > 0 || (floorDropsRemaining ?: 0) > 0
     val feedingResolved get() = floorDropsRemaining == 0 && heldFoods == 0 &&
-        maxOf(accountedFeedings, verifiedPopulation) >= feedingTarget
+        maxOf(accountedFeedings, verifiedPopulation) >= feedingTarget && feederCount == 0
+    val allNineFloorFoodUsed get() = floorDropsRemaining==0 && heldFoods==0 && feederCount==0 &&
+        maxOf(accountedFeedings,verifiedPopulation)>=feedingTarget && feedingTarget>=9
     val sparklingSpawned get() = feedingResolved
     val allSpawned get() = feedingResolved
     val collected get() = picked.values.sum()
@@ -67,17 +81,13 @@ class SafariBirdLedger {
     val sparklingTarget get() = feedingTarget
     /** Sender/type maxima deduplicate repeated notices; local notices overlap starting inventory. */
     fun contributions(local: String?, notices: Map<Pair<String, FloorDropType>, Int>, reporters: Set<String> = emptySet()) {
-        val known = reporters.map(String::lowercase).toSet() + notices.keys.map { it.first.lowercase() }
-        inferredExtras = inferredFood.count { it !in known && !it.equals(local, true) }
-        reportedExtras = notices.entries.sumOf { (key, amount) ->
-            if (local != null && key.first.equals(local, true)) (amount - localExtra(key.second.label)).coerceAtLeast(0) else amount
-        }
+        reportedExtras=0; inferredExtras=0
     }
     fun report() { reportedTarget = feedingTarget }
     val reportCoversTarget get() = (reportedTarget ?: -1) >= feedingTarget
     val hasReport get() = reportedTarget != null
     val remoteReady get() = !knownFoodUnresolved && (reportedTarget ?: 0) >= feedingTarget
-    fun spawnedCount(species: String) = renderedTotals[species] ?: 0
+    fun spawnedCount(species: String) = maxOf(renderedTotals[species] ?: 0, spawned[species] ?: 0)
     fun startingGrant(name: String) { if (name in foods) startingFoods[name] = maxOf(startingFoods[name] ?: 0, 1) }
     fun startingInventory(stacks: List<Pair<String, Int>>, elapsed: Long) {
         if (elapsed !in 0L..3000L) return
@@ -98,9 +108,21 @@ class SafariBirdLedger {
         else if (elapsed == null || elapsed in 0L..3000L) startingPickups.merge(food, quantity, Int::plus)
         return true
     }
-    /** Announcements cannot establish a spawn, usage, species count, or Macaw pair. */
-    fun spawn(@Suppress("UNUSED_PARAMETER") raw: String) = false
+    /** Each server feeder line is one food use; Macaws arrive as a pair. */
+    fun spawn(raw: String): Boolean {
+        val name=when(SafariRules.strip(raw)) {
+            "A Bluebird was attracted to the Birdfeeder!" -> "Bluebird"
+            "A Parakeet was attracted to the Birdfeeder!" -> "Parakeet"
+            "Two Macaws were attracted to the Birdfeeder!" -> "Macaw"
+            else -> return false
+        }
+        spawnEvents++
+        spawned.merge(name,if(name == "Macaw") 2 else 1,Int::plus)
+        feederCount=(feederCount-1).coerceAtLeast(0)
+        return true
+    }
     fun inventory(stacks: List<Pair<String, Int>>) {
+        foods.forEach { food -> heldByType[food]=stacks.filter { SafariRules.strip(it.first).trim()==food }.sumOf { it.second.coerceAtLeast(0) } }
         heldFoods = stacks.filter { SafariRules.strip(it.first).trim() in foods }.sumOf { it.second.coerceAtLeast(0) }
         retainSpawnProof()
     }

@@ -11,11 +11,10 @@ import java.nio.file.LinkOption
 import java.nio.file.StandardCopyOption
 import java.nio.file.AtomicMoveNotSupportedException
 import java.security.MessageDigest
-import java.util.jar.Manifest
 import java.util.zip.ZipFile
 import java.util.zip.ZipInputStream
 
-data class TargetSpec(val minecraft: String, val fabricApi: String, val hmApi: String, val moulConfig: String)
+data class TargetSpec(val minecraft: String, val fabricApi: String, val hmApi: String)
 data class VerifiedJar(val path: Path, val minecraft: String, val modVersion: String, val size: Long, val sha256: String)
 
 fun collectDistribution(paths: List<Path>, targets: List<TargetSpec>, modVersion: String, destination: Path): List<VerifiedJar> {
@@ -121,11 +120,10 @@ fun verifyJar(path: Path, target: TargetSpec, modVersion: String): VerifiedJar {
                 clients.forEach { entry("$prefix/$it.class") }
             }
             val hm = "META-INF/jars/hm-api-${target.hmApi}.jar"
-            val moul = "META-INF/jars/${target.moulConfig}-4.8.0.jar"
             val declared = (metadata["jars"] as? List<*>)?.map { (it as? Map<*, *>)?.get("file") }
-            require(declared?.toSet() == setOf(hm, moul) && declared.size == 2) { "Incorrect bundled artifacts" }
+            require(declared?.toSet() == setOf(hm) && declared.size == 1) { "Incorrect bundled artifacts" }
             val embedded = names.filter { it.startsWith("META-INF/jars/") && it.endsWith(".jar") }
-            require(embedded.toSet() == setOf(hm, moul)) { "Unexpected nested dependency (development JARs forbidden)" }
+            require(embedded.toSet() == setOf(hm)) { "Unexpected nested dependency (development JARs forbidden)" }
             for (file in embedded) {
                 val content = nested(entry(file))
                 val mod = json(content["fabric.mod.json"] ?: throw IllegalArgumentException("Missing nested Fabric metadata"))
@@ -134,14 +132,7 @@ fun verifyJar(path: Path, target: TargetSpec, modVersion: String): VerifiedJar {
                 require(accepts(requirements["minecraft"], target.minecraft) && accepts(requirements["java"], "25") &&
                     accepts(requirements["fabricloader"], "0.19.5") && accepts(requirements["fabric-api"], target.fabricApi)) { "Incompatible nested metadata: $file" }
                 if (file == hm) require(mod["id"] == "hm-api" && mod["version"] == target.hmApi) { "Incorrect HM API" }
-                if (file == moul) {
-                    require("io/github/notenoughupdates/moulconfig/Config.class" in content) { "Missing MoulConfig runtime" }
-                    val manifest = Manifest(ByteArrayInputStream(content["META-INF/MANIFEST.MF"] ?: throw IllegalArgumentException("Missing MoulConfig manifest")))
-                    val buildTarget = manifest.mainAttributes.getValue("Fabric-Minecraft-Version")
-                    // Upstream modern-26.2:4.8.0 retains its 26.2-pre-2 build label. Its startup/settings linkage is smoke-tested.
-                    val pinned262 = target.minecraft == "26.2" && target.moulConfig == "modern-26.2" && buildTarget == "26.2-pre-2"
-                    require(buildTarget == target.moulConfig.removePrefix("modern-") || pinned262) { "Wrong MoulConfig target" }
-                }
+
             }
         }
     } catch (e: Exception) {
@@ -159,9 +150,24 @@ fun verifyJar(path: Path, target: TargetSpec, modVersion: String): VerifiedJar {
 fun verifyDistribution(paths: List<Path>, targets: List<TargetSpec>, modVersion: String): List<VerifiedJar> {
     require(targets.map { it.minecraft }.toSet() == setOf("26.1.2", "26.2", "26.3") && targets.size == 3) { "Expected exactly three supported targets" }
     require(paths.size == 3 && paths.map { it.toAbsolutePath().normalize() }.distinct().size == 3) { "Missing or duplicate target JARs" }
-    return targets.map { target ->
+    val verified = targets.map { target ->
         val file = paths.singleOrNull { it.fileName.toString() == "sparkling-mutuals-$modVersion+mc${target.minecraft}.jar" }
             ?: throw IllegalArgumentException("Missing or duplicate target ${target.minecraft}")
         verifyJar(file, target, modVersion)
     }
+    // Platform adapters compile differently, but every target must ship the same feature classes and assets.
+    // Only the 26.1.2 immediate renderer needs this anonymous captured-pose adapter for Iris composition.
+    val immediatePoseAdapter = "net/johnceo/sparklingmutuals/safari/shots/preview/CapsulePreviewRenderer\$render\$captured\$1.class"
+    fun contents(path: Path): Map<String, String> = ZipFile(path.toFile()).use { zip ->
+        zip.entries().asSequence().filter { !it.isDirectory && !it.name.startsWith("META-INF/") && it.name != "fabric.mod.json" && it.name != immediatePoseAdapter }
+            .associate { entry -> entry.name to if (entry.name.endsWith(".class")) "class" else
+                zip.getInputStream(entry).use { MessageDigest.getInstance("SHA-256").digest(bytes(it)) }.joinToString("") { "%02x".format(it) } }
+    }
+    val baseline = contents(verified.first().path)
+    verified.drop(1).forEach { jar ->
+        val actual = contents(jar.path)
+        require(actual == baseline) { "Feature/resource parity differs for ${jar.minecraft}: " +
+            (baseline.keys + actual.keys).filter { baseline[it] != actual[it] }.joinToString() }
+    }
+    return verified
 }

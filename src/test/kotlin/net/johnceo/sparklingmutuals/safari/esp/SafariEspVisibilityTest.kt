@@ -30,7 +30,7 @@ class SafariEspVisibilityTest {
         settings.esp.floorDrops.visibility.lime = false
         settings.customization.forest.foxtrot.color = "0:255:18:52:86"
         settings.apply()
-        settings.modes.fullClear.enabled = true
+        net.johnceo.sparklingmutuals.safari.completion.SafariFullClear.select(net.johnceo.sparklingmutuals.safari.SafariMode.FULL_CLEAR)
         settings.apply(); settings.apply()
         assertTrue(SafariEspConfig.mobs.values.all { it.enabled })
         ConfigManager.init(dir)

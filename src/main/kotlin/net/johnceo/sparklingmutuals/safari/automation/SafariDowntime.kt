@@ -9,7 +9,7 @@ import net.minecraft.client.Minecraft
 
 /**
  * `!dt [reason]` in party chat: someone wants a break after this run. The request waits until the run ends, then the
- * clients coordinate one combined party announcement naming every requester and reason, and every client holds the
+ * leader sends one contest-ticket reminder in Torrhus, and every client holds the
  * Safari Manager shut until the requester says `r`, earns their contest ticket, or announces Ticket earned!. Asked outside the Safari,
  * it takes effect straight away. Requests leave with their requester: someone leaving or being removed from the party
  * drops theirs, and this client leaving, joining another party or the party disbanding drops them all. Turning the
@@ -159,7 +159,7 @@ object SafariDowntime {
         return true
     }
 
-    /** The run is over: banked requests become a hold and any client can report the whole list. */
+    /** The run is over: banked requests become a hold and a contest reminder can be queued. */
     @Suppress("UNUSED_PARAMETER")
     fun leftSafari(self: String): String? {
         if (!ConfigManager.downtimeCommand) { clear(); return null }
@@ -182,8 +182,8 @@ object SafariDowntime {
             (net.johnceo.sparklingmutuals.safari.SafariIsland.currentMode.equals("foraging_3", true) ||
                 SkyblockSidebar.areaName(client).equals("Torrhus Canyon", true))
         // Transfers may briefly clear Safari detection before the destination is available.
-        if (inCanyon || !holding)
-            announcement.poll(System.currentTimeMillis(), if (holding) summary() else null)?.let(::send)
+        announcement.poll(System.currentTimeMillis(), if (holding) summary() else null,
+            leader = PartyManager.isLeader(client.player!!.uuid.toString()), inCanyon = inCanyon)?.let(::send)
     }
 
     private fun displayName(key: String) = if (key.matches(Regex("[0-9a-f]{32}")))
@@ -191,12 +191,12 @@ object SafariDowntime {
     internal fun localNotice() = "[SM] ${if (requests.values.all { it.equals("contest", true) }) "Contest" else "Downtime"}: wait for ${waitingFor()} to say r or report a ticket in party chat." +
         (if (requests.values.any { it.equals("contest", true) }) " Other players' contest holds also clear 20s after a Torrhus party warp." else "") +
         " Hold Shift to enter anyway."
-    private fun summary() = DowntimeAnnouncement.format(requests.entries.associate { displayName(it.key) to it.value })
+    private fun summary(): String? = DowntimeAnnouncement.TICKET_REMINDER.takeIf {
+        requests.values.any { it.equals("contest", true) }
+    }
     fun queueAnnouncement(message: String) {
-        val client = Minecraft.getInstance()
-        val local = client.player?.uuid?.toString() ?: return
-        val rank = PartyManager.withLocal(local)?.sortedDescending()?.indexOf(local)?.coerceAtLeast(0) ?: 0
-        announcement.queue(message, System.currentTimeMillis(), rank)
+        // Only the current leader may publish it, once the Canyon location is confirmed.
+        announcement.queue(message, System.currentTimeMillis(), 0)
     }
 
     /** Prune only members proven absent from the refreshed party, not the current instance. */

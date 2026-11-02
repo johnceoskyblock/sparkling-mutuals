@@ -1,6 +1,6 @@
 package net.johnceo.sparklingmutuals.config
 
-import io.github.notenoughupdates.moulconfig.annotations.Category
+import net.johnceo.sparklingmutuals.config.Category
 import java.nio.file.Path
 import java.util.Properties
 import net.johnceo.sparklingmutuals.safari.SafariBiome
@@ -52,7 +52,7 @@ class SafariCustomizationTest {
         assertTrue(ConfigManager.showMoundCount)
         assertTrue(ConfigManager.showBeeNests)
         assertFalse(ConfigManager.showMoundStats)
-        AppearanceConfig.panels.values.forEach { assertFalse(it.borderEnabled) }
+        AppearanceConfig.panels.forEach { (id,style) -> assertEquals(id in setOf("miria","progress","missing","captures","objectives"),style.borderEnabled) }
         for (id in listOf("miria", "progress", "missing", "captures", "sparklings")) {
             val style = AppearanceConfig.panels.getValue(id)
             assertEquals(20, style.transparency)
@@ -119,16 +119,16 @@ class SafariCustomizationTest {
         ConfigManager.init(dir)
         val choices = CustomizationSettings()
         val names = listOf(choices.cavern, choices.forest, choices.icy, choices.haunted).flatMap { group -> group.javaClass.fields.toList() }.filter { it.type == ColorChoice::class.java || it.type == ScrappyAppearanceSettings::class.java }.map {
-            it.getAnnotation(io.github.notenoughupdates.moulconfig.annotations.ConfigOption::class.java).name
+            it.getAnnotation(net.johnceo.sparklingmutuals.config.ConfigOption::class.java).name
         }
         SafariRoster.all.filter { it.name != "Rockmite" }.forEach { assertEquals(1, names.count { name -> name == "${it.name} ESP" }) }
         assertTrue(names.containsAll(listOf("Rockmite silverfish ESP", "Rockmite mound ESP")))
     }
     @Test fun `warnings live in their accordion and mode-owned structure controls are absent`() {
-        fun names(type: Class<*>) = type.fields.mapNotNull { it.getAnnotation(io.github.notenoughupdates.moulconfig.annotations.ConfigOption::class.java)?.name }
-        assertEquals(setOf("Ticket mode", "Contest HUD and tracking", "Auto !dt contest", "Honeyhive beacons", "Warning"), names(SafariSettings.Miria::class.java).toSet())
+        fun names(type: Class<*>) = type.fields.mapNotNull { it.getAnnotation(net.johnceo.sparklingmutuals.config.ConfigOption::class.java)?.name }
+        assertEquals(setOf("Ticket mode", "Contest tracking", "Auto !dt contest", "Honeyhive beacons"), names(SafariSettings.Miria::class.java).toSet())
         assertTrue(names(SafariSettings.Unique::class.java).contains("Profitable critter ESP"))
-        assertEquals(setOf("5 minute warning", "3 minute warning", "1 minute warning", "No contest warnings", "Warning titles", "Sound volume", "Warning sound", "Save sound"), names(SafariSettings.Warning::class.java).toSet())
+        assertEquals(setOf("5 minute warning", "3 minute warning", "1 minute warning", "No contest warnings", "Warning titles", "Sound volume", "Warning sound", "Preview sound"), names(SafariSettings.Warning::class.java).toSet())
         assertEquals(setOf("Command help", "Move and resize HUDs"), names(SafariSettings.General::class.java).toSet())
         assertFalse(names(SafariSettings.Party::class.java).contains("Command help"))
         assertFalse(names(SafariSettings.Tracking::class.java).contains("Move and resize HUDs"))
@@ -139,7 +139,7 @@ class SafariCustomizationTest {
         val settings = SafariSettings()
         ConfigManager.showMoundStats = true
         ConfigManager.countUniqueOnly = true
-        ConfigManager.catchCountPanel = true
+        settings.tracking.captures = true
         settings.apply()
         assertTrue(ConfigManager.showMoundStats)
         assertTrue(ConfigManager.countUniqueOnly)
@@ -151,9 +151,9 @@ class SafariCustomizationTest {
         val settings = SafariSettings()
         val groups = listOf(settings.customization.huds, settings.customization.alertHuds, settings.customization.critters)
         val labels = groups.flatMap { group -> group.javaClass.fields.mapNotNull {
-            it.getAnnotation(io.github.notenoughupdates.moulconfig.annotations.ConfigOption::class.java)?.name
+            it.getAnnotation(net.johnceo.sparklingmutuals.config.ConfigOption::class.java)?.name
         } }
-        assertTrue(labels.containsAll(listOf("Missing panel HUD", "Sparkling alert HUD", "Cavern critter colors", "Forest critter colors", "Icy critter colors", "Haunted critter colors")))
+        assertTrue(labels.containsAll(listOf("Missing panel HUD", "Sparkling detection alert HUD", "Cavern critter colors", "Forest critter colors", "Icy critter colors", "Haunted critter colors")))
         assertFalse(labels.any { it.endsWith(" ESP") && it != "Floor drop ESP" })
         settings.customization.selectedHex = "#123456"
         settings.customization.cavern.rockmiteMound.setColor.run()
@@ -180,12 +180,12 @@ class SafariCustomizationTest {
         val cavern = SafariPanels.missing(null, SafariBiome.CAVERN, true, 0, 7, partial)
         assertTrue(cavern.rows.any { it.label == "Rockmite" })
         assertTrue(cavern.rows.any { it.label == "Snoozle" })
-        assertEquals("7", cavern.rows.single { it.label == "Mounds to break" }.value)
-        assertEquals("1 (+1?)", cavern.rows.single { it.label == "Snooper walls to break" }.value)
+        assertEquals("7", SafariPanels.objectives(null, SafariBiome.CAVERN, true, 0, 7, partial).rows.single { it.label == "Mounds" }.value)
+        assertEquals("1 (+1?)", SafariPanels.objectives(null, SafariBiome.CAVERN, true, 0, 7, partial).rows.single { it.label == "Snoozle walls" }.value)
         ConfigManager.showMoundCount = false
         ConfigManager.showSnooperWalls = false
         val hidden = SafariPanels.missing(null, SafariBiome.CAVERN, true, 0, 7, partial)
         assertEquals(cavern.rows, hidden.rows)
-        assertFalse(SafariPanels.missing(null, SafariBiome.CAVERN, true, 0).rows.any { it.label == "Mounds to break" })
+        assertFalse(SafariPanels.missing(null, SafariBiome.CAVERN, true, 0).rows.any { it.label == "Mounds" })
     }
 }

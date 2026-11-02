@@ -3,6 +3,7 @@ package net.johnceo.sparklingmutuals.commands
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback
 import net.fabricmc.fabric.api.client.command.v2.ClientCommands
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource
+import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.LocalChat
 import net.johnceo.sparklingmutuals.config.SafariConfigScreen
 import net.johnceo.sparklingmutuals.contest.ContestGui
@@ -61,6 +62,13 @@ object SparklingCommand {
                         1
                     })
             )
+            dispatcher.register(ClientCommands.literal("hotspot").executes {
+                ConfigManager.hotspotAnnouncer = !ConfigManager.hotspotAnnouncer
+                ConfigManager.save()
+                it.source.sendFeedback(LocalChat.component("[SM] Hotspot announcer " + if (ConfigManager.hotspotAnnouncer) "on." else "off."))
+                it.source.sendFeedback(LocalChat.component("[SM] Hotspot parties work best when all party members are using Sparkling Mutuals for the hotspot assignments"))
+                1
+            })
             dispatcher.register(ClientCommands.literal("rates").executes { SparklingRates.show(it.source) })
             for (alias in listOf("profit", "profits")) {
                 val command = ClientCommands.literal(alias).executes { ProfitableCritters.show(it.source) }

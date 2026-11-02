@@ -10,25 +10,18 @@ import org.junit.jupiter.api.io.TempDir
 
 class HiveObservationAndHudPreviewTest {
     @TempDir lateinit var dir: Path
-    @Test fun `alert previews retain identity across different title ordering custom text and saved layout`() {
+    @Test fun `shared banner preview retains saved placement and uses measured dimensions`() {
         ConfigManager.init(dir)
-        ConfigManager.runCompleteTitle = "Finished custom safari"
-        val previews = SmallAlerts.previews()
-        val expected = mapOf(SafariHud.GEMS to "ALL GEMS READY!", SafariHud.BIRD_FOOD to "ALL BIRD FOOD COLLECTED!",
-            SafariHud.INCENSE to "ALL INCENSE READY!", SafariHud.RUN_COMPLETE to "Finished custom safari", SafariHud.WARP to "Warping Now")
-        expected.forEach { (hud, title) ->
-            val panel = previews.getValue(hud)
-            assertEquals(title, panel.title)
-            hud.layout.x = .1f; hud.layout.y = .2f; hud.layout.scale = 1.9f
-            val bounds = hud.layout.bounds(1000, 600, panel.width(String::length), panel.height)
-            assertEquals(100, bounds.x); assertEquals(120, bounds.y)
-            assertTrue(bounds.contains(101.0, 121.0))
-        }
-        ConfigManager.save(); ConfigManager.init(dir)
-        expected.forEach { (hud, title) ->
-            assertEquals(title, SmallAlerts.previews().getValue(hud).title)
-            assertEquals(1.9f, hud.layout.scale)
-        }
+        val hud=SafariHud.BANNER
+        val panel=net.johnceo.sparklingmutuals.hud.SafariBanners.previewPanel { it.string.length*6 }
+        assertEquals("Safari Banner",panel.title)
+        assertEquals("Safari Banner".length*6+16,panel.width(String::length))
+        hud.layout.x=.1f;hud.layout.y=.2f;hud.layout.scale=1.9f
+        val bounds=hud.layout.bounds(1000,600,panel.width(String::length),panel.height)
+        assertEquals(100,bounds.x);assertEquals(120,bounds.y)
+        ConfigManager.save();ConfigManager.init(dir)
+        assertEquals(1.9f,hud.layout.scale)
+        assertEquals(.1f,hud.layout.x);assertEquals(.2f,hud.layout.y)
     }
     @Test fun `formatted multiline TextDisplay and armor stand label text exposes the screenshot countdown`() {
         assertEquals(listOf("Refill in: 23m 33s"), HoneyHiveLabels.statusLines("§6Honeyhive\n§cRefill in: §a23m §c33s"))

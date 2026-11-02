@@ -1,0 +1,16 @@
+Estimated Item Value and Chest Value adaptation
+
+Behavior and upgrade accounting adapted from SkyHanni (LGPL-2.1), local source revision 9cfab4c88.
+Sources: features/misc/items/EstimatedItemValueCalculator.kt, EstimatedItemValue.kt,
+features/inventory/ChestValue.kt under src/main/java/at/hannibal2/skyhanni/.
+https://github.com/SkyHanniStudios/SkyHanni
+Adapted implementation: skyblock/ItemValuation.kt and skyblock/EstimatedValues.kt.
+These derived files retain LGPL-2.1; see SkyHanni-LGPL-2.1.txt. Source is included in the sources JAR
+and available from https://github.com/johnceoskyblock/sparkling-mutuals.
+
+Gemstone, reforge and essence cost constants originate from NotEnoughUpdates-REPO (MIT).
+https://github.com/NotEnoughUpdates/NotEnoughUpdates-REPO/tree/master/constants
+See NotEnoughUpdates-REPO-MIT.txt.
+Other item metadata originates from Hypixel's public SkyBlock items resource.
+SkyHanni calculation metadata: https://github.com/SkyHanniStudios/SkyHanni-REPO/blob/master/constants/Items.json
+Snapshots obtained 2026-11-02. Market prices are fetched at runtime, never bundled.

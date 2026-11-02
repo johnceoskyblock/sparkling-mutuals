@@ -28,13 +28,8 @@ object SafariBiomeClearTracking {
         if (!snapshot.scanned) return
         val inventory = player.inventory
         run.inventoryEvidence((0 until inventory.containerSize).map { inventory.getItem(it) }
-            .filterNot { it.isEmpty }.map { it.hoverName.string to it.count })
+            .filterNot { it.isEmpty }.map { it.hoverName.string to it.count } + net.johnceo.sparklingmutuals.safari.resources.BirdfeederInventory.carried(client))
         run.localPlayer(player.name.string)
-        val party = net.johnceo.sparklingmutuals.party.PartyManager.getMembers().toSet()
-        client.level!!.players().filter { it.uuid.toString() in party && it.uuid != player.uuid &&
-            net.johnceo.sparklingmutuals.safari.SafariAreaMap.biomeAt(it.x, it.y, it.z) == SafariBiome.FOREST.ordinal + 1 }.forEach {
-            run.observeEarlyBirdVisitor(it.name.string, it.x, it.z, System.currentTimeMillis())
-        }
         // Forest food markers are visible Safari-wide, including the central boat and other biomes.
         run.scanBirdSources(
             snapshot.forestBirdFoodDropsRemaining,

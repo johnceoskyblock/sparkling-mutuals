@@ -20,10 +20,10 @@ class NestCounterPanelTest {
             liveHoneybugs(2)
         }
         for (mode in SafariMode.entries)
-            assertEquals(mode == SafariMode.FULL_CLEAR, rows(mode, run, 3).any { it.label == "Bee nests to punch" })
+            assertEquals(mode == SafariMode.FULL_CLEAR, rows(mode, run, 3).any { it.label == "Bee nests" })
         run.updateNestEvidence(false, 0, 4, 1)
         for (mode in SafariMode.entries)
-            assertTrue(rows(mode, run, 4).any { it.label == "Bee nests to punch" })
+            assertTrue(rows(mode, run, 4).any { it.label == "Bee nests" })
     }
     private fun party(needs: Boolean = true) = PartySparklingState().apply {
         select(setOf("me")); accept(setOf("me"), mapOf("me" to (SafariRoster.all.map { it.name }.toSet() -
@@ -32,13 +32,13 @@ class NestCounterPanelTest {
     private fun rows(mode: SafariMode, run: SafariRun, nests: Int, needs: Boolean = true) = kotlin.run {
         ConfigManager.fullClearMode = mode == SafariMode.FULL_CLEAR
         ConfigManager.sparklingMode = mode == SafariMode.SPARKLING
-        SafariPanels.missing(run, SafariBiome.FOREST, mode == SafariMode.UNIQUE, nests, party = party(needs)).rows
+        SafariPanels.objectives(run, SafariBiome.FOREST, mode == SafariMode.UNIQUE, nests, party = party(needs)).rows
     }
     @Test fun `missing panel shows only the nest counter without survey diagnostics`() {
         for (mode in SafariMode.entries) {
             val run = SafariRun(0).apply { visitBiome(SafariBiome.FOREST); updateNestEvidence(false, 0, 3, 4) }
             val panel = rows(mode, run, 3)
-            assertEquals("3", panel.first { it.label == "Bee nests to punch" }.value)
+            assertEquals("3", panel.first { it.label == "Bee nests" }.value)
             assertFalse(panel.any { it.label in setOf("Nest survey", "Unverified nest sites", "Honeybugs captured",
                 "Load grey survey markers", "Check nest data: /sm debug") })
         }
@@ -51,9 +51,9 @@ class NestCounterPanelTest {
                 updateNestEvidence(true, total, total, 0)
             }
             repeat(total - 1) { run.observeCritter(it, "Honeybug", UUID(0, it.toLong())) }
-            assertFalse(rows(SafariMode.FULL_CLEAR, run, 0).any { it.label == "Bee nests to punch" })
+            assertFalse(rows(SafariMode.FULL_CLEAR, run, 0).any { it.label == "Bee nests" })
             run.observeCritter(100, "Honeybug", UUID(0, (total - 1).toLong()))
-            assertFalse(rows(SafariMode.FULL_CLEAR, run, 0).any { it.label == "Bee nests to punch" })
+            assertFalse(rows(SafariMode.FULL_CLEAR, run, 0).any { it.label == "Bee nests" })
             assertFalse(run.captureComplete("Honeybug"))
             repeat(total) { run.record(SafariCatch(SafariRoster.named("Honeybug")!!)) }
             assertTrue(run.captureComplete("Honeybug"))
@@ -62,14 +62,14 @@ class NestCounterPanelTest {
     @Test fun `neither historical nor current sightings retire Full Clear nest work`() {
         val run = SafariRun(0).apply { visitBiome(SafariBiome.FOREST); updateNestEvidence(false, 0, 3, 0) }
         repeat(5) { run.observeCritter(it, "Honeybug", UUID(0, 1)) }
-        assertTrue(rows(SafariMode.FULL_CLEAR, run, 0).any { it.label == "Bee nests to punch" })
+        assertTrue(rows(SafariMode.FULL_CLEAR, run, 0).any { it.label == "Bee nests" })
         run.observeCritter(7, "Honeybug", UUID(0, 2)); run.observeCritter(8, "Honeybug", UUID(0, 3))
-        assertTrue(rows(SafariMode.FULL_CLEAR, run, 0).any { it.label == "Bee nests to punch" })
+        assertTrue(rows(SafariMode.FULL_CLEAR, run, 0).any { it.label == "Bee nests" })
         run.liveHoneybugs(3)
-        assertTrue(rows(SafariMode.FULL_CLEAR, run, 0).any { it.label == "Bee nests to punch" })
+        assertTrue(rows(SafariMode.FULL_CLEAR, run, 0).any { it.label == "Bee nests" })
         run.observeCritter(9, "Honeybug", UUID(0, 4))
         run.liveHoneybugs(4)
-        assertTrue(rows(SafariMode.FULL_CLEAR, run, 0).any { it.label == "Bee nests to punch" })
+        assertTrue(rows(SafariMode.FULL_CLEAR, run, 0).any { it.label == "Bee nests" })
     }
     @Test fun `Unique and Sparkling counters accept the mod users complete punch survey`() {
         for (mode in listOf(SafariMode.UNIQUE, SafariMode.SPARKLING)) {
@@ -77,18 +77,18 @@ class NestCounterPanelTest {
                 visitBiome(SafariBiome.FOREST); record(SafariCatch(SafariRoster.named("Honeybug")!!))
                 updateNestEvidence(true, 3, 3, 0)
             }
-            assertFalse(rows(mode, run, 0).any { it.label == "Bee nests to punch" })
+            assertFalse(rows(mode, run, 0).any { it.label == "Bee nests" })
             repeat(3) { run.observeCritter(it, "Honeybug", UUID(0, it.toLong())) }
-            assertFalse(rows(mode, run, 0).any { it.label == "Bee nests to punch" })
+            assertFalse(rows(mode, run, 0).any { it.label == "Bee nests" })
         }
     }
     @Test fun `incomplete survey prevents the zero counter disappearing and party overrides remain mode aware`() {
         val run = SafariRun(0).apply { visitBiome(SafariBiome.FOREST); updateNestEvidence(false, 3, 3, 1) }
         repeat(3) { run.observeCritter(it, "Honeybug", UUID(0, it.toLong())) }
-        assertTrue(rows(SafariMode.FULL_CLEAR, run, 0).any { it.label == "Bee nests to punch" })
+        assertTrue(rows(SafariMode.FULL_CLEAR, run, 0).any { it.label == "Bee nests" })
         run.partyFullClear("Party > Friend: fd")
         for (mode in SafariMode.entries)
-            assertTrue(rows(mode, run, 0).any { it.label == "Bee nests to punch" }, "current Forest requires local nest evidence in every mode")
+            assertTrue(rows(mode, run, 0).any { it.label == "Bee nests" }, "current Forest requires local nest evidence in every mode")
     }
     @Test fun `Sparkling checklist is named Unchecked in every biome`() {
         val before = net.johnceo.sparklingmutuals.config.ConfigManager.sparklingMode

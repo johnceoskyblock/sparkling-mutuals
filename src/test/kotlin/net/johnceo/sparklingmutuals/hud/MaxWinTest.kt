@@ -14,11 +14,11 @@ class MaxWinTest {
             assertEquals(7,state.coins)
             assertFalse(state.poll(run,7,2,5,0,first,2000))
             assertTrue(state.visible(5999)); assertFalse(state.visible(6000))
-            assertTrue(state.gain(120000)>0)
+            assertTrue(state.gain(120000.0)>0)
             state.poll(run,1,2,5,0,first,121000)
-            assertTrue(state.gain(121000)>0)
+            assertTrue(state.gain(121000.0)>0)
             state.poll(run,0,2,5,0,first,122000)
-            assertEquals(0f,state.gain(122000))
+            assertEquals(0f,state.gain(122000.0))
             assertFalse(state.poll(run,7,2,5,0,first,123000))
             assertTrue(state.poll(Any(),7,2,5,0,first,124000))
         }
@@ -30,12 +30,12 @@ class MaxWinTest {
         assertTrue(state.poll(run,8,3,5,0,true,1000))
         assertEquals(8,state.coins)
         assertFalse(state.poll(run,8,3,5,0,true,2000))
-        assertTrue(state.gain(5000)>state.gain(10000))
-        assertTrue(state.gain(10000)>state.gain(60000))
-        assertTrue(state.gain(60000)>state.gain(300000))
-        assertTrue(state.gain(300000)>0)
+        assertEquals(1f,state.gain(64.0))
+        assertEquals(.5f,state.gain(32.0))
+        assertEquals(0f,state.gain(0.0))
+        assertTrue(state.gain(8.0)>0f)
         state.poll(null,8,3,5,0,true,301000)
-        assertFalse(state.visible(301000));assertEquals(0f,state.gain(301000))
+        assertFalse(state.visible(301000));assertEquals(0f,state.gain(301000.0))
     }
     @Test fun `teammate starting coins never enter the personal maximum`() {
         val resources=SafariResources()
@@ -55,6 +55,6 @@ class MaxWinTest {
         assertTrue(state.poll(run,7,2,5,0,false,3))
         state.poll(run,0,2,5,0,false,4)
         assertTrue(state.visible(4))
-        state.reset();assertFalse(state.visible(5));assertEquals(0f,state.gain(5))
+        state.reset();assertFalse(state.visible(5));assertEquals(0f,state.gain(5.0))
     }
 }

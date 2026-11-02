@@ -18,7 +18,7 @@ class SparklingNoticeTest {
         assertTrue(memory.alert(id, true, "Gazer"))
         assertTrue(memory.announce(id, true, "Gazer"))
         queue.add(SparklingNotice(id, "Gazer", "Haunted 0 50 -60"))
-        assertEquals("SPARKLING Gazer! (Haunted 0 50 -60)", queue.next()!!.message())
+        assertEquals("SPARKLING Gazer!", queue.next()!!.message())
         assertNull(queue.next())
     }
 
