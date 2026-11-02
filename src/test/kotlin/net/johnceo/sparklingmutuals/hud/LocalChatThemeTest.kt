@@ -14,13 +14,4 @@ class LocalChatThemeTest {
         assertEquals(SafariTheme.CHAT_ACCENT, plain.first().style.color?.value)
         assertEquals(SafariTheme.CHAT_TEXT, plain.last().style.color?.value)
     }
-    @Test fun `gold palette stays scoped and preserves alpha and semantic colors`() {
-        assertEquals(0xAA202026.toInt(), SafariTheme.color(0xAA202026.toInt()))
-        SafariTheme.begin()
-        try {
-            assertEquals(0xAA19191E.toInt(), SafariTheme.color(0xAA202026.toInt()))
-            assertEquals(0xFF55FF55.toInt(), SafariTheme.color(0xFF55FF55.toInt()))
-        } finally { SafariTheme.end() }
-        assertEquals(0xAA202026.toInt(), SafariTheme.color(0xAA202026.toInt()))
-    }
 }

@@ -170,6 +170,8 @@ class SparklingCaptureRequirementTest {
         SafariRoster.all.forEach { run.record(SafariCatch(it, sparkling = true), 1000) }
         run.partyFullClear("Party > Friend: fd")
         repeat(20) { run.observeSparkling(UUID.randomUUID(), "Gazer") }
+        run.partyFullClear("Party > Friend: hd")
+        run.partyFullClear("Party > Friend: cd")
         assertTrue(run.completion.alert(run, SafariMode.UNIQUE, party(), true))
         run.observeSparkling(UUID.randomUUID(), "Gazer")
         assertFalse(run.completion.alert(run, SafariMode.UNIQUE, party(), true))

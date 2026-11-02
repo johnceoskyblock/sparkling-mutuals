@@ -22,7 +22,7 @@ object SparklingAlert {
 }
 
 data class SparklingNotice(val id: UUID, val name: String, val where: String, val unknown: Boolean = false) {
-    fun message() = "SPARKLING $name! ($where)"
+    fun message() = "SPARKLING $name!"
 }
 
 class SparklingNotices {

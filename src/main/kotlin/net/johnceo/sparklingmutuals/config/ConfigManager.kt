@@ -39,6 +39,7 @@ object ConfigManager {
     var sparklingMode = false
     var sparklingProfitableShardEsp = true
     var profitableShardEsp = true
+    var hotspotAnnouncer = false
     var uniqueHotspotAnnouncer = false
     var fullClearHotspotAnnouncer = false
     var sparklingHotspotAnnouncer = false
@@ -48,6 +49,10 @@ object ConfigManager {
     var autoParty = false
     var sparkleWarpMode = 0
     var warpDuo = ""
+    var settingsTheme = 4
+    var sparklingCatchCount = true
+    var specialCatchAlert = true
+    var specialCatchStyle = 0
     var leechMode = true
     var leechWhitelist = "JohnCEO _cj Rqach"
     var doomspiralThrowTimer = true
@@ -61,8 +66,11 @@ object ConfigManager {
     var hideHauntedPaintings = true
     var shinyDetection = true
     var progressHud = true
+    var progressProfit = true
+    var progressHotspot = true
     var countUniqueOnly = false
     var missingPanel = true
+    var biomeObjectives = true
     var highlightBeeNests = true
     var highlightSnooperWalls = true
     var showBeeNests = true
@@ -78,6 +86,7 @@ object ConfigManager {
     var sparklingSoundVolume = 100
     var allGemsAlert = true
     var allBirdFoodAlert = true
+    var allCoinsAlert = true
     var allIncenseAlert = true
     var runCompleteAlert = true
     var runCompleteTitle = "Run Complete"
@@ -91,6 +100,10 @@ object ConfigManager {
     var holdManagerOnKick = true
     var downtimeCommand = true
     var honeyHives = true
+    var skillOverflow = true
+    var estimatedItemValue = true
+    var estimatedChestValue = true
+    var huntingBoxValue = true
     var phantomleafSolver = true
     var runHistory = true
     var achievements = true
@@ -108,16 +121,16 @@ object ConfigManager {
     val personalBests = SafariPersonalBests()
     private val flags = mapOf(::doomspiralThrowTimer to true, ::autoParty to false, ::autoBiomeReports to true, ::uniqueHideCritterEsp to false, ::uniqueHideFloorDropEsp to false,
         ::fullClearHideCritterEsp to false, ::fullClearHideFloorDropEsp to false,
-        ::sparklingHideCritterEsp to false, ::sparklingHideFloorDropEsp to false, ::announceStartingItems to false, ::uniqueHotspotAnnouncer to false, ::fullClearHotspotAnnouncer to false, ::sparklingHotspotAnnouncer to false, ::highlightTeammates to true, ::showTeammateNames to true, ::partyCommandsEnabled to true, ::useCloudApi to true, ::fullClearMode to false, ::sparklingMode to false, ::sparklingProfitableShardEsp to true, ::profitableShardEsp to true, ::timesaveOnly to true, ::warpAlertsEnabled to false,
+        ::sparklingHideCritterEsp to false, ::sparklingHideFloorDropEsp to false, ::announceStartingItems to false, ::hotspotAnnouncer to false, ::uniqueHotspotAnnouncer to false, ::fullClearHotspotAnnouncer to false, ::sparklingHotspotAnnouncer to false, ::highlightTeammates to true, ::showTeammateNames to true, ::partyCommandsEnabled to true, ::useCloudApi to true, ::fullClearMode to false, ::sparklingMode to false, ::sparklingProfitableShardEsp to true, ::profitableShardEsp to true, ::timesaveOnly to true, ::warpAlertsEnabled to false,
         ::hideyhoAutoAccept to true, ::autoSelectSafariTicket to true, ::hideyhoInsideOutside to true, ::hideHauntedPaintings to true, ::shinyDetection to true,
-        ::progressHud to true, ::countUniqueOnly to false, ::missingPanel to true,
-        ::highlightBeeNests to true, ::removeDarkness to true, ::clearWater to true, ::sparklingAlert to true,
-        ::sparklingPartyAnnouncer to true, ::catchCountPanel to false, ::autoClicker to true, ::candleHitbox to true, ::holdManagerOnKick to true, ::downtimeCommand to true, ::honeyHives to true, ::phantomleafSolver to true, ::runHistory to true, ::achievements to true, ::achievementSound to true, ::achievementsToParty to false, ::runCoinsInstaSell to false,
+        ::progressHud to true, ::progressProfit to true, ::progressHotspot to true, ::countUniqueOnly to false, ::missingPanel to true, ::biomeObjectives to true,
+        ::highlightBeeNests to true, ::removeDarkness to true, ::clearWater to true, ::sparklingAlert to true, ::sparklingCatchCount to true,
+        ::sparklingPartyAnnouncer to true, ::catchCountPanel to false, ::autoClicker to true, ::candleHitbox to true, ::holdManagerOnKick to true, ::downtimeCommand to true, ::honeyHives to true, ::huntingBoxValue to true, ::skillOverflow to true, ::estimatedItemValue to true, ::estimatedChestValue to true, ::phantomleafSolver to true, ::runHistory to true, ::achievements to true, ::achievementSound to true, ::achievementsToParty to false, ::runCoinsInstaSell to false,
         ::hideCaptureChat to true, ::hideGroundCapsules to true, ::hideFlyingCapsules to true,
         ::experimentalCapsulePath to true, ::showCapsuleGuideThroughTerrain to true, ::gemzieGemAutoSelect to true,
         ::highlightSnooperWalls to true, ::showBeeNests to true, ::showMoundCount to true,
         ::showSnooperWalls to true, ::showMoundStats to false,
-        ::allGemsAlert to true, ::allBirdFoodAlert to true, ::allIncenseAlert to true, ::runCompleteAlert to true)
+        ::allGemsAlert to true, ::allBirdFoodAlert to true, ::allCoinsAlert to true, ::allIncenseAlert to true, ::runCompleteAlert to true)
 
     fun validCapsuleDistance(value: Float?) = value?.takeIf { it.isFinite() }?.coerceIn(.5f, 6f) ?: 2f
     fun validCapsulePathWidth(value: Float?) = value?.takeIf { it.isFinite() }?.coerceIn(1f,5f) ?: 3f
@@ -127,6 +140,9 @@ object ConfigManager {
         configPath = configDirectory.resolve("sparkling-mutuals.properties")
         val properties = if (Files.exists(configPath)) Properties() else FreshInstallDefaults.main()
         if (Files.exists(configPath)) Files.newInputStream(configPath).use(properties::load)
+        settingsTheme = properties.getProperty("settingsTheme")?.toIntOrNull()?.coerceIn(0,33) ?: 4
+        specialCatchAlert = properties.getProperty("specialCatchAlert")?.toBooleanStrictOrNull() ?: true
+        specialCatchStyle = properties.getProperty("specialCatchStyle")?.toIntOrNull()?.coerceIn(0,40) ?: 0
         apiKey = properties.getProperty("apiKey", "")
         sparklingSound = validSparklingSound(properties.getProperty("sparklingSound"))
         runCompleteTitle = properties.getProperty("runCompleteTitle", "Run Complete").take(120).ifBlank { "Run Complete" }
@@ -134,6 +150,7 @@ object ConfigManager {
         runCompleteVolume = properties.getProperty("runCompleteVolume")?.toIntOrNull()?.coerceIn(0, 100) ?: 100
         sparklingSoundVolume = properties.getProperty("sparklingSoundVolume")?.toIntOrNull()?.coerceIn(0, 100) ?: 100
         flags.forEach { (property, default) -> property.set(properties.getProperty(property.name)?.toBooleanStrictOrNull() ?: default) }
+        if (!properties.containsKey("hotspotAnnouncer")) hotspotAnnouncer = uniqueHotspotAnnouncer || fullClearHotspotAnnouncer || sparklingHotspotAnnouncer
         if (uniqueHideCritterEsp || uniqueHideFloorDropEsp) profitableShardEsp=false
         if (sparklingHideCritterEsp || sparklingHideFloorDropEsp) sparklingProfitableShardEsp=false
         warpDelaySeconds = properties.getProperty("warpDelaySeconds", "25").toIntOrNull()?.coerceIn(1, 86400) ?: 25
@@ -156,6 +173,7 @@ object ConfigManager {
         SafariFullClear.syncMode()
         SafariEspConfig.load(properties)
         SafariFullClear.applyEspPreset()
+        BannerConfig.load(properties)
         AppearanceConfig.load(properties)
     }
 
@@ -173,6 +191,9 @@ object ConfigManager {
             setProperty("warpDelaySeconds", warpDelaySeconds.toString())
             setProperty("sparkleWarpMode", sparkleWarpMode.toString())
             setProperty("warpDuo", warpDuo)
+            setProperty("settingsTheme", settingsTheme.toString())
+            setProperty("specialCatchAlert", specialCatchAlert.toString())
+            setProperty("specialCatchStyle", specialCatchStyle.toString())
             setProperty("leechMode", leechMode.toString())
             setProperty("leechWhitelist", leechWhitelist)
             setProperty("doomspiralEmergenceTicks", doomspiralEmergenceTicks.coerceIn(1, 600).toString())
@@ -187,6 +208,7 @@ object ConfigManager {
             SafariHud.save(this)
             SafariEspConfig.save(this)
             AppearanceConfig.save(this)
+            BannerConfig.save(this)
             PersonalBestConfig.write(configPath, this, "Sparkling Mutuals configuration")
         }
     }

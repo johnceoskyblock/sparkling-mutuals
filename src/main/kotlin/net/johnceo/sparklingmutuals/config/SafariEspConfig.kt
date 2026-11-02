@@ -1,6 +1,5 @@
 package net.johnceo.sparklingmutuals.config
 
-import io.github.notenoughupdates.moulconfig.ChromaColour
 import java.util.Properties
 import net.johnceo.sparklingmutuals.safari.esp.SafariEspRules
 import net.johnceo.sparklingmutuals.safari.resources.FloorDropType
@@ -86,12 +85,12 @@ object SafariEspConfig {
         if (name == "Rockmite" && mound) rockmiteMoundEnabled else mobs.getValue(name).enabled
     fun entityColor(name: String, mound: Boolean = false) =
         if (name == "Rockmite" && mound) rockmiteMoundColor else mobs.getValue(name).color
-    private fun defaultColor(rgb: Int) = ChromaColour.special(0, 255, rgb)
+    private fun defaultColor(rgb: Int) = "0:255:${rgb shr 16 and 255}:${rgb shr 8 and 255}:${rgb and 255}"
     fun validColor(value: String?, fallback: String): String = value?.takeIf { color ->
         val parts = color.split(':')
         parts.size == 5 && parts.all { it.toIntOrNull() in 0..255 }
     } ?: fallback
-    fun rgb(color: String) = ChromaColour.specialToChromaRGB(color)
+    fun rgb(color: String) = SettingsColor.argb(color)
     private fun key(name: String) = name.lowercase().replace(' ', '_')
     fun load(properties: Properties) {
         rewardDrops = properties.getProperty("esp.floor.rewards.enabled")?.toBooleanStrictOrNull() ?: false

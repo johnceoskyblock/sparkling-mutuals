@@ -12,7 +12,7 @@ import net.minecraft.client.Minecraft
 import org.slf4j.LoggerFactory
 
 /**
- * Bazaar prices for critter shards and Rainbow Feathers, for run profit. Read from Hypixel's public bazaar endpoint,
+ * All Bazaar product prices, shared by run profit, Hunting Box and item/chest valuation. Read from Hypixel's public bazaar endpoint,
  * which needs no key: an ordinary HTTP request, nothing sent to the game server. Every critter's shard is listed as
  * `SHARD_<NAME>` (`SHARD_MANTIS_SHRIMP`). Refreshed at most every three hours, and only when something wants a price.
  */
@@ -32,7 +32,6 @@ object BazaarPrices {
             val read = runCatching {
                 check(error == null && response.statusCode() == 200) { error?.message ?: "HTTP ${response.statusCode()}" }
                 JsonParser.parseString(response.body()).asJsonObject.getAsJsonObject("products").entrySet()
-                    .filter { it.key.startsWith("SHARD_") || it.key == FEATHER || it.key == SAFARI_ESSENCE }
                     .associate { (id, product) -> product.asJsonObject.getAsJsonObject("quick_status").let {
                         id to doubleArrayOf(it.get("sellPrice").asDouble, it.get("buyPrice").asDouble) } }
             }.onFailure { logger.warn("Bazaar lookup failed: {}", it.message) }.getOrDefault(emptyMap())

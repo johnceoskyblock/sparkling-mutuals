@@ -1,5 +1,6 @@
 package net.johnceo.sparklingmutuals.history.ui
 
+import com.mojang.blaze3d.platform.InputConstants
 import net.johnceo.sparklingmutuals.compat.*
 import java.time.Instant
 import java.time.ZoneId
@@ -8,6 +9,8 @@ import java.util.Locale
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.history.Achievement
 import net.johnceo.sparklingmutuals.history.Achievements
+import net.johnceo.sparklingmutuals.history.AchievementRules
+import net.johnceo.sparklingmutuals.history.SparklingDexType
 import net.johnceo.sparklingmutuals.history.BazaarPrices
 import net.johnceo.sparklingmutuals.history.PlaytimeReader
 import net.johnceo.sparklingmutuals.history.ProfitDays
@@ -23,6 +26,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.gui.screens.Screen
 import net.minecraft.client.gui.components.EditBox
 import net.minecraft.client.input.MouseButtonEvent
+import net.minecraft.client.input.KeyEvent
 import net.minecraft.network.chat.Component
 
 /**
@@ -48,6 +52,11 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
     private var runSort = RunSort.NEWEST
     private var selectedRun = -1
     private var mineOnly = false
+    private var dexType=SparklingDexType.SPARKLING
+    private var dexMenu=false
+    private var dexMenuScroll=0
+    private var dexButton=IntArray(4)
+    private var dexVisible=10
     private var filter = Filter.ALL
     private var achievementSort = AchievementSort.DEFAULT
     private var listTop = 0; private var listBottom = 0; private var listRows = 1; private var listSize = 0
@@ -85,6 +94,7 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
     override fun extractRenderState(g: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, delta: Float) {
         super.extractRenderState(g, mouseX, mouseY, delta)
         hits.clear()
+        if(tab!=Tab.SPARKLINGS) dexMenu=false
         scrollHandle = null
         if (draggingScroll != tab) draggingScroll = null
         pw = minOf(640, width - 20); ph = minOf(340, height - 50)
@@ -110,6 +120,7 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
         } else if (tab == Tab.SPARKLINGS) {
             critterSearch.x = px + 8; critterSearch.y = py + 22; critterSearch.width = maxOf(60, (pw * .60f).toInt() - 16)
             critterSearch.extractRenderState(g, mouseX, mouseY, delta)
+            if(dexMenu) drawDexMenu(g,mouseX,mouseY)
         }
     }
 
@@ -343,15 +354,19 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
         scrollbar(g, offset, px + listW + 6)
         // Your dex, by biome, in two columns; shrunk to fit a short window.
         val dx = px + listW + 16
-        val dex = Achievements.ownDex()
-        g.text(font, "Sparkling dex", dx, py + 6, GOLD)
+        val counts=Achievements.sparklingCounts()
+        val dex = AchievementRules.dex(counts,dexType.required)
+        g.text(font, dexType.label, dx, py + 6, GOLD)
+        val selectorW=(px+pw-10-dx).coerceAtLeast(60)
+        dexButton=intArrayOf(dx,py+22,selectorW,15)
+        button(g,mx,my,dx,py+22,selectorW,cut("","Dex Type: ${dexType.label} ▾",selectorW-8)) { dexMenu=!dexMenu }
         "${dex.size}/${SafariRoster.all.size}".let { g.text(font, it, px + pw - 10 - font.width(it), py + 6, TEXT) }
         val biomes = SafariBiome.entries
         val half = (biomes.size + 1) / 2
         val needed = IntArray(2).also { n -> biomes.forEachIndexed { b, biome -> n[if (b < half) 0 else 1] += ROW + 1 + 10 * biome.critters.size + 4 } }
-        val s = fit(needed.max(), py + ph - 26 - (py + 22))
+        val s = minOf(1f,((ph-70).coerceAtLeast(1)).toFloat()/needed.max()).coerceAtLeast(.2f)
         val pose = g.pose()
-        pose.pushMatrix(); pose.translate(dx.toFloat(), (py + 22).toFloat()); pose.scale(s, s)
+        pose.pushMatrix(); pose.translate(dx.toFloat(), (py + 44).toFloat()); pose.scale(s, s)
         val colW = Math.round((px + pw - 10 - dx) / 2f / s)
         val colY = intArrayOf(0, 0)
         biomes.forEachIndexed { b, biome ->
@@ -362,12 +377,28 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
             colY[col] += ROW + 1
             for (critter in biome.critters) {
                 g.text(font, if (critter.name in dex) colour(critter.name) + critter.name else "§8" + critter.name, x + 4, colY[col], TEXT)
+                tip(g,mx,my,dx+((x+4)*s).toInt(),py+44+(colY[col]*s).toInt(),(font.width(critter.name)*s).toInt().coerceAtLeast(1),(10*s).toInt().coerceAtLeast(1),
+                    critter.name,"${counts[critter.name] ?: 0} credited catches · ${dexType.required} required")
                 colY[col] += 10
             }
             colY[col] += 4
         }
         pose.popMatrix()
         toggle(g, mx, my, px + 8, py + ph - 20, "Mine only", mineOnly) { mineOnly = !mineOnly; scroll[Tab.SPARKLINGS] = 0 }
+    }
+
+    private fun drawDexMenu(g: GuiGraphicsExtractor,mx: Int,my: Int) {
+        hits.clear()
+        val w=maxOf(dexButton[2],150).coerceAtMost(pw-16)
+        val x=(dexButton[0]+dexButton[2]-w).coerceAtLeast(px+8);val y=dexButton[1]+18
+        dexVisible=((py+ph-26-y)/18).coerceIn(1,SparklingDexType.entries.size)
+        dexMenuScroll=dexMenuScroll.coerceIn(0,SparklingDexType.entries.size-dexVisible)
+        g.fill(x-2,y-2,x+w+2,y+dexVisible*18+1,0xFF11141C.toInt())
+        g.outline(x-2,y-2,w+4,dexVisible*18+3,GOLD)
+        SparklingDexType.entries.drop(dexMenuScroll).take(dexVisible).forEachIndexed { i,type ->
+            button(g,mx,my,x,y+i*18,w,"${type.label}  (${type.required}x)") { dexType=type;dexMenu=false }
+        }
+        if(dexVisible<SparklingDexType.entries.size) g.text(font,"↕",x+w-10,y+dexVisible*18-10,GOLD)
     }
 
     // ------------------------------------------------------------------ achievements
@@ -621,8 +652,16 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
         return prefix + shown.trimEnd() + "…"
     }
 
+    override fun keyPressed(event: KeyEvent): Boolean {
+        if(dexMenu && event.key()==InputConstants.KEY_ESCAPE) { dexMenu=false;return true }
+        return super.keyPressed(event)
+    }
     override fun mouseClicked(event: MouseButtonEvent, doubleClick: Boolean): Boolean {
-        if (event.button() == 0) scrollHandle?.takeIf { it.tab == tab &&
+        if(dexMenu) {
+            if(event.button()==InputConstants.MOUSE_BUTTON_LEFT) hits.firstOrNull { it.contains(event.x(),event.y()) }?.let { it.action();return true }
+            dexMenu=false;return true
+        }
+        if (event.button() == InputConstants.MOUSE_BUTTON_LEFT) scrollHandle?.takeIf { it.tab == tab &&
             event.x() >= it.x - 4 && event.x() < it.x + 6 && event.y() >= it.track.top && event.y() < it.track.bottom }?.let { handle ->
             val top = handle.track.thumbTop(scroll[tab] ?: 0)
             scrollGrab = if (event.y() >= top && event.y() < top + handle.track.thumbHeight) event.y() - top else handle.track.thumbHeight / 2.0
@@ -630,21 +669,22 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
             scroll[tab] = handle.track.offsetAt(event.y(), scrollGrab)
             return true
         }
-        if (event.button() == 0) hits.toList().firstOrNull { it.contains(event.x(), event.y()) }?.let { it.action(); return true }
+        if (event.button() == InputConstants.MOUSE_BUTTON_LEFT) hits.toList().firstOrNull { it.contains(event.x(), event.y()) }?.let { it.action(); return true }
         return super.mouseClicked(event, doubleClick)
     }
     override fun mouseDragged(event: MouseButtonEvent, dx: Double, dy: Double): Boolean {
-        if (event.button() == 0 && draggingScroll == tab) {
+        if (event.button() == InputConstants.MOUSE_BUTTON_LEFT && draggingScroll == tab) {
             scrollHandle?.takeIf { it.tab == tab }?.let { scroll[tab] = it.track.offsetAt(event.y(), scrollGrab) }
             return true
         }
         return super.mouseDragged(event, dx, dy)
     }
     override fun mouseReleased(event: MouseButtonEvent): Boolean {
-        if (event.button() == 0 && draggingScroll != null) { draggingScroll = null; return true }
+        if (event.button() == InputConstants.MOUSE_BUTTON_LEFT && draggingScroll != null) { draggingScroll = null; return true }
         return super.mouseReleased(event)
     }
     override fun mouseScrolled(mouseX: Double, mouseY: Double, scrollX: Double, scrollY: Double): Boolean {
+        if(dexMenu) { dexMenuScroll=(dexMenuScroll-scrollY.toInt()).coerceIn(0,SparklingDexType.entries.size-dexVisible);return true }
         if (scrollY == 0.0) return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY)
         scroll[tab] = ((scroll[tab] ?: 0) + if (scrollY > 0) -3 else 3).coerceAtLeast(0)
         return true

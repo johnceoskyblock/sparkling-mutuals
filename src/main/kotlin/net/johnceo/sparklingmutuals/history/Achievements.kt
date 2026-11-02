@@ -23,7 +23,7 @@ enum class AchievementTier(val code: String, val argb: Int) {
 }
 
 /** What an achievement is measured against; anything but EVENT gets a progress bar. */
-enum class Measure { EVENT, RUNS, HOURS, CAUGHT, COINS, OWN_SPARKLINGS, UNIQUES, DRY_SPARKLING, DRY_UNIQUE, RUNS_SINCE_MACAW, CONTESTS }
+enum class Measure { EVENT, RUNS, HOURS, CAUGHT, COINS, OWN_SPARKLINGS, UNIQUES, DRY_SPARKLING, DRY_UNIQUE, RUNS_SINCE_MACAW, CONTESTS, DUPLICATES, DEX_SETS, DYES, DAILY_RUNS }
 
 data class Achievement(val id: String, val name: String, val description: String, val tier: AchievementTier,
     val measure: Measure = Measure.EVENT, val goal: Long = 1, val secret: Boolean = false) {
@@ -38,106 +38,126 @@ data class Achievement(val id: String, val name: String, val description: String
  */
 object Achievements {
     private val tiers = AchievementTier.entries
+    internal val revampedIds=setOf("first_sparkle","dry_runs_10","dry_runs_20","dry_runs_30","dry_runs_40","dry_runs_50","no_unique_runs_5","no_unique_runs_10","no_unique_runs_25","no_unique_runs_50","no_unique_runs_250","macaw_3","macaw_4","no_macaw_3","no_macaw_5","no_macaw_8","run_10","run_50","run_100","run_500","hours_10","hours_50","party_caught_1000","party_caught_5000","party_caught_10000","party_caught_25000","party_caught_50000","coins_100m","coins_1b","speed_3","speed_230","ten_of_37","contests_10","contests_50","contests_100","dedication","instant")
     val definitions: List<Achievement> = listOf(
-        Achievement("first_sparkle", "First Sparkle", "Add your first sparkling to your dex.", AchievementTier.COMMON),
-        Achievement("party_double", "Shared Shine", "Your party catches 2 sparklings in one run.", AchievementTier.LEGENDARY),
-        Achievement("party_triple", "Sparkle Storm", "Your party catches 3 sparklings in one run.", AchievementTier.DIVINE),
-        Achievement("own_triple", "Hat Trick", "Catch 3 sparklings yourself in one run.", AchievementTier.SPECIAL),
-        Achievement("sparkle_10", "Glimmer", "Catch 10 of your own sparklings.", AchievementTier.UNCOMMON, Measure.OWN_SPARKLINGS, 10),
-        Achievement("sparkle_25", "Gleam", "Catch 25 of your own sparklings.", AchievementTier.RARE, Measure.OWN_SPARKLINGS, 25),
-        Achievement("sparkle_50", "Radiance", "Catch 50 of your own sparklings.", AchievementTier.EPIC, Measure.OWN_SPARKLINGS, 50),
-        Achievement("sparkle_100", "Supernova", "Catch 100 of your own sparklings.", AchievementTier.LEGENDARY, Measure.OWN_SPARKLINGS, 100),
-        Achievement("unique_10", "Collector", "Unlock 10 sparkling types in your dex.", AchievementTier.UNCOMMON, Measure.UNIQUES, 10),
-        Achievement("unique_20", "Curator", "Unlock 20 sparkling types in your dex.", AchievementTier.RARE, Measure.UNIQUES, 20),
-        Achievement("unique_30", "Archivist", "Unlock 30 sparkling types in your dex.", AchievementTier.EPIC, Measure.UNIQUES, 30),
-        Achievement("max_sparklings", "Max Sparklings", "Unlock all 37 sparkling types in your dex.", AchievementTier.DIVINE, Measure.UNIQUES, 37),
-        Achievement("legendary_sparkle", "Legend in Lights", "Catch a sparkling Macaw, Wumpa or Doomspiral yourself.", AchievementTier.LEGENDARY),
-        Achievement("gemzie_sparkle", "Gem of a Gemzie", "Catch a sparkling Gemzie yourself.", AchievementTier.EPIC),
-        Achievement("set_forest", "Forest Glitter", "Unlock every Forest sparkling in your dex.", AchievementTier.EPIC),
-        Achievement("set_cavern", "Cavern Glitter", "Unlock every Cavern sparkling in your dex.", AchievementTier.EPIC),
-        Achievement("set_icy", "Icy Glitter", "Unlock every Icy sparkling in your dex.", AchievementTier.EPIC),
-        Achievement("set_haunted", "Haunted Glitter", "Unlock every Haunted sparkling in your dex.", AchievementTier.EPIC),
-        Achievement("dry_runs_10", "Unlucky", "10 runs in a row without a party sparkling.", AchievementTier.UNCOMMON, Measure.DRY_SPARKLING, 10),
-        Achievement("dry_runs_20", "Very Unlucky", "20 runs in a row without a party sparkling.", AchievementTier.RARE, Measure.DRY_SPARKLING, 20),
-        Achievement("dry_runs_30", "Cursed", "30 runs in a row without a party sparkling.", AchievementTier.EPIC, Measure.DRY_SPARKLING, 30),
-        Achievement("dry_runs_40", "Forsaken", "40 runs in a row without a party sparkling.", AchievementTier.LEGENDARY, Measure.DRY_SPARKLING, 40),
-        Achievement("dry_runs_50", "Doomed", "50 runs in a row without a party sparkling.", AchievementTier.MYTHIC, Measure.DRY_SPARKLING, 50),
-        Achievement("no_unique_runs_5", "Same Old Sparkle", "5 runs in a row without a new sparkling type for the party.", AchievementTier.RARE, Measure.DRY_UNIQUE, 5),
-        Achievement("no_unique_runs_10", "Deja Vu", "10 runs in a row without a new sparkling type for the party.", AchievementTier.EPIC, Measure.DRY_UNIQUE, 10),
-        Achievement("no_unique_runs_25", "Groundhog Day", "25 runs in a row without a new sparkling type for the party.", AchievementTier.LEGENDARY, Measure.DRY_UNIQUE, 25),
-        Achievement("no_unique_runs_50", "Broken Record", "50 runs in a row without a new sparkling type for the party.", AchievementTier.MYTHIC, Measure.DRY_UNIQUE, 50),
-        Achievement("no_unique_runs_250", "Eternal Rerun", "250 runs in a row without a new sparkling type for the party.", AchievementTier.DIVINE, Measure.DRY_UNIQUE, 250),
-        Achievement("macaw_3", "Bird Watcher", "Your party catches 3 Macaws in one run.", AchievementTier.RARE),
-        Achievement("macaw_4", "Flock Together", "Your party catches 4 Macaws in one run.", AchievementTier.EPIC),
-        Achievement("macaw_8", "Macaw Mania", "Your party catches 8 Macaws in one run.", AchievementTier.LEGENDARY),
-        Achievement("no_macaw_3", "Where's the Macaw?", "3 runs in a row without a recorded party Macaw.", AchievementTier.UNCOMMON, Measure.RUNS_SINCE_MACAW, 3),
-        Achievement("no_macaw_5", "Macaw Drought", "5 runs in a row without a recorded party Macaw.", AchievementTier.RARE, Measure.RUNS_SINCE_MACAW, 5),
-        Achievement("no_macaw_8", "Extinct", "8 runs in a row without a recorded party Macaw.", AchievementTier.EPIC, Measure.RUNS_SINCE_MACAW, 8),
-        Achievement("emerald_dye", "Emerald Dye", "Find an Emerald Dye.", AchievementTier.DIVINE),
-        Achievement("run_10", "Safari Rookie", "Finish 10 Safari runs.", AchievementTier.COMMON, Measure.RUNS, 10),
-        Achievement("run_50", "Regular", "Finish 50 Safari runs.", AchievementTier.UNCOMMON, Measure.RUNS, 50),
-        Achievement("run_100", "Ranger", "Finish 100 Safari runs.", AchievementTier.RARE, Measure.RUNS, 100),
-        Achievement("run_500", "Warden of the Wilds", "Finish 500 Safari runs.", AchievementTier.EPIC, Measure.RUNS, 500),
-        Achievement("hours_10", "Time Flies", "Spend 10 hours in Safari.", AchievementTier.UNCOMMON, Measure.HOURS, 10),
-        Achievement("hours_50", "No Life", "Spend 50 hours in Safari.", AchievementTier.EPIC, Measure.HOURS, 50),
-        Achievement("party_caught_1000", "Catcher", "Receive credit for 1,000 catches, including loot shares.", AchievementTier.UNCOMMON, Measure.CAUGHT, 1000),
-        Achievement("party_caught_5000", "Trapper", "Receive credit for 5,000 catches, including loot shares.", AchievementTier.RARE, Measure.CAUGHT, 5000),
-        Achievement("party_caught_10000", "Exterminator", "Receive credit for 10,000 catches, including loot shares.", AchievementTier.EPIC, Measure.CAUGHT, 10000),
-        Achievement("party_caught_25000", "Critter Apocalypse", "Receive credit for 25,000 catches, including loot shares.", AchievementTier.LEGENDARY, Measure.CAUGHT, 25000),
-        Achievement("party_caught_50000", "Extinction Event", "Receive credit for 50,000 catches, including loot shares.", AchievementTier.MYTHIC, Measure.CAUGHT, 50000),
-        Achievement("coins_100m", "Shard Shark", "Reach 100M in recorded reward value.", AchievementTier.RARE, Measure.COINS, 100_000_000L),
-        Achievement("coins_1b", "Shard Tycoon", "Reach 1B in recorded reward value.", AchievementTier.LEGENDARY, Measure.COINS, 1_000_000_000L),
-        Achievement("full_house", "Full House", "Your party catches all 37 types in one run.", AchievementTier.UNCOMMON),
-        Achievement("speed_3", "Speedrunner", "Your party catches all 37 types in under 3:00.", AchievementTier.EPIC),
-        Achievement("speed_230", "Any%", "Your party catches all 37 types in under 2:30.", AchievementTier.LEGENDARY),
-        Achievement("ten_of_37", "Pulling Your Weight", "Catch 10 different critters yourself in a run.", AchievementTier.RARE),
-        Achievement("contests_10", "Contestant", "Complete 10 of Miria's contests.", AchievementTier.UNCOMMON, Measure.CONTESTS, 10),
-        Achievement("contests_50", "Honey Hoarder", "Complete 50 of Miria's contests.", AchievementTier.RARE, Measure.CONTESTS, 50),
-        Achievement("contests_100", "Miria's Favourite", "Complete 100 of Miria's contests.", AchievementTier.EPIC, Measure.CONTESTS, 100),
-        Achievement("night_owl", "Night Owl", "Finish a run between 3 and 5 in the morning.", AchievementTier.UNCOMMON, secret = true),
-        Achievement("dedication", "Dedication", "Finish 50 runs in one day.", AchievementTier.RARE, secret = true),
-        Achievement("back_to_back", "Back to Back", "Catch a sparkling yourself in two runs in a row.", AchievementTier.LEGENDARY, secret = true),
-        Achievement("instant", "Instant Gratification", "Catch a sparkling within 5 tickets of your last personal catch.", AchievementTier.EPIC, secret = true),
+        Achievement("first_sparkle", "First Sparkling", "Catch your first sparkling critter.", AchievementTier.COMMON),
+        Achievement("party_double", "Shared Shine", "Your party catches 2 sparklings in one run.", AchievementTier.MYTHIC, Measure.EVENT, 2L),
+        Achievement("party_triple", "Sparkle Storm", "Your party catches 3 sparklings in one run.", AchievementTier.DIVINE, Measure.EVENT, 3L),
+        Achievement("own_triple", "Hat Trick", "Catch 3 sparklings yourself in one run.", AchievementTier.SPECIAL, Measure.EVENT, 3L),
+        Achievement("sparkle_10", "Glimmer", "Catch 10 of your own sparklings.", AchievementTier.EPIC, Measure.OWN_SPARKLINGS, 10L),
+        Achievement("sparkle_25", "Gleam", "Catch 25 of your own sparklings.", AchievementTier.LEGENDARY, Measure.OWN_SPARKLINGS, 25L),
+        Achievement("sparkle_50", "Radiance", "Catch 50 of your own sparklings.", AchievementTier.MYTHIC, Measure.OWN_SPARKLINGS, 50L),
+        Achievement("sparkle_100", "Supernova", "Catch 100 of your own sparklings.", AchievementTier.DIVINE, Measure.OWN_SPARKLINGS, 100L),
+        Achievement("unique_10", "Collector", "Unlock 10 sparkling critter types in your sparkling dex.", AchievementTier.EPIC, Measure.UNIQUES, 10L),
+        Achievement("unique_20", "Curator", "Unlock 20 sparkling critter types in your sparkling dex.", AchievementTier.LEGENDARY, Measure.UNIQUES, 20L),
+        Achievement("unique_30", "Archivist", "Unlock 30 sparkling critter types in your sparkling dex.", AchievementTier.MYTHIC, Measure.UNIQUES, 30L),
+        Achievement("max_sparklings", "Max Sparklings", "Unlock all 37 sparkling types in your sparkling dex.", AchievementTier.DIVINE, Measure.UNIQUES, 37L),
+        Achievement("legendary_sparkle", "Legend in Lights", "Catch a sparkling Macaw, Wumpa or Doomspiral yourself.", AchievementTier.MYTHIC),
+        Achievement("gemzie_sparkle", "Gem of a Gemzie", "Catch a sparkling Gemzie yourself.", AchievementTier.LEGENDARY),
+        Achievement("set_forest", "Forest Glitter", "Unlock every Forest sparkling in your sparkling dex.", AchievementTier.MYTHIC),
+        Achievement("set_cavern", "Cavern Glitter", "Unlock every Cavern sparkling in your sparkling dex.", AchievementTier.MYTHIC),
+        Achievement("set_icy", "Icy Glitter", "Unlock every Icy sparkling in your sparkling dex.", AchievementTier.MYTHIC),
+        Achievement("set_haunted", "Haunted Glitter", "Unlock every Haunted sparkling in your sparkling dex.", AchievementTier.MYTHIC),
+        Achievement("dry_runs_10", "Unlucky", "25 runs in a row without a sparkling.", AchievementTier.RARE, Measure.DRY_SPARKLING, 25L),
+        Achievement("dry_runs_20", "Very Unlucky", "50 runs in a row without a sparkling.", AchievementTier.EPIC, Measure.DRY_SPARKLING, 50L),
+        Achievement("dry_runs_30", "Cursed", "75 runs in a row without a sparkling.", AchievementTier.LEGENDARY, Measure.DRY_SPARKLING, 75L),
+        Achievement("dry_runs_40", "Forsaken", "100 runs in a row without a sparkling.", AchievementTier.MYTHIC, Measure.DRY_SPARKLING, 100L),
+        Achievement("dry_runs_50", "Doomed", "150 runs in a row without a sparkling.", AchievementTier.DIVINE, Measure.DRY_SPARKLING, 150L),
+        Achievement("no_unique_runs_5", "Same Old Sparkle", "Get 10 duplicate sparkling critters without a new unique sparkling critter.", AchievementTier.RARE, Measure.DUPLICATES, 10L),
+        Achievement("no_unique_runs_10", "Deja Vu", "Get 25 duplicate sparkling critters without a new unique sparkling critter.", AchievementTier.EPIC, Measure.DUPLICATES, 25L),
+        Achievement("no_unique_runs_25", "Groundhog Day", "Get 50 duplicate sparkling critters without a new unique sparkling critter.", AchievementTier.LEGENDARY, Measure.DUPLICATES, 50L),
+        Achievement("no_unique_runs_50", "Broken Record", "Get 75 duplicate sparkling critters without a new unique sparkling critter.", AchievementTier.MYTHIC, Measure.DUPLICATES, 75L),
+        Achievement("no_unique_runs_250", "Eternal Rerun", "Get 100 duplicate sparkling critters without a new unique sparkling critter.", AchievementTier.DIVINE, Measure.DUPLICATES, 100L),
+        Achievement("macaw_3", "Bird Watcher", "Your party catches 4 Macaws in one run.", AchievementTier.LEGENDARY, Measure.EVENT, 4L),
+        Achievement("macaw_4", "Flock Together", "Your party catches 6 Macaws in one run.", AchievementTier.MYTHIC, Measure.EVENT, 6L),
+        Achievement("macaw_8", "Macaw Mania", "Your party catches 8 Macaws in one run.", AchievementTier.DIVINE, Measure.EVENT, 8L),
+        Achievement("no_macaw_3", "Where's the Macaw?", "10 runs in a row without a Macaw.", AchievementTier.LEGENDARY, Measure.RUNS_SINCE_MACAW, 10L),
+        Achievement("no_macaw_5", "Macaw Drought", "20 runs in a row without a Macaw.", AchievementTier.MYTHIC, Measure.RUNS_SINCE_MACAW, 20L),
+        Achievement("no_macaw_8", "Extinct", "30 runs in a row without a Macaw.", AchievementTier.DIVINE, Measure.RUNS_SINCE_MACAW, 30L),
+        Achievement("emerald_dye", "Emerald Dye", "Find an Emerald Dye.", AchievementTier.LEGENDARY, Measure.DYES, 1L),
+        Achievement("run_10", "Safari Rookie", "Complete 50 Safari runs.", AchievementTier.RARE, Measure.RUNS, 50L),
+        Achievement("run_50", "Regular", "Complete 250 Safari runs.", AchievementTier.EPIC, Measure.RUNS, 250L),
+        Achievement("run_100", "Ranger", "Complete 500 Safari runs.", AchievementTier.LEGENDARY, Measure.RUNS, 500L),
+        Achievement("run_500", "Warden of the Wilds", "Complete 2000 Safari runs.", AchievementTier.MYTHIC, Measure.RUNS, 2000L),
+        Achievement("hours_10", "Time Flies", "Spend 25 hours in Safari.", AchievementTier.RARE, Measure.HOURS, 25L),
+        Achievement("hours_50", "No Life", "Spend 200 hours in Safari.", AchievementTier.MYTHIC, Measure.HOURS, 200L),
+        Achievement("party_caught_1000", "Catcher", "10,000 critter catches.", AchievementTier.RARE, Measure.CAUGHT, 10000L),
+        Achievement("party_caught_5000", "Trapper", "50,000 critter catches.", AchievementTier.EPIC, Measure.CAUGHT, 50000L),
+        Achievement("party_caught_10000", "Exterminator", "100,000 critter catches.", AchievementTier.LEGENDARY, Measure.CAUGHT, 100000L),
+        Achievement("party_caught_25000", "Critter Apocalypse", "250,000 critter catches.", AchievementTier.MYTHIC, Measure.CAUGHT, 250000L),
+        Achievement("party_caught_50000", "Extinction Event", "500,000 critter catches.", AchievementTier.DIVINE, Measure.CAUGHT, 500000L),
+        Achievement("coins_100m", "Shard Shark", "Reach 1B in profit.", AchievementTier.MYTHIC, Measure.COINS, 1000000000L),
+        Achievement("coins_1b", "Shard Tycoon", "Reach 10B in profit.", AchievementTier.DIVINE, Measure.COINS, 10000000000L),
+        Achievement("full_house", "Full House", "Your party catches all 37 critters in one run.", AchievementTier.RARE, Measure.EVENT, 37L),
+        Achievement("speed_3", "Speedrunner", "Your party catches all 37 critters in under 2:30.", AchievementTier.EPIC, Measure.EVENT, 150000L),
+        Achievement("speed_230", "Any%", "Your party catches all 37 critters in under 2:00.", AchievementTier.LEGENDARY, Measure.EVENT, 120000L),
+        Achievement("ten_of_37", "Pulling Your Weight", "Catch 20 unique critters yourself in a run.", AchievementTier.RARE, Measure.EVENT, 20L),
+        Achievement("contests_10", "Contestant", "Complete 100 Miria's contests.", AchievementTier.EPIC, Measure.CONTESTS, 100L),
+        Achievement("contests_50", "Honey Hoarder", "Complete 500 Miria's contests.", AchievementTier.LEGENDARY, Measure.CONTESTS, 500L),
+        Achievement("contests_100", "Miria's Favourite", "Complete 2000 Miria's contests.", AchievementTier.MYTHIC, Measure.CONTESTS, 2000L),
+        Achievement("night_owl", "Night Owl", "Finish a run between 3 and 5 in the morning.", AchievementTier.UNCOMMON),
+        Achievement("dedication", "Dedication", "Finish 75 (>2m) runs in one day.", AchievementTier.EPIC, Measure.DAILY_RUNS, 75L),
+        Achievement("back_to_back", "Back to Back", "Catch a sparkling critter two runs in a row.", AchievementTier.MYTHIC, Measure.EVENT, 2L),
+        Achievement("instant", "Instant Gratification", "Catch a sparkling within 5 runs of your last catch.", AchievementTier.LEGENDARY, Measure.EVENT, 5L),
+        Achievement("cj_luck", "CJ Luck", "Get 200 duplicate sparkling critters without a new unique sparkling critter.", AchievementTier.SPECIAL, Measure.DUPLICATES, 200L, secret = true),
+        Achievement("dyes_3", "Dripped Out", "Find 3 Emerald Dyes.", AchievementTier.MYTHIC, Measure.DYES, 3L),
+        Achievement("dyes_8", "Dye Hotbar", "Find 8 Emerald Dyes.", AchievementTier.DIVINE, Measure.DYES, 8L),
+        Achievement("run_4000", "Gaias Envoy", "Complete 4000 Safari runs.", AchievementTier.DIVINE, Measure.RUNS, 4000L),
+        Achievement("hours_50_locked", "Locked In", "Spend 50 hours in Safari.", AchievementTier.EPIC, Measure.HOURS, 50L),
+        Achievement("hours_100", "Only Down From Here", "100 hours in Safari.", AchievementTier.LEGENDARY, Measure.HOURS, 100L),
+        Achievement("hours_400", "Do You Even Know What Grass Is?", "Spend 400 hours in Safari.", AchievementTier.DIVINE, Measure.HOURS, 400L),
+        Achievement("hours_1000", "This Is Water… Use It.", "Spend 1000 hours in Safari.", AchievementTier.SPECIAL, Measure.HOURS, 1000L, secret = true),
+        Achievement("speed_130", "G.O.A.T", "Your party catches all 37 critters in under 1:30.", AchievementTier.MYTHIC, Measure.EVENT, 90000L),
+        Achievement("daily_150", "No Life²", "Finish 150 (>2m) runs in one day.", AchievementTier.LEGENDARY, Measure.DAILY_RUNS, 150L),
+        Achievement("dex_2", "Dupedex", "2 of every sparkling critter type caught.", AchievementTier.DIVINE, Measure.DEX_SETS, 2L),
+        Achievement("dex_3", "Tripdex", "3 of every sparkling critter type caught.", AchievementTier.DIVINE, Measure.DEX_SETS, 3L),
+        Achievement("dex_4", "Quaddex", "4 of every sparkling critter type caught.", AchievementTier.DIVINE, Measure.DEX_SETS, 4L),
+        Achievement("dex_5", "Quindex", "5 of every sparkling critter type caught.", AchievementTier.DIVINE, Measure.DEX_SETS, 5L),
+        Achievement("dex_6", "Sexdex (nice)", "6 of every sparkling critter type caught.", AchievementTier.DIVINE, Measure.DEX_SETS, 6L),
+        Achievement("dex_7", "Septdex", "7 of every sparkling critter type caught.", AchievementTier.DIVINE, Measure.DEX_SETS, 7L),
+        Achievement("dex_8", "Octodex", "8 of every sparkling critter type caught.", AchievementTier.DIVINE, Measure.DEX_SETS, 8L),
+        Achievement("dex_9", "Nuevadex", "9 of every sparkling critter type caught.", AchievementTier.DIVINE, Measure.DEX_SETS, 9L),
+        Achievement("dex_10", "Decadex", "10 of every sparkling critter type caught.", AchievementTier.DIVINE, Measure.DEX_SETS, 10L),
+        Achievement("double_trouble", "Double Trouble", "Catch 2 of the same sparkling critter type in 1 run.", AchievementTier.SPECIAL, Measure.EVENT, 2L, secret = true),
     )
     fun all(): List<Achievement> = definitions
-    fun explanation(achievement: Achievement): String = when (achievement.measure) {
-        Measure.OWN_SPARKLINGS -> "Your sparkling catches only."
-        Measure.UNIQUES -> "Your caught types plus cached profile discoveries."
-        Measure.CAUGHT -> "Saved catches and loot shares, or your profile total if higher."
-        Measure.COINS -> "Your reward value, including loot shares and import estimates. Before fees and ticket costs."
-        Measure.RUNS -> "Saved runs or your profile estimate, whichever is higher. Includes imports."
-        Measure.HOURS -> "Safari /playtime plus newer runs; saved run time if unavailable."
-        Measure.DRY_SPARKLING -> "Party sparkling streak. Live runs only; imports break it."
-        Measure.DRY_UNIQUE -> "Party new-type streak. Live runs only; imports break it."
-        Measure.RUNS_SINCE_MACAW -> "Caught or loot-shared Macaws reset it. Includes imports."
-        Measure.CONTESTS -> "Your ticket target: Uncommon for Basic, Legendary for First-Class."
-        Measure.EVENT -> when {
-            achievement.id in setOf("full_house", "speed_3", "speed_230") -> "All 37 types caught or loot-shared. Timed from run start."
-            achievement.id in setOf("party_double", "party_triple") -> "Party sparkling catches in one run."
-            achievement.id.startsWith("macaw_") -> "Caught or loot-shared Macaws in one run."
-            achievement.id == "ten_of_37" -> "10 types caught yourself in one run. No loot shares."
-            achievement.id == "first_sparkle" || achievement.id.startsWith("set_") -> "Your caught types plus cached profile discoveries."
-            achievement.id == "back_to_back" -> "Your sparkling catch in each of two consecutive runs."
-            achievement.id == "instant" -> "At most five ticket uses between your own sparkling catches."
-            achievement.id == "night_owl" -> "Finish a run between 03:00 and 04:59, local time."
-            achievement.id == "dedication" -> "50 saved runs on the same local date."
-            else -> "Your catch or drop only."
-        }
-    }
+    fun explanation(achievement: Achievement): String = if(achievement.measure==Measure.RUNS_SINCE_MACAW)
+        "Must use all 9 bird food." else ""
 
     class Data(var initialised: Boolean = false, var unlocked: MutableMap<String, Long> = linkedMapOf(),
         var emblems: MutableMap<String, Long> = linkedMapOf(), var runsSinceOwnSparkling: Int = 0,
         var longestRunsWithoutSparkling: Int = 0, var runsSinceOwnUnique: Int = 0, var longestRunsWithoutUnique: Int = 0,
         var uniqueSinceLastRun: Boolean = false, var runsSinceMacaw: Int = 0, var longestRunsWithoutMacaw: Int = 0,
         var lastRunHadOwnSparkling: Boolean = false, var ticketsSinceOwnSparkling: Int = 0,
-        var contestsCompleted: Int = 0, var lastContestWindow: Long = -1, var partyStreakVersion: Int = 0)
+        var contestsCompleted: Int = 0, var lastContestWindow: Long = -1, var partyStreakVersion: Int = 0,
+        var catalogVersion: Int = 0,var emeraldDyes: Int = 0)
     private var data = Data()
+    private const val CATALOG_VERSION=2
+    private var pendingHistoryCheck=true
+    private val dyeProofs=DyeDropProofs()
+    private var sparklingRevision=-1L
+    private var cachedDiscoveries: Set<String> = emptySet()
+    private var counts: Map<String,Int> = emptyMap()
+    private var duplicates=AchievementRules.Streak(0,0)
+    private fun refreshSparklingSummary() {
+        if(sparklingRevision==SparklingLog.revision && cachedDiscoveries==OwnStats.dex) return
+        sparklingRevision=SparklingLog.revision;cachedDiscoveries=OwnStats.dex
+        counts=AchievementRules.dexCounts(SparklingLog.entries,cachedDiscoveries)
+        duplicates=AchievementRules.duplicateStreak(SparklingLog.entries)
+    }
     private var ticks = 0
 
     private val emeraldDrop = Regex("^(?:[A-Z!' ]*DROP!|WOW!|RNG METER|NICE!)", RegexOption.IGNORE_CASE)
 
     fun register() {
         data = HistoryStore.load("achievements", Data::class.java, ::Data)
+        pendingHistoryCheck=true
+        if(data.catalogVersion<CATALOG_VERSION) {
+            if(data.unlocked.isNotEmpty()) runCatching { HistoryStore.backup("achievements","pre-requirement-revamp") }
+                .onFailure { org.slf4j.LoggerFactory.getLogger("sparkling-mutuals/achievements").warn("Couldn't back up old achievement requirements",it) }
+            migrateRequirements(data)
+            save()
+        }
         // Achievements that were removed (emblems, the 10-run Macaw drought) no longer count.
         data.unlocked.keys.retainAll(definitions.map { it.id }.toSet())
         ClientReceiveMessageEvents.GAME.register { message, overlay ->
@@ -145,11 +165,21 @@ object Achievements {
         }
     }
 
+    internal fun migrateRequirements(saved: Data): Boolean {
+        if(saved.catalogVersion>=CATALOG_VERSION) return false
+        if("emerald_dye" in saved.unlocked) saved.emeraldDyes=maxOf(saved.emeraldDyes,1)
+        saved.unlocked.keys.removeAll(revampedIds)
+        saved.catalogVersion=CATALOG_VERSION
+        return true
+    }
+    private fun goal(id: String)=definitions.first { it.id==id }.goal
+
     // ------------------------------------------------------------------ events
 
     fun tick(client: Minecraft) {
         if (client.player == null || !ConfigManager.achievements) return
-        if (!data.initialised) { initialise(client); return }
+        if (!data.initialised) { pendingHistoryCheck=false;initialise(client); return }
+        if(pendingHistoryCheck) { pendingHistoryCheck=false;afterImport() }
         if (data.partyStreakVersion < 1) { refreshPartyStreaks(); save() }
         // A contest is counted once per window, however many times the sidebar shows it done. The window comes from
         // the tracker with its completion, so a completion from just before a boundary can't count for the next one.
@@ -162,7 +192,10 @@ object Achievements {
     fun onSparkling(entry: SparklingEntry, own: Boolean) {
         data.runsSinceOwnSparkling = 0
         if (own) {
-            if (data.ticketsSinceOwnSparkling <= 5 && ownEntries().size > 1) unlock("instant", true)
+            if(personalRunGaps().any { it.toLong() in 0..goal("instant") }) unlock("instant",true)
+            val current=net.johnceo.sparklingmutuals.safari.SafariTracking.ledger.current
+            if(current!=null && ownEntries().filter { it.at in current.startedAt..(current.endedAt ?: entry.at) }
+                    .groupingBy { it.critter }.eachCount().values.any { it>=goal("double_trouble") }) unlock("double_trouble",true)
             data.ticketsSinceOwnSparkling = 0; data.runsSinceOwnSparkling = 0
             if (entry.critter in setOf("Macaw", "Wumpa", "Doomspiral")) unlock("legendary_sparkle", true)
             if (entry.critter == "Gemzie") unlock("gemzie_sparkle", true)
@@ -191,7 +224,10 @@ object Achievements {
 
     private fun chat(text: String) {
         if (!ConfigManager.achievements) return
-        if ("Emerald Dye" in text && ownDrop(text)) unlock("emerald_dye", true)
+        if ("Emerald Dye" in text && ownDrop(text) && HistoryServerPolicy.allows()) {
+            val now=System.currentTimeMillis()
+            if(dyeProofs.accept(text,now)) { data.emeraldDyes++;save();checkAll(true) }
+        }
     }
     /** Your drop, not a broadcast of someone else's ("WOW! Name found Emerald Dye"). */
     fun ownDrop(text: String, self: String = Minecraft.getInstance()?.player?.name?.string.orEmpty()): Boolean {
@@ -199,7 +235,8 @@ object Achievements {
         val found = text.indexOf(" found ")
         if (found < 0) return true
         val before = text.substring(0, found)
-        return before.endsWith("You") || self.isNotEmpty() && before.endsWith(self)
+        val finder=before.substringAfterLast(' ').trim()
+        return finder.equals("You",true) || self.isNotEmpty() && finder.equals(self,true)
     }
 
     // ------------------------------------------------------------------ checking
@@ -209,7 +246,7 @@ object Achievements {
         for (achievement in definitions)
             if (achievement.measure != Measure.EVENT && !isUnlocked(achievement) && progress(achievement) >= achievement.goal) unlock(achievement.id, announce)
         val dex = ownDex()
-        if (dex.isNotEmpty()) unlock("first_sparkle", announce)
+        if (ownEntries().isNotEmpty()) unlock("first_sparkle", announce)
         for (biome in SafariBiome.entries) if (dex.containsAll(biome.critters.map { it.name }))
             unlock("set_${biome.name.lowercase()}", announce)
     }
@@ -220,8 +257,8 @@ object Achievements {
         speedAchievements(elapsed, true)
     }
     private fun speedAchievements(elapsed: Long, announce: Boolean) {
-        if (elapsed in 0 until 180_000) unlock("speed_3", announce)
-        if (elapsed in 0 until 150_000) unlock("speed_230", announce)
+        for(id in listOf("speed_3","speed_230","speed_130"))
+            if(elapsed in 0 until goal(id)) unlock(id,announce)
     }
     private fun refreshPartyStreaks() {
         val streaks = HistoryQueries.partyStreaks(RunHistory.runs, SparklingLog.entries)
@@ -230,20 +267,21 @@ object Achievements {
         data.partyStreakVersion = 1
     }
     private fun checkRun(run: RunRecord, announce: Boolean) {
-        if (run.sparklings.size >= 2) unlock("party_double", announce)
-        if (run.sparklings.size >= 3) unlock("party_triple", announce)
-        if (run.ownSparklings >= 3) unlock("own_triple", announce)
-        if (run.macaws >= 3) unlock("macaw_3", announce)
-        if (run.macaws >= 4) unlock("macaw_4", announce)
-        if (run.macaws >= 8) unlock("macaw_8", announce)
+        if (run.sparklings.size >= goal("party_double")) unlock("party_double", announce)
+        if (run.sparklings.size >= goal("party_triple")) unlock("party_triple", announce)
+        if (run.ownSparklings >= goal("own_triple")) unlock("own_triple", announce)
+        if (run.macaws >= goal("macaw_3")) unlock("macaw_3", announce)
+        if (run.macaws >= goal("macaw_4")) unlock("macaw_4", announce)
+        if (run.macaws >= goal("macaw_8")) unlock("macaw_8", announce)
+        val self=Minecraft.getInstance()?.player?.name?.string.orEmpty()
+        if(AchievementRules.doubleTrouble(run.sparklings,self)) unlock("double_trouble",announce)
         val all = SafariRoster.all.size
         if (run.party >= all) unlock("full_house", announce)
         HistoryQueries.allTypesTime(run)?.let { speedAchievements(it, announce) }
-        if (run.you >= 10) unlock("ten_of_37", announce)
+        if (run.you >= goal("ten_of_37")) unlock("ten_of_37", announce)
         val zone = ZoneId.systemDefault()
         if (Instant.ofEpochMilli(run.start + run.length).atZone(zone).hour in 3..4) unlock("night_owl", announce)
-        val day = Instant.ofEpochMilli(run.start).atZone(zone).toLocalDate()
-        if (RunHistory.runs.count { Instant.ofEpochMilli(it.start).atZone(zone).toLocalDate() == day } >= 50) unlock("dedication", announce)
+
     }
 
     fun progress(achievement: Achievement): Long = when (achievement.measure) {
@@ -257,7 +295,11 @@ object Achievements {
         Measure.UNIQUES -> ownDex().size.toLong()
         Measure.DRY_SPARKLING -> maxOf(data.longestRunsWithoutSparkling, data.runsSinceOwnSparkling).toLong()
         Measure.DRY_UNIQUE -> maxOf(data.longestRunsWithoutUnique, data.runsSinceOwnUnique).toLong()
-        Measure.RUNS_SINCE_MACAW -> maxOf(data.longestRunsWithoutMacaw, data.runsSinceMacaw).toLong()
+        Measure.RUNS_SINCE_MACAW -> AchievementRules.macawDrought(RunHistory.runs).longest.toLong()
+        Measure.DUPLICATES -> { refreshSparklingSummary();duplicates.longest.toLong() }
+        Measure.DEX_SETS -> AchievementRules.fullDexCount(sparklingCounts()).toLong()
+        Measure.DYES -> data.emeraldDyes.toLong()
+        Measure.DAILY_RUNS -> AchievementRules.mostDailyRuns(RunHistory.runs).toLong()
         Measure.CONTESTS -> data.contestsCompleted.toLong()
     }
 
@@ -327,6 +369,7 @@ object Achievements {
             if (entry.critter in setOf("Macaw", "Wumpa", "Doomspiral")) unlock("legendary_sparkle", false)
             if (entry.critter == "Gemzie") unlock("gemzie_sparkle", false)
         }
+        if(personalRunGaps().any { it.toLong() in 0..goal("instant") }) unlock("instant",false)
         checkAll(false)
         save()
         return data.unlocked.size - before
@@ -338,8 +381,13 @@ object Achievements {
         val self = Minecraft.getInstance()?.player?.name?.string ?: return emptyList()
         return SparklingLog.entries.filter { it.player.equals(self, true) }
     }
-    /** Your sparkling dex: your history, plus your Sparkling Critterdex from the API. */
-    fun ownDex(): Set<String> = ownEntries().mapNotNull { SafariRoster.named(it.critter)?.name }.toSet() + OwnStats.dex
+    /** Credited party history supplies per-type counts; cached API discoveries establish a one-catch floor. */
+    fun sparklingCounts(): Map<String,Int> { refreshSparklingSummary();return counts }
+    fun ownDex(): Set<String> = AchievementRules.dex(sparklingCounts(),1)
+    private fun personalRunGaps(): List<Int> {
+        val current=net.johnceo.sparklingmutuals.safari.SafariTracking.ledger.current
+        return AchievementRules.personalSparklingGaps(RunHistory.runs,ownEntries(),current?.let { it.startedAt to (it.endedAt ?: System.currentTimeMillis()) })
+    }
 
     /** Your profile was read from the API: whatever its runs, catches and dex earn is unlocked quietly. Returns how many. */
     fun afterApiStats(): Int {

@@ -1,14 +1,12 @@
 package net.johnceo.sparklingmutuals.config
 
-import io.github.notenoughupdates.moulconfig.annotations.*
 import net.johnceo.sparklingmutuals.LocalChat
 import net.minecraft.client.Minecraft
 
 /** One shared hex selection; color actions never change feature toggles. */
 class ColorChoice(private val read: () -> String, private val write: (String) -> Unit, private val selection: () -> String) {
-    @JvmField @ConfigOption(name = "Color", desc = "Choose a color.") @ConfigEditorColour var color = read()
-    @JvmField @ConfigOption(name = "Apply selected color", desc = "Apply the hex color above.")
-    @ConfigEditorButton(buttonText = "Set Color") val setColor = Runnable {
+    @JvmField @ConfigOption(name = "Color", desc = "") @ConfigEditorColour var color = read()
+    val setColor = Runnable {
         if (setSelected()) ConfigManager.save()
         else Minecraft.getInstance().player?.sendSystemMessage(LocalChat.component("[SM] Enter a hex color such as #55FF55."))
     }
@@ -43,12 +41,13 @@ class PanelAppearanceSettings(private val style: PanelStyle, selection: () -> St
 }
 
 class CustomizationSettings {
-    @JvmField @ConfigOption(name = "Selected hex color", desc = "Enter #RRGGBB, then use Set Color.")
-    @ConfigEditorText var selectedHex = AppearanceConfig.selectedHex
-    @JvmField @ConfigOption(name = "Tracking HUDs", desc = "") @Accordion val huds = TrackingAppearanceSettings({ selectedHex })
-    @JvmField @ConfigOption(name = "Alert HUDs", desc = "") @Accordion val alertHuds = AlertAppearanceSettings({ selectedHex })
-    @JvmField @ConfigOption(name = "Highlights and waypoints", desc = "") @Accordion val waypoints = WaypointAppearanceSettings({ selectedHex })
-    @JvmField @ConfigOption(name = "Critter colors", desc = "") @Accordion val critters = CritterAppearanceSettings({ selectedHex })
+    var selectedHex = AppearanceConfig.selectedHex
+    @JvmField @ConfigOption(name = "Biome HUD borders", desc = "Overrides custom border colors for each HUD.")
+    @ConfigEditorBoolean var biomeBorders = BannerConfig.biomeBorders
+    @JvmField val huds = TrackingAppearanceSettings({ selectedHex })
+    @JvmField val alertHuds = AlertAppearanceSettings({ selectedHex })
+    @JvmField val waypoints = WaypointAppearanceSettings({ selectedHex })
+    @JvmField val critters = CritterAppearanceSettings({ selectedHex })
     val progress get() = huds.progress
     val missing get() = huds.missing
     val captures get() = huds.captures
@@ -108,6 +107,8 @@ class CustomizationSettings {
     val doomspiral get() = haunted.doomspiral
 
     fun apply(): Boolean {
+        val themeChanged = biomeBorders != BannerConfig.biomeBorders
+        BannerConfig.biomeBorders = biomeBorders
         val selectedChanged = AppearanceConfig.withHex(AppearanceConfig.color(0), selectedHex) != null &&
             AppearanceConfig.selectedHex != selectedHex
         if (selectedChanged) AppearanceConfig.selectedHex = selectedHex
@@ -120,7 +121,7 @@ class CustomizationSettings {
                 else -> false
             }
         }.any { it }
-        return selectedChanged || changed
+        return themeChanged || selectedChanged || changed
     }
 }
 
@@ -142,6 +143,7 @@ class TrackingAppearanceSettings(private val selection: () -> String) : Appearan
     @JvmField @ConfigOption(name = "Doomspiral throw timer HUD", desc = "") @Accordion val doomThrow = panel("doom_throw")
     @JvmField @ConfigOption(name = "Progress HUD", desc = "") @Accordion val progress = panel("progress")
     @JvmField @ConfigOption(name = "Missing panel HUD", desc = "") @Accordion val missing = panel("missing")
+    @JvmField @ConfigOption(name = "Biome Objectives HUD", desc = "") @Accordion val objectives = panel("objectives")
     @JvmField @ConfigOption(name = "Biome captures HUD", desc = "") @Accordion val captures = panel("captures")
     @JvmField @ConfigOption(name = "Miria contest HUD", desc = "") @Accordion val miria = panel("miria")
     @JvmField @ConfigOption(name = "Nearby sparklings HUD", desc = "") @Accordion val sparklings = panel("sparklings")
@@ -149,9 +151,10 @@ class TrackingAppearanceSettings(private val selection: () -> String) : Appearan
 
 class AlertAppearanceSettings(private val selection: () -> String) : AppearanceSettingsGroup() {
     private fun panel(id: String) = PanelAppearanceSettings(AppearanceConfig.panels.getValue(id), selection)
-    @JvmField @ConfigOption(name = "Sparkling alert HUD", desc = "") @Accordion val alert = panel("alert")
+    @JvmField @ConfigOption(name = "Sparkling detection alert HUD", desc = "") @Accordion val alert = panel("alert")
     @JvmField @ConfigOption(name = "All Gems alert HUD", desc = "") @Accordion val gems = panel("gems")
     @JvmField @ConfigOption(name = "All Bird Food alert HUD", desc = "") @Accordion val birdFood = panel("bird_food")
+    @JvmField @ConfigOption(name = "All Coins alert HUD", desc = "") @Accordion val coins = panel("coins")
     @JvmField @ConfigOption(name = "All Incense alert HUD", desc = "") @Accordion val incense = panel("incense")
     @JvmField @ConfigOption(name = "Run completion alert HUD", desc = "") @Accordion val runComplete = panel("run_complete")
     @JvmField @ConfigOption(name = "Run completion text color", desc = "") @Accordion val runCompleteText = ColorChoice(
@@ -196,7 +199,7 @@ class ScrappyAppearanceSettings(private val selection: () -> String) {
     val fish = food(net.johnceo.sparklingmutuals.safari.esp.ScrappyFood.FISH)
     @JvmField @ConfigOption(name="Lily Pad",desc="") @Accordion
     val lilyPad = food(net.johnceo.sparklingmutuals.safari.esp.ScrappyFood.LILY_PAD)
-    @JvmField @ConfigOption(name="Unidentified",desc="Until all three Scrappys are identified.") @Accordion
+    @JvmField @ConfigOption(name="Unidentified",desc="Before all three Scrappys are identified.") @Accordion
     val unknown = ColorChoice({ SafariEspConfig.mobs.getValue("Scrappy").color }, { SafariEspConfig.mobs.getValue("Scrappy").color=it },selection)
     @JvmField @ConfigOption(name="Text size",desc="1 = original size.")
     @ConfigEditorSlider(minValue=.5f,maxValue=4f,minStep=.25f)

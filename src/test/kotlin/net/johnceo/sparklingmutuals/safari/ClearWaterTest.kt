@@ -30,7 +30,7 @@ class ClearWaterTest {
         assertFalse(ConfigManager.clearWater)
         assertEquals(65, ConfigManager.waterOpacity)
         assertEquals("Clear water",SafariSettings.SafariVisibilitySettings::class.java.getField("clearWater")
-            .getAnnotation(io.github.notenoughupdates.moulconfig.annotations.ConfigOption::class.java).name)
+            .getAnnotation(net.johnceo.sparklingmutuals.config.ConfigOption::class.java).name)
     }
     @Test fun `surface and overlay hook calls exist on the target Minecraft renderer`() {
         fun calls(resource: String, method: String): List<String> {

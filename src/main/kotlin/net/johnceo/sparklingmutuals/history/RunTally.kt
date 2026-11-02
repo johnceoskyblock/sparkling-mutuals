@@ -17,6 +17,15 @@ class RunTally {
     val party = linkedSetOf<String>()
     var ownSparklings = 0
     var safariEssence = -1
+    var liveEssence = 0
+        private set
+    private var essenceBalance: Int? = null
+    /** Sidebar gains include capture and floor-drop essence; spending never subtracts run earnings. */
+    fun observeEssence(balance: Int) {
+        if(balance<0) return
+        essenceBalance?.let { if(balance>it) liveEssence+=balance-it }
+        essenceBalance=balance
+    }
     var summaryShards = -1
     var huntingXp = -1L
     private var inSummary = false

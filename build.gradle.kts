@@ -13,7 +13,6 @@ base.archivesName = "sparkling-mutuals"
 
 repositories {
     mavenCentral()
-    maven("https://maven.notenoughupdates.org/releases")
     exclusiveContent {
         forRepository { maven("https://maven.azureaaron.net/releases") }
         filter { includeModule("net.azureaaron", "hm-api") }
@@ -30,7 +29,6 @@ dependencies {
     implementation("net.fabricmc.fabric-api:fabric-api:${property("fabric_api_version")}")
     implementation("net.fabricmc:fabric-language-kotlin:${property("fabric_kotlin_version")}")
     implementation(include("net.azureaaron:hm-api:${property("hm_api_version")}")!!)
-    implementation(include("org.notenoughupdates.moulconfig:${property("moulconfig_artifact")}:4.8.0")!!)
     runtimeOnly("me.djtheredstoner:DevAuth-fabric:${property("devauth.version")}")
     testImplementation(platform("org.junit:junit-bom:5.11.4"))
     testImplementation("org.junit.jupiter:junit-jupiter")

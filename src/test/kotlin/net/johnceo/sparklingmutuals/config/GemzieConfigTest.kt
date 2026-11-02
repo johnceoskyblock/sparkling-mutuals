@@ -32,7 +32,7 @@ class GemzieConfigTest {
         Files.writeString(dir.resolve("sparkling-mutuals.properties"),"gemzieGemAutoSelect=false\n")
         ConfigManager.init(dir)
         val settings=SafariSettings()
-        settings.modes.fullClear.enabled=true
+        net.johnceo.sparklingmutuals.safari.completion.SafariFullClear.select(net.johnceo.sparklingmutuals.safari.SafariMode.FULL_CLEAR)
         settings.apply()
         ConfigManager.init(dir)
         assertFalse(ConfigManager.gemzieGemAutoSelect)

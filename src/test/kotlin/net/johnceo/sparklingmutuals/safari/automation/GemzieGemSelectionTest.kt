@@ -70,11 +70,12 @@ class GemzieGemSelectionTest {
             { fail("slot changed") },{ fail("wrong item used") },{ missing=it }))
         assertEquals(GemzieGem.ORANGE,missing)
     }
-    @Test fun `held repeat cannot select use or emit feedback on a supported podium`() {
-        assertTrue(GemzieUseAction().handle(orange,0,hotbar(4 to GemzieStack("ORANGE_GEM","Orange Gem")),false,
-            { fail("held selection") },{ fail("held use") },{ fail("held notice") }))
-        assertFalse(GemzieUseAction().handle(orange.copy(top=false),0,hotbar(),false,
-            { fail("slot changed") },{ fail("item used") },{ fail("notice") }))
+    @Test fun `held use acquires a valid podium after starting with no target`() {
+        val action=GemzieUseAction();var used=0;var selected=0
+        val stacks=hotbar(4 to GemzieStack("ORANGE_GEM","Orange Gem"))
+        assertFalse(action.handle(orange.copy(top=false),0,stacks,true,{}, { fail("air use") },{}))
+        assertTrue(action.handle(orange,0,stacks,false,{ selected=it },{ used++ },{ fail("missing") }))
+        assertEquals(4,selected);assertEquals(1,used)
     }
     @Test fun `reentrant callback cannot duplicate the use and later fresh clicks still work`() {
         val action=GemzieUseAction();var used=0

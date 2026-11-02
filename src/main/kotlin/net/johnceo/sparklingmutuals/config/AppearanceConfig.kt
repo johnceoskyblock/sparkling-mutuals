@@ -1,6 +1,5 @@
 package net.johnceo.sparklingmutuals.config
 
-import io.github.notenoughupdates.moulconfig.ChromaColour
 import java.util.Properties
 import kotlin.math.roundToInt
 import net.minecraft.client.gui.GuiGraphicsExtractor
@@ -12,18 +11,18 @@ class PanelStyle {
     var transparency = 20
         set(value) { field = value.coerceIn(0, 100) }
     val backgroundArgb get() = (((100 - transparency) * 2.55).roundToInt() shl 24) or (SafariEspConfig.rgb(backgroundColor) and 0xFFFFFF)
-    fun draw(graphics: GuiGraphicsExtractor, width: Int, height: Int) {
+    fun draw(graphics: GuiGraphicsExtractor, width: Int, height: Int, borderOverride: Int? = null) {
         graphics.fill(0, 0, width, height, backgroundArgb)
         if (!borderEnabled) return
-        val color = SafariEspConfig.rgb(borderColor)
+        val color = borderOverride ?: SafariEspConfig.rgb(borderColor)
         graphics.fill(0, 0, width, 1, color); graphics.fill(0, height - 1, width, height, color)
         graphics.fill(0, 0, 1, height, color); graphics.fill(width - 1, 0, width, height, color)
     }
 }
 
 object AppearanceConfig {
-    fun color(rgb: Int) = ChromaColour.special(0, 255, rgb)
-    val panels = listOf("miria", "progress", "missing", "captures", "sparklings", "alert", "gems", "bird_food", "incense", "warp", "run_complete", "doom_throw").associateWith { PanelStyle() }
+    fun color(rgb: Int) = "0:255:${rgb shr 16 and 255}:${rgb shr 8 and 255}:${rgb and 255}"
+    val panels = listOf("miria", "progress", "missing", "objectives", "captures", "sparklings", "alert", "gems", "bird_food", "incense", "coins", "warp", "run_complete", "doom_throw").associateWith { PanelStyle() }
     var runCompleteColor = color(0x55FF55)
     var selectedHex = "#FFD700"
     var nestColor = color(0x55FF55)
@@ -39,14 +38,17 @@ object AppearanceConfig {
     fun load(properties: Properties) {
         selectedHex = properties.getProperty("appearance.selectedHex")?.takeIf { withHex(color(0), it) != null } ?: "#FFD700"
         panels.forEach { (id, style) ->
-            style.borderEnabled = properties.getProperty("appearance.$id.borderEnabled")?.toBooleanStrictOrNull() ?: true
-            val background = properties.getProperty("appearance.$id.backgroundColor")
+            // Seed the new panel from the existing Missing style, then save/edit it independently.
+            fun saved(key: String) = properties.getProperty("appearance.$id.$key")
+                ?: if (id == "objectives") properties.getProperty("appearance.missing.$key") else null
+            style.borderEnabled = saved("borderEnabled")?.toBooleanStrictOrNull() ?: true
+            val background = saved("backgroundColor")
             val legacyCompletion = id == "run_complete" && background == color(0xAAFFAA)
             // Upgrade exact old defaults only; user-picked colors, alpha and chroma remain intact.
-            style.borderColor = migratedColor(properties.getProperty("appearance.$id.borderColor"), SafariTheme.BORDER, setOf(0xE3C77E))
+            style.borderColor = migratedColor(saved("borderColor"), SafariTheme.BORDER, setOf(0xE3C77E))
             style.backgroundColor = migratedColor(background, SafariTheme.BACKGROUND,
                 if (id == "run_complete") setOf(0x241F18, 0xAAFFAA) else setOf(0x241F18))
-            val transparency = properties.getProperty("appearance.$id.transparency")?.toIntOrNull()
+            val transparency = saved("transparency")?.toIntOrNull()
             style.transparency = if (legacyCompletion && transparency == 80) 20 else transparency ?: 20
         }
         waypointColors.forEach { (property, default) ->

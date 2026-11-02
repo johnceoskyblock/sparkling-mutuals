@@ -47,10 +47,11 @@ class SafariCompletionEvents {
     fun sent(biome: SafariBiome) {
         if (pending.remove(biome)) announced.add(biome)
     }
+    fun reported(biome: SafariBiome)=biome in announced
     fun alert(run: SafariRun, mode: SafariMode, party: PartySparklingState, enabled: Boolean): Boolean {
         if (!enabled || alerted || mode == SafariMode.SPARKLING && !party.ready) return false
         val targets = SafariRoster.all.filter { mode != SafariMode.SPARKLING || party.needs(it.name) }
-        if (targets.isEmpty() || run.completed(mode, targets, party) != targets.size) return false
+        if (targets.isEmpty() || SafariBiome.entries.any { !run.biomeComplete(mode,it,party) }) return false
         alerted = true
         return true
     }

@@ -30,8 +30,8 @@ abstract class PublishReleaseTask : DefaultTask() {
         val sha = requireNotNull(env["GITHUB_SHA"])
         require(sha.matches(Regex("[a-f0-9]{40}"))) { "Missing immutable workflow commit" }
         val targets = targetProperties.get().map { (target, props) ->
-            val (fabric, hm, moul) = props.split('|')
-            TargetSpec(target, fabric, hm, moul)
+            val (fabric, hm) = props.split('|')
+            TargetSpec(target, fabric, hm)
         }
         val files = verifyDistribution(distributionDirectory.get().asFile.listFiles()!!.filter { it.extension == "jar" }.map { it.toPath() }, targets, version)
         val token = requireNotNull(env["GITHUB_TOKEN"]?.takeIf { it.isNotBlank() }) { "Missing GitHub token" }

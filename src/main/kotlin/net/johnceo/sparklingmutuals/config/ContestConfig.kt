@@ -23,6 +23,9 @@ object ContestConfig {
     fun editLayout(width: Int, height: Int) { layoutFor(width, height); legacyLayout = false }
     fun resetLayout() { layout.load(FreshInstallDefaults.contest(), "contest"); legacyLayout = false }
 
+    var showContestTimer = true
+    var showBracket = true
+    var showScore = true
     var trackContest = true
     var autoContestDowntime = true
     var ticketMode = 0 // Basic = 0, First-Class = 1; independent of entry ticket preference.
@@ -56,6 +59,9 @@ object ContestConfig {
             legacyLayout = !containsKey("hud.contest.x") || !containsKey("hud.contest.y")
             layout.load(this, "contest")
 
+            showContestTimer = getProperty("showContestTimer", "true").toBooleanStrictOrNull() ?: true
+            showBracket = getProperty("showBracket","true").toBooleanStrictOrNull() ?: true
+            showScore = getProperty("showScore","true").toBooleanStrictOrNull() ?: true
             trackContest = getProperty("trackContest", "true").toBoolean()
             autoContestDowntime = getProperty("autoContestDowntime", "true").toBooleanStrictOrNull() ?: true
             ticketMode = getProperty("ticketMode", "0").toIntOrNull()?.takeIf { it in 0..1 } ?: 0
@@ -88,6 +94,9 @@ object ContestConfig {
             setProperty("hudY", hudY.toString())
             setProperty("hudScale", hudScale.toString())
             if (!legacyLayout) layout.save(this, "contest")
+            setProperty("showContestTimer", showContestTimer.toString())
+            setProperty("showBracket",showBracket.toString())
+            setProperty("showScore",showScore.toString())
             setProperty("trackContest", trackContest.toString())
             setProperty("autoContestDowntime", autoContestDowntime.toString())
             setProperty("ticketMode", ticketMode.toString())

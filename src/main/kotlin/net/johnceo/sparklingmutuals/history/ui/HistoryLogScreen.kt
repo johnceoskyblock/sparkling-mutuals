@@ -1,12 +1,13 @@
 package net.johnceo.sparklingmutuals.history.ui
 
+import com.mojang.blaze3d.platform.InputConstants
 import net.johnceo.sparklingmutuals.compat.*
 import net.johnceo.sparklingmutuals.history.SparklingEntry
 import net.johnceo.sparklingmutuals.history.SparklingLog
 import net.johnceo.sparklingmutuals.history.importing.LogImporter
 import net.johnceo.sparklingmutuals.safari.SafariRules
 import net.minecraft.client.gui.GuiGraphicsExtractor
-import net.minecraft.client.gui.components.Button
+import net.johnceo.sparklingmutuals.config.ThemedButton as Button
 import net.minecraft.client.gui.screens.Screen
 import net.minecraft.client.input.MouseButtonEvent
 import net.minecraft.network.chat.Component
@@ -95,7 +96,7 @@ class HistoryLogScreen(private val parent: Screen, private val entry: SparklingE
         return true
     }
     override fun mouseClicked(event: MouseButtonEvent, doubleClick: Boolean): Boolean {
-        if (event.button() == 0 && track.scrollable && event.x() >= width - 18 && event.x() < width - 4 && event.y() >= top && event.y() < bottom) {
+        if (event.button() == InputConstants.MOUSE_BUTTON_LEFT && track.scrollable && event.x() >= width - 18 && event.x() < width - 4 && event.y() >= top && event.y() < bottom) {
             val thumb = track.thumbTop(offset)
             grab = if (event.y() >= thumb && event.y() < thumb + track.thumbHeight) event.y() - thumb else track.thumbHeight / 2.0
             dragging = true; offset = track.offsetAt(event.y(), grab)
@@ -104,11 +105,11 @@ class HistoryLogScreen(private val parent: Screen, private val entry: SparklingE
         return super.mouseClicked(event, doubleClick)
     }
     override fun mouseDragged(event: MouseButtonEvent, dx: Double, dy: Double): Boolean {
-        if (event.button() == 0 && dragging) { offset = track.offsetAt(event.y(), grab); return true }
+        if (event.button() == InputConstants.MOUSE_BUTTON_LEFT && dragging) { offset = track.offsetAt(event.y(), grab); return true }
         return super.mouseDragged(event, dx, dy)
     }
     override fun mouseReleased(event: MouseButtonEvent): Boolean {
-        if (event.button() == 0 && dragging) { dragging = false; return true }
+        if (event.button() == InputConstants.MOUSE_BUTTON_LEFT && dragging) { dragging = false; return true }
         return super.mouseReleased(event)
     }
     override fun isPauseScreen() = false

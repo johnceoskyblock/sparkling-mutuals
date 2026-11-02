@@ -60,8 +60,28 @@ object SafariEsp {
     private var drops = emptyList<EspDrop>()
     private val dropPredictor = FloorDropPredictor()
     private var predictedDrops = emptyList<PredictedFloorDrop>()
+    private val bannerCollected = mutableSetOf<Int>()
+    private val bannerMissing = mutableMapOf<Int,Int>()
     private val coinFloorIds = mutableSetOf<Int>()
-    fun resetDrops() { dropPredictor.reset(); predictedDrops = emptyList(); coinFloorIds.clear() }
+    fun resetDrops() { dropPredictor.reset(); predictedDrops = emptyList(); coinFloorIds.clear();bannerCollected.clear();bannerMissing.clear() }
+    /** Presentation-only proof. Remote unloads never count as completed floor drops. */
+    fun floorBannerReady(biome: SafariBiome): Boolean {
+        val client=Minecraft.getInstance();val player=client.player ?: return false
+        if(!scanned || client.level!==level) return false
+        val known=predictedDrops.filter { it.biome==biome }
+        if(known.isEmpty()) return false
+        known.forEach { drop ->
+            if(drop.actual!=null) bannerCollected.add(drop.id)
+            else if((0..2).any { activeFloorDisplay(client.level?.getEntity(drop.id+it)) }) {
+                bannerCollected.remove(drop.id);bannerMissing.remove(drop.id)
+            } else if(player.distanceToSqr(drop.x,drop.y,drop.z)<=24*24 &&
+                client.level?.hasChunkAt(net.minecraft.core.BlockPos.containing(drop.x,drop.y,drop.z))==true) {
+                val samples=(bannerMissing[drop.id] ?: 0)+1;bannerMissing[drop.id]=samples
+                if(samples>=2) bannerCollected.add(drop.id)
+            }
+        }
+        return known.all { it.id in bannerCollected }
+    }
     fun floorPickup(text: String) {
         val reward = FloorPickup.parse(text) ?: return
         val player = Minecraft.getInstance().player ?: return

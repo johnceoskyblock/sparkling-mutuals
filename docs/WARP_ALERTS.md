@@ -56,7 +56,7 @@ For the warping leader only, the next run waits until Uncommon is earned in the 
 
 ## Warp List
 
-The editor retains the 26 supported critters and ordered IGN lists. Invalid names are omitted; repeated names are invited at most once per window. Disabling Auto-party only stops pre-19-second candidates, not returning leechers.
+The editor shows player cards with per-biome selection flags for the 26 supported early-detection critters. Add/select an IGN, then enable the species that should trigger an invitation. All/None applies to that player. Existing per-critter invitation order is retained; disabling every flag keeps the player card for later editing. Invalid names are omitted; repeated names are invited at most once per window. Disabling Auto-party only stops pre-19-second candidates, not returning leechers.
 
 **Import CSV** in the Warp List editor replaces all saved entries immediately. Row 1 supplies case-insensitive critter headers; only rows 2-11 supply names, in order. Blank or invalid IGN cells and unsupported columns are ignored, and duplicates within a critter are removed. Missing or empty critter columns clear their old entries. CSV quoting and UTF-8 BOMs are supported. Cancelling, an unreadable file, malformed rows 1-11, duplicate critter headers or no supported headers leaves the current list unchanged. Content after row 11 is never parsed.
 
@@ -65,6 +65,8 @@ The editor retains the 26 supported critters and ordered IGN lists. Invalid name
 Focused tests cover Solo/Duo cleanup selection, missing/invalid runners, leader/capacity gating, the 19-second phase boundary, spaced invitations and deadline expiry, exact multiline invitation parsing, leave-before-accept, cancellation/expiry, and settings persistence. Server-side party permissions, transport and invite acceptance need live Hypixel testing.
 
 ## Last updated
+
+2026-11-01 — Player-card Warp List with per-species invite flags and replacement CSV import; existing per-critter order and Auto-party timing preserved. Empty player cards persist.
 
 2026-10-31 — Leech defaults on with JohnCEO, _cj and Rqach whitelisted; existing saved choices remain unchanged.
 

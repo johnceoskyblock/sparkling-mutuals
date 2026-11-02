@@ -83,7 +83,9 @@ object SafariTracking {
         }
         if (SafariAssist.inSafari) {
             ensureRun(client)
+            net.johnceo.sparklingmutuals.hud.SafariBanners.chat(text)
             ledger.current?.birdFoodCheck?.spawn(text,now)
+            ledger.current?.birds?.spawn(text)
             ledger.current?.recordWumpaSpawn(text)
             ledger.current?.sparklingBroadcast(text, now)
             ledger.current?.entry?.chat(text)
@@ -111,6 +113,7 @@ object SafariTracking {
         SafariAssist.markEntered()
         ensureRun(client)
         ledger.current!!.record(catch, now, client.player!!.name.string)
+        net.johnceo.sparklingmutuals.hud.SafariBanners.caught(catch.critter.name)
         checkPartyUnique(client, catch.critter.biome, now)
         SafariEsp.caught(catch.critter.name, catch.personal)
         ConfigManager.personalBests.captureFeedback(text, ledger.current!!, now, client.player!!.name.string)?.let { feedback ->
@@ -159,8 +162,15 @@ object SafariTracking {
         if (ConfigManager.progressHud) SafariPanels.progress(run, unique, System.currentTimeMillis()).draw(graphics, SafariHud.PROGRESS)
         if (!SafariVisibility.biomePanels(ConfigManager.showWhere, SafariAssist.inSafari, ledger.current != null, SafariAssist.biome)) return
         val biome = SafariAssist.biome ?: return
-        if (ConfigManager.missingPanel) SafariPanels.missing(run, biome, unique, BeeNests.unpunchedCount,
-            SafariStructures.nearbyMounds, SafariStructures.walls).draw(graphics, SafariHud.MISSING)
+        if (ConfigManager.missingPanel) {
+            val missing=SafariPanels.missing(run,biome,unique,BeeNests.unpunchedCount,SafariStructures.nearbyMounds,SafariStructures.walls)
+            if(missing.rows.isNotEmpty()) missing.draw(graphics,SafariHud.MISSING)
+        }
+        if (ConfigManager.biomeObjectives) {
+            val objectives = SafariPanels.objectives(run, biome, unique, BeeNests.unpunchedCount,
+                SafariStructures.nearbyMounds, SafariStructures.walls)
+            if (objectives.rows.isNotEmpty()) objectives.draw(graphics, SafariHud.OBJECTIVES)
+        }
         if (ConfigManager.catchCountPanel) SafariPanels.captures(run, biome).draw(graphics, SafariHud.CAPTURES)
     }
     /** Party Unique PBs are checked after catches and after scans (absence evidence), see recordPartyUnique. */

@@ -1,11 +1,12 @@
 package net.johnceo.sparklingmutuals.safari.ui
 
 import net.johnceo.sparklingmutuals.compat.*
+import net.johnceo.sparklingmutuals.config.SettingsPalette
 import net.johnceo.sparklingmutuals.config.SafariTheme
 import net.johnceo.sparklingmutuals.safari.SafariBiome
 import net.johnceo.sparklingmutuals.safari.SafariTracking
 import net.minecraft.client.gui.GuiGraphicsExtractor
-import net.minecraft.client.gui.components.Button
+import net.johnceo.sparklingmutuals.config.ThemedButton as Button
 import net.minecraft.client.gui.screens.Screen
 import net.minecraft.network.chat.Component
 
@@ -20,7 +21,7 @@ class CatchCountScreen(private val parent: Screen? = null) : Screen(Component.li
         addRenderableWidget(Button.builder(Component.literal("Back")) { onClose() }.bounds(width / 2 - 50, height - 26, 100, 20).build())
     }
     override fun extractRenderState(graphics: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, delta: Float) {
-        graphics.fill(0, 0, width, height, (0xCC000000.toInt() or SafariTheme.BACKGROUND))
+        graphics.fill(0, 0, width, height, SettingsPalette.background)
         val panel = SafariPanels.captures(SafariTracking.run, selected)
         val panelWidth = panel.width(font::width)
         val scale = minOf(1f, (width - 12).toFloat() / panelWidth, (height - 100).coerceAtLeast(1).toFloat() / panel.height)

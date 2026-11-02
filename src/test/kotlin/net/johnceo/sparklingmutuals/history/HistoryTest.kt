@@ -219,5 +219,6 @@ class HistoryTest {
         assertTrue(Achievements.ownDrop("RARE DROP! Emerald Dye", "Me"))
         assertTrue(Achievements.ownDrop("WOW! You found Emerald Dye #12!", "Me"))
         assertFalse(Achievements.ownDrop("WOW! [MVP+] Farmer found Emerald Dye #12!", "Me"))
+        assertFalse(Achievements.ownDrop("WOW! [MVP+] NotMe found Emerald Dye #12!", "Me"))
     }
 }

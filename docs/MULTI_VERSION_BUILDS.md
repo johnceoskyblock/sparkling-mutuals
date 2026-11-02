@@ -6,17 +6,17 @@ Build one shared Kotlin source tree into exactly three matching Fabric JARs. Ins
 
 ## Prerequisites
 
-| Exact Minecraft requirement | Filename for mod version V | Fabric API | Bundled HM API | Bundled MoulConfig |
-| --- | --- | --- | --- | --- |
-| 26.1.2 | `sparkling-mutuals-V+mc26.1.2.jar` | 0.155.3+26.1.2 | 1.0.3+26.1 | modern-26.1:4.8.0 |
-| 26.2 | `sparkling-mutuals-V+mc26.2.jar` | 0.161.0+26.2 | 1.0.4+26.2 | modern-26.2:4.8.0 |
-| 26.3 | `sparkling-mutuals-V+mc26.3.jar` | 0.163.0+26.3 | 1.0.5+26.3 | modern-26.3:4.8.0 |
+| Exact Minecraft requirement | Filename for mod version V | Fabric API | Bundled HM API |
+| --- | --- | --- | --- |
+| 26.1.2 | `sparkling-mutuals-V+mc26.1.2.jar` | 0.155.3+26.1.2 | 1.0.3+26.1 |
+| 26.2 | `sparkling-mutuals-V+mc26.2.jar` | 0.161.0+26.2 | 1.0.4+26.2 |
+| 26.3 | `sparkling-mutuals-V+mc26.3.jar` | 0.163.0+26.3 | 1.0.5+26.3 |
 
-All targets require **Java 25**, **Fabric Loader 0.19.5+**, matching **Fabric API**, and **Fabric Language Kotlin 1.14.1+kotlin.2.4.20**. HM API and MoulConfig are bundled; DevAuth 1.2.2 is development-only. Do not install source, test or development JARs.
+All targets require **Java 25**, **Fabric Loader 0.19.5+**, matching **Fabric API**, and **Fabric Language Kotlin 1.14.1+kotlin.2.4.20**. HM API is bundled; settings have no external UI dependency; DevAuth 1.2.2 is development-only. Do not install source, test or development JARs.
 
-The 26.1 line targets **26.1.2 only**. Other patches are not advertised. **v3.4.0** was the first published three-target release. The current release is **v3.5.0**, with internal version **3.5.0** in every target JAR. The older single-target v3.3.0 release remains unchanged.
+The 26.1 line targets **26.1.2 only**. Other patches are not advertised. **v3.4.0** was the first published three-target release. Each release uses the same mod version in all three target JARs; the target Minecraft version is recorded separately in the filename and metadata. The older single-target v3.3.0 release remains unchanged.
 
-Upstream `modern-26.2:4.8.0` retains `Fabric-Minecraft-Version: 26.2-pre-2` in its build manifest. This exact pinned artifact passed 26.2 client startup and settings rendering. Packaging accepts that specific upstream label, rejects other target mismatches, and still requires the mod's Minecraft metadata to be exactly `26.2`.
+The native settings workspace replaces MoulConfig across all targets. Packaging permits only HM API as a nested runtime dependency.
 
 ## Procedure
 
@@ -85,6 +85,12 @@ Use Java 25 and the repository wrapper. A valid single-target JAR does not form 
 
 ## Last updated
 
+2026-11-01 — Native settings replace MoulConfig; packaging checks reject the old UI dependency.
+
 2026-10-21 (America/New_York) — Updated the current three-target release to v3.5.0.
 
 2026-10-19 (America/New_York) — Consolidated build guidance and retained v3.4.0 as the first published three-target release during the master rebase. Reviewed runtime source: `93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee`; documentation-only changes, no local runtime differences or new live validation.
+
+2026-11-02 — Native UI input uses target Minecraft constants. In 26.3, SDL left/right buttons are 1/3 and Return/Escape use scancodes, unlike the older GLFW values. Shared HUD/settings/history/Warp List handlers must not hardcode input numbers.
+
+Distribution verification also compares feature-class inventories and all shared resources with 26.1.2. Only target metadata, nested platform libraries, compiled adapter bytecode and the named 26.1.2-only Iris captured-pose helper may differ. This detects omitted features or mismatched defaults/assets; native input and rendering still require client checks.

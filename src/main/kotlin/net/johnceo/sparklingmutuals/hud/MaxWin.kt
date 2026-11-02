@@ -1,7 +1,7 @@
 package net.johnceo.sparklingmutuals.hud
 
 import java.awt.Color
-import kotlin.math.exp
+import kotlin.math.sqrt
 import net.johnceo.sparklingmutuals.compat.*
 import net.johnceo.sparklingmutuals.safari.SafariAssist
 import net.johnceo.sparklingmutuals.safari.SafariRules
@@ -46,7 +46,7 @@ internal class MaxWinState {
         return true
     }
     fun visible(now: Long) = shownAt?.let { now - it in 0 until 5000 } == true
-    fun gain(now: Long): Float = musicAt?.let { exp(-(now - it).coerceAtLeast(0) / 120000.0).toFloat() } ?: 0f
+    fun gain(distance: Double): Float = if(musicAt==null) 0f else (distance/64.0).coerceIn(0.0,1.0).toFloat()
     fun hide() { shownAt = null; musicAt = null }
     fun reset() { run = null; celebrated = 0; shownAt = null; coins = 0; musicAt = null }
 }
@@ -57,12 +57,17 @@ internal object MaxWin {
     private val soundId = Identifier.fromNamespaceAndPath("sparkling-mutuals", "hidden_max_win")
     private val image = Identifier.fromNamespaceAndPath("sparkling-mutuals", "textures/hidden_max_win.png")
     private var song: Song? = null
+    private var songStartedAt=0L
 
     private class Song : AbstractTickableSoundInstance(SoundEvent.createVariableRangeEvent(soundId), SoundSource.MASTER, RandomSource.create()) {
         init { looping = true; relative = true; attenuation = SoundInstance.Attenuation.NONE; volume = 1f }
+        override fun canStartSilent() = true
         override fun tick() {
             if (state.musicAt == null) stop()
-            else volume = state.gain(System.currentTimeMillis())
+            else {
+                val player=Minecraft.getInstance().player ?: return
+                volume=state.gain(sqrt((player.x+3)*(player.x+3)+(player.y-61)*(player.y-61)+(player.z+57)*(player.z+57)))
+            }
         }
     }
     fun tick(client: Minecraft) {
@@ -79,10 +84,11 @@ internal object MaxWin {
         }
         val now = System.currentTimeMillis()
         val firstClass = run.entry.ticket?.let { it == SafariTicketType.FIRST_CLASS }
-        val triggered = state.poll(run, held, run.resources.startingCount(FloorDropType.COIN),
+        state.poll(run, held, run.resources.startingCount(FloorDropType.COIN),
             run.gimmiegoldCheck.floorMinimum, run.gimmiegoldCheck.remaining, firstClass, now)
         if (state.musicAt == null) stop(client)
-        else if (triggered && song == null) {
+        else if (song==null || now-songStartedAt>1000 && !client.soundManager.isActive(song!!)) {
+            songStartedAt=now
             song = Song().also { client.soundManager.play(it) }
         }
     }

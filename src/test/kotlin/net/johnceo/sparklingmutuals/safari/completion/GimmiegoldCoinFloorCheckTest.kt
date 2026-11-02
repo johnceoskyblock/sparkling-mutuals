@@ -49,38 +49,26 @@ class GimmiegoldCoinFloorCheckTest {
         check.scan(4, emptyList(), true)
         assertTrue(check.complete)
     }
-    @Test fun `party notices add quantities once and do not double count own starting coins`() {
-        val check = GimmiegoldSparklingCheck()
-        (1..5).forEach { check.floor(it, false) }
+    @Test fun `only own starting coins add to the floor source minimum`() {
+        val check=GimmiegoldSparklingCheck()
+        (1..5).forEach { check.floor(it,false) }
         check.inventory(0)
-        check.contributions(2, "Me", mapOf("me" to 2, "friend" to 1, "other" to 2))
-        assertEquals(10, check.required)
-        repeat(3) { check.contributions(2, "Me", mapOf("ME" to 2, "friend" to 1, "other" to 2)) }
-        assertEquals(10, check.required)
-        check.scan(3, live(6), true)
-        assertFalse(check.complete)
-        check.scan(3, live(7), true)
-        assertTrue(check.complete)
+        repeat(3) { check.contributions(2,"Me",mapOf("ME" to 2,"friend" to 1,"other" to 2)) }
+        assertEquals(7,check.required)
+        check.scan(3,live(3),true);assertFalse(check.complete)
+        check.scan(7,emptyList(),true);assertTrue(check.complete)
     }
-    @Test fun `run routing uses the slot count and accepted combined notices even after hd`() {
-        val run = SafariRun(0)
-        run.localPlayer("Me")
-        run.visitBiome(SafariBiome.HAUNTED)
-        run.inventoryEvidence(emptyList(), 0)
-        (1..5).forEach { run.gimmiegoldCheck.floor(it, false) }
-        repeat(2) { run.record(SafariCatch(SafariRoster.named("Gimmiegold")!!, false)) }
-        run.scanGimmiegolds(live(3), true)
-        assertTrue(run.sparklingComplete("Gimmiegold", party()))
-        run.partyFullClear("Party > Friend: hd")
-        repeat(2) { SafariMessages.forRun("Party > Friend: [SM] Use: 2x Shining Coin + 1x Yogi Berry", run, true) }
-        assertFalse(run.sparklingComplete("Gimmiegold", party()))
-        assertEquals(7, run.gimmiegoldCheck.required)
-        run.scanGimmiegolds(live(4), true)
-        assertFalse(run.sparklingComplete("Gimmiegold", party()))
-        run.scanGimmiegolds(live(5), true)
-        assertTrue(run.sparklingComplete("Gimmiegold", party()))
-        assertTrue(run.uniqueComplete("Gimmiegold", party()), "ordinary Unique still uses its first catch")
-        assertEquals(0, SafariRun(1).gimmiegoldCheck.floorMinimum)
+    @Test fun `combined teammate notices do not reopen a completed local check`() {
+        val run=SafariRun(0)
+        run.localPlayer("Me");run.visitBiome(SafariBiome.HAUNTED);run.inventoryEvidence(emptyList(),0)
+        (1..5).forEach { run.gimmiegoldCheck.floor(it,false) }
+        repeat(2) { run.record(SafariCatch(SafariRoster.named("Gimmiegold")!!,false)) }
+        run.scanGimmiegolds(live(3),true)
+        assertTrue(run.sparklingComplete("Gimmiegold",party()))
+        repeat(2) { SafariMessages.forRun("Party > Friend: [SM] Use: 2x Shining Coin + 1x Yogi Berry",run,true) }
+        assertEquals(5,run.gimmiegoldCheck.required)
+        assertTrue(run.sparklingComplete("Gimmiegold",party()))
+        assertTrue(run.uniqueComplete("Gimmiegold",party()))
     }
     @Test fun `unknown catalog and unknown inventory do not pass from a report or empty scan`() {
         val run = SafariRun(0)

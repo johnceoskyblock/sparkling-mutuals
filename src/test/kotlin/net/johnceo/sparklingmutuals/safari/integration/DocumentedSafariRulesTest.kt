@@ -247,7 +247,7 @@ class DocumentedSafariRulesTest {
         assertEquals(10, birds.feedingTarget)
     }
 
-    @Test fun `extra coin notice requires an additional checked spawn and a Full Clear catch`() {
+    @Test fun `own extra coin requires an additional checked spawn and a Full Clear catch`() {
         val run = SafariRun(0)
         (1..3).forEach { run.gimmiegoldCheck.floor(it, false) }
         run.inventoryEvidence(emptyList(), 10000)
@@ -255,7 +255,7 @@ class DocumentedSafariRulesTest {
         run.scanGimmiegolds(emptyList(), true)
         run.sparklingChecks.scan(SafariBiome.HAUNTED, -4.0, -64.0, emptyList(), hauntedDropsRemaining = 0)
         assertTrue(run.sparklingComplete("Gimmiegold", party("Gimmiegold")))
-        run.resources.partyNotice("Party > Friend: [SM] Unused starting item: 1x Shining Coin -> Haunted")
+        run.resources.headStart("HEAD START! You started with a Shining Coin!")
         assertFalse(run.sparklingComplete("Gimmiegold", party("Gimmiegold")))
         run.resources.spawn(SafariBiome.HAUNTED)
         assertFalse(run.sparklingComplete("Gimmiegold", party("Gimmiegold")))

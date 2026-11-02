@@ -1,4 +1,5 @@
 package net.johnceo.sparklingmutuals
+import net.johnceo.sparklingmutuals.compat.*
 
 import net.fabricmc.api.ModInitializer
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
@@ -89,6 +90,7 @@ object SparklingMutuals : ModInitializer {
         BeeNests.register()
         HoneyHives.register()
         PhantomleafSolver.register()
+        net.johnceo.sparklingmutuals.skyblock.SkillOverflow.register()
         SafariEsp.register()
         SafariAssist.register()
         TeammateEsp.register()
@@ -111,6 +113,8 @@ object SparklingMutuals : ModInitializer {
             net.johnceo.sparklingmutuals.hud.HotspotAssignmentAlert.render(graphics)
             SparklingEncounters.render(graphics)
             SmallAlerts.render(graphics)
+            if(Minecraft.getInstance().smScreen !is net.johnceo.sparklingmutuals.config.CatchCelebrationPreviewScreen)
+                net.johnceo.sparklingmutuals.hud.SpecialCatchAlert.render(graphics)
             net.johnceo.sparklingmutuals.safari.DoomspiralThrowTimer.render(graphics)
             net.johnceo.sparklingmutuals.hud.MaxWin.render(graphics)
         }
@@ -118,6 +122,8 @@ object SparklingMutuals : ModInitializer {
 
     private fun onClientTick(client: Minecraft) {
         net.johnceo.sparklingmutuals.safari.DoomspiralThrowTimer.tick(client)
+        net.johnceo.sparklingmutuals.hud.SpecialCatchAlert.tick(client)
+        net.johnceo.sparklingmutuals.hud.SafariBanners.tick(client)
         JoinWelcome.tick(client)
         PartyManager.onClientTick(client)
         net.johnceo.sparklingmutuals.alerts.SparkleWarping.tick(client)
@@ -151,9 +157,11 @@ object SparklingMutuals : ModInitializer {
     }
 
     private fun resetSession() {
+        net.johnceo.sparklingmutuals.hud.SafariBanners.reset()
         net.johnceo.sparklingmutuals.safari.ClearWater.reset()
         net.johnceo.sparklingmutuals.hud.MaxWin.reset()
         net.johnceo.sparklingmutuals.safari.DoomspiralThrowTimer.reset()
+        net.johnceo.sparklingmutuals.hud.SpecialCatchAlert.reset()
         JoinWelcome.reset()
         PhantomleafSolver.reset()
         CapsulePreview.reset()

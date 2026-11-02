@@ -58,7 +58,7 @@ Captures received before visiting this biome remain in the run. Reports supply c
 
 ## Whole-gem selection helper
 
-**Safari helpers → Gemzie gem auto-select** defaults on and preserves a saved off choice. In Safari's Cavern, a fresh use press on the top face of these exact podium support blocks selects a matching whole gem from your hotbar before attempting that same block interaction once:
+**Safari helpers → Gemzie gem auto-select** defaults on and preserves a saved off choice. In Safari's Cavern, holding right-click over the top face of these exact podium support blocks selects a matching whole gem from your hotbar before each vanilla-cadence block interaction:
 
 | Gem | Support block (X, Y, Z) | Item ID |
 | --- | --- | --- |
@@ -68,7 +68,13 @@ Captures received before visiting this biome remain in the run. Reports supply c
 
 The currently selected matching slot wins; otherwise the first matching hotbar slot wins. The selected slot stays selected afterward. When an item has no custom ID, its exact formatting-normalized whole-gem name is accepted; shards and conflicting custom IDs are rejected. Inventory-only and offhand-only gems are not moved or used. A missing hotbar gem cancels this supported click and shows a short, rate-limited hotbar reminder.
 
-The helper retains the original hit position, face and reach checks. It does not aim, forge a top-face hit, repeat held input, fall through to air/offhand use, or replay the click later. Other blocks, side faces, misses and contexts retain normal input behavior. Turning the helper off restores normal use. Selection and the attempted use are not placement, chamber-opening, checking, spawning or capture evidence; the exact server-message timer below remains unchanged.
+The helper retains the original hit position, face and reach checks. It does not aim, forge a top-face hit, fall through to air/offhand use, or replay the click later. Other blocks, side faces, misses and contexts retain normal input behavior. Turning the helper off restores normal use. Selection and the attempted use are not placement, chamber-opening, checking, spawning or capture evidence; confirmed placements supply evidence separately from the attempted click.
+
+## Podium display and readiness
+
+Loaded frog-light supports with player heads above them confirm placed gems, using SafariUtils' fixed podium geometry. Placements persist for the run. Collecting or placing each color contributes to All Gems readiness even when they were never held simultaneously. Three confirmed placements establish chamber opening with the existing five-second check delay; the exact opening chat line remains valid too. No captures are inferred.
+
+Gem floor-drop ESP excludes placed colors. When Gemzie remains needed, the Missing/Unchecked panel shows three gem icons: gray until placed, then their respective colors. Remove the icons when the chamber opens. Holding right-click can begin away from a podium and selects the matching gem when the crosshair reaches a valid podium top; normal reach and input delay still apply.
 
 ## Retention and reopening
 
@@ -91,6 +97,9 @@ Existing coverage: [GemzieChamberCheckTest](../../src/test/kotlin/net/johnceo/sp
 Population guarantees and capsule success/escape claims from supplied notes were not live revalidated; see [audit D2](../IMPLEMENTATION_AUDIT.md#d2).
 
 ## Last updated
+
+2026-11-01 — Held gem placement, retained podium evidence, readiness and gem icons.
+
 
 2026-10-27 — Personal Unique PBs exempt positively proven zero-spawn types.
 

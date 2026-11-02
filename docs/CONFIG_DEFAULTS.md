@@ -8,7 +8,7 @@ Describe settings actually loaded and saved by the reviewed implementation. Fres
 
 On joining Hypixel (including Alpha), a short local welcome appears once the player/world is ready and two seconds have elapsed. It explains `/sm`, `/sm help`, Unique/Full Clear/Sparkle, HUD editing and history. It is shown once per connection, not on ordinary lobby/world transfers or respawns, and may appear again after disconnecting and reconnecting. Hypixel is recognized by its server hostname or explicit scoreboard address. The welcome sends no party messages, commands or API requests.
 
-`/sm help` prints the existing mode-aware local and party command list in local chat. The same list remains available through General → Command help.
+`/sm help` lists slash commands with short descriptions in local chat. General → Command help shows the same list. Party `!commands` retains its separate mode-aware reply.
 
 The welcome is one compact MOTD-style block with a gold heading/dividers and light body text, without repeated `[SM]` prefixes. Commands are gold, clickable, and show explanatory hover text. Ordinary local feedback retains its usual prefix.
 
@@ -71,7 +71,7 @@ Startup and mode changes apply an ESP preset enabling all groups, species and Ro
 
 ### Feature bindings
 
-**Safari helpers → Gemzie gem auto-select** uses the independent saved key `gemzieGemAutoSelect`. It defaults on for missing/malformed values, preserves an explicit off choice, and is not changed by mode presets. It selects a whole hotbar gem for one fresh top-face Gemzie podium interaction; see [Gemzie](critters/gemzie.md#whole-gem-selection-helper). It does not move inventory/offhand items or add completion evidence.
+**Safari helpers → Gemzie gem auto-select** uses the independent saved key `gemzieGemAutoSelect`. It defaults on for missing/malformed values, preserves an explicit off choice, and is not changed by mode presets. It selects a whole hotbar gem while holding right-click over a valid Gemzie podium top; see [Gemzie](critters/gemzie.md#whole-gem-selection-helper). It does not move inventory/offhand items or add completion evidence.
 
 - [Capture projections](CAPTURE_PROJECTIONS.md#controls) has one enable switch, independent of capsule hiding. Missing/invalid saved enable values are on. The obsolete `allowUncalibratedCapsuleEstimates` and `hud.capsule_status.*` keys are ignored and omitted on save; no projection status HUD is offered.
 - [Sparkle Warping](WARP_ALERTS.md) controls both the alert and automatic `/p warp`; changing its switch/delay cancels pending work.
@@ -130,13 +130,15 @@ Each mode dropdown has independent Hide critter ESP and Hide floor-drop ESP togg
 
 ## Last updated
 
+2026-11-01 — Native settings preserve existing property keys, defaults and HUD placement. New settings: `settingsTheme=4` (Rainbow), `specialCatchAlert=true`, `specialCatchStyle=0` (Prismatic Whisper).
+
 2026-10-31 — Warp List starts blank for every critter on fresh installs. Existing saved lists remain unchanged.
 
 2026-10-31 — Leech defaults on; default whitelist: `JohnCEO _cj Rqach`. Applies when the corresponding settings are absent; explicit saved values remain unchanged.
 
 2026-10-31 — Added an empty-by-default Leech invite whitelist; `/leech` only accepts approved IGNs. Warping pauses new run entry until the selected contest ticket is earned.
 
-2026-10-30 — Hotspot announcer toggles now live under Party Interactions → Hotspot announcer. Existing per-mode keys and off defaults are preserved; each toggle controls actual-hotspot chat plus assigned-biome alerts.
+2026-11-01 — `/hotspot` replaces the per-mode hotspot toggles. Existing enabled preferences migrate; fresh installs default off. Mode selection uses commands only. Teammate color and name scale live beside Party visibility toggles. All Coins Alert defaults on.
 
 2026-10-30 — Sparkle Warping uses a 25-second fresh/reset delay, Solo leader mode, empty Duo runner and Leech off. Existing saved delays stay unchanged.
 
@@ -178,3 +180,5 @@ Each mode dropdown has independent Hide critter ESP and Hide floor-drop ESP togg
 2026-10-19 (America/New_York) — Audited loaded defaults, saved choices, presets, appearance and PB migration against source `93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee`. See [documentation conventions](DOCUMENTATION_GUIDE.md).
 
 Successful profile/discovery reads and IGN-to-UUID lookups are reused for 60 minutes, including after repartying. Simultaneous reads share one request. Failed lookups are not cached; background failures keep their one-minute retry. Observed catches update participating players’ discovery lists locally. Current mode discovery baselines remain cached while members are active or reserved for warping. Ticket and Honeyhive queries bypass the hour-long profile cache and retain the existing short transport-cache freshness. No periodic request is added by cache expiry. Account/provider/Alpha scope changes prevent cross-scope profile reuse.
+
+2026-11-02 — Shortened config descriptions and limited local command help to slash commands. Preserved the Sparkle Warping explanation.

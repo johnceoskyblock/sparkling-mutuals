@@ -22,6 +22,7 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
     fun excludeFromHistory() { historyExcluded = true }
     val entry = SafariEntryEvidence()
     val resources = SafariResources()
+    val gems = net.johnceo.sparklingmutuals.safari.resources.GemzieObjective()
     val birdFoodCheck = net.johnceo.sparklingmutuals.safari.resources.BirdFoodSparklingCheck()
     var biomeAtThirtySeconds: SafariBiome? = null
         private set
@@ -44,7 +45,7 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
     private var localPlayerName: String? = null
     fun localPlayer(name: String) { localPlayerName = name }
     private fun syncGimmiegoldContributions() {
-        gimmiegoldCheck.contributions(resources.startingCount(FloorDropType.COIN), localPlayerName, resources.coinContributions())
+        gimmiegoldCheck.contributions(resources.startingCount(FloorDropType.COIN), localPlayerName, emptyMap())
     }
     val coinsLeftToUse: Int? get() {
         syncGimmiegoldContributions()
@@ -52,8 +53,7 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
     }
     private fun gimmiegoldCaptureMinimum(): Int {
         syncGimmiegoldContributions()
-        return maxOf(sparklingChecks.gimmiegoldMinimum, gimmiegoldCheck.required,
-            resources.requiredPopulation(SafariBiome.HAUNTED))
+        return maxOf(sparklingChecks.gimmiegoldMinimum, gimmiegoldCheck.required)
     }
     fun scanGimmiegolds(live: Collection<java.util.UUID>, qualified: Boolean) {
         syncGimmiegoldContributions()
@@ -171,7 +171,7 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
         }
     }
     private val visited = mutableSetOf<SafariBiome>()
-    private fun syncBirdContributions() { birds.contributions(localPlayerName, resources.foodContributions(), resources.startingReporters()) }
+    private fun syncBirdContributions() { birds.contributions(localPlayerName, emptyMap(), emptySet()) }
     fun observeEarlyBirdVisitor(name: String, x: Double, z: Double, now: Long) {
         if (name.equals(localPlayerName, true)) return
         birds.earlyVisitor(name, now - startedAt,
@@ -190,11 +190,11 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
         }
         return (target - count(name)).coerceAtLeast(0)
     }
-    val knownBirdFoodLeftToUse: Int? get() = birdFoodCheck.leftToUse
-    val birdFoodLeftToUse: Int get() { syncBirdContributions(); return birdFoodCheck.leftToUse ?: 0 }
+    val knownBirdFoodLeftToUse: Int? get() = birdFoodCheck.leftToUse?.let { maxOf(it,birds.feederCount) }
+    val birdFoodLeftToUse: Int get() { syncBirdContributions(); return knownBirdFoodLeftToUse ?: 0 }
     fun birdSpawnsComplete(localOnly: Boolean = false): Boolean {
         syncBirdContributions()
-        return if (lastBiome == SafariBiome.FOREST) birdFoodCheck.complete else !localOnly &&
+        return if (lastBiome == SafariBiome.FOREST) birdFoodCheck.complete && birds.feederCount == 0 else !localOnly &&
             (birdFoodCheck.complete || birds.hasReport && resources.heldCount(FloorDropType.SEEDS)+resources.heldCount(FloorDropType.WORM)+resources.heldCount(FloorDropType.BERRY) == 0)
     }
     fun hasUnusedStartingForBiome(biome: SafariBiome, party: PartySparklingState) =
@@ -252,7 +252,7 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
         val critter = SafariRoster.named(name) ?: return false
         if (remoteReport(critter.biome)) {
             if (name in birdSpecies) return birdComplete(name, null)
-            if (name == "Gimmiegold" && (sparklingChecks.hasHeldCoins || resources.pending(SafariBiome.HAUNTED))) return false
+            if (name == "Gimmiegold" && (sparklingChecks.hasHeldCoins)) return false
             return count(name) >= remoteCaptureMinimum(name)
         }
         if (name in birdSpecies) return birdComplete(name, nearby[SafariBiome.FOREST])
@@ -375,6 +375,15 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
             SafariMode.SPARKLING -> sparklingComplete(it.name, party, localOnly)
         } }
     val completion = SafariCompletionEvents()
+    /** Remote scans/captures retain species evidence, but only a biome report can finish a remote biome. */
+    fun biomeComplete(mode: SafariMode,biome: SafariBiome,party: PartySparklingState): Boolean {
+        val targets=biome.critters.filter { mode!=SafariMode.SPARKLING || party.needs(it.name) }
+        if(targets.isEmpty()) return true
+        val icy=biome==SafariBiome.ICY && count("Wumpa")>0
+        if(lastBiome==biome && !icy) return completion.locallyComplete(this,biome,mode,party)
+        if(lastBiome!=biome && !icy && biome !in biomeReports && !completion.reported(biome)) return false
+        return completed(mode,targets,party)==targets.size
+    }
     private fun uniqueReportedComplete(name: String): Boolean {
         if (name !in setOf("Rockmite", "Snoozle") || SafariBiome.CAVERN !in biomeReports) return false
         return name !in uniqueSourceContradictions || cavernSourcesChecked(name)
@@ -465,8 +474,10 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
     private var nearbyMacaws = 0
     private var forestBirdsSurveyed = false
     val birdFoodsComplete get() = birds.foodsComplete
-    fun recordBirdFood(raw: String, biome: SafariBiome? = SafariBiome.FOREST, now: Long = System.currentTimeMillis()) =
-        birds.pickup(raw, biome, now - (firstInventoryAt ?: startedAt))
+    fun recordBirdFood(raw: String, biome: SafariBiome? = SafariBiome.FOREST, now: Long = System.currentTimeMillis()): Boolean {
+        gems.pickup(raw)
+        return birds.pickup(raw, biome, now - (firstInventoryAt ?: startedAt))
+    }
     fun updateCaptureEvidence(biome: SafariBiome, speciesInRange: Set<String>, allWallsChecked: Boolean, allNestsChecked: Boolean = false,
         macawsInRange: Int = if ("Macaw" in speciesInRange) 1 else 0,
         playerX: Double? = null, playerZ: Double? = null, nestsPunched: Int = 0, nestsFound: Int = nestsPunched) {
@@ -547,7 +558,7 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
         birdSpecies.all { birdComplete(it, speciesInRange, personalOnly) }
     fun sourcePending(name: String) = when (name) {
         "Bluebird", "Parakeet", "Macaw" -> birds.knownFoodUnresolved
-        "Gimmiegold" -> resources.pending(SafariBiome.HAUNTED)
+        "Gimmiegold" -> gimmiegoldCheck.leftToUse?.let { it > 0 } == true
         else -> false
     }
     fun captureComplete(species: String, personalOnly: Boolean = false,

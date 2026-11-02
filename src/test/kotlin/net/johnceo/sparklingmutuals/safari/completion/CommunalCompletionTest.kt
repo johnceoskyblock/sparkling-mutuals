@@ -86,6 +86,7 @@ class CommunalCompletionTest {
         SafariRoster.all.forEach { run.record(SafariCatch(it, false)) }
         assertFalse(run.completion.alert(run, SafariMode.UNIQUE, party(), true), "Rockmite and Snoozle still await cd")
         run.partyFullClear("Party > Friend: fd"); run.partyFullClear("Party > Friend: cd")
+        run.partyFullClear("Party > Friend: hd")
         assertTrue(run.completion.alert(run, SafariMode.UNIQUE, party(), true))
         assertFalse(run.completion.alert(run, SafariMode.UNIQUE, party(), false))
         assertFalse(run.completion.alert(run, SafariMode.UNIQUE, party(), true))

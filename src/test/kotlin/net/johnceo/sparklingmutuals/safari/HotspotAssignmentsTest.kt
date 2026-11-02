@@ -4,52 +4,66 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class HotspotAssignmentsTest {
-    private val ids=mapOf("first" to "00000000-0000-0000-0000-000000000001",
-        "second" to "00000000-0000-0000-0000-000000000002",
-        "third" to "00000000-0000-0000-0000-000000000003",
-        "fourth" to "00000000-0000-0000-0000-000000000004")
-    @Test fun `all four player hotspot combinations allocate exactly one biome each and preserve first claimants`() {
+    @Test fun `allocation is independent of report order and gives each member a different biome`() {
         for(a in SafariBiome.entries) for(b in SafariBiome.entries) for(c in SafariBiome.entries) for(d in SafariBiome.entries) {
-            val reports=linkedMapOf("first" to a,"second" to b,"third" to c,"fourth" to d)
-            val assigned=HotspotAssignments.allocate(reports,ids)
+            val reports=linkedMapOf("a" to a,"b" to b,"c" to c,"d" to d)
+            val assigned=HotspotAssignments.allocate(reports)
             assertEquals(SafariBiome.entries.toSet(),assigned.values.toSet())
-            assertEquals(4,assigned.size)
-            reports.entries.groupBy { it.value }.forEach { (biome,claimants) ->
-                assertEquals(biome,assigned[claimants.first().key],reports.toString())
+            assertEquals(assigned,HotspotAssignments.allocate(reports.entries.reversed().associate { it.toPair() }))
+            reports.entries.groupBy { it.value }.filterValues { it.size==1 }.forEach { (biome,members) ->
+                assertEquals(biome,assigned[members.single().key])
             }
-            assertEquals(assigned,HotspotAssignments.allocate(reports,ids.mapValues { it.value.replace("-","") }))
         }
     }
-    @Test fun `two icy two forest reports rank duplicate reporters by UUID not local random choice`() {
-        val reports=linkedMapOf("first" to SafariBiome.ICY,"second" to SafariBiome.FOREST,
-            "third" to SafariBiome.ICY,"fourth" to SafariBiome.FOREST)
-        val result=HotspotAssignments.allocate(reports,ids)
-        assertEquals(setOf(SafariBiome.CAVERN,SafariBiome.HAUNTED),setOf(result["third"],result["fourth"]))
-        val swapped=ids+mapOf("third" to ids.getValue("fourth"),"fourth" to ids.getValue("third"))
-        val other=HotspotAssignments.allocate(reports,swapped)
-        assertEquals(result["third"],other["fourth"])
-        assertEquals(result["fourth"],other["third"])
+    @Test fun `two second window collects late claims and rotates hotspot wins across runs once`() {
+        val wins=mutableMapOf<String,Int>()
+        fun round(): Map<String,SafariBiome> {
+            val states=listOf("a","b").associateWith { name -> HotspotAssignments(wins.toMutableMap()).apply {
+                begin(name,SafariBiome.FOREST,0)
+                report("a",SafariBiome.FOREST,100)
+                report("b",SafariBiome.FOREST,1800)
+            } }
+            states.values.forEach { assertNull(it.assignment(states.keys,2099)) }
+            val result=states.mapValues { it.value.assignment(states.keys,2100)!! }
+            states.forEach { (name,state) -> assertEquals(result[name],state.assignment(states.keys,9000)) }
+            result.filterValues { it==SafariBiome.FOREST }.keys.forEach { wins[it]=(wins[it] ?: 0)+1 }
+            return result
+        }
+        val first=round();val second=round()
+        assertNotEquals(first["a"],second["a"])
+        assertEquals(setOf(1),wins.values.toSet())
     }
-    @Test fun `title waits for reports while nonreporting members cannot block forever and outsiders never claim biomes`() {
-        val state=HotspotAssignments()
-        state.begin("Third",SafariBiome.ICY,0)
-        state.report("Outsider",SafariBiome.HAUNTED,100)
-        state.report("first",SafariBiome.ICY,100)
-        state.report("second",SafariBiome.FOREST,200)
-        state.report("third",SafariBiome.ICY,300)
-        state.report("THIRD",SafariBiome.HAUNTED,301) // Duplicate/repeated notices cannot replace the actual report.
-        assertNull(state.assignment(ids.keys,3499,ids))
-        assertTrue(state.assignment(ids.keys,3500,ids) in setOf(SafariBiome.CAVERN,SafariBiome.HAUNTED))
-        state.report("fourth",SafariBiome.FOREST,3600)
-        val all=HotspotAssignments.allocate(linkedMapOf("first" to SafariBiome.ICY,"second" to SafariBiome.FOREST,
-            "third" to SafariBiome.ICY,"fourth" to SafariBiome.FOREST),ids)
-        assertEquals(all["third"],state.assignment(ids.keys,3600,ids))
-        assertEquals(all["third"],state.assignment(setOf("third"),60000,ids),"Party changes later in the run do not reassign your biome")
-        val solo=HotspotAssignments().apply { begin("Solo",SafariBiome.HAUNTED,0) }
-        assertEquals(SafariBiome.HAUNTED,solo.assignment(setOf("Solo"),0))
-        val unresolved=HotspotAssignments().apply { begin("Solo",SafariBiome.HAUNTED,0) }
-        assertNull(unresolved.assignment(setOf("Solo"),0,expectedSize=4))
-        assertEquals(SafariBiome.HAUNTED,unresolved.assignment(setOf("Solo"),3500,expectedSize=4),"Missing cached names must not block the local title forever")
+    @Test fun `CritterMod reports from JohnFounder log participate before assignment freezes`() {
+        val members=setOf("johnfounder","m3fi","_cj","giannaaa")
+        val state=HotspotAssignments().apply { begin("JohnFounder",SafariBiome.FOREST,0) }
+        val lines=listOf(
+            "§9Party §8> §a[VIP§6+§a] JohnFounder§f: [SM] Hotspot: Forest",
+            "Party > [MVP++] _cj: [SM] Hotspot: Icy",
+            "Party > [MVP+] m3fi: [SM] Hotspot: Forest",
+            "§9Party §8> §6[MVP§0++§6] giannaaa§f: My hotspot: Cavern")
+        lines.take(3).forEach { line -> val report=HotspotAssignments.parse(line)!!;state.report(report.first,report.second,1000) }
+        assertNull(state.assignment(members,3000),"Do not freeze before the delayed CritterMod report")
+        val report=HotspotAssignments.parse(lines.last())!!
+        assertEquals("giannaaa" to SafariBiome.CAVERN,report)
+        state.report(report.first,report.second,4000)
+        val assigned=state.assignment(members,4000)
+        assertTrue(assigned in setOf(SafariBiome.FOREST,SafariBiome.HAUNTED))
+        assertEquals(assigned,state.assignment(members,20000))
+    }
+    @Test fun `missing announcements have a bounded grace period and common variants remain anchored`() {
+        val state=HotspotAssignments().apply {
+            begin("Me",SafariBiome.FOREST,0);report("Me",SafariBiome.FOREST,500)
+        }
+        assertNull(state.assignment(setOf("me","friend"),5499))
+        assertEquals(SafariBiome.FOREST,state.assignment(setOf("me","friend"),5500))
+        for(body in listOf("My hotspot: Icy","my hotspot: ice!","[CritterMod] My hotspot: Icy Biome","[SafariUtils] Hotspot: Icy"))
+            assertEquals("Friend" to SafariBiome.ICY,HotspotAssignments.parse("Party > Friend: $body"),body)
+        for(line in listOf("Guild > Friend: My hotspot: Cavern","From Friend: My hotspot: Cavern",
+            "Party > Friend: she said My hotspot: Cavern","Party > Friend: My hotspot: Cavern later",
+            "Party > Friend: My hotspot: Desert")) assertNull(HotspotAssignments.parse(line),line)
+    }
+    @Test fun `unique claim beats tally and parsing only accepts actual party reports`() {
+        assertEquals(SafariBiome.ICY,HotspotAssignments.allocate(mapOf("a" to SafariBiome.ICY,"b" to SafariBiome.FOREST),wins=mapOf("a" to 100))["a"])
         assertEquals("First" to SafariBiome.ICY,HotspotAssignments.parse("Party > [MVP+] First: [SM] Hotspot: Icy"))
         assertNull(HotspotAssignments.parse("Guild > First: [SM] Hotspot: Icy"))
         assertNull(HotspotAssignments.parse("Party > First: I think [SM] Hotspot: Icy"))

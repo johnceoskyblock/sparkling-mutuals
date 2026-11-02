@@ -6,6 +6,14 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class HistoryQueriesAndRewardsTest : ProfitableEspPriceFixture() {
+    @Test fun `live essence follows balance gains while summary stays authoritative`() {
+        val tally=RunTally()
+        tally.observeEssence(1000);tally.observeEssence(1020);tally.observeEssence(900);tally.observeEssence(910)
+        assertEquals(30,tally.liveEssence)
+        assertEquals(-1,tally.safariEssence)
+        tally.summaryLine("SAFARI REWARD SUMMARY");tally.summaryLine("+35 Safari Essence")
+        assertEquals(35,tally.safariEssence)
+    }
     @Test fun `Bests luck counts party sparklings and verified Macaw misses without bridging imports or unknown spawns`() {
         val runs = listOf(
             RunRecord(start = 1, macawChecked = true), RunRecord(start = 2, imported = true),

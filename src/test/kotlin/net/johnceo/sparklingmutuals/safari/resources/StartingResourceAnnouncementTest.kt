@@ -212,8 +212,8 @@ class StartingResourceAnnouncementTest {
         repeat(3) { SafariMessages.forRun("Party > Friend: $message", run, true) }
         run.birdSpawnsComplete()
         run.scanGimmiegolds(emptyList(), false)
-        assertEquals(13, run.birds.feedingTarget, "nine floor plus two local plus two remote")
-        assertEquals(2, run.gimmiegoldCheck.required, "local echo is not another coin")
+        assertEquals(11, run.birds.feedingTarget, "nine floor plus two local; remote supplies are informational")
+        assertEquals(1, run.gimmiegoldCheck.required, "local echo and remote supplies add no coin")
         assertFalse(run.resources.pending(SafariBiome.FOREST))
         assertFalse(run.resources.pending(SafariBiome.HAUNTED))
         // Older reminder format from a sender already counted early must not add another obligation.
@@ -236,7 +236,7 @@ class StartingResourceAnnouncementTest {
         }
     }
 
-    @Test fun `party extras retain remote bird proof but reopen coin population demand without captures`() {
+    @Test fun `party extras retain remote bird and coin proof without inventing captures`() {
         val run = SafariRun(0)
         run.localPlayer("Me")
         run.visitBiome(SafariBiome.CAVERN)
@@ -248,7 +248,7 @@ class StartingResourceAnnouncementTest {
         assertTrue(run.sparklingComplete("Gimmiegold", party("Gimmiegold")))
         SafariMessages.forRun("Party > Friend: [SM] Starting items: 2x Bag of Seeds; 1x Shining Coin", run, true)
         assertTrue(run.sparklingComplete("Bluebird", party("Bluebird")))
-        assertFalse(run.sparklingComplete("Gimmiegold", party("Gimmiegold")))
+        assertTrue(run.sparklingComplete("Gimmiegold", party("Gimmiegold")))
         assertEquals(0, run.count("Gimmiegold"))
         run.partyFullClear("Party > Clearer: hd")
         assertTrue(run.sparklingComplete("Gimmiegold", party("Gimmiegold")))
@@ -270,7 +270,7 @@ class StartingResourceAnnouncementTest {
         (1..4).forEach { run.gimmiegoldCheck.floor(it, false) }
         val state = party("Gimmiegold")
         assertNull(run.completion.announcement(run, SafariBiome.HAUNTED, SafariMode.SPARKLING, state))
-        run.scanGimmiegolds(List(3) { UUID.randomUUID() }, true)
+        run.scanGimmiegolds(List(2) { UUID.randomUUID() }, true)
         assertNull(run.completion.announcement(run, SafariBiome.HAUNTED, SafariMode.SPARKLING, state))
         run.scanGimmiegolds(List(4) { UUID.randomUUID() }, true)
         assertEquals("hd", run.completion.announcement(run, SafariBiome.HAUNTED, SafariMode.SPARKLING, state))

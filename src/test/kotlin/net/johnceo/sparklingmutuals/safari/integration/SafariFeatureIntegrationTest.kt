@@ -1,8 +1,8 @@
 package net.johnceo.sparklingmutuals.safari.integration
 
-import io.github.notenoughupdates.moulconfig.annotations.Accordion
-import io.github.notenoughupdates.moulconfig.annotations.Category
-import io.github.notenoughupdates.moulconfig.annotations.ConfigEditorBoolean
+import net.johnceo.sparklingmutuals.config.Accordion
+import net.johnceo.sparklingmutuals.config.Category
+import net.johnceo.sparklingmutuals.config.ConfigEditorBoolean
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.UUID
@@ -49,12 +49,14 @@ class SafariFeatureIntegrationTest {
         }
         inspect(SafariSettings())
         assertTrue(switches.size >= 40, "Inspect nested GUI options, including panel borders")
-        val exceptions = setOf("history.instaSell", "history.toParty", "warp.enabled", "warp.autoParty", "esp.floorDrops.visibility.generic", "esp.floorDrops.visibility.icebreaker", "miria.warning.five", "party.hotspot.unique", "party.hotspot.fullClear", "party.hotspot.sparkling", "party.startingItems",
+        val exceptions = setOf("tracking.capturesHud.enabled", "history.instaSell", "history.toParty", "warp.enabled", "warp.autoParty", "esp.floorDrops.visibility.generic", "esp.floorDrops.visibility.icebreaker", "miria.warning.five", "party.startingItems",
             "modes.unique.hideCritters", "modes.unique.hideDrops", "modes.fullClear.hideCritters",
             "modes.fullClear.hideDrops", "modes.sparkling.hideCritters", "modes.sparkling.hideDrops")
         val modes = setOf("modes.unique.enabled", "modes.fullClear.enabled", "modes.sparkling.enabled")
-        switches.filterKeys { it !in modes }.forEach { (name, value) -> assertEquals(name !in exceptions && !name.endsWith(".borderEnabled"), value, name) }
-        assertEquals(1, modes.count { switches[it] == true })
+        assertAll(switches.filterKeys { it !in modes && !it.startsWith("banner.") }.map { (name,value) ->
+            org.junit.jupiter.api.function.Executable { assertEquals(name !in exceptions && (!name.endsWith(".borderEnabled") || name.startsWith("tracking.") || name.startsWith("miria.")),value,name) }
+        })
+        assertTrue(modes.none { it in switches }, "Modes are selected through commands")
         assertEquals(1, SafariSettings().safari.entry.ticketPreference)
         assertTrue(ConfigManager.achievements)
         assertTrue(SafariEspConfig.mobs.values.all { it.enabled })

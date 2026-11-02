@@ -33,7 +33,7 @@ class ConfigTest {
         assertFalse(defaults.stringPropertyNames().any { it.startsWith("pb.") || it.contains("uuid", true) })
         ConfigManager.init(dir); ContestConfig.init(dir)
         assertEquals(1, ConfigManager.safariTicketPreference)
-        assertFalse(AppearanceConfig.panels.getValue("progress").borderEnabled)
+        assertTrue(AppearanceConfig.panels.getValue("progress").borderEnabled)
         assertEquals(.015104167f, SafariHud.PROGRESS.layout.x)
         val contest = ContestConfig.layoutFor(640, 360).bounds(640, 360, 150, 42)
         assertEquals(129, contest.x); assertEquals(9, contest.y)

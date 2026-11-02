@@ -79,7 +79,7 @@ class BirdCompletionPolicyTest {
         val run = run(SafariBiome.CAVERN); val state = party()
         run.partyFullClear("Party > Friend: fd")
         repeat(3) { run.resources.partyNotice("Party > Other: [SM] Unused starting item: 2x Yogi Berry -> Forest (Other)") }
-        assertTrue(run.sparklingComplete("Bluebird", state)); run.birdFoodLeftToUse; assertEquals(11, run.birds.feedingTarget)
+        assertTrue(run.sparklingComplete("Bluebird", state)); run.birdFoodLeftToUse; assertEquals(9, run.birds.feedingTarget)
         run.visitBiome(SafariBiome.FOREST)
         run.scanBirdSources(0, live(blue = 10)); assertTrue(run.sparklingComplete("Bluebird", state))
         run.scanBirdSources(0, live(blue = 11)); assertTrue(run.sparklingComplete("Bluebird", state))

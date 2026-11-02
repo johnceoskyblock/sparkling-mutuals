@@ -80,6 +80,7 @@ class FloorDropState {
     }
     fun enabledForMode(biome: SafariBiome?, mode: SafariMode, configured: Boolean, run: SafariRun?, party: PartySparklingState,
         profitableGimmiegold: Boolean = false): Boolean {
+        if (biome == SafariBiome.CAVERN && (run?.gems?.opened == true || run?.sparklingChecks?.gemzieChamberOpened == true)) return false
         if (biome == SafariBiome.CAVERN && run?.completed(mode,
                 listOf(net.johnceo.sparklingmutuals.safari.SafariRoster.named("Gemzie")!!), party) == 1) return false
         if (biome == this.biome && override != null) return override!!
@@ -108,6 +109,7 @@ object SafariFloorDrops {
         if (type == FloorDropType.GENERIC) return SafariEspConfig.rewardDrops && SafariEspConfig.groups.getValue("floor").enabled
         val mode = SafariFullClear.mode
         val party = SafariSparklingMode.state
+        if (SafariTracking.ledger.current?.gems?.placed(type) == true) return false
         return (type != FloorDropType.INCENSE || drop.id in incenseIds) && enabled(drop.biome) &&
             state.needed(type, mode, party, profitableGimmiegold())
     }

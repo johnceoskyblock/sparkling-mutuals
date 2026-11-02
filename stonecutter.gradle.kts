@@ -36,8 +36,7 @@ val verifyDistributions = tasks.register("verifyDistributions") {
 gradle.projectsEvaluated {
     val targets = subprojects.sortedBy { it.name }
     fun spec(p: Project) = TargetSpec(p.property("minecraft_version").toString(),
-        p.property("fabric_api_version").toString(), p.property("hm_api_version").toString(),
-        p.property("moulconfig_artifact").toString())
+        p.property("fabric_api_version").toString(), p.property("hm_api_version").toString())
     targets.forEach { p ->
         p.tasks.register("verifyTargetJar") {
             group = "verification"
@@ -68,7 +67,7 @@ gradle.projectsEvaluated {
         group = "publishing"
         description = "Publishes a complete verified distribution, exclusively in the matching tag-push workflow."
         modVersion = releaseVersion
-        targetProperties = targets.associate { p -> val s = spec(p); s.minecraft to "${s.fabricApi}|${s.hmApi}|${s.moulConfig}" }
+        targetProperties = targets.associate { p -> val s = spec(p); s.minecraft to "${s.fabricApi}|${s.hmApi}" }
         distributionDirectory = providers.gradleProperty("distributionDir").map { layout.projectDirectory.dir(it) }
             .orElse(layout.buildDirectory.dir("distributions/${releaseVersion.get()}"))
     }

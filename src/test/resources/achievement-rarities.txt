@@ -1,0 +1,79 @@
+First Sparkling|COMMON|false
+Shared Shine|MYTHIC|false
+Sparkle Storm|DIVINE|false
+Hat Trick|SPECIAL|false
+Glimmer|EPIC|false
+Gleam|LEGENDARY|false
+Radiance|MYTHIC|false
+Supernova|DIVINE|false
+Collector|EPIC|false
+Curator|LEGENDARY|false
+Archivist|MYTHIC|false
+Max Sparklings|DIVINE|false
+Legend in Lights|MYTHIC|false
+Gem of a Gemzie|LEGENDARY|false
+Forest Glitter|MYTHIC|false
+Cavern Glitter|MYTHIC|false
+Icy Glitter|MYTHIC|false
+Haunted Glitter|MYTHIC|false
+Unlucky|RARE|false
+Very Unlucky|EPIC|false
+Cursed|LEGENDARY|false
+Forsaken|MYTHIC|false
+Doomed|DIVINE|false
+Same Old Sparkle|RARE|false
+Deja Vu|EPIC|false
+Groundhog Day|LEGENDARY|false
+Broken Record|MYTHIC|false
+Eternal Rerun|DIVINE|false
+CJ Luck|SPECIAL|true
+Bird Watcher|LEGENDARY|false
+Flock Together|MYTHIC|false
+Macaw Mania|DIVINE|false
+Where's the Macaw?|LEGENDARY|false
+Macaw Drought|MYTHIC|false
+Extinct|DIVINE|false
+Emerald Dye|LEGENDARY|false
+Dripped Out|MYTHIC|false
+Dye Hotbar|DIVINE|false
+Safari Rookie|RARE|false
+Regular|EPIC|false
+Ranger|LEGENDARY|false
+Warden of the Wilds|MYTHIC|false
+Gaias Envoy|DIVINE|false
+Time Flies|RARE|false
+Locked In|EPIC|false
+Only Down From Here|LEGENDARY|false
+No Life|MYTHIC|false
+Do You Even Know What Grass Is?|DIVINE|false
+This Is Water… Use It.|SPECIAL|true
+Catcher|RARE|false
+Trapper|EPIC|false
+Exterminator|LEGENDARY|false
+Critter Apocalypse|MYTHIC|false
+Extinction Event|DIVINE|false
+Shard Shark|MYTHIC|false
+Shard Tycoon|DIVINE|false
+Full House|RARE|false
+Speedrunner|EPIC|false
+Any%|LEGENDARY|false
+G.O.A.T|MYTHIC|false
+Pulling Your Weight|RARE|false
+Contestant|EPIC|false
+Honey Hoarder|LEGENDARY|false
+Miria's Favourite|MYTHIC|false
+Night Owl|UNCOMMON|false
+Dedication|EPIC|false
+No Life²|LEGENDARY|false
+Back to Back|MYTHIC|false
+Instant Gratification|LEGENDARY|false
+Dupedex|DIVINE|false
+Tripdex|DIVINE|false
+Quaddex|DIVINE|false
+Quindex|DIVINE|false
+Sexdex (nice)|DIVINE|false
+Septdex|DIVINE|false
+Octodex|DIVINE|false
+Nuevadex|DIVINE|false
+Decadex|DIVINE|false
+Double Trouble|SPECIAL|true

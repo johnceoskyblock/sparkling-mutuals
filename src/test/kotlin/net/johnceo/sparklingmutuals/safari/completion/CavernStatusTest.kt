@@ -103,7 +103,7 @@ class CavernStatusTest {
         val unknown = WallSummary(List(4) { WallState.BROKEN } + WallState.UNKNOWN)
         assertEquals("0 (+1?)", unknown.remaining)
         assertFalse(unknown.allBroken)
-        assertEquals("0 (+1?)", SafariPanels.missing(run, SafariBiome.CAVERN, false, 0, walls = unknown).rows.single { it.label == "Snooper walls to break" }.value)
+        assertEquals("0 (+1?)", SafariPanels.objectives(run, SafariBiome.CAVERN, false, 0, walls = unknown).rows.single { it.label == "Snoozle walls" }.value)
         repeat(20) { run.recordMound("The mound falls apart, but nothing is inside...") }
         ConfigManager.showMoundCount = false; ConfigManager.showSnooperWalls = false
         assertTrue(SafariPanels.missing(run, SafariBiome.CAVERN, false, 0, walls = broken).rows.any { it.label == "Snoozle" })

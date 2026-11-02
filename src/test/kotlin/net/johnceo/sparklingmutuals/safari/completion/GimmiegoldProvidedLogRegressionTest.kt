@@ -79,7 +79,7 @@ class GimmiegoldProvidedLogRegressionTest {
         assertTrue(run.sparklingComplete("Gimmiegold", party()))
     }
 
-    @Test fun `starting coin held coin and extra party notices cannot be waived by the marker override`() {
+    @Test fun `starting and held coins block completion while teammate notices stay informational`() {
         val run = SafariRun(0); coins(run, 2)
         run.resources.headStart("HEAD START! You started with a Shining Coin!")
         run.sparklingChecks.startingCoins(1)
@@ -95,7 +95,7 @@ class GimmiegoldProvidedLogRegressionTest {
         run.resources.scan(SafariBiome.HAUNTED, 4)
         assertTrue(run.resources.partyNotice("Party > Other: [SM] Unused starting item: 1x Shining Coin -> Haunted (Other)"))
         scan(run)
-        assertFalse(run.sparklingComplete("Gimmiegold", party()))
+        assertTrue(run.sparklingComplete("Gimmiegold", party()), "teammate supplies do not raise local coin requirements")
     }
     @Test fun `a later coin cannot reuse surplus historical UUIDs as its new check`() {
         val run = SafariRun(0); coins(run, 3)

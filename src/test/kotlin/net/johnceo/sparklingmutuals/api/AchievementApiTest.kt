@@ -24,17 +24,17 @@ class AchievementApiTest {
         assertNull(profile.catches)
     }
     @Test fun `sparkle runs are re-tiered and a lone hat trick tops them`() {
-        assertEquals(AchievementTier.LEGENDARY, achievement("party_double").tier)
+        assertEquals(AchievementTier.MYTHIC, achievement("party_double").tier)
         assertEquals(AchievementTier.DIVINE, achievement("party_triple").tier)
         assertEquals(AchievementTier.SPECIAL, achievement("own_triple").tier)
         assertTrue(AchievementTier.SPECIAL > AchievementTier.DIVINE)
     }
-    @Test fun `250 runs without a unique is Divine, the Macaw drought stops at 8 and emblems are gone`() {
+    @Test fun `duplicate streak and verified Macaw drought use revamped targets`() {
         val noUnique = achievement("no_unique_runs_250")
         assertEquals(AchievementTier.DIVINE, noUnique.tier)
-        assertEquals(Measure.DRY_UNIQUE, noUnique.measure)
-        assertEquals(250L, noUnique.goal)
-        assertEquals(listOf(3L, 5L, 8L), Achievements.definitions.filter { it.measure == Measure.RUNS_SINCE_MACAW }.map { it.goal })
+        assertEquals(Measure.DUPLICATES, noUnique.measure)
+        assertEquals(100L, noUnique.goal)
+        assertEquals(listOf(10L, 20L, 30L), Achievements.definitions.filter { it.measure == Measure.RUNS_SINCE_MACAW }.map { it.goal })
         assertTrue(Achievements.definitions.none { it.id.startsWith("emblem") })
         assertEquals(Achievements.definitions, Achievements.all())
     }

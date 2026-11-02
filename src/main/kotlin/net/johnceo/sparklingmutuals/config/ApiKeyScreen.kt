@@ -1,8 +1,9 @@
 package net.johnceo.sparklingmutuals.config
 
 import net.johnceo.sparklingmutuals.compat.*
+import net.johnceo.sparklingmutuals.config.SettingsPalette
 import net.minecraft.client.gui.GuiGraphicsExtractor
-import net.minecraft.client.gui.components.Button
+import net.johnceo.sparklingmutuals.config.ThemedButton as Button
 import net.minecraft.client.gui.components.EditBox
 import net.minecraft.client.gui.screens.Screen
 import net.minecraft.network.chat.Component
@@ -39,9 +40,9 @@ class ApiKeyScreen(private val parent: Screen?) : Screen(Component.literal("Hypi
         control(2, "Back") { onClose() }
     }
     override fun extractRenderState(graphics: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, delta: Float) {
-        graphics.fill(0, 0, width, height, (0xF0000000.toInt() or SafariTheme.BACKGROUND))
-        graphics.centeredText(font, title, width / 2, height / 2 - 66, (0xFF000000.toInt() or SafariTheme.ACCENT))
-        graphics.centeredText(font, Component.literal(status), width / 2, height / 2 + 31, 0xFF000000.toInt() or SafariTheme.TEXT)
+        graphics.fill(0, 0, width, height, (SettingsPalette.background))
+        graphics.centeredText(font, title, width / 2, height / 2 - 66, (SettingsPalette.accent))
+        graphics.centeredText(font, Component.literal(status), width / 2, height / 2 + 31, SettingsPalette.text)
         super.extractRenderState(graphics, mouseX, mouseY, delta)
     }
     override fun onClose() { minecraft.smSetScreen(parent) }

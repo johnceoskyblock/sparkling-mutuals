@@ -31,7 +31,7 @@ class GemzieUseAction {
     fun handle(click:GemzieClick,selected:Int,hotbar:List<GemzieStack>,fresh:Boolean,
                select:(Int)->Unit,use:()->Unit,missing:(GemzieGem)->Unit):Boolean {
         val gem=GemzieSelection.target(click) ?: return false
-        if(!fresh || using) return true
+        if(using) return true
         val slot=GemzieSelection.slot(gem,selected,hotbar)
         if(slot==null) { missing(gem);return true }
         using=true

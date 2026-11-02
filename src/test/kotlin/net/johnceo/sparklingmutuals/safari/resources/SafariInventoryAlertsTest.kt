@@ -11,15 +11,23 @@ import org.junit.jupiter.api.io.TempDir
 class SafariInventoryAlertsTest {
     @TempDir lateinit var dir: Path
     private val enabled = InventoryAlert.entries.toSet()
-    @Test fun `gems require one of each exact type in Cavern and only alert once while held`() {
-        val state = InventoryAlertState()
-        val gems = listOf("§5Purple Gem" to 1, "Lime Gem" to 1, "Orange Gem" to 1)
-        assertTrue(state.poll(SafariBiome.CAVERN, gems.dropLast(1), enabled).isEmpty())
-        assertTrue(state.poll(SafariBiome.FOREST, gems, enabled).isEmpty())
-        assertEquals(listOf(InventoryAlert.GEMS), state.poll(SafariBiome.CAVERN, gems, enabled))
-        assertTrue(state.poll(SafariBiome.CAVERN, gems, enabled).isEmpty())
-        assertTrue(state.poll(SafariBiome.CAVERN, gems.dropLast(1), enabled).isEmpty())
-        assertEquals(listOf(InventoryAlert.GEMS), state.poll(SafariBiome.CAVERN, gems, enabled))
+    @Test fun `encounter readiness only alerts for an edge witnessed in its biome`() {
+        val state=EncounterReadiness()
+        fun poll(biome: SafariBiome,ready: Boolean)=state.poll(biome,mapOf(InventoryAlert.COINS to ready))
+        assertTrue(poll(SafariBiome.CAVERN,false).isEmpty())
+        assertTrue(poll(SafariBiome.CAVERN,true).isEmpty())
+        assertTrue(poll(SafariBiome.HAUNTED,true).isEmpty(),"late entry must not replay")
+        state.reset()
+        assertTrue(poll(SafariBiome.HAUNTED,false).isEmpty())
+        assertEquals(listOf(InventoryAlert.COINS),poll(SafariBiome.HAUNTED,true))
+        assertTrue(poll(SafariBiome.HAUNTED,true).isEmpty())
+    }
+    @Test fun `gem readiness is owned by persistent run objective instead of simultaneous inventory`() {
+        val state=InventoryAlertState()
+        assertTrue(state.poll(SafariBiome.CAVERN,listOf("Purple Gem" to 1,"Lime Gem" to 1,"Orange Gem" to 1),enabled).isEmpty())
+        val objective=GemzieObjective()
+        for(name in listOf("Purple Gem","Lime Gem","Orange Gem")) objective.inventory(listOf(name to 1))
+        assertTrue(objective.ready)
     }
     @Test fun `bird food inventory alone never qualifies without Forest pickup evidence`() {
         val state = InventoryAlertState()
@@ -53,7 +61,7 @@ class SafariInventoryAlertsTest {
         assertFalse(ConfigManager.allGemsAlert)
         assertTrue(ConfigManager.allBirdFoodAlert)
         assertFalse(ConfigManager.allIncenseAlert)
-        val options = SafariSettings.Alerts::class.java.fields.mapNotNull { it.getAnnotation(io.github.notenoughupdates.moulconfig.annotations.ConfigOption::class.java)?.name }
-        assertTrue(options.containsAll(setOf("All Gems Alert", "All Bird Food Alert", "All Incense Alert")))
+        val options = SafariSettings.Alerts::class.java.fields.mapNotNull { it.getAnnotation(net.johnceo.sparklingmutuals.config.ConfigOption::class.java)?.name }
+        assertTrue(options.none { it in setOf("All Gems Alert", "All Bird Food Alert", "All Incense Alert") })
     }
 }

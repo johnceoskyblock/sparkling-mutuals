@@ -1,0 +1,14 @@
+Skills menu overflow adaptation
+
+SkillOverflow.kt is adapted from SkyHanni SkillUtil.kt and SkillTooltip.kt (LGPL-2.1),
+including the normal skill leveling curve and extrapolated post-60 overflow slope.
+Sources inspected: local revision 9cfab4c88 and upstream beta SkillUtil.kt retrieved 2026-11-02.
+https://github.com/SkyHanniStudios/SkyHanni/tree/beta/src/main/java/at/hannibal2/skyhanni/features/skillprogress
+
+The adapted file retains LGPL-2.1. See SkyHanni-LGPL-2.1.txt.
+Its source is included in the sources JAR and available at
+https://github.com/johnceoskyblock/sparkling-mutuals.
+
+Bundled skill-levels.json contains public Hypixel skill resource metadata retrieved 2026-11-02:
+https://api.hypixel.net/v2/resources/skyblock/skills
+This metadata is bundled; the feature makes no runtime API requests.
