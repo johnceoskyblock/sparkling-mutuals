@@ -49,7 +49,7 @@ internal class SellOfferWatch {
             val before=previous.put(id,current)
             val sameRule=before?.modelKey==current.modelKey
             val drop=before?.state==AdviceState.SELL && current.state==AdviceState.HOLD && sameRule &&
-                current.ask?.let {ask -> (current.declineFromAsk ?: before.ask)?.let {ask<it} }==true
+                current.ask?.let {ask -> current.declineFromAsk?.let {it.isFinite() && it>0 && ask<it} }==true
             if(!drop || watch.alerted>0 && now-watch.alerted<600_000)continue
             watch.alerted=now
             result.add(SaleAlert(id,BazaarUnlistPresentation.message(setOf(id))!!))

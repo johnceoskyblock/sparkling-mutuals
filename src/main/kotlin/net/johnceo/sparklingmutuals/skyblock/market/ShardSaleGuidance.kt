@@ -51,6 +51,7 @@ object ShardSaleGuidance {
     private var profile: String?=null
     private var menu: AbstractContainerScreen<*>?=null
     private var view: SaleMenuSnapshot?=null
+    private var orderView: OrderMarkerSnapshot?=null
     private var tooltipSlot: Slot?=null
     private var savedAt=0L
     private val watchSaver by lazy {WatchSaveQueue(worker,{watchFile.write(it)})}
@@ -76,8 +77,8 @@ object ShardSaleGuidance {
             if(!overlay && SkyblockSidebar.inSkyblock(client)) {
                 syncIdentity(client)
                 val plain=SafariRules.strip(message.string)
-                if(SaleProfileEvidence.changing(plain)) {profile=null;session.reset();total.reset();view=null}
-                SaleProfileEvidence.profile(plain)?.let {profile=it;session.reset();total.reset();view=null}
+                if(SaleProfileEvidence.changing(plain)) {profile=null;session.reset();total.reset();view=null;orderView=null}
+                SaleProfileEvidence.profile(plain)?.let {profile=it;session.reset();total.reset();view=null;orderView=null}
             }
         }
         ItemTooltipCallback.EVENT.register {stack,_,_,lines ->
@@ -92,7 +93,7 @@ object ShardSaleGuidance {
     private fun syncIdentity(client: Minecraft) {
         val owner=client.player?.uuid?.toString()
         if(connection!==client.connection || owner!=account) {
-            profile=null;session.reset();total.reset();view=null;tooltipSlot=null
+            profile=null;session.reset();total.reset();view=null;orderView=null;tooltipSlot=null
             connection=client.connection;account=owner
         }
     }
@@ -105,7 +106,7 @@ object ShardSaleGuidance {
         val screen=client.smScreen as? AbstractContainerScreen<*>
         val entries=if((enabled || ConfigManager.huntingBoxValue) && inSkyblock && screen!=null)screen.menu.slots.filter {it.container !is Inventory && it.index in 0..53}.map {slot ->
             val stack=slot.item
-            MenuSlot(slot.index,stack.get(DataComponents.CUSTOM_DATA)?.copyTag()?.getStringOr("id","") ?: "",stack.hoverName.string,
+            MenuSlot(slot.index,stack.get(DataComponents.CUSTOM_DATA)?.copyTag()?.getStringOr("id","") ?: "",MarketSlotName.capture(stack.hoverName),
                 stack.get(DataComponents.LORE)?.lines().orEmpty().map {it.string})
         }else emptyList()
         total.tick(ConfigManager.huntingBoxValue || enabled,inSkyblock,SaleProfileEvidence.scope(account,profile),client.connection,
@@ -116,6 +117,9 @@ object ShardSaleGuidance {
         menu=screen
         view=if(screen!=null && projected.isNotEmpty())SaleMenuSnapshot(screen.menu,screen.menu.stateId,
             screen.menu.slots.filter {it.index in projected}.associate {it.index to it.item},projected)else null
+        val marked=session.orderMarkers()
+        orderView=if(screen!=null && marked.isNotEmpty())OrderMarkerSnapshot(screen.menu,screen.menu.stateId,
+            screen.menu.slots.filter {it.index in marked}.associate {it.index to it.item},marked)else null
         tooltipSlot=null
         save()
     }
@@ -141,16 +145,25 @@ object ShardSaleGuidance {
     internal fun sidebarOpening()=session.sidebarOpening
     internal fun profitRankingReady()=session.profitRankingReady()
     private fun advice(screen: AbstractContainerScreen<*>,slot: Slot): Recommendation? {
-        if(!ConfigManager.shardSaleGuidance || menu!==screen || Minecraft.getInstance().smScreen!==screen)return null
+        if(!ConfigManager.shardSaleGuidance || menu!==screen || Minecraft.getInstance().smScreen!==screen ||
+            !SkyblockSidebar.inSkyblock(Minecraft.getInstance()) || !HuntingBoxShardParsing.isBox(screen.title.string))return null
         return view?.advice(screen.menu,screen.menu.stateId,slot.index,slot.item,System.currentTimeMillis())
     }
     fun draw(screen: AbstractContainerScreen<*>,graphics: GuiGraphicsExtractor,slot: Slot) {
+        if(SellOfferParsing.isOrders(screen.title.string)) {
+            val client=Minecraft.getInstance()
+            if(ConfigManager.shardSaleGuidance && menu===screen && client.smScreen===screen && hasVerifiedProfile() &&
+                SkyblockSidebar.inSkyblock(client) &&
+                orderView?.needsUnlist(screen.menu,screen.menu.stateId,slot.index,slot.item,System.currentTimeMillis())==true)
+                graphics.outline(slot.x-1,slot.y-1,18,18,BazaarUnlistPresentation.COLOR)
+            return
+        }
         val advice=advice(screen,slot) ?: return
         graphics.outline(slot.x-1,slot.y-1,18,18,ShardSalePresentation.color(advice.state))
     }
     fun beginTooltip(screen: AbstractContainerScreen<*>,slot: Slot?) {tooltipSlot=slot?.takeIf {menu===screen}}
     fun endTooltip() {tooltipSlot=null}
     fun reset() {
-        save(force=true);session.reset();total.reset();profile=null;account=null;connection=null;view=null;menu=null;tooltipSlot=null
+        save(force=true);session.reset();total.reset();profile=null;account=null;connection=null;view=null;orderView=null;menu=null;tooltipSlot=null
     }
 }

@@ -7,7 +7,7 @@ class SellOfferWatchTest {
     private val scope=MarketScope("1".repeat(32),"2".repeat(32))
     private val id="SHARD_BLUEBIRD"
     private val now=MarketFixtures.NOW
-    private fun advice(state: AdviceState,ask: Double=100.0,key: String="range")=Recommendation(id,state,100.0,now,"EXPERIMENTAL_RANGE",ask,key)
+    private fun advice(state: AdviceState,ask: Double=100.0,key: String="range")=Recommendation(id,state,100.0,now,"EXPERIMENTAL_RANGE",ask,key,100.0)
     private fun watch()=SellOfferWatch().apply {selectScope(scope);observe(listOf(OfferEvidence(id,120.0,100,false)),now)}
     @Test fun `fresh observed offers produce one grouped confirmed decline unlist suggestion`() {
         val w=watch()
@@ -26,6 +26,19 @@ class SellOfferWatchTest {
         assertTrue(w.update(mapOf(id to advice(AdviceState.HOLD,101.0)),now+240000).isEmpty())
         w.update(mapOf(id to advice(AdviceState.SELL)),now+300000)
         assertTrue(w.update(mapOf(id to advice(AdviceState.HOLD,98.0,"new-model")),now+360000).isEmpty())
+    }
+    @Test fun `model recovery cannot alert when an intermediate UNKNOWN snapshot was not read by the client`() {
+        val w=watch()
+        fun rec(latch: AdviceLatch,ask: Double,at: Long)=Recommendation(id,latch.state,latch.target,at,
+            "EXPERIMENTAL_RANGE",ask,"range",latch.confirmedSellAsk)
+        val sell=ShardTargetModel.observe(null,MarketQuote(id,100.0,90.0,now),TargetResult(100.0,false,null),now,true)
+        w.update(mapOf(id to rec(sell,100.0,now)),now)
+        val unavailable=ShardTargetModel.observe(sell,null,TargetResult(100.0,false,null),now+60000,true)
+        assertEquals(AdviceState.UNKNOWN,unavailable.state)
+        val recovered=ShardTargetModel.observe(unavailable,MarketQuote(id,98.0,90.0,now+120000),TargetResult(100.0,false,null),now+120000,true)
+        assertNull(recovered.confirmedSellAsk)
+        assertTrue(w.update(mapOf(id to rec(recovered,98.0,now+120000)),now+120000).isEmpty(),
+            "A recovered initial HOLD has no confirmed decline baseline, even if the client missed UNKNOWN")
     }
     @Test fun `initial hold is silent and cooldown requires a return to sell`() {
         val w=watch()
@@ -59,7 +72,7 @@ class SellOfferWatchTest {
         val restored=SellOfferWatch().apply {restore(raw,now);selectScope(scope)}
         assertTrue(restored.products(now).isEmpty())
         restored.observe(listOf(OfferEvidence(id,100.0,20,false)),now)
-        assertTrue(restored.update(mapOf(id to advice(AdviceState.HOLD)),now+1000).isEmpty(),"Initial notice persisted")
+        assertTrue(restored.update(mapOf(id to advice(AdviceState.HOLD)),now+1000).isEmpty(),"Restored HOLD cannot establish a transition")
         for(bad in listOf("{}","broken",raw.replace(id,"SHARD_FAKE"),"x".repeat(1024*1024+1))) {
             val copy=SellOfferWatch();copy.restore(bad,now);copy.selectScope(scope)
             assertTrue(copy.products(now).isEmpty())
