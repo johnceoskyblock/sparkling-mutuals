@@ -21,6 +21,7 @@ abstract class ShardSaleContainerMixin {
     }
     @Inject(method=["extractTooltip"],at=[At("HEAD")])
     private fun rangeTooltipBegin(graphics: GuiGraphicsExtractor,mouseX: Int,mouseY: Int,ci: CallbackInfo) {
+        net.johnceo.sparklingmutuals.skyblock.market.WholeBoxTotalOverlay.render(this as AbstractContainerScreen<*>,graphics)
         net.johnceo.sparklingmutuals.skyblock.market.ShardSaleSidebar.render(this as AbstractContainerScreen<*>,graphics,mouseX,mouseY)
         ShardSaleGuidance.beginTooltip(this as AbstractContainerScreen<*>,hoveredSlot)
     }

@@ -24,6 +24,8 @@ object ShardSaleGuidance {
     private val worker by lazy {Executors.newSingleThreadExecutor {task ->Thread(task,"SM shard ranges").apply {isDaemon=true}}}
     private val watchFile by lazy {OrderWatchPersistence(FabricLoader.getInstance().configDir.resolve("sparkling-mutuals-sale-watches.json"))}
     private val boxFile by lazy {SavedHuntingBoxStore(FabricLoader.getInstance().configDir.resolve("sparkling-mutuals-box-guidance.json"))}
+    private val totalFile by lazy {WholeBoxTotalStore(FabricLoader.getInstance().configDir.resolve("sparkling-mutuals-box-total.json"))}
+    private val total=WholeBoxTotal(BazaarPrices::ensureGuidanceFresh)
     private val watches=SellOfferWatch()
     private val profitSelection by lazy {ProfitGuidanceSelection(ProfitableCritters::cachedSpecies,BazaarPrices::ensureGuidanceFresh)}
     private val market by lazy {ShardMarketService(SaleProducts.names.keys,System::currentTimeMillis,worker,
@@ -52,6 +54,7 @@ object ShardSaleGuidance {
     private var savedAt=0L
     private val watchSaver by lazy {WatchSaveQueue(worker,{watchFile.write(it)})}
     private val boxSaver by lazy {WatchSaveQueue(worker,{boxFile.write(it)})}
+    private val totalSaver by lazy {WatchSaveQueue(worker,{totalFile.write(it)})}
 
     fun register() {
         if(registered)return
@@ -60,9 +63,11 @@ object ShardSaleGuidance {
         worker.execute {
             val raw=watchFile.read()
             val boxes=boxFile.read()
+            val totals=totalFile.read()
             Minecraft.getInstance().execute {
                 val now=System.currentTimeMillis()
-                watches.restore(raw,now);session.restoreBoxes(boxes,now);session.reset();loaded=true
+                watches.restore(raw,now);session.restoreBoxes(boxes,now);session.reset()
+                total.restore(totals,now);total.reset();loaded=true
             }
         }
         ClientReceiveMessageEvents.GAME.register {message,overlay ->
@@ -70,8 +75,8 @@ object ShardSaleGuidance {
             if(!overlay && SkyblockSidebar.inSkyblock(client)) {
                 syncIdentity(client)
                 val plain=SafariRules.strip(message.string)
-                if(SaleProfileEvidence.changing(plain)) {profile=null;session.reset();view=null}
-                SaleProfileEvidence.profile(plain)?.let {profile=it;session.reset();view=null}
+                if(SaleProfileEvidence.changing(plain)) {profile=null;session.reset();total.reset();view=null}
+                SaleProfileEvidence.profile(plain)?.let {profile=it;session.reset();total.reset();view=null}
             }
         }
         ItemTooltipCallback.EVENT.register {stack,_,_,lines ->
@@ -86,7 +91,7 @@ object ShardSaleGuidance {
     private fun syncIdentity(client: Minecraft) {
         val owner=client.player?.uuid?.toString()
         if(connection!==client.connection || owner!=account) {
-            profile=null;session.reset();view=null;tooltipSlot=null
+            profile=null;session.reset();total.reset();view=null;tooltipSlot=null
             connection=client.connection;account=owner
         }
     }
@@ -97,11 +102,13 @@ object ShardSaleGuidance {
         val inSkyblock=client.player!=null && client.connection!=null && SkyblockSidebar.inSkyblock(client)
         val enabled=ConfigManager.shardSaleGuidance
         val screen=client.smScreen as? AbstractContainerScreen<*>
-        val entries=if(enabled && inSkyblock && screen!=null)screen.menu.slots.filter {it.container !is Inventory && it.index in 0..53}.map {slot ->
+        val entries=if((enabled || ConfigManager.huntingBoxValue) && inSkyblock && screen!=null)screen.menu.slots.filter {it.container !is Inventory && it.index in 0..53}.map {slot ->
             val stack=slot.item
             MenuSlot(slot.index,stack.get(DataComponents.CUSTOM_DATA)?.copyTag()?.getStringOr("id","") ?: "",stack.hoverName.string,
                 stack.get(DataComponents.LORE)?.lines().orEmpty().map {it.string})
         }else emptyList()
+        total.tick(ConfigManager.huntingBoxValue,inSkyblock,SaleProfileEvidence.scope(account,profile),client.connection,
+            screen?.title?.string.orEmpty(),entries,BazaarPrices.guidanceQuotes,now)
         val recommendations=if(enabled && inSkyblock)market.snapshot(now)else emptyMap()
         val projected=session.tick(enabled,inSkyblock,SaleProfileEvidence.scope(account,profile),client.player?.name?.string.orEmpty(),
             screen?.title?.string.orEmpty(),entries,recommendations,now,client.connection)
@@ -118,6 +125,7 @@ object ShardSaleGuidance {
         savedAt=now
         watchSaver.offer(watches.export(now))
         boxSaver.offer(session.exportBoxes())
+        totalSaver.offer(total.export())
     }
     internal fun sidebar(screen: AbstractContainerScreen<*>,now: Long): List<SavedBoxRow> {
         if(!ConfigManager.shardSaleGuidance || menu!==screen || Minecraft.getInstance().smScreen!==screen ||
@@ -125,6 +133,10 @@ object ShardSaleGuidance {
         return session.sidebar(now)
     }
     internal fun hasVerifiedProfile()=SaleProfileEvidence.scope(account,profile)!=null
+    internal fun totalSummary(screen: AbstractContainerScreen<*>,now: Long): WholeBoxSummary? =
+        if(!ConfigManager.huntingBoxValue || menu!==screen || Minecraft.getInstance().smScreen!==screen ||
+            !SkyblockSidebar.inSkyblock(Minecraft.getInstance()) || !HuntingBoxShardParsing.isBox(screen.title.string))null
+        else total.snapshot(now)
     internal fun sidebarOpening()=session.sidebarOpening
     internal fun profitRankingReady()=session.profitRankingReady()
     private fun advice(screen: AbstractContainerScreen<*>,slot: Slot): Recommendation? {
@@ -138,6 +150,6 @@ object ShardSaleGuidance {
     fun beginTooltip(screen: AbstractContainerScreen<*>,slot: Slot?) {tooltipSlot=slot?.takeIf {menu===screen}}
     fun endTooltip() {tooltipSlot=null}
     fun reset() {
-        save(force=true);session.reset();profile=null;account=null;connection=null;view=null;menu=null;tooltipSlot=null
+        save(force=true);session.reset();total.reset();profile=null;account=null;connection=null;view=null;menu=null;tooltipSlot=null
     }
 }

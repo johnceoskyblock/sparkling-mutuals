@@ -60,7 +60,8 @@ class SafariSettings {
         @ConfigEditorBoolean var skillOverflowNumbers = ConfigManager.skillOverflowNumbers
         @JvmField var estimatedItemValue = ConfigManager.estimatedItemValue
         @JvmField var estimatedChestValue = ConfigManager.estimatedChestValue
-        @JvmField var huntingBoxValue = ConfigManager.huntingBoxValue
+        @JvmField @ConfigOption(name = "Hunting Box total value", desc = "One estimated sell-offer total across visited pages.")
+        @ConfigEditorBoolean var huntingBoxValue = ConfigManager.huntingBoxValue
     }
 
     class MiscEndgame {

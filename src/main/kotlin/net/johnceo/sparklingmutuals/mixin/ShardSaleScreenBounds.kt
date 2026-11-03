@@ -8,5 +8,6 @@ import org.spongepowered.asm.mixin.gen.Accessor
 @Mixin(AbstractContainerScreen::class)
 interface ShardSaleScreenBounds {
     @Accessor("leftPos") fun sparklingMutualsShardPanelLeft(): Int
+    @Accessor("topPos") fun sparklingMutualsShardPanelTop(): Int
     @Accessor("imageWidth") fun sparklingMutualsShardPanelWidth(): Int
 }

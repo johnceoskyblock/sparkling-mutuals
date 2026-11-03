@@ -1,4 +1,26 @@
-# Hunting Box value
+# Hunting Box total value
+
+## Current local 26.1.2 feature
+
+**SkyBlock → Helpers → Hunting Box total value** shows one combined estimated sell-offer value above the inventory, without a shard-value list or generic item-value tooltips. It reuses the existing saved huntingBoxValue preference (default on), independently of [HOLD/SELL guidance](SHARD_SALE_GUIDANCE.md). General item/chest valuation remains shelved.
+
+For every recognized owned shard, multiply the last observed count by the lowest valid current competing ask from the shared Hypixel Bazaar book. This is an estimate before fees, not guaranteed fills. It includes non-Safari shards and products outside the top-ten advice list. Visit pages to collect quantities; repeats replace, overlaps deduplicate and explicit zero removes ownership. Missing or filtered entries never prove zero.
+
+The header shows current-opening/view coverage and marks older counts, missing prices, unresolved shard evidence and tracking limits. Missing metadata or partial coverage cannot look complete. Unknown prices produce a known subtotal; no usable prices means unavailable. Empty loading packets cannot claim a zero box. Quotes expire after three minutes, including between ticks. The header uses actual container bounds, renders before ordinary tooltips, scales no lower than 75%, and hides when there is insufficient readable space above the inventory.
+
+Only exact box titles, inner slots and unambiguous Owned lore count. Native SHARD_ IDs use bounded grammar. Generic short/long labels require shard-footer evidence and an exact match against the shared all-product catalogue. Conflicting metadata, duplicate slots, controls and player inventory are excluded. Unresolved labels are reported rather than guessed.
+
+Private local sparkling-mutuals-box-total.json holds four freshly verified account/profile scopes, 512 products each, 96-character IDs, 512 KiB final plus512 KiB atomic stage (1 MiB combined). Only positive ownership counts persist; prices and identity claims do not. Bounded in-memory zero tombstones reject older observations. Late restore cannot overwrite live edits. Until a fresh Profile ID line establishes scope, use connection-local observations; /profileid enables profile saving. Reconnect/profile changes clear visible state pending fresh evidence.
+
+The existing worker and coalescing save queue handle disk work. Valuation reuses the shared public Bazaar response with its existing one-minute minimum, with no per-shard/page requests, history demand, private credentials or uploads. Rendering reads cached summaries only. Its toggle ends valuation-only demand immediately.
+
+Unit tests cover aggregation, identities/lore, coverage, stale/missing prices, overflow, profiles, save bounds/recovery, late restore, settings and layout. Native NoFrills/owo fixtures cover combined totals, independent toggles, no valuation-only history demand, actual bounds, tooltip layering and resize. Live Hypixel menu/profile behavior remains pending.
+
+Primary reference: SkyHanni HuntingBoxValue.kt and AttributeShardsData.kt at a168f0089f0e8aec70539683f897744a22fef716. The former totals one inventory at a time; this implementation follows the human's compact cumulative-total design.
+
+Updated 2026-11-03. The historical description below concerns the archived individual-value list.
+
+## Archived individual-value list
 
 > Shelved as of 2026-11-02. This feature is not included in the mod or config UI. Sources, tests and supporting data are retained under `tools/shelved/item-values` for a future release. The behavior below is archival, not an implementation requirement.
 

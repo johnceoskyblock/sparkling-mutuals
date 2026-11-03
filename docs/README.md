@@ -20,7 +20,7 @@ Players: start with [installation and controls](../README.md). Contributors: rea
 | Biome assignments | [Hotspot announcer and UUID-ranked assignments](HOTSPOT_ASSIGNMENTS.md) |
 | Controls | [Configuration](CONFIG_DEFAULTS.md), [entry guard](SAFARI_ENTRY_GUARD.md), [warp alerts](WARP_ALERTS.md) |
 | Contest and Canyon | [Contest/downtime](CONTEST_DOWNTIME.md), [Honeyhives](HONEYHIVES.md) |
-| SkyBlock helpers (valuation shelved) | [Hunting Box value](HUNTING_BOX_VALUE.md), [item and chest values](ITEM_VALUES.md), [Skills overflow tooltips](SKILL_OVERFLOW.md) |
+| SkyBlock helpers (general valuation shelved) | [Hunting Box total value](HUNTING_BOX_VALUE.md), [item and chest values](ITEM_VALUES.md), [Skills overflow tooltips](SKILL_OVERFLOW.md) |
 | Misc Endgame Features | [Garden Phantomleaf Solver](PHANTOMLEAF_SOLVER.md) |
 | History | [History and imports](HISTORY_IMPORT.md), [achievement requirements and dex tiers](ACHIEVEMENTS.md), [credited party streaks](SINCE_COMMAND.md) |
 | Capsule aiming guide | [Capture projections](CAPTURE_PROJECTIONS.md) |
@@ -97,7 +97,7 @@ Generated `.gradle/`, `.kotlin/`, `build/`, `versions/<target>/build/`, IDE file
 
 2026-10-19 (America/New_York) — Consolidated navigation and audited contributor guidance. Reviewed source: `93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee`; documentation-only changes, no local runtime differences or new live validation.
 
-- [Hunting Box value](HUNTING_BOX_VALUE.md) — shelved for a future release.
+- [Hunting Box total value](HUNTING_BOX_VALUE.md) — local 26.1.2 cumulative sell-offer estimate; general valuation remains shelved.
 
 Last updated: 2026-11-02 — Added Hunting Box value reference.
 
