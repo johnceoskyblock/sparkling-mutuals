@@ -1,7 +1,10 @@
-Skills menu overflow adaptation
+Skills overflow adaptation
 
 SkillOverflow.kt is adapted from SkyHanni SkillUtil.kt and SkillTooltip.kt (LGPL-2.1),
 including the normal skill leveling curve and extrapolated post-60 overflow slope.
+OverflowChatTracker.kt and SkillOverflow.kt also adapt action-bar XP handling and
+the level-up chat styling/sound from SkillApi.kt and SkillProgress.kt, retrieved
+from upstream beta on 2026-11-02. Joke rewards and custom goals are omitted.
 Sources inspected: local revision 9cfab4c88 and upstream beta SkillUtil.kt retrieved 2026-11-02.
 https://github.com/SkyHanniStudios/SkyHanni/tree/beta/src/main/java/at/hannibal2/skyhanni/features/skillprogress
 

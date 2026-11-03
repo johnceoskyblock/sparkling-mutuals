@@ -109,3 +109,7 @@ Explanatory hover prose is removed except the Macaw drought note: Must use all 9
 2026-11-02 — Requirement revamp, credited multi-dex/duplicate milestones, strict daily and Macaw qualification, migration and Dex Type selector.
 
 2026-11-02 — Applied the supplied rarity/secret assignments to all 79 achievements. Double Trouble requires two personal catches of the same sparkling species in one run, including immediate live checks and retrospective saved-run checks. Rarity-only changes do not revoke valid unlocks.
+
+2026-11-02 — Local achievement announcements wait 0.5 seconds after the latest catch or queued achievement, preserving line order without interrupting Hypixel catch formatting. Pending messages clear on disconnect or when achievements are disabled.
+
+2026-11-02 — Locked secret achievements show no progress number/bar and do not participate in progress-based Closest ranking. Unlock requirements remain unchanged.

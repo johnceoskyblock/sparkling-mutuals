@@ -5,6 +5,14 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class StartingResourceDeliveryTest {
+    @Test fun `disabled starting announcements suppress titles without consuming the reminder`() {
+        val run=SafariRun(0)
+        val needs=party("Gimmiegold")
+        run.inventoryEvidence(listOf("Shining Coin" to 1),0)
+        run.resourceReminders.afterBiomeClear(0)
+        assertFalse(run.resourceReminders.dispatch(4000,"Local",SafariBiome.CAVERN,needs,enabled=false) { _,_ -> fail("disabled title") })
+        assertTrue(run.resourceReminders.dispatch(4000,"Local",SafariBiome.CAVERN,needs,enabled=true) { _,_ -> })
+    }
     private fun party(vararg needed: String) = PartySparklingState().apply {
         select(setOf("me")); accept(setOf("me"), mapOf("me" to (SafariRoster.all.map { it.name }.toSet() - needed.toSet())))
     }

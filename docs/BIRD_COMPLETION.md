@@ -16,7 +16,9 @@ A **feeding opportunity** is the ledger's unit of expected bird population: one 
 
 Expected opportunities are **max(9, personally collected Forest food quantity) + own extra food**. Own extras include starting inventory/grants and pickups outside Forest, avoiding overlap with early pickup messages. The first available inventory sample starts the three-second starting-inventory window. Teammate starting-item messages, unused-item messages and early visits never raise bird-food requirements.
 
-The feeder ledger records exact server bird-attracted messages as food uses, with two Macaws per Macaw event. Slot 22 of the Birdfeeder menu supplies its current food type/count. Inventory snapshots include carried cursor items. The Missing/Unchecked panel shows each food type left, known feed in the feeder and observed birds spawned, with food icons. Remaining feeder contents block local spawning completion.
+The feeder ledger records exact server bird-attracted messages as food uses, with two Macaws per Macaw event. Slot 22 of the Birdfeeder menu supplies its current food type/count. All runtime inventory readers include the same cursor/resync protection. The Biome Objectives panel shows positive food counts, known feeder contents and positive spawned-species counters; bird rows disappear after the mode's bird requirements complete. Per-type marker predictions refine displayed food counts only. Remaining feeder contents block local spawning and Full Clear bird completion.
+
+Feeder tracking adapts SafariUtils BirdfeederWatch's cursor protection and 150 ms transaction buffer. A closed cursor can remain protected for two seconds, or twelve after a mismatched-food rejection, until returned inventory confirms its location. Non-food placeholders clear feeder state after two menu observations. Slot decreases and spawn messages reconcile consumption in either arrival order; unchanged stale slot values cannot restore already-consumed feed. Opening a new feeder menu begins a fresh authoritative slot observation.
 
 Qualified population is:
 
@@ -24,7 +26,7 @@ Bluebird catches + live Bluebirds + Parakeet catches + live Parakeets + floor((M
 
 Exact bird-attracted system messages confirm one pending local food use each, including one for a Macaw pair. They establish spawned species counts and food-use events, but never captures. Complete active non-food reward triples are excluded from remaining food markers; food and partial/unknown groups still block. This marker scan operates Safari-wide, including the boat and other biomes, independently of selected ESP.
 
-The ledger retains maximum qualified species populations (captures + current renders). It retains a qualified total only when no floor food or held food remains. Incomplete scans do not accumulate separate UUID populations. New food pickup clears retained total proof; known remaining/held food blocks it, and increased demand can exceed it. Forest reentry clears the current total while retaining previously verified proof and species requirements.
+The ledger retains maximum qualified species populations (captures + current renders). A new population sample waits while a confirmed capture still awaits the corresponding rendered-population decrease, avoiding counting its lingering model twice. It retains a qualified total only when no floor food or held food remains. Incomplete scans do not accumulate separate UUID populations. New food pickup clears retained total proof; known remaining/held food blocks it, and increased demand can exceed it. Forest reentry clears the current total while retaining previously verified proof and species requirements.
 
 ### Completion by mode
 
@@ -62,7 +64,7 @@ For a local Unique Forest clearer, no catch of a bird species is required if tha
 - Seven Bluebird catches and two live Parakeets, zero floor/held food, and a qualified nine-opportunity observation can satisfy Sparkling without a Parakeet catch. Unique still needs one; Full Clear needs the required Parakeet catches.
 - A qualified population of six Bluebirds, two Parakeets and two Macaws represents nine opportunities. Six Bluebird catches, two Parakeet catches and one Macaw catch can satisfy Full Clear while the second Macaw remains.
 - A late entrant with bird loot shares can send fd after local population/source proof and the other active-mode requirements pass, provided no fd was received.
-- One reported extra food raises the Full Clear capture target from nine to ten. Repeating the same sender/type notice does not add another opportunity.
+- One own starting extra food raises the Full Clear feeding target from nine to ten. Teammate item notices do not raise it.
 
 ## Source and validation references
 
@@ -112,3 +114,5 @@ Sparkling bird checks use Forest floor-food markers and this client's inventory,
 2026-10-19 - Verified local zero-Macaw fd and row removal include all reported starting food; any Macaw encounter retains the catch requirement.
 
 2026-10-19 (America/New_York) — Early starting-food reports feed sender/type maxima; late entrants can report qualified local spawning without six personal pickups. Reviewed source: working changes on `78885e0`; live validation pending.
+
+2026-11-02 — Adapted SafariUtils feeder/cursor protections, unified runtime inventory evidence, reconciled slot and spawn event ordering, and blocked capture/model double-counting. Bird objective counters now omit zero entries and remain until the current mode's bird work completes.

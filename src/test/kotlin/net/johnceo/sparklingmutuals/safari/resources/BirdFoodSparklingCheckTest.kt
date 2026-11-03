@@ -5,6 +5,18 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class BirdFoodSparklingCheckTest {
+    @Test fun `capture awaiting model removal cannot increase retained bird population`() {
+        val run=SafariRun(0).apply { visitBiome(SafariBiome.FOREST);inventoryEvidence(emptyList(),0) }
+        val ids=List(9) { java.util.UUID(0,it.toLong()) }
+        run.observePopulation(ids.map { "Bluebird" to it })
+        run.scanBirdSources(0,List(9) { "Bluebird" })
+        run.record(SafariCatch(SafariRoster.named("Bluebird")!!),1000)
+        run.scanBirdSources(0,List(9) { "Bluebird" })
+        assertEquals(9,run.birds.spawnedCount("Bluebird"))
+        run.observePopulation(ids.drop(1).map { "Bluebird" to it })
+        run.scanBirdSources(0,List(8) { "Bluebird" })
+        assertEquals(9,run.birds.spawnedCount("Bluebird"))
+    }
     @Test fun `qualified full population recovers missed final spawn messages without trusting partial or remote scans`() {
         val run=SafariRun(0)
         run.localPlayer("me");run.visitBiome(SafariBiome.FOREST)

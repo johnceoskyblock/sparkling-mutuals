@@ -42,8 +42,13 @@ class SkillOverflowTest {
     @Test fun `helper setting persists without changing other toggles`() {
         ConfigManager.init(dir);ContestConfig.init(dir)
         val settings=SafariSettings();assertTrue(settings.skyblock.helpers.skillOverflow)
-        settings.skyblock.helpers.skillOverflow=false;settings.apply();ConfigManager.init(dir)
+        settings.skyblock.helpers.skillOverflow=false
+        settings.skyblock.helpers.skillOverflowChat=false
+        settings.skyblock.helpers.skillOverflowNumbers=true
+        settings.apply();ConfigManager.init(dir)
         assertFalse(ConfigManager.skillOverflow)
+        assertFalse(ConfigManager.skillOverflowChat)
+        assertTrue(ConfigManager.skillOverflowNumbers)
         assertTrue(SettingsCatalog(SafariSettings()).pages.first { it.name=="SkyBlock" }.rows.first { it.name=="Helpers" }
             .children.any { it.name=="Skills overflow" })
     }

@@ -157,12 +157,14 @@ object SparklingMutuals : ModInitializer {
     }
 
     private fun resetSession() {
+        net.johnceo.sparklingmutuals.skyblock.SkillOverflow.reset()
         net.johnceo.sparklingmutuals.hud.SafariBanners.reset()
         net.johnceo.sparklingmutuals.safari.ClearWater.reset()
         net.johnceo.sparklingmutuals.hud.MaxWin.reset()
         net.johnceo.sparklingmutuals.safari.DoomspiralThrowTimer.reset()
         net.johnceo.sparklingmutuals.hud.SpecialCatchAlert.reset()
         JoinWelcome.reset()
+        Achievements.resetAnnouncements()
         PhantomleafSolver.reset()
         CapsulePreview.reset()
         PartyCommands.reset()

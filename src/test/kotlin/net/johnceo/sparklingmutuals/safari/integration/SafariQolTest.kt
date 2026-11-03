@@ -42,7 +42,7 @@ class SafariQolTest {
         assertTrue(ConfigManager.hideCaptureChat)
         assertTrue(ConfigManager.hideGroundCapsules)
         assertTrue(ConfigManager.hideFlyingCapsules)
-        assertEquals(2f, ConfigManager.capsuleHideDistance)
+        assertEquals(3f, ConfigManager.capsuleHideDistance)
         val settings = SafariSettings()
         settings.safari.hideCaptureChat = true
         settings.safari.hideGroundCapsules = false

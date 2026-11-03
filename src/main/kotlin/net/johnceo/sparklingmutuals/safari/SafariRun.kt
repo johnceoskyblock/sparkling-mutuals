@@ -518,11 +518,16 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
         }
     }
     /** Shared captures + current nearby bird counts, never a history of distinct UUIDs. */
-    fun scanBirdSources(dropsRemaining: Int, live: List<String> = emptyList(), qualified: Boolean = lastBiome == SafariBiome.FOREST) {
+    fun scanBirdSources(dropsRemaining: Int, live: List<String> = emptyList(), qualified: Boolean = lastBiome == SafariBiome.FOREST,
+        foodByType: Map<String,Int>?=null) {
         syncBirdContributions()
         birds.floor(dropsRemaining)
+        birds.floorTypes(foodByType)
         birdFoodCheck.floor(dropsRemaining)
         if (!qualified || lastBiome != SafariBiome.FOREST) return
+        // A capture and its still-rendered model are not two separate birds.
+        // Keep prior qualified proof until the live-population decrease settles.
+        if(birdSpecies.any { (populationCaptureDebt[it] ?: 0)>0 }) return
         forestBirdsSurveyed = true
         nearbyMacaws = live.count { it == "Macaw" }
         sightings.addAll(live.filter { it in birdSpecies })

@@ -176,9 +176,30 @@ object Achievements {
 
     // ------------------------------------------------------------------ events
 
+    private val localAnnouncements=DelayedAchievementChat<Component>()
+    private var announcementOwner: java.util.UUID?=null
+
+    fun resetAnnouncements() {
+        localAnnouncements.clear()
+        announcementOwner=null
+    }
+
+    fun sparklingChatReceived() { localAnnouncements.postpone(System.currentTimeMillis()) }
+
+    fun queueLocal(vararg messages: Component) {
+        val player=Minecraft.getInstance().player ?: return
+        if(!ConfigManager.achievements) return
+        if(announcementOwner!=player.uuid) resetAnnouncements()
+        announcementOwner=player.uuid
+        localAnnouncements.add(messages.toList(),System.currentTimeMillis())
+    }
+
     fun tick(client: Minecraft) {
-        if (client.player == null || !ConfigManager.achievements) return
-        if (!data.initialised) { pendingHistoryCheck=false;initialise(client); return }
+        val player=client.player
+        if (player == null || !ConfigManager.achievements) { resetAnnouncements();return }
+        if(announcementOwner!=player.uuid) resetAnnouncements()
+        localAnnouncements.drain(System.currentTimeMillis()).forEach(player::sendSystemMessage)
+        if (!data.initialised) { pendingHistoryCheck=false;initialise(); return }
         if(pendingHistoryCheck) { pendingHistoryCheck=false;afterImport() }
         if (data.partyStreakVersion < 1) { refreshPartyStreaks(); save() }
         // A contest is counted once per window, however many times the sidebar shows it done. The window comes from
@@ -322,9 +343,9 @@ object Achievements {
         val player = client.player ?: return
         val tier = achievement.tier
         val hover = Component.literal("${tier.code}§l${achievement.name}\n§7${achievement.description}\n\n${tier.code}§l${tier.name} ACHIEVEMENT")
-        player.sendSystemMessage(LocalChat.component("[SM] §6§lACHIEVEMENT UNLOCKED! ${tier.code}§l${achievement.name}").copy()
-            .withStyle { it.withHoverEvent(HoverEvent.ShowText(hover)) })
-        player.sendSystemMessage(LocalChat.component("[SM]   §7${achievement.description} §8(${tier.code}${tier.name}§8)"))
+        queueLocal(LocalChat.component("[SM] §6§lACHIEVEMENT UNLOCKED! ${tier.code}§l${achievement.name}").copy()
+            .withStyle { it.withHoverEvent(HoverEvent.ShowText(hover)) },
+            LocalChat.component("[SM]   §7${achievement.description} §8(${tier.code}${tier.name}§8)"))
         if (ConfigManager.achievementSound) {
             // Mythic and Divine get the challenge-advancement fanfare; the rest a lighter chime.
             if (tier.ordinal >= AchievementTier.MYTHIC.ordinal) player.playSound(SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 1f, 1f)
@@ -339,12 +360,12 @@ object Achievements {
     }
 
     /** First run: unlock what the history already earns, quietly, and say how many in one line. */
-    private fun initialise(client: Minecraft) {
+    private fun initialise() {
         data.initialised = true
         val before = data.unlocked.size
         afterImport()
         val earned = data.unlocked.size - before
-        if (earned > 0) client.player?.sendSystemMessage(LocalChat.component(
+        if (earned > 0) queueLocal(LocalChat.component(
             "[SM] Achievements are here! Your history already earns §e$earned§r of them. See /sm achievements."))
     }
 

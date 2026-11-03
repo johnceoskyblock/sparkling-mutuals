@@ -20,18 +20,23 @@ class StartingResourceAnnouncement(private val resources: SafariResources) {
     fun dispatch(now: Long, party: PartySparklingState, hotspotEnabled: Boolean, send: (String) -> Unit): Boolean =
         dispatch(now, party, hotspotEnabled, true, send)
     fun dispatch(now: Long, party: PartySparklingState, hotspotEnabled: Boolean, startingItemsEnabled: Boolean, send: (String) -> Unit): Boolean {
+        return dispatch(now,party,hotspotEnabled,startingItemsEnabled,{ "[SM] Hotspot: $it" },send)
+    }
+    fun dispatch(now: Long, party: PartySparklingState, hotspotEnabled: Boolean, startingItemsEnabled: Boolean,
+        hotspotMessage: (String) -> String?, send: (String) -> Unit): Boolean {
         val departure = leftAt ?: return false
-        if (now < nextAt || now - departure < 500) return false
+        if (now < nextAt) return false
         if (!hotspotHandled) {
             if (hotspotEnabled) {
-                send("[SM] Hotspot: $hotspot")
+                val message=hotspotMessage(hotspot ?: return false) ?: return false
+                send(message)
                 hotspotHandled = true
                 nextAt = now + 1500
                 return true
             }
             hotspotHandled = true
         }
-        if (!startingItemsEnabled || !party.ready) return false
+        if (now-departure<500 || !startingItemsEnabled || !party.ready) return false
         val notice = resources.startingNotice(party) ?: return false
         // Delayed starting rewards can amend the early report, but consumption cannot repeat it.
         if (notice.items.none { it.quantity > (announced[it.type] ?: 0) }) return false

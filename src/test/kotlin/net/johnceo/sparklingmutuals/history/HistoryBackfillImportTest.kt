@@ -16,6 +16,22 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 
 class HistoryBackfillImportTest {
+    @Test fun `nested copied archives retain original dates and do not duplicate catches`() {
+        val folder = Files.createDirectories(dir.resolve("old instance/logs"))
+        val owned = line("13:00:00", ticket) + "\n" + line("13:00:05", "SPARKLING! [Local head]Local caught a SPARKLING Fluffling!") +
+            "\n" + line("13:01:00", "SAFARI REWARD SUMMARY")
+        Files.writeString(folder.resolve("2026-10-10-1 (1).log"), owned)
+        GZIPOutputStream(Files.newOutputStream(dir.resolve("2026-10-10-1.log (1).gz"))).use { it.write(owned.toByteArray()) }
+        Files.writeString(folder.resolve("2026-10-10-2.log"), owned.replace("Setting user: Local", "Setting user: Other"))
+        val result = LogImporter.read(dir, "Local").join()
+        assertEquals(3, result.files)
+        assertEquals(1, result.sparklings.size)
+        assertEquals(at(13,0,5), result.sparklings.single().at)
+        assertEquals(1, result.skippedAccounts)
+        assertTrue(result.skippedFiles.single().reason.contains("Other"))
+        assertTrue(result.failures.isEmpty())
+        assertEquals(result.sparklings.map { it.at }, LogImporter.read(dir,"Local").join().sparklings.map { it.at })
+    }
     @Test fun `file imports verify owner skip foreign and unidentified logs and dedupe copied archives`() {
         val owned = listOf(line("13:00:00", ticket), line("13:00:01", capture), line("13:01:00", "SAFARI REWARD SUMMARY")).joinToString("\n")
         Files.writeString(dir.resolve("2026-10-10-1.log"), owned)

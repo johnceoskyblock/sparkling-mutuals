@@ -6,6 +6,17 @@ import org.junit.jupiter.api.Test
 import java.util.UUID
 
 class StartingResourceAnnouncementTest {
+    @Test fun `leader waits for a complete snapshot without consuming the announcement or delaying a ready snapshot`() {
+        val delivery=SafariRun(0).startingAnnouncement
+        delivery.observeHotspot("HOTSPOT! Your Hunting Hotspot is the Forest Biome!",100)
+        val sent=mutableListOf<String>()
+        assertFalse(delivery.dispatch(100,PartySparklingState(),true,false,{ null },sent::add))
+        assertTrue(sent.isEmpty())
+        val snapshot="[SM] Hotspot: Forest | Hotspot wins: Leader=2, Friend=1"
+        assertTrue(delivery.dispatch(101,PartySparklingState(),true,false,{ snapshot },sent::add))
+        assertEquals(listOf(snapshot),sent)
+        assertFalse(delivery.dispatch(2000,PartySparklingState(),true,false,{ snapshot },sent::add))
+    }
     @Test fun `starting item opt out keeps hotspot announcement and resource accounting independent`() {
         val run = SafariRun(0)
         run.inventoryEvidence(listOf("Bag of Seeds" to 1), 0)
@@ -27,11 +38,11 @@ class StartingResourceAnnouncementTest {
         delivery.observeHotspot("Party > Friend: HOTSPOT! Your Hunting Hotspot is the Forest Biome!", 0)
         assertFalse(delivery.dispatch(1000, party("Macaw"), true, sent::add))
         delivery.observeHotspot("HOTSPOT! Your Hunting Hotspot is the Forest Biome!", 1000)
-        assertFalse(delivery.dispatch(1499, PartySparklingState(), true, sent::add))
-        assertTrue(delivery.dispatch(1500, PartySparklingState(), true, sent::add))
+        assertTrue(delivery.dispatch(1000, PartySparklingState(), true, sent::add))
+        assertFalse(delivery.dispatch(1001, PartySparklingState(), true, sent::add))
         assertEquals(listOf("[SM] Hotspot: Forest"), sent)
-        assertFalse(delivery.dispatch(2999, party("Macaw"), true, sent::add))
-        assertTrue(delivery.dispatch(3000, party("Macaw"), true, sent::add))
+        assertFalse(delivery.dispatch(2499, party("Macaw"), true, sent::add))
+        assertTrue(delivery.dispatch(2500, party("Macaw"), true, sent::add))
         assertEquals("[SM] Starting items: 1x Bag of Seeds", sent.last())
         delivery.observeHotspot("HOTSPOT! Your Hunting Hotspot is the Haunted Biome!", 3500)
         assertFalse(delivery.dispatch(5000, party("Macaw"), true, sent::add))

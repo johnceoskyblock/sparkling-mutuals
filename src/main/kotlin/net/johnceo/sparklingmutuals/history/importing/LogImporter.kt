@@ -23,7 +23,10 @@ import org.slf4j.LoggerFactory
 /** One explicit backfill imports both histories. Normal sessions are recorded live, without startup rescans. */
 object LogImporter {
     private val logger = LoggerFactory.getLogger("sparkling-mutuals/history-import")
-    private val dated = Regex("^(\\d{4})-(\\d{2})-(\\d{2})-(\\d+)\\.(?:log(?:\\.gz)?|json)$", RegexOption.IGNORE_CASE)
+    // Windows may insert the copy suffix before .log.gz or before just its final .gz extension.
+    private val dated = Regex("^(\\d{4})-(\\d{2})-(\\d{2})-(\\d+)(?: \\(\\d+\\)| - Copy(?: \\(\\d+\\))?)?\\.(?:log(?: \\(\\d+\\))?(?:\\.gz)?|json)$", RegexOption.IGNORE_CASE)
+    private val compressedLog = Regex("\\.log(?: \\(\\d+\\))?\\.gz$", RegexOption.IGNORE_CASE)
+    private fun isLog(name: String) = name.endsWith(".log", true) || compressedLog.containsMatchIn(name)
     private val executor = Executors.newSingleThreadExecutor { Thread(it, "Sparkling Mutuals history import").apply { isDaemon = true } }
     private val busy = AtomicBoolean()
     val running get() = busy.get()
@@ -34,7 +37,8 @@ object LogImporter {
     data class Failure(val file: String, val reason: String)
     class Result(val runs: List<RunRecord>, val sparklings: List<SparklingEntry>, val files: Int, val newest: Long,
         val failures: List<Failure> = emptyList(), val ticketTimes: List<Long> = emptyList(), val skippedAccounts: Int = 0,
-        val alphaRuns: List<RunRecord> = emptyList(), val alphaSparklings: List<SparklingEntry> = emptyList())
+        val alphaRuns: List<RunRecord> = emptyList(), val alphaSparklings: List<SparklingEntry> = emptyList(),
+        val skippedFiles: List<Failure> = emptyList())
     private data class LogFile(val path: Path, val day: LocalDate, val order: Int, val modified: Long)
     fun defaultLogs(): Path = FabricLoader.getInstance().gameDir.resolve("logs")
 
@@ -81,9 +85,10 @@ object LogImporter {
     }
 
     private fun files(folder: Path, includeLatest: Boolean, newerThan: Long): List<LogFile> {
-        val all = Files.list(folder).use { paths -> paths.filter { Files.isRegularFile(it) }.toList() }.mapNotNull { path ->
+        // Copied instance logs are often left in a subfolder. Do not follow directory symlinks.
+        val all = Files.walk(folder).use { paths -> paths.filter { !Files.isSymbolicLink(it) && Files.isRegularFile(it) }.toList() }.mapNotNull { path ->
             val name = path.fileName.toString()
-            if (!name.endsWith(".log", true) && !name.endsWith(".log.gz", true) && !name.endsWith(".json", true)) return@mapNotNull null
+            if (!isLog(name) && !name.endsWith(".json", true)) return@mapNotNull null
             if (!includeLatest && name.equals("latest.log", true)) return@mapNotNull null
             val modified = Files.getLastModifiedTime(path).toMillis()
             val match = dated.matchEntire(name)
@@ -102,7 +107,7 @@ object LogImporter {
         CompletableFuture.supplyAsync({
             val logs = files(folder, includeLatest, newerThan)
             filesTotal = logs.size; filesDone = 0
-            val parser = Parser(self); val failures = mutableListOf<Failure>(); var skippedAccounts = 0
+            val parser = Parser(self); val failures = mutableListOf<Failure>(); val skipped = mutableListOf<Failure>()
             for (file in logs) {
                 try {
                     val json = file.path.toString().endsWith(".json", true)
@@ -114,14 +119,18 @@ object LogImporter {
                             else parser.read(reader, day, closeAtEnd = !active, source = file.path.toAbsolutePath().normalize().toString())
                         }
                     }
-                } catch (_: HistoryBackfill.OwnerMismatch) {
-                    skippedAccounts++
+                } catch (error: HistoryBackfill.OwnerMismatch) {
+                    val reason = error.message ?: "Account could not be verified"
+                    skipped += Failure(folder.relativize(file.path).toString(), reason)
+                    logger.info("Skipped history log {} for {}: {}", file.path, self, reason)
                 } catch (error: Exception) {
                     failures += Failure(file.path.fileName.toString(), error.message ?: error.javaClass.simpleName)
                     logger.warn("Couldn't import {}", file.path.fileName, error)
                 } finally { filesDone++ }
             }
-            Result(parser.runs, parser.sparklings, logs.size, logs.maxOfOrNull { it.modified } ?: 0L, failures, parser.ticketTimes, skippedAccounts, parser.alphaRuns, parser.alphaSparklings)
+            logger.info("History scan for {} in {}: {} files, {} account skips, {} failures, {} runs, {} sparkling catches",
+                self, folder, logs.size, skipped.size, failures.size, parser.runs.size, parser.sparklings.size)
+            Result(parser.runs, parser.sparklings, logs.size, logs.maxOfOrNull { it.modified } ?: 0L, failures, parser.ticketTimes, skipped.size, parser.alphaRuns, parser.alphaSparklings, skipped)
         }, executor)
 
     data class CatchLog(val path: Path, val lines: List<String>, val line: Int)
@@ -138,7 +147,7 @@ object LogImporter {
             val candidates = (listOfNotNull(preferred) + nearby).distinct()
             var best: CatchLog? = null; var distance = Long.MAX_VALUE
             for (path in candidates) {
-                if (!path.toString().endsWith(".log", true) && !path.toString().endsWith(".log.gz", true)) continue
+                if (!isLog(path.toString())) continue
                 runCatching {
                     val match = dated.matchEntire(path.fileName.toString())
                     val start = match?.let { LocalDate.of(it.groupValues[1].toInt(), it.groupValues[2].toInt(), it.groupValues[3].toInt()) }
@@ -205,7 +214,8 @@ object LogImporter {
                         "Totals are a cross-check only; records without log evidence are kept.") }
                     client.player?.sendOverlayMessage(Component.literal("§aHistory import complete"))
                     tell("[SM] Scanned ${result.files} files: added §e$runs§r runs, updated §e${RunHistory.lastImportUpdated}§r existing runs, and added §e$sparks§r sparklings. " +
-                        "Removed $removedRuns Alpha/duplicate runs and $removedSparks Alpha/duplicate catches confirmed by scanned logs. ${result.skippedAccounts} files skipped for a different or unverifiable account." + (if (result.failures.isNotEmpty()) " §c${result.failures.size} files failed; see latest.log." else "") +
+                        "Removed $removedRuns Alpha/duplicate runs and $removedSparks Alpha/duplicate catches confirmed by scanned logs. ${result.skippedAccounts} files skipped for a different or unverifiable account." +
+                        (if (result.skippedAccounts > 0) " File names and reasons are in latest.log." else "") + (if (result.failures.isNotEmpty()) " §c${result.failures.size} files failed; see latest.log." else "") +
                         (if (earned > 0) " §6$earned achievements unlocked!" else ""))
                 }
             } catch (failure: Exception) {
