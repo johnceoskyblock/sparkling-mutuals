@@ -22,3 +22,7 @@ Two approaches were discussed: clear the combined list after leaving the box, or
 No automatic menu navigation, trading, changes to sell-offer alerts, forecast claims or higher network caps. Retain the NoFrills crash and short-label recognition fixes. Test page accumulation/revisits, explicit zero versus omission, scope isolation/restart restore, stale ownership versus stale prices, and bounded persistence. Build/test 26.1.2 and verify native layout/scrolling with the user's mod combination where possible. No instance replacement or game closure without applicable authorization.
 
 Implementation details and exact spacing are delegated to the builder. Approval is required before product code changes.
+
+## Later direct human amendment (2026-11-03)
+
+The human subsequently requested limiting highlights to whatever shards are currently in `/profit`'s top ten. This supersedes displaying all 37 supported products: borders, added tooltips and sidebar rows now use the command's shared cached ranking and preferences. Stored ownership still covers all 37 so ranking changes do not erase previous observations. Personal sell-offer alerts and HOLD/SELL model semantics retain their previous scope.

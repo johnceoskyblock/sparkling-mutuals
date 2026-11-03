@@ -9,7 +9,7 @@ class SavedBoxGuidanceSessionTest {
     private val bird="SHARD_BLUEBIRD"
     private val hide="SHARD_HIDEONWALL"
     private val demands=mutableListOf<Set<String>>()
-    private val c=SaleGuidanceSession(SellOfferWatch(),{_,_,ids,_->demands.add(ids)},{_,_->})
+    private val c=SaleGuidanceSession(SellOfferWatch(),{_,_,ids,_->demands.add(ids)},{_,_->},profitProducts={setOf(bird,hide)})
     private fun slots(id: String=bird,count: Long=10)=listOf(MenuSlot(10,id,"${SaleProducts.names.getValue(id)} Shard",listOf("Owned: $count Shards")))
     private fun advice(at: Long=now)=mapOf(bird to Recommendation(bird,AdviceState.SELL,100.0,at,"EXPERIMENTAL_RANGE"),
         hide to Recommendation(hide,AdviceState.HOLD,100.0,at,"EXPERIMENTAL_RANGE"))

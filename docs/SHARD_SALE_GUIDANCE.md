@@ -2,19 +2,21 @@
 
 ## Use and meaning
 
-Local development for **Minecraft 26.1.2 only**. Enable **SkyBlock → Helpers → Shard sale guidance (experimental)** in `/sm`; default off. Hunting Box shard slots show green for SELL near/above a recent reference target, red for HOLD below it, and gray when data is unavailable. Hover for current competing sell-offer price, reference target, quote age and explanation. Icons, server stacks, clicks and ordinary `/profit` rankings are unchanged. Shelved valuation stays shelved.
+Local development for **Minecraft 26.1.2 only**. Enable **SkyBlock → Helpers → Shard sale guidance (experimental)** in `/sm`; default off. Owned Hunting Box shards in the current **`/profit` top ten** show green for SELL near/above a recent reference target, red for HOLD below it, and gray when data is unavailable. Other shards receive no range border or added range tooltip. Hover for current competing sell-offer price, reference target, quote age and explanation. Icons, server stacks, clicks and ordinary `/profit` rankings are unchanged. Shelved valuation stays shelved.
+
+Selection reuses `ProfitableCritters.cachedSpecies()`, exactly matching the command's cached estimated coins-per-run ranking, chosen ticket and insta-sell/sell-offer preference. It is not a fixed list or highest unit-price ranking. Rockmite remains eligible when listed by the command; entity-ESP exceptions do not apply to the box. No need to run `/profit` manually. New cached quotes/preferences update the selection on the next client tick. If the ranking is unavailable, no fallback highlights appear; opening the enabled box may bootstrap the existing throttled quote refresh. The command remains read-only. HOLD/SELL targets still use experimental history ranges and live prices, independently of the ranking metric.
 
 These are descriptive historical ranges, **not validated forecasts, recovery times, order fills or guaranteed profits**. A below-range price can continue falling. The human approved this experimental meaning after every tested forecast family failed qualification. No three-hour probability or predicted waiting time is implied. No trading actions are automated.
 
 ## Saved cross-page list
 
-The Hunting Box also shows an alphabetical list to the right of the inventory: green **SELL**, red **HOLD**, gray **UNAVAILABLE**. Scroll over the panel to see additional rows; inventory scrolling elsewhere is unchanged. The same guidance switch controls the panel, slot borders and tooltips. The list covers the current 37 supported Safari shards.
+The Hunting Box also shows an alphabetical list to the right of the inventory: green **SELL**, red **HOLD**, gray **UNAVAILABLE**. Scroll over the panel to see additional rows; inventory scrolling elsewhere is unchanged. The same guidance switch controls the panel, slot borders and tooltips. It lists remembered owned shards currently in the `/profit` top ten (or fewer when the command has fewer valid prices). Ownership for the full 37-species catalog is retained so ranking changes can use previously visited pages without erasing them.
 
 Each visited page updates remembered ownership; repeat visits replace counts rather than adding them. Explicit zero-owned entries remove that product. Missing rows, filters and unopened pages cannot prove zero ownership. Previously observed rows remain between openings and have a `*` until revisited; hovering shows the observed count and age. Closing the box hides the panel. Market advice is always refreshed and subject to the existing freshness/coverage rules, even when ownership is old.
 
 Verified account/profile lists survive restarts in private local `sparkling-mutuals-box-guidance.json`, with four scopes and 37 entries per scope, <=64 KiB final and <=64 KiB atomic staging file (128 KiB combined). The existing worker and coalescing save queue handle disk work. Restored ownership never restores prices or establishes profile identity. Until a fresh **Profile ID:** line is received, only the current connection's observations are used; the panel explains `/profileid` to enable profile-specific saving. Unverified observations are not written to disk or adopted into a newly verified scope.
 
-Opening the box updates its visible page and requests advice for remembered supported products within existing request limits. Other pages update when visited; no automatic menu navigation is performed. The panel uses actual container bounds, scales down only to 75%, and hides if the remaining margin is too small to remain readable without overlapping inventory slots.
+Opening the box updates its visible page and requests advice for remembered owned top-ten products within existing request limits. Existing personal sell-offer watches retain their own demand and alert scope, including products outside the box's top ten. Other pages update when visited; no automatic menu navigation is performed. The panel uses actual container bounds, scales down only to 75%, and hides if the remaining margin is too small to remain readable without overlapping inventory slots.
 
 ## Data and rule
 
@@ -58,4 +60,4 @@ Detailed unit/native receipts remain in the local execution ledger. Live Hypixel
 
 ## Last updated
 
-2026-11-03 (America/New_York) — Added approved saved cross-page sidebar, profile isolation and ownership freshness indicators; retained descriptive-range meaning and live-evidence limitations.
+2026-11-03 — Limited box highlights, added tooltips and sidebar rows to the current `/profit` top ten under the human's direct amendment; retained all saved ownership, personal watch scope and price-range rules.

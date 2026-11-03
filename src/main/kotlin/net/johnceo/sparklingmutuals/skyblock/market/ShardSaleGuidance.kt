@@ -4,6 +4,7 @@ import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents
 import net.fabricmc.loader.api.FabricLoader
 import net.johnceo.sparklingmutuals.LocalChat
+import net.johnceo.sparklingmutuals.commands.ProfitableCritters
 import net.johnceo.sparklingmutuals.compat.smScreen
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.history.BazaarPrices
@@ -24,6 +25,7 @@ object ShardSaleGuidance {
     private val watchFile by lazy {OrderWatchPersistence(FabricLoader.getInstance().configDir.resolve("sparkling-mutuals-sale-watches.json"))}
     private val boxFile by lazy {SavedHuntingBoxStore(FabricLoader.getInstance().configDir.resolve("sparkling-mutuals-box-guidance.json"))}
     private val watches=SellOfferWatch()
+    private val profitSelection by lazy {ProfitGuidanceSelection(ProfitableCritters::cachedSpecies,BazaarPrices::ensureGuidanceFresh)}
     private val market by lazy {ShardMarketService(SaleProducts.names.keys,System::currentTimeMillis,worker,
         FinanceHistoryTransport(),{job,raw,now ->FinanceHistoryParsing.runtime(raw,now,job.part)},
         MarketHistoryStore(FabricLoader.getInstance().configDir.resolve("sparkling-mutuals-shard-history.json"),SaleProducts.names.keys),
@@ -37,7 +39,8 @@ object ShardSaleGuidance {
             lastDemand=signature;demandAt=now
             market.updateDemand(enabled,skyblock,products,generation)
         }
-    },{_,text ->Minecraft.getInstance().player?.sendSystemMessage(LocalChat.component(text));save(force=true)})
+    },{_,text ->Minecraft.getInstance().player?.sendSystemMessage(LocalChat.component(text));save(force=true)},
+        profitProducts={profitSelection.products()})
     private var registered=false
     private var loaded=false
     private var connection: Any?=null
@@ -123,6 +126,7 @@ object ShardSaleGuidance {
     }
     internal fun hasVerifiedProfile()=SaleProfileEvidence.scope(account,profile)!=null
     internal fun sidebarOpening()=session.sidebarOpening
+    internal fun profitRankingReady()=session.profitRankingReady()
     private fun advice(screen: AbstractContainerScreen<*>,slot: Slot): Recommendation? {
         if(!ConfigManager.shardSaleGuidance || menu!==screen || Minecraft.getInstance().smScreen!==screen)return null
         return view?.advice(screen.menu,screen.menu.stateId,slot.index,slot.item,System.currentTimeMillis())

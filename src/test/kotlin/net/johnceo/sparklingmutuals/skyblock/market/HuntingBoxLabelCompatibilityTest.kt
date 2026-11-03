@@ -25,7 +25,7 @@ class HuntingBoxLabelCompatibilityTest {
         assertTrue(HuntingBoxShardParsing.parse("(3/3) Hunting Box",listOf(entry(name="Fake Hideonwall"))).isEmpty())
     }
     @Test fun `recognized menu slots reach unavailable advice before history is ready`() {
-        val session=SaleGuidanceSession(SellOfferWatch(),{_,_,_,_->},{_,_->})
+        val session=SaleGuidanceSession(SellOfferWatch(),{_,_,_,_->},{_,_->},profitProducts={setOf("SHARD_HIDEONWALL")})
         val view=session.tick(true,true,null,"Local","(3/3) Hunting Box",listOf(entry()),emptyMap(),1000)
         assertEquals(AdviceState.UNKNOWN,view.getValue(16).state)
         assertEquals("HISTORY_COVERAGE",view.getValue(16).reason)

@@ -68,9 +68,9 @@ internal object ShardSaleSidebar {
         g.fill(0,0,width,height,SettingsPalette.background)
         g.fill(0,0,width,1,SettingsPalette.accent)
         fun text(value: String,x: Int,y: Int,color: Int=SettingsPalette.text)=g.text(client.font,value,x,y,color,true)
-        text("Shard guidance",6,6,SettingsPalette.accent)
-        text("${rows.size} shards · Scroll list",6,18,SettingsPalette.muted)
-        if(rows.isEmpty())text("Visit box pages to add shards",6,header+2,SettingsPalette.muted)
+        text("Top /profit shards",6,6,SettingsPalette.accent)
+        text("${rows.size} owned · Scroll list",6,18,SettingsPalette.muted)
+        if(rows.isEmpty())text(if(ShardSaleGuidance.profitRankingReady())"Visit pages to find top shards" else "Waiting for /profit prices",6,header+2,SettingsPalette.muted)
         rows.drop(scroll).take(area.rows).forEachIndexed {index,row->
             val y=header+index*rowHeight
             if(row==hover)g.fill(2,y-1,width-2,y+12,SettingsPalette.hover)

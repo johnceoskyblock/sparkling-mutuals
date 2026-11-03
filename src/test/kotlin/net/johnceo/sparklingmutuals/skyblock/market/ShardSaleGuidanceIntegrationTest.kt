@@ -10,7 +10,7 @@ class ShardSaleGuidanceIntegrationTest {
     private val order=listOf(MenuSlot(10,"","§6§lSELL §6Bluebird Shard",listOf("Offer amount: 50x","Price per unit: 100 coins")))
     @Test fun `visible demand and revalidated offers combine without render network work`() {
         val calls=mutableListOf<Set<String>>();val messages=mutableListOf<String>()
-        val controller=SaleGuidanceSession(SellOfferWatch(),{_,_,ids,_->calls.add(ids)},{_,text->messages.add(text)})
+        val controller=SaleGuidanceSession(SellOfferWatch(),{_,_,ids,_->calls.add(ids)},{_,text->messages.add(text)},profitProducts={setOf("SHARD_BLUEBIRD")})
         val advice=mapOf("SHARD_BLUEBIRD" to Recommendation("SHARD_BLUEBIRD",AdviceState.SELL,100.0,now,"EXPERIMENTAL_RANGE",100.0,"range"))
         assertEquals(setOf(10),controller.tick(true,true,scope,"Player","Hunting Box",box,advice,now).keys)
         assertEquals(setOf("SHARD_BLUEBIRD"),calls.last())
@@ -25,7 +25,7 @@ class ShardSaleGuidanceIntegrationTest {
     @Test fun `disable profile uncertainty disconnect and stale advice clear colors and notifications`() {
         val calls=mutableListOf<Pair<Long,Set<String>>>()
         val messages=mutableListOf<String>()
-        val c=SaleGuidanceSession(SellOfferWatch(),{_,_,ids,generation->calls.add(generation to ids)},{_,text->messages.add(text)})
+        val c=SaleGuidanceSession(SellOfferWatch(),{_,_,ids,generation->calls.add(generation to ids)},{_,text->messages.add(text)},profitProducts={setOf("SHARD_BLUEBIRD")})
         val rec=Recommendation("SHARD_BLUEBIRD",AdviceState.SELL,100.0,now,"EXPERIMENTAL_RANGE",100.0,"range")
         c.tick(true,true,scope,"Player","Your Bazaar Orders",order,mapOf(rec.productId to rec),now)
         val first=calls.last().first
