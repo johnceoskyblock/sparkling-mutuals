@@ -67,3 +67,7 @@ Focused automated coverage exercises retained members, joining/leaving members, 
 2026-10-21 — Added `/profitablecritters` as a read-only consumer of existing Bazaar quotes; no new fetch trigger.
 
 2026-10-21 (America/New_York) — Implemented retained member discovery baselines, local catch updates, thirty-minute personal stats and three-hour Bazaar throttling; reused resolved IGNs for party profile cards.
+
+## Experimental shard sale guidance (26.1.2)
+
+Default-off demand shares Bazaar quotes at most once/minute; ordinary consumers keep three-hour cadence. Visible box shards and revalidated personal watches request anonymous Skyblock.finance history: two-day minute data every ten minutes and eight-day fifteen-minute data hourly, serialized at least one second apart, at most37products/74jobs/one outstanding request. Bodies cap2MiB, timeout20seconds, bounded retries/Retry-After. Render/tooltip reads never fetch. Disable/leavingSkyBlock/disconnect invalidates demand/late results. No personal identifiers or orders transmitted. The five-minute research collector remains stopped. See [experimental range contract](SHARD_SALE_GUIDANCE.md).

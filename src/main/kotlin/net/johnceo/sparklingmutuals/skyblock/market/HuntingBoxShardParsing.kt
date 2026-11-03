@@ -37,7 +37,9 @@ internal object HuntingBoxShardParsing {
 internal object SaleProfileEvidence {
     private fun uuid(raw: String?)=raw?.takeIf {Regex("(?:[0-9a-fA-F]{32}|[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12})").matches(it)}?.replace("-","")?.lowercase(Locale.ROOT)
     fun profile(line: String)=Regex("^Profile ID: (\\S+)$").matchEntire(SafariRules.strip(line))?.groupValues?.get(1)?.let(::uuid)
-    fun changing(line: String)=Regex("^You are playing on profile: [A-Za-z]+(?: \\(Co-op\\))?$").matches(SafariRules.strip(line))
+    fun changing(line: String)=SafariRules.strip(line).let { text ->
+        listOf("You are playing on profile: ","Your profile was changed to: ").any {text.startsWith(it,ignoreCase=true)}
+    }
     fun scope(account: String?,profile: String?): MarketScope? {
         val owner=uuid(account) ?: return null
         return uuid(profile)?.let {MarketScope(owner,it)}

@@ -12,6 +12,7 @@ Players: start with [installation and controls](../README.md). Contributors: rea
 | Gameplay overview | [Modes and completion](../SAFARI_LOGIC.md), [37 species](critters/README.md) |
 | Evidence | [Tracking](critters/TRACKING.md), [exact messages](critters/MESSAGES.md), [floor drops](critters/FLOOR_DROPS.md) |
 | API data and recovery | [Safari API lookups, new players and one-minute retries](API_LOOKUPS.md) |
+| Experimental shard ranges | [Hunting Box colors and observed sell-offer alerts](SHARD_SALE_GUIDANCE.md) |
 | Cached-data estimates | [Profitable critters](PROFITABLE_CRITTERS.md), [Sparkling rates](SPARKLING_RATES.md) |
 | Network investigations | [API fetch audit](API_FETCH_AUDIT.md), [shared API usage report](SHINYHUNTER_API_USAGE_REPORT.md), [unknown-packet disconnect investigation](NETWORK_DISCONNECTS.md) |
 | Banners and HUD themes | [Safari banners, customization ownership and ticket progress](BANNERS.md) |

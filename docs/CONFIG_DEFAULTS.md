@@ -188,3 +188,7 @@ Each mode dropdown has independent Hide critter ESP and Hide floor-drop ESP togg
 Successful profile/discovery reads and IGN-to-UUID lookups are reused for 60 minutes, including after repartying. Simultaneous reads share one request. Failed lookups are not cached; background failures keep their one-minute retry. Observed catches update participating players’ discovery lists locally. Current mode discovery baselines remain cached while members are active or reserved for warping. Ticket and Honeyhive queries bypass the hour-long profile cache and retain the existing short transport-cache freshness. No periodic request is added by cache expiry. Account/provider/Alpha scope changes prevent cross-scope profile reuse.
 
 2026-11-02 — Shortened config descriptions and limited local command help to slash commands. Preserved the Sparkle Warping explanation.
+
+## Experimental shard ranges
+
+SkyBlock → Helpers → Shard sale guidance (experimental) uses persisted `shardSaleGuidance`, default **off** for both new and existing settings. It adds Hunting Box range colors and passive observed-order advisories, without enabling shelved valuation. See [meaning and limitations](SHARD_SALE_GUIDANCE.md).

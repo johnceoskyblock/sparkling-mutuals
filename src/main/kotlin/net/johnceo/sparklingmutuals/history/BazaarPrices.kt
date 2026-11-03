@@ -86,14 +86,16 @@ internal class BazaarPriceCache(
     private var fetchedAt: Long? = null
     private var fetching = false
 
-    fun ensureFresh(intervalMillis: Long = refreshMillis) {
+    @Synchronized fun ensureFresh(intervalMillis: Long = refreshMillis) {
         val interval = intervalMillis.coerceAtLeast(60_000L)
         if (fetching || fetchedAt?.let { clock() - it < interval } == true) return
         fetching = true
         fetchedAt = clock()
         fetch { read ->
-            fetching = false
-            if (read.isNotEmpty()) prices = read
+            synchronized(this) {
+                fetching = false
+                if (read.isNotEmpty()) prices = read
+            }
         }
     }
 

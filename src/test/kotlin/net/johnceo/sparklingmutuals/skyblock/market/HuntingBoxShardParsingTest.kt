@@ -28,6 +28,8 @@ class HuntingBoxShardParsingTest {
         assertNull(SaleProfileEvidence.scope(id,null))
         assertNotNull(SaleProfileEvidence.scope(id,id))
         assertTrue(SaleProfileEvidence.changing("You are playing on profile: Apple"))
+        assertTrue(SaleProfileEvidence.changing("Your profile was changed to: Banana"))
+        assertTrue(SaleProfileEvidence.changing("You are playing on profile: Apple (Co-op) extra suffix"),"Even an unknown login suffix must invalidate old scope")
         assertFalse(SaleProfileEvidence.changing("Player: You are playing on profile: Apple"))
     }
 }

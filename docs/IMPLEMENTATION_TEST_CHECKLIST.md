@@ -271,3 +271,11 @@ If a scenario fails, preserve a minimal reproduction and compare the current own
 2026-10-22 — Added Unique Haunted progress/footer and discovery-dependent Rockmite ESP gameplay checks.
 
 2026-10-19 (America/New_York) — Added early resource, local-title and late-entry report scenarios. Reviewed source: working changes on `78885e0`; live validation pending.
+
+## Experimental shard ranges — live checks pending
+
+- Enable the experimental SkyBlock / Helpers switch on26.1.2; verify persistence and unchanged /profit. Cold caches may stay gray while history loads.
+- Open box pages/sort/filter rapidly: only actual owned Safari slots get range outlines and local explanations. No stale advice follows reused slots; icons remain readable.
+- Confirm current Profile ID, observe SELL offers, verify explicit unit-price lore and co-op ownership. Repeat partial fills, duplicate products, detail/unknown screens and page changes. A cancel button or missing row never proves all offers cancelled.
+- Verify one last-observed advisory after confirmed SELL→HOLD with real ask decline; no repeat spam, target-only false drop, UNKNOWN/recovery or profile/account leakage. Restart requires revalidation.
+- Disable/disconnect during downloads/menu loading: no late colors/alerts. Never place/cancel test orders automatically. Offline checks do not certify trading outcomes.
