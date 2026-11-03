@@ -50,4 +50,32 @@ class WholeBoxTotalTest {
         c.tick(true,true,scope,connection,"(1/1) Hunting Box",items(n=0),prices(),now+1)
         assertEquals(0.0,c.snapshot(now+1)!!.value.known)
     }
+    @Test fun `quick reopening keeps quantities but resets coverage and older count markers`() {
+        tick();tick("(2/2) Hunting Box",bird,now+1)
+        assertTrue(c.snapshot(now+1)!!.coverage.complete)
+        tick("",at=now+100)
+        tick(at=now+450)
+        val reopened=c.snapshot(now+450)!!
+        assertEquals(900.0,reopened.value.known)
+        assertEquals(1,reopened.coverage.visited);assertEquals(1,reopened.coverage.older)
+        assertFalse(reopened.coverage.complete)
+    }
+    @Test fun `empty filtered view retains known quantities but cannot retain complete coverage`() {
+        tick();tick("(2/2) Hunting Box",bird,now+1)
+        c.tick(true,true,scope,connection,"(1/2) Hunting Box",
+            listOf(MenuSlot(48,"","Search",listOf("Query: nonexistent"))),prices(now+2),now+2)
+        val filtered=c.snapshot(now+2)!!
+        assertEquals(900.0,filtered.value.known)
+        assertFalse(filtered.coverage.complete);assertEquals(2,filtered.coverage.older)
+        assertEquals(0,filtered.coverage.visited)
+    }
+    @Test fun `empty loading packet after a complete view is partial until item evidence returns`() {
+        tick("(1/1) Hunting Box")
+        assertTrue(c.snapshot(now)!!.coverage.complete)
+        c.tick(true,true,scope,connection,"(1/1) Hunting Box",emptyList(),prices(now+1),now+1)
+        assertEquals(300.0,c.snapshot(now+1)!!.value.known)
+        assertFalse(c.snapshot(now+1)!!.coverage.complete)
+        tick("(1/1) Hunting Box",at=now+2)
+        assertTrue(c.snapshot(now+2)!!.coverage.complete)
+    }
 }

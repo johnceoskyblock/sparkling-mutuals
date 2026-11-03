@@ -17,6 +17,7 @@ internal class WholeBoxLedger {
     private var filtered=false
     private var total: Int?=null
     private var limited=false
+    private var loading=false
     private val refreshed=mutableSetOf<String>()
     private val pages=mutableMapOf<String,Int>()
     private fun current()=selected?.let {scopes.getValue(it)} ?: temporary
@@ -26,12 +27,14 @@ internal class WholeBoxLedger {
         selected=valid;this.connection=connection;temporary=Memory();beginOpening()
         if(valid!=null) {val memory=scopes.remove(valid) ?: Memory();scopes[valid]=memory;trim()}
     }
-    fun beginOpening() {view=null;filtered=false;total=null;limited=false;refreshed.clear();pages.clear()}
+    fun beginOpening() {view=null;filtered=false;total=null;limited=false;loading=false;refreshed.clear();pages.clear()}
     fun observe(page: WholeBoxPage,now: Long) {
         if(now<=0)return
         val expected=page.totalPages?.takeIf {it in 1..1000 && page.page!=null && page.page in 1..it}
         if(view!=null && (view!=page.view || total!=expected || filtered!=page.filtered))beginOpening()
         view=page.view;total=expected;filtered=page.filtered
+        loading=page.shards.isEmpty() && page.unsupported==0
+        if(loading)return // View changes still apply, but packet gaps do not establish zero or scanned coverage.
         val memory=current();memory.touched=true
         for(shard in page.shards) {
             if(!WholeBoxParsing.validId(shard.productId) || shard.amount<0)continue
@@ -49,7 +52,7 @@ internal class WholeBoxLedger {
         val older=rows().count {it.productId !in refreshed}
         val unknown=pages.values.sumOf {it.toLong()}.coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
         return WholeBoxCoverage(pages.size,total,total!=null && pages.size==total && !filtered &&
-            older==0 && unknown==0 && !limited,older,unknown,limited)
+            older==0 && unknown==0 && !limited && !loading,older,unknown,limited)
     }
     fun export(): String = JsonObject().apply {
         addProperty("schema",1)

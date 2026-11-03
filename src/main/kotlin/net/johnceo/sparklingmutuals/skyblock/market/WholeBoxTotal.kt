@@ -27,14 +27,14 @@ internal class WholeBoxTotal(private val refresh: ()->Unit={}) {
             active=on;selected=valid;this.connection=connection
         }
         summary=null
-        if(!on || !HuntingBoxShardParsing.isBox(title))return
+        if(!on || !HuntingBoxShardParsing.isBox(title)) {lastBoxAt=null;ledger.beginOpening();return}
         val previous=lastBoxAt
         if(previous==null || now<previous || now-previous>2000)ledger.beginOpening()
         lastBoxAt=now
         refresh() // Shared throttled public snapshot only; no per-product/history requests.
         val catalog=quotes?.let {it.quotes.keys+it.quickPrices.keys}.orEmpty()
         val page=WholeBoxParsing.observe(title,slots,catalog)
-        if(page!=null && (page.shards.isNotEmpty() || page.unsupported>0))ledger.observe(page,now)
+        if(page!=null)ledger.observe(page,now)
         val coverage=ledger.coverage()
         val rows=ledger.rows()
         val value=if(rows.isEmpty() && coverage.visited==0)WholeBoxValue(null,0,0,0)
