@@ -1,6 +1,6 @@
 # Bazaar shard unlist guidance
 
-Status: approach and clarification choices settled; written design awaiting approval.
+Status: approved by the human in this chat on 2026-11-03.
 
 ## Intent and selected approach
 
