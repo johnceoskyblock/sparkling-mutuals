@@ -48,4 +48,19 @@ class BazaarUnlistEvidenceTest {
         assertNull(BazaarUnlistPresentation.message(emptySet()))
         assertNull(BazaarUnlistPresentation.message(setOf("NOT_A_SHARD")))
     }
+    @Test fun `mixed legacy and structured SELL letters require effective bold on every visible letter`() {
+        val mixed=Component.literal("SE").withStyle(ChatFormatting.BOLD)
+            .append(Component.literal("§lLL Bluebird Shard"))
+        val reversed=Component.literal("§lSE").append(Component.literal("LL Bluebird Shard").withStyle(ChatFormatting.BOLD))
+        for(name in listOf(mixed,reversed)) {
+            assertEquals(1,SellOfferParsing.parseSlots("Your Bazaar Orders",
+                listOf(row().copy(name=MarketSlotName.capture(name))),"Player").size)
+        }
+        val plainStart=Component.literal("SE").append(Component.literal("§lLL Bluebird Shard"))
+        val reset=Component.literal("§lSE§rLL Bluebird Shard")
+        val colorReset=Component.literal("SE").withStyle(ChatFormatting.BOLD)
+            .append(Component.literal("§6LL Bluebird Shard"))
+        for(name in listOf(plainStart,reset,colorReset))assertTrue(SellOfferParsing.parseSlots("Your Bazaar Orders",
+            listOf(row().copy(name=MarketSlotName.capture(name))),"Player").isEmpty())
+    }
 }
