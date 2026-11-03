@@ -108,6 +108,10 @@ internal class ShardMarketService(
         if(!enabled)return
         val now=clock()
         if(!loaded) {history=store.read(now);loaded=true}
+        if(!demand.on || demand.token!=appliedToken)return
+        refreshQuotes() // The shared quote transport owns its one-minute GET throttle.
+        // All cached products see shared prices before a pending response parses or writes history.
+        publish(now)
         val response=pending
         if(response!=null) {
             pending=null
@@ -118,8 +122,7 @@ internal class ShardMarketService(
             }
         }
         if(!demand.on || demand.token!=appliedToken)return
-        refreshQuotes() // The shared quote transport owns its one-minute GET throttle.
-        publish(now)
+        if(response!=null)publish(clock())
         wanted.forEach {id -> HistoryPart.entries.forEach {part ->
             val job=HistoryJob(id,part)
             if(active?.job!=job)queue.add(job)

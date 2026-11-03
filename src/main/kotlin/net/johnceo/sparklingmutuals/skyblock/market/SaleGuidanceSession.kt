@@ -15,6 +15,7 @@ internal class SaleGuidanceSession(
     private var lastBoxAt: Long?=null
     private var insideBox=false
     private var latest=emptyMap<String,Recommendation>()
+    private val display=ShardDisplayAdvice()
     private var eligible=emptySet<String>()
     var sidebarOpening=0L
         private set
@@ -25,13 +26,14 @@ internal class SaleGuidanceSession(
         if(selected!=this.scope || on!=active || connection!==this.connection) {
             generation++;this.scope=selected;active=on;watches.selectScope(null);watches.selectScope(selected)
             this.connection=connection;lastBoxAt=null
+            display.clear()
         }
         boxes.select(selected,connection)
         insideBox=on && HuntingBoxShardParsing.isBox(title)
         eligible=if(insideBox)profitProducts().intersect(SaleProducts.names.keys).take(10).toSet()else emptySet()
         if(!on) {latest=emptyMap();demand(false,false,emptySet(),generation);return emptyMap()}
         val fresh=advice.mapValues {(_,rec) ->fresh(rec,now)}
-        latest=fresh
+        latest=display.project(fresh)
         watches.observe(SellOfferParsing.parse(title,slots,localName),now)
         val observed=HuntingBoxShardParsing.observe(title,slots)
         if(insideBox) {
@@ -43,12 +45,13 @@ internal class SaleGuidanceSession(
         val products=if(insideBox)boxes.rows().map {it.first.productId}.filter {it in eligible}.toSet()else emptySet()
         demand(true,true,products+watches.products(now),generation)
         watches.update(fresh,now).forEach {notify(it.productId,it.message)}
-        return box.associate {entry ->entry.slot to (fresh[entry.productId] ?: Recommendation(entry.productId,AdviceState.UNKNOWN,null,0,"HISTORY_COVERAGE"))}
+        return box.associate {entry ->entry.slot to (latest[entry.productId] ?: Recommendation(entry.productId,AdviceState.UNKNOWN,null,0,"HISTORY_COVERAGE"))}
     }
     private fun fresh(rec: Recommendation,now: Long)=
         if(now-rec.quoteAt>180000 || now<rec.quoteAt-60000)rec.copy(state=AdviceState.UNKNOWN,target=null,reason="STALE_QUOTE")else rec
     fun reset() {
         generation++;scope=null;active=false;connection=null;lastBoxAt=null;insideBox=false;latest=emptyMap();eligible=emptySet()
+        display.clear()
         boxes.select(null,null);watches.selectScope(null);demand(false,false,emptySet(),generation)
     }
     fun sidebar(now: Long): List<SavedBoxRow> = if(!insideBox)emptyList()else boxes.rows().filter {it.first.productId in eligible}.map {(shard,seen)->

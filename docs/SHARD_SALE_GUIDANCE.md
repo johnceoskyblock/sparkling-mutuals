@@ -26,7 +26,7 @@ Anonymous [Skyblock.finance](https://skyblock.finance/) chart requests use `bz!a
 
 The descriptive rule blends the 60th percentiles of three hours/day/week with 60%/30%/10% weights, clamped to six-hour 10th–90th percentiles. Three falling closed fifteen-minute medians totaling at least 1% decline enable a falling-range exit interpretation. These are explanatory choices, not successfully validated forecasts. Require 80% three-hour/day/six-hour/week coverage, latest fine bin within fifteen minutes, live quote within three minutes, and newest history reference within 10% of current ask. Failure removes colors and market alerts.
 
-SELL enters at 99.5% of target. SELL→HOLD needs ask below 98.5%, confirmed by two distinct server snapshots at least sixty seconds apart. Repeated reads cannot confirm. UNKNOWN resets the baseline; recovery cannot invent a drop. Recalculation without an actual ask decline cannot trigger a price-drop alert.
+SELL enters at 99.5% of target. Box borders, tooltips and sidebar change a displayed SELL to HOLD on the first valid ask below 98.5%, retaining HOLD until the 99.5% SELL threshold is reached. This display-only state does not wait for alert confirmation. Personal alerts still require two distinct server snapshots at least sixty seconds apart for SELL→HOLD. Repeated reads cannot confirm alerts. UNKNOWN and scope/connection changes reset baselines; recovery cannot invent a drop. Recalculation without an actual ask decline cannot trigger a price-drop alert.
 
 ## Personal sell offers
 
@@ -44,6 +44,8 @@ Live Hunting Box inspection on 2026-11-03 showed the short `Hideonwall` label, `
 
 One integration and one lazy daemon worker. Rendering only reads cached slots, guarded by menu identity, revision and item reference. Parsing, HTTP and disk work stay outside drawing/tooltips. Disable and cached reads do not wait for background processing.
 
+Fresh shared quotes are published for all demanded products with usable cached history before pending history responses are parsed/written, then refreshed again after accepted history. Cold missing history still loads serially within the existing limits. The faster display removes the additional alert-confirmation wait; it does not accelerate the provider's own updates or change the one-minute quote-fetch minimum.
+
 The container tooltip hook shadows the hovered-slot field directly with `@JvmField`. It must not generate Kotlin `getHoveredSlot`/`setHoveredSlot` methods: those collide with NoFrills' public slot accessor and crash container tooltip rendering. A compiled-bytecode regression guards this compatibility boundary.
 
 Demand is limited to visible box products plus revalidated personal watches, at most 37 Safari shards. Shared live refresh is at most once/minute; ordinary consumers keep three-hour cadence. History requests are serialized at least one elapsed second apart: recent data every ten minutes, week context hourly. At most 74 queued jobs, one active request, 2 MiB response, twenty-second timeout, capped fifteen-second→fifteen-minute backoff and a provider-wide elapsed Retry-After cooldown across products, views and sessions. Disable, leaving SkyBlock or disconnect invalidates demand/UI and cancels unnecessary history work. Late generations cannot publish. No collector runs after Minecraft closes.
@@ -60,4 +62,4 @@ Detailed unit/native receipts remain in the local execution ledger. Live Hypixel
 
 ## Last updated
 
-2026-11-03 — Limited box highlights, added tooltips and sidebar rows to the current `/profit` top ten under the human's direct amendment; retained all saved ownership, personal watch scope and price-range rules.
+2026-11-03 — Made box decisions update on the first valid below-range quote, kept personal alerts confirmed, and published shared prices before pending history processing. Top-ten selection, saved ownership, target rules and request limits are unchanged.

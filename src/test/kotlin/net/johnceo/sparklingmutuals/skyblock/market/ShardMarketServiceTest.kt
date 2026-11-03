@@ -8,6 +8,38 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 
 class ShardMarketServiceTest {
+    @Test fun `new shared quote reaches all ten cached products before pending history parsing`() {
+        val ids=SaleProducts.names.keys.take(10).toSet()
+        val cache=MarketHistoryStore(directory.resolve("priority.json"),ids)
+        cache.write(ids.associateWith {data},now)
+        val worker=java.util.concurrent.Executors.newSingleThreadExecutor()
+        val requested=java.util.concurrent.CountDownLatch(1)
+        val entered=java.util.concurrent.CountDownLatch(1)
+        val release=java.util.concurrent.CountDownLatch(1)
+        val callback=java.util.concurrent.atomic.AtomicReference<((HistoryReply)->Unit)?>()
+        val quote=java.util.concurrent.atomic.AtomicReference(QuoteSnapshot(now,
+            ids.associateWith {MarketQuote(it,100.0,90.0,now)},emptyMap()))
+        val s=ShardMarketService(ids,{now},worker,HistoryTransport {_,reply ->
+            callback.set(reply);requested.countDown();MarketCancel {}
+        },{_,_,_->entered.countDown();release.await(5,java.util.concurrent.TimeUnit.SECONDS);data},
+            cache,{quote.get()},{},{null},experimental=true)
+        try {
+            s.updateDemand(true,true,ids,1)
+            assertTrue(requested.await(3,java.util.concurrent.TimeUnit.SECONDS))
+            assertTrue(s.snapshot(now).values.all {it.state==AdviceState.SELL})
+            val next=now+60000
+            quote.set(QuoteSnapshot(next,ids.associateWith {MarketQuote(it,98.0,90.0,next)},emptyMap()))
+            callback.get()!!(HistoryReply(200,"ok"))
+            assertTrue(entered.await(3,java.util.concurrent.TimeUnit.SECONDS))
+            val current=s.snapshot(next)
+            assertEquals(ids,current.keys)
+            assertTrue(current.values.all {it.quoteAt==next && it.ask==98.0},
+                "Fresh shared prices must publish before slow history parsing or disk writes")
+            assertTrue(current.values.all {it.state==AdviceState.SELL},"Service still exposes confirmed advice")
+            s.stop(2)
+            assertTrue(s.snapshot(next).isEmpty(),"Interim view cannot outlive disabled demand")
+        } finally {release.countDown();worker.shutdown();assertTrue(worker.awaitTermination(6,java.util.concurrent.TimeUnit.SECONDS))}
+    }
     @Test fun `slow background parsing never blocks cached rendering or client disable`() {
         val worker=java.util.concurrent.Executors.newSingleThreadExecutor()
         val client=java.util.concurrent.Executors.newSingleThreadExecutor()
