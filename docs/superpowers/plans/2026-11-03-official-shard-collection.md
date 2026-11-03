@@ -36,10 +36,10 @@
 
 **Interfaces:** `parse_quotes(raw: bytes, received_at: int) -> dict`; `read_body(stream, limit: int, counter: list[int]) -> bytes`; `decode_body(body: bytes, encoding: str) -> bytes`; `fetch_official(limit: int) -> dict`.
 
-- [ ] Write failing tests: best ask/bid versus weighted values; allowlist isolation; malformed/crossed books; future/stale timestamps; encoded stream and gzip expansion limits.
-- [ ] Run `python -B -m unittest discover -s tools/shard_market -p test_official_quotes.py -v`; expect failures for missing reader.
-- [ ] Implement the fixed public reader, rejecting redirect/non-200 responses and retaining no full payload in output.
-- [ ] Rerun the reader tests; expect all pass.
+- [x] Write failing tests: best ask/bid versus weighted values; allowlist isolation; malformed/crossed books; future/stale timestamps; encoded stream and gzip expansion limits.
+- [x] Run `python -B -m unittest discover -s tools/shard_market -p test_official_quotes.py -v`; expect failures for missing reader.
+- [x] Implement the fixed public reader, rejecting redirect/non-200 responses and retaining no full payload in output.
+- [x] Rerun the reader tests; expect all pass.
 
 ### Task 2: Persistent bounded run and controls
 
@@ -47,13 +47,17 @@
 
 **Interfaces:** `Store(path, limits).begin(now) -> reservation | None`, `finish(result, now)`, `SingleWorker(path)`; CLI `run/status/stop --data-dir PATH`.
 
-- [ ] Write failing tests for persisted deadline/request/download limits, interrupted reservations, missing state, corrupt data, single-worker exclusion, stop marker, output cap, restart throttle, clock regression, timeout termination and successful selected-record persistence.
-- [ ] Run the collector tests; expect failures for missing collector.
-- [ ] Implement atomic state and bounded append, fail-closed loads, OS-held lock, parent-enforced child timeout, interruptible waiting and fixed CLI. No reset switch, startup registration or automatic restart.
-- [ ] Run all helper tests, existing repository Python suites and `:26.1.2:test`; expect zero failures. Run read-only documentation sync and `git diff --check`.
-- [ ] Commit locally. Obtain one fresh review of this collector increment, fix Important findings with RED→GREEN tests, and rerun affected/full checks. This is not the unfinished feature's final review.
-- [ ] Start exactly one hidden local process in an output directory outside the checkout. Verify PID identity, first actual official quote, limits and status. Provide status/stop commands and actual deadline. Record launch receipt; leave collection running without waiting 15 days in this session.
+- [x] Write failing tests for persisted deadline/request/download limits, interrupted reservations, missing state, corrupt data, single-worker exclusion, stop marker, output cap, restart throttle, clock regression, timeout termination and successful selected-record persistence.
+- [x] Run the collector tests; expect failures for missing collector.
+- [x] Implement atomic state and bounded append, fail-closed loads, OS-held lock, parent-enforced child timeout, interruptible waiting and fixed CLI. No reset switch, startup registration or automatic restart.
+- [x] Run all helper tests, existing repository Python suites and `:26.1.2:test`; expect zero failures. Run read-only documentation sync and `git diff --check`.
+- [x] Commit locally. Obtain one fresh review of this collector increment, fix Important findings with RED→GREEN tests, and rerun affected/full checks. This is not the unfinished feature's final review.
+- [x] Start exactly one hidden local process in an output directory outside the checkout. Verify PID identity, first actual official quote, limits and status. Provide status/stop commands and actual deadline. Record launch receipt; leave collection running without waiting 15 days in this session.
 
 ## Self-review and execution
 
 Both tasks map to the approved bounded proposal; counter safety belongs to the store, transport limits to the reader, total deadline and single-worker exclusion to the runner. All five review conditions have named tests. Preserve Native execution and the existing ledger. No additional dependency, target or release work is included.
+
+## Recorded outcome
+
+Completed locally at collector code commit `bf3326a`: 30 helper tests pass on both source and frozen launch copy; fresh 26.1.2 suite passed 1,193 tests. The current checkout has no pre-existing tracked Python suite, so historical external helper totals are not claimed. Four Important focused-review findings were fixed with failing-then-passing regressions; broader invalid-response reason codes remain a deferred minor. One hidden collection process was launched under the direct approval and its first HTTP 200 response supplied 37 valid shard quotes. Full receipts and status/stop controls live outside the checkout under `outputs/shard-sale-guidance-20261103`. The market-guidance feature and 15-day coverage remain incomplete; this is the acquisition increment only.
