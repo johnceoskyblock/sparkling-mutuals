@@ -8,6 +8,29 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 
 class ShardMarketServiceTest {
+    @Test fun `slow background parsing never blocks cached rendering or client disable`() {
+        val worker=java.util.concurrent.Executors.newSingleThreadExecutor()
+        val client=java.util.concurrent.Executors.newSingleThreadExecutor()
+        val entered=java.util.concurrent.CountDownLatch(1)
+        val release=java.util.concurrent.CountDownLatch(1)
+        val requested=java.util.concurrent.CountDownLatch(1)
+        val callback=java.util.concurrent.atomic.AtomicReference<((HistoryReply)->Unit)?>()
+        val s=ShardMarketService(setOf(id),{now},worker,HistoryTransport {_,reply ->
+            callback.set(reply);requested.countDown();MarketCancel {}
+        },{_,_,_->entered.countDown();release.await(3,java.util.concurrent.TimeUnit.SECONDS);data},
+            MarketHistoryStore(directory.resolve("slow.json"),setOf(id)),{null},{},{null})
+        var responsive=false
+        try {
+            s.updateDemand(true,true,setOf(id),1)
+            assertTrue(requested.await(2,java.util.concurrent.TimeUnit.SECONDS))
+            callback.get()!!(HistoryReply(200,"ok"))
+            assertTrue(entered.await(2,java.util.concurrent.TimeUnit.SECONDS))
+            val read=client.submit<Boolean> {s.snapshot(now);s.updateDemand(false,true,emptySet(),1);s.snapshot(now).isEmpty()}
+            responsive=runCatching {read.get(300,java.util.concurrent.TimeUnit.MILLISECONDS)}.getOrDefault(false)
+        } finally {release.countDown();worker.shutdown();client.shutdown();worker.awaitTermination(3,java.util.concurrent.TimeUnit.SECONDS);client.awaitTermination(3,java.util.concurrent.TimeUnit.SECONDS)}
+        assertTrue(responsive,"Background work must not hold a lock required by rendering/client lifecycle")
+        assertFalse(java.nio.file.Files.exists(directory.resolve("slow.json")),"Disable during parse must invalidate the pending write")
+    }
     @TempDir lateinit var directory: Path
     private val id="SHARD_HIDEONWALL"
     private var now=MarketFixtures.NOW
@@ -19,7 +42,7 @@ class ShardMarketServiceTest {
     private var data=MarketFixtures.samples()
     private var certificate: EligibilityReport?=null
     private var serverAt=now
-    private fun service(ids: Set<String> = setOf(id)): ShardMarketService {
+    private fun service(ids: Set<String> = setOf(id),experimental: Boolean=false): ShardMarketService {
         val transport=HistoryTransport { job,reply ->
             val call=Call(job,reply)
             calls.add(call)
@@ -29,7 +52,7 @@ class ShardMarketServiceTest {
             { job,body,at -> parseCalls++; require(body=="ok"); if(job.part==HistoryPart.RECENT)data else ShardHistoryParsing.normalize(data,at).week },
             MarketHistoryStore(directory.resolve("prices.json"),ids),
             {QuoteSnapshot(serverAt,mapOf(id to MarketQuote(id,100.0,90.0,serverAt)),emptyMap())},
-            {quoteRefreshes++},{certificate},elapsedClock={now})
+            {quoteRefreshes++},{certificate},elapsedClock={now},experimental=experimental)
     }
     private fun drain() {var count=0;while(work.isNotEmpty()){check(count++<100);work.removeFirst().run()}}
     private fun tick(service: ShardMarketService, products: Set<String> = setOf(id), generation: Long=1) {
@@ -37,6 +60,15 @@ class ShardMarketServiceTest {
     }
     private fun reply(index: Int,status: Int=200,body: String="ok",retryAfter: Long?=null) {
         calls[index].reply(HistoryReply(status,body,retryAfter));drain()
+    }
+    @Test fun `experimental mode publishes references honestly without a forecast certificate`() {
+        data=data.map {it.copy(basis=PriceBasis.UNVERIFIED_REFERENCE,availableAt=null)}
+        val s=service(experimental=true);tick(s);reply(0)
+        val advice=s.snapshot(now).getValue(id)
+        assertEquals(AdviceState.SELL,advice.state)
+        assertEquals("EXPERIMENTAL_RANGE",advice.reason)
+        assertEquals(ExperimentalRange.KEY,advice.modelKey)
+        assertNull(certificate)
     }
 
     @Test fun `ticks coalesce and history requests stay singular deduplicated and rate limited`() {

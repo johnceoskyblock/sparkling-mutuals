@@ -12,6 +12,8 @@
 
 ## Global Constraints
 
+Latest approved amendment (call_0c6bb937035f4b99bc43fb06e7e4d569): deliver experimental descriptive price ranges, not validated three-hour forecasts. See the final spec amendment; it supersedes forecast certification/color gates below. Preserve negative replay results and all freshness/profile/order/rate/bounds protections. Runtime uses Skyblock.finance reference history with honest unknown historical availability. Default-off native setting and every explanation explicitly say experimental. Collector remains stopped. Only 26.1.2 tasks execute. Task3 now adds a descriptive adapter and regressions; Task4 binds bounded Finance HTTP and experimental mode without removing strict-replay mode. Tasks5–8 continue unchanged except no three-hour prediction wording or performance certificate is implied.
+
 - Keep all work local: no pushes, GitHub writes, PRs, master modifications, releases, game-session closures or instance installations.
 - Base isolated implementation on verified master 9581012a5b91b92828a1ff7810f9276f2d5bfdf7; recheck current GitHub context and reconcile changes before implementation/final delivery. Preserve the historical revert/restore-78885e0 checkout and all unrelated work. Never read .devAuth.
 - Minecraft 26.1.2, 26.2 and 26.3; target-native input/rendering APIs; preserve saved settings and /profit cached-read behavior.

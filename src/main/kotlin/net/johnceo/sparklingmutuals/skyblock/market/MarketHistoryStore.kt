@@ -47,7 +47,7 @@ internal class MarketHistoryStore(
         sanitize(values,now)
     }.getOrDefault(emptyMap())
 
-    @Synchronized fun write(values: Map<String,List<PriceSample>>, now: Long): Boolean {
+    @Synchronized fun write(values: Map<String,List<PriceSample>>, now: Long,stillCurrent: ()->Boolean={true}): Boolean {
         var created=false
         return try {
             val root=JsonObject().apply {addProperty("schema",1);addProperty("model",modelVersion)}
@@ -72,6 +72,7 @@ internal class MarketHistoryStore(
                 channel.force(true)
             }
             // Do not fall back to a non-atomic replacement on unsupported filesystems.
+            if(!stillCurrent()) {Files.deleteIfExists(staging);return false}
             Files.move(staging,path,ATOMIC_MOVE,REPLACE_EXISTING)
             true
         } catch(_: Exception) {

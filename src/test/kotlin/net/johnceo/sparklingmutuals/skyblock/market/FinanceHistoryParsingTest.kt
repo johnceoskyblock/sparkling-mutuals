@@ -5,6 +5,18 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class FinanceHistoryParsingTest {
+    @Test fun `runtime medians require actual sampling coverage and coarse candles never invent fine points`() {
+        val minuteBars=(0..4).map {bar("12:0$it",if(it==4)"10000" else "100")}
+        val parsed=FinanceHistoryParsing.runtime(response(*minuteBars.toTypedArray()),now,HistoryPart.RECENT)
+        assertEquals(100.0,parsed.single().ask)
+        assertTrue(FinanceHistoryParsing.runtime(response(minuteBars.last()),now,HistoryPart.RECENT).isEmpty())
+        val end=java.time.Instant.parse("2026-11-03T12:00:00Z").toEpochMilli()
+        val coarse=(0..7).map { index -> """{"time":${end-7200000+index*900000},"open":100,"high":100,"low":100,"close":100,"volume":1}""" }
+        val weekly=FinanceHistoryParsing.runtime(response(*coarse.toTypedArray()),now,HistoryPart.WEEK)
+        assertEquals(ShardHistoryParsing.COARSE,weekly.single().resolutionMillis)
+        assertEquals(end,weekly.single().at)
+        assertNull(weekly.single().availableAt)
+    }
     private val now=Instant.parse("2026-11-03T12:05:00Z").toEpochMilli()
     private fun bar(minute: String, close: String="100", high: String=close, low: String=close, open: String=close): String =
         """{"time":${Instant.parse("2026-11-03T$minute:00Z").toEpochMilli()},"open":$open,"high":$high,"low":$low,"close":$close,"volume":999}"""

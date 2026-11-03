@@ -18,7 +18,7 @@ internal data class PriceSample(val at: Long, val ask: Double, val resolutionMil
     val basis: PriceBasis = PriceBasis.UNVERIFIED_REFERENCE, val availableAt: Long? = null)
 internal data class HistorySnapshot(val fine: List<PriceSample>, val week: List<PriceSample>)
 internal enum class AdviceState { SELL, HOLD, UNKNOWN }
-internal enum class UnknownReason { HISTORY_COVERAGE, STALE_HISTORY, STALE_QUOTE, UNVALIDATED_MODEL }
+internal enum class UnknownReason { HISTORY_COVERAGE, STALE_HISTORY, STALE_QUOTE, UNVALIDATED_MODEL, REFERENCE_MISMATCH }
 internal data class TargetResult(val price: Double?, val falling: Boolean, val unknown: UnknownReason?)
 internal data class AdviceLatch(
     val state: AdviceState,
