@@ -9,15 +9,11 @@ import net.johnceo.sparklingmutuals.hud.SkyblockSidebar
 import net.johnceo.sparklingmutuals.mixin.ShardSaleScreenBounds
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphicsExtractor
-import net.minecraft.client.gui.screens.Screen
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen
 import net.minecraft.network.chat.Component
-import java.util.Collections
-import java.util.WeakHashMap
 
-/** Cached read-only panel. Event closures and weak keys never keep closed screens alive. */
+/** Cached read-only panel; callbacks belong to Fabric's per-initialization screen events. */
 internal object ShardSaleSidebar {
-    private val attached=Collections.newSetFromMap(WeakHashMap<Screen,Boolean>())
     private var registered=false
     private var scroll=0
     private var opening=Long.MIN_VALUE
@@ -25,7 +21,8 @@ internal object ShardSaleSidebar {
         if(registered)return
         registered=true
         ScreenEvents.AFTER_INIT.register {_,screen,_,_->
-            if(screen is AbstractContainerScreen<*> && HuntingBoxShardParsing.isBox(screen.title.string) && attached.add(screen)) {
+            // Fabric recreates this event on resize as well as initial screen setup.
+            if(screen is AbstractContainerScreen<*> && HuntingBoxShardParsing.isBox(screen.title.string)) {
                 ScreenMouseEvents.allowMouseScroll(screen).register {current,mx,my,_,vertical->
                     val box=current as? AbstractContainerScreen<*>
                     if(box==null || !visible(box) || vertical==0.0)true
