@@ -41,6 +41,24 @@ internal object HuntingBoxShardParsing {
 }
 
 internal object SaleProfileEvidence {
+    fun profile(message: net.minecraft.network.chat.Component): String? {
+        profile(message.string)?.let {return it}
+        if(SafariRules.strip(message.string) !in setOf("CLICK THIS TO SUGGEST IT IN CHAT [DASHES]",
+            "CLICK THIS TO SUGGEST IT IN CHAT [NO DASHES]"))return null
+        val ids=mutableSetOf<String>()
+        var invalid=false
+        message.visit(net.minecraft.network.chat.FormattedText.StyledContentConsumer<Boolean> {style,text ->
+            if(text.isNotEmpty()) {
+                val click=style.clickEvent
+                if(click!=null) {
+                    val id=(click as? net.minecraft.network.chat.ClickEvent.SuggestCommand)?.command()?.let(::uuid)
+                    if(id==null)invalid=true else ids.add(id)
+                }
+            }
+            java.util.Optional.empty()
+        },net.minecraft.network.chat.Style.EMPTY)
+        return ids.singleOrNull()?.takeUnless {invalid}
+    }
     private fun uuid(raw: String?)=raw?.takeIf {Regex("(?:[0-9a-fA-F]{32}|[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12})").matches(it)}?.replace("-","")?.lowercase(Locale.ROOT)
     fun profile(line: String)=Regex("^Profile ID: (\\S+)$").matchEntire(SafariRules.strip(line))?.groupValues?.get(1)?.let(::uuid)
     fun changing(line: String)=SafariRules.strip(line).let { text ->

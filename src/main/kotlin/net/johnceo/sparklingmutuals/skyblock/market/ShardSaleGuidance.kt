@@ -49,6 +49,7 @@ object ShardSaleGuidance {
     private var connection: Any?=null
     private var account: String?=null
     private var profile: String?=null
+    private val profileConfirmation=SaleProfileConfirmation()
     private var menu: AbstractContainerScreen<*>?=null
     private var view: SaleMenuSnapshot?=null
     private var orderView: OrderMarkerSnapshot?=null
@@ -77,8 +78,10 @@ object ShardSaleGuidance {
             if(!overlay && SkyblockSidebar.inSkyblock(client)) {
                 syncIdentity(client)
                 val plain=SafariRules.strip(message.string)
-                if(SaleProfileEvidence.changing(plain)) {profile=null;session.reset();total.reset();view=null;orderView=null}
-                SaleProfileEvidence.profile(plain)?.let {profile=it;session.reset();total.reset();view=null;orderView=null}
+                val now=System.currentTimeMillis()
+                if(SaleProfileEvidence.changing(plain)) {profile=null;profileConfirmation.reset(now);session.reset();total.reset();view=null;orderView=null}
+                val confirmed=SaleProfileEvidence.profile(plain) ?: if(ConfigManager.shardSaleGuidance)profileConfirmation.accept(message,now)else null
+                confirmed?.let {profile=it;session.reset();total.reset();view=null;orderView=null}
             }
         }
         ItemTooltipCallback.EVENT.register {stack,_,_,lines ->
@@ -93,6 +96,7 @@ object ShardSaleGuidance {
     private fun syncIdentity(client: Minecraft) {
         val owner=client.player?.uuid?.toString()
         if(connection!==client.connection || owner!=account) {
+            profileConfirmation.reset(System.currentTimeMillis())
             profile=null;session.reset();total.reset();view=null;orderView=null;tooltipSlot=null
             connection=client.connection;account=owner
         }
@@ -103,6 +107,8 @@ object ShardSaleGuidance {
         val now=System.currentTimeMillis()
         val inSkyblock=client.player!=null && client.connection!=null && SkyblockSidebar.inSkyblock(client)
         val enabled=ConfigManager.shardSaleGuidance
+        if(!inSkyblock)profile=null
+        if(profileConfirmation.next(enabled && inSkyblock,hasVerifiedProfile(),now))client.connection?.sendCommand("profileid")
         val screen=client.smScreen as? AbstractContainerScreen<*>
         val entries=if((enabled || ConfigManager.huntingBoxValue) && inSkyblock && screen!=null)screen.menu.slots.filter {it.container !is Inventory && it.index in 0..53}.map {slot ->
             val stack=slot.item
@@ -164,6 +170,7 @@ object ShardSaleGuidance {
     fun beginTooltip(screen: AbstractContainerScreen<*>,slot: Slot?) {tooltipSlot=slot?.takeIf {menu===screen}}
     fun endTooltip() {tooltipSlot=null}
     fun reset() {
+        profileConfirmation.reset(System.currentTimeMillis())
         save(force=true);session.reset();total.reset();profile=null;account=null;connection=null;view=null;orderView=null;menu=null;tooltipSlot=null
     }
 }
