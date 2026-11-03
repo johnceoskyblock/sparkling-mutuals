@@ -14,8 +14,13 @@ class ShardSaleSidebarLayoutTest {
         }
     }
     @Test fun `insufficient space hides instead of overlapping inventory or unreadably shrinking`() {
-        for((width,height,right) in listOf(Triple(320,240,248),Triple(640,40,408),Triple(600,300,590),Triple(0,300,0)))
+        for((width,height,right) in listOf(Triple(320,240,248),Triple(640,24,408),Triple(600,300,590),Triple(0,300,0)))
             assertNull(ShardSaleSidebarLayout.bounds(width,height,right,37))
+    }
+    @Test fun `top ten panel has compact heading and rows without helper bands`() {
+        val box=ShardSaleSidebarLayout.bounds(640,360,408,10)!!
+        assertTrue(box.height<=150,"No owned-count, session or profile footer bands")
+        assertEquals(0,box.rowAt(box.x+8.0,box.y+20*box.scale.toDouble()))
     }
     @Test fun `empty and short lists keep scroll clamped and pointer rows bounded`() {
         for(count in listOf(0,1,5,37)) {

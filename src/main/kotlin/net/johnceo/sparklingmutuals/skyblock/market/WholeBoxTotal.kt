@@ -1,7 +1,8 @@
 package net.johnceo.sparklingmutuals.skyblock.market
 
 import net.johnceo.sparklingmutuals.history.BazaarPrices
-import net.johnceo.sparklingmutuals.config.SettingsPalette
+import net.johnceo.sparklingmutuals.config.AppearanceConfig
+import net.johnceo.sparklingmutuals.hud.HudRow
 import net.johnceo.sparklingmutuals.mixin.ShardSaleScreenBounds
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphicsExtractor
@@ -51,18 +52,8 @@ internal class WholeBoxTotal(private val refresh: ()->Unit={}) {
     fun restore(raw: String,now: Long) {ledger.restore(raw,now)}
 }
 internal object WholeBoxHeader {
-    fun lines(summary: WholeBoxSummary): List<String> = buildList {
-        val value=summary.value;val coverage=summary.coverage
-        add(if(value.known==null)"Box value: unavailable"else
-            (if(value.missing>0 || !coverage.complete)"Known subtotal: "else "Est. box value: ")+BazaarPrices.format(value.known.roundToLong())+" coins")
-        add("Sell offers · before fees")
-        add("Pages: ${coverage.visited}/${coverage.total ?: "?"}"+if(!coverage.complete)" · partial"else "")
-        val age=buildList {if(coverage.older>0)add("Older counts");if(value.missing>0)add("${value.missing} unpriced")}
-        if(age.isNotEmpty())add(age.joinToString(" · "))
-        val incomplete=buildList {if(coverage.unsupported>0)add("${coverage.unsupported} unresolved");if(coverage.limited)add("Tracking limit")}
-        if(incomplete.isNotEmpty())add(incomplete.joinToString(" · "))
-        if(!summary.verified)add("Session counts · /profileid")
-    }
+    fun lines(summary: WholeBoxSummary): List<String> = listOf("Hunting Box value: "+
+        (summary.value.known?.let {BazaarPrices.format(it.roundToLong())+" coins"} ?: "unavailable"))
     fun bounds(screenWidth: Int,left: Int,top: Int,width: Int,textWidth: Int,lineCount: Int): WholeBoxHeaderBounds? {
         if(left<0 || width<=12 || left+width>screenWidth || lineCount<=0)return null
         val scale=minOf(1f,(width-12).toFloat()/textWidth.coerceAtLeast(1))
@@ -85,9 +76,8 @@ internal object WholeBoxTotalOverlay {
             lines.maxOfOrNull {client.font.width(it)} ?: 0,lines.size) ?: return
         g.pose().pushMatrix();g.pose().translate(area.x.toFloat(),area.y.toFloat());g.pose().scale(area.scale,area.scale)
         val width=(area.width/area.scale).toInt()
-        g.fill(0,0,width,8+lines.size*10,SettingsPalette.background)
-        g.fill(0,0,width,1,SettingsPalette.accent)
-        lines.forEachIndexed {index,text->g.text(client.font,text,6,4+index*10,if(index==0)SettingsPalette.accent else SettingsPalette.muted,true)}
+        AppearanceConfig.panels.getValue("progress").draw(g,width,8+lines.size*10)
+        lines.forEachIndexed {index,text->g.text(client.font,text,6,4+index*10,HudRow.GOLD,true)}
         g.pose().popMatrix()
     }
 }

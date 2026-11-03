@@ -4,7 +4,9 @@ import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents
 import net.fabricmc.fabric.api.client.screen.v1.ScreenMouseEvents
 import net.johnceo.sparklingmutuals.compat.smScreen
 import net.johnceo.sparklingmutuals.config.ConfigManager
-import net.johnceo.sparklingmutuals.config.SettingsPalette
+import net.johnceo.sparklingmutuals.config.AppearanceConfig
+import net.johnceo.sparklingmutuals.config.SafariTheme
+import net.johnceo.sparklingmutuals.hud.HudRow
 import net.johnceo.sparklingmutuals.hud.SkyblockSidebar
 import net.johnceo.sparklingmutuals.mixin.ShardSaleScreenBounds
 import net.minecraft.client.Minecraft
@@ -41,7 +43,7 @@ internal object ShardSaleSidebar {
         if(!visible(screen))return
         syncOpening()
         val now=System.currentTimeMillis()
-        draw(screen,g,mx,my,ShardSaleGuidance.sidebar(screen,now),now,ShardSaleGuidance.hasVerifiedProfile())
+        draw(screen,g,mx,my,ShardSaleGuidance.sidebar(screen,now),now)
     }
     private fun visible(screen: AbstractContainerScreen<*>)=ConfigManager.shardSaleGuidance &&
         Minecraft.getInstance().smScreen===screen && SkyblockSidebar.inSkyblock(Minecraft.getInstance()) &&
@@ -55,7 +57,7 @@ internal object ShardSaleSidebar {
         return ShardSaleSidebarLayout.bounds(screen.width,screen.height,
             container.sparklingMutualsShardPanelLeft()+container.sparklingMutualsShardPanelWidth(),count)
     }
-    fun draw(screen: AbstractContainerScreen<*>,g: GuiGraphicsExtractor,mx: Int,my: Int,rows: List<SavedBoxRow>,now: Long,verifiedProfile: Boolean) {
+    fun draw(screen: AbstractContainerScreen<*>,g: GuiGraphicsExtractor,mx: Int,my: Int,rows: List<SavedBoxRow>,now: Long) {
         val area=bounds(screen,rows.size) ?: return
         scroll=area.clampScroll(scroll,rows.size)
         val client=Minecraft.getInstance()
@@ -65,25 +67,19 @@ internal object ShardSaleSidebar {
         val hover=area.rowAt(mx.toDouble(),my.toDouble())?.let {rows.getOrNull(scroll+it)}
         g.pose().pushMatrix();g.pose().translate(area.x.toFloat(),area.y.toFloat());g.pose().scale(area.scale,area.scale)
         val height=header+area.rows*rowHeight+ShardSaleSidebarLayout.FOOTER
-        g.fill(0,0,width,height,SettingsPalette.background)
-        g.fill(0,0,width,1,SettingsPalette.accent)
-        fun text(value: String,x: Int,y: Int,color: Int=SettingsPalette.text)=g.text(client.font,value,x,y,color,true)
-        text("Top /profit shards",6,6,SettingsPalette.accent)
-        text("${rows.size} owned · Scroll list",6,18,SettingsPalette.muted)
-        if(rows.isEmpty())text(if(ShardSaleGuidance.profitRankingReady())"Visit pages to find top shards" else "Waiting for /profit prices",6,header+2,SettingsPalette.muted)
+        AppearanceConfig.panels.getValue("progress").draw(g,width,height)
+        fun text(value: String,x: Int,y: Int,color: Int=0xFF000000.toInt() or SafariTheme.TEXT)=g.text(client.font,value,x,y,color,true)
+        text("Top /profit shards",6,6,HudRow.GOLD)
         rows.drop(scroll).take(area.rows).forEachIndexed {index,row->
             val y=header+index*rowHeight
-            if(row==hover)g.fill(2,y-1,width-2,y+12,SettingsPalette.hover)
+            if(row==hover)g.fill(2,y-1,width-2,y+10,0x66000000 or SafariTheme.HOVER)
             val state=when(row.advice.state) {AdviceState.SELL->"SELL";AdviceState.HOLD->"HOLD";AdviceState.UNKNOWN->"UNAVAILABLE"}
             val color=ShardSalePresentation.color(row.advice.state) or 0xFF000000.toInt()
             val statusX=width-7-client.font.width(state)
             val name=client.font.plainSubstrByWidth(SaleProducts.names.getValue(row.shard.productId),statusX-24)
-            text(name+(if(row.refreshedThisOpening)"" else " *"),6,y+2)
-            text(state,statusX,y+2,color)
+            text(name,6,y)
+            text(state,statusX,y,color)
         }
-        val footer=header+area.rows*rowHeight+4
-        text(if(verifiedProfile)"* Previously observed ownership" else "Session list · /profileid to save",6,footer,SettingsPalette.muted)
-        text("Experimental price ranges",6,footer+11,SettingsPalette.muted)
         g.pose().popMatrix()
         if(hover!=null) {
             val age=((now-hover.shard.observedAt).coerceAtLeast(0)/1000)

@@ -8,16 +8,11 @@ import org.junit.jupiter.api.io.TempDir
 
 class WholeBoxHeaderTest {
     @TempDir lateinit var directory: Path
-    @Test fun `compact text shows one total with sell offer basis and honest partial notes`() {
+    @Test fun `box value is one plainly named coin amount without helper lines`() {
         val summary=WholeBoxSummary(WholeBoxValue(1600.0,1,2,MarketFixtures.NOW),WholeBoxCoverage(2,3,false,1,1),false)
         val lines=WholeBoxHeader.lines(summary)
-        assertTrue(lines.first().contains("subtotal",true))
-        assertTrue(lines.any {it.contains("Sell offers")})
-        assertTrue(lines.any {it.contains("2/3") && it.contains("partial")})
-        assertTrue(lines.any {it.contains("older",true)})
-        assertTrue(lines.any {it.contains("unpriced",true)})
-        assertFalse(lines.joinToString(" ").contains("Bluebird"))
-        assertTrue(WholeBoxHeader.lines(summary.copy(value=WholeBoxValue(null,3,0,0))).first().contains("unavailable",true))
+        assertEquals(listOf("Hunting Box value: 2k coins"),lines)
+        assertEquals(listOf("Hunting Box value: unavailable"),WholeBoxHeader.lines(summary.copy(value=WholeBoxValue(null,3,0,0))))
     }
     @Test fun `header respects actual bounds scales readably and hides without space above`() {
         val bounds=WholeBoxHeader.bounds(640,232,97,176,170,5)!!
