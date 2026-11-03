@@ -9,17 +9,16 @@ internal data class SaleAlert(val productId: String,val message: String)
 
 /** Client-owned, product-level observations. An absent/filled row cannot identify every other offer. */
 internal class SellOfferWatch {
-    private data class Watch(var seen: Long,var initialNotified: Boolean=false,var alerted: Long=0)
+    private data class Watch(var seen: Long,var alerted: Long=0)
     private val scopes=linkedMapOf<MarketScope,MutableMap<String,Watch>>()
     private var scope: MarketScope?=null
     private val revalidated=mutableSetOf<String>()
     private val previous=mutableMapOf<String,Recommendation>()
-    private val recovered=mutableSetOf<String>()
 
     fun selectScope(next: MarketScope?) {
         val valid=next?.takeIf {SaleProfileEvidence.scope(it.accountId,it.profileId)==it}
         if(valid==scope)return
-        scope=valid;revalidated.clear();previous.clear();recovered.clear()
+        scope=valid;revalidated.clear();previous.clear()
         if(valid!=null) {
             val records=scopes.remove(valid) ?: mutableMapOf()
             scopes[valid]=records
@@ -44,28 +43,23 @@ internal class SellOfferWatch {
             val watch=records[id] ?: continue
             val current=advice[id]
             if(current==null || current.state==AdviceState.UNKNOWN) {
-                if(previous.remove(id)!=null)recovered.add(id)
+                previous.remove(id)
                 continue
             }
             val before=previous.put(id,current)
             val sameRule=before?.modelKey==current.modelKey
             val drop=before?.state==AdviceState.SELL && current.state==AdviceState.HOLD && sameRule &&
                 current.ask?.let {ask -> (current.declineFromAsk ?: before.ask)?.let {ask<it} }==true
-            val initial=before==null && current.state==AdviceState.HOLD && id !in recovered && !watch.initialNotified
-            if(current.state==AdviceState.HOLD)watch.initialNotified=true
-            if(!(drop || initial) || watch.alerted>0 && now-watch.alerted<600_000)continue
+            if(!drop || watch.alerted>0 && now-watch.alerted<600_000)continue
             watch.alerted=now
-            val age=((now-watch.seen).coerceAtLeast(0)/60_000)
-            val reason=if(initial)"is already below the recent reference range" else "price guidance changed to HOLD after a price decline"
-            result.add(SaleAlert(id,"Experimental shard range: Last observed sell offer for ${SaleProducts.names[id]} ($age"+
-                "m ago) $reason. Check your orders; it may already have filled. This is not a price forecast."))
+            result.add(SaleAlert(id,BazaarUnlistPresentation.message(setOf(id))!!))
         }
         return result
     }
     private fun prune(now: Long) {
         scopes.values.forEach {records ->records.entries.removeAll {it.value.seen>now+60000 || now-it.value.seen>30*ShardHistoryParsing.DAY}}
         revalidated.retainAll(scope?.let {scopes[it]?.keys}.orEmpty())
-        previous.keys.retainAll(revalidated);recovered.retainAll(revalidated)
+        previous.keys.retainAll(revalidated)
     }
     fun export(now: Long): String {
         prune(now)
@@ -74,13 +68,13 @@ internal class SellOfferWatch {
             add("scopes",JsonArray().apply {scopes.forEach { (owner,records) ->add(JsonObject().apply {
                 addProperty("account",owner.accountId);addProperty("profile",owner.profileId)
                 add("watches",JsonArray().apply {records.forEach { (id,watch) ->add(JsonArray().apply {
-                    add(id);add(watch.seen);add(watch.initialNotified);add(watch.alerted)
+                    add(id);add(watch.seen);add(false);add(watch.alerted) // Retain schema1's obsolete initial-notice field.
                 }) }})
             }) }})
         }.toString().also {check(it.toByteArray(Charsets.UTF_8).size<=1024*1024)}
     }
     fun restore(raw: String,now: Long) {
-        scope=null;scopes.clear();revalidated.clear();previous.clear();recovered.clear()
+        scope=null;scopes.clear();revalidated.clear();previous.clear()
         if(raw.length>1024*1024 || raw.toByteArray(Charsets.UTF_8).size>1024*1024)return
         runCatching {
             val root=JsonParser.parseString(raw).asJsonObject
@@ -97,7 +91,7 @@ internal class SellOfferWatch {
                     require(fields[1].asJsonPrimitive.isNumber && fields[2].asJsonPrimitive.isBoolean && fields[3].asJsonPrimitive.isNumber)
                     val seen=fields[1].asBigDecimal.longValueExact();val alerted=fields[3].asBigDecimal.longValueExact()
                     require(seen>0 && alerted>=0 && alerted<=now+60000)
-                    records[id]=Watch(seen,fields[2].asBoolean,alerted)
+                    records[id]=Watch(seen,alerted) // Legacy initial-notice flag is validated above, then ignored.
                 }
                 scopes[selected]=records
             }

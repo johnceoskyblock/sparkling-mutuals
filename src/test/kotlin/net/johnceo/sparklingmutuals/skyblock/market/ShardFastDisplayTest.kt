@@ -35,7 +35,7 @@ class ShardFastDisplayTest {
         assertEquals(AdviceState.HOLD,held.state)
         show(held)
         assertEquals(1,alerts.size)
-        assertTrue(alerts.single().contains("after a price decline"))
+        assertTrue(alerts.single().contains("Consider unlisting"))
         show(held);assertEquals(1,alerts.size)
     }
 

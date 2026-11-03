@@ -9,14 +9,14 @@ class SellOfferWatchTest {
     private val now=MarketFixtures.NOW
     private fun advice(state: AdviceState,ask: Double=100.0,key: String="range")=Recommendation(id,state,100.0,now,"EXPERIMENTAL_RANGE",ask,key)
     private fun watch()=SellOfferWatch().apply {selectScope(scope);observe(listOf(OfferEvidence(id,120.0,100,false)),now)}
-    @Test fun `fresh observed offers produce one grouped confirmed decline alert with age wording`() {
+    @Test fun `fresh observed offers produce one grouped confirmed decline unlist suggestion`() {
         val w=watch()
         assertTrue(w.update(mapOf(id to advice(AdviceState.SELL)),now).isEmpty())
         assertEquals(1,w.update(mapOf(id to advice(AdviceState.HOLD,98.0)),now+120000).size)
         assertTrue(w.update(mapOf(id to advice(AdviceState.HOLD,97.0)),now+180000).isEmpty())
         val text=watch().apply {update(mapOf(id to advice(AdviceState.SELL)),now)}
             .update(mapOf(id to advice(AdviceState.HOLD,98.0)),now+120000).single().message
-        assertTrue(text.contains("Last observed sell offer"));assertTrue(text.contains("2m"));assertTrue(text.contains("experimental",true))
+        assertTrue(text.contains("Consider unlisting"));assertTrue(text.contains("last observed"));assertTrue(text.contains("HOLD"))
     }
     @Test fun `unknown recovery target changes and rising ask never fabricate price drops`() {
         val w=watch();w.update(mapOf(id to advice(AdviceState.SELL)),now)
@@ -27,14 +27,23 @@ class SellOfferWatchTest {
         w.update(mapOf(id to advice(AdviceState.SELL)),now+300000)
         assertTrue(w.update(mapOf(id to advice(AdviceState.HOLD,98.0,"new-model")),now+360000).isEmpty())
     }
-    @Test fun `initial hold is distinct and cooldown requires a return to sell`() {
+    @Test fun `initial hold is silent and cooldown requires a return to sell`() {
         val w=watch()
-        val first=w.update(mapOf(id to advice(AdviceState.HOLD,98.0)),now).single()
-        assertTrue(first.message.contains("already below"))
+        assertTrue(w.update(mapOf(id to advice(AdviceState.HOLD,98.0)),now).isEmpty())
         w.update(mapOf(id to advice(AdviceState.SELL)),now+60000)
-        assertTrue(w.update(mapOf(id to advice(AdviceState.HOLD,97.0)),now+120000).isEmpty())
+        assertEquals(1,w.update(mapOf(id to advice(AdviceState.HOLD,97.0)),now+120000).size)
+        assertTrue(w.update(mapOf(id to advice(AdviceState.HOLD,96.0)),now+180000).isEmpty())
         w.update(mapOf(id to advice(AdviceState.SELL)),now+660000)
         assertEquals(1,w.update(mapOf(id to advice(AdviceState.HOLD,96.0)),now+720000).size)
+    }
+    @Test fun `legacy initial notice flags never revive initial hold alerts or establish a transition`() {
+        for(flag in listOf(false,true)) {
+            val raw="""{"schema":1,"scopes":[{"account":"${scope.accountId}","profile":"${scope.profileId}","watches":[["$id",$now,$flag,0]]}]}"""
+            val w=SellOfferWatch().apply {restore(raw,now);selectScope(scope);observe(listOf(OfferEvidence(id,100.0,2,false)),now)}
+            assertTrue(w.update(mapOf(id to advice(AdviceState.HOLD,98.0)),now).isEmpty())
+            w.update(mapOf(id to advice(AdviceState.SELL)),now+60000)
+            assertEquals(1,w.update(mapOf(id to advice(AdviceState.HOLD,97.0)),now+120000).size)
+        }
     }
     @Test fun `pagination and ambiguous completion never cancel another offer and profiles never mix`() {
         val w=watch();w.observe(emptyList(),now+1000)
