@@ -106,3 +106,4 @@ Last updated: 2026-11-02 — Added item and chest value controls, pricing source
 Last updated: 2026-11-02 — Added Skills overflow tooltip reference.
 
 Last updated: 2026-11-02 — Added banner system and HUD customization reference.
+Last updated: 2026-11-03 — Added experimental shard range and observed-offer guidance reference.

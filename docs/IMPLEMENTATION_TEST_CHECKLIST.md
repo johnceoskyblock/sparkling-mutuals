@@ -266,6 +266,8 @@ If a scenario fails, preserve a minimal reproduction and compare the current own
 
 ## Last updated
 
+2026-11-03 (America/New_York) — Added explicit pending live Hunting Box, personal-order, profile and stale-data scenarios.
+
 2026-10-29 — Retired shot recording tools; retained the live projection collision-cache packet observer.
 
 2026-10-22 — Added Unique Haunted progress/footer and discovery-dependent Rockmite ESP gameplay checks.

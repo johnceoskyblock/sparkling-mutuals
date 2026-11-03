@@ -58,6 +58,8 @@ Focused automated coverage exercises retained members, joining/leaving members, 
 
 ## Last updated
 
+2026-11-03 (America/New_York) — Added bounded experimental Finance history, shared live quotes and provider-wide Retry-After behavior.
+
 2026-10-27 — Added one optional cached selected-profile comparison per explicit history import; no retry or per-file lookup.
 
 2026-10-25 — Renamed the local rate command to `/rates`; no new API requests. `/profitablecritters` now ranks ten results by estimated coins per run.
@@ -70,4 +72,4 @@ Focused automated coverage exercises retained members, joining/leaving members, 
 
 ## Experimental shard sale guidance (26.1.2)
 
-Default-off demand shares Bazaar quotes at most once/minute; ordinary consumers keep three-hour cadence. Visible box shards and revalidated personal watches request anonymous Skyblock.finance history: two-day minute data every ten minutes and eight-day fifteen-minute data hourly, serialized at least one second apart, at most37products/74jobs/one outstanding request. Bodies cap2MiB, timeout20seconds, bounded retries/Retry-After. Render/tooltip reads never fetch. Disable/leavingSkyBlock/disconnect invalidates demand/late results. No personal identifiers or orders transmitted. The five-minute research collector remains stopped. See [experimental range contract](SHARD_SALE_GUIDANCE.md).
+Default-off demand shares Bazaar quotes at most once/minute; ordinary consumers keep three-hour cadence. Visible box shards and revalidated personal watches request anonymous Skyblock.finance history: two-day minute data every ten minutes and eight-day fifteen-minute data hourly, serialized at least one second apart, at most 37 products, 74 jobs and one outstanding request. Bodies are capped at 2 MiB, with a twenty-second timeout and bounded retries and a provider-wide elapsed Retry-After wait that survives demand changes. Render/tooltip reads never fetch. Disabling, leaving SkyBlock or disconnecting invalidates demand/late results. No personal identifiers or orders transmitted. The five-minute research collector remains stopped. See [experimental range contract](SHARD_SALE_GUIDANCE.md).

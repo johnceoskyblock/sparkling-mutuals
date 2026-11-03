@@ -42,6 +42,8 @@ class ShardMarketServiceTest {
     private var data=MarketFixtures.samples()
     private var certificate: EligibilityReport?=null
     private var serverAt=now
+    private var serverAsk=100.0
+    private var elapsedOverride: Long?=null
     private fun service(ids: Set<String> = setOf(id),experimental: Boolean=false): ShardMarketService {
         val transport=HistoryTransport { job,reply ->
             val call=Call(job,reply)
@@ -51,8 +53,8 @@ class ShardMarketServiceTest {
         return ShardMarketService(ids,{now},Executor {work.add(it)},transport,
             { job,body,at -> parseCalls++; require(body=="ok"); if(job.part==HistoryPart.RECENT)data else ShardHistoryParsing.normalize(data,at).week },
             MarketHistoryStore(directory.resolve("prices.json"),ids),
-            {QuoteSnapshot(serverAt,mapOf(id to MarketQuote(id,100.0,90.0,serverAt)),emptyMap())},
-            {quoteRefreshes++},{certificate},elapsedClock={now},experimental=experimental)
+            {QuoteSnapshot(serverAt,mapOf(id to MarketQuote(id,serverAsk,90.0,serverAt)),emptyMap())},
+            {quoteRefreshes++},{certificate},elapsedClock={elapsedOverride ?: now},experimental=experimental)
     }
     private fun drain() {var count=0;while(work.isNotEmpty()){check(count++<100);work.removeFirst().run()}}
     private fun tick(service: ShardMarketService, products: Set<String> = setOf(id), generation: Long=1) {
@@ -60,6 +62,20 @@ class ShardMarketServiceTest {
     }
     private fun reply(index: Int,status: Int=200,body: String="ok",retryAfter: Long?=null) {
         calls[index].reply(HistoryReply(status,body,retryAfter));drain()
+    }
+    @Test fun `actual model pending confirmation preserves economic decline for grouped offer warning`() {
+        val s=service(experimental=true);tick(s);reply(0)
+        val watches=SellOfferWatch().apply {selectScope(MarketScope("1".repeat(32),"2".repeat(32)));observe(listOf(OfferEvidence(id,100.0,10,false)),now)}
+        assertTrue(watches.update(s.snapshot(now),now).isEmpty())
+        now+=60000;serverAt=now;serverAsk=98.0;tick(s)
+        assertEquals(AdviceState.SELL,s.snapshot(now).getValue(id).state)
+        assertTrue(watches.update(s.snapshot(now),now).isEmpty())
+        repeat(3) {tick(s);assertTrue(watches.update(s.snapshot(now),now).isEmpty())}
+        now+=60000;serverAt=now;tick(s)
+        assertEquals(AdviceState.HOLD,s.snapshot(now).getValue(id).state)
+        now+=1000;serverAt=now;tick(s) // Client may read the next HOLD snapshot rather than the transition frame.
+        assertEquals(1,watches.update(s.snapshot(now),now).size)
+        assertTrue(watches.update(s.snapshot(now),now).isEmpty())
     }
     @Test fun `experimental mode publishes references honestly without a forecast certificate`() {
         data=data.map {it.copy(basis=PriceBasis.UNVERIFIED_REFERENCE,availableAt=null)}
@@ -117,14 +133,32 @@ class ShardMarketServiceTest {
     @Test fun `retry after is respected and normal refresh intervals are distinct`() {
         val s=service();tick(s)
         reply(0,429,retryAfter=60_000)
-        now+=1000;tick(s);assertEquals(HistoryPart.WEEK,calls.last().job.part)
+        now+=59_999;tick(s);assertEquals(1,calls.size,"Whole provider respects Retry-After")
+        now++;tick(s);assertEquals(HistoryPart.WEEK,calls.last().job.part)
         reply(1)
-        now+=58_999;tick(s);assertEquals(2,calls.size)
+        now+=999;tick(s);assertEquals(2,calls.size)
         now++;tick(s);assertEquals(HistoryPart.RECENT,calls.last().job.part)
         reply(2)
         now+=599_999;tick(s);assertEquals(3,calls.size)
         now++;tick(s);assertEquals(4,calls.size)
         assertEquals(HistoryPart.RECENT,calls.last().job.part)
+    }
+    @Test fun `provider cooldown spans products demand generations and wall clock jumps using elapsed time`() {
+        val other="SHARD_BLUEBIRD";val start=now;elapsedOverride=start
+        val s=service(setOf(id,other));tick(s,setOf(id,other));reply(0,429,retryAfter=60000)
+        elapsedOverride=start+1000;now+=1000;tick(s,setOf(id,other));assertEquals(1,calls.size)
+        now+=7*86400000L;elapsedOverride=start+59999
+        tick(s,setOf(other),generation=2);assertEquals(1,calls.size,"New demand and a forward wall-clock jump cannot bypass provider wait")
+        elapsedOverride=start+60000;tick(s,setOf(other),generation=2)
+        assertEquals(2,calls.size);assertEquals(other,calls.last().job.productId)
+    }
+    @Test fun `late throttled response still protects the provider without parsing or publishing retired work`() {
+        val s=service();tick(s);s.updateDemand(false,false,emptySet(),1);drain()
+        now+=1000;reply(0,429,retryAfter=60000)
+        val parsed=parseCalls
+        now+=1000;tick(s,generation=2);assertEquals(1,calls.size)
+        assertEquals(parsed,parseCalls);assertFalse(Files.exists(directory.resolve("prices.json")))
+        now+=59000;tick(s,generation=2);assertEquals(2,calls.size)
     }
     @Test fun `no certificate or unverified history remains unknown despite fresh quotes`() {
         val s=service();tick(s);reply(0)

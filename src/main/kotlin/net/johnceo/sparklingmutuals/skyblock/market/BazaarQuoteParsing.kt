@@ -39,12 +39,14 @@ internal object BazaarQuoteParsing {
     }.getOrNull()
 
     private fun orders(product: JsonObject, side: String): List<Double> = runCatching {
-        product.getAsJsonArray(side)?.mapNotNull { item ->
-            runCatching {
-                val order = item.asJsonObject
-                val price = order.get("pricePerUnit").asDouble
-                price.takeIf { it.isFinite() && it > 0 && order.get("amount").asDouble > 0 && order.get("orders").asInt > 0 }
-            }.getOrNull()
+        product.getAsJsonArray(side)?.map { item ->
+            val order = item.asJsonObject
+            require(listOf("pricePerUnit","amount","orders").all {order.getAsJsonPrimitive(it).isNumber})
+            val price = order.get("pricePerUnit").asDouble
+            val amount = order.get("amount").asDouble
+            val count = order.get("orders").asBigDecimal.intValueExact()
+            require(price.isFinite() && price>0 && amount.isFinite() && amount>0 && count>0)
+            price
         }.orEmpty()
     }.getOrDefault(emptyList())
 }

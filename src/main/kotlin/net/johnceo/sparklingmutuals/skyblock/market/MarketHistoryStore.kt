@@ -4,14 +4,8 @@ import com.google.gson.JsonArray
 import com.google.gson.JsonNull
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
-import java.nio.ByteBuffer
-import java.nio.channels.FileChannel
 import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.StandardCopyOption.ATOMIC_MOVE
-import java.nio.file.StandardCopyOption.REPLACE_EXISTING
-import java.nio.file.StandardOpenOption.CREATE_NEW
-import java.nio.file.StandardOpenOption.WRITE
 
 /** Price history only. Final/staging files are each <=8 MiB, together <=16 MiB. */
 internal class MarketHistoryStore(
@@ -20,7 +14,6 @@ internal class MarketHistoryStore(
     private val modelVersion: Int=ShardTargetModel.VERSION,
 ) {
     private val allowed=allowedIds.toSet()
-    private val staging=path.resolveSibling(path.fileName.toString()+".pending")
     init {
         require(allowed.size<=37 && allowed.all {Regex("SHARD_[A-Z_]+").matches(it)})
         require(modelVersion>0)
@@ -48,8 +41,7 @@ internal class MarketHistoryStore(
     }.getOrDefault(emptyMap())
 
     @Synchronized fun write(values: Map<String,List<PriceSample>>, now: Long,stillCurrent: ()->Boolean={true}): Boolean {
-        var created=false
-        return try {
+        return runCatching {
             val root=JsonObject().apply {addProperty("schema",1);addProperty("model",modelVersion)}
             val products=JsonObject()
             sanitize(values,now).forEach { (id,points) ->
@@ -61,26 +53,9 @@ internal class MarketHistoryStore(
                 products.add(id,rows)
             }
             root.add("products",products)
-            val bytes=root.toString().toByteArray(Charsets.UTF_8)
-            if(bytes.size>FILE_LIMIT || Files.isSymbolicLink(path) || Files.exists(staging)) return false
-            if(Files.exists(path) && Files.size(path)>FILE_LIMIT) return false
-            path.toAbsolutePath().parent?.let {Files.createDirectories(it)}
-            FileChannel.open(staging,CREATE_NEW,WRITE).use { channel ->
-                created=true
-                val buffer=ByteBuffer.wrap(bytes)
-                while(buffer.hasRemaining())channel.write(buffer)
-                channel.force(true)
-            }
-            // Do not fall back to a non-atomic replacement on unsupported filesystems.
-            if(!stillCurrent()) {Files.deleteIfExists(staging);return false}
-            Files.move(staging,path,ATOMIC_MOVE,REPLACE_EXISTING)
-            true
-        } catch(_: Exception) {
-            if(created)runCatching {Files.deleteIfExists(staging)}
-            false
-        }
+            BoundedAtomicCacheFile.write(path,FILE_LIMIT,root.toString().toByteArray(Charsets.UTF_8),stillCurrent)
+        }.getOrDefault(false)
     }
-
     fun sanitize(values: Map<String,List<PriceSample>>, now: Long): Map<String,List<PriceSample>> =
         values.filterKeys {it in allowed}.toSortedMap().mapValues { (_,points) ->
             points.filter { p ->

@@ -54,13 +54,15 @@ internal object ShardTargetModel {
         quote!!
         val price=if(target.falling)quote.ask else target.price!!
         if(target.falling || quote.ask>=price*.995)
-            return AdviceLatch(AdviceState.SELL,price,null,quote.serverAt)
+            return AdviceLatch(AdviceState.SELL,price,null,quote.serverAt,confirmedSellAsk=quote.ask)
         if(previous?.state!=AdviceState.SELL)
-            return AdviceLatch(AdviceState.HOLD,price,null,quote.serverAt)
+            return AdviceLatch(AdviceState.HOLD,price,null,quote.serverAt,
+                confirmedSellAsk=previous?.takeIf {it.state==AdviceState.HOLD}?.confirmedSellAsk)
         if(quote.serverAt<previous.serverAt) return previous
-        if(quote.ask>=price*.985) return AdviceLatch(AdviceState.SELL,price,null,quote.serverAt)
+        if(quote.ask>=price*.985) return AdviceLatch(AdviceState.SELL,price,null,quote.serverAt,confirmedSellAsk=quote.ask)
         val since=previous.belowSince ?: quote.serverAt
         val confirmed=quote.serverAt>previous.serverAt && quote.serverAt-since>=60_000
-        return AdviceLatch(if(confirmed)AdviceState.HOLD else AdviceState.SELL,price,null,quote.serverAt,if(confirmed)null else since)
+        return AdviceLatch(if(confirmed)AdviceState.HOLD else AdviceState.SELL,price,null,quote.serverAt,
+            if(confirmed)null else since,previous.confirmedSellAsk)
     }
 }

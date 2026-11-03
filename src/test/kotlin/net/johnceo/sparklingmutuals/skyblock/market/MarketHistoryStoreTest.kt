@@ -73,8 +73,13 @@ class MarketHistoryStoreTest {
         val old=Files.readAllBytes(path)
         val stage=directory.resolve("prices.json.pending")
         Files.writeString(stage,"other writer")
-        assertFalse(store().write(mapOf(other to listOf(point())),now))
-        assertArrayEquals(old,Files.readAllBytes(path))
-        assertEquals("other writer",Files.readString(stage))
+        java.nio.channels.FileChannel.open(directory.resolve("prices.json.lock"),java.nio.file.StandardOpenOption.CREATE,java.nio.file.StandardOpenOption.WRITE).use {channel ->channel.lock().use {
+            assertFalse(store().write(mapOf(other to listOf(point())),now))
+            assertArrayEquals(old,Files.readAllBytes(path))
+            assertEquals("other writer",Files.readString(stage))
+        }}
+        assertTrue(store().write(mapOf(other to listOf(point())),now),"Fresh writer recovers an orphan after exclusive lock release")
+        assertEquals(setOf(other),store().read(now).keys)
+        assertFalse(Files.exists(stage))
     }
 }

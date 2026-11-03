@@ -134,6 +134,8 @@ Each mode dropdown has independent Hide critter ESP and Hide floor-drop ESP togg
 
 ## Last updated
 
+2026-11-03 (America/New_York) — Added the default-off experimental shard sale guidance switch.
+
 2026-11-02 — Refreshed bundled main/contest preferences and all HUD placements from the current Skyblock instance. Hotspot announcing, Sparkle Warping, Leech and starting quest-item announcements default off. All Warp List entries start empty; the inviter whitelist is retained. No credentials, PBs, run/sparkling histories, achievement state, playtime, hive cooldowns or other account statistics are included. Existing config files remain authoritative. Starting quest-item local title reminders now obey the same toggle as the party announcements.
 
 2026-11-01 — Native settings preserve existing property keys, defaults and HUD placement. New settings: `settingsTheme=4` (Rainbow), `specialCatchAlert=true`, `specialCatchStyle=0` (Prismatic Whisper).

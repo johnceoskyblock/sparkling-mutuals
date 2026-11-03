@@ -23,9 +23,25 @@ class BazaarQuoteParsingTest {
 
     @Test fun `invalid orders cannot become best prices and an incoherent product remains absent`() {
         val snapshot = BazaarQuoteParsing.parse(payload(book("0,-1,1e999,120", "0,-1,90")), now)!!
-        assertEquals(120.0, snapshot.quotes.getValue("SHARD_BLUEBIRD").ask)
+        assertTrue(snapshot.quotes.isEmpty(),"An incomplete supplied book cannot establish the best price")
         assertTrue(BazaarQuoteParsing.parse(payload(book("80", "90")), now)!!.quotes.isEmpty())
         assertTrue(BazaarQuoteParsing.parse(payload(book("0,-1", "90")), now)!!.quotes.isEmpty())
+    }
+    @Test fun `malformed better levels suppress only their quote while legacy values and valid siblings survive`() {
+        val badLevels=listOf(
+            """{"amount":2,"pricePerUnit":95}""",
+            """{"amount":1e999,"orders":1,"pricePerUnit":95}""",
+            """{"amount":2,"orders":1.5,"pricePerUnit":95}""",
+            """{"amount":"2","orders":1,"pricePerUnit":95}""",
+            """{"amount":2,"orders":1,"pricePerUnit":"95"}""",
+        )
+        for(level in badLevels)for(side in listOf("buy_summary","sell_summary")) {
+            val invalid=book("100","90").replace("\"$side\":[","\"$side\":[$level,")
+            val raw="""{"success":true,"lastUpdated":$now,"products":{"BAD":$invalid,"SHARD_BLUEBIRD":${book()}}}"""
+            val parsed=BazaarQuoteParsing.parse(raw,now)!!
+            assertEquals(setOf("SHARD_BLUEBIRD"),parsed.quotes.keys,"$side $level")
+            assertArrayEquals(doubleArrayOf(87.5,115.5),parsed.quickPrices.getValue("BAD"))
+        }
     }
 
     @Test fun `malformed product does not remove a valid sibling or fabricate its own quote`() {

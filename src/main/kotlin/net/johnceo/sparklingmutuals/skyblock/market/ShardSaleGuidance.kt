@@ -17,8 +17,6 @@ import net.minecraft.network.chat.Component
 import net.minecraft.world.entity.player.Inventory
 import net.minecraft.world.inventory.Slot
 import java.util.concurrent.Executors
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicReference
 
 /** One client-owned integration and one lazy daemon worker. No collectors while Minecraft is closed. */
 object ShardSaleGuidance {
@@ -48,9 +46,7 @@ object ShardSaleGuidance {
     private var view: SaleMenuSnapshot?=null
     private var tooltipSlot: Slot?=null
     private var savedAt=0L
-    private var savedText=""
-    private val pendingSave=AtomicReference<String?>()
-    private val saving=AtomicBoolean(false)
+    private val watchSaver by lazy {WatchSaveQueue(worker,{watchFile.write(it)})}
 
     fun register() {
         if(registered)return
@@ -110,16 +106,7 @@ object ShardSaleGuidance {
         val now=System.currentTimeMillis()
         if(!force && now>=savedAt && now-savedAt<30000)return
         savedAt=now
-        val raw=watches.export(now)
-        if(raw==savedText)return
-        savedText=raw;pendingSave.set(raw)
-        if(!saving.compareAndSet(false,true))return
-        worker.execute {
-            do {
-                pendingSave.getAndSet(null)?.let {watchFile.write(it)}
-                saving.set(false)
-            }while(pendingSave.get()!=null && saving.compareAndSet(false,true))
-        }
+        watchSaver.offer(watches.export(now))
     }
     private fun advice(screen: AbstractContainerScreen<*>,slot: Slot): Recommendation? {
         if(!ConfigManager.shardSaleGuidance || menu!==screen || Minecraft.getInstance().smScreen!==screen)return null

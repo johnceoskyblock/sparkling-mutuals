@@ -50,7 +50,7 @@ internal class SellOfferWatch {
             val before=previous.put(id,current)
             val sameRule=before?.modelKey==current.modelKey
             val drop=before?.state==AdviceState.SELL && current.state==AdviceState.HOLD && sameRule &&
-                current.ask?.let {ask -> before.ask?.let {ask<it} }==true
+                current.ask?.let {ask -> (current.declineFromAsk ?: before.ask)?.let {ask<it} }==true
             val initial=before==null && current.state==AdviceState.HOLD && id !in recovered && !watch.initialNotified
             if(current.state==AdviceState.HOLD)watch.initialNotified=true
             if(!(drop || initial) || watch.alerted>0 && now-watch.alerted<600_000)continue

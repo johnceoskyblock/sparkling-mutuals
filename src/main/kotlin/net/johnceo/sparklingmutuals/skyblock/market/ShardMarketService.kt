@@ -3,6 +3,7 @@ package net.johnceo.sparklingmutuals.skyblock.market
 import java.util.Collections
 import java.util.concurrent.Executor
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
 
 internal enum class HistoryPart(val refreshMillis: Long) { RECENT(600_000), WEEK(3_600_000) }
 internal data class HistoryJob(val productId: String,val part: HistoryPart)
@@ -39,6 +40,8 @@ internal class ShardMarketService(
     private data class View(val token: Long,val advice: Map<String,Recommendation>,val historyAt: Map<String,Long>)
     @Volatile private var view=View(-1,emptyMap(),emptyMap())
     private var nextLaunch=Long.MIN_VALUE
+    /** Provider throttle survives product, menu, disable and generation changes. Elapsed-clock deadline. */
+    private val providerNotBefore=AtomicLong(Long.MIN_VALUE)
     private val queue=linkedSetOf<HistoryJob>()
     private val due=mutableMapOf<HistoryJob,Long>()
     private val failures=mutableMapOf<HistoryJob,Int>()
@@ -121,7 +124,7 @@ internal class ShardMarketService(
             val job=HistoryJob(id,part)
             if(active?.job!=job)queue.add(job)
         }}
-        if(active!=null || elapsedClock()<nextLaunch)return
+        if(active!=null || elapsedClock()<nextLaunch || elapsedClock()<providerNotBefore.get())return
         val job=queue.firstOrNull {(due[it] ?: Long.MIN_VALUE)<=now} ?: return
         queue.remove(job)
         nextLaunch=elapsedClock()+1000
@@ -129,6 +132,8 @@ internal class ShardMarketService(
         active=owner
         try {
             val cancel=transport.request(job) {reply -> synchronized(responseLock) {
+                // A retired public request may still report a real provider throttle. No data publication follows.
+                extendProviderWait(reply,maxOf(15_000L,reply.retryAfterMillis?.coerceAtLeast(0) ?: 0))
                 if(valid(owner) && active===owner && pending==null) {
                     pending=owner to reply;requestWork()
                 }
@@ -140,6 +145,12 @@ internal class ShardMarketService(
     }
 
     private fun valid(owner: Active)=demand.let {it.on && it.token==owner.token && owner.job.productId in it.products}
+
+    private fun extendProviderWait(reply: HistoryReply,delay: Long) {
+        if(reply.status!=429 && reply.retryAfterMillis==null)return
+        val deadline=runCatching {Math.addExact(elapsedClock(),delay)}.getOrDefault(Long.MAX_VALUE)
+        providerNotBefore.accumulateAndGet(deadline) {before,next ->maxOf(before,next)}
+    }
 
     private fun accept(owner: Active,reply: HistoryReply,now: Long) {
         val job=owner.job
@@ -153,6 +164,7 @@ internal class ShardMarketService(
             val count=(failures[job] ?: 0)+1
             val backoff=minOf(900_000L,15_000L shl minOf(count-1,6))
             val delay=maxOf(backoff,reply.retryAfterMillis?.coerceAtLeast(0) ?: 0)
+            extendProviderWait(reply,delay)
             due[job]=if(delay>Long.MAX_VALUE-now)Long.MAX_VALUE else now+delay
             if(count>=7) {failures.remove(job);due[job]=maxOf(due.getValue(job),now+job.part.refreshMillis)}
             else failures[job]=count
@@ -200,7 +212,7 @@ internal class ShardMarketService(
             result[id]=Recommendation(id,advice.state,advice.target,quote?.serverAt ?: 0L,
                 advice.unknown?.name ?: if(experimental) {if(target.falling)"EXPERIMENTAL_FALLING_RANGE" else "EXPERIMENTAL_RANGE"}
                     else if(target.falling)"FALLING_MARKET_EXIT" else "HISTORICAL_TARGET",quote?.ask,
-                if(experimental)ExperimentalRange.KEY else modelKeys[id])
+                if(experimental)ExperimentalRange.KEY else modelKeys[id],advice.confirmedSellAsk)
         }
         if(recalculate)targetAt=now
         published=Collections.unmodifiableMap(result)

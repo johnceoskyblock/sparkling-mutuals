@@ -26,6 +26,7 @@ internal data class AdviceLatch(
     val unknown: UnknownReason?,
     val serverAt: Long = 0L,
     val belowSince: Long? = null,
+    val confirmedSellAsk: Double? = null,
 )
 internal data class Recommendation(
     val productId: String,
@@ -36,4 +37,6 @@ internal data class Recommendation(
     val ask: Double? = null,
     /** Changes reset alert baselines; a recalibration is not evidence of a market-price drop. */
     val modelKey: String? = null,
+    /** Economic pre-decline ask, retained through SELL-to-HOLD confirmation snapshots. */
+    val declineFromAsk: Double? = null,
 )
