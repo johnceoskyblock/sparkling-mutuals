@@ -1,12 +1,15 @@
 """One manually started bounded official-quote research run; no mod integration."""
 
 import argparse
+import ctypes
 from dataclasses import asdict, dataclass
+import hashlib
 import json
 import multiprocessing
 import os
 from pathlib import Path
 import time
+import threading
 
 from official_quotes import ENCODED_LIMIT, fetch_official
 
@@ -26,8 +29,10 @@ def encoded(value):
 class Store:
     HEADROOM = 32_768
 
-    def __init__(self, path, limits=Limits()):
+    def __init__(self, path, limits=Limits(), monotonic=time.monotonic):
         self.path, self.limits = Path(path), limits
+        self.monotonic = monotonic
+        self.not_before = monotonic()
         self.path.mkdir(parents=True, exist_ok=True)
         self.state = None
         self.reservation = None
@@ -41,6 +46,9 @@ class Store:
         if state_path.stat().st_size > 8192:
             raise ValueError("invalid_state_size")
         state = json.loads(state_path.read_bytes())
+        state_hash = state.pop("stateHash", None)
+        if state_hash != hashlib.sha256(encoded(state)).hexdigest():
+            raise ValueError("corrupt_state_preserve_evidence")
         required = ("startedAt", "deadlineAt", "attempts", "chargedBytes", "lastAttemptAt",
                     "nextAttemptAt", "reserved", "records", "acceptedSnapshots", "lastGoodServerAt")
         if (state.get("version") != 1 or state.get("limits") != asdict(limits)
@@ -52,16 +60,58 @@ class Store:
                 or (state["attempts"] > 0 and state["nextAttemptAt"] < state["lastAttemptAt"] + 300_000)
                 or state["reserved"] > min(ENCODED_LIMIT, state["chargedBytes"])):
             raise ValueError("invalid_state_no_reset")
-        if samples.exists() and samples.stat().st_size:
-            with samples.open("rb") as stream:
-                stream.seek(max(0, samples.stat().st_size - 65_536))
-                tail = stream.read()
-            if not tail.endswith(b"\n"):
-                raise ValueError("partial_record_preserve_evidence")
-            row = json.loads(tail.splitlines()[-1])
-            if not isinstance(row, dict) or not 0 < row.get("attempt", 0) <= state["attempts"]:
-                raise ValueError("invalid_last_record")
         self.state = state
+        self.validate_evidence(samples)
+        # A restart cannot know how the wall clock changed while stopped.
+        self.not_before = monotonic() + 300
+
+    def validate_evidence(self, samples):
+        s = self.state
+        count, accepted, good_at, previous_attempt = 0, 0, 0, 0
+        previous_hash = "0" * 64
+        prefix_matches = s["records"] == 0 and s.get("recordHash") == previous_hash and s["acceptedSnapshots"] == 0 and s["lastGoodServerAt"] == 0
+        last = None
+        if samples.exists():
+            if samples.stat().st_size > self.limits.disk:
+                raise ValueError("evidence_size_limit")
+            with samples.open("rb") as stream:
+                while line := stream.readline(65_537):
+                    if len(line) > 65_536 or not line.endswith(b"\n"):
+                        raise ValueError("partial_or_oversized_record")
+                    row = json.loads(line)
+                    if not isinstance(row, dict):
+                        raise ValueError("invalid_record")
+                    claimed_hash = row.pop("recordHash", None)
+                    actual_hash = hashlib.sha256(encoded(row)).hexdigest()
+                    attempt = row.get("attempt")
+                    if (claimed_hash != actual_hash or row.get("previousRecordHash") != previous_hash
+                            or row.get("schema") != 1 or type(attempt) is not int
+                            or not previous_attempt < attempt <= s["attempts"]
+                            or type(row.get("attemptedAt")) is not int or type(row.get("finishedAt")) is not int
+                            or not isinstance(row.get("status"), str)):
+                        raise ValueError("corrupt_evidence")
+                    count += 1
+                    if count > self.limits.attempts:
+                        raise ValueError("too_many_records")
+                    if row["status"] == "ok":
+                        at = row.get("serverAt")
+                        if type(at) is not int or at <= good_at:
+                            raise ValueError("invalid_fresh_source_time")
+                        accepted += 1
+                        good_at = at
+                    previous_hash, previous_attempt, last = actual_hash, attempt, row
+                    if count == s["records"]:
+                        prefix_matches = (actual_hash == s.get("recordHash") and accepted == s["acceptedSnapshots"]
+                                          and good_at == s["lastGoodServerAt"])
+        if not prefix_matches or count < s["records"] or count > s["records"] + 1:
+            raise ValueError("missing_or_inconsistent_evidence")
+        if count > s["records"]:
+            if not s["reserved"] or last["attempt"] != s["attempts"]:
+                raise ValueError("unexplained_extra_record")
+            # The append was durable before its state update. Preserve the full byte charge.
+            s.update(records=count, acceptedSnapshots=accepted, lastGoodServerAt=good_at,
+                     recordHash=previous_hash, reserved=0, lastResult="recovered_completed_record")
+            self.save()
 
     def usage(self):
         if self.path.is_symlink():
@@ -75,7 +125,9 @@ class Store:
         return total
 
     def save(self):
-        content = encoded(self.state)
+        snapshot = self.state.copy()
+        snapshot["stateHash"] = hashlib.sha256(encoded(self.state)).hexdigest()
+        content = encoded(snapshot)
         temporary = self.path / "state.tmp"
         old_temp = temporary.stat().st_size if temporary.exists() else 0
         if len(content) > 8192 or self.usage() - old_temp + len(content) > self.limits.disk:
@@ -96,7 +148,8 @@ class Store:
                           "deadlineAt": now + self.limits.duration, "attempts": 0,
                           "chargedBytes": 0, "reserved": 0, "lastAttemptAt": now,
                           "nextAttemptAt": now, "records": 0, "acceptedSnapshots": 0,
-                          "status": "running", "pid": os.getpid(), "lastGoodServerAt": 0}
+                          "status": "running", "pid": os.getpid(), "lastGoodServerAt": 0,
+                          "recordHash": "0" * 64}
         s = self.state
         reason = None
         if s["status"] != "running":
@@ -116,7 +169,7 @@ class Store:
         if reason:
             self.terminal(reason)
             return None
-        if now < s["nextAttemptAt"]:
+        if now < s["nextAttemptAt"] or self.monotonic() < self.not_before:
             return None
         limit = min(ENCODED_LIMIT, self.limits.download - s["chargedBytes"])
         s.update(attempts=s["attempts"] + 1, reserved=limit,
@@ -124,6 +177,7 @@ class Store:
                  nextAttemptAt=now + 300_000, pid=os.getpid())
         # Persist conservative charge BEFORE making any request. A crash never refunds it.
         self.save()
+        self.not_before = self.monotonic() + 300
         self.reservation = {"attempt": s["attempts"], "limit": limit}
         return self.reservation.copy()
 
@@ -138,13 +192,16 @@ class Store:
             s["chargedBytes"] -= s["reserved"] - actual
         s["reserved"] = 0
         result = dict(result)
+        good_at = s["lastGoodServerAt"]
         if result.get("status") == "ok":
             source_at = result["serverAt"]
             if source_at <= s["lastGoodServerAt"]:
                 result["status"] = "duplicate_snapshot" if source_at == s["lastGoodServerAt"] else "out_of_order_snapshot"
             else:
-                s["lastGoodServerAt"] = source_at
+                good_at = source_at
         row = {"schema": 1, "attempt": s["attempts"], "attemptedAt": s["lastAttemptAt"], "finishedAt": now, **result}
+        row["previousRecordHash"] = s["recordHash"]
+        row["recordHash"] = hashlib.sha256(encoded(row)).hexdigest()
         content = encoded(row)
         if len(content) + self.usage() > self.limits.disk - self.HEADROOM:
             self.reservation = None
@@ -155,9 +212,12 @@ class Store:
             stream.flush()
             os.fsync(stream.fileno())
         s.update(reserved=0, records=s["records"] + 1,
+                 recordHash=row["recordHash"], lastGoodServerAt=good_at,
                  acceptedSnapshots=s["acceptedSnapshots"] + (result.get("status") == "ok"),
                  lastResult=result.get("status"), lastReceivedAt=result.get("receivedAt"),
                  lastServerAt=result.get("serverAt"), lastQuoteCount=len(result.get("quotes", {})))
+        s["nextAttemptAt"] = max(s["nextAttemptAt"], now + 300_000)
+        self.not_before = self.monotonic() + 300
         retry = result.get("retryAfter", 0)
         if type(retry) is int and retry > 0:
             s["nextAttemptAt"] = max(s["nextAttemptAt"], now + min(retry, 86_400) * 1000)
@@ -202,28 +262,101 @@ class SingleWorker:
         self.stream.close()
 
 
-def _fetch_child(sender, target, limit):
+class RequestJob:
+    """Windows closes this non-inherited handle on parent death, killing its request child."""
+
+    def __init__(self):
+        self.handle = None
+        if os.name != "nt":
+            return
+        from ctypes import wintypes as w
+
+        class Basic(ctypes.Structure):
+            _fields_ = [("process_time", ctypes.c_longlong), ("job_time", ctypes.c_longlong),
+                        ("flags", w.DWORD), ("min_ws", ctypes.c_size_t), ("max_ws", ctypes.c_size_t),
+                        ("process_count", w.DWORD), ("affinity", ctypes.c_size_t),
+                        ("priority", w.DWORD), ("scheduling", w.DWORD)]
+
+        class Extended(ctypes.Structure):
+            _fields_ = [("basic", Basic), ("io", ctypes.c_ulonglong * 6),
+                        ("process_memory", ctypes.c_size_t), ("job_memory", ctypes.c_size_t),
+                        ("peak_process", ctypes.c_size_t), ("peak_job", ctypes.c_size_t)]
+
+        self.kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+        self.kernel.CreateJobObjectW.argtypes = [ctypes.c_void_p, ctypes.c_wchar_p]
+        self.kernel.CreateJobObjectW.restype = ctypes.c_void_p
+        self.kernel.SetInformationJobObject.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, w.DWORD]
+        self.kernel.OpenProcess.argtypes = [w.DWORD, w.BOOL, w.DWORD]
+        self.kernel.OpenProcess.restype = ctypes.c_void_p
+        self.kernel.AssignProcessToJobObject.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
+        self.kernel.CloseHandle.argtypes = [ctypes.c_void_p]
+        self.handle = self.kernel.CreateJobObjectW(None, None)
+        if not self.handle:
+            raise ctypes.WinError(ctypes.get_last_error())
+        limits = Extended()
+        limits.basic.flags = 0x2000  # JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
+        if not self.kernel.SetInformationJobObject(self.handle, 9, ctypes.byref(limits), ctypes.sizeof(limits)):
+            error = ctypes.get_last_error()
+            self.close()
+            raise ctypes.WinError(error)
+
+    def assign(self, pid):
+        if not self.handle:
+            return
+        process = self.kernel.OpenProcess(0x0101, False, pid)  # SET_QUOTA | TERMINATE
+        if not process:
+            raise ctypes.WinError(ctypes.get_last_error())
+        try:
+            if not self.kernel.AssignProcessToJobObject(self.handle, process):
+                raise ctypes.WinError(ctypes.get_last_error())
+        finally:
+            self.kernel.CloseHandle(process)
+
+    def close(self):
+        if self.handle:
+            self.kernel.CloseHandle(self.handle)
+            self.handle = None
+
+
+def _fetch_child(sender, target, limit, gate, deadline, parent_pid):
+    watchdog = threading.Timer(max(0, deadline - time.monotonic()), os._exit, args=(124,))
+    watchdog.daemon = True
+    watchdog.start()
     try:
+        if os.name != "nt":
+            libc = ctypes.CDLL(None, use_errno=True)
+            if not hasattr(libc, "prctl") or libc.prctl(1, 9) != 0 or os.getppid() != parent_pid:
+                raise RuntimeError("parent_lifetime_control_unavailable")
+        # No network before the parent installs OS lifetime control.
+        if not gate.wait(max(0, deadline - time.monotonic())):
+            return
         sender.send(target(limit))
     except Exception:
         sender.send({"status": "worker_error", "bodyBytes": None})
     finally:
+        watchdog.cancel()
         sender.close()
 
 
 def timed_fetch(limit, timeout=20, target=fetch_official):
     context = multiprocessing.get_context("spawn")
     receiver, sender = context.Pipe(duplex=False)
-    child = context.Process(target=_fetch_child, args=(sender, target, limit), daemon=True)
     started = time.monotonic()
+    deadline = started + timeout
+    gate = context.Event()
+    child = context.Process(target=_fetch_child, args=(sender, target, limit, gate, deadline, os.getpid()), daemon=True)
+    job = None
     try:
+        job = RequestJob()
         child.start()
+        job.assign(child.pid)
+        gate.set()
         sender.close()
         if receiver.poll(max(0, timeout - (time.monotonic() - started))):
             try:
                 return receiver.recv()
             except EOFError:
-                return {"status": "worker_error", "bodyBytes": None}
+                return {"status": "timeout" if time.monotonic() >= deadline else "worker_error", "bodyBytes": None}
         return {"status": "timeout", "bodyBytes": None}
     finally:
         if child.pid is not None:
@@ -239,22 +372,31 @@ def timed_fetch(limit, timeout=20, target=fetch_official):
             child.close()
         receiver.close()
         sender.close()
+        if job:
+            job.close()
 
 
 def run(path):
     with SingleWorker(path):
         store = Store(path)
         wall_start, mono_start = time.time(), time.monotonic()
+        remaining_ms = (store.state["deadlineAt"] - int(wall_start * 1000)) if store.state else store.limits.duration
+        elapsed_deadline = mono_start + max(0, min(remaining_ms, store.limits.duration)) / 1000
         try:
             while True:
                 now = time.time_ns() // 1_000_000
+                if time.monotonic() >= elapsed_deadline:
+                    if store.state:
+                        store.terminal("deadline")
+                    return
                 if abs(time.time() - wall_start - (time.monotonic() - mono_start)) > 60:
                     if store.state:
                         store.terminal("clock_change")
                     return
                 reservation = store.begin(now)
                 if reservation:
-                    remaining = max(0, (store.state["deadlineAt"] - now) / 1000)
+                    remaining = max(0, min((store.state["deadlineAt"] - now) / 1000,
+                                           elapsed_deadline - time.monotonic()))
                     result = timed_fetch(reservation["limit"], timeout=min(20, remaining))
                     store.finish(result, time.time_ns() // 1_000_000)
                 elif store.state["status"] != "running":
@@ -269,7 +411,10 @@ def read_status(path):
     state_file = path / "state.json"
     if not state_file.exists():
         return {"status": "not_started", "workerRunning": False}
-    state = Store(path).state.copy()
+    if state_file.stat().st_size > 8192:
+        raise ValueError("invalid_state_size")
+    # State replacement is atomic. Do not audit an append that an active worker may be writing.
+    state = json.loads(state_file.read_bytes())
     state["workerRunning"] = False
     if (path / "worker.lock").exists():
         try:

@@ -1,4 +1,5 @@
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -17,6 +18,17 @@ def slow_fetch(limit):
     return {"status": "ok", "bodyBytes": 0}
 
 
+class SimulatedStore(c.Store):
+    """Old wall-time fixtures advance an independent fake elapsed clock alongside time."""
+    def __init__(self, path, limits):
+        self.tick = 0.0
+        super().__init__(path, limits, monotonic=lambda: self.tick)
+
+    def begin(self, now):
+        self.tick = max(self.tick, (now - NOW) / 1000)
+        return super().begin(now)
+
+
 class StoreTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
@@ -24,7 +36,7 @@ class StoreTests(unittest.TestCase):
         self.path = Path(self.temp.name)
 
     def store(self, **limits):
-        return c.Store(self.path, c.Limits(**limits))
+        return SimulatedStore(self.path, c.Limits(**limits))
 
     def test_restart_keeps_deadline_throttle_attempts_and_crash_reservation(self):
         store = self.store()
@@ -164,6 +176,123 @@ class StoreTests(unittest.TestCase):
         self.assertEqual("timeout", result["status"])
         self.assertIsNone(result["bodyBytes"])
         self.assertLess(time.monotonic() - start, 5)
+
+    def test_forward_clock_jump_cannot_shorten_monotonic_spacing(self):
+        tick = [0.0]
+        store = c.Store(self.path, monotonic=lambda: tick[0])
+        store.begin(NOW)
+        store.finish({"status": "invalid_response", "bodyBytes": 10}, NOW)
+        tick[0] = 241.0
+        self.assertIsNone(store.begin(NOW + 300_000))
+        tick[0] = 300.0
+        self.assertIsNotNone(store.begin(NOW + 359_000))
+
+    def test_restart_waits_a_full_monotonic_interval_even_after_forward_clock_change(self):
+        tick = [0.0]
+        store = c.Store(self.path, monotonic=lambda: tick[0])
+        store.begin(NOW)
+        tick[0] = 1.0
+        resumed = c.Store(self.path, monotonic=lambda: tick[0])
+        self.assertIsNone(resumed.begin(NOW + 600_000))
+        tick[0] = 301.0
+        self.assertIsNotNone(resumed.begin(NOW + 900_000))
+
+    def test_tolerated_backward_clock_adjustment_cannot_extend_run_deadline(self):
+        from unittest.mock import patch
+        tick = [0.0]
+        original_store = c.Store
+
+        def wall():
+            return NOW / 1000 + tick[0] - (59 if tick[0] else 0)
+
+        def sleep(seconds):
+            tick[0] += seconds
+
+        def store(path):
+            return original_store(path, c.Limits(duration=1000), monotonic=lambda: tick[0])
+
+        with patch.object(c, "Store", store), patch.object(c.time, "time", wall), \
+                patch.object(c.time, "time_ns", lambda: int(wall() * 1_000_000_000)), \
+                patch.object(c.time, "monotonic", lambda: tick[0]), patch.object(c.time, "sleep", sleep), \
+                patch.object(c, "timed_fetch", lambda *a, **k: {"status": "invalid_response", "bodyBytes": 0}):
+            c.run(self.path)
+        self.assertLessEqual(tick[0], 2, "one-second test run must not stretch by a 59-second clock adjustment")
+        self.assertEqual("deadline", json.loads((self.path / "state.json").read_text())["status"])
+
+    def test_interior_corruption_and_missing_completed_evidence_fail_closed(self):
+        store = self.store()
+        store.begin(NOW)
+        store.finish({"status": "invalid_response", "bodyBytes": 10}, NOW)
+        file = self.path / "samples.jsonl"
+        original = file.read_bytes()
+        for bad in (b"corrupt earlier evidence\n" + original, b"", original.replace(b'invalid_response', b'other_response')):
+            file.write_bytes(bad)
+            with self.assertRaises(ValueError):
+                self.store()
+        file.unlink()
+        with self.assertRaises(ValueError):
+            self.store()
+
+    def test_positive_counter_corruption_is_detected_before_a_request(self):
+        store = self.store()
+        store.begin(NOW)
+        state_path = self.path / "state.json"
+        state = json.loads(state_path.read_text())
+        state["chargedBytes"] = 1
+        state["reserved"] = 0
+        state_path.write_text(json.dumps(state))
+        with self.assertRaises(ValueError):
+            self.store()
+
+    def test_append_before_state_save_crash_recovers_without_refunding_unknown_bytes(self):
+        store = self.store()
+        store.begin(NOW)
+        old_state = (self.path / "state.json").read_bytes()
+        store.finish({"status": "invalid_response", "bodyBytes": 10}, NOW)
+        (self.path / "state.json").write_bytes(old_state)
+        resumed = self.store()
+        self.assertEqual(1, resumed.state["records"])
+        self.assertEqual(1_048_576, resumed.state["chargedBytes"])
+        self.assertEqual(2, resumed.begin(NOW + 300_000)["attempt"])
+
+    @unittest.skipUnless(os.name == "nt", "Windows orphan-lifetime regression")
+    def test_abrupt_parent_death_stops_its_request_child(self):
+        import ctypes
+        parent_script = self.path / "orphan_probe.py"
+        child_id = self.path / "child.pid"
+        parent_script.write_text(
+            "import os,sys,time\n"
+            f"sys.path.insert(0,{str(Path(c.__file__).parent)!r})\n"
+            "from official_collect import timed_fetch\n"
+            "def slow(limit):\n"
+            f"    open({str(child_id)!r},'w').write(str(os.getpid()))\n"
+            "    time.sleep(10)\n"
+            "    return {'status':'timeout','bodyBytes':None}\n"
+            "if __name__=='__main__': timed_fetch(100,timeout=1,target=slow)\n")
+        parent = subprocess.Popen([sys.executable, "-B", str(parent_script)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+        kernel.OpenProcess.restype = ctypes.c_void_p
+        kernel.WaitForSingleObject.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+        kernel.CloseHandle.argtypes = [ctypes.c_void_p]
+        handle = None
+        try:
+            until = time.monotonic() + 5
+            while not child_id.exists() and parent.poll() is None and time.monotonic() < until:
+                time.sleep(0.02)
+            self.assertTrue(child_id.exists(), "request child must start before killing its parent")
+            handle = kernel.OpenProcess(0x100000 | 1, False, int(child_id.read_text()))
+            self.assertTrue(handle)
+            parent.kill()
+            parent.wait(timeout=3)
+            self.assertEqual(0, kernel.WaitForSingleObject(handle, 2000), "orphan must exit before a restarted collector can overlap it")
+        finally:
+            if parent.poll() is None:
+                parent.kill()
+                parent.wait(timeout=3)
+            if handle:
+                kernel.TerminateProcess.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+                kernel.TerminateProcess(handle, 1)
+                kernel.CloseHandle(handle)
 
 
 if __name__ == "__main__":

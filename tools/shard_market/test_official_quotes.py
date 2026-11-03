@@ -107,6 +107,14 @@ class QuoteTests(unittest.TestCase):
             result = q.fetch_official(100)
         self.assertIsNone(result["bodyBytes"], "partial bytes inside a failed read cannot be refunded")
 
+    def test_one_malformed_best_level_cannot_certify_a_worse_price(self):
+        root = payload()
+        root["products"]["SHARD_HIDEONWALL"]["buy_summary"].append(
+            {"pricePerUnit": 100, "amount": "unknown", "orders": 1})
+        result = self.parse(root)
+        self.assertNotIn("SHARD_HIDEONWALL", result["quotes"])
+        self.assertIn("SHARD_HIDEONWALL", result["missing"])
+
 
 if __name__ == "__main__":
     unittest.main()

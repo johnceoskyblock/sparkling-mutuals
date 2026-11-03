@@ -39,17 +39,21 @@ def parse_quotes(raw, received_at):
             missing[product_id] = "missing_or_wrong_identity"
             continue
         sides = []
+        malformed = False
         for key in ("buy_summary", "sell_summary"):
             entries = product.get(key)
             valid = []
             if isinstance(entries, list):
                 for order in entries:
                     if (isinstance(order, dict) and positive(order.get("pricePerUnit"))
-                            and positive(order.get("amount")) and positive(order.get("orders"))):
+                            and positive(order.get("amount")) and type(order.get("orders")) is int
+                            and order["orders"] > 0):
                         valid.append(float(order["pricePerUnit"]))
+                    else:
+                        malformed = True
             sides.append(valid)
         asks, bids = sides
-        if asks and bids and max(bids) <= min(asks):
+        if not malformed and asks and bids and max(bids) <= min(asks):
             quotes[product_id] = {"ask": min(asks), "bid": max(bids)}
         else:
             missing[product_id] = "invalid_or_crossed_book"
