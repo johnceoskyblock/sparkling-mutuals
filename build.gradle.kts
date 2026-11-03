@@ -64,6 +64,7 @@ if (targetMinecraft == "26.1.2") tasks.register<JavaExec>("replayShardMarket") {
     doFirst {
         args(providers.gradleProperty("marketManifest").get(), providers.gradleProperty("marketReport").get())
         if (providers.gradleProperty("marketSelectTraining").isPresent) args("select-training")
+        else if (providers.gradleProperty("marketExportSamples").isPresent) args("export-samples")
     }
 }
 tasks.processResources {

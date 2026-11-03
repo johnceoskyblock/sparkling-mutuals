@@ -14,9 +14,11 @@ internal data class ReplayMetrics(val total: Int, val holds: Int, val touches: I
 }
 internal data class EligibilityReport(val modelVersion: Int, val fingerprint: String, val training: ReplayMetrics,
     val holdout: ReplayMetrics, val windows: List<ReplayWindow>, val eligible: Boolean, val reason: String, val parameters: ModelParameters,
-    val verifiedEvidence: Boolean, val usesKnownAvailability: Boolean)
+    val verifiedEvidence: Boolean, val usesKnownAvailability: Boolean, val policyVersion: Int, val validationEndAt: Long)
 
 internal object ShardReplay {
+    const val POLICY_VERSION=2
+    const val VALIDATION_DAYS=3L
     /** Each decision sees only closed bins at that instant; a frozen target is assessed over a non-overlapping 3h window. */
     fun evaluate(samples: List<PriceSample>, splitAt: Long, parameters: ModelParameters=ModelParameters()): EligibilityReport {
         val sorted=samples.filter { it.ask.isFinite() && it.ask>0 }.sortedWith(compareBy({it.at},{it.resolutionMillis}))
@@ -24,10 +26,11 @@ internal object ShardReplay {
         val knownAvailability=sorted.isNotEmpty() && sorted.all {it.availableAt!=null}
         val verified=knownAvailability && sorted.all {it.basis==PriceBasis.VERIFIED_BEST_ASK && it.availableAt!!>=it.observedAt}
         val horizon=3*HOUR
+        val validationEnd=splitAt+VALIDATION_DAYS*DAY
         val windows=mutableListOf<ReplayWindow>()
         if(fine.isNotEmpty()) {
             val first=(sorted.first().at+WEEK+horizon-1)/horizon*horizon
-            val last=minOf(fine.last().at,splitAt+DAY)-horizon
+            val last=minOf(fine.last().at,validationEnd)-horizon
             var at=first
             while(at<=last) {
                 if(at<splitAt && at+horizon>splitAt) {at+=horizon;continue}
@@ -46,16 +49,18 @@ internal object ShardReplay {
             }
         }
         val training=metrics(windows.filter {it.at+horizon<=splitAt})
-        val holdout=metrics(windows.filter {it.at>=splitAt && it.at+horizon<=splitAt+DAY})
+        val holdout=metrics(windows.filter {it.at>=splitAt && it.at+horizon<=validationEnd})
         val enough=windows.size>=20 && windows.map {it.at/DAY}.distinct().size>=4
-        val eligible=verified && enough && training.qualifies() && holdout.qualifies()
+        val completeValidation=fine.lastOrNull()?.at?.let {it>=validationEnd}==true
+        val eligible=verified && enough && completeValidation && training.qualifies() && holdout.qualifies()
         val digest=MessageDigest.getInstance("SHA-256")
         sorted.forEach {digest.update("${it.at},${it.ask},${it.resolutionMillis},${it.basis},${it.availableAt};".toByteArray(Charsets.UTF_8))}
         val fingerprint=digest.digest().joinToString("") {"%02x".format(it)}
         return EligibilityReport(ShardTargetModel.VERSION,fingerprint,training,holdout,windows.toList(),eligible,
             if(!verified)"Retrospective research only: historical price basis or actual availability unverified"
             else if(eligible)"Historical replay qualifies; target touches do not prove fills"
-            else if(!enough)"Insufficient complete replay windows" else "Training or holdout acceptance not met",parameters,verified,knownAvailability)
+            else if(!completeValidation)"Three completed validation days are required"
+            else if(!enough)"Insufficient complete replay windows" else "Training or holdout acceptance not met",parameters,verified,knownAvailability,POLICY_VERSION,validationEnd)
     }
 
     /** Candidates are fixed in advance. Only the training prefix can influence their selection. */

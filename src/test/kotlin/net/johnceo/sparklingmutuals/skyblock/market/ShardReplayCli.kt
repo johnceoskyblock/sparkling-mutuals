@@ -11,7 +11,8 @@ object ShardReplayCli {
         require(args.size in 2..3) { "Input manifest, output report, optional training selection flag required" }
         val manifest=JsonParser.parseString(Files.readString(Path.of(args[0]))).asJsonObject
         val now=manifest.get("asOf").asLong
-        val split=now/ShardHistoryParsing.DAY*ShardHistoryParsing.DAY-ShardHistoryParsing.DAY
+        val split=now/ShardHistoryParsing.DAY*ShardHistoryParsing.DAY-ShardReplay.VALIDATION_DAYS*ShardHistoryParsing.DAY
+        val exportedSamples=linkedMapOf<String,List<PriceSample>>()
         val reports=manifest.getAsJsonObject("products").entrySet().associate { (id,value) ->
             val samples=value.asJsonObject.getAsJsonArray("files").flatMap { entry ->
                 val file=entry.asJsonObject
@@ -19,12 +20,14 @@ object ShardReplayCli {
                 require(Files.size(path)<=2*1024*1024) { "Oversized research input" }
                 ShardHistoryParsing.parse(Files.readString(path),now,file.get("resolutionMillis").asLong)
             }
+            if(args.getOrNull(2)=="export-samples") exportedSamples[id]=samples
             val selected=if(args.getOrNull(2)=="select-training")ShardReplay.selectTrainingParameters(samples,split) else ModelParameters()
             val report=ShardReplay.evaluate(samples,split,selected ?: ModelParameters())
             id to if(selected==null)report.copy(eligible=false,reason="No predeclared candidate met training acceptance")else report
         }
-        val result=mapOf("asOf" to now,"splitAt" to split,"modelVersion" to ShardTargetModel.VERSION,"reports" to reports,
+        val result=mutableMapOf<String,Any>("asOf" to now,"splitAt" to split,"modelVersion" to ShardTargetModel.VERSION,"reports" to reports,
             "limits" to "Quote target touches are not fills. Public graph prices may fall back to quick_status when the source book is absent.")
+        if(exportedSamples.isNotEmpty()) result["samples"]=exportedSamples
         Files.writeString(Path.of(args[1]),GsonBuilder().setPrettyPrinting().create().toJson(result))
         for((id,report) in reports) println("$id eligible=${report.eligible} windows=${report.windows.size} training=${report.training} holdout=${report.holdout}")
     }
