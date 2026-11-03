@@ -27,7 +27,7 @@ internal class FinanceHistoryTransport(
 
     companion object {
         fun uri(job: HistoryJob,now: Long): URI {
-            require(Regex("SHARD_[A-Z_]+").matches(job.productId))
+            require(SaleMarketProducts.historyId(job.productId))
             val until=now/60000*60
             val from=until-(if(job.part==HistoryPart.RECENT)2 else 8)*86400L
             val resolution=if(job.part==HistoryPart.RECENT)"1" else "15"

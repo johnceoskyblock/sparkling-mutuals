@@ -54,7 +54,7 @@ internal object ShardSaleSidebar {
     }
     private fun bounds(screen: AbstractContainerScreen<*>,count: Int): ShardSidebarBounds? {
         val container=screen as? ShardSaleScreenBounds ?: return null
-        return ShardSaleSidebarLayout.bounds(screen.width,screen.height,
+        return ShardSaleSidebarLayout.boxBounds(screen.width,screen.height,
             container.sparklingMutualsShardPanelLeft()+container.sparklingMutualsShardPanelWidth(),count)
     }
     fun draw(screen: AbstractContainerScreen<*>,g: GuiGraphicsExtractor,mx: Int,my: Int,rows: List<SavedBoxRow>,now: Long) {
@@ -62,7 +62,7 @@ internal object ShardSaleSidebar {
         scroll=area.clampScroll(scroll,rows.size)
         val client=Minecraft.getInstance()
         val width=ShardSaleSidebarLayout.WIDTH
-        val header=ShardSaleSidebarLayout.HEADER
+        val header=ShardSaleSidebarLayout.BOX_HEADER
         val rowHeight=ShardSaleSidebarLayout.ROW
         val hover=area.rowAt(mx.toDouble(),my.toDouble())?.let {rows.getOrNull(scroll+it)}
         g.pose().pushMatrix();g.pose().translate(area.x.toFloat(),area.y.toFloat());g.pose().scale(area.scale,area.scale)
@@ -70,6 +70,10 @@ internal object ShardSaleSidebar {
         AppearanceConfig.panels.getValue("progress").draw(g,width,height)
         fun text(value: String,x: Int,y: Int,color: Int=0xFF000000.toInt() or SafariTheme.TEXT)=g.text(client.font,value,x,y,color,true)
         text("Top /profit shards",6,6,HudRow.GOLD)
+        val essence=ShardSaleGuidance.essence(screen,now) ?: Recommendation(SaleMarketProducts.ESSENCE,AdviceState.UNKNOWN,null,0,"HISTORY_COVERAGE")
+        val essenceState=when(essence.state) {AdviceState.SELL->"SELL";AdviceState.HOLD->"HOLD";AdviceState.UNKNOWN->"UNAVAILABLE"}
+        text("Safari Essence",6,17)
+        text(essenceState,width-7-client.font.width(essenceState),17,ShardSalePresentation.color(essence.state) or 0xFF000000.toInt())
         rows.drop(scroll).take(area.rows).forEachIndexed {index,row->
             val y=header+index*rowHeight
             if(row==hover)g.fill(2,y-1,width-2,y+10,0x66000000 or SafariTheme.HOVER)
@@ -81,7 +85,12 @@ internal object ShardSaleSidebar {
             text(state,statusX,y,color)
         }
         g.pose().popMatrix()
-        if(hover!=null) {
+        val essenceHovered=area.contains(mx.toDouble(),my.toDouble()) &&
+            (my-area.y)/area.scale>=17 && (my-area.y)/area.scale<28
+        if(essenceHovered) {
+            g.setComponentTooltipForNextFrame(client.font,(listOf("Safari Essence","")+
+                ShardSalePresentation.tooltip(essence,now)).map(Component::literal),mx,my)
+        } else if(hover!=null) {
             val age=((now-hover.shard.observedAt).coerceAtLeast(0)/1000)
             val lines=listOf(SaleProducts.names.getValue(hover.shard.productId),"Last observed owned: ${hover.shard.amount}",
                 "Ownership observed ${age}s ago"+(if(hover.refreshedThisOpening)"" else " · previous opening"),"")+

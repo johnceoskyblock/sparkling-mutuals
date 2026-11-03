@@ -4,7 +4,7 @@ The settings workspace is adapted from Serkosea's SafariUtils v3.3.0, commit `2e
 
 ## Settings
 
-Local 26.1.2 development restores **SkyBlock → Helpers → Hunting Box total value** as an independent saved switch for one cumulative sell-offer estimate above the inventory. General item/chest valuation stays shelved. See [Hunting Box total](HUNTING_BOX_VALUE.md).
+The v4.0.2 candidate restores **SkyBlock → Helpers → Hunting Box total value** as an independent saved switch for one cumulative sell-offer estimate above the inventory. General item/chest valuation stays shelved. See [Hunting Box total](HUNTING_BOX_VALUE.md).
 
 The Hunting Box total and top-ten guidance list use the Safari Progress HUD's existing panel style, including its saved border/background/transparency. The total displays one named coin amount; the shard list omits auxiliary ownership/session/profile footer text.
 

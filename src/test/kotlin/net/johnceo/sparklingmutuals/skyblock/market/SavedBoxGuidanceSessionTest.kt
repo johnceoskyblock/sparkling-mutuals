@@ -18,12 +18,12 @@ class SavedBoxGuidanceSessionTest {
 
     @Test fun `all remembered pages participate in advice and box demand but closing keeps only watches`() {
         tick();tick("(2/3) Hunting Box",slots(hide,20),now+50)
-        assertEquals(setOf(bird,hide),demands.last())
+        assertEquals(setOf(bird,hide,SaleMarketProducts.ESSENCE),demands.last())
         assertEquals(listOf(AdviceState.SELL,AdviceState.HOLD),c.sidebar(now+50).map {it.advice.state})
         tick("Your Skills",emptyList(),now+100);assertTrue(c.sidebar(now+100).isEmpty());assertTrue(demands.last().isEmpty())
         tick(at=now+3000)
         assertEquals(listOf(true,false),c.sidebar(now+3000).map {it.refreshedThisOpening})
-        assertEquals(setOf(bird,hide),demands.last())
+        assertEquals(setOf(bird,hide,SaleMarketProducts.ESSENCE),demands.last())
     }
     @Test fun `cached ownership does not keep stale colors and explicit zero removes a row`() {
         tick();assertEquals(AdviceState.UNKNOWN,c.sidebar(now+180001).single().advice.state)

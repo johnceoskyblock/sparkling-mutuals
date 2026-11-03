@@ -193,4 +193,4 @@ Successful profile/discovery reads and IGN-to-UUID lookups are reused for 60 min
 
 ## Experimental shard ranges
 
-SkyBlock → Helpers → Shard sale guidance (experimental) uses persisted `shardSaleGuidance`, default **off** for both new and existing settings. It adds Hunting Box range colors and passive observed-order advisories, without enabling shelved valuation. See [meaning and limitations](SHARD_SALE_GUIDANCE.md).
+SkyBlock → Helpers → Shard sale guidance (experimental) uses persisted `shardSaleGuidance`, default **off** for both new and existing settings. It adds Hunting Box range colors, an always-present Safari Essence advice row and passive observed-order advisories. The combined Hunting Box total remains an independent switch; general item/chest valuation stays shelved. See [meaning and limitations](SHARD_SALE_GUIDANCE.md).

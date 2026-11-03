@@ -20,7 +20,7 @@ internal class ShardDisplayAdvice {
                 })
             }
         }
-        previous=result.filterKeys {it in SaleProducts.names}
+        previous=result.filterKeys {it in SaleMarketProducts.ids}
         return result
     }
 

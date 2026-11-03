@@ -13,7 +13,7 @@ class ShardSaleGuidanceIntegrationTest {
         val controller=SaleGuidanceSession(SellOfferWatch(),{_,_,ids,_->calls.add(ids)},{_,text->messages.add(text)},profitProducts={setOf("SHARD_BLUEBIRD")})
         val advice=mapOf("SHARD_BLUEBIRD" to Recommendation("SHARD_BLUEBIRD",AdviceState.SELL,100.0,now,"EXPERIMENTAL_RANGE",100.0,"range",100.0))
         assertEquals(setOf(10),controller.tick(true,true,scope,"Player","Hunting Box",box,advice,now).keys)
-        assertEquals(setOf("SHARD_BLUEBIRD"),calls.last())
+        assertEquals(setOf("SHARD_BLUEBIRD",SaleMarketProducts.ESSENCE),calls.last())
         controller.tick(true,true,scope,"Player","Your Bazaar Orders",order,advice,now)
         controller.tick(true,true,scope,"Player","",emptyList(),advice,now+60000)
         assertEquals(setOf("SHARD_BLUEBIRD"),calls.last())

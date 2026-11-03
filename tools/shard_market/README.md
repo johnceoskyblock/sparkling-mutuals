@@ -24,7 +24,7 @@ Sleep/reboot stops or interrupts collection; no missing period is backfilled. Mo
 
 `samples.jsonl` contains one bounded result per completed attempt: server snapshot time, actual receipt time, request/finish time, exact minimum buy-summary ask and maximum sell-summary bid, missing/error reasons and response identity hash. A malformed level makes the affected product unknown; a worse surviving level is never certified as exact best. The full response, quick-status weighted prices and unrelated products are discarded. Stale (>3 minutes), excessively future (>60 seconds), crossed or invalid quotes are rejected. Duplicate/older source snapshots are explicitly marked and do not count as fresh accepted snapshots. Invalid-response diagnostics currently retain the broad status/exception type rather than each validation reason; finer reason codes remain a deferred minor.
 
-Receipt time is availability evidence, not a claim that the server clock equals the local clock. Preserve both timestamps for later source/clock qualification. Five-minute observations do not reconstruct intrabin peaks or actual order fills. Collection can stop short of adequate coverage; a model must still pass the approved earlier-training/final-three-day validation gates before any Hunting Box colors or alerts are enabled.
+Receipt time is availability evidence, not a claim that the server clock equals the local clock. Preserve both timestamps for later source/clock qualification. Five-minute observations do not reconstruct intrabin peaks or actual order fills. Collection can stop short of adequate coverage; a forecast model must still pass the approved earlier-training/final-three-day validation gates. The separately approved experimental price-range UI does not claim those forecast checks passed; this collector never enables it.
 
 ## Tests
 
@@ -34,4 +34,4 @@ From the repository root:
 python -B -m unittest discover -s tools/shard_market -p "test_*.py" -v
 ```
 
-2026-11-03 — Local bounded research acquisition added under direct human approval. This is not a completed market-guidance feature.
+2026-11-03 — Local bounded research acquisition added under direct human approval. This remains a manual research utility; Minecraft never launches it.

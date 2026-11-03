@@ -26,7 +26,7 @@ internal class ShardMarketService(
     private val elapsedClock: ()->Long={System.nanoTime()/1_000_000},
     private val experimental: Boolean=false,
 ) {
-    private val allowed=allowedIds.toSet().also {require(it.size<=37)}
+    private val allowed=allowedIds.toSet().also {require(SaleMarketProducts.bounded(it))}
     private var generation=-1L
     private var epoch=0L
     private var enabled=false

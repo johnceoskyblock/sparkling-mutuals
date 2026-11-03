@@ -1,6 +1,6 @@
 # Hunting Box total value
 
-## Current local 26.1.2 feature
+## Current feature (26.1.2, 26.2 and 26.3)
 
 **SkyBlock → Helpers → Hunting Box total value** shows one combined estimated sell-offer value above the inventory, without a shard-value list or generic item-value tooltips. It reuses the existing saved huntingBoxValue preference (default on), independently of [HOLD/SELL guidance](SHARD_SALE_GUIDANCE.md). General item/chest valuation remains shelved.
 

@@ -54,7 +54,8 @@ internal class SaleGuidanceSession(
         }
         val box=observed.filter {it.amount>0 && it.productId in eligible}
         val products=if(insideBox)boxes.rows().map {it.first.productId}.filter {it in eligible}.toSet()else emptySet()
-        demand(true,true,products+watches.products(now).intersect(qualifying),generation)
+        demand(true,true,products+watches.products(now).intersect(qualifying)+
+            if(insideBox)setOf(SaleMarketProducts.ESSENCE)else emptySet(),generation)
         offerAdvice=offers.associate {offer->offer.slot to (fresh[offer.evidence.productId]?.takeIf {it.productId==offer.evidence.productId}
             ?: Recommendation(offer.evidence.productId,AdviceState.UNKNOWN,null,0,"HISTORY_COVERAGE"))}
         markers=offerAdvice.filterValues {it.state==AdviceState.HOLD}
@@ -80,4 +81,6 @@ internal class SaleGuidanceSession(
     fun profitRankingReady()=eligible.isNotEmpty()
     fun orderMarkers(): Map<Int,Recommendation> = markers
     fun orderAdvice(): Map<Int,Recommendation> = offerAdvice
+    fun essence(now: Long): Recommendation?=if(!insideBox)null else latest[SaleMarketProducts.ESSENCE]?.let {fresh(it,now)}
+        ?: Recommendation(SaleMarketProducts.ESSENCE,AdviceState.UNKNOWN,null,0,"HISTORY_COVERAGE")
 }

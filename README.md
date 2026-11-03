@@ -12,7 +12,7 @@ A Fabric client mod for Hypixel SkyBlock Safari, Sparkling discoveries, party co
 2. Download an appropriate published build from [Releases](https://github.com/johnceoskyblock/sparkling-mutuals/releases), or `jar-mc<version>` from a successful [Actions run](https://github.com/johnceoskyblock/sparkling-mutuals/actions).
 3. Install **one** matching Sparkling Mutuals JAR in `mods`, replacing the older mod JAR. Do not install source/test/development JARs. [Exact dependencies and filenames](docs/MULTI_VERSION_BUILDS.md#prerequisites).
 
-Current release: **[v3.5.0](https://github.com/johnceoskyblock/sparkling-mutuals/releases/tag/v3.5.0)**, with `sparkling-mutuals-3.5.0+mc26.1.2.jar`, `sparkling-mutuals-3.5.0+mc26.2.jar` and `sparkling-mutuals-3.5.0+mc26.3.jar`. Install only the file matching your Minecraft version and remove the older Sparkling Mutuals JAR before updating.
+Current published release: **[v4.0.1](https://github.com/johnceoskyblock/sparkling-mutuals/releases/tag/v4.0.1)**. **v4.0.2 is being prepared** with matching JARs for 26.1.2, 26.2 and 26.3; preparation does not publish assets. Install only the file matching your Minecraft version and remove the older Sparkling Mutuals JAR before updating.
 
 HM API is bundled. Settings use a native workspace adapted from SafariUtils. Player profile lookups use a Hypixel API key or the optional Shiny Hunter shared API. Keep keys and local authentication files private. Release notes and the availability of published assets belong to their [release descriptions](https://github.com/johnceoskyblock/sparkling-mutuals/releases).
 
@@ -31,6 +31,7 @@ HM API is bundled. Settings use a native workspace adapted from SafariUtils. Pla
 | History and achievements | `/sm history`, `/sm history import`, `/sm achievements`; [history/import/profit rules](docs/HISTORY_IMPORT.md) |
 | Sparkling rates | `/rates`; [cached-party checks and rate estimates](docs/SPARKLING_RATES.md) |
 | Profitable critters | `/profit <ticket>` or `/profits <ticket>`; [shard + essence ranking](docs/PROFITABLE_CRITTERS.md) |
+| Hunting Box and Bazaar guidance | [Experimental shard and Safari Essence ranges, saved top-ten list and own-offer actions](docs/SHARD_SALE_GUIDANCE.md); [combined Hunting Box value](docs/HUNTING_BOX_VALUE.md) |
 | Party streaks | `!since`, `!since unique`; [credit and participation](docs/SINCE_COMMAND.md) |
 | Contest and readiness | [Miria/downtime](docs/CONTEST_DOWNTIME.md), [Safari entry guard and Shift override](docs/SAFARI_ENTRY_GUARD.md) |
 | Canyon and warp | [Honeyhives](docs/HONEYHIVES.md), [warp reminders and automatic warp](docs/WARP_ALERTS.md) |

@@ -31,7 +31,7 @@ class ProfitShardGuidanceTest : ProfitableEspPriceFixture() {
         for(page in SaleProducts.names.keys.chunked(14))
             assertEquals(page.toSet().intersect(selected),tick(c,page).values.map {it.productId}.toSet())
         assertEquals(selected,c.sidebar(now).map {it.shard.productId}.toSet())
-        assertEquals(selected,demands.last());assertEquals(37,ledger.rows().size)
+        assertEquals(selected+SaleMarketProducts.ESSENCE,demands.last());assertEquals(37,ledger.rows().size)
         assertEquals(0,bootstrap)
     }
     @Test fun `changed prices ticket and sell preference update selection and retain cached ownership`() {
@@ -52,10 +52,10 @@ class ProfitShardGuidanceTest : ProfitableEspPriceFixture() {
     @Test fun `empty cached ranking bootstraps quotes without highlighting every saved shard`() {
         prices(emptyMap());val c=controller()
         assertTrue(tick(c,listOf("SHARD_BLUEBIRD")).isEmpty())
-        assertTrue(c.sidebar(now).isEmpty());assertTrue(demands.last().isEmpty());assertEquals(1,bootstrap)
+        assertTrue(c.sidebar(now).isEmpty());assertEquals(setOf(SaleMarketProducts.ESSENCE),demands.last());assertEquals(1,bootstrap)
         repeat(50){c.sidebar(now)};assertEquals(1,bootstrap,"Rendering does not request quotes")
         prices(mapOf("SHARD_BLUEBIRD" to doubleArrayOf(100.0,100.0)))
-        tick(c);assertEquals(setOf("SHARD_BLUEBIRD"),demands.last())
+        tick(c);assertEquals(setOf("SHARD_BLUEBIRD",SaleMarketProducts.ESSENCE),demands.last())
         assertEquals(1,c.sidebar(now).size)
     }
     @Test fun `partial rankings retain Rockmite and Snoozle exactly as command lists them`() {
@@ -70,7 +70,7 @@ class ProfitShardGuidanceTest : ProfitableEspPriceFixture() {
             listOf("Offer amount: 2x","Price per unit: 100 coins"))
         c.tick(true,true,scope,"Local","Your Bazaar Orders",listOf(order),advice(),now)
         assertEquals(setOf(outside),demands.last());assertTrue(c.sidebar(now).isEmpty())
-        tick(c);assertEquals(expected()+outside,demands.last())
+        tick(c);assertEquals(expected()+outside+SaleMarketProducts.ESSENCE,demands.last())
         assertFalse(c.sidebar(now).any {it.shard.productId==outside})
     }
 }

@@ -28,9 +28,9 @@ object ShardSaleGuidance {
     private val total=WholeBoxTotal(BazaarPrices::ensureGuidanceFresh)
     private val watches=SellOfferWatch()
     private val profitSelection by lazy {ProfitGuidanceSelection(ProfitableCritters::cachedSpecies,BazaarPrices::ensureGuidanceFresh)}
-    private val market by lazy {ShardMarketService(SaleProducts.names.keys,System::currentTimeMillis,worker,
+    private val market by lazy {ShardMarketService(SaleMarketProducts.ids,System::currentTimeMillis,worker,
         FinanceHistoryTransport(),{job,raw,now ->FinanceHistoryParsing.runtime(raw,now,job.part)},
-        MarketHistoryStore(FabricLoader.getInstance().configDir.resolve("sparkling-mutuals-shard-history.json"),SaleProducts.names.keys),
+        MarketHistoryStore(FabricLoader.getInstance().configDir.resolve("sparkling-mutuals-shard-history.json"),SaleMarketProducts.ids),
         {BazaarPrices.guidanceQuotes},{BazaarPrices.ensureGuidanceFresh()},{null},experimental=true)}
     private var lastDemand: List<Any>?=null
     private var demandAt=0L
@@ -147,6 +147,11 @@ object ShardSaleGuidance {
         return session.sidebar(now)
     }
     internal fun hasVerifiedProfile()=SaleProfileEvidence.scope(account,profile)!=null
+    internal fun essence(screen: AbstractContainerScreen<*>,now: Long): Recommendation? {
+        if(!ConfigManager.shardSaleGuidance || menu!==screen || Minecraft.getInstance().smScreen!==screen ||
+            !SkyblockSidebar.inSkyblock(Minecraft.getInstance()) || !HuntingBoxShardParsing.isBox(screen.title.string))return null
+        return session.essence(now)
+    }
     internal fun orders(screen: AbstractContainerScreen<*>,now: Long): List<Recommendation> {
         if(!ConfigManager.shardSaleGuidance || menu!==screen || Minecraft.getInstance().smScreen!==screen ||
             !SkyblockSidebar.inSkyblock(Minecraft.getInstance()) || !hasVerifiedProfile() ||

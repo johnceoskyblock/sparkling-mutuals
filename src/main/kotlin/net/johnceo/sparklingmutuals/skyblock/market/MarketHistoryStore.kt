@@ -15,7 +15,7 @@ internal class MarketHistoryStore(
 ) {
     private val allowed=allowedIds.toSet()
     init {
-        require(allowed.size<=37 && allowed.all {Regex("SHARD_[A-Z_]+").matches(it)})
+        require(SaleMarketProducts.bounded(allowed) && allowed.all(SaleMarketProducts::historyId))
         require(modelVersion>0)
     }
 
