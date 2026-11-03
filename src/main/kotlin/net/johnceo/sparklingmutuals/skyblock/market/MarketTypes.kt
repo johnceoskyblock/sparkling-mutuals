@@ -34,4 +34,6 @@ internal data class Recommendation(
     val quoteAt: Long,
     val reason: String,
     val ask: Double? = null,
+    /** Changes reset alert baselines; a recalibration is not evidence of a market-price drop. */
+    val modelKey: String? = null,
 )

@@ -18,7 +18,15 @@ object ShardReplayCli {
                 val file=entry.asJsonObject
                 val path=Path.of(file.get("path").asString)
                 require(Files.size(path)<=2*1024*1024) { "Oversized research input" }
-                ShardHistoryParsing.parse(Files.readString(path),now,file.get("resolutionMillis").asLong)
+                val source=file.get("source")?.asString ?: "cofl"
+                when(source) {
+                    "cofl" -> ShardHistoryParsing.parse(Files.readString(path),now,file.get("resolutionMillis").asLong)
+                    "skyblock-finance" -> {
+                        require(file.get("resolutionMillis").asLong==60_000L) {"Finance parser requires one-minute source bars"}
+                        FinanceHistoryParsing.parse(Files.readString(path),now)
+                    }
+                    else -> throw IllegalArgumentException("Unsupported research source: $source")
+                }
             }
             if(args.getOrNull(2)=="export-samples") exportedSamples[id]=samples
             val selected=if(args.getOrNull(2)=="select-training")ShardReplay.selectTrainingParameters(samples,split) else ModelParameters()
@@ -26,7 +34,7 @@ object ShardReplayCli {
             id to if(selected==null)report.copy(eligible=false,reason="No predeclared candidate met training acceptance")else report
         }
         val result=mutableMapOf<String,Any>("asOf" to now,"splitAt" to split,"modelVersion" to ShardTargetModel.VERSION,"reports" to reports,
-            "limits" to "Quote target touches are not fills. Public graph prices may fall back to quick_status when the source book is absent.")
+            "limits" to "Quote target touches are not fills. Historical price provenance and actual publication availability require independent qualification. Finance null-volume sampling flags are excluded; source candle boundaries remain research assumptions.")
         if(exportedSamples.isNotEmpty()) result["samples"]=exportedSamples
         Files.writeString(Path.of(args[1]),GsonBuilder().setPrettyPrinting().create().toJson(result))
         for((id,report) in reports) println("$id eligible=${report.eligible} windows=${report.windows.size} training=${report.training} holdout=${report.holdout}")

@@ -8,7 +8,7 @@
 
 **Tech Stack:** Existing Kotlin 2.4.20 / Java 25 / Fabric APIs, Gson and java.net.http; existing Gradle/Stonecutter three-target build. No new runtime dependencies or personal API credentials.
 
-**Spec:** ./design.txt (direct human approval: Approved, after presentation of the design).
+**Spec:** ../specs/2026-11-03-shard-sale-guidance-design.md (copy of the directly approved design; later direct-human amendments apply).
 
 ## Global Constraints
 

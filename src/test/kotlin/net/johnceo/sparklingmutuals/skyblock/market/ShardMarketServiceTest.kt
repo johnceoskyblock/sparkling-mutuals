@@ -1,0 +1,193 @@
+package net.johnceo.sparklingmutuals.skyblock.market
+
+import java.nio.file.Files
+import java.nio.file.Path
+import java.util.concurrent.Executor
+import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
+
+class ShardMarketServiceTest {
+    @TempDir lateinit var directory: Path
+    private val id="SHARD_HIDEONWALL"
+    private var now=MarketFixtures.NOW
+    private val work=ArrayDeque<Runnable>()
+    private data class Call(val job: HistoryJob,val reply: (HistoryReply)->Unit,var cancelled: Boolean=false)
+    private val calls=mutableListOf<Call>()
+    private var quoteRefreshes=0
+    private var parseCalls=0
+    private var data=MarketFixtures.samples()
+    private var certificate: EligibilityReport?=null
+    private var serverAt=now
+    private fun service(ids: Set<String> = setOf(id)): ShardMarketService {
+        val transport=HistoryTransport { job,reply ->
+            val call=Call(job,reply)
+            calls.add(call)
+            MarketCancel {call.cancelled=true}
+        }
+        return ShardMarketService(ids,{now},Executor {work.add(it)},transport,
+            { job,body,at -> parseCalls++; require(body=="ok"); if(job.part==HistoryPart.RECENT)data else ShardHistoryParsing.normalize(data,at).week },
+            MarketHistoryStore(directory.resolve("prices.json"),ids),
+            {QuoteSnapshot(serverAt,mapOf(id to MarketQuote(id,100.0,90.0,serverAt)),emptyMap())},
+            {quoteRefreshes++},{certificate},elapsedClock={now})
+    }
+    private fun drain() {var count=0;while(work.isNotEmpty()){check(count++<100);work.removeFirst().run()}}
+    private fun tick(service: ShardMarketService, products: Set<String> = setOf(id), generation: Long=1) {
+        service.updateDemand(true,true,products,generation);drain()
+    }
+    private fun reply(index: Int,status: Int=200,body: String="ok",retryAfter: Long?=null) {
+        calls[index].reply(HistoryReply(status,body,retryAfter));drain()
+    }
+
+    @Test fun `ticks coalesce and history requests stay singular deduplicated and rate limited`() {
+        val s=service()
+        repeat(100){s.updateDemand(true,true,setOf(id,"UNRELATED"),1)}
+        assertEquals(1,work.size)
+        drain();assertEquals(1,calls.size)
+        repeat(5){tick(s)}
+        assertEquals(1,calls.size)
+        reply(0)
+        tick(s);assertEquals(1,calls.size)
+        now+=1000;tick(s)
+        assertEquals(2,calls.size)
+        assertEquals(HistoryPart.WEEK,calls[1].job.part)
+    }
+    @Test fun `disable cancels transport and late callbacks cannot publish or write`() {
+        val s=service();tick(s)
+        s.updateDemand(false,true,setOf(id),1);drain()
+        assertTrue(calls[0].cancelled)
+        reply(0)
+        assertFalse(Files.exists(directory.resolve("prices.json")))
+        assertTrue(s.snapshot(now).isEmpty())
+    }
+    @Test fun `reconnect generation ignores old callback and stale stop requests`() {
+        val s=service();tick(s)
+        now+=1000
+        tick(s,generation=2)
+        assertEquals(2,calls.size)
+        reply(0)
+        assertFalse(Files.exists(directory.resolve("prices.json")))
+        s.stop(1)
+        reply(1)
+        assertTrue(Files.exists(directory.resolve("prices.json")))
+        assertEquals(setOf(id),s.snapshot(now).keys)
+    }
+    @Test fun `oversized and malformed responses preserve old cache without publication`() {
+        val s=service();tick(s)
+        reply(0,body="x".repeat(2*1024*1024+1))
+        assertEquals(0,parseCalls)
+        assertFalse(Files.exists(directory.resolve("prices.json")))
+        assertEquals(AdviceState.UNKNOWN,s.snapshot(now).getValue(id).state)
+        now+=1000;tick(s)
+        reply(calls.lastIndex,body="é".repeat(1_050_000))
+        assertEquals(0,parseCalls,"UTF8 size cap must run before parser invocation")
+    }
+    @Test fun `retry after is respected and normal refresh intervals are distinct`() {
+        val s=service();tick(s)
+        reply(0,429,retryAfter=60_000)
+        now+=1000;tick(s);assertEquals(HistoryPart.WEEK,calls.last().job.part)
+        reply(1)
+        now+=58_999;tick(s);assertEquals(2,calls.size)
+        now++;tick(s);assertEquals(HistoryPart.RECENT,calls.last().job.part)
+        reply(2)
+        now+=599_999;tick(s);assertEquals(3,calls.size)
+        now++;tick(s);assertEquals(4,calls.size)
+        assertEquals(HistoryPart.RECENT,calls.last().job.part)
+    }
+    @Test fun `no certificate or unverified history remains unknown despite fresh quotes`() {
+        val s=service();tick(s);reply(0)
+        assertEquals(AdviceState.UNKNOWN,s.snapshot(now).getValue(id).state)
+        val points=MarketFixtures.samples(14,price={at -> if((at/MarketFixtures.HOUR)%3==0L)99.0 else 101.0})
+        certificate=ShardReplay.evaluate(points,now-3*MarketFixtures.DAY)
+        assertTrue(certificate!!.eligible)
+        now+=1000;tick(s);reply(calls.lastIndex) // Complete the initial weekly request.
+        data=data.map {it.copy(basis=PriceBasis.UNVERIFIED_REFERENCE)}
+        now=MarketFixtures.NOW+600_000;serverAt=now;tick(s);reply(calls.lastIndex)
+        assertEquals(AdviceState.UNKNOWN,s.snapshot(now).getValue(id).state)
+        assertEquals("UNVALIDATED_MODEL",s.snapshot(now).getValue(id).reason)
+    }
+    @Test fun `valid synthetic evidence enables advice but read time staleness removes it without networking`() {
+        val points=MarketFixtures.samples(14,price={at -> if((at/MarketFixtures.HOUR)%3==0L)99.0 else 101.0})
+        certificate=ShardReplay.evaluate(points,now-3*MarketFixtures.DAY)
+        assertTrue(certificate!!.eligible)
+        val s=service();tick(s);reply(0)
+        assertEquals(AdviceState.SELL,s.snapshot(now).getValue(id).state)
+        val refreshes=quoteRefreshes
+        assertEquals(AdviceState.UNKNOWN,s.snapshot(now+180_001).getValue(id).state)
+        assertEquals(refreshes,quoteRefreshes)
+        s.stop(2);drain()
+        assertTrue(s.snapshot(now).isEmpty())
+    }
+    @Test fun `invalid delivery metadata cannot enable advice even with a passing report`() {
+        val points=MarketFixtures.samples(14,price={at -> if((at/MarketFixtures.HOUR)%3==0L)99.0 else 101.0})
+        certificate=ShardReplay.evaluate(points,now-3*MarketFixtures.DAY)
+        data=data.map {it.copy(observedAt=-1)}
+        val s=service();tick(s);reply(0)
+        assertEquals(AdviceState.UNKNOWN,s.snapshot(now).getValue(id).state)
+    }
+    @Test fun `new calibration parameters replace cached targets and reset the state baseline`() {
+        val points=MarketFixtures.samples(14,price={at -> if((at/MarketFixtures.HOUR)%3==0L)99.0 else 101.0})
+        val report=ShardReplay.evaluate(points,now-3*MarketFixtures.DAY)
+        certificate=report.copy(parameters=ModelParameters(.1,1.0,0.0,0.0))
+        data=MarketFixtures.samples(price={at -> if(at>now-90*60_000)200.0 else 100.0})
+        val s=service();tick(s);reply(0)
+        assertEquals(100.0,s.snapshot(now).getValue(id).target)
+        certificate=report.copy(parameters=ModelParameters(.9,1.0,0.0,0.0))
+        now+=1000;serverAt=now;tick(s)
+        assertEquals(200.0,s.snapshot(now).getValue(id).target)
+        assertEquals(AdviceState.HOLD,s.snapshot(now).getValue(id).state)
+    }
+    @Test fun `thirty seven products produce at most seventy four distinct queued refreshes`() {
+        data=data.takeLast(24)
+        val ids=(0 until 37).map {"SHARD_TEST_${('A'.code+it/26).toChar()}${('A'.code+it%26).toChar()}"}.toSet()
+        val s=service(ids)
+        tick(s,ids+"UNRELATED")
+        repeat(74) { index -> reply(index);now+=1000;tick(s,ids) }
+        assertEquals(74,calls.size)
+        assertEquals(74,calls.map {it.job}.distinct().size)
+        assertTrue(calls.all {it.job.productId in ids})
+    }
+    @Test fun `failure retry delay grows from fifteen seconds to the fifteen minute ceiling`() {
+        val s=service();tick(s);reply(0,500)
+        now+=1000;tick(s);reply(1)
+        var lastRecent=MarketFixtures.NOW
+        for(delay in listOf(15_000L,30_000,60_000,120_000,240_000,480_000,900_000)) {
+            val count=calls.size
+            now=lastRecent+delay-1;tick(s);assertEquals(count,calls.size)
+            now++;tick(s);assertEquals(count+1,calls.size)
+            assertEquals(HistoryPart.RECENT,calls.last().job.part)
+            lastRecent=now;reply(calls.lastIndex,500)
+        }
+    }
+    @Test fun `queued work disabled before execution cannot start transport or read a price file`() {
+        val s=service()
+        s.updateDemand(true,true,setOf(id),1)
+        s.stop(2);drain()
+        assertTrue(calls.isEmpty())
+        assertFalse(Files.exists(directory.resolve("prices.json")))
+    }
+    @Test fun `parser failure does not persist or promote partial history`() {
+        val s=service();tick(s);reply(0,body="truncated")
+        assertEquals(1,parseCalls)
+        assertFalse(Files.exists(directory.resolve("prices.json")))
+        assertEquals(AdviceState.UNKNOWN,s.snapshot(now).getValue(id).state)
+    }
+    @Test fun `weekly refresh does not repeat before its hour while recent refresh remains independent`() {
+        val s=service();tick(s);reply(0)
+        now+=1000;tick(s);reply(1)
+        now=MarketFixtures.NOW+3_600_999;tick(s)
+        assertEquals(HistoryPart.RECENT,calls.last().job.part)
+        assertEquals(1,calls.count {it.job.part==HistoryPart.WEEK})
+        reply(calls.lastIndex)
+        now+=1000;tick(s)
+        assertEquals(HistoryPart.WEEK,calls.last().job.part)
+    }
+    @Test fun `verified price labels without known delivery remain unavailable`() {
+        val points=MarketFixtures.samples(14,price={at -> if((at/MarketFixtures.HOUR)%3==0L)99.0 else 101.0})
+        certificate=ShardReplay.evaluate(points,now-3*MarketFixtures.DAY)
+        data=data.map {it.copy(availableAt=null)}
+        val s=service();tick(s);reply(0)
+        assertEquals(AdviceState.UNKNOWN,s.snapshot(now).getValue(id).state)
+        assertEquals("UNVALIDATED_MODEL",s.snapshot(now).getValue(id).reason)
+    }
+}
