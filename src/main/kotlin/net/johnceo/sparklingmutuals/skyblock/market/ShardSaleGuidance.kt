@@ -22,6 +22,7 @@ import java.util.concurrent.Executors
 object ShardSaleGuidance {
     private val worker by lazy {Executors.newSingleThreadExecutor {task ->Thread(task,"SM shard ranges").apply {isDaemon=true}}}
     private val watchFile by lazy {OrderWatchPersistence(FabricLoader.getInstance().configDir.resolve("sparkling-mutuals-sale-watches.json"))}
+    private val boxFile by lazy {SavedHuntingBoxStore(FabricLoader.getInstance().configDir.resolve("sparkling-mutuals-box-guidance.json"))}
     private val watches=SellOfferWatch()
     private val market by lazy {ShardMarketService(SaleProducts.names.keys,System::currentTimeMillis,worker,
         FinanceHistoryTransport(),{job,raw,now ->FinanceHistoryParsing.runtime(raw,now,job.part)},
@@ -47,13 +48,18 @@ object ShardSaleGuidance {
     private var tooltipSlot: Slot?=null
     private var savedAt=0L
     private val watchSaver by lazy {WatchSaveQueue(worker,{watchFile.write(it)})}
+    private val boxSaver by lazy {WatchSaveQueue(worker,{boxFile.write(it)})}
 
     fun register() {
         if(registered)return
         registered=true
         worker.execute {
             val raw=watchFile.read()
-            Minecraft.getInstance().execute {watches.restore(raw,System.currentTimeMillis());session.reset();loaded=true}
+            val boxes=boxFile.read()
+            Minecraft.getInstance().execute {
+                val now=System.currentTimeMillis()
+                watches.restore(raw,now);session.restoreBoxes(boxes,now);session.reset();loaded=true
+            }
         }
         ClientReceiveMessageEvents.GAME.register {message,overlay ->
             val client=Minecraft.getInstance()
@@ -94,7 +100,7 @@ object ShardSaleGuidance {
         }else emptyList()
         val recommendations=if(enabled && inSkyblock)market.snapshot(now)else emptyMap()
         val projected=session.tick(enabled,inSkyblock,SaleProfileEvidence.scope(account,profile),client.player?.name?.string.orEmpty(),
-            screen?.title?.string.orEmpty(),entries,recommendations,now)
+            screen?.title?.string.orEmpty(),entries,recommendations,now,client.connection)
         menu=screen
         view=if(screen!=null && projected.isNotEmpty())SaleMenuSnapshot(screen.menu,screen.menu.stateId,
             screen.menu.slots.filter {it.index in projected}.associate {it.index to it.item},projected)else null
@@ -107,7 +113,14 @@ object ShardSaleGuidance {
         if(!force && now>=savedAt && now-savedAt<30000)return
         savedAt=now
         watchSaver.offer(watches.export(now))
+        boxSaver.offer(session.exportBoxes())
     }
+    internal fun sidebar(screen: AbstractContainerScreen<*>,now: Long): List<SavedBoxRow> {
+        if(!ConfigManager.shardSaleGuidance || menu!==screen || Minecraft.getInstance().smScreen!==screen ||
+            !SkyblockSidebar.inSkyblock(Minecraft.getInstance()) || !HuntingBoxShardParsing.isBox(screen.title.string))return emptyList()
+        return session.sidebar(now)
+    }
+    internal fun hasVerifiedProfile()=SaleProfileEvidence.scope(account,profile)!=null
     private fun advice(screen: AbstractContainerScreen<*>,slot: Slot): Recommendation? {
         if(!ConfigManager.shardSaleGuidance || menu!==screen || Minecraft.getInstance().smScreen!==screen)return null
         return view?.advice(screen.menu,screen.menu.stateId,slot.index,slot.item,System.currentTimeMillis())
