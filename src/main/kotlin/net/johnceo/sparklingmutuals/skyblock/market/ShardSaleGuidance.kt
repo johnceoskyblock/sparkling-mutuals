@@ -42,7 +42,8 @@ object ShardSaleGuidance {
             market.updateDemand(enabled,skyblock,products,generation)
         }
     },{_,text ->Minecraft.getInstance().player?.sendSystemMessage(LocalChat.component(text));save(force=true)},
-        profitProducts={profitSelection.products()})
+        profitProducts={profitSelection.products()},
+        ownedProducts={total.ownedSafariProducts(SaleProfileEvidence.scope(account,profile),connection)})
     private var registered=false
     private var loaded=false
     private var connection: Any?=null
@@ -67,7 +68,7 @@ object ShardSaleGuidance {
             Minecraft.getInstance().execute {
                 val now=System.currentTimeMillis()
                 watches.restore(raw,now);session.restoreBoxes(boxes,now);session.reset()
-                total.restore(totals,now);total.reset();loaded=true
+                total.restore(boxes,now);total.restore(totals,now);total.reset();loaded=true
             }
         }
         ClientReceiveMessageEvents.GAME.register {message,overlay ->
@@ -107,7 +108,7 @@ object ShardSaleGuidance {
             MenuSlot(slot.index,stack.get(DataComponents.CUSTOM_DATA)?.copyTag()?.getStringOr("id","") ?: "",stack.hoverName.string,
                 stack.get(DataComponents.LORE)?.lines().orEmpty().map {it.string})
         }else emptyList()
-        total.tick(ConfigManager.huntingBoxValue,inSkyblock,SaleProfileEvidence.scope(account,profile),client.connection,
+        total.tick(ConfigManager.huntingBoxValue || enabled,inSkyblock,SaleProfileEvidence.scope(account,profile),client.connection,
             screen?.title?.string.orEmpty(),entries,BazaarPrices.guidanceQuotes,now)
         val recommendations=if(enabled && inSkyblock)market.snapshot(now)else emptyMap()
         val projected=session.tick(enabled,inSkyblock,SaleProfileEvidence.scope(account,profile),client.player?.name?.string.orEmpty(),

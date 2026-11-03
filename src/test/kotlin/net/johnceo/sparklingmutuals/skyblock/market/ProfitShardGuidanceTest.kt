@@ -17,7 +17,7 @@ class ProfitShardGuidanceTest : ProfitableEspPriceFixture() {
         it.select(scope,null);it.observe(SaleProducts.names.keys.map {id->BoxShard(10,id,20)},now-1000)
     }
     private fun controller()=SaleGuidanceSession(SellOfferWatch(),{_,_,ids,_->demands.add(ids)},{_,_->},ledger,
-        profitProducts={selection.products()})
+        profitProducts={selection.products()},ownedProducts={ledger.rows().map {it.first.productId}.toSet()})
     private fun expected()=ProfitableCritters.cachedTop().map {BazaarPrices.shardId(it.name)}.toSet()
     private fun advice()=SaleProducts.names.keys.associateWith {Recommendation(it,AdviceState.SELL,100.0,now,"EXPERIMENTAL_RANGE")}
     private fun slots(ids: List<String>)=ids.mapIndexed {i,id->MenuSlot(if(i<7)10+i else 19+i-7,id,
@@ -64,7 +64,7 @@ class ProfitShardGuidanceTest : ProfitableEspPriceFixture() {
         assertEquals(setOf("SHARD_ROCKMITE","SHARD_SNOOZLE"),expected())
         assertEquals(expected(),c.sidebar(now).map {it.shard.productId}.toSet())
     }
-    @Test fun `watch alerts retain their own demand outside the box selection`() {
+    @Test fun `owned watch retains its demand outside the top ten box selection`() {
         val outside=(SaleProducts.names.keys-expected()).first();val c=controller()
         val order=MenuSlot(10,outside,"§6§lSELL §6${SaleProducts.names.getValue(outside)} Shard",
             listOf("Offer amount: 2x","Price per unit: 100 coins"))

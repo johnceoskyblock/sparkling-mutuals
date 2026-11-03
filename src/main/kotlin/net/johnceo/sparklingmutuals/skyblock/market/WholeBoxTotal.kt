@@ -50,6 +50,11 @@ internal class WholeBoxTotal(private val refresh: ()->Unit={}) {
     fun reset() {active=false;selected=null;connection=null;lastBoxAt=null;summary=null;ledger.select(null,null);ledger.beginOpening()}
     fun export()=ledger.export()
     fun restore(raw: String,now: Long) {ledger.restore(raw,now)}
+    fun ownedSafariProducts(scope: MarketScope?,connection: Any?): Set<String> {
+        val valid=scope?.let {SaleProfileEvidence.scope(it.accountId,it.profileId)} ?: return emptySet()
+        if(!active || valid!=selected || connection!==this.connection)return emptySet()
+        return ledger.rows().map {it.productId}.filter {it in SaleProducts.names}.toSet()
+    }
 }
 internal object WholeBoxHeader {
     fun lines(summary: WholeBoxSummary): List<String> = listOf("Hunting Box value: "+
