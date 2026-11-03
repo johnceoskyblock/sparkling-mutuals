@@ -8,11 +8,16 @@ internal data class MenuSlot(val index: Int,val itemId: String,val name: String,
 internal data class BoxShard(val slot: Int,val productId: String,val amount: Long)
 internal object SaleProducts {
     val names=SafariRoster.all.associate {"SHARD_"+it.name.uppercase(Locale.ROOT).replace(' ','_') to it.name}
-    fun identity(itemId: String,name: String): String? {
-        if(itemId in names)return itemId
-        if(itemId!="ATTRIBUTE_SHARD")return null
+    private val menuFooter=Regex("^(?:COMMON|UNCOMMON|RARE|EPIC|LEGENDARY|MYTHIC) [A-Z]+ SHARD \\(ID [A-Z][0-9]+\\)$")
+    fun identity(itemId: String,name: String,lore: List<String>): String? {
         val plain=SafariRules.strip(name).trim()
-        return names.entries.firstOrNull {plain=="${it.value} Shard"}?.key
+        val named=names.entries.firstOrNull {plain==it.value || plain=="${it.value} Shard"} ?: return itemId.takeIf {it in names}
+        if(itemId in names)return itemId.takeIf {it==named.key}
+        if(itemId!="" && itemId!="ATTRIBUTE_SHARD")return null
+        if(itemId=="ATTRIBUTE_SHARD" && plain=="${named.value} Shard")return named.key
+        // Box icons use the short creature label and may omit the carried item's custom ID.
+        // Require the server's shard footer; the caller also requires box/slot/owned-count evidence.
+        return named.key.takeIf {lore.count {menuFooter.matches(SafariRules.strip(it).trim())}==1}
     }
 }
 
@@ -26,7 +31,7 @@ internal object HuntingBoxShardParsing {
         return slots.groupBy {it.index}.values.filter {it.size==1}.mapNotNull {group ->
             val slot=group.single()
             if(slot.index !in 9..44 || slot.index%9 in setOf(0,8))return@mapNotNull null
-            val product=SaleProducts.identity(slot.itemId,slot.name) ?: return@mapNotNull null
+            val product=SaleProducts.identity(slot.itemId,slot.name,slot.lore) ?: return@mapNotNull null
             val amounts=slot.lore.mapNotNull {owned.matchEntire(SafariRules.strip(it).trim())?.groupValues?.get(1)?.replace(",","")?.toLongOrNull()}
             val amount=amounts.singleOrNull()?.takeIf {it>0} ?: return@mapNotNull null
             BoxShard(slot.index,product,amount)

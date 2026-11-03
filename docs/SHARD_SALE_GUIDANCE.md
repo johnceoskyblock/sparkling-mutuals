@@ -26,9 +26,13 @@ One initial HOLD notice is labeled separately. Subsequent confirmed SELL→HOLD 
 
 Fields were researched in [SkyHanni BazaarOrderApi at 07716a4](https://github.com/SkyHanniStudios/SkyHanni/blob/07716a4366d94b20eb9e1de9f7b853fd9384f220/src/main/java/at/hannibal2/skyhanni/features/inventory/bazaar/BazaarOrderApi.kt) and associated BazaarApi. Fixtures combine supported fields; they are **not captured live 26.1.2 sell tooltips**. Sell-detail cancel/claim wording is unsupported. Profile UUID grammar is deliberately stricter than public parsers; unmatched evidence remains unknown.
 
+Live Hunting Box inspection on 2026-11-03 showed the short `Hideonwall` label, `Owned: 243 Shards` and `RARE FOREST SHARD (ID R79)` footer. Menu icons may use that short roster label rather than the carried item's `Hideonwall Shard` name. When the custom ID is absent or generic `ATTRIBUTE_SHARD`, short labels require exactly one shard footer plus the existing exact box, inner-slot and positive owned-count checks. Conflicting product IDs are rejected. The live custom ID itself was not captured; this fallback does not assume one. Missing history produces UNKNOWN guidance for recognized slots.
+
 ## Lifecycle and bounds
 
 One integration and one lazy daemon worker. Rendering only reads cached slots, guarded by menu identity, revision and item reference. Parsing, HTTP and disk work stay outside drawing/tooltips. Disable and cached reads do not wait for background processing.
+
+The container tooltip hook shadows the hovered-slot field directly with `@JvmField`. It must not generate Kotlin `getHoveredSlot`/`setHoveredSlot` methods: those collide with NoFrills' public slot accessor and crash container tooltip rendering. A compiled-bytecode regression guards this compatibility boundary.
 
 Demand is limited to visible box products plus revalidated personal watches, at most 37 Safari shards. Shared live refresh is at most once/minute; ordinary consumers keep three-hour cadence. History requests are serialized at least one elapsed second apart: recent data every ten minutes, week context hourly. At most 74 queued jobs, one active request, 2 MiB response, twenty-second timeout, capped fifteen-second→fifteen-minute backoff and a provider-wide elapsed Retry-After cooldown across products, views and sessions. Disable, leaving SkyBlock or disconnect invalidates demand/UI and cancels unnecessary history work. Late generations cannot publish. No collector runs after Minecraft closes.
 
