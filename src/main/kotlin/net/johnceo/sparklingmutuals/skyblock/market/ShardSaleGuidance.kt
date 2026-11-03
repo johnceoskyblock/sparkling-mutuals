@@ -63,6 +63,7 @@ object ShardSaleGuidance {
         if(registered)return
         registered=true
         ShardSaleSidebar.register()
+        BazaarOfferSidebar.register()
         worker.execute {
             val raw=watchFile.read()
             val boxes=boxFile.read()
@@ -125,9 +126,9 @@ object ShardSaleGuidance {
         menu=screen
         view=if(screen!=null && projected.isNotEmpty())SaleMenuSnapshot(screen.menu,screen.menu.stateId,
             screen.menu.slots.filter {it.index in projected}.associate {it.index to it.item},projected)else null
-        val marked=session.orderMarkers()
-        orderView=if(screen!=null && marked.isNotEmpty())OrderMarkerSnapshot(screen.menu,screen.menu.stateId,
-            screen.menu.slots.filter {it.index in marked}.associate {it.index to it.item},marked)else null
+        val offers=session.orderAdvice()
+        orderView=if(screen!=null && offers.isNotEmpty())OrderMarkerSnapshot(screen.menu,screen.menu.stateId,
+            screen.menu.slots.filter {it.index in offers}.associate {it.index to it.item},offers)else null
         tooltipSlot=null
         save()
     }
@@ -146,6 +147,12 @@ object ShardSaleGuidance {
         return session.sidebar(now)
     }
     internal fun hasVerifiedProfile()=SaleProfileEvidence.scope(account,profile)!=null
+    internal fun orders(screen: AbstractContainerScreen<*>,now: Long): List<Recommendation> {
+        if(!ConfigManager.shardSaleGuidance || menu!==screen || Minecraft.getInstance().smScreen!==screen ||
+            !SkyblockSidebar.inSkyblock(Minecraft.getInstance()) || !hasVerifiedProfile() ||
+            !SellOfferParsing.isOrders(screen.title.string))return emptyList()
+        return orderView?.rows(screen.menu,screen.menu.stateId,{screen.menu.slots.getOrNull(it)?.item},now).orEmpty()
+    }
     internal fun totalSummary(screen: AbstractContainerScreen<*>,now: Long): WholeBoxSummary? =
         if(!ConfigManager.huntingBoxValue || menu!==screen || Minecraft.getInstance().smScreen!==screen ||
             !SkyblockSidebar.inSkyblock(Minecraft.getInstance()) || !HuntingBoxShardParsing.isBox(screen.title.string))null

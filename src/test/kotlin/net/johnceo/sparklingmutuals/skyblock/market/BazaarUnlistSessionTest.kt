@@ -87,4 +87,15 @@ class BazaarUnlistSessionTest {
         assertEquals(1,messages.size);assertTrue(messages.single().contains("last observed"))
         assertTrue(c.orderMarkers().isEmpty())
     }
+    @Test fun `offer sidebar gets confirmed SELL HOLD and unavailable with the same eligibility and ownership boundaries`() {
+        ranked=setOf(bird,hide,snooze)
+        val rows=listOf(order(10),order(11,hide),order(12,snooze),order(13,owner="Other"),
+            order(14,buy=true),order(15,completed=true),order(16,"SHARD_BAL"))
+        tick(rows,mapOf(bird to rec(bird),hide to rec(hide,AdviceState.SELL)))
+        assertEquals(mapOf(10 to AdviceState.HOLD,11 to AdviceState.SELL,12 to AdviceState.UNKNOWN),c.orderAdvice().mapValues {it.value.state})
+        assertEquals(setOf(10),c.orderMarkers().keys)
+        tick(selected=null);assertTrue(c.orderAdvice().isEmpty())
+        tick(rows);tick(on=false);assertTrue(c.orderAdvice().isEmpty())
+        tick(rows);c.reset();assertTrue(c.orderAdvice().isEmpty())
+    }
 }

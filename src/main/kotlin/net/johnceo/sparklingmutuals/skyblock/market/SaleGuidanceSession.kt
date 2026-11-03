@@ -19,6 +19,7 @@ internal class SaleGuidanceSession(
     private val display=ShardDisplayAdvice()
     private var eligible=emptySet<String>()
     private var markers=emptyMap<Int,Recommendation>()
+    private var offerAdvice=emptyMap<Int,Recommendation>()
     var sidebarOpening=0L
         private set
     fun tick(enabled: Boolean,inSkyblock: Boolean,scope: MarketScope?,localName: String,title: String,
@@ -37,6 +38,7 @@ internal class SaleGuidanceSession(
             profitProducts().intersect(SaleProducts.names.keys).take(10).toSet()else emptySet()
         eligible=if(insideBox)ranked else emptySet()
         markers=emptyMap()
+        offerAdvice=emptyMap()
         if(!on) {latest=emptyMap();demand(false,false,emptySet(),generation);return emptyMap()}
         val qualifying=ranked+if(selected!=null)ownedProducts().intersect(SaleProducts.names.keys)else emptySet()
         val fresh=advice.mapValues {(_,rec) ->fresh(rec,now)}
@@ -53,8 +55,9 @@ internal class SaleGuidanceSession(
         val box=observed.filter {it.amount>0 && it.productId in eligible}
         val products=if(insideBox)boxes.rows().map {it.first.productId}.filter {it in eligible}.toSet()else emptySet()
         demand(true,true,products+watches.products(now).intersect(qualifying),generation)
-        markers=offers.mapNotNull {offer ->fresh[offer.evidence.productId]?.takeIf {it.state==AdviceState.HOLD}
-            ?.let {offer.slot to it}}.toMap()
+        offerAdvice=offers.associate {offer->offer.slot to (fresh[offer.evidence.productId]?.takeIf {it.productId==offer.evidence.productId}
+            ?: Recommendation(offer.evidence.productId,AdviceState.UNKNOWN,null,0,"HISTORY_COVERAGE"))}
+        markers=offerAdvice.filterValues {it.state==AdviceState.HOLD}
         val alerts=watches.update(fresh.filterKeys {it in qualifying},now)
         BazaarUnlistPresentation.message(alerts.map {it.productId}.toSet())?.let {notify(alerts.first().productId,it)}
         return box.associate {entry ->entry.slot to (latest[entry.productId] ?: Recommendation(entry.productId,AdviceState.UNKNOWN,null,0,"HISTORY_COVERAGE"))}
@@ -65,6 +68,7 @@ internal class SaleGuidanceSession(
         generation++;scope=null;active=false;connection=null;lastBoxAt=null;insideBox=false;latest=emptyMap();eligible=emptySet()
         display.clear()
         markers=emptyMap()
+        offerAdvice=emptyMap()
         boxes.select(null,null);watches.selectScope(null);demand(false,false,emptySet(),generation)
     }
     fun sidebar(now: Long): List<SavedBoxRow> = if(!insideBox)emptyList()else boxes.rows().filter {it.first.productId in eligible}.map {(shard,seen)->
@@ -75,4 +79,5 @@ internal class SaleGuidanceSession(
     fun exportBoxes(): String = boxes.export()
     fun profitRankingReady()=eligible.isNotEmpty()
     fun orderMarkers(): Map<Int,Recommendation> = markers
+    fun orderAdvice(): Map<Int,Recommendation> = offerAdvice
 }

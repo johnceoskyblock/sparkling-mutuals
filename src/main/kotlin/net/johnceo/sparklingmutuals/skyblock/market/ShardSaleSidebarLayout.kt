@@ -11,6 +11,12 @@ internal data class ShardSidebarBounds(val x: Int,val y: Int,val width: Int,val 
     }
 }
 internal object ShardSaleSidebarLayout {
+    fun leftBounds(screenWidth: Int,screenHeight: Int,inventoryLeft: Int,rowCount: Int): ShardSidebarBounds? {
+        if(inventoryLeft !in 0..screenWidth)return null
+        return bounds(screenWidth,screenHeight,screenWidth-inventoryLeft+24,rowCount)?.let {
+            it.copy(x=screenWidth-it.x-it.width)
+        }
+    }
     const val WIDTH=236
     const val HEADER=17
     const val FOOTER=6

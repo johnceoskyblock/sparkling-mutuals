@@ -38,6 +38,10 @@ Within the 37 Safari roster, an active owned offer qualifies if its product is i
 
 Qualifying visible own offers get an opaque bright cyan-blue outline only for **confirmed HOLD**. SELL, UNKNOWN, stale, filled, buy, foreign-owner, unsupported and ineligible rows are unmarked. This uses confirmed advice, independently of the faster Hunting Box display state. Menu/revision/item-reference checks prevent stale slot outlines. Order tooltips receive no Hunting Box range additions. The same guidance switch controls this behavior.
 
+A **Safari sell offers** panel to the left of the opened orders menu explains each qualifying current-page shard once: blue **TAKE DOWN** for confirmed HOLD, green **KEEP LISTED** for confirmed SELL and gray **UNAVAILABLE** for missing, invalid or stale advice. It uses the same guarded snapshot as the slot outlines, current ownership and top-ten-or-owned eligibility; duplicate offers group by shard. Foreign, BUY, filled, non-Safari and ineligible offers never enter the list. No historical or unopened-page offers are presented as current. Initial HOLD can appear as TAKE DOWN without a chat message. This is guidance only; it never cancels an offer.
+
+The left panel follows saved Safari Progress panel styling, reserves thirty GUI pixels for adjacent Bazaar controls, scrolls only while the pointer is over it and resets scrolling on a replacement menu. It scales down only to75% and hides if there is not enough readable space. Unknown profile and empty eligible-page states use short neutral text, not KEEP LISTED. Existing Hunting Box overlays and scrolling are unchanged.
+
 There is **no initial/already-HOLD chat notice**. A message requires an observed confirmed SELL→HOLD with an actual ask decline under the same rule. Keep the distinct-quote sixty-second confirmation, ten-minute per-product cooldown and confirmed return to SELL before another decline alert. Duplicate offers and simultaneous changed products group into one concise local suggestion: consider unlisting the last observed offers if still active. Revalidated qualifying watches may continue after the menu closes. UNKNOWN recovery, model/profile changes and newly eligible HOLD data cannot invent a transition. Missing pages, completed rows and detail/cancel controls cannot prove every other offer for that product disappeared.
 
 Fields were researched in [SkyHanni BazaarOrderApi at 07716a4](https://github.com/SkyHanniStudios/SkyHanni/blob/07716a4366d94b20eb9e1de9f7b853fd9384f220/src/main/java/at/hannibal2/skyhanni/features/inventory/bazaar/BazaarOrderApi.kt) and rechecked at a168f0089f0e8aec70539683f897744a22fef716 for the ownerless solo-profile fallback. Fixtures combine supported fields; they are **not captured live 26.1.2 sell tooltips**. Sell-detail cancel/claim wording is unsupported. Profile UUID grammar is deliberately stricter than public parsers; unmatched evidence remains unknown. No orders are automatically cancelled or navigated.
@@ -65,6 +69,8 @@ The separate five-minute official collector is **stopped**, its six accepted sna
 Detailed unit/native receipts remain in the local execution ledger. Live Hypixel menu/profile delivery, order lifecycle and trading usefulness still require gameplay confirmation. Other Minecraft targets, every provider product and every market regime are unverified. Source/build changes stay local; no push, release or user-instance installation is implied.
 
 ## Last updated
+
+2026-11-03 — Added explicit TAKE DOWN / KEEP LISTED / UNAVAILABLE text beside current qualifying Safari sell offers.
 
 2026-11-03 — Repaired current clickable profile-ID replies and added automatic bounded server confirmation for enabled guidance.
 
