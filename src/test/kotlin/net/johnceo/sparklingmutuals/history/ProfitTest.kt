@@ -6,6 +6,27 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class ProfitTest {
+    @Test fun `fast consumer shares in flight fetch and stops accelerating when demand ends`() {
+        var now = 1_000_000L
+        var requests = 0
+        var pending: ((Map<String, DoubleArray>) -> Unit)? = null
+        val cache = BazaarPriceCache({ now }) { complete -> requests++; pending=complete }
+        cache.ensureFresh()
+        cache.ensureFresh(60_000L)
+        assertEquals(1,requests)
+        pending!!(table)
+        now += 59_999
+        cache.ensureFresh(60_000L)
+        assertEquals(1,requests)
+        now++
+        cache.ensureFresh(60_000L)
+        assertEquals(2,requests)
+        pending!!(emptyMap())
+        assertEquals(250.0,cache.prices.getValue("SHARD_CAVERNFISH")[1])
+        now+=60_000
+        cache.ensureFresh()
+        assertEquals(2,requests,"ordinary consumer retains three-hour cadence after fast demand stops")
+    }
     @Test fun `valuing runs refreshes loaded prices after three hours`() {
         var now = 2_000_000L
         var quote = 250.0

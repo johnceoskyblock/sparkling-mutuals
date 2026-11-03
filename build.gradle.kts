@@ -55,6 +55,18 @@ tasks.test {
     useJUnitPlatform()
     failOnNoDiscoveredTests = true
 }
+
+// Local, test-classpath research only; does not publish data or change the target matrix.
+if (targetMinecraft == "26.1.2") tasks.register<JavaExec>("replayShardMarket") {
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass = "net.johnceo.sparklingmutuals.skyblock.market.ShardReplayCli"
+    doFirst {
+        args(providers.gradleProperty("marketManifest").get(), providers.gradleProperty("marketReport").get())
+        if (providers.gradleProperty("marketSelectTraining").isPresent) args("select-training")
+        else if (providers.gradleProperty("marketExportSamples").isPresent) args("export-samples")
+    }
+}
 tasks.processResources {
     val properties = mapOf("version" to modVersion, "minecraft" to targetMinecraft)
     inputs.properties(properties)

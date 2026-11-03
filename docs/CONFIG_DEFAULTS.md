@@ -134,6 +134,8 @@ Each mode dropdown has independent Hide critter ESP and Hide floor-drop ESP togg
 
 ## Last updated
 
+2026-11-03 (America/New_York) — Added the default-off experimental shard sale guidance switch.
+
 2026-11-02 — Refreshed bundled main/contest preferences and all HUD placements from the current Skyblock instance. Hotspot announcing, Sparkle Warping, Leech and starting quest-item announcements default off. All Warp List entries start empty; the inviter whitelist is retained. No credentials, PBs, run/sparkling histories, achievement state, playtime, hive cooldowns or other account statistics are included. Existing config files remain authoritative. Starting quest-item local title reminders now obey the same toggle as the party announcements.
 
 2026-11-01 — Native settings preserve existing property keys, defaults and HUD placement. New settings: `settingsTheme=4` (Rainbow), `specialCatchAlert=true`, `specialCatchStyle=0` (Prismatic Whisper).
@@ -188,3 +190,7 @@ Each mode dropdown has independent Hide critter ESP and Hide floor-drop ESP togg
 Successful profile/discovery reads and IGN-to-UUID lookups are reused for 60 minutes, including after repartying. Simultaneous reads share one request. Failed lookups are not cached; background failures keep their one-minute retry. Observed catches update participating players’ discovery lists locally. Current mode discovery baselines remain cached while members are active or reserved for warping. Ticket and Honeyhive queries bypass the hour-long profile cache and retain the existing short transport-cache freshness. No periodic request is added by cache expiry. Account/provider/Alpha scope changes prevent cross-scope profile reuse.
 
 2026-11-02 — Shortened config descriptions and limited local command help to slash commands. Preserved the Sparkle Warping explanation.
+
+## Experimental shard ranges
+
+SkyBlock → Helpers → Shard sale guidance (experimental) uses persisted `shardSaleGuidance`, default **off** for both new and existing settings. It adds Hunting Box range colors, an always-present Safari Essence advice row and passive observed-order advisories. The combined Hunting Box total remains an independent switch; general item/chest valuation stays shelved. See [meaning and limitations](SHARD_SALE_GUIDANCE.md).

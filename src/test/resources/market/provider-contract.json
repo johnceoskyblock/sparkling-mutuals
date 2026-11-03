@@ -1,0 +1,22 @@
+{
+  "provider": "SkyCofl",
+  "documentation": "https://sky.coflnet.com/wiki/api",
+  "attribution": "https://sky.coflnet.com/data",
+  "historicalAsk": "buy",
+  "historicalBid": "sell",
+  "qualifiedForAutomaticAdvice": false,
+  "timezone": "UTC",
+  "availability": "market bin close does not establish publication time; historical delivery time is unknown",
+  "fallbackLimitation": "Graph values can fall back to quick_status when the source order book is absent",
+  "fineRangeMaximumExclusiveMillis": 86400000,
+  "researchSample": {
+    "productId": "SHARD_HIDEONWALL",
+    "timestamp": "2026-11-03T05:35:22.861",
+    "buy": 155341.8,
+    "sell": 140004.4,
+    "snapshotBestAsk": 155341.8,
+    "snapshotBestBid": 140004.4
+  },
+  "weeklyCatalogueSurvey": {"products": 37, "http200": 37, "sampleCountRange": [81, 82]},
+  "validatedRecommendationProducts": 0
+}

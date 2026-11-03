@@ -26,6 +26,8 @@ The command and profitable-critter ESP share a ranking computed from the read-on
 
 ## Profitable-shard ESP
 
+The experimental Hunting Box range guide also reuses this exact cached top-ten selection for slot borders, added tooltips and saved sidebar rows. It respects ticket and price preferences and includes Rockmite when ranked. This is separate from entity-ESP exclusions below. An enabled box may bootstrap the existing throttled Bazaar refresh when no cached ranking exists; `/profit` itself remains read-only. The ranking selects products; experimental range guidance independently supplies HOLD/SELL decisions.
+
 In Unique and Sparkle modes, **Critter ESP for profitable shards** highlights the combined-revenue cached top ten, except Rockmite. Rockmite remains in the command ranking but receives no extra profitable highlight; no lower-ranked replacements are added. Ordinary mode-required entity/source highlights still apply. Snoozle is eligible for profitable ESP when ranked in the top ten. Each mode retains its own toggle. Full Clear is unchanged. Loaded-entity and existing biome/group visibility gates still apply.
 
 Before any valid quotes have loaded, the extra profitable list is empty; ordinary mode and sparkling-detection highlights remain available. A partial price cache yields fewer than ten species, matching the command. Updated quotes and changes to the price preference update both consumers together without repeated sorting for each rendered entity.

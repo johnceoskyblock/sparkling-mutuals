@@ -1,0 +1,101 @@
+package net.johnceo.sparklingmutuals.skyblock.market
+
+import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents
+import net.fabricmc.fabric.api.client.screen.v1.ScreenMouseEvents
+import net.johnceo.sparklingmutuals.compat.smScreen
+import net.johnceo.sparklingmutuals.config.ConfigManager
+import net.johnceo.sparklingmutuals.config.AppearanceConfig
+import net.johnceo.sparklingmutuals.config.SafariTheme
+import net.johnceo.sparklingmutuals.hud.HudRow
+import net.johnceo.sparklingmutuals.hud.SkyblockSidebar
+import net.johnceo.sparklingmutuals.mixin.ShardSaleScreenBounds
+import net.minecraft.client.Minecraft
+import net.minecraft.client.gui.GuiGraphicsExtractor
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen
+import net.minecraft.network.chat.Component
+
+/** Cached read-only panel; callbacks belong to Fabric's per-initialization screen events. */
+internal object ShardSaleSidebar {
+    private var registered=false
+    private var scroll=0
+    private var opening=Long.MIN_VALUE
+    fun register() {
+        if(registered)return
+        registered=true
+        ScreenEvents.AFTER_INIT.register {_,screen,_,_->
+            // Fabric recreates this event on resize as well as initial screen setup.
+            if(screen is AbstractContainerScreen<*> && HuntingBoxShardParsing.isBox(screen.title.string)) {
+                ScreenMouseEvents.allowMouseScroll(screen).register {current,mx,my,_,vertical->
+                    val box=current as? AbstractContainerScreen<*>
+                    if(box==null || !visible(box) || vertical==0.0)true
+                    else {
+                        syncOpening()
+                        val rows=ShardSaleGuidance.sidebar(box,System.currentTimeMillis())
+                        val bounds=bounds(box,rows.size)
+                        if(bounds==null || !bounds.contains(mx,my))true
+                        else {scroll=bounds.clampScroll(scroll+if(vertical>0)-1 else 1,rows.size);false}
+                    }
+                }
+            }
+        }
+    }
+    fun render(screen: AbstractContainerScreen<*>,g: GuiGraphicsExtractor,mx: Int,my: Int) {
+        if(!visible(screen))return
+        syncOpening()
+        val now=System.currentTimeMillis()
+        draw(screen,g,mx,my,ShardSaleGuidance.sidebar(screen,now),now)
+    }
+    private fun visible(screen: AbstractContainerScreen<*>)=ConfigManager.shardSaleGuidance &&
+        Minecraft.getInstance().smScreen===screen && SkyblockSidebar.inSkyblock(Minecraft.getInstance()) &&
+        HuntingBoxShardParsing.isBox(screen.title.string)
+    private fun syncOpening() {
+        val current=ShardSaleGuidance.sidebarOpening()
+        if(current!=opening) {opening=current;scroll=0}
+    }
+    private fun bounds(screen: AbstractContainerScreen<*>,count: Int): ShardSidebarBounds? {
+        val container=screen as? ShardSaleScreenBounds ?: return null
+        return ShardSaleSidebarLayout.boxBounds(screen.width,screen.height,
+            container.sparklingMutualsShardPanelLeft()+container.sparklingMutualsShardPanelWidth(),count)
+    }
+    fun draw(screen: AbstractContainerScreen<*>,g: GuiGraphicsExtractor,mx: Int,my: Int,rows: List<SavedBoxRow>,now: Long) {
+        val area=bounds(screen,rows.size) ?: return
+        scroll=area.clampScroll(scroll,rows.size)
+        val client=Minecraft.getInstance()
+        val width=ShardSaleSidebarLayout.WIDTH
+        val header=ShardSaleSidebarLayout.BOX_HEADER
+        val rowHeight=ShardSaleSidebarLayout.ROW
+        val hover=area.rowAt(mx.toDouble(),my.toDouble())?.let {rows.getOrNull(scroll+it)}
+        g.pose().pushMatrix();g.pose().translate(area.x.toFloat(),area.y.toFloat());g.pose().scale(area.scale,area.scale)
+        val height=header+area.rows*rowHeight+ShardSaleSidebarLayout.FOOTER
+        AppearanceConfig.panels.getValue("progress").draw(g,width,height)
+        fun text(value: String,x: Int,y: Int,color: Int=0xFF000000.toInt() or SafariTheme.TEXT)=g.text(client.font,value,x,y,color,true)
+        text("Top /profit shards",6,6,HudRow.GOLD)
+        val essence=ShardSaleGuidance.essence(screen,now) ?: Recommendation(SaleMarketProducts.ESSENCE,AdviceState.UNKNOWN,null,0,"HISTORY_COVERAGE")
+        val essenceState=when(essence.state) {AdviceState.SELL->"SELL";AdviceState.HOLD->"HOLD";AdviceState.UNKNOWN->"UNAVAILABLE"}
+        text("Safari Essence",6,17)
+        text(essenceState,width-7-client.font.width(essenceState),17,ShardSalePresentation.color(essence.state) or 0xFF000000.toInt())
+        rows.drop(scroll).take(area.rows).forEachIndexed {index,row->
+            val y=header+index*rowHeight
+            if(row==hover)g.fill(2,y-1,width-2,y+10,0x66000000 or SafariTheme.HOVER)
+            val state=when(row.advice.state) {AdviceState.SELL->"SELL";AdviceState.HOLD->"HOLD";AdviceState.UNKNOWN->"UNAVAILABLE"}
+            val color=ShardSalePresentation.color(row.advice.state) or 0xFF000000.toInt()
+            val statusX=width-7-client.font.width(state)
+            val name=client.font.plainSubstrByWidth(SaleProducts.names.getValue(row.shard.productId),statusX-24)
+            text(name,6,y)
+            text(state,statusX,y,color)
+        }
+        g.pose().popMatrix()
+        val essenceHovered=area.contains(mx.toDouble(),my.toDouble()) &&
+            (my-area.y)/area.scale>=17 && (my-area.y)/area.scale<28
+        if(essenceHovered) {
+            g.setComponentTooltipForNextFrame(client.font,(listOf("Safari Essence","")+
+                ShardSalePresentation.tooltip(essence,now)).map(Component::literal),mx,my)
+        } else if(hover!=null) {
+            val age=((now-hover.shard.observedAt).coerceAtLeast(0)/1000)
+            val lines=listOf(SaleProducts.names.getValue(hover.shard.productId),"Last observed owned: ${hover.shard.amount}",
+                "Ownership observed ${age}s ago"+(if(hover.refreshedThisOpening)"" else " · previous opening"),"")+
+                ShardSalePresentation.tooltip(hover.advice,now)
+            g.setComponentTooltipForNextFrame(client.font,lines.map(Component::literal),mx,my)
+        }
+    }
+}

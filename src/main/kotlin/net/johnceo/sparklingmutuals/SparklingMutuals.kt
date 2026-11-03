@@ -91,6 +91,7 @@ object SparklingMutuals : ModInitializer {
         HoneyHives.register()
         PhantomleafSolver.register()
         net.johnceo.sparklingmutuals.skyblock.SkillOverflow.register()
+        net.johnceo.sparklingmutuals.skyblock.market.ShardSaleGuidance.register()
         SafariEsp.register()
         SafariAssist.register()
         TeammateEsp.register()
@@ -121,6 +122,7 @@ object SparklingMutuals : ModInitializer {
     }
 
     private fun onClientTick(client: Minecraft) {
+        net.johnceo.sparklingmutuals.skyblock.market.ShardSaleGuidance.tick(client)
         net.johnceo.sparklingmutuals.safari.DoomspiralThrowTimer.tick(client)
         net.johnceo.sparklingmutuals.hud.SpecialCatchAlert.tick(client)
         net.johnceo.sparklingmutuals.hud.SafariBanners.tick(client)
@@ -157,6 +159,7 @@ object SparklingMutuals : ModInitializer {
     }
 
     private fun resetSession() {
+        net.johnceo.sparklingmutuals.skyblock.market.ShardSaleGuidance.reset()
         net.johnceo.sparklingmutuals.skyblock.SkillOverflow.reset()
         net.johnceo.sparklingmutuals.hud.SafariBanners.reset()
         net.johnceo.sparklingmutuals.safari.ClearWater.reset()

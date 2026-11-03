@@ -4,6 +4,10 @@ The settings workspace is adapted from Serkosea's SafariUtils v3.3.0, commit `2e
 
 ## Settings
 
+The v4.0.2 candidate restores **SkyBlock → Helpers → Hunting Box total value** as an independent saved switch for one cumulative sell-offer estimate above the inventory. General item/chest valuation stays shelved. See [Hunting Box total](HUNTING_BOX_VALUE.md).
+
+The Hunting Box total and top-ten guidance list use the Safari Progress HUD's existing panel style, including its saved border/background/transparency. The total displays one named coin amount; the shard list omits auxiliary ownership/session/profile footer text.
+
 `/sm` opens the native workspace. HUDs, Safari, Party, ESP, History and Advanced areas with tabs, full-catalog search, grouped cards, boolean switches, dropdowns, sliders, text editors and HSV/opacity/chroma color controls replace MoulConfig. Changes use the existing apply/save actions. Search includes every nested setting across areas; Enter opens a single matching action. Text and color dialogs require Save; Escape cancels the dialog. Search includes nested group context. Navigation and expanded groups are remembered while running. Existing HUD drag/resize behavior and saved placements are retained.
 
 The default Rainbow theme matches SafariUtils. The Theme button exposes SafariUtils' 34 built-in workspace palettes. This selection affects settings screens, not gameplay requirements or existing per-HUD color choices. Color strings keep their existing speed/alpha/RGB representation, including animated hue offsets.
