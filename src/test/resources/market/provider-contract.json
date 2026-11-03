@@ -4,8 +4,9 @@
   "attribution": "https://sky.coflnet.com/data",
   "historicalAsk": "buy",
   "historicalBid": "sell",
+  "qualifiedForAutomaticAdvice": false,
   "timezone": "UTC",
-  "availability": "closed input bins only; no high/low lookahead",
+  "availability": "market bin close does not establish publication time; historical delivery time is unknown",
   "fallbackLimitation": "Graph values can fall back to quick_status when the source order book is absent",
   "fineRangeMaximumExclusiveMillis": 86400000,
   "researchSample": {
