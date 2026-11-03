@@ -14,6 +14,8 @@ internal class SaleGuidanceSession(
     private var lastBoxAt: Long?=null
     private var insideBox=false
     private var latest=emptyMap<String,Recommendation>()
+    var sidebarOpening=0L
+        private set
     fun tick(enabled: Boolean,inSkyblock: Boolean,scope: MarketScope?,localName: String,title: String,
         slots: List<MenuSlot>,advice: Map<String,Recommendation>,now: Long,connection: Any?=null): Map<Int,Recommendation> {
         val on=enabled && inSkyblock
@@ -31,7 +33,7 @@ internal class SaleGuidanceSession(
         val observed=HuntingBoxShardParsing.observe(title,slots)
         if(insideBox) {
             val previous=lastBoxAt
-            if(previous==null || now<previous || now-previous>2000)boxes.beginOpening()
+            if(previous==null || now<previous || now-previous>2000) {boxes.beginOpening();sidebarOpening++}
             lastBoxAt=now;boxes.observe(observed,now)
         }
         val box=observed.filter {it.amount>0}

@@ -53,6 +53,7 @@ object ShardSaleGuidance {
     fun register() {
         if(registered)return
         registered=true
+        ShardSaleSidebar.register()
         worker.execute {
             val raw=watchFile.read()
             val boxes=boxFile.read()
@@ -121,6 +122,7 @@ object ShardSaleGuidance {
         return session.sidebar(now)
     }
     internal fun hasVerifiedProfile()=SaleProfileEvidence.scope(account,profile)!=null
+    internal fun sidebarOpening()=session.sidebarOpening
     private fun advice(screen: AbstractContainerScreen<*>,slot: Slot): Recommendation? {
         if(!ConfigManager.shardSaleGuidance || menu!==screen || Minecraft.getInstance().smScreen!==screen)return null
         return view?.advice(screen.menu,screen.menu.stateId,slot.index,slot.item,System.currentTimeMillis())
