@@ -1,6 +1,5 @@
 package net.johnceo.sparklingmutuals.history
 
-import com.google.gson.JsonParser
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
@@ -10,6 +9,9 @@ import java.util.Locale
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.minecraft.client.Minecraft
 import org.slf4j.LoggerFactory
+import net.johnceo.sparklingmutuals.skyblock.market.BazaarQuoteParsing
+import net.johnceo.sparklingmutuals.skyblock.market.LimitedStringSubscriber
+import net.johnceo.sparklingmutuals.skyblock.market.QuoteSnapshot
 
 /**
  * All Bazaar product prices, shared by run profit, Hunting Box and item/chest valuation. Read from Hypixel's public bazaar endpoint,
@@ -23,19 +25,26 @@ object BazaarPrices {
     private val logger = LoggerFactory.getLogger("sparkling-mutuals/bazaar")
     private val client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build()
     private val cache = BazaarPriceCache(System::currentTimeMillis, ::fetchPrices)
+    @Volatile internal var guidanceQuotes: QuoteSnapshot? = null
+        private set
 
     fun ensureFresh() = cache.ensureFresh()
+    /** Explicit fast consumer only. Cached command/tooltip reads never invoke this. */
+    internal fun ensureGuidanceFresh() = cache.ensureFresh(60_000L)
 
     private fun fetchPrices(accept: (Map<String, DoubleArray>) -> Unit) {
         val request = HttpRequest.newBuilder(URI.create(URL)).timeout(Duration.ofSeconds(20)).header("User-Agent", "Sparkling Mutuals").GET().build()
-        client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).whenComplete { response, error ->
+        client.sendAsync(request, HttpResponse.BodyHandler { LimitedStringSubscriber(8 * 1024 * 1024) }).whenComplete { response, error ->
+            var snapshot: QuoteSnapshot? = null
             val read = runCatching {
                 check(error == null && response.statusCode() == 200) { error?.message ?: "HTTP ${response.statusCode()}" }
-                JsonParser.parseString(response.body()).asJsonObject.getAsJsonObject("products").entrySet()
-                    .associate { (id, product) -> product.asJsonObject.getAsJsonObject("quick_status").let {
-                        id to doubleArrayOf(it.get("sellPrice").asDouble, it.get("buyPrice").asDouble) } }
+                snapshot = BazaarQuoteParsing.parse(response.body(),System.currentTimeMillis())
+                checkNotNull(snapshot) { "Invalid Bazaar response" }.quickPrices
             }.onFailure { logger.warn("Bazaar lookup failed: {}", it.message) }.getOrDefault(emptyMap())
             Minecraft.getInstance().execute {
+                snapshot?.let { fresh ->
+                    if (fresh.serverAt >= (guidanceQuotes?.serverAt ?: 0L)) guidanceQuotes = fresh
+                }
                 accept(read)
                 if (read.isEmpty()) return@execute
                 RunHistory.fillMissingCoins()
@@ -77,8 +86,9 @@ internal class BazaarPriceCache(
     private var fetchedAt: Long? = null
     private var fetching = false
 
-    fun ensureFresh() {
-        if (fetching || fetchedAt?.let { clock() - it < refreshMillis } == true) return
+    fun ensureFresh(intervalMillis: Long = refreshMillis) {
+        val interval = intervalMillis.coerceAtLeast(60_000L)
+        if (fetching || fetchedAt?.let { clock() - it < interval } == true) return
         fetching = true
         fetchedAt = clock()
         fetch { read ->
