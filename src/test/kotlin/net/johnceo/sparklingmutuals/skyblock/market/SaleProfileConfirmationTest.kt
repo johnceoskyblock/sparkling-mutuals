@@ -56,4 +56,23 @@ class SaleProfileConfirmationTest {
         assertNull(requests.accept(reply(),11001))
         assertTrue(requests.next(true,false,18000))
     }
+    @Test fun `clock rollback cannot replenish an exhausted automatic request budget`() {
+        val requests=SaleProfileConfirmation();requests.next(true,false,1000)
+        for(at in listOf(2000L,32000L,62000L))assertTrue(requests.next(true,false,at))
+        assertFalse(requests.next(true,false,61000));assertNull(requests.accept(reply(),61001))
+        for(at in listOf(77001L,78001L,92000L,1000000L))assertFalse(requests.next(true,false,at))
+    }
+    @Test fun `clock rollback retains original thirty second retry deadline`() {
+        val requests=SaleProfileConfirmation();requests.next(true,false,1000);requests.next(true,false,2000)
+        assertFalse(requests.next(true,false,1900));assertNull(requests.accept(reply(),2001))
+        for(at in listOf(18001L,19001L,31999L))assertFalse(requests.next(true,false,at))
+        assertTrue(requests.next(true,false,32000))
+    }
+    @Test fun `value only legacy compatibility respects canceled request drain and never adopts clickable replies`() {
+        val requests=SaleProfileConfirmation();val legacy=Component.literal("Profile ID: $id")
+        assertEquals(compact,requests.passiveLegacy(legacy,1000));assertNull(requests.passiveLegacy(reply(),1001))
+        requests.next(true,false,2000);requests.next(true,false,3000);requests.reset(4000)
+        assertNull(requests.passiveLegacy(legacy,4001));assertNull(requests.passiveLegacy(legacy,18000))
+        assertEquals(compact,requests.passiveLegacy(legacy,18001))
+    }
 }

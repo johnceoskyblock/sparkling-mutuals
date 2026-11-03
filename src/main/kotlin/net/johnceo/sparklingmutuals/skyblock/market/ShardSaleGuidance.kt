@@ -80,7 +80,9 @@ object ShardSaleGuidance {
                 val plain=SafariRules.strip(message.string)
                 val now=System.currentTimeMillis()
                 if(SaleProfileEvidence.changing(plain)) {profile=null;profileConfirmation.reset(now);session.reset();total.reset();view=null;orderView=null}
-                val confirmed=SaleProfileEvidence.profile(plain) ?: if(ConfigManager.shardSaleGuidance)profileConfirmation.accept(message,now)else null
+                if(!ConfigManager.shardSaleGuidance)profileConfirmation.next(false,hasVerifiedProfile(),now)
+                val confirmed=if(ConfigManager.shardSaleGuidance)profileConfirmation.accept(message,now)
+                    else if(ConfigManager.huntingBoxValue)profileConfirmation.passiveLegacy(message,now)else null
                 confirmed?.let {profile=it;session.reset();total.reset();view=null;orderView=null}
             }
         }

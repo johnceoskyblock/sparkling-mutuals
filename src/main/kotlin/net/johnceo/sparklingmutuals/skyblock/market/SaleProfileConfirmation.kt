@@ -30,6 +30,10 @@ internal class SaleProfileConfirmation {
         pendingUntil=null
         return id
     }
+    fun passiveLegacy(message: Component,now: Long): String? {
+        if(!time(now) || now<drainUntil || pendingUntil!=null)return null
+        return SaleProfileEvidence.profile(message.string)
+    }
     /** Drain any old request before accepting a response in a replacement context. */
     fun reset(now: Long) {
         val effective=maxOf(now,lastNow ?: now)
@@ -39,7 +43,7 @@ internal class SaleProfileConfirmation {
     }
     private fun time(now: Long): Boolean {
         val previous=lastNow
-        if(previous!=null && now<previous) {reset(previous);return false}
+        if(previous!=null && now<previous) {pendingUntil=null;return false}
         lastNow=now
         return true
     }
