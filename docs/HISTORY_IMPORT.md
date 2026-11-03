@@ -51,9 +51,9 @@ A manual import optionally compares the resulting party-catch history with the a
 
 ### Manual import inputs and run boundaries
 
-Read only files directly inside the chosen folder: `.log`, `.log.gz` and chat `.json`, including `latest.log`. Modern/older prefixes, formatting, optional Chat Heads and midnight rollovers are supported. JSON may be an array or an `entries` array; accepted entries include message/text/formattedMessage/content/line strings, numeric seconds/milliseconds or ISO dates, timestamped log strings, and dated player/critter Sparkling entries. It is chat ingestion, not arbitrary saved-run JSON restoration.
+Read `.log`, `.log.gz` and chat `.json` files inside the chosen folder and its subfolders, including `latest.log`. Directory symlinks are not followed. Modern/older prefixes, formatting, optional Chat Heads and midnight rollovers are supported. JSON may be an array or an `entries` array; accepted entries include message/text/formattedMessage/content/line strings, numeric seconds/milliseconds or ISO dates, timestamped log strings, and dated player/critter Sparkling entries. It is chat ingestion, not arbitrary saved-run JSON restoration.
 
-Dated archive filenames establish the start day. Undated logs infer it from modification time and time-of-day rollovers, using the local timezone. Preserve names/timestamps; changed file dates/timezones cannot be reliably repaired.
+Dated archive filenames establish the start day, including Windows copy names such as `2026-10-10-1 (1).log.gz` and `2026-10-10-1.log (1).gz`. Undated logs infer it from modification time and time-of-day rollovers, using the local timezone. Preserve names/timestamps; changed file dates/timezones cannot be reliably repaired. Each skipped account file is logged with its path and reason in `latest.log`, followed by scan totals. Copying the same logs again does not create extra catches.
 
 A Hunting Hotspot starts a run and associates a nearby Manager ticket confirmation; without a Hotspot, a ticket can start one. The reward-summary header is the preferred end, with server departure as fallback. Missing ends remain unknown (`length=0` internally), even when a later boundary separates records. An unfinished run in this instance's active `latest.log` is left to the live recorder. Archived partial runs can import with no known duration; ticket-only runs can have zero captures. [Messages](critters/MESSAGES.md) owns exact recognized wording.
 
@@ -123,6 +123,8 @@ Missing messages/dates cannot be reconstructed, and close run starts can be ambi
 - Existing secondary coverage: [HistoryBackfillImportTest](../src/test/kotlin/net/johnceo/sparklingmutuals/history/HistoryBackfillImportTest.kt), [HistoryServerPolicyTest](../src/test/kotlin/net/johnceo/sparklingmutuals/history/HistoryServerPolicyTest.kt), [HistoryTest](../src/test/kotlin/net/johnceo/sparklingmutuals/history/HistoryTest.kt), [ProfitTest](../src/test/kotlin/net/johnceo/sparklingmutuals/history/ProfitTest.kt). No local runtime suites or Minecraft session ran for this documentation audit; CI results are separate. Live validation remains needed for message order, GUI actions, settings/restart, Alpha transitions and real imported-log fidelity; parser tests alone do not prove those paths.
 
 ## Last updated
+
+2026-11-02 — Import scans copied subfolders and recognizes Windows copy suffixes on dated log archives. Skipped files now log their paths and account-verification reasons, plus scan totals. Ownership checks, Alpha exclusion and duplicate reconciliation remain in effect.
 
 2026-10-27 — Removed scope category tags and shortened stat names; scope lives in hover help. Party dry-streak achievements recalculate from native history. Speed awards and Fastest 37/37 use first complete capture coverage, with import enrichment and safe legacy timing fallback.
 

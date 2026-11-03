@@ -1,14 +1,14 @@
-# Skills overflow tooltips
+# Skills overflow
 
 ## Control
 
-Advanced → SkyBlock → Helpers → **Skills overflow**, on by default. This is the Skills menu tooltip feature only; it adds no HUD, XP/hour display, ETA, chat announcement or command.
+Advanced → SkyBlock → Helpers contains **Skills overflow** for menu tooltips, **Overflow level-up messages** for local chat (both on by default), and **Use numbers for skill levels** (off by default).
 
 ## Display and calculation
 
 In SkyBlock's **Your Skills** menu, hover a maxed standard skill to see:
 
-- Its virtual level, keeping the menu's Roman or decimal format.
+- Its virtual level, keeping the menu's Roman or decimal format unless Use numbers is enabled.
 - Percentage and XP progress toward the next virtual level.
 - Total overflow XP above the cap shown by the menu.
 
@@ -18,10 +18,14 @@ Read the total XP following **Max Skill level reached!** directly from the toolt
 
 Normal-skill XP metadata is bundled from Hypixel's public skill resource. There are no runtime API requests, profile lookups, stored player XP records or cross-profile cache entries.
 
+## Level-up chat
+
+Maxed-skill action-bar XP establishes a baseline, then increases in the virtual level produce SkyHanni's aqua level-up heading, divider lines and level-up sound. Roman levels change to decimal numbers when Use numbers is enabled. Flexing Points, SkyHanni User Luck and the empty rewards section are omitted. Repeated action-bar packets do not repeat the message. Disconnecting or changing profiles clears the baseline; the first observation never announces a historical level-up. This does not add an XP HUD or fetch skill profiles.
+
 ## Validation
 
 Focused checks cover exact level thresholds, the post-60 curve and slope changes, lower displayed caps, Roman/decimal names, abbreviated/malformed XP, missing data, duplicate tooltip protection and setting persistence. All supported versions compile. In game, hover a maxed skill in Your Skills, compare its total XP, and toggle the feature off to confirm the original tooltip returns.
 
 ## Last updated
 
-2026-11-02 — Added the requested tooltip-only Skills overflow adaptation. See packaged SkyHanni skill attribution and LGPL notice.
+2026-11-02 — Added overflow level-up chat and a numeric skill-level toggle, alongside the existing menu tooltips. See packaged SkyHanni skill attribution and LGPL notice.

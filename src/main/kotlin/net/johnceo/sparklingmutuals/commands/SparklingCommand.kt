@@ -66,7 +66,8 @@ object SparklingCommand {
                 ConfigManager.hotspotAnnouncer = !ConfigManager.hotspotAnnouncer
                 ConfigManager.save()
                 it.source.sendFeedback(LocalChat.component("[SM] Hotspot announcer " + if (ConfigManager.hotspotAnnouncer) "on." else "off."))
-                it.source.sendFeedback(LocalChat.component("[SM] Hotspot parties work best when all party members are using Sparkling Mutuals for the hotspot assignments"))
+                if (ConfigManager.hotspotAnnouncer)
+                    it.source.sendFeedback(LocalChat.component("[SM] Hotspot parties work best when all party members are using Sparkling Mutuals for the hotspot assignments"))
                 1
             })
             dispatcher.register(ClientCommands.literal("rates").executes { SparklingRates.show(it.source) })

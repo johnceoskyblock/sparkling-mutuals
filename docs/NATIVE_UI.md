@@ -52,7 +52,7 @@ Modes switch through `/unique`, `/fc` and `/sparkle`; their dropdowns contain vi
 
 2026-11-02 — Advanced → SkyBlock has Helpers and Endgame subtabs. Hunting Box value is in Helpers; Phantomleaf Solver moves to Endgame with its existing saved setting.
 
-2026-11-02 — Detection and alerts → Sparkling catch count defaults on. Confirmed new discoveries show NEW; other confirmed catches show the species catch number from saved/imported history, including credited party catches. Messages are local with a hover explaining the history scope. No catch-time API request is added; Alpha does not update the counter.
+2026-11-02 — Detection and alerts → Sparkling catch count defaults on. Confirmed new discoveries show NEW; other confirmed catches show the species catch number from saved/imported history, including credited party catches. Messages go to party chat while in a Safari party. No catch-time API request is added; Alpha does not update the counter.
 
 SkyBlock → Helpers also contains Estimated item value and Estimated chest value. Both are independent persistent toggles; hover and storage panels use the native dark theme. See [valuation behavior and price requests](ITEM_VALUES.md). Updated 2026-11-02.
 
@@ -71,3 +71,17 @@ SkyBlock → Helpers also contains Estimated item value and Estimated chest valu
 2026-11-02 — All native screens use Minecraft mouse/key constants so HUD dragging, right-click settings, history controls, Warp List and keyboard shortcuts match across 26.1.2, 26.2 and SDL-based 26.3. Update status refreshes during an open settings session and on demand; failed refreshes never retain an Up to Date label.
 
 Release validation, 2026-11-02: all 1,139 tests passed on each of 26.1.2, 26.2 and 26.3, plus 21 build-helper tests. Native offline clients exercised HUD click/drag/release, scroll resize, right-click settings, settings click/Escape and layout persistence on each target. The 26.3 probe used SDL button codes 1/3 and Return/Escape 40/41; older targets used 0/1 and 257/256. Public update selection and timed refresh/failure behavior have automated regressions. Windows screenshot capture was unavailable; this is not a full visual, live Hypixel or shader-pack parity certification.
+
+2026-11-02 — Fresh-install settings and normalized HUD placements now mirror the current Skyblock instance, with hotspot/warping/leech/starting-item announcements off, a blank Warp List and the saved leech whitelist retained. Existing configs are not overwritten. Starting-item reminder titles also respect the announcement toggle.
+
+2026-11-02 — Completed Missing/Unchecked and Biome Objectives HUDs remain visible with a green completion line. Missing uses 'All caught and checked!' in Unique/Full Clear and 'All checked!' in Sparkle; objectives use 'All objectives complete!'.
+
+2026-11-02 — Icy Biome Objectives lists only Capture Wumpa in Unique/Full Clear, and in Sparkle only when Wumpa is needed. After capture, the completed-objectives line remains.
+
+2026-11-02 — Hotspots announce immediately on Hypixel's message. Assignment waits two seconds after the third distinct reporter (all members for smaller parties), with a five-second fallback. Manual biome names/close typos are accepted. Only the leader sends one assignment instruction per member without an SM/SU announcement.
+
+2026-11-02 — /sm gui adds SafariUtils-style snapping: centers within five GUI pixels and screen edges within three, with center alignment guides while dragging. Snap defaults on and its editor button saves the preference. Arrow keys nudge the last hovered HUD one pixel without snapping. Normalized positions round to the nearest pixel so nudges and snapped alignment survive saving. Dragging, scroll resize and right-click settings remain available.
+
+2026-11-02 — Leader-owned hotspot coordination adds pre-run Hotspot wins to the leader announcement and publishes one Biomes map. Followers validate the current leader and full roster, replace local counts, and follow the final map even after missed reports or a local fallback. Duplicate messages do not double-credit wins. Individual instructions remain leader-only for non-mod reporters. No additional API requests.
+
+2026-11-02 — Locked secret achievements hide progress. Biome Objectives includes a concise remaining-critter instruction per mode. Forest omits zero food/bird counters, removes bird rows only after mode completion, and reconciles feeder slot/chat consumption with consistent cursor-safe inventory and transaction buffering.

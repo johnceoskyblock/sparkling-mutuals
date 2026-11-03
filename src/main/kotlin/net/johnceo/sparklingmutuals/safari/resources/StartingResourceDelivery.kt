@@ -12,8 +12,9 @@ class StartingResourceDelivery(private val resources: SafariResources) {
         active = true; nextAt = now + 4000
     }
     fun dispatch(now: Long, player: String, biome: SafariBiome, party: PartySparklingState,
+        enabled: Boolean = true,
         send: (String, StartingResourceNotice) -> Unit): Boolean {
-        if (!active || now < nextAt) return false
+        if (!enabled || !active || now < nextAt) return false
         // Rebuild from current inventory, destination and discoveries, avoiding stale quantities.
         val items = resources.notices(player, biome, party).mapNotNull { StartingResourceReminder.parse(it, party) }
         if (items.isEmpty()) return false

@@ -63,7 +63,7 @@ internal object HistoryBackfill {
         reader.lineSequence().forEachIndexed { index, raw ->
             if ("[CHAT]" !in raw) ownerLine.find(SafariRules.strip(raw))?.let {
                 owners += it.groupValues[1].lowercase(Locale.ROOT)
-                if (expectedSelf != null && !it.groupValues[1].equals(expectedSelf, true)) throw OwnerMismatch("Log belongs to another account")
+                if (expectedSelf != null && !it.groupValues[1].equals(expectedSelf, true)) throw OwnerMismatch("Log belongs to ${it.groupValues[1]}, not $expectedSelf")
             }
             val time = time(raw) ?: return@forEachIndexed
             if (previous?.let { time.toSecondOfDay() < it.toSecondOfDay() - 3600 } == true) date = date.plusDays(1)
@@ -89,7 +89,7 @@ internal object HistoryBackfill {
     private fun checkOwner(owners: Set<String>, expectedSelf: String?) {
         if (expectedSelf == null) return
         if (expectedSelf.isBlank() || owners.isEmpty()) throw OwnerMismatch("Log account could not be verified")
-        if (owners.any { !it.equals(expectedSelf, true) }) throw OwnerMismatch("Log belongs to another account")
+        if (owners.any { !it.equals(expectedSelf, true) }) throw OwnerMismatch("Log belongs to ${owners.joinToString()}, not $expectedSelf")
     }
     private fun epoch(value: JsonElement?): Long? {
         if (value == null || !value.isJsonPrimitive) return null

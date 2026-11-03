@@ -17,6 +17,7 @@ object ObjectivePalette {
             "gem" in text -> 0xDAC3FF
             "coin" in text -> 0xFFE078
             "gazer" in text -> 0xCDB0FF
+            "wumpa" in text -> 0x80DDFF
             "incense" in text -> 0xE3B0EE
             else -> 0xDDDDDD
         }

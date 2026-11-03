@@ -3,6 +3,7 @@ package net.johnceo.sparklingmutuals.skyblock
 
 import com.google.gson.JsonParser
 import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback
+import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents
 import net.johnceo.sparklingmutuals.compat.smScreen
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.hud.SkyblockSidebar
@@ -11,6 +12,7 @@ import net.minecraft.ChatFormatting
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen
 import net.minecraft.network.chat.Component
+import net.minecraft.sounds.SoundEvents
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.util.Locale
@@ -91,13 +93,31 @@ internal object OverflowTooltipParsing {
 
 /** Menu-local transformation only: never edits server item stacks, skill stats, or inventories. */
 object SkillOverflow {
+    private val tracker = OverflowChatTracker()
+    fun reset() = tracker.clear()
     fun register() {
+        ClientReceiveMessageEvents.GAME.register { message, overlay ->
+            val client = Minecraft.getInstance()
+            if (!overlay) {
+                if (SafariRules.strip(message.string).startsWith("You are playing on profile:")) reset()
+                return@register
+            }
+            if (!SkyblockSidebar.inSkyblock(client)) return@register
+            // Track even while disabled so enabling the setting cannot replay old level-ups.
+            tracker.observe(message.string).forEach { change ->
+                if (ConfigManager.skillOverflowChat) {
+                    client.player?.sendSystemMessage(Component.literal(change.message(ConfigManager.skillOverflowNumbers)))
+                    client.player?.playSound(SoundEvents.PLAYER_LEVELUP, 1f, 1f)
+                }
+            }
+        }
         ItemTooltipCallback.EVENT.register { stack,_,_,lines ->
             val client=Minecraft.getInstance()
             if(!ConfigManager.skillOverflow || !SkyblockSidebar.inSkyblock(client)) return@register
             val screen=client.smScreen as? AbstractContainerScreen<*> ?: return@register
             if(SafariRules.strip(screen.title.string)!="Your Skills") return@register
-            val plan=OverflowTooltipParsing.plan(stack.hoverName.string,lines.map { it.string }) ?: return@register
+            val parsed=OverflowTooltipParsing.plan(stack.hoverName.string,lines.map { it.string }) ?: return@register
+            val plan=if(ConfigManager.skillOverflowNumbers) parsed.copy(roman=false) else parsed
             if(lines.isEmpty()) return@register
             lines[0]=Component.literal(plan.title).setStyle(lines[0].style)
             lines[plan.progressIndex]=Component.literal("Progress to Level ${plan.level(plan.value.level+1)}: ").withStyle(ChatFormatting.GRAY)

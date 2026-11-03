@@ -31,12 +31,20 @@ class ConfigTest {
         val defaults = FreshInstallDefaults.main()
         assertFalse(defaults.containsKey("apiKey"))
         assertFalse(defaults.stringPropertyNames().any { it.startsWith("pb.") || it.contains("uuid", true) })
+        assertTrue(defaults.stringPropertyNames().filter { it.startsWith("warpList.") }.all { defaults.getProperty(it).isEmpty() })
+        for(key in listOf("hotspotAnnouncer","warpAlertsEnabled","leechMode","announceStartingItems"))
+            assertEquals("false",defaults.getProperty(key),key)
+        assertFalse(defaults.getProperty("leechWhitelist").isBlank())
         ConfigManager.init(dir); ContestConfig.init(dir)
-        assertEquals(1, ConfigManager.safariTicketPreference)
+        assertEquals(0, ConfigManager.safariTicketPreference)
         assertTrue(AppearanceConfig.panels.getValue("progress").borderEnabled)
-        assertEquals(.015104167f, SafariHud.PROGRESS.layout.x)
+        assertEquals(.013541667f, SafariHud.PROGRESS.layout.x)
         val contest = ContestConfig.layoutFor(640, 360).bounds(640, 360, 150, 42)
-        assertEquals(129, contest.x); assertEquals(9, contest.y)
+        assertEquals(102, contest.x); assertEquals(9, contest.y)
+        for((w,h) in listOf(320 to 240,640 to 360,1280 to 720)) for(hud in SafariHud.entries) {
+            val box=hud.layout.bounds(w,h,180,100)
+            assertTrue(box.x>=0 && box.y>=0 && box.x+box.width<=w && box.y+box.height<=h,hud.name)
+        }
         val main = "shinyDetection=false\nsafariTicketPreference=0\nhud.progress.x=0.25\nhud.progress.scale=1.4\n"
         val legacyContest = "hudX=41\nhudY=22\nhudScale=1.2\ncontestWarnMinutes=5\n"
         Files.writeString(dir.resolve("sparkling-mutuals.properties"), main)
@@ -184,7 +192,7 @@ class ConfigTest {
         assertEquals(25, ConfigManager.warpDelaySeconds)
         assertEquals(0, ConfigManager.sparkleWarpMode)
         assertEquals("", ConfigManager.warpDuo)
-        assertTrue(ConfigManager.leechMode)
+        assertFalse(ConfigManager.leechMode)
         assertEquals("JohnCEO _cj Rqach",ConfigManager.leechWhitelist)
     }
 

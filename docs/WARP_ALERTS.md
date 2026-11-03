@@ -14,7 +14,7 @@ A cycle starts at the Hunting Hotspot message (leaving the boat), only for a con
 
 1. During the first 19 seconds, optional Auto-party invites saved Warp List players for positively identified visible Sparkling critters. Unknown particle detections do not invite.
 2. From 19 seconds, pending Warp List candidates give way to the previous leechers. Invite all missing returning players in one `/p <IGN> <IGN> <IGN>` command, filling only remaining spots up to four members including the leader and Duo runner. This batch does not wait for the Warp List two-second pacing.
-3. At the configured delay (25 seconds by default), show **Warping Now** and send `/p warp` once. Players invited during this window can bring the party to four without cancelling that warp. Sending the command does not prove server acceptance.
+3. At the configured delay (26 seconds for fresh installs), show **Warping Now** and send `/p warp` once. Players invited during this window can bring the party to four without cancelling that warp. Sending the command does not prove server acceptance.
 4. Whenever the leader returns from Safari to Torrhus Canyon or Springs with warping enabled, save the current leechers and prepare the next run. **Solo** sends `/p disband`. **Duo** keeps the selected runner and sends `/p kick <IGN>` for each other member. The leader must still hold leadership; incomplete roster/name information waits rather than guessing. This cleanup also happens after a four-player run that never started the invite/warp timer.
 
 Choose the Duo runner with `/duo <IGN>`; this also selects Duo mode. The same IGN can be edited in the tab. Duo cleanup requires that runner to be in the party, and the delayed warp also requires the runner to remain a member. Switch the dropdown to Solo to run alone.
@@ -25,7 +25,7 @@ Warp List invitations before 19 seconds are sent one at a time, two seconds apar
 
 `/leech` or the Leech toggle enables automatic acceptance of genuine Hypixel party invites **only from IGNs in the Leech whitelist**. Edit the whitelist in the Sparkle Warping tab using spaces, commas or semicolons. Matching is exact and case-insensitive; invalid names and duplicate entries are omitted. The default whitelist is `JohnCEO _cj Rqach`. An explicitly empty list accepts nobody. An unlisted invite neither leaves the current party nor replaces a pending approved invite. If already in a party, send `/p leave`, wait for leave/roster confirmation, then `/p accept <inviter>`. If solo, accept immediately once party state is known. A newer invite replaces the pending target; turning Leech off, editing the whitelist, disconnecting or a 15-second timeout cancels pending acceptance. Player-chat quotes cannot trigger it.
 
-Leech works in Hypixel lobbies as well as SkyBlock and does not require `/warping` or Auto-party. While Leech is enabled, this client does not run the leader cycle. It defaults on.
+Leech works in Hypixel lobbies as well as SkyBlock and does not require `/warping` or Auto-party. While Leech is enabled, this client does not run the leader cycle. It defaults off for fresh installs.
 
 ## Controls and persistence
 
@@ -35,10 +35,10 @@ Leech works in Hypixel lobbies as well as SkyBlock and does not require `/warpin
 | `/warping` / Auto warping | Off | Toggle invitations, delayed warps and return cleanup without immediately changing the party; use `/start` to prepare it. |
 | Leader mode | Solo | Disband on returning from Safari to Torrhus, or keep the Duo runner. |
 | `/duo <IGN>` / Duo runner | Empty | Save the runner; the command also chooses Duo. |
-| `/autoparty` / Auto-party | Off | Prioritize detected critters' Warp List players before 19 seconds. Returning leechers are invited even with this off. |
-| `/leech` / Leech | On | Accept whitelisted party invites, leaving the current party first. |
-| Leech whitelist | `JohnCEO _cj Rqach` | Approved inviter IGNs; empty accepts nobody. |
-| `/warpingdelay <seconds>` / Delay | 25 seconds | Range 1–86400. Existing saved custom delays, including 23 seconds, stay unchanged. Reset uses 25. |
+| `/autoparty` / Auto-party | On | Prioritize detected critters' Warp List players before 19 seconds. Returning leechers are invited even with this off. |
+| `/leech` / Leech | Off | Accept whitelisted party invites, leaving the current party first. |
+| Leech whitelist | `_cj JohnFounder Rqach` for fresh installs | Approved inviter IGNs; empty accepts nobody. |
+| `/warpingdelay <seconds>` / Delay | 26 seconds for fresh installs | Range 1–86400. Existing saved custom delays, including 23 seconds, stay unchanged. The missing-key fallback is 25. |
 
 A delay below 19 seconds ends before returning-leecher invitations can begin. The tab explains the cycle and keeps the normal full-width description text.
 
@@ -87,3 +87,5 @@ Focused tests cover Solo/Duo cleanup selection, missing/invalid runners, leader/
 2026-10-29 (America/New_York) — Added Warp List CSV replacement import using the header and ten name rows. Renamed controls to Sparkle Warping, `/warping` and `/warpingdelay`, changed the fresh default to 23 seconds, and added bounded Warp List auto-party invitations.
 
 Contest handling: leader warp entry requires Uncommon, regardless of the ticket-announcer goal. Each new contest queues one party reminder to grab contest between warps. While disbanded, the reminder waits until the leader has party members again. Shift still overrides the entry guard.
+
+2026-11-03 — Fresh profiles retain the copied 26-second delay and Auto-party preference, with master warping and Leech off. Existing saved choices remain unchanged.

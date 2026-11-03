@@ -85,11 +85,12 @@ object SafariTracking {
             ensureRun(client)
             net.johnceo.sparklingmutuals.hud.SafariBanners.chat(text)
             ledger.current?.birdFoodCheck?.spawn(text,now)
-            ledger.current?.birds?.spawn(text)
+            ledger.current?.birds?.spawn(text,now)
             ledger.current?.recordWumpaSpawn(text)
             ledger.current?.sparklingBroadcast(text, now)
             ledger.current?.entry?.chat(text)
             ledger.current?.startingAnnouncement?.observeHotspot(text, now)
+            if(text.startsWith("HOTSPOT!")) ledger.current?.let { announceStarting(client,it,now) }
             if (text.startsWith("HEAD START!")) ledger.current?.startingGrantWindow(now)
             ledger.current?.resources?.headStart(text)
             if (text.startsWith("HEAD START!")) ledger.current?.entry?.headStart?.let { type ->
@@ -131,10 +132,16 @@ object SafariTracking {
         run.localPlayer(player.name.string)
         // Sample on the boat too, before anyone can use starting supplies or collect floor drops.
         run.inventoryEvidence((0 until player.inventory.containerSize).map { player.inventory.getItem(it) }
-            .filterNot { it.isEmpty }.map { it.hoverName.string to it.count }, now)
+            .filterNot { it.isEmpty }.map { it.hoverName.string to it.count } + net.johnceo.sparklingmutuals.safari.resources.BirdfeederInventory.carried(client), now)
+        announceStarting(client,run,now)
+    }
+    private fun announceStarting(client: Minecraft,run: SafariRun,now: Long) {
+        val player=client.player ?: return
+        val connection=client.connection ?: return
         if (PartyManager.hasInfo && PartyManager.getMembers().size > 1) {
             val hotspotEnabled = net.johnceo.sparklingmutuals.hud.HotspotAssignmentAlert.enabled()
-            run.startingAnnouncement.dispatch(now, SafariSparklingMode.state, hotspotEnabled, ConfigManager.announceStartingItems) { message ->
+            run.startingAnnouncement.dispatch(now, SafariSparklingMode.state, hotspotEnabled, ConfigManager.announceStartingItems,
+                net.johnceo.sparklingmutuals.hud.HotspotAssignmentAlert::announcement) { message ->
                 connection.sendCommand("pc $message")
                 // Apply our own contribution now; the server's party echo is deduplicated.
                 run.resources.partyNotice("Party > ${player.name.string}: $message")

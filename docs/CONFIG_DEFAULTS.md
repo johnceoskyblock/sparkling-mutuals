@@ -12,15 +12,19 @@ On joining Hypixel (including Alpha), a short local welcome appears once the pla
 
 The welcome is one compact MOTD-style block with a gold heading/dividers and light body text, without repeated `[SM]` prefixes. Commands are gold, clickable, and show explanatory hover text. Ordinary local feedback retains its usual prefix.
 
-Open `/sm` for settings. Fresh installs use [bundled main defaults](../src/main/resources/defaults/sparkling-mutuals.properties) and [contest defaults](../src/main/resources/defaults/sparkling-mutuals-contest.properties), copied from the author’s chosen settings. Most feature switches are on, with these notable preferences:
+Open `/sm` for settings. Fresh installs use [bundled main defaults](../src/main/resources/defaults/sparkling-mutuals.properties) and [contest defaults](../src/main/resources/defaults/sparkling-mutuals-contest.properties), copied from the author’s Skyblock instance settings (2026-11-02), with the requested automation defaults disabled. Most feature switches are on, with these notable preferences:
 
 | Setting | Saved key | Default |
 | --- | --- | --- |
 | Sparkle Warping | `warpAlertsEnabled` | Off |
+| Hotspot announcer | `hotspotAnnouncer` | Off |
+| Leech auto-accept | `leechMode` | Off; inviter whitelist retained |
+| Starting quest-item announcements and reminder titles | `announceStartingItems` | Off |
+| Warp List | `warpList.*` | Empty |
 | Coins at insta-sell | `runCoinsInstaSell` | Off (sell-offer valuation) |
 | Achievements to party | `achievementsToParty` | Off |
 | XP / Essence / Shard floor drops | `esp.floor.rewards.enabled` | On, current biome only |
-| HUD borders | `appearance.<panel>.borderEnabled` | Off |
+| HUD borders | `appearance.<panel>.borderEnabled` | Match the Skyblock snapshot for each HUD |
 | Five-minute contest warning | `contestWarnMinutes` | Off; warnings at 3 and 1 minutes |
 
 Achievements themselves and achievement sound default on. A button's backing field is not an enable switch. Mode selectors are mutually exclusive: fresh configuration selects **Unique** (`fullClearMode=false`, `sparklingMode=false`); they are not an all-on feature group.
@@ -129,6 +133,8 @@ Startup normalizes legacy `pb.*` keys from the general file and the earlier `Spa
 Each mode dropdown has independent Hide critter ESP and Hide floor-drop ESP toggles, both off by default. They gate rendering only, including retained critter markers, and never disable scanning or requirements. Turning on either hide toggle disables that mode's profitable-critter ESP (Unique/Sparkle). Party Interactions > Auto biome reports defaults on and controls automatic fd/cd/id/hd messages without disabling progress tracking.
 
 ## Last updated
+
+2026-11-02 — Refreshed bundled main/contest preferences and all HUD placements from the current Skyblock instance. Hotspot announcing, Sparkle Warping, Leech and starting quest-item announcements default off. All Warp List entries start empty; the inviter whitelist is retained. No credentials, PBs, run/sparkling histories, achievement state, playtime, hive cooldowns or other account statistics are included. Existing config files remain authoritative. Starting quest-item local title reminders now obey the same toggle as the party announcements.
 
 2026-11-01 — Native settings preserve existing property keys, defaults and HUD placement. New settings: `settingsTheme=4` (Rainbow), `specialCatchAlert=true`, `specialCatchStyle=0` (Prismatic Whisper).
 

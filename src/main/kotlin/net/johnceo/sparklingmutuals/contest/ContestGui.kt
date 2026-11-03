@@ -11,6 +11,7 @@ import net.johnceo.sparklingmutuals.config.ContestConfig
 import net.johnceo.sparklingmutuals.config.SafariTheme
 import net.johnceo.sparklingmutuals.hud.HudLayout
 import net.johnceo.sparklingmutuals.hud.HudRow
+import net.johnceo.sparklingmutuals.hud.HudSnapping
 import net.johnceo.sparklingmutuals.hud.SafariHud
 import net.johnceo.sparklingmutuals.hud.SmallAlerts
 import net.johnceo.sparklingmutuals.safari.SafariAssist
@@ -20,6 +21,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.johnceo.sparklingmutuals.config.ThemedButton as Button
 import net.minecraft.client.gui.screens.Screen
 import net.minecraft.client.input.MouseButtonEvent
+import net.minecraft.client.input.KeyEvent
 import net.minecraft.network.chat.Component
 
 /** All HUDs have previews even when disabled or outside Safari, following v0.9.0's editor. */
@@ -29,11 +31,14 @@ class ContestGui(private val parent: Screen? = null) : Screen(Component.literal(
     private val previews = mutableListOf<Preview>()
     private val miria = ContestConfig.layout
     private var dragging: Preview? = null
+    private var selected: Preview? = null
+    private var centeredX=false
+    private var centeredY=false
     private var offsetX = 0.0
     private var offsetY = 0.0
     override fun init() {
         ContestConfig.editLayout(width, height)
-        previews.clear();dragging=null
+        previews.clear();dragging=null;selected=null;centeredX=false;centeredY=false
         previews.add(Preview("Miria contest", miria, ContestHud.WIDTH, ContestHud.previewHeight, HudConfigLinks.contest) { g, x, y ->
             ContestConfig.hudScale = miria.scale; ContestHud.renderPreview(g, x, y)
         })
@@ -53,18 +58,30 @@ class ContestGui(private val parent: Screen? = null) : Screen(Component.literal(
                 else panel.draw(g, x, y, hud.layout.effectiveScale(width, height, panel.width(font::width), panel.height),
                     AppearanceConfig.panels.getValue(hud.name.lowercase())) })
         }
-        addRenderableWidget(Button.builder(Component.literal("Reset positions")) {
+        val gap=6
+        val buttonWidth=minOf(120,(width-16-gap*2).coerceAtLeast(3)/3)
+        val start=(width-(buttonWidth*3+gap*2))/2
+        addRenderableWidget(Button.builder(Component.literal(if(buttonWidth>=100) "Reset positions" else "Reset")) {
             SafariHud.resetDefaults()
             ContestConfig.resetLayout()
             save()
-        }.bounds(width / 2 - 104, height - 24, 120, 20).build())
-        addRenderableWidget(Button.builder(Component.literal("Done")) { onClose() }.bounds(width / 2 + 20, height - 24, 84, 20).build())
+        }.bounds(start, height - 24, buttonWidth, 20).build())
+        addRenderableWidget(Button.builder(Component.literal(snapLabel())) { button ->
+            ConfigManager.hudSnapping=!ConfigManager.hudSnapping
+            button.message=Component.literal(snapLabel())
+            centeredX=false;centeredY=false
+            save()
+        }.bounds(start+buttonWidth+gap, height-24, buttonWidth,20).build())
+        addRenderableWidget(Button.builder(Component.literal("Done")) { onClose() }
+            .bounds(start+(buttonWidth+gap)*2, height - 24, buttonWidth, 20).build())
     }
+    private fun snapLabel()="Snap: "+if(ConfigManager.hudSnapping) "On" else "Off"
     private fun bounds(preview: Preview) = preview.layout.bounds(width, height, preview.width, preview.height)
     private fun hovered(x: Double, y: Double) = previews.asReversed().firstOrNull { bounds(it).contains(x, y) }
     override fun extractRenderState(graphics: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, delta: Float) {
         graphics.fill(0, 0, width, height, (0x88000000.toInt() or SafariTheme.BACKGROUND))
         val hover = hovered(mouseX.toDouble(), mouseY.toDouble())
+        if(hover!=null) selected=hover
         previews.forEach { preview ->
             val box = bounds(preview)
             preview.draw(graphics, box.x, box.y)
@@ -81,7 +98,12 @@ class ContestGui(private val parent: Screen? = null) : Screen(Component.literal(
                 }
             }
         }
-        val instructions=font.split(Component.literal("Drag to move · Scroll to resize · Right-click for settings · Esc to save"),(width-16).coerceAtLeast(1))
+        if(dragging!=null && ConfigManager.hudSnapping) {
+            val guide=0xAA000000.toInt() or (HudRow.GOLD and 0xFFFFFF)
+            if(centeredX) graphics.fill(width/2,0,width/2+1,height-52,guide)
+            if(centeredY) graphics.fill(0,height/2,width,height/2+1,guide)
+        }
+        val instructions=font.split(Component.literal("Drag to move · Arrows to nudge · Scroll to resize · Right-click for settings · Esc to save"),(width-16).coerceAtLeast(1))
         instructions.forEachIndexed { i,line -> graphics.text(font,line,(width-font.width(line))/2,height-30-instructions.size*10+i*10,-1,true) }
         super.extractRenderState(graphics, mouseX, mouseY, delta)
     }
@@ -95,6 +117,7 @@ class ContestGui(private val parent: Screen? = null) : Screen(Component.literal(
         }
         if (event.button() != InputConstants.MOUSE_BUTTON_LEFT) return false
         dragging = hovered(event.x(), event.y()) ?: return false
+        selected=dragging
         val box = bounds(dragging!!)
         offsetX = event.x() - box.x; offsetY = event.y() - box.y
         return true
@@ -102,11 +125,16 @@ class ContestGui(private val parent: Screen? = null) : Screen(Component.literal(
     override fun mouseDragged(event: MouseButtonEvent, dx: Double, dy: Double): Boolean {
         val target = dragging ?: return super.mouseDragged(event, dx, dy)
         if (event.button() != InputConstants.MOUSE_BUTTON_LEFT) return false
-        target.layout.move(event.x() - offsetX, event.y() - offsetY, width, height, target.width, target.height)
+        val box=bounds(target)
+        val x=event.x()-offsetX
+        val y=event.y()-offsetY
+        val snapped=if(ConfigManager.hudSnapping) HudSnapping.position(x,y,width,height,box.width,box.height) else null
+        centeredX=snapped?.centeredX==true;centeredY=snapped?.centeredY==true
+        target.layout.move(snapped?.x?.toDouble() ?: x,snapped?.y?.toDouble() ?: y,width,height,target.width,target.height)
         return true
     }
     override fun mouseReleased(event: MouseButtonEvent): Boolean {
-        if (event.button() == InputConstants.MOUSE_BUTTON_LEFT && dragging != null) { dragging = null; save(); return true }
+        if (event.button() == InputConstants.MOUSE_BUTTON_LEFT && dragging != null) { dragging = null; centeredX=false;centeredY=false;save(); return true }
         return super.mouseReleased(event)
     }
     override fun mouseScrolled(mouseX: Double, mouseY: Double, horizontalAmount: Double, verticalAmount: Double): Boolean {
@@ -114,6 +142,21 @@ class ContestGui(private val parent: Screen? = null) : Screen(Component.literal(
         if (verticalAmount == 0.0) return false
         target.layout.scale += if (verticalAmount > 0) .1f else -.1f
         save(); return true
+    }
+    override fun keyPressed(event: KeyEvent): Boolean {
+        val target=selected ?: return super.keyPressed(event)
+        val (dx,dy)=when(event.key()) {
+            InputConstants.KEY_LEFT -> -1 to 0
+            InputConstants.KEY_RIGHT -> 1 to 0
+            InputConstants.KEY_UP -> 0 to -1
+            InputConstants.KEY_DOWN -> 0 to 1
+            else -> return super.keyPressed(event)
+        }
+        val box=bounds(target)
+        target.layout.move((box.x+dx).toDouble(),(box.y+dy).toDouble(),width,height,target.width,target.height)
+        centeredX=false;centeredY=false
+        save()
+        return true
     }
     private fun save() {
         val box = bounds(previews.first())

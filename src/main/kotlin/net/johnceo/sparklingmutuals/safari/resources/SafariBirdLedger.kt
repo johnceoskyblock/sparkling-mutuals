@@ -16,16 +16,19 @@ class SafariBirdLedger {
     private var verifiedPopulation = 0
     private var heldFoods: Int? = null
     private val heldByType=mutableMapOf<String,Int>()
+    private var floorByType: Map<String,Int>?=null
     private val spawned=mutableMapOf<String,Int>()
     var spawnEvents=0
         private set
-    var feederFood: String?=null
-        private set
-    var feederCount=0
-        private set
-    fun feeder(name: String?, count: Int) { feederFood=name;feederCount=count.coerceAtLeast(0) }
+    private val feeder=BirdfeederState()
+    val feederFood get()=feeder.food
+    val feederCount get()=feeder.count
+    fun feeder(name: String?, count: Int,now: Long=System.currentTimeMillis()) { feeder.observe(name,count,now) }
+    fun feederOpened() { feeder.newMenu() }
     fun held(name: String)=heldByType[name] ?: 0
-    fun remaining(name: String)=(if(floorDropsRemaining == 0) 0 else maxOf(0,3-(forest[name] ?: 0)))+held(name)
+    fun remaining(name: String)=(if(floorDropsRemaining == 0) 0 else floorByType?.get(name) ?: maxOf(0,3-(forest[name] ?: 0)))+held(name)
+    /** Per-type marker predictions refine HUD counts only; total source proof is tracked separately. */
+    fun floorTypes(counts: Map<String,Int>?) { if(counts!=null) floorByType=counts.toMap() }
 
     private var reportedExtras = 0
     private val inferredFood = mutableSetOf<String>()
@@ -44,6 +47,7 @@ class SafariBirdLedger {
     fun reenter() { currentPopulation = null }
     /** Food markers remain visible Safari-wide; travel must not erase a known remaining drop. */
     fun floor(dropsRemaining: Int) {
+        if(dropsRemaining>=0 && floorByType?.values?.sum()?.let { it!=dropsRemaining }==true) floorByType=null
         floorDropsRemaining = if (dropsRemaining >= 0) dropsRemaining else floorDropsRemaining?.takeIf { it > 0 }
         retainSpawnProof()
     }
@@ -109,7 +113,7 @@ class SafariBirdLedger {
         return true
     }
     /** Each server feeder line is one food use; Macaws arrive as a pair. */
-    fun spawn(raw: String): Boolean {
+    fun spawn(raw: String,now: Long=System.currentTimeMillis()): Boolean {
         val name=when(SafariRules.strip(raw)) {
             "A Bluebird was attracted to the Birdfeeder!" -> "Bluebird"
             "A Parakeet was attracted to the Birdfeeder!" -> "Parakeet"
@@ -118,7 +122,7 @@ class SafariBirdLedger {
         }
         spawnEvents++
         spawned.merge(name,if(name == "Macaw") 2 else 1,Int::plus)
-        feederCount=(feederCount-1).coerceAtLeast(0)
+        feeder.spawn(now)
         return true
     }
     fun inventory(stacks: List<Pair<String, Int>>) {
@@ -139,7 +143,7 @@ class SafariBirdLedger {
         !knownFoodUnresolved && catches >= requiredCaptures(macawsCaught, macawsRemaining)
     /** Full Clear keeps one-Macaw credit; fd never supplies missing captures. */
     fun capturesComplete(count: (String) -> Int): Boolean {
-        if (knownFoodUnresolved) return false
+        if (knownFoodUnresolved || feederCount>0) return false
         val macaws = count("Macaw")
         val macawCredit = if (macaws > 0) maxOf(spawnedCount("Macaw") / 2, (macaws + 1) / 2) else 0
         return count("Bluebird") >= spawnedCount("Bluebird") && count("Parakeet") >= spawnedCount("Parakeet") &&

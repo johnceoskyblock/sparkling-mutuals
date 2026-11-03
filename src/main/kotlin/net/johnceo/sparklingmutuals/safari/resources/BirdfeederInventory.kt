@@ -8,20 +8,43 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen
 
 /** SafariUtils' feeder contents slot (22); player slots and cursor are never feeder contents. */
 object BirdfeederInventory {
+    private val foods=setOf("Bag of Seeds","Wriggleworm","Yogi Berry")
+    private var owner: Any?=null
+    private var cursor=BirdCursorGuard()
+    private var sampledTick: Int?=null
+    private var observedMenu: Any?=null
+    private var emptyTicks=0
+    private fun sync() {
+        val current=SafariTracking.ledger.current
+        if(owner!==current) { owner=current;cursor=BirdCursorGuard();sampledTick=null;observedMenu=null;emptyTicks=0 }
+    }
     fun tick(client: Minecraft) {
-        val screen=client.smScreen as? AbstractContainerScreen<*> ?: return
-        if (screen.title.string != "Birdfeeder") return
+        sync()
+        val player=client.player ?: return
+        if(sampledTick==player.tickCount) return
+        sampledTick=player.tickCount
+        val screen=client.smScreen as? AbstractContainerScreen<*>
+        if(screen==null || screen.title.string!="Birdfeeder") { observedMenu=null;emptyTicks=0;return }
         val menu=screen.menu
+        if(observedMenu!==menu) { observedMenu=menu;emptyTicks=0;SafariTracking.ledger.current?.birds?.feederOpened() }
         if (menu.slots.size <= 22) return
         val stack=menu.getSlot(22).item
         val food=SafariRules.strip(stack.hoverName.string).trim()
-        if (food in setOf("Bag of Seeds","Wriggleworm","Yogi Berry"))
+        if (food in foods && !stack.isEmpty) {
+            emptyTicks=0
             SafariTracking.ledger.current?.birds?.feeder(food,stack.count)
-        else if (stack.isEmpty) SafariTracking.ledger.current?.birds?.feeder(null,0)
+        } else if(++emptyTicks>=2) SafariTracking.ledger.current?.birds?.feeder(null,0)
     }
     fun carried(client: Minecraft): List<Pair<String,Int>> {
-        val screen=client.smScreen as? AbstractContainerScreen<*> ?: return emptyList()
-        val stack=screen.menu.carried
-        return if (stack.isEmpty) emptyList() else listOf(stack.hoverName.string to stack.count)
+        tick(client)
+        val player=client.player ?: return emptyList()
+        val screen=client.smScreen as? AbstractContainerScreen<*>
+        val stack=screen?.menu?.carried
+        val real=if(stack==null || stack.isEmpty) emptyList() else listOf(SafariRules.strip(stack.hoverName.string).trim() to stack.count)
+        val held=(0 until player.inventory.containerSize).map { player.inventory.getItem(it) }.filterNot { it.isEmpty }
+            .groupBy { SafariRules.strip(it.hoverName.string).trim() }.mapValues { (_,stacks) -> stacks.sumOf { it.count } }.filterKeys { it in foods }
+        val extra=cursor.extra(held,real.filter { it.first in foods }.toMap(),screen?.title?.string=="Birdfeeder",
+            SafariTracking.ledger.current?.birds?.feederFood,System.currentTimeMillis())
+        return real.filter { it.first !in foods }+extra.map { it.key to it.value }
     }
 }

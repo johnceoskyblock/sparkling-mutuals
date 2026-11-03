@@ -48,7 +48,8 @@ import org.slf4j.LoggerFactory
 
 data class EspCritterObservation(val id: Int, val species: String, val biome: SafariBiome, val x: Double, val y: Double, val z: Double, val mound: Boolean, val uuid: UUID)
 data class SafariEspObservations(val critters: List<EspCritterObservation>, val floorDrops: List<EspDrop>,
-    val scanned: Boolean = false, val hauntedCoinDropsRemaining: Int = -1, val forestBirdFoodDropsRemaining: Int = -1)
+    val scanned: Boolean = false, val hauntedCoinDropsRemaining: Int = -1, val forestBirdFoodDropsRemaining: Int = -1,
+    val forestBirdFoodByType: Map<String,Int>?=null)
 
 /** Nebulune SafariESP identification and box offsets, adapted to our Fabric renderer without Athen. */
 object SafariEsp {
@@ -384,7 +385,8 @@ object SafariEsp {
             (0..2).all { activeFloorDisplay(client.level?.getEntity(drop.id + it)) }
         }
         return SafariEspObservations(critters, rawDrops, scanned,
-            HauntedCoinDrops.remaining(rawDrops, completeGroups), ForestBirdFoodDrops.remaining(rawDrops, completeGroups))
+            HauntedCoinDrops.remaining(rawDrops, completeGroups), ForestBirdFoodDrops.remaining(rawDrops, completeGroups),
+            ForestBirdFoodDrops.remainingByType(rawDrops,completeGroups))
     }
     private fun activeFloorDisplay(entity: Entity?) = entity is Display.ItemDisplay && !entity.isRemoved &&
         !entity.isInvisible && entity.itemStack.`is`(Items.STRING)

@@ -18,6 +18,7 @@ object ConfigManager {
     var partyCommandsEnabled = true
     var announceStartingItems = false
     var autoBiomeReports = true
+    var hudSnapping = true
     var uniqueHideCritterEsp = false
     var uniqueHideFloorDropEsp = false
     var fullClearHideCritterEsp = false
@@ -53,7 +54,7 @@ object ConfigManager {
     var sparklingCatchCount = true
     var specialCatchAlert = true
     var specialCatchStyle = 0
-    var leechMode = true
+    var leechMode = false
     var leechWhitelist = "JohnCEO _cj Rqach"
     var doomspiralThrowTimer = true
     var doomspiralEmergenceTicks = 98
@@ -101,6 +102,8 @@ object ConfigManager {
     var downtimeCommand = true
     var honeyHives = true
     var skillOverflow = true
+    var skillOverflowChat = true
+    var skillOverflowNumbers = false
     var estimatedItemValue = true
     var estimatedChestValue = true
     var huntingBoxValue = true
@@ -119,13 +122,13 @@ object ConfigManager {
     var capsuleHideDistance = 2f
     var showWhere = 1
     val personalBests = SafariPersonalBests()
-    private val flags = mapOf(::doomspiralThrowTimer to true, ::autoParty to false, ::autoBiomeReports to true, ::uniqueHideCritterEsp to false, ::uniqueHideFloorDropEsp to false,
+    private val flags = mapOf(::hudSnapping to true, ::doomspiralThrowTimer to true, ::autoParty to false, ::autoBiomeReports to true, ::uniqueHideCritterEsp to false, ::uniqueHideFloorDropEsp to false,
         ::fullClearHideCritterEsp to false, ::fullClearHideFloorDropEsp to false,
         ::sparklingHideCritterEsp to false, ::sparklingHideFloorDropEsp to false, ::announceStartingItems to false, ::hotspotAnnouncer to false, ::uniqueHotspotAnnouncer to false, ::fullClearHotspotAnnouncer to false, ::sparklingHotspotAnnouncer to false, ::highlightTeammates to true, ::showTeammateNames to true, ::partyCommandsEnabled to true, ::useCloudApi to true, ::fullClearMode to false, ::sparklingMode to false, ::sparklingProfitableShardEsp to true, ::profitableShardEsp to true, ::timesaveOnly to true, ::warpAlertsEnabled to false,
         ::hideyhoAutoAccept to true, ::autoSelectSafariTicket to true, ::hideyhoInsideOutside to true, ::hideHauntedPaintings to true, ::shinyDetection to true,
         ::progressHud to true, ::progressProfit to true, ::progressHotspot to true, ::countUniqueOnly to false, ::missingPanel to true, ::biomeObjectives to true,
         ::highlightBeeNests to true, ::removeDarkness to true, ::clearWater to true, ::sparklingAlert to true, ::sparklingCatchCount to true,
-        ::sparklingPartyAnnouncer to true, ::catchCountPanel to false, ::autoClicker to true, ::candleHitbox to true, ::holdManagerOnKick to true, ::downtimeCommand to true, ::honeyHives to true, ::huntingBoxValue to true, ::skillOverflow to true, ::estimatedItemValue to true, ::estimatedChestValue to true, ::phantomleafSolver to true, ::runHistory to true, ::achievements to true, ::achievementSound to true, ::achievementsToParty to false, ::runCoinsInstaSell to false,
+        ::sparklingPartyAnnouncer to true, ::catchCountPanel to false, ::autoClicker to true, ::candleHitbox to true, ::holdManagerOnKick to true, ::downtimeCommand to true, ::honeyHives to true, ::huntingBoxValue to true, ::skillOverflow to true, ::skillOverflowChat to true, ::skillOverflowNumbers to false, ::estimatedItemValue to true, ::estimatedChestValue to true, ::phantomleafSolver to true, ::runHistory to true, ::achievements to true, ::achievementSound to true, ::achievementsToParty to false, ::runCoinsInstaSell to false,
         ::hideCaptureChat to true, ::hideGroundCapsules to true, ::hideFlyingCapsules to true,
         ::experimentalCapsulePath to true, ::showCapsuleGuideThroughTerrain to true, ::gemzieGemAutoSelect to true,
         ::highlightSnooperWalls to true, ::showBeeNests to true, ::showMoundCount to true,
@@ -156,7 +159,7 @@ object ConfigManager {
         warpDelaySeconds = properties.getProperty("warpDelaySeconds", "25").toIntOrNull()?.coerceIn(1, 86400) ?: 25
         sparkleWarpMode = properties.getProperty("sparkleWarpMode", "0").toIntOrNull()?.coerceIn(0,1) ?: 0
         warpDuo = properties.getProperty("warpDuo", "").trim().takeIf { Regex("[A-Za-z0-9_]{1,16}").matches(it) }.orEmpty()
-        leechMode = properties.getProperty("leechMode", "true").toBoolean()
+        leechMode = properties.getProperty("leechMode", "false").toBoolean()
         leechWhitelist = net.johnceo.sparklingmutuals.alerts.WarpList.parse(properties.getProperty("leechWhitelist", "JohnCEO _cj Rqach")).joinToString(" ")
         safariTicketPreference = properties.getProperty("safariTicketPreference")?.toIntOrNull()?.takeIf { it in 0..1 } ?: 0
         profitsTicketMode = properties.getProperty("profitsTicketMode")?.toIntOrNull()?.takeIf { it in 0..3 } ?: 0

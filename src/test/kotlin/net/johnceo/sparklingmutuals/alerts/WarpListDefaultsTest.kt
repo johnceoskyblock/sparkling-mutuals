@@ -11,10 +11,10 @@ import org.junit.jupiter.api.io.TempDir
 class WarpListDefaultsTest {
     @TempDir lateinit var directory: Path
 
-    @Test fun `fresh installs keep invitation lists empty and leader automation off`() {
+    @Test fun `fresh installs keep invitation lists empty and leader warping off`() {
         ConfigManager.init(directory)
         assertTrue(WarpList.critters.all { WarpList.names(it).isEmpty() })
-        assertFalse(ConfigManager.autoParty)
+        assertTrue(ConfigManager.autoParty)
         assertFalse(ConfigManager.warpAlertsEnabled)
         ConfigManager.save()
         ConfigManager.init(directory)

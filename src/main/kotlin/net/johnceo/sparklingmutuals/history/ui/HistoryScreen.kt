@@ -412,7 +412,8 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
             AchievementSort.RARITY_DOWN -> rarity.reversed()
             AchievementSort.CLOSEST -> compareBy { when {
                 Achievements.isUnlocked(it) -> 3.0
-                !it.hasProgress -> if (it.secret) 2.5 else 2.0
+                it.secret -> 2.5
+                !it.hasProgress -> 2.0
                 else -> 1 - minOf(1.0, Achievements.progress(it).toDouble() / it.goal)
             } }
             AchievementSort.RECENT -> compareBy { -Achievements.unlockedAt(it) }
@@ -440,10 +441,10 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
             g.fill(px + 6, y, px + 9, y + rowH - 2, if (has) a.tier.argb else 0xFF444444.toInt())
             // The right column (date or progress) is reserved; text on the left is cut to fit beside it.
             val right = px + pw - 18
-            val progress = if (!has && a.hasProgress) minOf(Achievements.progress(a), a.goal) else 0
+            val progress = if (!has && !hidden && a.hasProgress) minOf(Achievements.progress(a), a.goal) else 0
             val side = when {
                 has -> "§a✔ §7" + DAY.format(Instant.ofEpochMilli(Achievements.unlockedAt(a)).atZone(ZoneId.systemDefault()))
-                a.hasProgress -> "§7${compact(progress)}/${compact(a.goal)}"
+                !hidden && a.hasProgress -> "§7${compact(progress)}/${compact(a.goal)}"
                 else -> null
             }
             val sideW = if (side == null) 0 else maxOf(font.width(side), if (a.hasProgress && !has) 70 else 0)

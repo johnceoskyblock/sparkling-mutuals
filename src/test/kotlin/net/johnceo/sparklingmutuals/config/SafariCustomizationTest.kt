@@ -52,7 +52,7 @@ class SafariCustomizationTest {
         assertTrue(ConfigManager.showMoundCount)
         assertTrue(ConfigManager.showBeeNests)
         assertFalse(ConfigManager.showMoundStats)
-        AppearanceConfig.panels.forEach { (id,style) -> assertEquals(id in setOf("miria","progress","missing","captures","objectives"),style.borderEnabled) }
+        AppearanceConfig.panels.forEach { (id,style) -> assertEquals(id in setOf("miria","progress","missing","captures","objectives","sparklings"),style.borderEnabled) }
         for (id in listOf("miria", "progress", "missing", "captures", "sparklings")) {
             val style = AppearanceConfig.panels.getValue(id)
             assertEquals(20, style.transparency)

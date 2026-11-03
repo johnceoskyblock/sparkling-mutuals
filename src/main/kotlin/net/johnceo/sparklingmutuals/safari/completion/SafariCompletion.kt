@@ -27,7 +27,7 @@ object SafariCompletion {
         // Sample held food before deciding whether any Forest report may be queued or sent.
         client.player?.inventory?.let { inventory ->
             run.inventoryEvidence((0 until inventory.containerSize).map { inventory.getItem(it) }
-                .filterNot { it.isEmpty }.map { it.hoverName.string to it.count }, now)
+                .filterNot { it.isEmpty }.map { it.hoverName.string to it.count } + net.johnceo.sparklingmutuals.safari.resources.BirdfeederInventory.carried(client), now)
         }
         SafariBiome.entries.forEach { area ->
             run.completion.announcement(run, area, mode, party, ConfigManager.autoBiomeReports)?.let { queue.addLast(area to it) }
@@ -38,7 +38,7 @@ object SafariCompletion {
             area.critters.count { mode != SafariMode.SPARKLING || party.needs(it.name) } }
         run.completion.armSharedClearReminder(run, biome, mode, party, now)
         if (run.completion.locallyComplete(run, biome, mode, party)) run.resourceReminders.afterBiomeClear(now)
-        run.resourceReminders.dispatch(now, client.player?.name?.string ?: "Player", biome, party) { _, reminder ->
+        run.resourceReminders.dispatch(now, client.player?.name?.string ?: "Player", biome, party, enabled=ConfigManager.announceStartingItems) { _, reminder ->
             client.gui.smSetTimes(5, 50, 15)
             client.gui.smSetTitle(net.minecraft.network.chat.Component.literal(reminder.title)
                 .withStyle { it.withColor(SafariTheme.ACCENT).withBold(true) })

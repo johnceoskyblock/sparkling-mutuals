@@ -2,6 +2,7 @@ package net.johnceo.sparklingmutuals.hud
 
 import java.util.Properties
 import kotlin.math.ceil
+import kotlin.math.roundToInt
 
 data class HudBounds(val x: Int, val y: Int, val width: Int, val height: Int) {
     fun contains(mx: Double, my: Double) = mx >= x && mx < x + width && my >= y && my < y + height
@@ -25,8 +26,8 @@ class HudLayout(private val defaultX: Float, private val defaultY: Float, privat
         val fittedScale = effectiveScale(screenWidth, screenHeight, panelWidth, panelHeight)
         val w = ceil(panelWidth * fittedScale).toInt()
         val h = ceil(panelHeight * fittedScale).toInt()
-        return HudBounds((x * screenWidth).toInt().coerceIn(0, (screenWidth - w).coerceAtLeast(0)),
-            (y * screenHeight).toInt().coerceIn(0, (screenHeight - h).coerceAtLeast(0)), w, h)
+        return HudBounds((x * screenWidth).roundToInt().coerceIn(0, (screenWidth - w).coerceAtLeast(0)),
+            (y * screenHeight).roundToInt().coerceIn(0, (screenHeight - h).coerceAtLeast(0)), w, h)
     }
     fun move(px: Double, py: Double, screenWidth: Int, screenHeight: Int, panelWidth: Int, panelHeight: Int) {
         val bounds = bounds(screenWidth, screenHeight, panelWidth, panelHeight)

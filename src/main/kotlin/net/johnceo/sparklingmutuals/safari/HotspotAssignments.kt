@@ -6,6 +6,15 @@ import net.johnceo.sparklingmutuals.commands.PartyChat
 class HotspotAssignments(private val wins: MutableMap<String,Int> = mutableMapOf()) {
     private var firstReportAt: Long? = null
     private val reports=linkedMapOf<String,SafariBiome>()
+    private val reportTimes=mutableMapOf<String,Long>()
+    private val coordinated=mutableSetOf<String>()
+    private var allocated: Map<String,SafariBiome>?=null
+    private var credited=emptySet<String>()
+    private var preRunWins: Map<String,Int>?=null
+    private var leaderControlled=false
+    private var leaderFinal=false
+    val finalPlan get()=allocated?.toMap()
+    private val notified=mutableSetOf<String>()
     private var self: String?=null
     private var hotspot: SafariBiome?=null
     private var beganAt: Long?=null
@@ -14,44 +23,117 @@ class HotspotAssignments(private val wins: MutableMap<String,Int> = mutableMapOf
         if (beganAt != null) return
         self=name.lowercase();hotspot=actual;beganAt=now
     }
-    fun report(name: String, biome: SafariBiome, now: Long) {
+    fun snapshot(members: Set<String>): Map<String,Int> {
+        if(preRunWins==null) preRunWins=members.associate { it.lowercase() to (wins[it.lowercase()] ?: 0) }
+        return preRunWins!!.toMap()
+    }
+    private fun fresh(now: Long,limit: Long)=beganAt?.let { now-it in 0..limit }==true
+    fun acceptWins(message: HotspotProtocol.Wins,leader: String?,members: Set<String>,now: Long): Boolean {
+        if(leader==null || !message.sender.equals(leader,true) || !fresh(now,15_000) || leaderControlled || leaderFinal ||
+            message.counts.keys!=members.map(String::lowercase).toSet() || message.counts.values.any { it !in 0..1_000_000 } ||
+            reports[leader.lowercase()]?.let { it!=message.hotspot }==true) return false
+        uncredit()
+        wins.clear();wins.putAll(message.counts)
+        preRunWins=message.counts.toMap()
+        allocated=null;finalAssignment=null
+        leaderControlled=true
+        report(message.sender,message.hotspot,now,true)
+        return true
+    }
+    fun acceptAssignment(message: HotspotProtocol.Assignment,leader: String?,members: Set<String>,now: Long): Boolean {
+        val plan=message.biomes
+        if(leader==null || !message.sender.equals(leader,true) || !fresh(now,20_000) || leaderFinal ||
+            plan.keys!=members.map(String::lowercase).toSet() || self !in plan || plan.size !in 1..4 ||
+            plan.values.toSet().size!=plan.size) return false
+        finish(plan)
+        leaderFinal=true
+        return true
+    }
+    private fun uncredit() {
+        credited.forEach { wins[it]=((wins[it] ?: 0)-1).coerceAtLeast(0) }
+        credited=emptySet()
+    }
+    private fun finish(plan: Map<String,SafariBiome>) {
+        uncredit()
+        val actuals=reports.toMutableMap()
+        self?.let { name -> hotspot?.let { actuals.putIfAbsent(name,it) } }
+        credited=plan.filter { (name,biome) -> actuals[name]==biome }.keys.toSet()
+        credited.forEach { wins[it]=(wins[it] ?: 0)+1 }
+        allocated=plan.toMap();finalAssignment=plan[self]
+    }
+    fun report(name: String, biome: SafariBiome, now: Long, modReport: Boolean = false) {
+        if (finalAssignment != null) return
         if (beganAt?.let { now-it > 10_000 } == true) return
         if (firstReportAt == null) firstReportAt = now
-        reports.putIfAbsent(name.lowercase(),biome)
+        val key=name.lowercase()
+        reports.putIfAbsent(key,biome)
+        reportTimes.putIfAbsent(key,now)
+        if(modReport) coordinated.add(key)
     }
     fun assignment(members: Set<String>, now: Long, uuids: Map<String,String> = emptyMap(), expectedSize: Int = members.size): SafariBiome? {
         val name=self ?: return null
         val actual=hotspot ?: return null
         if (beganAt == null) return null
         finalAssignment?.let { return it }
+        if(leaderControlled && fresh(now,15_000)) return null
         val expected=members.map(String::lowercase).toSet()+name
         if (expectedSize <= 1) return actual.also { finalAssignment=it }
         val first=firstReportAt ?: return null
-        val allReported=expected.size >= expectedSize && reports.keys.containsAll(expected)
-        if (now-first < 2000 || !allReported && now-first < 5000) return null
+        val times=reportTimes.filterKeys { it in expected }.values.sorted()
+        val threshold=minOf(3,expectedSize)
+        val readyAt=if(times.size>=threshold) times[threshold-1]+2000 else first+5000
+        if(now<readyAt || expected.size<expectedSize) return null
         val ordered=reports.filterKeys { it in expected }.toMutableMap()
         ordered.putIfAbsent(name,actual)
-        val allocated=allocate(ordered,uuids,wins)
-        allocated.forEach { (member,biome) ->
-            if (ordered[member] == biome) wins[member]=(wins[member] ?: 0)+1
-        }
-        val result=allocated[name] ?: actual
-        finalAssignment=result
-        return result
+        val resultMap=allocate(ordered,uuids,wins).toMutableMap()
+        val free=SafariBiome.entries.filter { it !in resultMap.values }
+        expected.filter { it !in resultMap }.sortedWith(compareBy<String> { identity(it,uuids).hashCode() }
+            .thenBy { identity(it,uuids) }).zip(free).forEach { (member,biome) -> resultMap[member]=biome }
+        snapshot(expected)
+        finish(resultMap)
+        return finalAssignment
+    }
+    /** Only the leader sends instructions, once per uncoordinated member per run. */
+    fun notifications(leader: Boolean, self: String): List<Pair<String,SafariBiome>> {
+        if(!leader) return emptyList()
+        return allocated.orEmpty().filterKeys { it!=self.lowercase() && it !in coordinated && it !in notified }
+            .map { (name,biome) -> notified.add(name); name to biome }
     }
     companion object {
-        // Anchored announcements only: accept other mods without interpreting casual chat or quotes.
-        private val announcement=Regex(
-            """^(?:\[(?:SM|CritterMod|SafariUtils|CM|SU)]\s*)?(?:My\s+)?(?:Hunting\s+)?Hotspot:\s*(Forest|Cavern|Icy|Ice|Haunted)(?:\s+Biome)?[!.]?$""",
-            RegexOption.IGNORE_CASE)
+        data class Report(val sender: String,val biome: SafariBiome,val coordinated: Boolean)
+        private val prefix=Regex("""^\[(SM|SU|SafariUtils|CritterMod|CM)]\s*""",RegexOption.IGNORE_CASE)
+        private val filler=setOf("my","hunting","hotspot","is","the","biome","i","got","have","im","in","at")
+        private val aliases=mapOf(SafariBiome.FOREST to listOf("forest"),SafariBiome.CAVERN to listOf("cavern","cav","cave"),
+            SafariBiome.ICY to listOf("icy","ice"),SafariBiome.HAUNTED to listOf("haunted","haunt","hvant"))
+        private fun close(a: String,b: String): Boolean {
+            if(a==b) return true
+            if(a.length<4 || kotlin.math.abs(a.length-b.length)>1) return false
+            if(a.length==b.length) {
+                val mismatches=a.indices.filter { a[it]!=b[it] }
+                return mismatches.size==1 || mismatches.size==2 && mismatches[1]==mismatches[0]+1 &&
+                    a[mismatches[0]]==b[mismatches[1]] && a[mismatches[1]]==b[mismatches[0]]
+            }
+            val longer=if(a.length>b.length) a else b
+            val shorter=if(a.length>b.length) b else a
+            return longer.indices.any { longer.removeRange(it,it+1)==shorter }
+        }
+        fun parseReport(raw: String): Report? {
+            HotspotProtocol.parseWins(raw)?.let { return Report(it.sender,it.hotspot,true) }
+            val chat=PartyChat.parse(raw) ?: return null
+            val tag=prefix.find(chat.body)
+            val body=chat.body.removePrefix(tag?.value ?: "").lowercase()
+            val words=body.replace(Regex("[^a-z\\s]")," ").trim().split(Regex("\\s+")).filter { it !in filler }
+            if(words.size!=1) return null
+            val matches=aliases.filterValues { names -> names.any { close(words.single(),it) } }.keys
+            val biome=matches.singleOrNull() ?: return null
+            return Report(chat.sender,biome,tag?.groupValues?.get(1)?.lowercase() in setOf("sm","su","safariutils"))
+        }
 
         fun parse(raw: String): Pair<String,SafariBiome>? {
-            val chat=PartyChat.parse(raw) ?: return null
-            val label=announcement.matchEntire(chat.body.trim())?.groupValues?.get(1) ?: return null
-            val biome=if (label.equals("Ice",true)) SafariBiome.ICY else
-                SafariBiome.entries.first { it.label.equals(label,true) }
-            return chat.sender to biome
+            val report=parseReport(raw) ?: return null
+            return report.sender to report.biome
         }
+        private fun identity(name: String,uuids: Map<String,String>)=uuids[name.lowercase()]?.replace("-","")?.lowercase() ?: name.lowercase()
         fun allocate(reports: Map<String,SafariBiome>, uuids: Map<String,String> = emptyMap(), wins: Map<String,Int> = emptyMap()): Map<String,SafariBiome> {
             val assigned=linkedMapOf<String,SafariBiome>()
             val used=mutableSetOf<SafariBiome>()

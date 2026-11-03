@@ -57,7 +57,7 @@ object OwnStats {
                     profile.runs?.let { runs = it }
                     profile.catches?.let { caught = it }
                     val earned = Achievements.afterApiStats()
-                    if (earned > 0) client.player?.sendSystemMessage(LocalChat.component(
+                    if (earned > 0) Achievements.queueLocal(LocalChat.component(
                         "[SM] Your Hypixel profile earns §e$earned§r achievement${if (earned == 1) "" else "s"}. See /sm achievements."))
                 }
             }

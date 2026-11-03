@@ -52,6 +52,10 @@ class SafariSettings {
     class SkyBlockHelpers {
         @JvmField @ConfigOption(name = "Skills overflow", desc = "Virtual levels in Skills menu tooltips.")
         @ConfigEditorBoolean var skillOverflow = ConfigManager.skillOverflow
+        @JvmField @ConfigOption(name = "Overflow level-up messages", desc = "")
+        @ConfigEditorBoolean var skillOverflowChat = ConfigManager.skillOverflowChat
+        @JvmField @ConfigOption(name = "Use numbers for skill levels", desc = "Show 61 instead of LXI.")
+        @ConfigEditorBoolean var skillOverflowNumbers = ConfigManager.skillOverflowNumbers
         @JvmField var estimatedItemValue = ConfigManager.estimatedItemValue
         @JvmField var estimatedChestValue = ConfigManager.estimatedChestValue
         @JvmField var huntingBoxValue = ConfigManager.huntingBoxValue
@@ -337,7 +341,7 @@ class SafariSettings {
         @ConfigEditorBoolean var darkness = ConfigManager.removeDarkness
     }
     class Alerts {
-        @JvmField @ConfigOption(name = "Sparkling catch count", desc = "Catch number in local chat.")
+        @JvmField @ConfigOption(name = "Sparkling catch count", desc = "Catch number in party chat.")
         @ConfigEditorBoolean var catchCount = ConfigManager.sparklingCatchCount
         @JvmField @ConfigOption(name = "Unique Sparkling catch alert", desc = "New discoveries only.")
         @ConfigEditorBoolean var caught = ConfigManager.specialCatchAlert
@@ -492,7 +496,7 @@ class SafariSettings {
         val changes = listOf(ConfigManager::sparklingCatchCount to safari.alerts.catchCount, ConfigManager::specialCatchAlert to safari.alerts.caught,ConfigManager::doomspiralThrowTimer to safari.capture.doomTimer, ConfigManager::autoParty to warp.autoParty, ConfigManager::autoBiomeReports to party.biomeReports,
             ConfigManager::uniqueHideCritterEsp to modes.unique.hideCritters, ConfigManager::uniqueHideFloorDropEsp to modes.unique.hideDrops,
             ConfigManager::fullClearHideCritterEsp to modes.fullClear.hideCritters, ConfigManager::fullClearHideFloorDropEsp to modes.fullClear.hideDrops,
-            ConfigManager::sparklingHideCritterEsp to modes.sparkling.hideCritters, ConfigManager::sparklingHideFloorDropEsp to modes.sparkling.hideDrops, ConfigManager::announceStartingItems to party.startingItems, ConfigManager::huntingBoxValue to skyblock.helpers.huntingBoxValue, ConfigManager::skillOverflow to skyblock.helpers.skillOverflow, ConfigManager::estimatedItemValue to skyblock.helpers.estimatedItemValue, ConfigManager::estimatedChestValue to skyblock.helpers.estimatedChestValue, ConfigManager::phantomleafSolver to miscEndgame.phantomleafSolver, ConfigManager::highlightTeammates to safari.highlightTeammates, ConfigManager::showTeammateNames to safari.showTeammateNames, ConfigManager::profitableShardEsp to modes.unique.profitable, ConfigManager::sparklingProfitableShardEsp to modes.sparkling.profitable, ConfigManager::partyCommandsEnabled to party.enabled, ConfigManager::downtimeCommand to party.downtime, ConfigManager::useCloudApi to api.cloud, ConfigManager::hideHauntedPaintings to safari.paintings,
+            ConfigManager::sparklingHideCritterEsp to modes.sparkling.hideCritters, ConfigManager::sparklingHideFloorDropEsp to modes.sparkling.hideDrops, ConfigManager::announceStartingItems to party.startingItems, ConfigManager::huntingBoxValue to skyblock.helpers.huntingBoxValue, ConfigManager::skillOverflow to skyblock.helpers.skillOverflow, ConfigManager::skillOverflowChat to skyblock.helpers.skillOverflowChat, ConfigManager::skillOverflowNumbers to skyblock.helpers.skillOverflowNumbers, ConfigManager::estimatedItemValue to skyblock.helpers.estimatedItemValue, ConfigManager::estimatedChestValue to skyblock.helpers.estimatedChestValue, ConfigManager::phantomleafSolver to miscEndgame.phantomleafSolver, ConfigManager::highlightTeammates to safari.highlightTeammates, ConfigManager::showTeammateNames to safari.showTeammateNames, ConfigManager::profitableShardEsp to modes.unique.profitable, ConfigManager::sparklingProfitableShardEsp to modes.sparkling.profitable, ConfigManager::partyCommandsEnabled to party.enabled, ConfigManager::downtimeCommand to party.downtime, ConfigManager::useCloudApi to api.cloud, ConfigManager::hideHauntedPaintings to safari.paintings,
             ConfigManager::shinyDetection to safari.shiny, ConfigManager::hideyhoAutoAccept to safari.hideyhoAutoAccept, ConfigManager::autoSelectSafariTicket to safari.autoSelectTicket, ConfigManager::hideyhoInsideOutside to safari.hideyhoInsideOutside,
             ConfigManager::progressHud to tracking.progress, ConfigManager::progressProfit to tracking.progressHud.profit, ConfigManager::progressHotspot to tracking.progressHud.hotspot, ConfigManager::catchCountPanel to tracking.captures,
             ConfigManager::experimentalCapsulePath to safari.experimentalCapsulePath,

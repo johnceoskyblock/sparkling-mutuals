@@ -49,15 +49,15 @@ class SafariFeatureIntegrationTest {
         }
         inspect(SafariSettings())
         assertTrue(switches.size >= 40, "Inspect nested GUI options, including panel borders")
-        val exceptions = setOf("tracking.capturesHud.enabled", "history.instaSell", "history.toParty", "warp.enabled", "warp.autoParty", "esp.floorDrops.visibility.generic", "esp.floorDrops.visibility.icebreaker", "miria.warning.five", "party.startingItems",
+        val exceptions = setOf("warp.leech", "safari.teammates.highlightTeammates", "safari.teammates.showTeammateNames", "skyblock.helpers.skillOverflowNumbers", "tracking.capturesHud.enabled", "history.instaSell", "history.toParty", "warp.enabled", "esp.floorDrops.visibility.generic", "miria.warning.five", "party.startingItems",
             "modes.unique.hideCritters", "modes.unique.hideDrops", "modes.fullClear.hideCritters",
             "modes.fullClear.hideDrops", "modes.sparkling.hideCritters", "modes.sparkling.hideDrops")
         val modes = setOf("modes.unique.enabled", "modes.fullClear.enabled", "modes.sparkling.enabled")
         assertAll(switches.filterKeys { it !in modes && !it.startsWith("banner.") }.map { (name,value) ->
-            org.junit.jupiter.api.function.Executable { assertEquals(name !in exceptions && (!name.endsWith(".borderEnabled") || name.startsWith("tracking.") || name.startsWith("miria.")),value,name) }
+            org.junit.jupiter.api.function.Executable { assertEquals(name !in exceptions && (!name.endsWith(".borderEnabled") || name.startsWith("tracking.") || name.startsWith("miria.") || name=="safari.alerts.nearbyAppearance.borderEnabled"),value,name) }
         })
         assertTrue(modes.none { it in switches }, "Modes are selected through commands")
-        assertEquals(1, SafariSettings().safari.entry.ticketPreference)
+        assertEquals(0, SafariSettings().safari.entry.ticketPreference)
         assertTrue(ConfigManager.achievements)
         assertTrue(SafariEspConfig.mobs.values.all { it.enabled })
     }

@@ -34,7 +34,8 @@ object SafariBiomeClearTracking {
         run.scanBirdSources(
             snapshot.forestBirdFoodDropsRemaining,
             snapshot.critters.filter { it.biome == SafariBiome.FOREST && !it.mound }.distinctBy { it.uuid }.map { it.species },
-            qualified = currentBiome == SafariBiome.FOREST && ForestCompletionZones.inBirdScanRadius(player.x, player.z))
+            qualified = currentBiome == SafariBiome.FOREST && ForestCompletionZones.inBirdScanRadius(player.x, player.z),
+            foodByType=snapshot.forestBirdFoodByType)
         val biome = currentBiome ?: return
         run.observePopulation(snapshot.critters.filterNot { it.mound }.map { it.species to it.uuid })
         snapshot.critters.filterNot { it.mound }.forEach { run.observeCritter(it.id, it.species, it.uuid) }
