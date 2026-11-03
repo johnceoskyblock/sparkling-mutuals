@@ -29,7 +29,7 @@
 - Ownerless co-op/foreign/filled rows and menu/item replacement cannot retain blue slot marks.
 - Grouped/background suggestions must retain product cooldowns and last-observed wording, without claiming an offer is still active.
 
-### Task1: Slot-aware owner evidence and change-only watch policy
+### Task 1: Slot-aware owner evidence and change-only watch policy
 
 **Files:** modify market/SellOfferParsing.kt and market/SellOfferWatch.kt; create market/MarketSlotName.kt and market/BazaarUnlistPresentation.kt. Add/update their tests under the corresponding src/test/kotlin market package. Source paths are under src/main/kotlin/net/johnceo/sparklingmutuals/skyblock/.
 
@@ -46,7 +46,7 @@
 - [ ] Implement parsing and style capture; remove initial-notice behavior while preserving legacy cache readability and validation bounds. Suggested message: Consider unlisting: Bluebird, Hideonwall. Guidance changed to HOLD; check your last observed offers are still active.
 - [ ] Run full26.1.2 tests; expected GREEN. Commit locally.
 
-### Task2: Shared ownership, eligibility and confirmed order decisions
+### Task 2: Shared ownership, eligibility and confirmed order decisions
 
 **Files:** modify market/WholeBoxTotal.kt, market/SaleGuidanceSession.kt and market/ShardSaleGuidance.kt; update/add WholeBoxTotal, ProfitShardGuidance and order-session integration tests.
 
@@ -62,7 +62,7 @@
 - [ ] Populate orderMarkers from Task1 visible evidence and confirmed HOLD only. Group simultaneous alerts into one notification; preserve per-product watch accounting and cooldowns.
 - [ ] Run full26.1.2 tests; expected GREEN. Commit locally.
 
-### Task3: Passive blue markers, documentation and verified delivery
+### Task 3: Passive blue markers, documentation and verified delivery
 
 **Files:** add OrderMarkerSnapshot to market/BazaarUnlistPresentation.kt; modify market/ShardSaleGuidance.kt and relevant presentation tests. Update docs/SHARD_SALE_GUIDANCE.md with the owner fallback, union eligibility, blue markers and change-only alerts.
 
