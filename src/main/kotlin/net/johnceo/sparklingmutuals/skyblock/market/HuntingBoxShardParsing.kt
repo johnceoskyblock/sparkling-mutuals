@@ -26,14 +26,15 @@ internal object HuntingBoxShardParsing {
     private val titles=Regex("^(?:Hunting Box|\\([1-9][0-9]*/[1-9][0-9]*\\) Hunting Box|Hunting Box \\(Page [1-9][0-9]*(?:/| of )[1-9][0-9]*\\))$")
     private val owned=Regex("^Owned: ([0-9][0-9,]*) Shards?$")
     fun isBox(title: String)=titles.matches(SafariRules.strip(title))
-    fun parse(title: String,slots: List<MenuSlot>): List<BoxShard> {
+    fun parse(title: String,slots: List<MenuSlot>): List<BoxShard> = observe(title,slots).filter {it.amount>0}
+    fun observe(title: String,slots: List<MenuSlot>): List<BoxShard> {
         if(!isBox(title))return emptyList()
         return slots.groupBy {it.index}.values.filter {it.size==1}.mapNotNull {group ->
             val slot=group.single()
             if(slot.index !in 9..44 || slot.index%9 in setOf(0,8))return@mapNotNull null
             val product=SaleProducts.identity(slot.itemId,slot.name,slot.lore) ?: return@mapNotNull null
             val amounts=slot.lore.mapNotNull {owned.matchEntire(SafariRules.strip(it).trim())?.groupValues?.get(1)?.replace(",","")?.toLongOrNull()}
-            val amount=amounts.singleOrNull()?.takeIf {it>0} ?: return@mapNotNull null
+            val amount=amounts.singleOrNull()?.takeIf {it>=0} ?: return@mapNotNull null
             BoxShard(slot.index,product,amount)
         }
     }
