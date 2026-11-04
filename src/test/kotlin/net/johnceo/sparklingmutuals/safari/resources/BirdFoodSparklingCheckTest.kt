@@ -73,7 +73,7 @@ class BirdFoodSparklingCheckTest {
         stale.inventory(listOf("Wriggleworm" to 1),5000);stale.inventory(emptyList(),5100)
         assertFalse(stale.complete)
     }
-    @Test fun `party food reports do not raise local Sparkling demand`() {
+    @Test fun `party food reports do not raise local Sparkling demand`() = net.johnceo.sparklingmutuals.config.withStartingItems {
         val run=SafariRun(0)
         run.visitBiome(SafariBiome.FOREST)
         run.inventoryEvidence(listOf("Bag of Seeds" to 1),0)

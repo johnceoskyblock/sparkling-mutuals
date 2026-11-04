@@ -24,7 +24,7 @@ The nine recognized quest types are Icebreaker, Yogi Berry, Wriggleworm, Bag of 
 
 ### Prediction algorithm
 
-Every five ticks in Safari, SafariEsp supplies currently loaded display descriptions to FloorDropPredictor. It forms nonoverlapping numeric-ID triples k, k+1, k+2 with pairwise distance at most 1.5 blocks and identical item-ID/stripped-name descriptions. Centroids round to two decimals. Numeric IDs, not UUIDs or distance order, determine prediction.
+Every five ticks in Safari, SafariEsp supplies currently loaded, visible STRING display descriptions to FloorDropPredictor. Empty displays awaiting metadata and decorative items cannot establish retained anchors. It forms nonoverlapping numeric-ID triples k, k+1, k+2 with pairwise distance at most 1.5 blocks and identical item-ID/stripped-name descriptions. Only accepted triples consume IDs in that pass. Centroids round to two decimals. Numeric IDs, not UUIDs or distance order, determine prediction.
 
 Retain recorded groups through unload/pickup. Walk recorded groups in numeric order through Cavern → Forest → Haunted → Icy; the first recorded eligible group in each phase supplies anchor a. Index i is integer division of (k − a) by 3, so ID gaps matter.
 
@@ -135,6 +135,8 @@ In the ESP config tab, **Floor-drop text sizes** provides a separate 0.5–4.0 s
 Existing configs without the new keys initialize every drop-type and party-member size from the saved `esp.textScale` value, preserving their prior appearance. Each independent value then saves in `esp.floor.<type>.textScale` or `esp.teammate.textScale`. Changing the other-label scale does not change them. Text-size settings do not affect colors, source tracking or mode requirements.
 
 ## Last updated
+
+2026-11-03 — Floor prediction accepts only visible STRING markers, preventing uninitialized/decorative displays from seeding false anchors. Rejected triples no longer consume valid marker IDs. `/sm debug` includes gem inventory cutoffs, mode/completion gates, podium state, per-marker restrictions and nearby Cavern display data for cross-version diagnosis. Hotspot assignment does not control gem eligibility.
 
 2026-11-01 — Local-only bird/coin requirements, placed-gem filtering and All Coins alert.
 

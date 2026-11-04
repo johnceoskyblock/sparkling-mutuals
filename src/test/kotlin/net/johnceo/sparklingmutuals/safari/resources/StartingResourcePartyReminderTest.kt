@@ -88,7 +88,7 @@ class StartingResourcePartyReminderTest {
         run.resources.inventory(listOf("Shining Coin" to 1), true)
         val party = state()
         run.partyFullClear("Party > OtherModUser: id")
-        assertNull(run.completion.announcement(run, SafariBiome.ICY, SafariMode.UNIQUE, party))
+        assertEquals("id", run.completion.announcement(run, SafariBiome.ICY, SafariMode.UNIQUE, party))
         run.completion.armSharedClearReminder(run, SafariBiome.ICY, SafariMode.UNIQUE, party, 10000)
         val sent = mutableListOf<String>()
         assertTrue(run.partyResourceReminders.dispatch(11500, party, sent::add))
@@ -97,15 +97,20 @@ class StartingResourcePartyReminderTest {
         assertFalse(run.partyResourceReminders.dispatch(22000, party, sent::add))
     }
 
-    @Test fun `destination report waits for still held needed starting items`() {
-        val run = SafariRun(0)
-        val party = state()
-        assertTrue(run.canReportBiome(SafariBiome.HAUNTED, party))
-        run.resources.inventory(listOf("Shining Coin" to 1), true)
-        assertTrue(run.hasUnusedStartingForBiome(SafariBiome.HAUNTED, party))
-        assertFalse(run.canReportBiome(SafariBiome.HAUNTED, party))
-        run.resources.inventory(emptyList(), false)
-        assertTrue(run.canReportBiome(SafariBiome.HAUNTED, party))
+    @Test fun `starting coin opt out excludes grants while retaining later floor pickups`() {
+        val resources = SafariResources()
+        val coin = FloorDropType.COIN
+        resources.inventory(listOf(coin.label to 1), true)
+        assertTrue(resources.hasHeldStarting(SafariBiome.HAUNTED))
+        assertEquals(1, resources.coordinatedHeld(coin, includeStarting = true))
+        assertEquals(0, resources.coordinatedHeld(coin, includeStarting = false))
+        assertEquals(0, resources.coordinatedDiscovered(coin, includeStarting = false))
+        resources.inventory(emptyList(), false)
+        resources.pickup("FLOOR DROP! You found Shining Coin on the ground!")
+        resources.inventory(listOf(coin.label to 1), false)
+        assertFalse(resources.hasHeldStarting(SafariBiome.HAUNTED))
+        assertEquals(1, resources.coordinatedHeld(coin, includeStarting = false))
+        assertEquals(1, resources.coordinatedDiscovered(coin, includeStarting = false))
     }
 
 }

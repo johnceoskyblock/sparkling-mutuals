@@ -59,6 +59,16 @@ class SafariSettingsTest {
         ContestConfig.init(dir)
         assertFalse(ContestConfig.firstClassTicket)
         assertTrue(ContestConfig.warningMinutes().isEmpty())
+        val autoParty = ConfigManager.autoParty
+        settings.warp.leech = true
+        settings.apply()
+        assertTrue(ConfigManager.leechMode)
+        assertFalse(ConfigManager.warpAlertsEnabled)
+        settings.warp.enabled = true
+        settings.apply()
+        assertTrue(ConfigManager.warpAlertsEnabled)
+        assertFalse(ConfigManager.leechMode)
+        assertEquals(autoParty, ConfigManager.autoParty)
         settings.warp.enabled = false
         settings.apply()
         assertFalse(net.johnceo.sparklingmutuals.alerts.SparkleWarping.preparingParty,

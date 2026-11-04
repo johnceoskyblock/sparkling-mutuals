@@ -19,7 +19,7 @@ object SparkleAutoParty {
     private var level: Any? = null
     private var connection: Any? = null
     private var windowStartedAt = 0L
-    private var returningQueued = false
+    private val returningInvites = ReturningPartyInvites()
     fun register() {
         ClientSendMessageEvents.COMMAND.register { command ->
             if (command.trim().matches(Regex("(?:p|party)\\s+warp", RegexOption.IGNORE_CASE))) stop()
@@ -37,6 +37,10 @@ object SparkleAutoParty {
             if (!overlay && net.johnceo.sparklingmutuals.safari.automation.SafariDowntime.partyWarpMessage(message.string))
                 Minecraft.getInstance().execute { stop() }
             if (!overlay) SafariMessages.lines(message.string).forEach { line ->
+                if (line == "You cannot invite that player since they're not online.") Minecraft.getInstance().execute {
+                    val now = System.currentTimeMillis()
+                    if (!SparkleWarpPolicy.returningPhase(windowStartedAt, now)) invitations.rejectedOffline(now)
+                }
                 Regex("^(?:\\[[^]\\r\\n]+]\\s*)*([A-Za-z0-9_]{1,16}) joined the party[.!]$")
                     .matchEntire(line)?.groupValues?.get(1)?.let { name ->
                         Minecraft.getInstance().execute { joined.add(name.lowercase()) }
@@ -55,19 +59,19 @@ object SparkleAutoParty {
         connection = client.connection
         invitations.start(deadline)
         windowStartedAt = startedAt
-        returningQueued = false
     }
     fun detected(name: String) {
         if (ConfigManager.autoParty && ConfigManager.warpAlertsEnabled && SafariAssist.inSafari &&
             run === SafariTracking.ledger.current && !SparkleWarpPolicy.returningPhase(windowStartedAt,System.currentTimeMillis()))
-            invitations.add(name, WarpList.names(name))
+            invitations.add(name, WarpPlayerStatus.ordered(name))
     }
     fun tick(client: Minecraft) {
+        val now = System.currentTimeMillis()
+        WarpPlayerStatus.tick(client, now)
         if (invitations.deadline == 0L) return
         if (!ConfigManager.warpAlertsEnabled || !SafariAssist.inSafari || client.level !== level ||
             client.connection !== connection || SafariTracking.ledger.current !== run ||
             SafariTracking.ledger.current?.endedAt != null) { stop(); return }
-        val now = System.currentTimeMillis()
         if (now >= invitations.deadline) { stop(); return }
         if (SparkleWarping.preparingParty) return
         if (!PartyManager.hasInfo) { PartyManager.requestPartyInfo(); return }
@@ -85,16 +89,16 @@ object SparkleAutoParty {
         if (ConfigManager.sparkleWarpMode == 1 && ConfigManager.warpDuo.lowercase() !in present) return
         if (SparkleWarpPolicy.returningPhase(windowStartedAt,now)) {
             invitations.discardPending()
-            if (!returningQueued) SparkleWarpPolicy.returningCommand(SparkleWarping.returningPlayers(),present,members.size)?.let {
-                client.connection?.sendCommand(it)
-                returningQueued=true
+            val handler = client.connection ?: return
+            returningInvites.next(now, invitations.deadline, SparkleWarping.returningPlayers(), present, members.size)?.let {
+                handler.sendCommand(it)
             }
             return
         }
         if (maxOf(members.size,present.size) >= SparkleWarpPolicy.PARTY_SIZE) return
-        invitations.next(now, present)?.let {
+        invitations.next(now, present) { WarpPlayerStatus.eligible(it, now) }?.let {
             client.connection?.sendCommand("p $it")
         }
     }
-    fun stop() { invitations.stop(); joined.clear(); run = null; level = null; connection = null;windowStartedAt=0;returningQueued=false }
+    fun stop() { invitations.stop(); joined.clear(); run = null; level = null; connection = null;windowStartedAt=0;returningInvites.reset() }
 }

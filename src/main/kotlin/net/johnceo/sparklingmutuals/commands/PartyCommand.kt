@@ -20,7 +20,7 @@ data class PartyChat(val sender: String, val body: String) {
 enum class PartyCommandKind { MUTUALS, MISSING, TICKETS, HELP, PB_DOOM, PB_WUMPA, PB_FOREST, PB_HAUNTED, PB_ICY, PB_CAVERN, MISSING_RUN, SINCE_SPARKLING, SINCE_UNIQUE }
 
 data class PartyCommand(val kind: PartyCommandKind, val ign: String = "", val duo: Boolean = false, val trackedPlayer: Boolean = false,
-    val biome: SafariBiome? = null) {
+    val biome: SafariBiome? = null, val sinceCritter: String? = null) {
     val isSince get() = kind == PartyCommandKind.SINCE_SPARKLING || kind == PartyCommandKind.SINCE_UNIQUE
     val requiresApiKey get() = kind in listOf(PartyCommandKind.MUTUALS, PartyCommandKind.MISSING, PartyCommandKind.TICKETS)
     val pbName get() = when (kind) {
@@ -90,7 +90,7 @@ data class PartyCommand(val kind: PartyCommandKind, val ign: String = "", val du
         PartyCommandKind.MUTUALS -> "!mutuals"
         PartyCommandKind.MISSING -> "!missing $ign"
         PartyCommandKind.TICKETS -> "!tickets $ign"
-        PartyCommandKind.SINCE_SPARKLING -> "!since"
+        PartyCommandKind.SINCE_SPARKLING -> sinceCritter?.let { "!since $it" } ?: "!since"
         PartyCommandKind.SINCE_UNIQUE -> "!since unique"
         PartyCommandKind.HELP -> "!commands"
         PartyCommandKind.MISSING_RUN -> if (biome == null) "!m" else "!m ${biome.label.lowercase()}"
@@ -104,7 +104,7 @@ data class PartyCommand(val kind: PartyCommandKind, val ign: String = "", val du
         private val lookupResult = Regex("^(?:None|None\\. :skull:|All\\. :skull:|(?:$names)(?:, (?:$names))*)$", RegexOption.IGNORE_CASE)
         private val bossLookup = Regex("""^!pb\s+(doom|wumpa|forest|haunted|icy|cavern)\s+([A-Za-z0-9_]{1,16})(?:\s+(duo|party))?$""", RegexOption.IGNORE_CASE)
         private val lookup = Regex("""^!(missing|tickets?)(?:\s+([A-Za-z0-9_]{1,16}))?$""", RegexOption.IGNORE_CASE)
-        private val since = Regex("""^!since(?:\s+(unique))?$""", RegexOption.IGNORE_CASE)
+        private val since = Regex("""^!since(?:\s+(.+))?$""", RegexOption.IGNORE_CASE)
         private val missingRun = Regex("""^!m(?:\s+(\S+))?$""", RegexOption.IGNORE_CASE)
         fun fromChat(text: String): PartyRequest? {
             val chat = PartyChat.parse(text) ?: return null
@@ -120,8 +120,16 @@ data class PartyCommand(val kind: PartyCommandKind, val ign: String = "", val du
                 "!pb icy" -> PartyCommand(PartyCommandKind.PB_ICY)
                 "!pb cavern" -> PartyCommand(PartyCommandKind.PB_CAVERN)
                 else -> since.matchEntire(chat.body)?.let { match ->
-                    PartyCommand(if (match.groupValues[1].equals("unique", true)) PartyCommandKind.SINCE_UNIQUE
-                        else PartyCommandKind.SINCE_SPARKLING)
+                    val argument = match.groupValues[1]
+                    when {
+                        argument.isEmpty() -> PartyCommand(PartyCommandKind.SINCE_SPARKLING)
+                        argument.equals("unique", true) -> PartyCommand(PartyCommandKind.SINCE_UNIQUE)
+                        else -> {
+                            val normalized = argument.replace(Regex("""\s+"""), " ")
+                            val critter = SafariRoster.all.firstOrNull { it.name.equals(normalized, true) } ?: return null
+                            PartyCommand(PartyCommandKind.SINCE_SPARKLING, sinceCritter = critter.name)
+                        }
+                    }
                 } ?: missingRun.matchEntire(chat.body)?.let { match ->
                     val word = match.groupValues[1]
                     if (word.isEmpty()) PartyCommand(PartyCommandKind.MISSING_RUN)

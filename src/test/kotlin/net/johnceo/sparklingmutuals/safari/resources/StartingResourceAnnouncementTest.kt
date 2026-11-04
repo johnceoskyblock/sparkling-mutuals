@@ -4,6 +4,7 @@ import net.johnceo.sparklingmutuals.safari.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import java.util.UUID
+import net.johnceo.sparklingmutuals.config.ConfigManager
 
 class StartingResourceAnnouncementTest {
     @Test fun `leader waits for a complete snapshot without consuming the announcement or delaying a ready snapshot`() {
@@ -166,20 +167,24 @@ class StartingResourceAnnouncementTest {
     }
 
     @Test fun `waiting on boat before admission does not lose the second ticket reward`() {
-        val run = SafariRun(0)
-        run.inventoryEvidence(emptyList(), 0)
-        run.startingGrantWindow(60000)
-        run.resources.headStart("HEAD START! You started with a Wriggleworm!")
-        run.birds.startingGrant("Wriggleworm")
-        run.inventoryEvidence(listOf("Wriggleworm" to 1, "Yogi Berry" to 1), 60100)
-        run.startingAnnouncement.observeHotspot("HOTSPOT! Your Hunting Hotspot is the Forest Biome!", 60200)
-        val sent = mutableListOf<String>()
-        assertTrue(run.startingAnnouncement.dispatch(60700, party("Macaw"), sent::add))
-        assertEquals("[SM] Starting items: 1x Wriggleworm; 1x Yogi Berry", sent.single())
-        assertEquals(1, run.resources.startingCount(FloorDropType.BERRY))
-        assertEquals(11, run.birds.feedingTarget)
-        run.startingGrantWindow(65000)
-        assertFalse(run.inStartingInventoryWindow(65001), "a repeated grant line cannot keep extending the window")
+        val previous = ConfigManager.announceStartingItems
+        ConfigManager.announceStartingItems = true
+        try {
+            val run = SafariRun(0)
+            run.inventoryEvidence(emptyList(), 0)
+            run.startingGrantWindow(60000)
+            run.resources.headStart("HEAD START! You started with a Wriggleworm!")
+            run.birds.startingGrant("Wriggleworm")
+            run.inventoryEvidence(listOf("Wriggleworm" to 1, "Yogi Berry" to 1), 60100)
+            run.startingAnnouncement.observeHotspot("HOTSPOT! Your Hunting Hotspot is the Forest Biome!", 60200)
+            val sent = mutableListOf<String>()
+            assertTrue(run.startingAnnouncement.dispatch(60700, party("Macaw"), sent::add))
+            assertEquals("[SM] Starting items: 1x Wriggleworm; 1x Yogi Berry", sent.single())
+            assertEquals(1, run.resources.startingCount(FloorDropType.BERRY))
+            assertEquals(11, run.birds.feedingTarget)
+            run.startingGrantWindow(65000)
+            assertFalse(run.inStartingInventoryWindow(65001), "a repeated grant line cannot keep extending the window")
+        } finally { ConfigManager.announceStartingItems = previous }
     }
     @Test fun `delayed boat reward amends the report without treating later Forest pickups as starting items`() {
         val run = SafariRun(0)
@@ -215,23 +220,27 @@ class StartingResourceAnnouncementTest {
     }
 
     @Test fun `early mixed reports update both source totals without delayed-notice obligations or echo doubling`() {
-        val run = SafariRun(0)
-        run.localPlayer("Me")
-        run.inventoryEvidence(listOf("Bag of Seeds" to 2, "Shining Coin" to 1), 0)
-        val message = "[SM] Starting items: 2x Bag of Seeds; 1x Shining Coin"
-        repeat(3) { SafariMessages.forRun("Party > Me: $message", run, true) }
-        repeat(3) { SafariMessages.forRun("Party > Friend: $message", run, true) }
-        run.birdSpawnsComplete()
-        run.scanGimmiegolds(emptyList(), false)
-        assertEquals(11, run.birds.feedingTarget, "nine floor plus two local; remote supplies are informational")
-        assertEquals(1, run.gimmiegoldCheck.required, "local echo and remote supplies add no coin")
-        assertFalse(run.resources.pending(SafariBiome.FOREST))
-        assertFalse(run.resources.pending(SafariBiome.HAUNTED))
-        // Older reminder format from a sender already counted early must not add another obligation.
-        SafariMessages.forRun("Party > Friend: [SM] Use: 2x Bag of Seeds + 1x Shining Coin", run, true)
-        assertFalse(run.resources.pending(SafariBiome.FOREST))
-        assertFalse(run.resources.pending(SafariBiome.HAUNTED))
-        assertEquals(2, run.resources.foodContributions()["friend" to FloorDropType.SEEDS])
+        val previous = ConfigManager.announceStartingItems
+        ConfigManager.announceStartingItems = true
+        try {
+            val run = SafariRun(0)
+            run.localPlayer("Me")
+            run.inventoryEvidence(listOf("Bag of Seeds" to 2, "Shining Coin" to 1), 0)
+            val message = "[SM] Starting items: 2x Bag of Seeds; 1x Shining Coin"
+            repeat(3) { SafariMessages.forRun("Party > Me: $message", run, true) }
+            repeat(3) { SafariMessages.forRun("Party > Friend: $message", run, true) }
+            run.birdSpawnsComplete()
+            run.scanGimmiegolds(emptyList(), false)
+            assertEquals(11, run.birds.feedingTarget, "nine floor plus two local; remote supplies are informational")
+            assertEquals(1, run.gimmiegoldCheck.required, "local echo and remote supplies add no coin")
+            assertFalse(run.resources.pending(SafariBiome.FOREST))
+            assertFalse(run.resources.pending(SafariBiome.HAUNTED))
+            // Older reminder format from a sender already counted early must not add another obligation.
+            SafariMessages.forRun("Party > Friend: [SM] Use: 2x Bag of Seeds + 1x Shining Coin", run, true)
+            assertFalse(run.resources.pending(SafariBiome.FOREST))
+            assertFalse(run.resources.pending(SafariBiome.HAUNTED))
+            assertEquals(2, run.resources.foodContributions()["friend" to FloorDropType.SEEDS])
+        } finally { ConfigManager.announceStartingItems = previous }
     }
 
     @Test fun `malformed or nonparty early reports cannot partially update either ledger`() {
@@ -288,7 +297,7 @@ class StartingResourceAnnouncementTest {
         run.completion.sent(SafariBiome.HAUNTED)
         assertNull(run.completion.announcement(run, SafariBiome.HAUNTED, SafariMode.SPARKLING, state))
         run.partyFullClear("Party > Friend: hd")
-        assertFalse(run.canReportBiome(SafariBiome.HAUNTED), "a queued hd must be cancelled too")
+        assertTrue(run.canReportBiome(SafariBiome.HAUNTED), "manual chat does not prevent backend reporting")
         assertNull(run.completion.announcement(run, SafariBiome.HAUNTED, SafariMode.SPARKLING, state))
     }
 }

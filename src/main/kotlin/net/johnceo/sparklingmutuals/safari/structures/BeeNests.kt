@@ -36,9 +36,11 @@ object BeeNests {
         else it.partyNestsHandled
     } == true
     val unpunchedCount get() = if (handledByParty) 0 else survey.remaining.size
-    val punchedCount get() = survey.punchedCount
+    val punchedCount get() = survey.resolvedNestCount
     val nestCount get() = survey.nestCount
     val allChecked get() = survey.allChecked
+    val locallyResolved get() = survey.locallyResolved
+    fun sharedResolved(positions: Collection<Triple<Int,Int,Int>>) { positions.forEach(survey::acceptResolved);syncRun() }
     private val lines = WorldRenderCompat.renderType("nests", cull = null)
 
     fun register() {
@@ -62,7 +64,7 @@ object BeeNests {
     }
     private fun syncRun() {
         if(SafariTracking.ledger.current?.trustLateForestNestReport == true) survey.acceptPartyClear()
-        SafariTracking.ledger.current?.updateNestEvidence(survey.allChecked, survey.punchedCount,
+        SafariTracking.ledger.current?.updateNestEvidence(survey.allChecked, survey.resolvedNestCount,
             survey.nestCount, survey.unverified.size)
     }
     fun tick(client: Minecraft) {
@@ -88,7 +90,7 @@ object BeeNests {
         lastRenderedMarkers = 0
         val client = Minecraft.getInstance()
         val level = client.level ?: return
-        if (ConfigManager.hideCritterEsp() || client.player == null || client.options.smHideGui || !SafariAssist.inSafari) return
+        if (ConfigManager.hideCritterEsp() || client.player == null || client.options.smHideGui || !SafariAssist.visualsActive(client)) return
         val camera = client.gameRenderer.smCamera.position()
         val markers = when {
             SafariAssist.biome == SafariBiome.FOREST &&
@@ -107,7 +109,7 @@ object BeeNests {
             SafariAssist.biome == SafariBiome.CAVERN &&
                 SafariHelperRules.needed("Snoozle", SafariFullClear.mode, SafariTracking.ledger.current, SafariSparklingMode.state) ->
                 SafariStructures.intactWalls.filter { level.isLoaded(it) && !level.getBlockState(it).isAir &&
-                    it.distToCenterSqr(camera) < 40000 }.map { Triple(it, "Snooper wall", SafariEspConfig.rgb(AppearanceConfig.snooperColor)) }
+                    it.distToCenterSqr(camera) < 40000 }.map { Triple(it, "Snoozle wall", SafariEspConfig.rgb(AppearanceConfig.snooperColor)) }
             else -> emptyList()
         }
         lastRenderedMarkers = markers.size

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Build one shared Kotlin source tree into exactly three matching Fabric JARs. Installation uses one matching JAR. [Contributing](../CONTRIBUTING.md) owns the general contribution workflow.
+Build one shared Kotlin source tree into exactly three matching Fabric JARs. Installation uses one matching JAR.
 
 ## Prerequisites
 

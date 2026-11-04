@@ -104,17 +104,23 @@ object SafariManagerGuard {
         onClientTick(client)
         val guard = ConfigManager.holdManagerOnKick
         val downtime = SafariDowntime.entryHold
+        val shift = shiftDown(client)
+        if (shift) net.johnceo.sparklingmutuals.contest.ContestTracker.bypassPartyContest()
+        val contestWaiting = if (stage() == EntryStage.TORRHUS)
+            net.johnceo.sparklingmutuals.contest.ContestTracker.contestWaiting() else emptyList()
         val active = activeRun(client)
         val warpContestHold = stage() in setOf(EntryStage.TORRHUS,EntryStage.SAFARI) && !active &&
             net.johnceo.sparklingmutuals.alerts.SparkleWarping.contestPaused(client)
-        val blocked = warpContestHold && !shiftDown(client) || (guard || ConfigManager.downtimeCommand) && EntryGuardDecision.block(stage(),
+        val blocked = (warpContestHold || contestWaiting.isNotEmpty()) && !shift || (guard || ConfigManager.downtimeCommand) && EntryGuardDecision.block(stage(),
             downtime, guard && kick.active, !guard || presence.ready,
             when (stage()) {
                 EntryStage.TORRHUS -> ConfigManager.downtimeCommand && SafariPartyInput.pendingDowntime
                 EntryStage.SAFARI -> guard && SafariPartyInput.pendingKick
                 else -> SafariPartyInput.pending
-            }, shiftDown(client))
-        val reason = if (warpContestHold) "Reach Uncommon in the contest before the next warp run" else when (stage()) {
+            }, shift)
+        val reason = if (contestWaiting.isNotEmpty())
+            "Waiting for ticket confirmation from ${contestWaiting.joinToString(", ") { SafariPartyInput.nameOf(it) ?: "name loading" }}"
+        else if (warpContestHold) "Get Uncommon bracket in contest before entering next run" else when (stage()) {
             EntryStage.TORRHUS -> if (SafariPartyInput.overflowReadiness) "Everyone must say r or Ticket earned! in party chat"
                 else if (SafariPartyInput.pendingDowntime) "Checking party readiness" else "Waiting for ${SafariDowntime.waitingFor()}"
             EntryStage.UNKNOWN -> "Waiting for server info"
@@ -132,7 +138,9 @@ object SafariManagerGuard {
         val now = System.currentTimeMillis()
         if (blocked && now - messagedAt >= 3000) {
             messagedAt = now
-            player.sendSystemMessage(LocalChat.component("[SM] Safari: $reason. Hold Shift to enter anyway."))
+            val message = if (warpContestHold && contestWaiting.isEmpty()) "[SM] $reason."
+                else "[SM] Safari: $reason. Hold Shift to enter anyway."
+            player.sendSystemMessage(LocalChat.component(message))
         }
         return blocked
     }
@@ -144,6 +152,26 @@ object SafariManagerGuard {
     fun debug() = listOf("Entry guard: stage=${stage()} setting=${ConfigManager.holdManagerOnKick} " +
         "downtime=${ConfigManager.downtimeCommand} holders=${SafariDowntime.holders()} rosterKnown=${PartyManager.hasInfo} " +
         "ready=${presence.ready} missing=${presence.missing} kick=${kick.active} identityPending=${SafariPartyInput.pending}", lastDecision)
+    /** Readiness only: never simulates an NPC click or grants the Shift bypass. */
+    fun allowsCjApproach(client: Minecraft): Boolean {
+        onClientTick(client)
+        val currentStage = stage()
+        val guard = ConfigManager.holdManagerOnKick
+        val contestHold = currentStage in setOf(EntryStage.TORRHUS, EntryStage.SAFARI) && !activeRun(client) &&
+            net.johnceo.sparklingmutuals.alerts.SparkleWarping.contestPaused(client)
+        val ticketHold = currentStage == EntryStage.TORRHUS &&
+            net.johnceo.sparklingmutuals.contest.ContestTracker.contestWaiting().isNotEmpty()
+        val entryHold = (guard || ConfigManager.downtimeCommand) && EntryGuardDecision.block(currentStage,
+            SafariDowntime.entryHold, guard && kick.active, !guard || presence.ready,
+            when (currentStage) {
+                EntryStage.TORRHUS -> ConfigManager.downtimeCommand && SafariPartyInput.pendingDowntime
+                EntryStage.SAFARI -> guard && SafariPartyInput.pendingKick
+                else -> SafariPartyInput.pending
+            })
+        return net.johnceo.sparklingmutuals.safari.automation.entry.CjsApproachReadiness.allows(
+            inSafariInstance(), PartyManager.hasInfo, presence.ready, SafariPartyInput.pending,
+            guard && kick.active, contestHold || ticketHold || entryHold)
+    }
     private fun isManager(client: Minecraft, entity: Entity): Boolean {
         fun named(e: Entity) = SafariRules.strip(e.customName?.string ?: e.name.string).equals("Safari Manager", true)
         val world = client.level ?: return false

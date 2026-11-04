@@ -17,6 +17,18 @@ class UniquePartyReportTest {
     private fun report(run: SafariRun, biome: SafariBiome) = SafariMessages.forRun("Party > Friend: ${word(biome)}", run, true)
     private fun caught(run: SafariRun, biome: SafariBiome, except: String? = null) = biome.critters.filter { it.name != except }
         .forEach { run.record(SafariCatch(it, false)) }
+    @Test fun `Unique bars count first catches and waive only unobserved optional spawns after a report`() {
+        val run = SafariRun(0)
+        val forest = SafariBiome.FOREST
+        run.record(SafariCatch(SafariRoster.named("Honeybug")!!))
+        run.record(SafariCatch(SafariRoster.named("Honeybug")!!))
+        assertEquals(1, run.uniqueBarProgress(forest.critters))
+        run.birds.spawn("A Bluebird was attracted to the Birdfeeder!")
+        report(run, forest)
+        assertEquals(3, run.uniqueBarProgress(forest.critters))
+        run.sharedBiomeReport(SafariBiome.CAVERN)
+        assertEquals(2, run.uniqueBarProgress(SafariBiome.CAVERN.critters))
+    }
     @Test fun `each ordinary Unique capture advances remote progress immediately without any report or scan`() {
         ConfigManager.fullClearMode = false; ConfigManager.sparklingMode = false
         val state = party()
@@ -43,7 +55,8 @@ class UniquePartyReportTest {
                 assertFalse(SafariPanels.missing(run, SafariBiome.CAVERN, true, 0, party = state).rows.any { it.label == name })
             }
             report(run, SafariBiome.CAVERN)
-            assertEquals(2, run.completed(SafariMode.UNIQUE, SafariBiome.CAVERN.critters, state))
+            assertEquals(2, run.uniqueBarProgress(SafariBiome.CAVERN.critters))
+            assertEquals(9, run.completed(SafariMode.UNIQUE, SafariBiome.CAVERN.critters, state))
         }
     }
     @Test fun `loaded Cavern sources can reopen and complete checks while standing in Forest`() {
@@ -104,7 +117,7 @@ class UniquePartyReportTest {
             assertTrue(biome.critters.all { run.count(it.name) == 1 && run.personalCount(it.name) == 0 })
         }
     }
-    @Test fun `entering Haunted reopens needed local checks while other biomes keep their own rules`() {
+    @Test fun `entering Haunted reopens needed local checks while other biomes keep their own rules`() = net.johnceo.sparklingmutuals.config.withStartingItems {
         val state = party()
         for (biome in listOf(SafariBiome.FOREST, SafariBiome.ICY, SafariBiome.HAUNTED)) {
             val run = SafariRun(0); caught(run, biome); report(run, biome)
@@ -113,12 +126,15 @@ class UniquePartyReportTest {
                 run.updateCaptureEvidence(biome, biome.critters.map { it.name }.toSet(), false)
                 run.inventoryEvidence(listOf("Shining Coin" to 2, "Yogi Berry" to 2), 10000)
                 run.sparklingChecks.scan(biome, 0.0, 0.0, emptyList())
-                assertEquals(biome.critters.size - when (biome) { SafariBiome.FOREST -> 4; SafariBiome.HAUNTED -> 2; else -> 0 },
+                assertEquals(biome.critters.size - when (biome) { SafariBiome.FOREST -> 3; SafariBiome.HAUNTED -> 2; else -> 0 },
                     run.completed(SafariMode.UNIQUE, biome.critters, state), biome.label)
             }
-            assertEquals(biome.critters.size - when (biome) { SafariBiome.FOREST -> 4; SafariBiome.HAUNTED -> 2; else -> 0 },
+            assertEquals(biome.critters.size - when (biome) { SafariBiome.FOREST -> 3; SafariBiome.HAUNTED -> 2; else -> 0 },
                 run.completed(SafariMode.UNIQUE, biome.critters, state, localOnly = true))
-            assertNull(run.completion.announcement(run, biome, SafariMode.UNIQUE, state), "do not echo another player's checking evidence")
+            if (biome == SafariBiome.ICY) {
+                assertEquals("id", run.completion.announcement(run, biome, SafariMode.UNIQUE, state))
+                assertFalse(run.completion.chatReportAllowed(biome, SafariMode.UNIQUE))
+            } else assertNull(run.completion.announcement(run, biome, SafariMode.UNIQUE, state), "Incomplete local checks cannot announce")
         }
     }
     @Test fun `intact Cavern sources only contradict needed shiny checks after first captures`() {
@@ -130,7 +146,8 @@ class UniquePartyReportTest {
         assertEquals(9, run.completed(SafariMode.UNIQUE, SafariBiome.CAVERN.critters, state), "unknown source scans are not contradictions")
         run.reconcileStructures(SafariBiome.CAVERN, true, false)
         assertFalse(run.uniqueComplete("Rockmite", state)); assertTrue(run.uniqueComplete("Snoozle", state))
-        run.reconcileStructures(SafariBiome.CAVERN, true, true)
+        run.updateCaptureEvidence(SafariBiome.CAVERN, setOf("Rockmite Mound"), false)
+        run.observeCavernSources(true, true, false)
         assertEquals(7, run.completed(SafariMode.UNIQUE, SafariBiome.CAVERN.critters, state))
         assertEquals(emptySet<String>(), SafariPanels.missing(run, SafariBiome.CAVERN, true, 0, party = state).rows
             .map { it.label }.filter { label -> SafariBiome.CAVERN.critters.any { it.name == label } }.toSet())

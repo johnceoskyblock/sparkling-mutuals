@@ -79,7 +79,7 @@ class GimmiegoldProvidedLogRegressionTest {
         assertTrue(run.sparklingComplete("Gimmiegold", party()))
     }
 
-    @Test fun `starting and held coins block completion while teammate notices stay informational`() {
+    @Test fun `starting and held coins block completion while teammate notices stay informational`() = net.johnceo.sparklingmutuals.config.withStartingItems {
         val run = SafariRun(0); coins(run, 2)
         run.resources.headStart("HEAD START! You started with a Shining Coin!")
         run.sparklingChecks.startingCoins(1)

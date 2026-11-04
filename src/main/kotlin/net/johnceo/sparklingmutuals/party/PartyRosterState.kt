@@ -7,13 +7,18 @@ class PartyRosterState {
     var known = false
         private set
     private var leader: String? = null
+    var continuity = 0L
+        private set
     fun update(ids: List<String>, leaderId: String? = null) {
-        members = ids.map(String::lowercase).distinct()
-        leader = leaderId?.lowercase()?.takeIf { it in members }
+        val next = ids.map(String::lowercase).distinct()
+        val nextLeader = leaderId?.lowercase()?.takeIf { it in next }
+        if (!known || next.toSet() != members.toSet() || nextLeader != leader) continuity++
+        members = next
+        leader = nextLeader
         known = true
     }
     fun isLeader(uuid: String) = known && leader == uuid.lowercase()
-    fun invalidate() { known = false; leader = null }
+    fun invalidate() { if (known) continuity++; known = false; leader = null }
     fun withLocal(local: String): Set<String>? = if (known) (members + local.lowercase()).toSet() else null
     fun reset() { members = emptyList(); invalidate() }
 }

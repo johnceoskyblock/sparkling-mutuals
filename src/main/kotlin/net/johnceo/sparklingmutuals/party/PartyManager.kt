@@ -16,6 +16,7 @@ object PartyManager {
     var revision = 0L
         private set
     val hasInfo get() = roster.known
+    val continuity get() = roster.continuity
     private val callbacks = mutableListOf<() -> Unit>()
     private var requestedAt = 0L
     private var refreshAgain = false
@@ -68,7 +69,8 @@ object PartyManager {
     fun withPartyInfo(onReady: () -> Unit) { if (hasInfo) onReady() else refreshPartyInfo(onReady) }
 
     fun onClientTick(client: Minecraft) {
-        if (client.player == null || client.connection == null) { reset(); return }
+        if (client.connection == null) { reset(); return }
+        if (client.player == null) return
         if (hasInfo) {
             val members = getMembers().toSet()
             val names = client.connection!!.onlinePlayers.filter { it.profile.id.toString() in members }.map { it.profile.name }
@@ -85,6 +87,18 @@ object PartyManager {
     }
 
     fun reset() { roster.reset(); revision++; callbacks.clear(); requestedAt = 0; refreshAgain = false }
+    fun hasTeammates(client: Minecraft): Boolean {
+        val self = client.player?.uuid?.toString() ?: return false
+        return (withLocal(self)?.size ?: 0) > 1
+    }
+
+    fun sendPartyChat(client: Minecraft, message: String): Boolean {
+        val connection = client.connection ?: return false
+        if (!hasTeammates(client)) return false
+        connection.sendCommand("pc $message")
+        return true
+    }
+
     fun isLeader(uuid: String) = roster.isLeader(uuid)
     fun getMembers(): List<String> = roster.members
     fun withLocal(local: String) = roster.withLocal(local)

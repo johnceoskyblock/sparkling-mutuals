@@ -2,7 +2,7 @@
 
 ## Purpose and audience
 
-Players: start with [installation and controls](../README.md). Contributors: read [contributing](../CONTRIBUTING.md), then the relevant rule owner. This is a current-implementation reference at the [audited revision](IMPLEMENTATION_AUDIT.md), with live uncertainties stated separately.
+Start with [installation and features](../README.md), then use this index for gameplay rules and development references.
 
 ## Categorized links
 
@@ -11,22 +11,20 @@ Players: start with [installation and controls](../README.md). Contributors: rea
 | Common language | [Vocabulary, templates and ownership](DOCUMENTATION_GUIDE.md) |
 | Gameplay overview | [Modes and completion](../SAFARI_LOGIC.md), [37 species](critters/README.md) |
 | Evidence | [Tracking](critters/TRACKING.md), [exact messages](critters/MESSAGES.md), [floor drops](critters/FLOOR_DROPS.md) |
-| API data and recovery | [Safari API lookups, new players and one-minute retries](API_LOOKUPS.md) |
+| API data and recovery | [Safari API lookups and retries](API_LOOKUPS.md), [request and cache inventory](API_FETCH_AUDIT.md) |
 | Experimental shard ranges | [Hunting Box colors and observed sell-offer alerts](SHARD_SALE_GUIDANCE.md) |
 | Cached-data estimates | [Profitable critters](PROFITABLE_CRITTERS.md), [Sparkling rates](SPARKLING_RATES.md) |
-| Network investigations | [API fetch audit](API_FETCH_AUDIT.md), [shared API usage report](SHINYHUNTER_API_USAGE_REPORT.md), [unknown-packet disconnect investigation](NETWORK_DISCONNECTS.md) |
 | Banners and HUD themes | [Safari banners, customization ownership and ticket progress](BANNERS.md) |
 | Gameplay display | [Bird completion](BIRD_COMPLETION.md), [missing panel](MISSING_PANEL.md), [Sparkling detection](SPARKLING_DETECTION.md) |
 | Biome assignments | [Hotspot announcer and UUID-ranked assignments](HOTSPOT_ASSIGNMENTS.md) |
+| Native UI | [Settings and catch celebrations](NATIVE_UI.md) |
 | Controls | [Configuration](CONFIG_DEFAULTS.md), [entry guard](SAFARI_ENTRY_GUARD.md), [warp alerts](WARP_ALERTS.md) |
 | Contest and Canyon | [Contest/downtime](CONTEST_DOWNTIME.md), [Honeyhives](HONEYHIVES.md) |
-| SkyBlock helpers (general valuation shelved) | [Hunting Box total value](HUNTING_BOX_VALUE.md), [item and chest values](ITEM_VALUES.md), [Skills overflow tooltips](SKILL_OVERFLOW.md) |
+| SkyBlock helpers | [Hunting Box total value](HUNTING_BOX_VALUE.md), [Skills overflow tooltips](SKILL_OVERFLOW.md) |
 | Misc Endgame Features | [Garden Phantomleaf Solver](PHANTOMLEAF_SOLVER.md) |
 | History | [History and imports](HISTORY_IMPORT.md), [achievement requirements and dex tiers](ACHIEVEMENTS.md), [credited party streaks](SINCE_COMMAND.md) |
 | Capsule aiming guide | [Capture projections](CAPTURE_PROJECTIONS.md) |
-| Comparative review | [SafariUtils feature, UI and ESP comparison](SAFARIUTILS_COMPARISON.md) |
-| Workshop plan | [SafariUtils adaptation gameplan, including bird food and coin logic](SAFARIUTILS_ADAPTATION_GAMEPLAN.md) |
-| Development | [Contribution workflow](../CONTRIBUTING.md), [multi-version builds](MULTI_VERSION_BUILDS.md), [source synchronization](SOURCE_SYNC.md) |
+| Development | [multi-version builds](MULTI_VERSION_BUILDS.md), [source synchronization](SOURCE_SYNC.md) |
 | Validation | [Manual scenarios](IMPLEMENTATION_TEST_CHECKLIST.md), [audit discrepancies](IMPLEMENTATION_AUDIT.md) |
 | Requests and release notes | [GitHub Issues](https://github.com/johnceoskyblock/sparkling-mutuals/issues), [GitHub Releases](https://github.com/johnceoskyblock/sparkling-mutuals/releases) |
 
@@ -61,7 +59,6 @@ Kotlin source lives under `src/main/kotlin/net/johnceo/sparklingmutuals/`. Packa
 | `safari/esp` | Entity identification, visibility, capture identity, projections and rendering |
 | `safari/hideyho` | Quest prompts, acceptance and hiding-location observations |
 | `safari/resources` | Floor drops, starting supplies, bird feeding and inventory reminders |
-| `safari/shots` | Opt-in local capsule evidence, bounded export and lifecycle |
 | `safari/shots/preview` | Single-switch default-off capsule guide, terrain/critter estimates and passive rendering |
 | `safari/sparkling` | Sparkling detection, encounters and pending capture evidence |
 | `safari/structures` | Bee nests, nest surveys, mounds and Snooper walls |
@@ -79,31 +76,14 @@ Runtime assets, mod metadata and mixin registration remain under `src/main/resou
 
 Generated `.gradle/`, `.kotlin/`, `build/`, `versions/<target>/build/`, IDE files, `run/` and logs are not maintained source. Do not commit authentication files or raw player recordings.
 
-- [Native UI and catch celebrations](NATIVE_UI.md) — workspace controls, symbols, updates and confirmed-catch effects.
+## Credits
+
+- JavaBetter contributed player cards, cloud lookups, party helpers, honeyhives, history, achievements and profit tracking; GamingLegend123 contributed the Shiny Hunter icon.
+- Adapted work: [CritterMod v0.9.0](https://github.com/MrCloudy2/critterMod/tree/v0.9.0), [ShinyHunter](https://github.com/javabetter/ShinyHunter), [Nebulune](https://github.com/Gaeritag/Nebulune), and [SkyHanni 9.1.0](https://github.com/hannibal002/SkyHanni/tree/9.1.0).
+- Settings workspace, HUD symbols and catch celebrations: [SafariUtils](https://github.com/Serkosea/safariutils) (MIT).
+- Phantomleaf Solver: adapted from [SkyHanni](https://github.com/SkyHanniStudios/SkyHanni/blob/b3543887dfb80d95ff9880b3f610167ac2c104f2/src/main/java/at/hannibal2/skyhanni/features/garden/greenhouse/PhantomleafSolver.kt) under LGPL-2.1; open `/sm` → Misc Endgame Features. See [feature guide](PHANTOMLEAF_SOLVER.md).
+- Licensing and attribution: [LICENSE](../LICENSE) and [third-party notices](../licenses).
 
 ## Last updated
 
-2026-11-01 — Added the native UI and catch-celebration implementation reference.
-
-2026-10-31 — Added the SafariUtils comparison and adaptation plan for feature workshop discussions.
-
-2026-10-30 — Added the Hotspot announcer and biome-assignment reference.
-
-2026-10-21 (America/New_York) — Indexed the cached-data commands and API/network investigation references for v3.5.0.
-
-2026-10-19 - Indexed API empty-discovery handling and automatic one-minute failure recovery.
-
-2026-10-19 - Indexed the Phantomleaf Solver feature and its package; five focused 26.1.2 tests passed, live Garden validation pending.
-
-2026-10-19 (America/New_York) — Consolidated navigation and audited contributor guidance. Reviewed source: `93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee`; documentation-only changes, no local runtime differences or new live validation.
-
-- [Hunting Box total value](HUNTING_BOX_VALUE.md) — local 26.1.2 cumulative sell-offer estimate; general valuation remains shelved.
-
-Last updated: 2026-11-02 — Added Hunting Box value reference.
-
-Last updated: 2026-11-02 — Added item and chest value controls, pricing sources and cache reference.
-
-Last updated: 2026-11-02 — Added Skills overflow tooltip reference.
-
-Last updated: 2026-11-02 — Added banner system and HUD customization reference.
-Last updated: 2026-11-03 — Added experimental shard range and observed-offer guidance reference.
+2026-11-04 — Removed superseded plans and reports from the index and preserved project credits.

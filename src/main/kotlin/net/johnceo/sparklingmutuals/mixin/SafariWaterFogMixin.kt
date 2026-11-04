@@ -15,7 +15,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo
 class SafariWaterFogMixin {
     @Inject(method=["setupFog"], at=[At("RETURN")])
     private fun clearWaterFog(fog: FogData, camera: Camera, level: ClientLevel, renderDistance: Float, delta: DeltaTracker, ci: CallbackInfo) {
-        if (!ClearWater.active) return
+        if (!ClearWater.active || !net.johnceo.sparklingmutuals.safari.SafariAssist.visualsActive()) return
         val far = maxOf(4096f, renderDistance * 2f)
         fog.environmentalStart = far
         fog.environmentalEnd = far + 1024f

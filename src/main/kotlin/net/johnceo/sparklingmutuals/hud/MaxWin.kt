@@ -29,7 +29,7 @@ internal class MaxWinState {
         private set
 
     fun poll(key: Any?, held: Int, ownStarting: Int, floorCoins: Int, remaining: Int,
-             firstClass: Boolean?, now: Long): Boolean {
+             firstClass: Boolean?, now: Long, presentImmediately: Boolean = true): Boolean {
         if (key !== run) { reset(); run = key }
         if (key == null) return false
         if (held == 0) musicAt = null
@@ -41,12 +41,15 @@ internal class MaxWinState {
             else -> return false
         }
         if (remaining != 0 || floorCoins <= 0 || held != target || target <= celebrated) return false
-        celebrated = target; coins = target; shownAt = now
+        celebrated = target; coins = target
         if (musicAt == null) musicAt = now
+        if (presentImmediately) present(now)
         return true
     }
     fun visible(now: Long) = shownAt?.let { now - it in 0 until 5000 } == true
     fun gain(distance: Double): Float = if(musicAt==null) 0f else (distance/64.0).coerceIn(0.0,1.0).toFloat()
+    fun present(now: Long) { shownAt = now }
+    fun finishPresentation() { shownAt = null }
     fun hide() { shownAt = null; musicAt = null }
     fun reset() { run = null; celebrated = 0; shownAt = null; coins = 0; musicAt = null }
 }
@@ -84,8 +87,16 @@ internal object MaxWin {
         }
         val now = System.currentTimeMillis()
         val firstClass = run.entry.ticket?.let { it == SafariTicketType.FIRST_CLASS }
-        state.poll(run, held, run.resources.startingCount(FloorDropType.COIN),
-            run.gimmiegoldCheck.floorMinimum, run.gimmiegoldCheck.remaining, firstClass, now)
+        if (state.poll(run, held, run.resources.startingCount(FloorDropType.COIN),
+            run.gimmiegoldCheck.floorMinimum, run.gimmiegoldCheck.remaining, firstClass, now, presentImmediately = false)) {
+            val coins = state.coins
+            SafariAlertSequence.queue.submit(this, 5_000, coins,
+                valid = { SafariAssist.inSafari && SafariTracking.ledger.current === run },
+                finish = state::finishPresentation) {
+                shownCoins = coins
+                state.present(System.currentTimeMillis())
+            }
+        }
         if (state.musicAt == null) stop(client)
         else if (song==null || now-songStartedAt>1000 && !client.soundManager.isActive(song!!)) {
             songStartedAt=now
@@ -93,8 +104,9 @@ internal object MaxWin {
         }
     }
     private fun stop(client: Minecraft) { song?.let { client.soundManager.stop(it) }; song = null }
-    fun reset() { stop(Minecraft.getInstance()); state.reset() }
+    fun reset() { SafariAlertSequence.queue.clear(this); stop(Minecraft.getInstance()); state.reset() }
 
+    private var shownCoins = 0
     fun render(g: GuiGraphicsExtractor) {
         val client = Minecraft.getInstance()
         val now = System.currentTimeMillis()
@@ -102,7 +114,7 @@ internal object MaxWin {
         val width = client.window.guiScaledWidth; val height = client.window.guiScaledHeight
         val elapsed = now - (state.shownAt ?: return)
         val fade = minOf(1.0, (5000 - elapsed) / 800.0).coerceAtLeast(0.0)
-        if (state.coins == 8) {
+        if (shownCoins == 8) {
             // Fill the viewport while preserving the supplied image's aspect ratio.
             val scale = maxOf(width / 498f, height / 410f)
             val w = (498 * scale).toInt(); val h = (410 * scale).toInt()
@@ -131,7 +143,7 @@ internal object MaxWin {
             x += client.font.width(text)
         }
         g.pose().popMatrix()
-        val subtitle = "${state.coins} Shining Coins in inventory"
+        val subtitle = "$shownCoins Shining Coins in inventory"
         val subScale = minOf(2f, (width - 16f) / client.font.width(subtitle))
         g.pose().pushMatrix(); g.pose().translate(width / 2f, y + client.font.lineHeight * scale + 14); g.pose().scale(subScale, subScale)
         g.text(client.font, subtitle, -client.font.width(subtitle) / 2, 0, edgeAlpha or 0xFFFFFF, true)

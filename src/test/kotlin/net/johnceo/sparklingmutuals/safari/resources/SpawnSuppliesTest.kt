@@ -30,7 +30,7 @@ class SpawnSuppliesTest {
             assertFalse(birds.capturesComplete { 0 }) // Rendering is not Full Clear capture evidence.
         }
     }
-    @Test fun `early floor pickups and repeated inventory scans do not inflate starting food`() {
+    @Test fun `early floor pickups and repeated inventory scans do not inflate starting food`() = net.johnceo.sparklingmutuals.config.withStartingItems {
         val run = SafariRun(1000)
         run.birds.pickup("FLOOR DROP! Bag of Seeds", SafariBiome.FOREST)
         run.inventoryEvidence(listOf("Bag of Seeds" to 2, "Wriggleworm" to 1), 4000)

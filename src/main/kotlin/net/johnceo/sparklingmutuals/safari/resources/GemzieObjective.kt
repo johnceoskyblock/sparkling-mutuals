@@ -9,8 +9,16 @@ import net.minecraft.world.level.block.Blocks
 class GemzieObjective {
     val placed = mutableSetOf<GemzieGem>()
     private val acquired = mutableSetOf<GemzieGem>()
+    private val localPlaced = mutableSetOf<GemzieGem>()
+    var sharedOpen = false
+        private set
+    val locallyPlaced get() = localPlaced.toSet()
+    fun shared(mask: Int,open: Boolean) {
+        listOf(GemzieGem.LIME,GemzieGem.ORANGE,GemzieGem.PURPLE).forEachIndexed { i,gem -> if(mask and (1 shl i)!=0) placed.add(gem) }
+        sharedOpen=sharedOpen || open
+    }
     val ready get() = (acquired + placed).size == 3
-    val opened get() = placed.size == 3
+    val opened get() = placed.size == 3 || sharedOpen
     fun inventory(stacks: List<Pair<String,Int>>) {
         GemzieGem.entries.filterTo(acquired) { gem -> stacks.any { it.first == gem.label && it.second > 0 } }
     }
@@ -19,7 +27,7 @@ class GemzieObjective {
         GemzieGem.entries.firstOrNull { it.label == type.label }?.let(acquired::add)
     }
     fun observe(gem: GemzieGem, matchingSupport: Boolean, head: Boolean) {
-        if (matchingSupport && head) placed.add(gem)
+        if (matchingSupport && head) { placed.add(gem);localPlaced.add(gem) }
     }
     fun tick(client: Minecraft) {
         val level=client.level ?: return

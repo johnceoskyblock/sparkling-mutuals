@@ -40,7 +40,9 @@ class SparklingChecksTest {
                 assertEquals(icy.critters.size, run.completed(SafariMode.SPARKLING, icy.critters, state, localOnly))
             }
             assertTrue(SafariPanels.missingCritters(run, icy, state).isEmpty())
-            assertNull(run.completion.announcement(run, icy, SafariMode.SPARKLING, state), "Wumpa already proves Icy completion without a redundant report")
+            assertEquals("id", run.completion.announcement(run, icy, SafariMode.SPARKLING, state), "Logical completion is separate from chat delivery")
+            run.completion.sent(icy)
+            assertNull(run.completion.announcement(run, icy, SafariMode.SPARKLING, state))
             assertEquals(icy.critters.size, run.completed(SafariMode.UNIQUE, icy.critters, state))
             assertFalse(run.captureComplete("Billygoat"))
             assertFalse(run.sparklingComplete("Gazer", state))

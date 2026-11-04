@@ -226,5 +226,5 @@ object SafariDowntime {
     fun clear() { active = false; announcementDue = false; requests.clear(); announcement.clear(); contestTravelAt.clear() }
     fun reset() { clear() }
 
-    private fun send(message: String) { Minecraft.getInstance().player?.connection?.sendCommand("pc $message") }
+    private fun send(message: String) { PartyManager.sendPartyChat(Minecraft.getInstance(), "$message") }
 }

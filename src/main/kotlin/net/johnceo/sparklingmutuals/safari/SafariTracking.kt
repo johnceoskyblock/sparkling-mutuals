@@ -14,7 +14,6 @@ import net.johnceo.sparklingmutuals.safari.esp.SafariEspRules
 import net.johnceo.sparklingmutuals.safari.resources.FloorDropType
 import net.johnceo.sparklingmutuals.safari.resources.SafariFloorDrops
 import net.johnceo.sparklingmutuals.safari.resources.SafariInventoryAlerts
-import net.johnceo.sparklingmutuals.safari.sparkling.SparklingEncounters
 import net.johnceo.sparklingmutuals.safari.structures.BeeNests
 import net.johnceo.sparklingmutuals.safari.structures.SafariMounds
 import net.johnceo.sparklingmutuals.safari.structures.SafariStructures
@@ -31,6 +30,7 @@ object SafariTracking {
         SafariTicketType.fromItem(name)?.let { pendingTicket = it to System.currentTimeMillis() }
     }
     private fun entryEvidence(run: SafariRun, now: Long) {
+        net.johnceo.sparklingmutuals.safari.sparkling.SparklingEncounters.reset()
         pendingTicket?.takeIf { now - it.second in 0..120000 }?.let { run.entry.ticket = it.first }
         pendingAdmission?.takeIf { now - it.second in 0..120000 }?.let { run.entry.admission = it.first }
         pendingTicket = null; pendingAdmission = null
@@ -41,6 +41,7 @@ object SafariTracking {
     val displayBiome get() = SafariAssist.biome ?: run?.lastBiome
     val visible get() = SafariVisibility.visible(ConfigManager.showWhere, SafariAssist.inSafari, SafariAssist.atEntrance)
     fun register() {
+        net.johnceo.sparklingmutuals.sync.SafariPartySync.register()
         ClientReceiveMessageEvents.GAME.register { message, overlay ->
             if (!overlay) Minecraft.getInstance().execute {
                 SafariMessages.forRun(message.string, ledger.current, SafariAssist.inSafari).forEach(::receive)
@@ -52,7 +53,6 @@ object SafariTracking {
     }
     private fun resetEncounters() {
         BeeNests.reset()
-        SparklingEncounters.reset()
         SafariStructures.reset()
         SafariEsp.clearCaptured()
         SafariEsp.resetDrops()
@@ -66,7 +66,11 @@ object SafariTracking {
         net.johnceo.sparklingmutuals.history.HistoryServerPolicy.allows(client)
         val text = SafariRules.strip(raw)
         val now = System.currentTimeMillis()
-        if (TicketCounter.isTicket(text)) pendingAdmission = text to now
+        if (TicketCounter.isTicket(text)) {
+            val current = ledger.current
+            if (SafariIsland.onIsland && current != null) current.entry.admission = text
+            else pendingAdmission = text to now
+        }
         if (SafariAssist.inSafari) {
             SafariEspRules.thrownSpecies(text)?.let(SafariEsp::threw)
             SafariEspRules.escapedSpecies(text)?.let(SafariEsp::escaped)
@@ -96,7 +100,8 @@ object SafariTracking {
             if (text.startsWith("HEAD START!")) ledger.current?.entry?.headStart?.let { type ->
                 SafariFloorDrops.state.startingGrant(type)
                 ledger.current?.birds?.startingGrant(type.label)
-                ledger.current?.sparklingChecks?.startingCoins(ledger.current?.resources?.startingCount(FloorDropType.COIN) ?: 0)
+                if (ConfigManager.announceStartingItems)
+                    ledger.current?.sparklingChecks?.startingCoins(ledger.current?.resources?.startingCount(FloorDropType.COIN) ?: 0)
             }
             ledger.current?.sparklingChecks?.chat(text, manualAllowed = SafariFullClear.mode == SafariMode.SPARKLING)
             if (text == "A Gimmiegold appeared out of nowhere and gobbled up your Shining Coin!") ledger.current?.resources?.spawn(SafariBiome.HAUNTED)
@@ -131,18 +136,19 @@ object SafariTracking {
         val now = System.currentTimeMillis()
         run.localPlayer(player.name.string)
         // Sample on the boat too, before anyone can use starting supplies or collect floor drops.
-        run.inventoryEvidence((0 until player.inventory.containerSize).map { player.inventory.getItem(it) }
-            .filterNot { it.isEmpty }.map { it.hoverName.string to it.count } + net.johnceo.sparklingmutuals.safari.resources.BirdfeederInventory.carried(client), now)
+        run.inventoryEvidence(net.johnceo.sparklingmutuals.safari.resources.BirdfeederInventory.snapshot(client), now)
         announceStarting(client,run,now)
     }
     private fun announceStarting(client: Minecraft,run: SafariRun,now: Long) {
         val player=client.player ?: return
         val connection=client.connection ?: return
         if (PartyManager.hasInfo && PartyManager.getMembers().size > 1) {
+            val sync=net.johnceo.sparklingmutuals.sync.SafariPartySync
+            if(sync.pauseHotspotChat && !sync.backendCoordination) return
             val hotspotEnabled = net.johnceo.sparklingmutuals.hud.HotspotAssignmentAlert.enabled()
             run.startingAnnouncement.dispatch(now, SafariSparklingMode.state, hotspotEnabled, ConfigManager.announceStartingItems,
                 net.johnceo.sparklingmutuals.hud.HotspotAssignmentAlert::announcement) { message ->
-                connection.sendCommand("pc $message")
+                if (!PartyManager.sendPartyChat(client, message)) return@dispatch
                 // Apply our own contribution now; the server's party echo is deduplicated.
                 run.resources.partyNotice("Party > ${player.name.string}: $message")
             }
@@ -175,7 +181,7 @@ object SafariTracking {
         }
         if (ConfigManager.biomeObjectives) {
             val objectives = SafariPanels.objectives(run, biome, unique, BeeNests.unpunchedCount,
-                SafariStructures.nearbyMounds, SafariStructures.walls)
+                run?.moundSurvey?.remaining ?: 0, SafariStructures.walls)
             if (objectives.rows.isNotEmpty()) objectives.draw(graphics, SafariHud.OBJECTIVES)
         }
         if (ConfigManager.catchCountPanel) SafariPanels.captures(run, biome).draw(graphics, SafariHud.CAPTURES)

@@ -94,7 +94,7 @@ object PartyCommands {
                 (!reply.command.isSince && history.containsResult(reply.body, reply.cursor, reply.roster))) replies.removeFirst()
             else if (reply.part == 0 || now - sentReplyAt >= 1500) {
                 replies.removeFirst()
-                client.player?.connection?.sendCommand("pc ${reply.body}")
+                PartyManager.sendPartyChat(client, "${reply.body}")
                 sentReplyAt = now
             }
         }

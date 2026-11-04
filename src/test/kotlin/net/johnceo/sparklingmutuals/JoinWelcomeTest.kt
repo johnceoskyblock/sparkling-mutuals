@@ -4,13 +4,14 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class JoinWelcomeTest {
-    @Test fun `welcome waits for Hypixel and a ready player and only shows once per connection`() {
+    @Test fun `welcome waits for SkyBlock and the release check and shows once per connection`() {
         val state = JoinWelcomeState()
         assertFalse(state.shouldShow(false, true, 0))
         assertFalse(state.shouldShow(true, false, 1000))
         assertFalse(state.shouldShow(true, true, 2000))
-        assertFalse(state.shouldShow(true, true, 3999))
-        assertTrue(state.shouldShow(true, true, 4000))
+        assertFalse(state.shouldShow(true, true, 2999))
+        assertFalse(state.shouldShow(true, false, 4000))
+        assertTrue(state.shouldShow(true, true, 4001))
         assertFalse(state.shouldShow(true, false, 5000))
         assertFalse(state.shouldShow(true, true, 60000), "lobby transfers must not repeat it")
         val reconnect = JoinWelcomeState()

@@ -12,6 +12,14 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class SparklingDetectorTest {
+    @Test fun `capture marker suppresses first sightings from both skin and name`() {
+        val body = model()
+        val tag = label()
+        val marker = SparklingEntity(9, UUID.randomUUID(), body.x, body.y, body.z, name = "§cCAPTURING")
+        val nearby = model(10).copy(x = body.x + 2)
+        assertEquals(listOf(nearby.id), SparklingDetector.detect(listOf(body, tag, marker, nearby)).map { it.body })
+        assertTrue(SparklingDetector.detect(listOf(body.copy(capsule = true), tag)).isEmpty())
+    }
     private fun model(id: Int = 1, name: String = "Duplico", texture: String? = SparklingSkins.textures[name]) =
         SparklingEntity(id, UUID.randomUUID(), -4.0, 71.0, -72.0, texture = texture, skinCarrier = true, body = true)
     private fun label(id: Int = 2, name: String = "Duplico") =

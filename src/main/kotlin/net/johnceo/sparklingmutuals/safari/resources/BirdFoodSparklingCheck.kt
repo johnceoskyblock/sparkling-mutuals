@@ -13,6 +13,7 @@ class BirdFoodSparklingCheck {
     private val earlySpawns = ArrayDeque<Long>()
     var pendingSpawns = 0
         private set
+    val floorDropsRemaining get() = floor
     val leftToUse: Int? get() = held?.let { h -> floor?.let { it+h } }
     val complete get() = floor == 0 && held == 0 &&
         (pendingSpawns == 0 && (consumed || population >= 9) || verifiedPopulation >= feedingTarget)

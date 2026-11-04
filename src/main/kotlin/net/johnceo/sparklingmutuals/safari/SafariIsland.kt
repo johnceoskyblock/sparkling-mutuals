@@ -17,14 +17,21 @@ object SafariIsland {
         private set
     var currentMode: String? = null
         private set
+    var serverName: String? = null
+        private set
+    internal var locationRevision = 0L
+        private set
 
     fun register() {
         HypixelNetworking.registerToEvents(Object2IntOpenHashMap<net.minecraft.network.protocol.common.custom.CustomPacketPayload.Type<HypixelS2CPacket>>()
             .apply { put(LocationUpdateS2CPacket.ID, 1) })
         HypixelPacketEvents.LOCATION_UPDATE.register { packet ->
-            if (packet is LocationUpdateS2CPacket) Minecraft.getInstance().execute { currentMode = packet.mode().orElse(null); onIsland = isSafari(currentMode) }
+            if (packet is LocationUpdateS2CPacket) Minecraft.getInstance().execute {
+                currentMode = packet.mode().orElse(null); onIsland = isSafari(currentMode); serverName=packet.serverName()
+                locationRevision++
+            }
         }
     }
     fun isSafari(mode: String?) = mode.equals(MODE, true)
-    fun reset() { onIsland = false; currentMode = null }
+    fun reset() { onIsland = false; currentMode = null; serverName=null }
 }

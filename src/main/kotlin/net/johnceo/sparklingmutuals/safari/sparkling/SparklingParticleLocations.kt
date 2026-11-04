@@ -4,7 +4,7 @@ import java.util.UUID
 import net.johnceo.sparklingmutuals.safari.SafariBiome
 import net.johnceo.sparklingmutuals.safari.esp.SafariEspRules
 
-/** Last-seen packet origins, not entity identities or a count of distinct critters. */
+/** Short-lived packet evidence for alert correlation. These points are never rendered. */
 class SparklingParticleLocations {
     data class Location(val id: UUID, var x: Double, var y: Double, var z: Double,
         val biome: SafariBiome, var seenAt: Long, var identified: Boolean = false) {
@@ -26,10 +26,14 @@ class SparklingParticleLocations {
         if (locations.size >= 128) return null
         return Location(UUID.randomUUID(), x, y, z, biome, now).also(locations::add)
     }
-    /** Only independently identified name/skin positives retire anonymous waypoints. */
+    /** Independently identified name or skin matches consume nearby anonymous evidence. */
     fun identify(x: Double, y: Double, z: Double): List<UUID> =
         locations.filter { it.distanceSquared(x, y, z) <= 9.0 }.onEach { it.identified = true }.map { it.id }
     fun unknown() = locations.filterNot { it.identified }
+    fun recentUnknown(now: Long): List<Location> {
+        locations.removeAll { now - it.seenAt > 1_000 }
+        return unknown()
+    }
     /** Moving critters leave anonymous trails; a confirmed catch clears the old trail in its biome. */
     fun captured(biome: SafariBiome, now: Long): List<UUID> {
         val retired = locations.filter { it.biome == biome && it.seenAt <= now }

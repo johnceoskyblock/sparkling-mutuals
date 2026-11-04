@@ -16,6 +16,23 @@ class UniqueAbsentCritterTest {
     private fun party() = PartySparklingState().apply {
         select(setOf("me")); accept(setOf("me"), mapOf("me" to emptySet()))
     }
+    private fun qualifiedChecks(run: SafariRun, biome: SafariBiome) {
+        if (biome == SafariBiome.CAVERN) {
+            val inputs = listOf(
+                Triple("Cavernfish", -85.0 to 81.0, 3), Triple("Flitter", -84.0 to 62.0, 5),
+                Triple("Shyworm", -119.0 to 43.0, 3), Triple("Driftling", -120.0 to 55.0, 2),
+                Triple("Chuckwalla", -100.0 to 45.0, 1), Triple("Gemzie", -141.0 to 51.0, 2),
+                Triple("Scrappy", -114.0 to 49.0, 2))
+            for ((name, point, extra) in inputs)
+                run.sparklingChecks.scan(biome, point.first, point.second,
+                    List(extra) { name to java.util.UUID.randomUUID() }, moundsCleared = true, wallsCleared = true)
+        } else {
+            run.sparklingChecks.scan(biome, 3.0, 47.0,
+                listOf("Foxtrot" to 5, "Treefrog" to 2, "Woodchucker" to 2).flatMap { (name, extra) ->
+                    List(extra) { name to java.util.UUID.randomUUID() }
+                }, nestsChecked = true, birdsSpawned = true)
+        }
+    }
     @Test fun `local zero-spawn Cavern survey completes Unique rows and reports without fabricating catches`() {
         ConfigManager.fullClearMode = false; ConfigManager.sparklingMode = false
         val run = SafariRun(0); val state = party()
@@ -28,6 +45,10 @@ class UniqueAbsentCritterTest {
         assertTrue(run.uniqueComplete("Rockmite", state, localOnly = true))
         assertTrue(run.uniqueComplete("Snoozle", state, localOnly = true))
         assertEquals(9, run.completed(SafariMode.UNIQUE, SafariBiome.CAVERN.critters, state))
+        assertFalse(run.completion.allNeededChecked(run, SafariBiome.CAVERN, state, localOnly = true))
+        assertNull(run.completion.announcement(run, SafariBiome.CAVERN, SafariMode.UNIQUE, state))
+        qualifiedChecks(run, SafariBiome.CAVERN)
+        assertTrue(run.completion.allNeededChecked(run, SafariBiome.CAVERN, state, localOnly = true))
         assertEquals("cd", run.completion.announcement(run, SafariBiome.CAVERN, SafariMode.UNIQUE, state))
         assertFalse(SafariPanels.missing(run, SafariBiome.CAVERN, true, 0, party = state).rows.any { it.label in setOf("Rockmite", "Snoozle") })
         run.reconcileStructures(SafariBiome.CAVERN, true, true)
@@ -42,7 +63,7 @@ class UniqueAbsentCritterTest {
         unknown.reconcileStructures(SafariBiome.CAVERN, false, false)
         assertFalse(unknown.uniqueComplete("Rockmite", state)); assertFalse(unknown.uniqueComplete("Snoozle", state))
     }
-    @Test fun `no Macaw local Forest completion includes own starting food before fd or row removal`() {
+    @Test fun `no Macaw local Forest completion includes own starting food before fd or row removal`() = net.johnceo.sparklingmutuals.config.withStartingItems {
         ConfigManager.fullClearMode = false; ConfigManager.sparklingMode = false
         val run = SafariRun(0); val state = party()
         run.visitBiome(SafariBiome.FOREST)
@@ -66,11 +87,15 @@ class UniqueAbsentCritterTest {
         assertTrue(run.uniqueComplete("Macaw", state, localOnly = true))
         assertEquals(0, run.count("Macaw"))
         assertFalse(SafariPanels.missing(run, SafariBiome.FOREST, true, 0, party = state).rows.any { it.label == "Macaw" })
+        assertFalse(run.completion.allNeededChecked(run, SafariBiome.FOREST, state, localOnly = true))
+        assertNull(run.completion.announcement(run, SafariBiome.FOREST, SafariMode.UNIQUE, state))
+        qualifiedChecks(run, SafariBiome.FOREST)
+        assertTrue(run.completion.allNeededChecked(run, SafariBiome.FOREST, state, localOnly = true))
         assertEquals("fd", run.completion.announcement(run, SafariBiome.FOREST, SafariMode.UNIQUE, state))
         run.observeCritter(42, "Macaw")
         assertFalse(run.uniqueComplete("Macaw", state), "a newly seen Macaw revokes zero-spawn completion")
     }
-    @Test fun `any bird may have zero spawns after all feeding opportunities including own extras resolve`() {
+    @Test fun `any bird may have zero spawns after all feeding opportunities including own extras resolve`() = net.johnceo.sparklingmutuals.config.withStartingItems {
         ConfigManager.fullClearMode = false; ConfigManager.sparklingMode = false
         for (absent in listOf("Bluebird", "Parakeet", "Macaw")) {
             val run = SafariRun(0); val state = party()
@@ -97,7 +122,11 @@ class UniqueAbsentCritterTest {
             assertTrue(run.uniqueComplete(absent, state, localOnly = true), absent)
             assertFalse(SafariPanels.missing(run, SafariBiome.FOREST, true, 0, party = state).rows.any { it.label == absent })
             assertFalse(SafariEspRules.neededForRun(absent, false, run, false, false, state))
-            assertEquals("fd", run.completion.announcement(run, SafariBiome.FOREST, SafariMode.UNIQUE, state))
+            assertFalse(run.completion.allNeededChecked(run, SafariBiome.FOREST, state, localOnly = true))
+        assertNull(run.completion.announcement(run, SafariBiome.FOREST, SafariMode.UNIQUE, state))
+        qualifiedChecks(run, SafariBiome.FOREST)
+        assertTrue(run.completion.allNeededChecked(run, SafariBiome.FOREST, state, localOnly = true))
+        assertEquals("fd", run.completion.announcement(run, SafariBiome.FOREST, SafariMode.UNIQUE, state))
             assertFalse(run.captureComplete(absent), "Full Clear still needs the spawned birds caught")
             repeat(9) { run.record(SafariCatch(SafariRoster.named(spawned)!!)) }
             run.scanBirdSources(0, emptyList())

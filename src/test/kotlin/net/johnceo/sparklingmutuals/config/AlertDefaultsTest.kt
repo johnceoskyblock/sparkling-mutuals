@@ -9,8 +9,8 @@ import org.junit.jupiter.api.io.TempDir
 class AlertDefaultsTest {
     @TempDir lateinit var directory: Path
     @Test
-    fun `warp reminder starts at 26 seconds`() {
+    fun `warp reminder starts at the supplied 28 second default`() {
         ConfigManager.init(directory)
-        assertEquals(26, AlertManager.getDelay())
+        assertEquals(28, AlertManager.getDelay())
     }
 }

@@ -1,10 +1,11 @@
 package net.johnceo.sparklingmutuals.hud
 
+import net.johnceo.sparklingmutuals.safari.SafariRoster
 import net.minecraft.client.gui.GuiGraphicsExtractor
 
 /** SafariUtils pixel sprites (MIT). No font-specific Unicode or texture-pack dependency. */
 object UiIcons {
-    enum class Kind { BIRD,BERRY,WORM,SEED_BAG,INCENSE,GEM,MOUNTAIN,SNOWFLAKE,SKULL,LEAF,NEST,WALL,MOUND,COIN,EYE,CHECK,CROSS }
+    enum class Kind { BIRD,BERRY,WORM,SEED_BAG,INCENSE,GEM,MOUNTAIN,SNOWFLAKE,RAVAGER,SKULL,LEAF,NEST,WALL,MOUND,COIN,EYE,CHECK,CROSS }
     private val sprites=mapOf(
         Kind.BIRD to arrayOf(".....ss....","....s##ss..","....wwwd#s.","...hhw###oo",".wwww####s.","smww####s..","mmmmms##s..",".mmmms#s...","..mm..ss..."),
         Kind.BERRY to arrayOf("....bb....","...#b#....","..#hh###..","..hh#####.",".########s",".########s",".#######ss","..######s.","...####s.."),
@@ -14,6 +15,7 @@ object UiIcons {
         Kind.GEM to arrayOf("..........","...hhhh...","..hh##hh..",".hh####hs.",".m######s.",".m######s.",".mm####ss.","..mm##ss..","...msss..."),
         Kind.MOUNTAIN to arrayOf("....l......","...loo..l..","..looosloo.",".looogloogs","looogggggss","oogggggssss","ogggggsssss","sssdddsssss",".sssssssss."),
         Kind.SNOWFLAKE to arrayOf(".....g.....","..l..g..l..","...l.g.l...",".l..ggg..l.","..gggdggg..",".l..ggg..l.","...l.g.l...","..l..g..l..",".....g....."),
+        Kind.RAVAGER to arrayOf("c.........c","tc.hhhhh.ct",".tchggghct.","..sgggggs..","..sddddds..","..seggges..","..sgmnmgs..","...smnms...","....sss...."),
         Kind.SKULL to arrayOf("..lllll....",".lgggggl...","lgggggggl..","lgpdgdpgl..","lgggggggl..",".lggdggl...","..gdddg....","..s.s.s....","..sssss...."),
         Kind.LEAF to arrayOf(".....l.....","....lgl....","...lgggl...","..lggvggs..","..lggvggs..","..lggvggs..","...lgvgs...","....vs.....","....s......"),
         Kind.NEST to arrayOf("..hhhhhh..",".h######s.","h########s","h##dddd##s","h########s","h##dddd##s",".h######s.","..ssssss.."),
@@ -25,6 +27,7 @@ object UiIcons {
         Kind.CROSS to arrayOf("##.....##", ".##...##.", "..##.##..", "...###...", "..##.##..", ".##...##.", "##.....##")
     )
     fun forLabel(label: String): Kind? {
+        if (SafariRoster.named(label) != null) return null
         val text=label.lowercase()
         return when {
             text.startsWith("forest") -> Kind.LEAF
@@ -40,7 +43,7 @@ object UiIcons {
             "yogi berry" in text -> Kind.BERRY
             "wriggleworm" in text -> Kind.WORM
             "bag of seeds" in text -> Kind.SEED_BAG
-            "bird food" in text || "bird" in text || "macaw" in text -> Kind.BIRD
+            "bird food" in text -> Kind.SEED_BAG
             "incense" in text -> Kind.INCENSE
             "gem" in text -> Kind.GEM
             "all caught" in text || "all checked" in text -> Kind.CHECK
@@ -56,6 +59,13 @@ object UiIcons {
             line.forEachIndexed { col,token ->
                 val pixel=when(kind) {
                     Kind.MOUNTAIN -> when(token) { 'l'->0xFFFFD09A.toInt();'o'->0xFFEF8A42.toInt();'g'->0xFFA85F3F.toInt();'s'->0xFF5A3C32.toInt();'d'->0xFF2F211E.toInt();else->0 }
+                    Kind.RAVAGER -> when (token) {
+                        'c' -> 0xFFADC6C4.toInt(); 't' -> 0xFF5F7979.toInt()
+                        'h' -> 0xFF8C8780.toInt(); 'g' -> 0xFF6A655E.toInt()
+                        's' -> 0xFF403D39.toInt(); 'd' -> 0xFF262523.toInt()
+                        'e' -> 0xFFC7E5A8.toInt(); 'm' -> 0xFF514C46.toInt()
+                        'n' -> 0xFF2E2D28.toInt(); else -> 0
+                    }
                     Kind.SKULL -> when(token) { 'l'->0xFFD6C3DF.toInt();'g'->0xFF8B7895.toInt();'s'->0xFF483752.toInt();'d'->0xFF1C1325.toInt();'p'->0xFF45155F.toInt();else->0 }
                     Kind.SNOWFLAKE -> when(token) { 'l'->0xFFB9F3FF.toInt();'g'->0xFF65CFFF.toInt();'d'->0xFF318CCF.toInt();else->0 }
                     Kind.LEAF -> when(token) { 'l'->0xFFA9F05E.toInt();'g'->0xFF43C83F.toInt();'v'->0xFF279D36.toInt();'s'->0xFF176F2D.toInt();else->0 }

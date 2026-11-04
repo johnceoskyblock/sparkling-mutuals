@@ -100,8 +100,15 @@ object HypixelApi {
         CloudProfiles.member(profiles(playerUuid),playerUuid,profileUuid) ?: throw ApiFailure.dataUnavailable()
     }
 
-    private fun get(url: String): JsonObject {
-        val key = ConfigManager.apiKey.trim()
+    internal fun onlineStatus(uuid: String, key: String): Boolean? = data {
+        val id = uuid.replace("-", "").lowercase()
+        if (!id.matches(Regex("[0-9a-f]{32}"))) return@data null
+        get("https://api.hypixel.net/v2/status?uuid=$id", key).get("session")
+            ?.takeIf { it.isJsonObject }?.asJsonObject?.get("online")
+            ?.takeIf { it.isJsonPrimitive && it.asJsonPrimitive.isBoolean }?.asBoolean
+    }
+
+    private fun get(url: String, key: String = ConfigManager.apiKey.trim()): JsonObject {
         if (key.isEmpty()) throw ApiFailure(ApiFailureKind.MISSING_KEY,
             "No Hypixel API key. Use /apikey or settings.")
         // Keep credentials out of URLs and diagnostic messages.

@@ -146,9 +146,14 @@ object HideyhoSpotter {
         if (!watch.context(ConfigManager.hideyhoInsideOutside, SafariAssist.biome.takeIf { SafariAssist.inSafari }, SafariFullClear.mode)) return
         val inside = HideyhoHiding.inside(spot)
         logger.info("Hideyho settled at {}: {}", spot, if (inside) "inside" else "outside")
-        client.gui.smSetTimes(5, 50, 15)
-        client.gui.smSetTitle(LocalChat.hideyho(inside, bold = true))
-        client.gui.smSetSubtitle(Component.literal(spot.toString()).withStyle { it.withColor(SafariTheme.MUTED) })
+        val world = client.level
+        net.johnceo.sparklingmutuals.hud.SafariAlertSequence.queue.submit(this, 3_500,
+            valid = { client.level === world && SafariAssist.inSafari && ConfigManager.hideyhoInsideOutside &&
+                SafariFullClear.mode != net.johnceo.sparklingmutuals.safari.SafariMode.SPARKLING }, minimumTicks = 70) {
+            client.gui.smSetTimes(5, 50, 15)
+            client.gui.smSetTitle(LocalChat.hideyho(inside, bold = true))
+            client.gui.smSetSubtitle(Component.literal(spot.toString()).withStyle { it.withColor(SafariTheme.MUTED) })
+        }
         client.player?.sendSystemMessage(LocalChat.component(LocalChat.hideyho(inside)))
     }
 

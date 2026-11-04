@@ -58,7 +58,7 @@ Modes switch through `/unique`, `/fc` and `/sparkle`; their dropdowns contain vi
 
 2026-11-02 — Detection and alerts → Sparkling catch count defaults on. Confirmed new discoveries show NEW; other confirmed catches show the species catch number from saved/imported history, including credited party catches. Messages go to party chat while in a Safari party. No catch-time API request is added; Alpha does not update the counter.
 
-SkyBlock → Helpers also contains Estimated item value and Estimated chest value. Both are independent persistent toggles; hover and storage panels use the native dark theme. See [valuation behavior and price requests](ITEM_VALUES.md). Updated 2026-11-02.
+General item and chest valuation are shelved. Hunting Box valuation is documented separately in [Hunting Box value](HUNTING_BOX_VALUE.md).
 
 2026-11-02 — Removed redundant setting descriptions and shortened remaining guidance. The standalone Sparkle Warping explanation is unchanged. General command help now lists slash commands only.
 

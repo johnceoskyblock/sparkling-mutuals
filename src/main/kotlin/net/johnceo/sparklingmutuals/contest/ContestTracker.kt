@@ -9,6 +9,8 @@ import kotlin.math.round
 import net.johnceo.sparklingmutuals.config.ContestConfig
 import net.johnceo.sparklingmutuals.hud.SkyblockSidebar
 import net.johnceo.sparklingmutuals.party.PartyManager
+import net.johnceo.sparklingmutuals.safari.SafariEntryPresence
+import net.johnceo.sparklingmutuals.safari.automation.SafariPartyInput
 import net.johnceo.sparklingmutuals.safari.automation.SafariDowntime
 import net.minecraft.client.Minecraft
 import net.minecraft.client.resources.sounds.SimpleSoundInstance
@@ -30,6 +32,52 @@ object ContestTracker {
     private val ticketNotices = ContestTicketState()
 
     private val downtime = ContestDowntimeState()
+    private val waiting = linkedSetOf<String>()
+    private var contestStartedAt = 0L
+    private var reminderAt: Long? = null
+    private var reminded = false
+    private var bypassedWindow = -1L
+    private var returnedFromSafari = false
+    private var voluntaryReturnAt = 0L
+    private var scoreLevel: Any? = null
+    private var scoreLevelSince = 0L
+    private var restoredTicket = false
+
+    private fun inTorrhus(client: Minecraft) =
+        SkyblockSidebar.areaName(client) in setOf("Torrhus Canyon", "Torrhus Springs", "Critter Safari Entrance") ||
+            net.johnceo.sparklingmutuals.safari.SafariIsland.currentMode.equals("foraging_3", true)
+
+    fun register() {
+        net.fabricmc.fabric.api.client.message.v1.ClientSendMessageEvents.COMMAND.register { command ->
+            if (net.johnceo.sparklingmutuals.safari.SafariIsland.onIsland &&
+                command.trim().lowercase() in setOf("warp torrhus", "warp canyon", "warp torrhus_canyon"))
+                voluntaryReturnAt = System.currentTimeMillis()
+        }
+    }
+
+    fun bypassPartyContest() {
+        if (contestWaiting().isEmpty()) return
+        bypassedWindow = windowKey
+        clearPartyContest()
+    }
+
+    fun clearPartyContest() { waiting.clear(); reminderAt = null }
+    fun confirmPartyTicket(id: String, receivedAt: Long) {
+        if (receivedAt >= contestStartedAt) waiting.remove(id)
+    }
+
+    private fun otherMembers(self: String) = PartyManager.withLocal(self).orEmpty()
+        .map(SafariEntryPresence::normalize).filter { it != SafariEntryPresence.normalize(self) }
+
+    fun contestWaiting(): List<String> {
+        val self = Minecraft.getInstance().player?.uuid?.toString() ?: return emptyList()
+        if (!ContestConfig.autoContestDowntime || (PartyManager.hasInfo && !PartyManager.isLeader(self)) || betweenContests() ||
+            windowKey != absoluteWindow(java.time.LocalDateTime.now())) return emptyList()
+        if (!PartyManager.hasInfo) return waiting.toList()
+        val others = otherMembers(self)
+        return waiting.filter { it in others }
+    }
+
     private var tickCounter = 0
     private var windowKey = -1L
     private var secondsIntoWindow = 0
@@ -67,21 +115,60 @@ object ContestTracker {
     fun onClientTick(client: Minecraft) {
         if (client.player == null || client.level == null) return
 
+        val now = System.currentTimeMillis()
+        if (client.level !== scoreLevel) {
+            scoreLevel = client.level
+            scoreLevelSince = now
+            restoredTicket = false
+        }
+        if (net.johnceo.sparklingmutuals.safari.automation.SafariManagerGuard.activeRun(client)) {
+            returnedFromSafari = true
+            reminderAt = null
+        }
         if (++tickCounter < 10) return
         tickCounter = 0
 
         rollWindow()
         if (selectedTicketMode != ContestConfig.ticketMode) {
             selectedTicketMode = ContestConfig.ticketMode
+            restoredTicket = false
             complete = false; completedWindow = -1L; warnedMinutes.clear()
         }
+        val self = client.player!!.uuid.toString()
+        val leader = PartyManager.isLeader(self)
+        val others = otherMembers(self)
+        val skyblock = SkyblockSidebar.inSkyblock(client)
+        if ((PartyManager.hasInfo && !leader) || !ContestConfig.autoContestDowntime || betweenContests()) clearPartyContest()
+        if (PartyManager.hasInfo) waiting.retainAll(others.toSet())
         if (downtime.poll(windowKey, secondsIntoWindow, ContestConfig.autoContestDowntime,
-                SkyblockSidebar.inSkyblock(client), PartyManager.hasInfo &&
-                    PartyManager.getMembers().size > 1,
-                PartyManager.isLeader(client.player!!.uuid.toString())))
-            client.connection?.sendCommand("pc !dt contest")
-        if (SkyblockSidebar.inSkyblock(client)) readSidebar(client)
+                skyblock, others.isNotEmpty(), leader)) {
+            waiting.addAll(others)
+            contestStartedAt = now
+            reminded = false
+            PartyManager.sendPartyChat(client, "New Contest Started!")
+        }
+        val canyon = skyblock && !net.johnceo.sparklingmutuals.safari.SafariIsland.onIsland && inTorrhus(client)
+        if (canyon && returnedFromSafari && (now - voluntaryReturnAt in 0..15_000 ||
+            client.connection?.listedOnlinePlayers?.any {
+                SafariEntryPresence.normalize(it.profile.id.toString()) in others
+            } == true)) {
+            returnedFromSafari = false
+            voluntaryReturnAt = 0L
+        }
+        if (!canyon) reminderAt = null
+        if (leader && canyon && !returnedFromSafari && waiting.isNotEmpty() && !reminded &&
+            bypassedWindow != windowKey) {
+            val deadline = reminderAt ?: (now + 30_000).also { reminderAt = it }
+            if (now >= deadline) remindWaiting(client)
+        }
+        if (skyblock) readSidebar(client)
         if (ContestConfig.trackContest) maybeWarn(client)
+    }
+
+    private fun remindWaiting(client: Minecraft) {
+        val names = waiting.take(3).map { SafariPartyInput.nameOf(it) ?: return }
+        reminded = PartyManager.sendPartyChat(client,
+            "${names.joinToString(", ")}, still waiting on ticket earned confirmation message (Send message containing \"r\" or \"ticket\").")
     }
 
     /** The contest window a time of day falls in. */
@@ -102,6 +189,8 @@ object ContestTracker {
         if (key == windowKey) return
 
         val first = windowKey == -1L
+        clearPartyContest()
+        restoredTicket = false
         windowKey = key
         complete = false
         warnedMinutes.clear()
@@ -127,7 +216,13 @@ object ContestTracker {
         val match = MiriaContestFilter.miriaLines(SkyblockSidebar.lines(client)).firstNotNullOfOrNull { line ->
             TIER_ROW.find(line)?.takeIf { isTierName(it.groupValues[1]) }
         } ?: return
-        if (!observeScore(match.groupValues[1], parseInt(match.groupValues[2]))) return
+        val observedTier = match.groupValues[1]
+        val observedPoints = parseInt(match.groupValues[2])
+        if (points < 0 && observedPoints >= 0 && inTorrhus(client) &&
+            System.currentTimeMillis() - scoreLevelSince <= 10_000 &&
+            ContestTicketState.earned(observedTier, ContestConfig.firstClassTicket, observedPoints))
+            restoredTicket = true
+        if (!observeScore(observedTier, observedPoints)) return
 
         if (
             tier.isNotEmpty() &&
@@ -139,10 +234,10 @@ object ContestTracker {
             completedWindow = windowKey
             val player = client.player ?: return
             SafariDowntime.ticketEarned(player.name.string)
-            if (ticketNotices.claim(player.uuid.toString(), windowKey, tier, secondsIntoWindow, ContestConfig.firstClassTicket, points) &&
+            if (!restoredTicket && ticketNotices.claim(player.uuid.toString(), windowKey, tier, secondsIntoWindow, ContestConfig.firstClassTicket, points) &&
                 PartyManager.hasInfo &&
                 PartyManager.getMembers().size > 1)
-                client.connection?.sendCommand("pc ${ContestTicketState.message(ContestConfig.firstClassTicket)}")
+                PartyManager.sendPartyChat(client, "${ContestTicketState.message(ContestConfig.firstClassTicket)}")
             println("Sparkling Mutuals: Contest complete — $tier with $points")
         }
     }

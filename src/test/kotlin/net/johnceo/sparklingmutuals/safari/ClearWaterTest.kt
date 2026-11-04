@@ -20,15 +20,17 @@ class ClearWaterTest {
         assertFalse(ClearWater.enabled(true,false));assertFalse(ClearWater.enabled(false,true))
     }
     @Test fun `clear water toggle persists under Safari visual cleanup`() {
+        java.nio.file.Files.writeString(dir.resolve("sparkling-mutuals.properties"), "waterOpacity=47\n")
         ConfigManager.init(dir)
         assertTrue(ConfigManager.clearWater)
-        assertEquals(60, ConfigManager.waterOpacity)
+        assertTrue(SafariBiome.entries.all { ConfigManager.waterOpacityFor(it) == 47 })
         val settings=SafariSettings()
         settings.safari.visibility.clearWater=false
-        settings.safari.visibility.waterOpacity=65;settings.apply()
+        settings.safari.visibility.waterOpacity.icy=65;settings.apply()
         ConfigManager.init(dir)
         assertFalse(ConfigManager.clearWater)
-        assertEquals(65, ConfigManager.waterOpacity)
+        assertEquals(65, ConfigManager.waterOpacityFor(SafariBiome.ICY))
+        assertEquals(47, ConfigManager.waterOpacityFor(SafariBiome.FOREST))
         assertEquals("Clear water",SafariSettings.SafariVisibilitySettings::class.java.getField("clearWater")
             .getAnnotation(net.johnceo.sparklingmutuals.config.ConfigOption::class.java).name)
     }

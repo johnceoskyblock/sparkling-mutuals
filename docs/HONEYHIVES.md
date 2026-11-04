@@ -6,7 +6,7 @@ Show personal loot-ready Honeyhives during an incomplete Miria contest. Out of h
 
 ## Controls and defaults
 
-**Miria contest → Honeyhive beacons** defaults on in the general [configuration](CONFIG_DEFAULTS.md). The presentation range is 256 blocks. `/sm debug` writes nearby hive state and raw label-carrier diagnostics locally. This helper is independent of Safari Honeybug nests and their [completion rules](critters/honeybug.md).
+**Miria contest → Honeyhive beacons** defaults on in the general [configuration](CONFIG_DEFAULTS.md). Ready waypoints are drawn across Torrhus from the bundled catalogue, including outside chunk render distance. `/sm debug` writes nearby hive state and raw label-carrier diagnostics locally. This helper is independent of Safari Honeybug nests and their [completion rules](critters/honeybug.md).
 
 ## Implemented behavior
 
@@ -24,11 +24,11 @@ The [message reference](critters/MESSAGES.md) owns exact server wording. Recogni
 
 Click observers watch local attack/use on bee nests at bundled hive coordinates without consuming the interaction. Arbitrary tree/decorative nests cannot register a new waypoint. Chat tracking requires the helper enabled, Canyon detection and SkyBlock. Canyon detection uses the confirmed `foraging_3` island mode, falling back to the Torrhus Canyon/Springs scoreboard area only while mode is unknown. Every 20 client ticks, maintenance expires deadlines and, when display gates permit, checks loaded holograms and refreshes beacons. Automatic terrain discovery is disabled; the bundled catalogue is the location source of truth.
 
-Holograms can be text displays or custom-name carriers, with formatting stripped per line. Select the unambiguous nearest hive by squared 3D distance to its label anchor; horizontal X and Z offsets must each be at most 1.5 blocks, with label Y from hive Y − 1 through hive Y + 4. This is a square horizontal bound, not a 1.5-block radius. Only a currently loaded bee nest can receive the correction. Contest completion suppresses display and hologram correction until a later incomplete window; timestamp expiry maintenance continues.
+Holograms can be text displays or custom-name carriers, with formatting stripped per line. Select the unambiguous nearest hive by squared 3D distance to its label anchor; horizontal X and Z offsets must each be at most 1.5 blocks, with label Y from hive Y − 1 through hive Y + 4. This is a square horizontal bound, not a 1.5-block radius. Only a matching loaded hologram can correct hive readiness. Contest completion suppresses display and hologram correction until a later incomplete window; timestamp expiry maintenance continues.
 
 ### Positions and display
 
-The bundled `hive_7` position is **(-705, 92, 225)**. Saved **(-704, 92, 225)** keys migrate there; duplicate legacy fallback deadlines retain the later deadline. The nonexistent **(-730, 132, 184)** hive is excluded. Confirmed loot/Queen events refresh the visible list immediately. Available hives get green beacons and outlines; if the beacon renderer fails, columns provide a fallback. Both render paths require a catalogued coordinate. If its chunk is loaded and that block is not a bee nest, no marker renders. Unloaded known hives can retain their timer-based waypoint. This checks block presence only: honey level still never determines fullness, and a missing block does not alter the saved cooldown.
+The bundled `hive_7` position is **(-705, 92, 225)**. Saved **(-704, 92, 225)** keys migrate there; duplicate legacy fallback deadlines retain the later deadline. The nonexistent **(-730, 132, 184)** hive is excluded. Confirmed loot/Queen events refresh the visible list immediately. Available hives get green beacons and outlines; if the beacon renderer fails, columns provide a fallback. Both render paths require a catalogued coordinate. An unloaded chunk does not affect the timer or waypoint. The last confirmed profile is saved per account so its cooldowns can be restored while the profile join message is pending.
 
 ## Lifecycle and persistence
 

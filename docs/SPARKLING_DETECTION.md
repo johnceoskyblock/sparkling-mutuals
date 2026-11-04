@@ -96,6 +96,8 @@ Automatic Sparkling checks do not create ordinary critter ESP or start a ten-sec
 
 ## Last updated
 
+2026-11-04 — A server-transfer message stops Sparkling scans, clears queued alerts and stops the active alert sound while the old world unloads. Deduplication belongs to the Safari run and is independent of party-sync reconnects.
+
 2026-10-26 — Removed check-only ordinary ESP and per-UUID lifetime bookkeeping, including Driftling’s unlimited check highlight.
 
 2026-10-25 — Fixed persistent Unknown Sparkling rows after the confirmed Foxtrot capture. Capture cleanup clears same-biome anonymous trails, absorbs the final particle burst and deduplicates global/reward echoes while preserving other biomes and later sightings.

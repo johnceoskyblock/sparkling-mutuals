@@ -5,6 +5,17 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class SparklingNoticeTest {
+    @Test fun `local and room reports reserve the same alert in either order`() {
+        val local = SparklingNotice(UUID.randomUUID(), "Gazer", "Haunted 0 50 -60")
+        val room = SparklingNotice(UUID.randomUUID(), "Gazer", "Party discovery")
+        for ((first, second) in listOf(local to room, room to local)) {
+            val memory = SparklingMemory()
+            assertTrue(memory.alert(first.id, true, first.name))
+            assertFalse(memory.alert(second.id, true, second.name))
+            memory.reset()
+            assertTrue(memory.alert(second.id, true, second.name))
+        }
+    }
     @Test fun `particle first alerts locally and announces only the identified species`() {
         val id = UUID.randomUUID()
         val memory = SparklingMemory()

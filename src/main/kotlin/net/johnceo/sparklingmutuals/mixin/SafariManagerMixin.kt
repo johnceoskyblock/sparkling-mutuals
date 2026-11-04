@@ -38,6 +38,10 @@ class SafariManagerMixin {
     private fun guardAttack(player: Player, entity: Entity, info: CallbackInfo) {
         if (SafariManagerGuard.shouldBlock(entity)) info.cancel()
     }
+    @Inject(method = ["attack"], at = [At("TAIL")])
+    private fun observeAttack(player: Player, entity: Entity, info: CallbackInfo) {
+        net.johnceo.sparklingmutuals.sync.SafariPartySync.moundAttack(entity)
+    }
     @Inject(method = ["useItem"], at = [At("HEAD")], cancellable = true)
     private fun guardTicket(player: Player, hand: InteractionHand, info: CallbackInfoReturnable<InteractionResult>) {
         if (SafariManagerGuard.shouldBlockTicket(player, hand)) info.returnValue = InteractionResult.FAIL

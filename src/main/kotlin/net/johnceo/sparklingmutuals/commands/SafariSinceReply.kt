@@ -10,7 +10,7 @@ import net.johnceo.sparklingmutuals.safari.SafariTracking
 /** Streaks since any party Sparkling credited during a recorded or current Safari run. */
 object SafariSinceReply {
     private fun label(unique: Boolean) = if (unique) "unique shiny" else "shiny"
-    fun format(player: String, unique: Boolean, runs: List<RunRecord>, entries: List<SparklingEntry>, active: SafariRun? = null): String {
+    fun format(player: String, unique: Boolean, runs: List<RunRecord>, entries: List<SparklingEntry>, active: SafariRun? = null, critter: String? = null): String {
         val validRuns = runs.filter { it.start > 0 }.sortedBy { it.start }
         fun credited(entry: SparklingEntry): Boolean {
             if (entry.at <= 0) return false
@@ -23,17 +23,25 @@ object SafariSinceReply {
             // Its run-specific Sparkling list can still establish the credit.
             return run.sparklings.any { it.equals("${entry.player}:${entry.critter}", true) }
         }
-        val last = entries.filter { (!unique || it.unique) && credited(it) }.maxByOrNull { it.at }
+        val last = entries.filter { (!unique || it.unique) && (critter == null || it.critter.equals(critter, true)) && credited(it) }.maxByOrNull { it.at }
         val label = label(unique)
+        if (last == null && critter != null) return "$player has never caught a shiny $critter."
         if (last == null) return "${validRuns.size} runs tracked; no $label in history."
         val count = validRuns.count { it.start > last.at }
         return "$count run${if (count == 1) "" else "s"} since last $label: ${last.critter} caught by ${last.player}."
     }
     /** Called on the client thread before the async reply pipeline, so histories cannot race an import/save. */
     fun current(command: PartyCommand) = format(command.ign, command.kind == PartyCommandKind.SINCE_UNIQUE,
-        RunHistory.runs, SparklingLog.entries, SafariTracking.ledger.current)
+        RunHistory.runs, SparklingLog.entries, SafariTracking.ledger.current, command.sinceCritter)
     fun matches(command: PartyCommand, body: String): Boolean {
         val label = label(command.kind == PartyCommandKind.SINCE_UNIQUE)
+        val critter = command.sinceCritter
+        if (critter != null) {
+            val never = "${command.ign} has never caught a shiny $critter."
+            return body.equals(never, true) ||
+                Regex("""^[0-9]+ runs? since last $label: ${Regex.escape(critter)} caught by [A-Za-z0-9_]{1,16}\.$""",
+                    RegexOption.IGNORE_CASE).matches(body)
+        }
         return Regex("""^(?:[0-9]+ runs? since last $label: .+ caught by [A-Za-z0-9_]{1,16}\.|[0-9]+ runs tracked; no $label in history\.)$""",
             RegexOption.IGNORE_CASE).matches(body)
     }

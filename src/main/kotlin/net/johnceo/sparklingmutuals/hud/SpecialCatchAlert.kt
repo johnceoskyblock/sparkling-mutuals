@@ -23,22 +23,36 @@ object SpecialCatchAlert {
     private var style=SparklingAlertStyle.preset(0)
     private fun now()=System.nanoTime()/1_000_000
     fun caught(player: String,species: String,unique: Boolean) {
-        if(!unique || !SafariAssist.inSafari || !ConfigManager.specialCatchAlert) return
+        if (!SafariAssist.inSafari || !(ConfigManager.alwaysCelebrateSparkling || unique && ConfigManager.specialCatchAlert)) return
         val current=SafariTracking.ledger.current?:return
         val key="$player:$species"
         val time=now()
         if(current===run && key==lastCatch && time-lastAt<2000) return
         lastCatch=key;lastAt=time;run=current
-        show(species,false)
+        enqueue(species, false) { SafariTracking.ledger.current === current && SafariAssist.inSafari }
     }
-    fun preview() { show("Macaw",true) }
-    private fun show(species: String,preview: Boolean) {
+    fun preview() {
+        closePreview()
+        enqueue("Macaw", true) { Minecraft.getInstance().smScreen is net.johnceo.sparklingmutuals.config.CatchCelebrationPreviewScreen }
+    }
+    private var previewAudio = false
+    fun closePreview() {
+        SafariAlertSequence.queue.clear(this) { it == "preview" }
+        if (previewAudio) CatchCelebrationAudio.stop()
+        previewAudio = false
+    }
+    private fun enqueue(species: String, preview: Boolean, valid: () -> Boolean) {
+        val selected = SparklingAlertStyle.preset(ConfigManager.specialCatchStyle)
+        SafariAlertSequence.queue.submit(this, selected.displayMillis(), if (preview) "preview" else null,
+            valid = valid, finish = ::finish) { show(species, preview, selected) }
+    }
+    private fun show(species: String,preview: Boolean, selected: SparklingAlertStyle) {
         subject=species;shownAt=now();previewing=preview
-        style=SparklingAlertStyle.preset(ConfigManager.specialCatchStyle)
+        style=selected
+        previewAudio = preview
         CatchCelebrationAudio.start(style)
     }
     fun tick(client: Minecraft) {
-        if(subject!=null && (client.player==null && !previewing || now()-shownAt>=style.displayMillis() || !previewing && !SafariAssist.inSafari)) { reset();return }
         CatchCelebrationAudio.tick(client)
     }
     fun render(g: GuiGraphicsExtractor) {
@@ -81,5 +95,6 @@ object SpecialCatchAlert {
             if(style.callout()>=2) centered("SPARKLING CAPTURE",1f,h-h/7f-9,-1,true)
         }
     }
-    fun reset() { subject=null;run=null;lastCatch="";lastAt=0;previewing=false;CatchCelebrationAudio.stop() }
+    private fun finish() { subject=null;previewing=false }
+    fun reset() { SafariAlertSequence.queue.clear(this);CatchCelebrationAudio.stop();previewAudio=false;run=null;lastCatch="";lastAt=0 }
 }
