@@ -47,13 +47,19 @@ class CjsEntryFlow {
     val claimedContext get()=context.takeIf { claimed }
     private fun terminal()=phase in setOf(CjsEntryPhase.DONE,CjsEntryPhase.CANCELLED,CjsEntryPhase.EXPIRED)
     fun cancel(reason: String="Automatic entry cancelled") { phase=CjsEntryPhase.CANCELLED;status=reason }
+    /** A native press is latched even if it is released before the next START sample. */
+    fun inputEvent(pressed: Boolean): Boolean {
+        if(!pressed || !claimed || terminal()) return false
+        cancel("Automatic entry cancelled: manual input")
+        return true
+    }
     private fun valid(f: CjsEntryFrame, now: Long): Boolean = clock.accept(now) && now<deadline &&
         f.context==context && context!=null && f.enabled && f.atEntry && !f.admitted && f.safe && f.guardAllows &&
         !f.manualCancel && !f.unexpectedScreen && f.warpAllowed && f.warpGeneration==warp &&
         f.signal?.valid(context!!)==true && f.signal.generation==socket && f.manager==target
     fun tick(f: CjsEntryFrame, now: Long): CjsEntryEffect? {
         if(!clock.accept(now)) { cancel("Automatic entry cancelled: clock rollback");return null }
-        if(f.enabled && f.warpAllowed && f.warpGeneration>warp && f.context!=null) {
+        if(f.warpAllowed && f.warpGeneration>warp && f.context!=null) {
             context=f.context;warp=f.warpGeneration;deadline=entryDeadline(f.arrivedAt,12000)
             socket=-1;target=null;menu=null;ticket=null;managerIssued=false;ticketIssued=false;claimed=false
             phase=CjsEntryPhase.WAITING

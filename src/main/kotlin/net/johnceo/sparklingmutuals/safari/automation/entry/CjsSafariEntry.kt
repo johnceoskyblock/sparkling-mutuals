@@ -6,6 +6,7 @@ import net.azureaaron.hmapi.network.packet.v1.s2c.LocationUpdateS2CPacket
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents
 import net.fabricmc.loader.api.FabricLoader
 import net.johnceo.sparklingmutuals.JoinWelcomeState
+import net.johnceo.sparklingmutuals.compat.smScreen
 import net.johnceo.sparklingmutuals.LocalChat
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.hud.SkyblockSidebar
@@ -114,8 +115,13 @@ object CjsSafariEntry {
     }
     fun manualInput() {
         if(!supported || !flow.suppressesAutomaticMenus) return
-        flow.cancel("Automatic entry cancelled: manual input")
-        approach.release(Minecraft.getInstance())
+        if(flow.inputEvent(true)) approach.release(Minecraft.getInstance())
+    }
+    /** Called only by actual Minecraft input callbacks, never KeyMapping writes. */
+    fun gameplayInput(window: Long, action: Int) {
+        if(!supported || action<=0 || !flow.suppressesAutomaticMenus) return
+        val client=Minecraft.getInstance()
+        if(window==client.window.handle() && client.smScreen==null) manualInput()
     }
     fun suppressesAutomaticMenu(client: Minecraft): Boolean =
         supported && client.connection!=null && flow.suppressesAutomaticMenus

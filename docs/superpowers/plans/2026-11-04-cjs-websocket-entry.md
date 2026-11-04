@@ -122,4 +122,4 @@ Before Task 1, verify clean .5 tests with `G :26.1.2:test`. Expected: 1,435 test
 
 Spec coverage: authority/connection lifecycle and wire order → Task 1; attempt/menu ownership/settings protection → Tasks 2/4; movement/reach/normal input → Task 3; lifecycle/settings/docs/package/review → Task 4. Interface dependencies are 1→2 signal, 1+2→3 dispatch, and 1+2+3→4 composition. Retained caught negatives and new-generation positive readiness are deliberately separate. Native/API details are builder choices, not new human scope questions.
 
-Design approval is recorded. This written implementation plan is ready for the human’s required plan review. Native execution remains selected; no new execution-method question is needed.
+The human approved both written design and this plan. Native implementation and final review fixes are validated; execution details and the one deferred scanning-overhead Minor are recorded in the plan ledger and local delivery receipts. No new execution-method question is needed.

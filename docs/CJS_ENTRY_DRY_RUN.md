@@ -27,7 +27,7 @@ Keep Minecraft focused, game view grabbed and movement/mouse controls idle. CJ f
 
 The exact `Critter Safari Entry` menu stays visible. CJ owns the menu/container instance and rechecks current room, context, guard, tier, slot and availability before its one permitted normal selection. Menu replacement, closure/Escape, manual input, focus loss, guard/context/roster changes, last active discovery being caught, socket loss/replacement or timeout cancels remaining input. Cancellation cannot retry in the same warp. The generic helper remains suppressed for the claimed arrival, including late/reopened menus and switch-off, so it cannot finish a revoked CJ attempt. Manual guarded interaction remains available.
 
-A sent Manager/ticket input is only an attempt. Exact personal ticket/Manager acceptance or personal Hotspot evidence confirms admission; another player entering does not. An uncertain outcome is not retried. A genuine new verified warp creates the next budget; reconnect or a generic world replacement does not.
+A sent Manager/ticket input is only an attempt. Exact personal ticket/Manager acceptance or personal Hotspot evidence confirms admission; another player entering does not. An uncertain outcome is not retried. A genuine new verified warp ends the prior arrival’s generic-helper suppression even if Automatic Safari entry is now off; that off choice grants no new CJ input. Reconnect or a generic world replacement does not clear the old suppression. Real gameplay key/button presses latch cancellation even if released between ticks; synthetic binding writes do not count as manual takeover, and vanilla user input is not swallowed.
 
 ## Test and diagnostics
 
@@ -38,3 +38,5 @@ Automated tests include real local HTTP/WebSocket fixtures, all 37 upstream spec
 This delivery does not install, launch/close Minecraft, upload to GitHub, modify the server or send to Discord. Earlier .3–.5 report/dry-run/approach instructions are historical; source and delivered packages remain retained. The [approved design](superpowers/specs/2026-11-04-cjs-websocket-entry-design.md) and [plan](superpowers/plans/2026-11-04-cjs-websocket-entry.md) describe the current increment.
 
 Last updated: 2026-11-04 (Asia/Dubai).
+
+Deferred review minor: full-entry terminal attempts still construct native Manager/guard evidence each tick. This can add entity-scanning overhead; it was not profiled.

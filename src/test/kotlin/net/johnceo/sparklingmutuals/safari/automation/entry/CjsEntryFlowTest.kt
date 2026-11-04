@@ -21,6 +21,26 @@ class CjsEntryFlowTest {
         assertFalse(flow.consumeManager(completed(),6101))
         return flow
     }
+    @Test fun `new verified warp ends old suppression while full entry remains disabled`() {
+        val flow=CjsEntryFlow();flow.tick(frame(),6000)
+        flow.tick(frame().copy(enabled=false),6100)
+        assertTrue(flow.suppressesAutomaticMenus)
+        assertNull(flow.tick(frame().copy(enabled=false,context=c.copy(world=2),warpAllowed=false),6200))
+        assertTrue(flow.suppressesAutomaticMenus)
+        assertNull(flow.tick(frame().copy(enabled=false,warpGeneration=2,arrivedAt=6200),6300))
+        assertFalse(flow.suppressesAutomaticMenus)
+        assertFalse(flow.consumeManager(completed().copy(enabled=false,warpGeneration=2),6301))
+    }
+    @Test fun `gameplay press and release between samples latches cancellation`() {
+        val flow=CjsEntryFlow();flow.tick(frame(),6000)
+        assertTrue(flow.inputEvent(true))
+        assertFalse(flow.inputEvent(false))
+        assertNull(flow.tick(completed(),6100))
+        assertFalse(flow.consumeManager(completed(),6100))
+        assertTrue(flow.suppressesAutomaticMenus)
+        val idle=CjsEntryFlow();assertFalse(idle.inputEvent(true))
+        assertNotNull(idle.tick(frame(),6000))
+    }
     @Test fun `complete sequence has one manager one ticket and personal confirmation`() {
         val flow=waitingMenu();val f=completed().copy(menu=ticket())
         assertTrue(flow.tick(f,6200) is CjsEntryEffect.Ticket)

@@ -64,4 +64,4 @@ Run the complete 26.1.2 suite and build, then independent whole-change review. V
 
 Official source/protocol references are saved under `outputs/cjs-websocket-entry-20261104` outside this checkout. The inspected published master is `0d33d8e475e21140202a93280897575411a2cb16`; the unpublished supplied source remains the integration base. This document supersedes the .5 design’s explicit rejection of backend-positive evidence and its manual-click endpoint only for the new increment.
 
-Status: written for builder check and human approval. Product implementation has not started for this increment.
+Status: builder check completed; human approved the written design and plan in this chat. Native implementation, 1,457 Kotlin tests, 21 helper tests and 26.1.2 build/JAR verification completed. Final review found two Important issues corrected with regressions; one scanning-overhead Minor is recorded for follow-up. Live entry remains unverified.
