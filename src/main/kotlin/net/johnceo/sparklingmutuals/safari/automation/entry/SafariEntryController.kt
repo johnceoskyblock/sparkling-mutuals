@@ -1,5 +1,7 @@
 package net.johnceo.sparklingmutuals.safari.automation.entry
 
+import net.johnceo.sparklingmutuals.safari.SafariRoster
+
 enum class EntryPhase { OFF, WAITING_CONTEXT, WAITING_SIGHTING, READY, WAITING_MENU, WAITING_ADMISSION, DONE, CANCELLED, EXPIRED }
 
 /** Evidence supplied by a future adapter, never inferred from menu shape alone. */
@@ -33,6 +35,9 @@ class SafariEntryController(private val token: () -> String = ::entryToken) {
     private var ownedMenu: Int? = null
     private var ownedSlot: Int? = null
     private var attempt = ""
+    private var verificationEstablished = false
+    private val capturedAt = mutableMapOf<String, Long>()
+    private val retiredEvents = mutableSetOf<String>()
     var phase = EntryPhase.OFF
         private set
     var suppressesAutomaticMenus = false
@@ -47,12 +52,14 @@ class SafariEntryController(private val token: () -> String = ::entryToken) {
         context = current; arrivedAt = now; clock.reset(now); requester.beginArrival(current, now)
         sighting = null; managerProposed = false; ticketProposed = false; ownedMenu = null; ownedSlot = null
         ticketIssued = false; suppressesAutomaticMenus = false
+        verificationEstablished = false; capturedAt.clear(); retiredEvents.clear()
         attempt = token().also { require(EntryWire.token.matches(it)) }
         phase = EntryPhase.WAITING_CONTEXT
         return true
     }
     fun observe(value: EntrySighting) {
-        if (value.context != context || terminal()) return
+        if (value.context != context || terminal() || value.event in retiredEvents ||
+            capturedAt[value.species]?.let { value.receivedAt <= it } == true) return
         val old = sighting
         if (old?.event == value.event && value.expiresAt <= old.receivedAt) { cancel(); return }
         sighting = if (old?.event == value.event) old.copy(expiresAt = minOf(old.expiresAt, value.expiresAt)) else value
@@ -63,8 +70,15 @@ class SafariEntryController(private val token: () -> String = ::entryToken) {
         observe(value)
         return true
     }
-    fun captured(species: String) {
+    fun captured(current: EntryContext, species: String, now: Long) {
+        if (current != context || SafariRoster.all.none { it.name == species }) return
+        if (!clock.accept(now)) { cancel(); return }
+        capturedAt[species] = now
+        requester.cancel() // Any in-flight pre-capture reply can describe the now-retired opportunity.
         if (sighting?.species != species) return
+        val event = sighting!!.event
+        if (retiredEvents.size >= 128 && event !in retiredEvents) { cancel(); return }
+        retiredEvents.add(event)
         sighting = null
         if (managerProposed) cancel() else if (!terminal()) phase = EntryPhase.WAITING_SIGHTING
     }
@@ -88,6 +102,9 @@ class SafariEntryController(private val token: () -> String = ::entryToken) {
         if (frame.manualCancel || frame.unrelatedScreen) { cancel(); return emptyList() }
         if (!frame.enabled || !frame.ticketHelperEnabled) { cancel(); phase = EntryPhase.OFF; return emptyList() }
         if (terminal()) return emptyList()
+        val verified = frame.partyKnown && frame.destinationAssociated
+        if (!verified && verificationEstablished) { cancel(); return emptyList() }
+        if (verified) verificationEstablished = true
         if (now >= entryDeadline(arrivedAt, 12000)) { cancel(); phase = EntryPhase.EXPIRED; return emptyList() }
         if (!base(frame, current)) {
             if (managerProposed) cancel() else phase = EntryPhase.WAITING_CONTEXT

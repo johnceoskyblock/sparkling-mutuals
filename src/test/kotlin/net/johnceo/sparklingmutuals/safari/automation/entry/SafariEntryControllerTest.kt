@@ -106,7 +106,7 @@ class SafariEntryControllerTest {
         assertTrue(back.tick(ticketFrame(), 1200).isEmpty())
         val ended = controller(); ended.observe(sighting(Long.MAX_VALUE))
         assertTrue(ended.tick(frame(), 13000).isEmpty())
-        val caught = managerIssued(); caught.captured("Bluebird")
+        val caught = managerIssued(); caught.captured(c, "Bluebird", 1150)
         assertTrue(caught.tick(ticketFrame(), 1200).isEmpty())
         assertTrue(caught.suppressesAutomaticMenus)
     }
@@ -126,5 +126,36 @@ class SafariEntryControllerTest {
         ctl.observe(EntrySighting(c, "Bluebird", EntryFixtures.event, 2000, 6000))
         assertDoesNotThrow { ctl.observe(EntrySighting(c, "Bluebird", EntryFixtures.event, 1000, 1500)) }
         assertTrue(ctl.tick(frame(), 2100).none { it is EntryEffect.Manager || it is EntryEffect.Ticket })
+    }
+
+    @Test fun `verification lapse retires an outstanding query but initially loading context may settle`() {
+        listOf(frame().copy(partyKnown = false), frame().copy(destinationAssociated = false)).forEach { lost ->
+            val ctl = controller()
+            assertTrue(ctl.tick(frame(), 1100).single() is EntryEffect.Query)
+            ctl.tick(lost, 1200)
+            assertFalse(ctl.receiveReply(c, EntryPeer(EntryFixtures.leader, "Leader"), EntryFixtures.live(), 1300))
+            assertTrue(ctl.tick(frame(), 1400).isEmpty())
+        }
+        val settling = controller(); settling.tick(frame().copy(partyKnown = false), 1100)
+        assertTrue(settling.tick(frame(), 1200).single() is EntryEffect.Query)
+        val held = controller(); held.tick(frame(), 1100)
+        held.tick(frame().copy(guardAllows = false), 1200)
+        assertTrue(held.receiveReply(c, EntryPeer(EntryFixtures.leader, "Leader"), EntryFixtures.live(), 1300))
+        assertTrue(held.tick(frame(), 1400).single() is EntryEffect.Manager)
+    }
+
+    @Test fun `captured events and pre-capture replies cannot be restored while a new identity may qualify`() {
+        val ctl = controller(); val old = sighting()
+        ctl.observe(old); ctl.captured(c, "Bluebird", 1050); ctl.observe(old)
+        assertTrue(ctl.tick(frame(), 1100).none { it is EntryEffect.Manager })
+        ctl.observe(old.copy(event = "c".repeat(32), receivedAt = 1200, expiresAt = 6200))
+        assertTrue(ctl.tick(frame(), 1300).single() is EntryEffect.Manager)
+        val waiting = controller(); waiting.tick(frame(), 1100); waiting.captured(c, "Bluebird", 1200)
+        assertFalse(waiting.receiveReply(c, EntryPeer(EntryFixtures.leader, "Leader"), EntryFixtures.live(age = 100), 1500))
+        assertTrue(waiting.tick(frame(), 1600).isEmpty())
+        val delayedLocal = controller(); delayedLocal.captured(c, "Bluebird", 1050); delayedLocal.observe(old)
+        assertTrue(delayedLocal.tick(frame(), 1100).none { it is EntryEffect.Manager })
+        delayedLocal.observe(old.copy(event = "d".repeat(32), receivedAt = 1200, expiresAt = 6200))
+        assertTrue(delayedLocal.tick(frame(), 1300).single() is EntryEffect.Manager)
     }
 }
