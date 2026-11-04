@@ -24,6 +24,9 @@ object CjsSafariEntry {
     private fun now() = (System.nanoTime() - origin) / 1_000_000
     private var supported = false
     private var environment = EntryDryRunEnvironment()
+    private var admission = CjsAdmissionState()
+    private var warp = CjsWarpGate()
+    private val approach = CjsApproachInput()
     private var session = EntryDryRunSession()
     private var transport = EntryDryRunTransport(::now)
     private var nextRosterAt = 0L
@@ -55,7 +58,11 @@ object CjsSafariEntry {
                 SafariRules.strip(it).equals("alpha.hypixel.net", true)
             }) "alpha" else "main"
 
-    private fun sync(client: Minecraft, at: Long) = environment.world(client.connection, client.level, at)
+    private fun sync(client: Minecraft, at: Long) {
+        environment.world(client.connection, client.level, at)
+        admission.world(client.level)
+        warp.world(client.level,at)
+    }
 
     private fun frame(client: Minecraft, at: Long): EntryDryRunFrame {
         sync(client, at)
@@ -75,8 +82,7 @@ object CjsSafariEntry {
             PartyManager.requestPartyInfo()
         }
         val mapped = player?.let { SafariAreaMap.areaAt(it.x, it.y, it.z) }
-        return EntryDryRunFrame(context, enabled, SafariAssist.atEntrance && mapped == 0,
-            SafariAssist.inSafari && mapped in 0..4, environment.arrivedAt)
+        return admission.frame(context, enabled, mapped, SafariAssist.inSafari && mapped in 0..4, environment.arrivedAt)
     }
 
     private fun receive(text: String) {
@@ -84,7 +90,9 @@ object CjsSafariEntry {
         val client = Minecraft.getInstance()
         val at = now()
         val frame = frame(client, at)
+        admission.chat(text)
         if (!frame.enabled) return
+        warp.observe(text,at)
         // Global capture evidence must also withdraw advice while this player is still outside.
         EntryCaptureNotice.species(text)?.let {
             session.captured(frame, it, at); record("capture received: $it", at)
@@ -130,6 +138,17 @@ object CjsSafariEntry {
         wasEnabled = frame.enabled
     }
 
+    /** Input ownership is checked before vanilla's next player/input tick. */
+    fun startTick(client: Minecraft) {
+        if (!supported) return
+        val at=now();val frame=frame(client,at)
+        approach.tick(client,frame,session.fresh(frame,at),ConfigManager.safariEntryApproach,
+            warp.allows(frame.context,profiles(client),at),warp.generation,at) { text ->
+            logger.info("CJ_ENTRY_APPROACH {}",text)
+            client.player?.sendSystemMessage(LocalChat.component("[CJ approach] $text."))
+        }
+    }
+
     private fun record(text: String, at: Long) {
         val line = "t=${at}ms arrival+${(at - environment.arrivedAt).coerceAtLeast(0)}ms $text"
         if (trace.size >= 64) trace.removeFirst()
@@ -141,6 +160,7 @@ object CjsSafariEntry {
         session.debug() + trace.toList()
 
     fun reset() {
+        approach.reset(Minecraft.getInstance());admission=CjsAdmissionState();warp=CjsWarpGate()
         environment = EntryDryRunEnvironment(); session = EntryDryRunSession()
         transport = EntryDryRunTransport(::now)
         nextRosterAt = 0; wasEnabled = false; trace.clear()

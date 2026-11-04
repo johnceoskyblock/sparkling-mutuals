@@ -144,6 +144,12 @@ object SafariManagerGuard {
     fun debug() = listOf("Entry guard: stage=${stage()} setting=${ConfigManager.holdManagerOnKick} " +
         "downtime=${ConfigManager.downtimeCommand} holders=${SafariDowntime.holders()} rosterKnown=${PartyManager.hasInfo} " +
         "ready=${presence.ready} missing=${presence.missing} kick=${kick.active} identityPending=${SafariPartyInput.pending}", lastDecision)
+    /** Readiness only. Does not pretend an NPC click occurred or apply the Shift override. */
+    fun allowsCjApproach(client: Minecraft): Boolean {
+        onClientTick(client)
+        return inSafariInstance() && PartyManager.hasInfo && presence.ready &&
+            !SafariPartyInput.pending && (!ConfigManager.holdManagerOnKick || !kick.active)
+    }
     private fun isManager(client: Minecraft, entity: Entity): Boolean {
         fun named(e: Entity) = SafariRules.strip(e.customName?.string ?: e.name.string).equals("Safari Manager", true)
         val world = client.level ?: return false

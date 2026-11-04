@@ -276,8 +276,10 @@ class SafariSettings {
             set(value) { alerts.announce = value }
     }
     class SafariEntrySettings {
-        @JvmField @ConfigOption(name = "Auto Safari Entry (dry run)", desc = "CJ's Revenge 26.1.2. Exchanges status and logs timing; adds no entry clicks. Existing ticket helper is separate.")
+        @JvmField @ConfigOption(name = "Safari entry status exchange", desc = "CJ's Revenge 26.1.2. Exchanges fresh Sparkling reports. Manager and ticket clicks remain manual.")
         @ConfigEditorBoolean var dryRun = ConfigManager.safariEntryDryRun
+        @JvmField @ConfigOption(name = "Approach Manager (one-block test)", desc = "Faces the Manager and creeps up to one block after fresh evidence. Requires status exchange. Manual input cancels. Does not click or select tickets.")
+        @ConfigEditorBoolean var approach = ConfigManager.safariEntryApproach
         @JvmField @ConfigOption(name = "Guard Safari entry", desc = "Wait for party members. Shift bypasses.")
         @ConfigEditorBoolean var holdManagerOnKick = ConfigManager.holdManagerOnKick
         @JvmField @ConfigOption(name = "Auto-select Safari ticket", desc = "Non-leaders, inside Safari only.")
@@ -498,7 +500,7 @@ class SafariSettings {
             net.johnceo.sparklingmutuals.alerts.SparkleWarping.configurationChanged()
         }
         if (warp.enabled != ConfigManager.warpAlertsEnabled) AlertManager.toggleAlert()
-        val changes = listOf(ConfigManager::safariEntryDryRun to safari.entry.dryRun, ConfigManager::sparklingCatchCount to safari.alerts.catchCount, ConfigManager::specialCatchAlert to safari.alerts.caught,ConfigManager::doomspiralThrowTimer to safari.capture.doomTimer, ConfigManager::autoParty to warp.autoParty, ConfigManager::autoBiomeReports to party.biomeReports,
+        val changes = listOf(ConfigManager::safariEntryApproach to safari.entry.approach, ConfigManager::safariEntryDryRun to safari.entry.dryRun, ConfigManager::sparklingCatchCount to safari.alerts.catchCount, ConfigManager::specialCatchAlert to safari.alerts.caught,ConfigManager::doomspiralThrowTimer to safari.capture.doomTimer, ConfigManager::autoParty to warp.autoParty, ConfigManager::autoBiomeReports to party.biomeReports,
             ConfigManager::uniqueHideCritterEsp to modes.unique.hideCritters, ConfigManager::uniqueHideFloorDropEsp to modes.unique.hideDrops,
             ConfigManager::fullClearHideCritterEsp to modes.fullClear.hideCritters, ConfigManager::fullClearHideFloorDropEsp to modes.fullClear.hideDrops,
             ConfigManager::sparklingHideCritterEsp to modes.sparkling.hideCritters, ConfigManager::sparklingHideFloorDropEsp to modes.sparkling.hideDrops, ConfigManager::announceStartingItems to party.startingItems, ConfigManager::huntingBoxValue to skyblock.helpers.huntingBoxValue, ConfigManager::shardSaleGuidance to skyblock.helpers.shardSaleGuidance, ConfigManager::skillOverflow to skyblock.helpers.skillOverflow, ConfigManager::skillOverflowChat to skyblock.helpers.skillOverflowChat, ConfigManager::skillOverflowNumbers to skyblock.helpers.skillOverflowNumbers, ConfigManager::estimatedItemValue to skyblock.helpers.estimatedItemValue, ConfigManager::estimatedChestValue to skyblock.helpers.estimatedChestValue, ConfigManager::phantomleafSolver to miscEndgame.phantomleafSolver, ConfigManager::highlightTeammates to safari.highlightTeammates, ConfigManager::showTeammateNames to safari.showTeammateNames, ConfigManager::profitableShardEsp to modes.unique.profitable, ConfigManager::sparklingProfitableShardEsp to modes.sparkling.profitable, ConfigManager::partyCommandsEnabled to party.enabled, ConfigManager::downtimeCommand to party.downtime, ConfigManager::useCloudApi to api.cloud, ConfigManager::hideHauntedPaintings to safari.paintings,

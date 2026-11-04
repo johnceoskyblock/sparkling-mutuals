@@ -14,6 +14,7 @@ class ConfigTest {
         assertTrue(ConfigManager.safariEntryDryRun)
         assertFalse(ConfigManager.autoSelectSafariTicket)
         assertTrue(ConfigManager.shinyDetection)
+        assertFalse(ConfigManager.safariEntryApproach)
         ConfigManager.warpDelaySeconds = 27
         ConfigManager.save()
         SafariSettings().apply { safari.entry.dryRun = true }.apply()
@@ -32,6 +33,9 @@ class ConfigTest {
         ConfigManager.init(dir)
         assertFalse(ConfigManager.safariEntryDryRun)
         assertTrue(ConfigManager.autoSelectSafariTicket)
+        SafariSettings().apply { safari.entry.approach = true }.apply()
+        ConfigManager.init(dir)
+        assertTrue(ConfigManager.safariEntryApproach)
     }
     @Test fun `each new warp setting persists when changed on its own`() {
         ConfigManager.init(dir); ContestConfig.init(dir)

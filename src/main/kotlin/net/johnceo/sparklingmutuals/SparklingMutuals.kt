@@ -103,6 +103,7 @@ object SparklingMutuals : ModInitializer {
 
     private fun registerCallbacks() {
         ClientTickEvents.START_CLIENT_TICK.register(AutoClicker::tick)
+        ClientTickEvents.START_CLIENT_TICK.register(net.johnceo.sparklingmutuals.safari.automation.entry.CjsSafariEntry::startTick)
         ClientTickEvents.END_CLIENT_TICK.register(::onClientTick)
         ClientPlayConnectionEvents.DISCONNECT.register { _, _ -> resetSession() }
         HudElementRegistry.attachElementBefore(

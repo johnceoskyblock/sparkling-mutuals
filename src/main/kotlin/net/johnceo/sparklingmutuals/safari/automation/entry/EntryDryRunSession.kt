@@ -149,5 +149,11 @@ class EntryDryRunSession {
         return out
     }
 
+    /** Current observation for the separately opted-in approach; never returns cancelled or admitted evidence. */
+    fun fresh(frame: EntryDryRunFrame, now: Long): EntrySighting? {
+        val current = prepare(frame, now) ?: return null
+        if (cancelled || !frame.atEntry || frame.activeRun || now >= entryDeadline(arrivedAt, 12000)) return null
+        return remote?.takeIf { it.valid(current, now) } ?: sightings.freshest(current, now)
+    }
     fun debug() = listOf("CJ entry dry run: $status", "arrival=$arrivedAt querySent=${query != null} replyReceived=$answered actions=disabled")
 }

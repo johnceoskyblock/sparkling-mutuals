@@ -17,7 +17,8 @@ Open `/sm` for settings. Fresh installs use [bundled main defaults](../src/main/
 | Setting | Saved key | Default |
 | --- | --- | --- |
 | Sparkle Warping | `warpAlertsEnabled` | Off |
-| CJ's Revenge Auto Safari Entry (dry run, 26.1.2 only) | `safariEntryDryRun` | On in CJ recording build .3; status exchange only, no entry clicks |
+| CJ's Revenge Safari entry status exchange (26.1.2 only) | `safariEntryDryRun` | On in CJ recording build .3; status exchange only, no entry clicks |
+| CJ's Revenge one-block approach test | `safariEntryApproach` | Off; opt-in movement requires fresh evidence and status exchange |
 | Hotspot announcer | `hotspotAnnouncer` | Off |
 | Leech auto-accept | `leechMode` | Off; inviter whitelist retained |
 | Starting quest-item announcements and reminder titles | `announceStartingItems` | Off |
@@ -194,7 +195,7 @@ Successful profile/discovery reads and IGN-to-UUID lookups are reused for 60 min
 
 ## Experimental shard ranges
 
-Local CJ's Revenge 26.1.2 also has an independent **Safari entry > Auto Safari Entry (dry run)** switch, saved as `safariEntryDryRun`, default on for missing/invalid values in CJ recording build .3; automatic ticket selection defaults off. It exchanges party status and records timing only. Existing ticket-selection and warp preferences remain independent. See [dry-run setup](CJS_ENTRY_DRY_RUN.md).
+Local CJ's Revenge 26.1.2 also has an independent **Safari entry > Safari entry status exchange** switch, saved as `safariEntryDryRun`, default on for missing/invalid values in CJ recording build .3; automatic ticket selection defaults off. It exchanges party status and records timing only. Existing ticket-selection and warp preferences remain independent. See [dry-run setup](CJS_ENTRY_DRY_RUN.md).
 
 SkyBlock → Helpers → Shard sale guidance (experimental) uses persisted `shardSaleGuidance`, default **off** for both new and existing settings. It adds Hunting Box range colors, an always-present Safari Essence advice row and passive observed-order advisories. The combined Hunting Box total remains an independent switch; general item/chest valuation stays shelved. See [meaning and limitations](SHARD_SALE_GUIDANCE.md).
 

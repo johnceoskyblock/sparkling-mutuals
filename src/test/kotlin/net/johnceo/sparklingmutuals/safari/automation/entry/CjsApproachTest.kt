@@ -1,0 +1,59 @@
+package net.johnceo.sparklingmutuals.safari.automation.entry
+
+import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Test
+import java.util.UUID
+
+class CjsApproachTest {
+    private val c = EntryFixtures.context()
+    private val target = UUID.fromString("00000000-0000-0000-0000-000000000099")
+    private val sight = EntrySighting(c, "Bluebird", EntryFixtures.event, 0, 5000)
+    private fun frame(x: Double = 0.0, z: Double = 0.0) = CjsApproachFrame(c, true, sight, target,
+        x, 68.0, z, 0.0, 3.6, 0f, 0f, true)
+    @Test fun `face the Manager before walking rather than following original yaw`() {
+        val a = CjsApproach()
+        val first = a.tick(frame().copy(managerX = -3.6, managerZ = 0.0), 0)
+        assertFalse(first.forward); assertEquals(90f, first.yaw!!, .01f)
+        assertTrue(a.tick(frame().copy(managerX = -3.6, managerZ = 0.0, yaw = 90f), 50).forward)
+    }
+    @Test fun `stop short of one block and never rearm in same arrival`() {
+        val a=CjsApproach(); a.tick(frame(),0)
+        assertTrue(a.tick(frame(),50).forward)
+        assertTrue(a.tick(frame(z=.2),100).forward)
+        assertTrue(a.tick(frame(z=.5),150).forward)
+        assertTrue(a.tick(frame(z=.7),175).forward)
+        assertFalse(a.tick(frame(z=.86),200).forward)
+        assertFalse(a.tick(frame(),250).forward)
+        assertFalse(a.tick(frame().copy(context=c.copy(party=EntryParty(c.party.leader,c.party.members,3))),300).forward)
+        assertFalse(a.tick(frame().copy(enabled=false),350).forward)
+        assertFalse(a.tick(frame(),400).forward)
+        assertFalse(a.tick(frame().copy(context=c.copy(world=2,arrival=2),sighting=sight.copy(context=c.copy(world=2,arrival=2))),450).forward)
+    }
+    @Test fun `safety interruption or changed target context cancels rather than waiting to resume`() {
+        val changes=listOf<(CjsApproachFrame)->CjsApproachFrame>(
+            {it.copy(safe=false)}, {it.copy(enabled=false)}, {it.copy(sighting=null)},
+            {it.copy(target=null)}, {it.copy(target=UUID.randomUUID())}, {it.copy(context=null)},
+            {it.copy(context=c.copy(server="miniOther"))}, {it.copy(y=68.3)},
+            {it.copy(yaw=45f)}, {it.copy(x=2.0)}, {it.copy(x=Double.NaN)})
+        for (change in changes) {
+            val a=CjsApproach(); a.tick(frame(),0); assertTrue(a.tick(frame(),50).forward)
+            assertFalse(a.tick(change(frame()),100).forward)
+            assertFalse(a.tick(frame(),150).forward)
+        }
+    }
+    @Test fun `expiry rollback timeout and stalled movement stop owned input`() {
+        for (time in listOf(5000L,1500L,-1L)) {
+            val a=CjsApproach(); a.tick(frame(),0); a.tick(frame(),50)
+            assertFalse(a.tick(frame(),time).forward)
+            assertFalse(a.tick(frame(),time.coerceAtLeast(0)+100).forward)
+        }
+        val a=CjsApproach(); a.tick(frame(),0); a.tick(frame(),50)
+        assertFalse(a.tick(frame(),450).forward)
+    }
+    @Test fun `unsafe start consumes no movement but does not spend a never started attempt`() {
+        val a=CjsApproach()
+        assertFalse(a.tick(frame().copy(safe=false),0).forward)
+        assertFalse(a.tick(frame(),50).forward) // face first
+        assertTrue(a.tick(frame(),100).forward)
+    }
+}
