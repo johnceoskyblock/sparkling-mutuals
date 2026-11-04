@@ -78,6 +78,10 @@ class EntrySightings(private val token: () -> String = ::entryToken) {
             else retired.add(it.entity)
         }
     }
+    /** A completed current scan can withdraw visibility without declaring a capture. */
+    fun retainVisible(current: EntryContext, ids: Set<UUID>, now: Long) {
+        if (scope(current, now)) seen.entries.removeAll { it.value.entity !in ids }
+    }
     fun freshest(current: EntryContext, now: Long): EntrySighting? {
         if (!scope(current, now) || retirementOverflow) return null
         val found = seen.values.filter { now >= it.at && now - it.at < 5000 }.maxByOrNull { it.at } ?: return null
