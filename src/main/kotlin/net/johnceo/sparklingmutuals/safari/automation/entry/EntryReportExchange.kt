@@ -58,7 +58,7 @@ class EntrySightings(private val token: () -> String = ::entryToken) {
     private var context: EntryContext? = null
     private val clock = EntryClock()
     private val seen = linkedMapOf<String, Seen>()
-    private val retired = mutableSetOf<UUID>()
+    private val retired = mutableMapOf<UUID, String>()
     private var retirementOverflow = false
     private fun scope(current: EntryContext, now: Long): Boolean {
         if (context != current) { context = current; seen.clear(); retired.clear(); retirementOverflow = false; clock.reset(now) }
@@ -75,9 +75,12 @@ class EntrySightings(private val token: () -> String = ::entryToken) {
         if (context != current) return
         seen.remove(species)?.let {
             if (retired.size >= 128 && it.entity !in retired) { retirementOverflow = true; seen.clear() }
-            else retired.add(it.entity)
+            else retired[it.entity] = species
         }
     }
+    /** Identity knowledge only; this must never be interpreted as fresh authorization. */
+    internal fun knowsIdentity(current: EntryContext, species: String) =
+        context == current && (species in seen || species in retired.values)
     /** A completed current scan can withdraw visibility without declaring a capture. */
     fun retainVisible(current: EntryContext, ids: Set<UUID>, now: Long) {
         if (scope(current, now)) seen.entries.removeAll { it.value.entity !in ids }

@@ -32,6 +32,7 @@ class EntryDryRunSession {
     private var evidenceSeen = false
     private var missingContext = false
     private val sharedCaptureSpecies = mutableSetOf<String>()
+    private val unmatchedSharedCaptures = mutableSetOf<String>()
 
     private fun prepare(frame: EntryDryRunFrame, now: Long): EntryContext? {
         val current = frame.context
@@ -44,6 +45,7 @@ class EntryDryRunSession {
             remote = null; query = null; answered = false; cancelled = false; wasEnabled = false
             evidenceSeen = false; emitted = ""; missingContext = false
             sharedCaptureSpecies.clear()
+            unmatchedSharedCaptures.clear()
         }
         if (!clock.accept(now) || arrivedAt < 0 || arrivedAt > now) {
             cancelled = true; requester.cancel(); remote = null; status = "Cancelled: invalid monotonic timing"; return null
@@ -54,6 +56,7 @@ class EntryDryRunSession {
                 if (!missingContext) {
                     sightings = EntrySightings(); responder = EntryReportResponder(sightings)
                     sharedCaptureSpecies.clear()
+                    unmatchedSharedCaptures.clear()
                 }
             }
             missingContext = true
@@ -66,6 +69,7 @@ class EntryDryRunSession {
             requester.cancel(); cancelled = true; remote = null
             sightings = EntrySightings(); responder = EntryReportResponder(sightings); context = current
             sharedCaptureSpecies.clear()
+            unmatchedSharedCaptures.clear()
         }
         if (!frame.enabled) {
             if (wasEnabled) { cancelled = true; requester.cancel(); remote = null }
@@ -81,7 +85,8 @@ class EntryDryRunSession {
         val current = prepare(frame, now) ?: return
         sightings.retainVisible(current, observed.mapTo(hashSetOf()) { it.id }, now)
         if (!frame.activeRun && !frame.atEntry) return
-        observed.forEach { sightings.observe(current, it.id, it.species, now) }
+        observed.filterNot { it.species in unmatchedSharedCaptures }
+            .forEach { sightings.observe(current, it.id, it.species, now) }
     }
 
     /** Revalidate loaded identities at send-time without refreshing their observation timestamps. */
@@ -100,8 +105,13 @@ class EntryDryRunSession {
 
     /** Visit-retained captures may withdraw evidence; they never supply or refresh a sighting. */
     fun sharedCaptures(frame: EntryDryRunFrame, species: Set<String>, now: Long) {
-        prepare(frame, now) ?: return
-        species.filter { sharedCaptureSpecies.add(it) }.forEach { captured(frame, it, now) }
+        val current = prepare(frame, now) ?: return
+        species.filter { sharedCaptureSpecies.add(it) }.forEach {
+            // No known pre-capture identity means the first later model could be the lingering caught one.
+            // Quarantine that species for this context; do not invent identity or capture timing.
+            if (!sightings.knowsIdentity(current, it)) unmatchedSharedCaptures.add(it)
+            captured(frame, it, now)
+        }
     }
 
     fun receive(frame: EntryDryRunFrame, peer: EntryPeer, message: EntryMessage, now: Long) {
@@ -115,6 +125,7 @@ class EntryDryRunSession {
                     peer.id !in current.party.members || message.nonce != sent.nonce ||
                     !message.requester.equals(current.selfName, true) || message.realm != current.realm ||
                     message.server != current.server) return
+                if (message is EntryMessage.Live && message.species in sharedCaptureSpecies) return
                 remote = requester.receive(current, peer, message, now)
                 answered = true
             }

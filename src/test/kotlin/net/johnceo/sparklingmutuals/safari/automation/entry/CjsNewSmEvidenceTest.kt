@@ -79,4 +79,62 @@ class CjsNewSmEvidenceTest {
         assertFalse(ready(kick = true))
         assertFalse(ready(entryHold = true), "The current upstream entry hold cannot be bypassed by walking")
     }
+
+    @Test fun `capture before the first scan cannot authorize a lingering local model`() {
+        val session = EntryDryRunSession()
+        session.sharedCaptures(frame, setOf("Doomspiral"), 1000)
+        session.scan(frame, listOf(EntryDryRunObservation(creature, "Doomspiral")), 1001)
+        session.sharedCaptures(frame, setOf("Doomspiral"), 1002)
+        assertNull(session.fresh(frame, 1002, setOf(creature)))
+    }
+
+    @Test fun `capture before a leaders first scan never produces a LIVE reply`() {
+        val session = EntryDryRunSession()
+        val leaderFrame = frame.copy(context = context.copy(account = leader, selfName = "Leader"), atEntry = false, activeRun = true)
+        session.sharedCaptures(leaderFrame, setOf("Doomspiral"), 1000)
+        session.scan(leaderFrame, listOf(EntryDryRunObservation(creature, "Doomspiral")), 1001)
+        session.receive(leaderFrame, EntryPeer(guest, "Guest"), EntryMessage.Query("a".repeat(32), "main", "mini1"), 1002)
+        val response = session.tick(leaderFrame, 1003).filterIsInstance<EntryDryRunOutput.Party>().single().message
+        assertTrue(response is EntryMessage.None)
+    }
+
+    @Test fun `context reset reapplies unmatched captures before the leaders next scan`() {
+        val session = EntryDryRunSession()
+        val leaderFrame = frame.copy(context = context.copy(account = leader, selfName = "Leader"), atEntry = false, activeRun = true)
+        session.scan(leaderFrame, listOf(EntryDryRunObservation(creature, "Doomspiral")), 1000)
+        session.sharedCaptures(leaderFrame, setOf("Doomspiral"), 1010)
+        val changed = leaderFrame.copy(context = leaderFrame.context!!.copy(party = EntryParty(leader, party.members, 1)))
+        session.sharedCaptures(changed, setOf("Doomspiral"), 1020)
+        session.scan(changed, listOf(EntryDryRunObservation(creature, "Doomspiral")), 1021)
+        session.receive(changed, EntryPeer(guest, "Guest"), EntryMessage.Query("b".repeat(32), "main", "mini1"), 1022)
+        val response = session.tick(changed, 1023).filterIsInstance<EntryDryRunOutput.Party>().single().message
+        assertTrue(response is EntryMessage.None)
+    }
+
+    @Test fun `capture snapshot before a query also rejects a later LIVE reply for that species`() {
+        val session = EntryDryRunSession()
+        session.sharedCaptures(frame, setOf("Doomspiral"), 1000)
+        val query = session.tick(frame, 1001).filterIsInstance<EntryDryRunOutput.Party>().single().message as EntryMessage.Query
+        session.receive(frame, EntryPeer(leader, "Leader"), EntryMessage.Live("Guest", query.nonce, "main", "mini1", "Doomspiral", 0, "c".repeat(32)), 1010)
+        assertNull(session.fresh(frame, 1010, emptySet()))
+    }
+
+    @Test fun `unmatched backend capture leaves other freshly identified species eligible`() {
+        val session = EntryDryRunSession()
+        session.sharedCaptures(frame, setOf("Doomspiral"), 1000)
+        session.scan(frame, listOf(EntryDryRunObservation(creature, "Gazer")), 1001)
+        assertEquals("Gazer", session.fresh(frame, 1001, setOf(creature))?.species)
+    }
+
+    @Test fun `backend echo of a known chat capture preserves a genuinely different later identity`() {
+        val session = EntryDryRunSession()
+        session.scan(frame, listOf(EntryDryRunObservation(creature, "Doomspiral")), 1000)
+        session.captured(frame, "Doomspiral", 1010)
+        session.sharedCaptures(frame, setOf("Doomspiral"), 1020)
+        val next = UUID(0, 101)
+        session.scan(frame, listOf(EntryDryRunObservation(next, "Doomspiral")), 1030)
+        assertNotNull(session.fresh(frame, 1030, setOf(next)))
+        session.scan(frame, listOf(EntryDryRunObservation(creature, "Doomspiral")), 1040)
+        assertNull(session.fresh(frame, 1040, setOf(creature)))
+    }
 }
