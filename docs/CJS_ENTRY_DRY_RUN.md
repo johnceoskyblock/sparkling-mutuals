@@ -2,7 +2,15 @@
 
 ## Scope
 
-Local experiment `4.0.2-cjs-revenge.4`, Minecraft **26.1.2 only**. It observes doom-check arrivals, current Sparkling detections and party status exchanges. **Status exchange alone does not move or click.** The separate opt-in approach test can face the Manager and creep up to one block; Manager/ticket clicks remain manual. The [admission decision core](SAFARI_ENTRY_CORE.md) remains disconnected from gameplay actions.
+Local experiment `4.0.2-cjs-revenge.5`, Minecraft **26.1.2 only**. It observes doom-check arrivals, current Sparkling detections and party status exchanges. **Status exchange alone does not move or click.** The separate opt-in approach test can face the Manager and creep up to one block; Manager/ticket clicks remain manual. The [admission decision core](SAFARI_ENTRY_CORE.md) remains disconnected from gameplay actions.
+
+## New SM integration (.5)
+
+The supplied newer SM source is the base. Its backend room synchronization, returning invitations, capture filtering, shared alerts and other improvements remain intact. The backend retains discovery bits across a visit without observation timestamps; these bits never create or refresh CJ movement evidence. Current-world/server/roster-scoped capture bits can withdraw prior CJ evidence, once per species and context, including an already in-flight leader reply. Repeated snapshots do not keep retiring a genuinely new later identity.
+
+The source’s 28-second fresh warp delay and 24-second returning-invite phase are preserved. Explicit saved timing wins. No live run has verified the remaining entry-window margin with this integrated build. The approach also respects current upstream entry/contest holds without granting Shift bypass.
+
+Configuration files now use `config/sparkling-mutuals/`, through the new SM migration. Explicit CJ and ticket-selection choices survive. Status exchange defaults on, approach and automatic ticket selection default off. Developer-only recording/HUD features remain off in package metadata. This build has not been installed or sent automatically.
 
 ## Setup and collection
 

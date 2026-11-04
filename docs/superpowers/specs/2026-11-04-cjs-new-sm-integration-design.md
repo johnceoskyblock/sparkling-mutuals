@@ -21,7 +21,7 @@ The source archive supplies product source, resources and notices, but no Gradle
 
 **Replace CJ’s freshness protocol with the new shared Sparkling bitmap.** Rejected for the present increment: `PartySyncState` merges discovery/capture bits for a visit, and its received state has no sighting time, nonce-bound request or current entity identity. A connection/reconnect snapshot does not prove a creature is still freshly observed. Preserve that state for its upstream display/invitation consumers; never turn it directly into movement authorization.
 
-This document records a proposed merge boundary for approval; it does not claim that this integration approach has already been approved.
+The human approved this integration design in this chat on 2026-11-04. Native execution continues under that approval.
 
 ## Ownership and resulting behavior
 
@@ -48,4 +48,4 @@ Live Hypixel/Alpha timing, backend availability, two-client protocol delivery, a
 
 ## Last updated
 
-2026-11-04 — Proposed integration based on the supplied archives and the approved CJ .4 design; no integration implementation or new build claimed.
+2026-11-04 — Approved integration implemented locally. Automated validation and artifact receipts are stored separately; no live gameplay confirmation is implied.

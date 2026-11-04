@@ -4,7 +4,7 @@
 
 Cancel recognized Safari entry interactions before their normal packet path while party readiness or presence is unresolved. The guard only blocks interactions. An independently configurable ticket-selection helper can finish a manually initiated Manager interaction, through the same guard. [Contest and downtime](CONTEST_DOWNTIME.md) owns requests, readiness parsing and ticket release.
 
-The separate local **CJ’s Revenge** branch contains an [unregistered admission decision core](SAFARI_ENTRY_CORE.md) and [26.1.2 detection/transport dry run](CJS_ENTRY_DRY_RUN.md). The experiment adds no gameplay actions and does not change this live guard or the existing ticket selector.
+The separate local **CJ’s Revenge** branch contains an [unregistered admission decision core](SAFARI_ENTRY_CORE.md) and [26.1.2 detection/transport dry run](CJS_ENTRY_DRY_RUN.md). The opt-in .5 approach uses a read-only readiness query on this guard before each movement tick, including current contest and applicable stage holds. It never invokes Manager/ticket input or grants Shift bypass; those clicks remain manual in the test flow. Ordinary entry interception and the existing ticket selector retain the supplied SM behavior.
 
 ## Controls and defaults
 

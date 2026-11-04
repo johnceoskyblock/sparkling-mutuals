@@ -1,6 +1,6 @@
 # CJ’s Revenge
 
-Local experimental build `4.0.2-cjs-revenge.4`, based on Sparkling Mutuals v4.0.2. This increment targets **Minecraft 26.1.2 only**. Keep its artifacts and test instance separate from normal profiles. The [Safari entry dry run](docs/CJS_ENTRY_DRY_RUN.md) connects fresh leader reports, corrected pre-admission detection and an optional bounded Manager approach. Manager/ticket clicks remain manual.
+Local experimental build `4.0.2-cjs-revenge.5`, based on the supplied unpublished Sparkling Mutuals v4.0.2 source. It retains the new party synchronization, warp/invitation logic and configuration migration. This increment targets **Minecraft 26.1.2 only**. Keep its artifacts and test instance separate from normal profiles. The [Safari entry dry run](docs/CJS_ENTRY_DRY_RUN.md) connects fresh leader reports, corrected pre-admission detection and an optional bounded Manager approach. Manager/ticket clicks remain manual.
 
 ## Purpose and audience
 
