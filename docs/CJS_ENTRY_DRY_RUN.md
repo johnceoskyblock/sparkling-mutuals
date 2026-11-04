@@ -7,7 +7,7 @@ Local experiment `4.0.2-cjs-revenge.2`, Minecraft **26.1.2 only**. It observes d
 ## Setup and collection
 
 1. Use a separate Fabric 26.1.2 profile named CJ's Revenge with its own game directory. Replace Sparkling Mutuals only within that test profile, retaining required dependencies. They share a mod ID, so install one JAR, not both. Normal instances stay unchanged.
-2. On the leader and joining clients, enable **`/sm` > Safari > Safari entry > Auto Safari Entry (dry run)**. It defaults off and persists per instance.
+2. On the leader and joining clients, enable **`/sm` > Safari helpers > Safari entry > Auto Safari Entry (dry run)**. It defaults off and persists per instance.
 3. Keep the leader's existing Auto warping/Auto-party/Leech configuration and saved delay as appropriate for the existing routine. This feature changes none of them; it does not require changing the delay to 25 seconds.
 4. For passive menu recording, disable the existing **Auto-select Safari ticket** helper separately. That older helper can still act on a manually opened menu when enabled; the dry-run setting does not disable or reconfigure it.
 5. Observe a delayed warp. Local `[CJ dry run ...]` messages describe waiting, accepted fresh evidence, expiry or cancellation. A ready diagnostic says **would check entry NPC/menu; actions disabled**. It does not certify reach or admission. `/sm debug` writes the current state and at most 64 recent timing events to `latest.log` under `CJ_ENTRY_DRY_RUN`.
@@ -30,7 +30,9 @@ Responses retain the existing bounded 1500ms pacing and strict 3-second queue li
 
 A location packet is a **candidate destination claim**, not a unique server run ID, proof of completed party warp, ticket admission or permission to act. A packet observed before a later world replacement is discarded, and a missing fresh packet conservatively leaves the dry run waiting. Actual packet ordering, entrance classification at the supplied spawn, server chat routing, rate limits and the short entry window require live evidence. Only loaded, positively identified creatures can be reported; this does not scan the whole Safari.
 
-The dry-run output type contains only bounded party messages and local diagnostic notices. It has no Manager/Ticket action or permit API. Before each immediate party send, the native adapter rechecks the output's immutable origin context, current setting, destination and role. It retains no outgoing retry queue. Sending a command is logged as an attempt, never server acceptance.
+The dry-run output type contains only bounded party messages and local diagnostic notices. It has no Manager/Ticket action or permit API. Before each immediate party send, the native adapter rechecks the output's immutable origin context, current setting, destination and role. Replies retain their verified recipient UUID/name and require the same unique current profile mapping at send time. Missing, renamed, replaced or ambiguous profiles drop the proposal without lookup or retry.
+
+A separate transport cooldown measures 1500ms from the actual completed/uncertain send attempt, including client stalls, and survives roster-context changes. Proposals blocked by this cooldown are dropped, never buffered or retried. An uncertain send also consumes the cooldown. Sending a command is logged as an attempt, never server acceptance.
 
 Automated tests exercise context continuity, real requester/responder sessions, captures/unloading, pacing/deadlines, current-frame dispatch and config persistence. A 26.1.2 build/compile does not establish live Hypixel behavior. No 26.2/26.3 artifacts or tests are generated for this increment.
 

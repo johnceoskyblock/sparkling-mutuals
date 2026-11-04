@@ -25,6 +25,7 @@ object CjsSafariEntry {
     private var supported = false
     private var environment = EntryDryRunEnvironment()
     private var session = EntryDryRunSession()
+    private var transport = EntryDryRunTransport(::now)
     private var nextRosterAt = 0L
     private var wasEnabled = false
     private val trace = ArrayDeque<String>()
@@ -89,12 +90,13 @@ object CjsSafariEntry {
             session.captured(frame, it, at); record("capture received: $it", at)
         }
         val current = frame.context ?: return
-        val profiles = client.connection?.onlinePlayers.orEmpty().mapNotNull {
-            if (!EntryWire.ign.matches(it.profile.name)) null else EntryPeer(it.profile.id, it.profile.name)
-        }
-        val (peer, message) = EntryPartySender.resolve(text, profiles, current.party.members) ?: return
+        val (peer, message) = EntryPartySender.resolve(text, profiles(client), current.party.members) ?: return
         record("${if (message is EntryMessage.Query) "query" else "reply"} received from ${peer.name}", at)
         session.receive(frame, peer, message, at)
+    }
+
+    private fun profiles(client: Minecraft) = client.connection?.onlinePlayers.orEmpty().mapNotNull {
+        if (!EntryWire.ign.matches(it.profile.name)) null else EntryPeer(it.profile.id, it.profile.name)
     }
 
     /** Called once per completed positive detector scan, including an empty result. */
@@ -117,12 +119,11 @@ object CjsSafariEntry {
                 }
                 is EntryDryRunOutput.Party -> {
                     // No background work or queue between proposal and this current-frame check.
-                    val sentAt = now()
-                    val current = frame(client, sentAt)
-                    EntryDryRunDispatch.command(output, current, sentAt)?.let {
-                        client.connection?.sendCommand(it)
-                        record("${if (output.message is EntryMessage.Query) "query" else "reply"} send attempted (acceptance unverified)", sentAt)
+                    val sent = transport.send(output, { frame(client, now()) }, { profiles(client) }) {
+                        checkNotNull(client.connection).sendCommand(it)
                     }
+                    record(if (sent) "${if (output.message is EntryMessage.Query) "query" else "reply"} send attempted (acceptance unverified)"
+                        else "proposal dropped or send uncertain; no retry", now())
                 }
             }
         }
@@ -141,6 +142,7 @@ object CjsSafariEntry {
 
     fun reset() {
         environment = EntryDryRunEnvironment(); session = EntryDryRunSession()
+        transport = EntryDryRunTransport(::now)
         nextRosterAt = 0; wasEnabled = false; trace.clear()
     }
 }

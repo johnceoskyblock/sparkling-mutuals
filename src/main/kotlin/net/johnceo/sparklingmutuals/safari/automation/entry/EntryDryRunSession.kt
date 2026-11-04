@@ -8,7 +8,8 @@ data class EntryDryRunFrame(val context: EntryContext?, val enabled: Boolean, va
 
 /** Deliberately cannot represent movement, entity interaction, a menu action or a ticket permit. */
 sealed interface EntryDryRunOutput {
-    data class Party(val context: EntryContext, val message: EntryMessage, val proposedAt: Long) : EntryDryRunOutput
+    data class Party(val context: EntryContext, val message: EntryMessage, val proposedAt: Long,
+        val recipient: EntryPeer? = null) : EntryDryRunOutput
     data class Notice(val text: String, val elapsedMs: Long) : EntryDryRunOutput
 }
 
@@ -114,7 +115,7 @@ class EntryDryRunSession {
         if (current != null) {
             if (current.account == current.party.leader) {
                 responder.poll(current, now, true, frame.activeRun, true)?.let {
-                    out.add(EntryDryRunOutput.Party(current, it.message, now))
+                    out.add(EntryDryRunOutput.Party(current, it.message, now, it.peer))
                 }
                 status = if (frame.activeRun) "Leader listening for fresh-status queries" else "Leader waiting outside the run"
             } else when {

@@ -32,10 +32,10 @@
 
 **Interfaces:** `EntryDryRunEnvironment.world(connection: Any?, world: Any?, now: Long)`; `.location(mode: String?, server: String?, realm: String)` binds to observed world; `.context(account: UUID, name: String, party: EntryParty?): EntryContext?`; `.arrivedAt: Long`. Pure `EntryPartySender.resolve(text: String, profiles: List<EntryPeer>, members: Set<UUID>): Pair<EntryPeer, EntryMessage>?` accepts one exact current roster/profile match and the existing Party envelope/protocol.
 
-- [ ] Write tests: packet-before-world rejects, same-world duplicate metadata preserves origin, server/realm change invalidates, unknown/equal roster continuity changes, public/quoted/ambiguous/wrong UUID names reject.
-- [ ] Run target-qualified test, observe RED for missing production types.
-- [ ] Implement context tracker with no inherited packet/world claims and bounded immutable party evidence.
-- [ ] Run tests GREEN and commit focused source/tests.
+- [x] Write tests: packet-before-world rejects, same-world duplicate metadata preserves origin, server/realm change invalidates, unknown/equal roster continuity changes, public/quoted/ambiguous/wrong UUID names reject.
+- [x] Run target-qualified test, observe RED for missing production types.
+- [x] Implement context tracker with no inherited packet/world claims and bounded immutable party evidence.
+- [x] Run tests GREEN and commit focused source/tests.
 
 ### Task 2: Fresh-report dry-run session
 
@@ -43,21 +43,21 @@
 
 **Interfaces:** `EntryDryRunFrame(context: EntryContext?, enabled: Boolean, atEntry: Boolean, activeRun: Boolean, arrivedAt: Long)`; session `tick(frame, now): List<EntryDryRunOutput>`, `receive(frame, peer, message, now)`, `scan(frame, observed: List<EntryDryRunObservation>, now)`, `retainLoaded(frame, ids: Set<UUID>, now)`, `captured(frame, species, now)`, `debug()`. Reset replaces the session object. Output algebra has only `Party(context, message, proposedAt)` and `Notice(text, elapsedMs)`, with no action executor interface. Complete scans and send-time withdrawal do not refresh retained observation age. Extend `EntrySightings` only with visibility withdrawal; keep capture retirement and requester/responder contracts.
 
-- [ ] Write tests: two real sessions query/reply end-to-end; wrong sender/server; one query; no packet replay after disable/context gap; arrival-anchored expiry; capture before queued send; local observation freshness; third peer pacing expiry; no hint authorization; no fresh observation wording; monotonic rollback.
-- [ ] Run tests RED, implement session, run GREEN.
-- [ ] Commit session and regression tests.
+- [x] Write tests: two real sessions query/reply end-to-end; wrong sender/server; one query; no packet replay after disable/context gap; arrival-anchored expiry; capture before queued send; local observation freshness; third peer pacing expiry; no hint authorization; no fresh observation wording; monotonic rollback.
+- [x] Run tests RED, implement session, run GREEN.
+- [x] Commit session and regression tests.
 
 ### Task 3: Client wiring, setting, diagnostics and 26.1.2 delivery
 
 **Files:** Create `CjsSafariEntry.kt`; modify initializer, `SparklingEncounters.kt`, configuration `ConfigManager.kt`/`SafariSettings.kt`, `/sm debug` command, version and affected feature docs. Extend `ConfigTest.kt`.
 
-**Interfaces:** `CjsSafariEntry.register/tick/reset/scanned/debug`. Native adapter supplies current immutable frames, serializes callbacks on client thread, uses fresh location context, and checks the originating context immediately before each `pc` send through `EntryDryRunDispatch.command`. Current sender identity derives only from connection profiles and current roster. No standard CHAT handler or automatic name lookup. Complete positive scans come from SafariAssist; capture notices use the anchored existing global capture grammar, including at the entrance. Restrict registration to 26.1.2.
+**Interfaces:** `CjsSafariEntry.register/tick/reset/scanned/debug`. Native adapter supplies current immutable frames, serializes callbacks on client thread, uses fresh location context, and checks the originating context immediately before each `pc` send through `EntryDryRunTransport.send` and `EntryDryRunDispatch.command`. Transport preserves the verified recipient and rechecks its unique current profile mapping, and enforces 1500ms pacing from completed/uncertain sends rather than proposal time. It drops blocked outputs with no queue/retry. Current sender identity derives only from connection profiles and current roster. No standard CHAT handler or automatic name lookup. Complete positive scans come from SafariAssist; capture notices use the anchored existing global capture grammar, including at the entrance. Restrict registration to 26.1.2.
 
-- [ ] Write settings default/persistence regression, observe RED, implement setting and apply binding; GREEN.
-- [ ] Connect native event boundary and diagnostics; use actual loader version check and compile current 26.1.2 APIs.
-- [ ] Run complete `:26.1.2:test :26.1.2:build` with strict temp harness and 21 build-helper checks; review actual XML counts/failures.
-- [ ] Independent whole-change review; fix Important findings in one RED/GREEN pass, rerun suite/build.
-- [ ] Reconcile docs; package only `4.0.2-cjs-revenge.2+mc26.1.2` with precise dry-run instructions and verified SHA256/metadata. Archive execution receipts; retain local branch/worktree. No install or third-party send.
+- [x] Write settings default/persistence regression, observe RED, implement setting and apply binding; GREEN.
+- [x] Connect native event boundary and diagnostics; use actual loader version check and compile current 26.1.2 APIs.
+- [x] Run complete `:26.1.2:test :26.1.2:build` with strict temp harness and 21 build-helper checks; review actual XML counts/failures.
+- [x] Independent whole-change review; fix Important findings in one RED/GREEN pass, rerun suite/build.
+- [x] Reconcile docs; package only `4.0.2-cjs-revenge.2+mc26.1.2` with precise dry-run instructions and verified SHA256/metadata. Archive execution receipts; retain local branch/worktree. No install or third-party send.
 
 ## Execution commands
 
