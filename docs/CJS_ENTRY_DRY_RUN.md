@@ -2,14 +2,14 @@
 
 ## Scope
 
-Local experiment `4.0.2-cjs-revenge.2`, Minecraft **26.1.2 only**. It observes doom-check arrivals, current Sparkling detections and party status exchanges. **It does not click the Manager, move, select a ticket or automatically enter Safari.** The [admission decision core](SAFARI_ENTRY_CORE.md) remains disconnected from gameplay actions.
+Local experiment `4.0.2-cjs-revenge.3`, Minecraft **26.1.2 only**. It observes doom-check arrivals, current Sparkling detections and party status exchanges. **It does not click the Manager, move, select a ticket or automatically enter Safari.** The [admission decision core](SAFARI_ENTRY_CORE.md) remains disconnected from gameplay actions.
 
 ## Setup and collection
 
 1. Use a separate Fabric 26.1.2 profile named CJ's Revenge with its own game directory. Replace Sparkling Mutuals only within that test profile, retaining required dependencies. They share a mod ID, so install one JAR, not both. Normal instances stay unchanged.
-2. On the leader and joining clients, enable **`/sm` > Safari helpers > Safari entry > Auto Safari Entry (dry run)**. It defaults off and persists per instance.
+2. On the leader and joining clients, enable **`/sm` > Safari helpers > Safari entry > Auto Safari Entry (dry run)**. It defaults on in this recording build and persists per instance. Existing explicit saved values are preserved; verify the switch when reusing a test profile.
 3. Keep the leader's existing Auto warping/Auto-party/Leech configuration and saved delay as appropriate for the existing routine. This feature changes none of them; it does not require changing the delay to 25 seconds.
-4. For passive menu recording, disable the existing **Auto-select Safari ticket** helper separately. That older helper can still act on a manually opened menu when enabled; the dry-run setting does not disable or reconfigure it.
+4. For passive menu recording, keep **Auto-select Safari ticket** off (the default in this recording build). That older helper can still act on a manually opened menu when enabled; the dry-run setting does not disable or reconfigure it.
 5. Observe a delayed warp. Local `[CJ dry run ...]` messages describe waiting, accepted fresh evidence, expiry or cancellation. A ready diagnostic says **would check entry NPC/menu; actions disabled**. It does not certify reach or admission. `/sm debug` writes the current state and at most 64 recent timing events to `latest.log` under `CJ_ENTRY_DRY_RUN`.
 
 No automatic instance installation, client launch, recording or upload is performed by the implementation. Collect the actual spawn-to-menu-to-admission sequence manually; it remains necessary for live integration.
@@ -38,4 +38,4 @@ Automated tests exercise context continuity, real requester/responder sessions, 
 
 ## Last updated
 
-2026-11-04 — Added the directly approved, off-by-default 26.1.2 doom-check detection and dry-run wiring.
+2026-11-04 — Recording build .3 defaults dry run on and ticket selection off; explicit saved choices remain intact. Build .2 introduced the diagnostic wiring.

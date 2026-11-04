@@ -60,8 +60,8 @@ object ConfigManager {
     var doomspiralEmergenceTicks = 98
     var doomspiralThrowLeadTicks = 4
     var hideyhoAutoAccept = true
-    var autoSelectSafariTicket = true
-    var safariEntryDryRun = false
+    var autoSelectSafariTicket = false
+    var safariEntryDryRun = true
     var safariTicketPreference = 0
     var profitsTicketMode = 0
     var hideyhoInsideOutside = true
@@ -127,7 +127,7 @@ object ConfigManager {
     private val flags = mapOf(::hudSnapping to true, ::doomspiralThrowTimer to true, ::autoParty to false, ::autoBiomeReports to true, ::uniqueHideCritterEsp to false, ::uniqueHideFloorDropEsp to false,
         ::fullClearHideCritterEsp to false, ::fullClearHideFloorDropEsp to false,
         ::sparklingHideCritterEsp to false, ::sparklingHideFloorDropEsp to false, ::announceStartingItems to false, ::hotspotAnnouncer to false, ::uniqueHotspotAnnouncer to false, ::fullClearHotspotAnnouncer to false, ::sparklingHotspotAnnouncer to false, ::highlightTeammates to true, ::showTeammateNames to true, ::partyCommandsEnabled to true, ::useCloudApi to true, ::fullClearMode to false, ::sparklingMode to false, ::sparklingProfitableShardEsp to true, ::profitableShardEsp to true, ::timesaveOnly to true, ::warpAlertsEnabled to false,
-        ::hideyhoAutoAccept to true, ::autoSelectSafariTicket to true, ::safariEntryDryRun to false, ::hideyhoInsideOutside to true, ::hideHauntedPaintings to true, ::shinyDetection to true,
+        ::hideyhoAutoAccept to true, ::autoSelectSafariTicket to false, ::safariEntryDryRun to true, ::hideyhoInsideOutside to true, ::hideHauntedPaintings to true, ::shinyDetection to true,
         ::progressHud to true, ::progressProfit to true, ::progressHotspot to true, ::countUniqueOnly to false, ::missingPanel to true, ::biomeObjectives to true,
         ::highlightBeeNests to true, ::removeDarkness to true, ::clearWater to true, ::sparklingAlert to true, ::sparklingCatchCount to true,
         ::sparklingPartyAnnouncer to true, ::catchCountPanel to false, ::autoClicker to true, ::candleHitbox to true, ::holdManagerOnKick to true, ::downtimeCommand to true, ::honeyHives to true, ::huntingBoxValue to true, ::shardSaleGuidance to false, ::skillOverflow to true, ::skillOverflowChat to true, ::skillOverflowNumbers to false, ::estimatedItemValue to true, ::estimatedChestValue to true, ::phantomleafSolver to true, ::runHistory to true, ::achievements to true, ::achievementSound to true, ::achievementsToParty to false, ::runCoinsInstaSell to false,

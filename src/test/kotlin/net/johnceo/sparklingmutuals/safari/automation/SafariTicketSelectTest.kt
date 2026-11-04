@@ -39,17 +39,17 @@ class SafariTicketSelectTest {
         } finally { config.autoSelectSafariTicket=previous }
     }
     @org.junit.jupiter.api.io.TempDir lateinit var dir: java.nio.file.Path
-    @Test fun `ticket helper defaults on and GUI saves opt out and preference`() {
+    @Test fun `CJ ticket helper defaults off and GUI saves opt in and preference`() {
         val config = net.johnceo.sparklingmutuals.config.ConfigManager
         config.init(dir)
-        assertTrue(config.autoSelectSafariTicket)
+        assertFalse(config.autoSelectSafariTicket)
         assertEquals(0, config.safariTicketPreference)
         val settings = net.johnceo.sparklingmutuals.config.SafariSettings()
-        settings.safari.entry.autoSelectTicket = false
+        settings.safari.entry.autoSelectTicket = true
         settings.safari.ticketPreference = 1
         settings.apply()
         config.init(dir)
-        assertFalse(config.autoSelectSafariTicket)
+        assertTrue(config.autoSelectSafariTicket)
         assertEquals(1, config.safariTicketPreference)
         assertFalse(java.nio.file.Files.readString(dir.resolve("sparkling-mutuals.properties")).contains("hideyhoQuestClicks"))
     }

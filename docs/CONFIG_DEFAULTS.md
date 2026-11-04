@@ -17,7 +17,7 @@ Open `/sm` for settings. Fresh installs use [bundled main defaults](../src/main/
 | Setting | Saved key | Default |
 | --- | --- | --- |
 | Sparkle Warping | `warpAlertsEnabled` | Off |
-| CJ's Revenge Auto Safari Entry (dry run, 26.1.2 only) | `safariEntryDryRun` | Off; status exchange only, no entry clicks |
+| CJ's Revenge Auto Safari Entry (dry run, 26.1.2 only) | `safariEntryDryRun` | On in CJ recording build .3; status exchange only, no entry clicks |
 | Hotspot announcer | `hotspotAnnouncer` | Off |
 | Leech auto-accept | `leechMode` | Off; inviter whitelist retained |
 | Starting quest-item announcements and reminder titles | `announceStartingItems` | Off |
@@ -30,7 +30,7 @@ Open `/sm` for settings. Fresh installs use [bundled main defaults](../src/main/
 
 Achievements themselves and achievement sound default on. A button's backing field is not an enable switch. Mode selectors are mutually exclusive: fresh configuration selects **Unique** (`fullClearMode=false`, `sparklingMode=false`); they are not an all-on feature group.
 
-Capture projections and automatic ticket selection default on. **Preferred ticket** is **Basic** for fresh installs. Existing files preserve their preferences and retain First Class as the older missing/invalid-field fallback. The curated profile is applied only when the corresponding main or contest config file does not exist, including when a user explicitly deletes that file.
+Capture projections default on. Automatic ticket selection defaults off in CJ recording build .3 for passive menu recording. **Preferred ticket** is **Basic** for fresh installs. Existing files preserve their preferences and retain First Class as the older missing/invalid-field fallback. The curated profile is applied only when the corresponding main or contest config file does not exist, including when a user explicitly deletes that file.
 
 ### Fresh-install profile and portable HUDs
 
@@ -194,7 +194,7 @@ Successful profile/discovery reads and IGN-to-UUID lookups are reused for 60 min
 
 ## Experimental shard ranges
 
-Local CJ's Revenge 26.1.2 also has an independent **Safari entry > Auto Safari Entry (dry run)** switch, saved as `safariEntryDryRun`, default off for missing/invalid values. It exchanges party status and records timing only. Existing ticket-selection and warp preferences remain independent. See [dry-run setup](CJS_ENTRY_DRY_RUN.md).
+Local CJ's Revenge 26.1.2 also has an independent **Safari entry > Auto Safari Entry (dry run)** switch, saved as `safariEntryDryRun`, default on for missing/invalid values in CJ recording build .3; automatic ticket selection defaults off. It exchanges party status and records timing only. Existing ticket-selection and warp preferences remain independent. See [dry-run setup](CJS_ENTRY_DRY_RUN.md).
 
 SkyBlock → Helpers → Shard sale guidance (experimental) uses persisted `shardSaleGuidance`, default **off** for both new and existing settings. It adds Hunting Box range colors, an always-present Safari Essence advice row and passive observed-order advisories. The combined Hunting Box total remains an independent switch; general item/chest valuation stays shelved. See [meaning and limitations](SHARD_SALE_GUIDANCE.md).
 
