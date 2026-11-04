@@ -1,6 +1,6 @@
 # Documentation index
 
-Local CJ's Revenge 26.1.2 experiment: [entry detection and dry-run setup](CJS_ENTRY_DRY_RUN.md). Automatic admission remains inactive.
+Local CJ's Revenge 26.1.2 experiment: [WebSocket automatic-entry setup](CJS_ENTRY_DRY_RUN.md). Full entry requires its separate opt-in.
 
 ## Purpose and audience
 
@@ -21,7 +21,7 @@ Players: start with [installation and controls](../README.md). Contributors: rea
 | Gameplay display | [Bird completion](BIRD_COMPLETION.md), [missing panel](MISSING_PANEL.md), [Sparkling detection](SPARKLING_DETECTION.md) |
 | Biome assignments | [Hotspot announcer and UUID-ranked assignments](HOTSPOT_ASSIGNMENTS.md) |
 | Controls | [Configuration](CONFIG_DEFAULTS.md), [entry guard](SAFARI_ENTRY_GUARD.md), [warp alerts](WARP_ALERTS.md) |
-| CJ’s Revenge local experiment | [Unregistered Safari sighting/report and admission decision core](SAFARI_ENTRY_CORE.md) |
+| CJ’s Revenge local experiment | [Current WebSocket entry ownership and historical report core](SAFARI_ENTRY_CORE.md) |
 | Contest and Canyon | [Contest/downtime](CONTEST_DOWNTIME.md), [Honeyhives](HONEYHIVES.md) |
 | SkyBlock helpers (general valuation shelved) | [Hunting Box total value](HUNTING_BOX_VALUE.md), [item and chest values](ITEM_VALUES.md), [Skills overflow tooltips](SKILL_OVERFLOW.md) |
 | Misc Endgame Features | [Garden Phantomleaf Solver](PHANTOMLEAF_SOLVER.md) |

@@ -4,7 +4,7 @@
 
 Cancel recognized Safari entry interactions before their normal packet path while party readiness or presence is unresolved. The guard only blocks interactions. An independently configurable ticket-selection helper can finish a manually initiated Manager interaction, through the same guard. [Contest and downtime](CONTEST_DOWNTIME.md) owns requests, readiness parsing and ticket release.
 
-The separate local **CJ’s Revenge** branch contains an [unregistered admission decision core](SAFARI_ENTRY_CORE.md) and [26.1.2 detection/transport dry run](CJS_ENTRY_DRY_RUN.md). The opt-in .5 approach uses a read-only readiness query on this guard before each movement tick, including current contest and applicable stage holds. It never invokes Manager/ticket input or grants Shift bypass; those clicks remain manual in the test flow. Ordinary entry interception and the existing ticket selector retain the supplied SM behavior.
+The separate local **CJ’s Revenge .6** experiment now has [WebSocket-driven automatic entry](CJS_ENTRY_DRY_RUN.md) on 26.1.2 only. Its explicit opt-in owns one bounded approach, Manager interaction and configured ticket selection per verified warp. It checks this guard without Shift bypass and uses the ordinary guarded game-mode paths. The generic ticket helper is suppressed for CJ-owned/cancelled attempts, including late menus and switch-off; those menus stay visible for manual cancellation. Normal non-CJ entry interception and helper behavior otherwise retain their supplied SM owners. See [current core ownership](SAFARI_ENTRY_CORE.md).
 
 ## Controls and defaults
 

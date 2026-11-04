@@ -282,10 +282,12 @@ class SafariSettings {
             set(value) { alerts.announce = value }
     }
     class SafariEntrySettings {
-        @JvmField @ConfigOption(name = "Safari entry status exchange", desc = "CJ's Revenge 26.1.2. Exchanges fresh Sparkling reports. Manager and ticket clicks remain manual.")
+        @JvmField @ConfigOption(name = "WebSocket Safari discoveries", desc = "CJ’s Revenge 26.1.2. Current-room uncaught discoveries authorize the opted-in entry modes; no party-chat fallback.")
         @ConfigEditorBoolean var dryRun = ConfigManager.safariEntryDryRun
-        @JvmField @ConfigOption(name = "Approach Manager (one-block test)", desc = "Opt-in CJ movement test. Requires fresh reports and a verified party warp. Stops on input, unsafe terrain or changed context.")
+        @JvmField @ConfigOption(name = "Approach Manager (one-block test)", desc = "Approach only, without ticket clicks. Requires current WebSocket discoveries and a verified party warp.")
         @ConfigEditorBoolean var approach = ConfigManager.safariEntryApproach
+        @JvmField @ConfigOption(name = "Automatic Safari entry", desc = "CJ’s Revenge 26.1.2. On uncaught room discoveries: approach, open Manager, select Preferred ticket. One attempt per verified party warp; game must stay focused.")
+        @ConfigEditorBoolean var autoEnter = ConfigManager.safariEntryAutoEnter
         @JvmField @ConfigOption(name = "Guard Safari entry", desc = "Wait for party members. Shift bypasses.")
         @ConfigEditorBoolean var holdManagerOnKick = ConfigManager.holdManagerOnKick
         @JvmField @ConfigOption(name = "Auto-select Safari ticket", desc = "Non-leaders, inside Safari only.")
@@ -509,7 +511,7 @@ class SafariSettings {
             net.johnceo.sparklingmutuals.alerts.SparkleWarping.configurationChanged()
         }
         if (warp.enabled != ConfigManager.warpAlertsEnabled) AlertManager.toggleAlert()
-        val changes = listOf(ConfigManager::safariEntryApproach to safari.entry.approach, ConfigManager::safariEntryDryRun to safari.entry.dryRun, ConfigManager::sparklingCatchCount to safari.alerts.catchCount, ConfigManager::specialCatchAlert to safari.alerts.caught,
+        val changes = listOf(ConfigManager::safariEntryAutoEnter to safari.entry.autoEnter, ConfigManager::safariEntryApproach to safari.entry.approach, ConfigManager::safariEntryDryRun to safari.entry.dryRun, ConfigManager::sparklingCatchCount to safari.alerts.catchCount, ConfigManager::specialCatchAlert to safari.alerts.caught,
             ConfigManager::alwaysCelebrateSparkling to safari.alerts.alwaysCelebrate,
             ConfigManager::doomspiralThrowTimer to safari.capture.doomTimer, ConfigManager::autoParty to warp.autoParty, ConfigManager::autoPartyOnlineOnly to warp.autoPartyOnlineOnly, ConfigManager::autoBiomeReports to party.biomeReports,
             ConfigManager::uniqueHideCritterEsp to modes.unique.hideCritters, ConfigManager::uniqueHideFloorDropEsp to modes.unique.hideDrops,

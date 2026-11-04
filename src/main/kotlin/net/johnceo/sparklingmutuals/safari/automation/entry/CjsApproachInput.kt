@@ -21,6 +21,7 @@ class CjsApproachInput {
     private var input: CjsWalkingKeys? = null
     private var lastStatus = ""
     var outcome=CjsApproachOutcome.WAITING; private set
+    fun aimMatches(client: Minecraft)=client.player?.let { policy.aimMatches(it.yRot,it.xRot) }==true
     val ownsKeys get()=input?.owns==true
     fun userIdle(client: Minecraft): Boolean {
         val o=client.options

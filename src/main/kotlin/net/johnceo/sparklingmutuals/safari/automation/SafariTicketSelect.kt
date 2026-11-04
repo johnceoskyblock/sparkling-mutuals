@@ -2,6 +2,8 @@ package net.johnceo.sparklingmutuals.safari.automation
 
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents
 import net.fabricmc.fabric.api.client.screen.v1.ScreenMouseEvents
+import net.fabricmc.fabric.api.client.screen.v1.ScreenKeyboardEvents
+import net.johnceo.sparklingmutuals.safari.automation.entry.CjsSafariEntry
 import net.minecraft.client.gui.screens.Screen
 import net.johnceo.sparklingmutuals.compat.smScreen
 import net.johnceo.sparklingmutuals.config.ConfigManager
@@ -58,7 +60,9 @@ object SafariTicketSelect {
 
     fun register() {
         ScreenEvents.AFTER_INIT.register { _, screen, _, _ ->
+            ScreenKeyboardEvents.allowKeyPress(screen).register { _, _ -> CjsSafariEntry.manualInput();true }
             if (screen is AbstractContainerScreen<*>) ScreenMouseEvents.allowMouseClick(screen).register { _, _ ->
+                CjsSafariEntry.manualInput()
                 val hidden=hideScreen(screen)
                 // A visible menu belongs to the user once they begin clicking it.
                 if (!hidden && entryMenu(screen.title.string) && contextAllows(Minecraft.getInstance())) {
@@ -76,6 +80,7 @@ object SafariTicketSelect {
         val client = Minecraft.getInstance()
         val now = System.currentTimeMillis()
         syncSession(client)
+        if (CjsSafariEntry.suppressesAutomaticMenu(client)) return false
         if (!contextAllows(client) || client.smScreen !== screen || screen !is AbstractContainerScreen<*> ||
             !entryMenu(screen.title.string)) return false
         observeMenu(client.player!!.containerMenu, now)
@@ -122,6 +127,7 @@ object SafariTicketSelect {
     fun tick(client: Minecraft) {
         val now = System.currentTimeMillis()
         syncSession(client)
+        if (CjsSafariEntry.suppressesAutomaticMenu(client)) { revealed=true; return }
         if (!ConfigManager.autoSelectSafariTicket) { reset(); return }
         val player = client.player ?: return
         val screen = client.smScreen as? AbstractContainerScreen<*> ?: run {

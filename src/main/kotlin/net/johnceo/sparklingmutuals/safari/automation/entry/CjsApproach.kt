@@ -24,6 +24,8 @@ class CjsApproach {
     private var status = "Waiting for room discovery and clear approach"
     private var outcome = CjsApproachOutcome.WAITING
     fun cancel() { stop("Approach cancelled") }
+    fun aimMatches(currentYaw: Float, currentPitch: Float): Boolean = origin==null ||
+        abs(((currentYaw-yaw+540)%360+360)%360-180)<=3 && abs(currentPitch-pitch)<=3
     fun heading(): Float? = yaw.takeIf { origin!=null }
     private fun stop(reason: String, result: CjsApproachOutcome = CjsApproachOutcome.CANCELLED): CjsApproachAction {
         terminal = true; status = reason; outcome=result

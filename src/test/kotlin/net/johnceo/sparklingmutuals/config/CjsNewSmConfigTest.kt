@@ -9,6 +9,20 @@ import org.junit.jupiter.api.io.TempDir
 class CjsNewSmConfigTest {
     @TempDir lateinit var root: Path
 
+    @Test fun `automatic entry requires a new opt in and survives native settings saving`() {
+        Files.writeString(root.resolve("sparkling-mutuals.properties"),
+            "safariEntryApproach=true\nautoSelectSafariTicket=true\n")
+        val migrated=ConfigStorage.migrate(root)
+        ConfigManager.init(migrated);ContestConfig.init(migrated)
+        assertFalse(ConfigManager.safariEntryAutoEnter)
+        SafariSettings().apply { safari.entry.autoEnter=true }.apply()
+        ConfigManager.init(migrated)
+        assertTrue(ConfigManager.safariEntryAutoEnter)
+        assertTrue(ConfigManager.safariEntryApproach)
+        assertTrue(ConfigManager.autoSelectSafariTicket)
+        SafariSettings().apply { safari.entry.autoEnter=false }.apply()
+        ConfigManager.init(migrated);assertFalse(ConfigManager.safariEntryAutoEnter)
+    }
     @Test fun `migrated CJ choices survive settings edits and are not replaced by fresh defaults`() {
         Files.writeString(root.resolve("sparkling-mutuals.properties"),
             "safariEntryDryRun=false\nsafariEntryApproach=true\nautoSelectSafariTicket=true\nwarpDelaySeconds=26\n")

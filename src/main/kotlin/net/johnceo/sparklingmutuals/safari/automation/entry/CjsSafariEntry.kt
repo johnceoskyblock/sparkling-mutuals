@@ -16,10 +16,12 @@ import net.johnceo.sparklingmutuals.safari.SafariIsland
 import net.johnceo.sparklingmutuals.safari.SafariRules
 import net.minecraft.client.Minecraft
 import org.slf4j.LoggerFactory
+import net.johnceo.sparklingmutuals.sync.SafariPartySync
+import net.johnceo.sparklingmutuals.sync.PartySyncProtocol
 
-/** 26.1.2 experiment. Its only outgoing network operation is a bounded party status command. */
+/** 26.1.2 experiment. Positive coordination uses only the existing shared WebSocket. */
 object CjsSafariEntry {
-    private val logger = LoggerFactory.getLogger("sparkling-mutuals/cj-entry-dryrun")
+    private val logger = LoggerFactory.getLogger("sparkling-mutuals/cj-entry")
     private val origin = System.nanoTime()
     private fun now() = (System.nanoTime() - origin) / 1_000_000
     private var supported = false
@@ -27,10 +29,11 @@ object CjsSafariEntry {
     private var admission = CjsAdmissionState()
     private var warp = CjsWarpGate()
     private val approach = CjsApproachInput()
-    private var session = EntryDryRunSession()
-    private var transport = EntryDryRunTransport(::now)
+    private var flow=CjsEntryFlow()
+    private val entryInput=CjsEntryInput(approach)
+    private var lastApproachWarp=-1L
+    private var lastStatus=""
     private var nextRosterAt = 0L
-    private var wasEnabled = false
     private val trace = ArrayDeque<String>()
 
     fun register() {
@@ -82,9 +85,7 @@ object CjsSafariEntry {
             PartyManager.requestPartyInfo()
         }
         val mapped = player?.let { SafariAreaMap.areaAt(it.x, it.y, it.z) }
-        val frame = admission.frame(context, enabled, mapped, SafariAssist.inSafari && mapped in 0..4, environment.arrivedAt)
-        session.sharedCaptures(frame, net.johnceo.sparklingmutuals.sync.SafariPartySync.capturedSpecies(client), at)
-        return frame
+        return admission.frame(context, enabled, mapped, SafariAssist.inSafari && mapped in 0..4, environment.arrivedAt)
     }
 
     private fun receive(text: String) {
@@ -95,60 +96,84 @@ object CjsSafariEntry {
         admission.chat(text)
         if (!frame.enabled) return
         warp.observe(text,at)
-        // Global capture evidence must also withdraw advice while this player is still outside.
-        EntryCaptureNotice.species(text)?.let {
-            session.captured(frame, it, at); record("capture received: $it", at)
-        }
-        val current = frame.context ?: return
-        val (peer, message) = EntryPartySender.resolve(text, profiles(client), current.party.members) ?: return
-        record("${if (message is EntryMessage.Query) "query" else "reply"} received from ${peer.name}", at)
-        session.receive(frame, peer, message, at)
     }
 
     private fun profiles(client: Minecraft) = client.connection?.onlinePlayers.orEmpty().mapNotNull {
         if (!EntryWire.ign.matches(it.profile.name)) null else EntryPeer(it.profile.id, it.profile.name)
     }
 
-    /** Called once per completed positive detector scan, including an empty result. */
-    fun scanned(observed: List<EntryDryRunObservation>) {
-        if (!supported) return
-        val at = now()
-        session.scan(frame(Minecraft.getInstance(), at), observed, at)
+    private fun signal(client: Minecraft, base: EntryDryRunFrame): CjsRoomSignal? {
+        val c=base.context ?: return null
+        val own=PartySyncProtocol.canonicalLobby(c.server) ?: return null
+        val shared=SafariIsland.serverName?.let(PartySyncProtocol::canonicalLobby) ?: return null
+        if(!own.equals(shared,true)) return null
+        return SafariPartySync.entryRoom(client)?.let { CjsRoomSignal(c,it.generation,it.active) }
     }
-
     fun tick(client: Minecraft) {
-        if (!supported) return
-        val at = now()
-        val frame = frame(client, at)
-        session.retainLoaded(frame, SafariAssist.entryVisibleIdentities(), at)
-        session.tick(frame, at).forEach { output ->
-            when (output) {
-                is EntryDryRunOutput.Notice -> if (frame.enabled || wasEnabled) {
-                    record(output.text, at)
-                    client.player?.sendSystemMessage(LocalChat.component("[CJ dry run +${output.elapsedMs}ms] ${output.text}."))
-                }
-                is EntryDryRunOutput.Party -> {
-                    // No background work or queue between proposal and this current-frame check.
-                    val sent = transport.send(output, { frame(client, now()) }, { profiles(client) }) {
-                        checkNotNull(client.connection).sendCommand(it)
-                    }
-                    record(if (sent) "${if (output.message is EntryMessage.Query) "query" else "reply"} send attempted (acceptance unverified)"
-                        else "proposal dropped or send uncertain; no retry", now())
-                }
-            }
-        }
-        wasEnabled = frame.enabled
+        if(supported) frame(client,now()) // Lifecycle only. All CJ inputs run at START.
     }
+    fun manualInput() {
+        if(!supported || !flow.suppressesAutomaticMenus) return
+        flow.cancel("Automatic entry cancelled: manual input")
+        approach.release(Minecraft.getInstance())
+    }
+    fun suppressesAutomaticMenu(client: Minecraft): Boolean =
+        supported && client.connection!=null && flow.suppressesAutomaticMenus
 
-    /** Input ownership is checked before vanilla's next player/input tick. */
+    /** Drain known room changes and revalidate before vanilla consumes walking input. */
     fun startTick(client: Minecraft) {
-        if (!supported) return
-        val at=now();val frame=frame(client,at)
-        approach.tick(client,frame,net.johnceo.sparklingmutuals.sync.SafariPartySync.entryRoom(client)?.let { room ->
-            frame.context?.let { CjsRoomSignal(it,room.generation,room.active) } },ConfigManager.safariEntryApproach,
-            warp.allows(frame.context,profiles(client),at),warp.generation,at) { text ->
-            logger.info("CJ_ENTRY_APPROACH {}",text)
-            client.player?.sendSystemMessage(LocalChat.component("[CJ approach] $text."))
+        if(!supported) return
+        val at=now()
+        fun base()=frame(client,now())
+        val initial=frame(client,at)
+        val allowed=warp.allows(initial.context,profiles(client),at)
+        if(allowed && lastApproachWarp!=warp.generation) {
+            approach.reset(client);lastApproachWarp=warp.generation
+        }
+        fun current(): CjsEntryFrame {
+            val b=base()
+            return entryInput.frame(client,b,signal(client,b),ConfigManager.safariEntryAutoEnter,
+                warp.allows(b.context,profiles(client),now()),warp.generation,flow)
+        }
+        try {
+            if(ConfigManager.safariEntryAutoEnter || flow.suppressesAutomaticMenus) {
+                val f=current()
+                when(val effect=flow.tick(f,at)) {
+                    is CjsEntryEffect.Approach -> {
+                        val room=SafariPartySync.entryRoom(client)
+                        val driven=room!=null && room.generation==effect.generation && SafariPartySync.withEntryRoom(client,room) {
+                            val fresh=current()
+                            if(!flow.matches(effect) || !fresh.safe || !fresh.guardAllows || !fresh.enabled ||
+                                fresh.context!=effect.context || fresh.signal?.generation!=effect.generation ||
+                                fresh.signal.active.isEmpty() || !fresh.warpAllowed) false
+                            else {
+                                approach.tick(client,base(),fresh.signal,true,true,warp.generation,now()) { record(it,now()) }
+                                true
+                            }
+                        }
+                        if(!driven) { flow.cancel("Approach permission withdrawn");approach.release(client) }
+                    }
+                    is CjsEntryEffect.Manager, is CjsEntryEffect.Ticket ->
+                        entryInput.dispatch(client,flow,effect,::base,::current,now())
+                    null -> approach.release(client)
+                }
+                if(flow.status!=lastStatus) {
+                    lastStatus=flow.status;record(lastStatus,at)
+                    client.player?.sendSystemMessage(LocalChat.component("[CJ entry] $lastStatus."))
+                }
+            } else {
+                val room=SafariPartySync.entryRoom(client)
+                val ran=room!=null && SafariPartySync.withEntryRoom(client,room) {
+                    val b=base()
+                    approach.tick(client,b,signal(client,b),ConfigManager.safariEntryApproach,
+                        warp.allows(b.context,profiles(client),now()),warp.generation,now()) { record(it,now()) }
+                    true
+                }
+                if(!ran) approach.tick(client,initial,null,ConfigManager.safariEntryApproach,allowed,warp.generation,at) { record(it,at) }
+            }
+        } catch(error: Exception) {
+            flow.cancel("Automatic entry cancelled: ${error.javaClass.simpleName}")
+            approach.release(client);record(flow.status,now())
         }
     }
 
@@ -156,16 +181,15 @@ object CjsSafariEntry {
         val line = "t=${at}ms arrival+${(at - environment.arrivedAt).coerceAtLeast(0)}ms $text"
         if (trace.size >= 64) trace.removeFirst()
         trace.addLast(line)
-        logger.info("CJ_ENTRY_DRY_RUN {}", line)
+        logger.info("CJ_ENTRY {}", line)
     }
 
-    fun debug() = listOf("CJ entry: supported=$supported setting=${ConfigManager.safariEntryDryRun} npcAndTicketActions=disabled approachSetting=${ConfigManager.safariEntryApproach}") +
-        session.debug() + trace.toList()
+    fun debug() = listOf("CJ entry: supported=$supported WebSocket=${ConfigManager.safariEntryDryRun} autoEntry=${ConfigManager.safariEntryAutoEnter} approachOnly=${ConfigManager.safariEntryApproach}",
+        "CJ phase=${flow.phase} status=${flow.status} genericMenuSuppressed=${flow.suppressesAutomaticMenus} warp=${warp.generation}") + trace.toList()
 
     fun reset() {
         approach.reset(Minecraft.getInstance());admission=CjsAdmissionState();warp=CjsWarpGate()
-        environment = EntryDryRunEnvironment(); session = EntryDryRunSession()
-        transport = EntryDryRunTransport(::now)
-        nextRosterAt = 0; wasEnabled = false; trace.clear()
+        environment=EntryDryRunEnvironment();flow=CjsEntryFlow();lastApproachWarp=-1;lastStatus=""
+        nextRosterAt=0;trace.clear()
     }
 }

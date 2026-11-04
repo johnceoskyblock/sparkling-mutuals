@@ -1,42 +1,25 @@
 # CJ’s Revenge Safari entry core
 
-## Purpose
+The local **4.0.2-cjs-revenge.6** experiment now registers the complete WebSocket-driven entry flow on **26.1.2 only**. See [setup, actions and limits](CJS_ENTRY_DRY_RUN.md), the [approved design](superpowers/specs/2026-11-04-cjs-websocket-entry-design.md), and [implementation plan](superpowers/plans/2026-11-04-cjs-websocket-entry.md). The separate normal instance is not modified or installed by this delivery.
 
-This local experiment implements coordinate-independent sighting, fresh-report and admission decisions. The **admission controller remains unregistered and does not automatically enter Safari**. The separate [26.1.2 dry-run integration](CJS_ENTRY_DRY_RUN.md) now connects detection, party-protocol exchange, a persisted setting and diagnostics. The separately opted-in .4 approach test connects bounded ordinary walking; NPC interaction, menu clicks and reach extension remain disconnected. Existing Safari entry and ticket selection behave as before. See the [live entry guard](SAFARI_ENTRY_GUARD.md).
+## Current ownership
 
-The user named the experiment **CJ’s Revenge** and requested separation from normal instances. Its current version is `4.0.2-cjs-revenge.5`, targeting 26.1.2 only; packaged files retain the `sparkling-mutuals-` prefix required by the existing verifier. The Fabric display name is **CJ’s Revenge** and the mod ID remains `sparkling-mutuals`. Any test install requires a separate Modrinth profile/game directory; it must not replace the normal instance or run alongside another JAR with the same mod ID. The prior .4 build was installed in the separate CJ test profile. This .5 package is a local delivery only; installation requires a new request.
+- `PartyRoomDiscoveries`: current-socket atomic positives and visit-scoped caught negatives. `PartySyncTransport` drains bounded inbound work and synchronizes permission consumption with current generation/room readiness. `SafariPartySync` validates world/account/server/exact roster. A new welcome requires a new snapshot; old found history is insufficient. No five-second age gate or CJ party-chat fallback.
+- `CjsEntryFlow`: immutable context and verified warp, 12-second attempt window, approach/settle/Manager/menu/ticket/admission phases, one-use Manager/ticket consumption, and retained generic-helper suppression after cancellation. Unknown context authorizes no action.
+- `CjsApproach`/`CjsApproachInput`/`CjsWalkingKeys`: bounded ordinary movement, frozen Manager-facing heading, clear supported corridor, early release/reserved coast, physical/logical takeover and Hold/Toggle crouch ownership. Only a genuinely new leader warp replenishes input.
+- `CjsEntryInput`: native geometry/reach, visible exact menu, current ticket options and normal guarded game-mode calls. Proposals retain emitting context/warp/socket generation and are revalidated at dispatch. No raw interaction packets, extra reach or repeated spend.
+- `CjsSafariEntry`: current Hypixel location/party/warp/personal admission lifecycle and START-tick composition. No registered report-session transport or local detector forwarding remains. Screen/manual callbacks cancel owned automation; generic ticket-helper tick/hide paths honor the retained owner.
 
-## Implemented pure contracts
+Full entry has a distinct saved opt-in (`safariEntryAutoEnter=false` by default). Old approach-only settings never acquire ticket spending. `safariEntryDryRun` is retained as the WebSocket observation setting for compatibility. Preferred ticket and all explicit existing choices are preserved.
 
-- Immutable local account/connection/world/arrival/party-continuity contexts. A server name is a claim to compare, not a unique run identifier. Genuine new-arrival evidence must come from a later validated adapter.
-- Exact single-line `SMSE1` query/NONE/LIVE grammar, at most1024characters, bounded tokens and canonical species. Current `SPARKLING <species>!` party text supplies only a hint. Catch/lookup/public/quoted text is not a named sighting. Dry-run sender attribution uses a server Party envelope plus a unique current roster/profile mapping; GAME carries no signed sender UUID.
-- One query per arrival with no retry, a12second context preparation bound,3second reply deadline and5second effective observation age including measured round-trip. No cross-client wall-clock comparison. Rollback and overflow fail closed.
-- Initially unknown context may settle within that bound. Losing previously established party/destination verification cancels the old authorization; an equal roster later cannot restore its old query. Ordinary successful refreshes and temporary guard holds do not replenish the budget.
-- A leader response proposal requires a current member, matching realm/server and fresh local unresolved observations. Enable/run/destination evidence is checked again when dequeuing. At most three peer responses are retained; proposals are paced1500ms apart and queue time consumes freshness/deadline budgets.
-- One current local observation per species, stable event token per identity and bounded capture retirement. Up to128captured identities are retained per context; overflow disables positive reports for that context instead of forgetting old captures. A genuinely different post-capture identity may qualify.
-- An admission controller proposes one Manager interaction and one ticket action per independently established arrival. It requires explicit current destination, party, guard, Manager identity/reach and exact-menu evidence. Default frames authorize no action.
-- Ticket proposals are reservations. A future sender must call `consumeTicketPermit` with the complete current frame immediately before input; it checks context, guard, container and selected slot and consumes permission once. Merely calling `allowsAutomaticTicket` is insufficient.
-- Cancellation after a Manager proposal latches suppression for automatic entry menus for that arrival. Menu close/reopen, toggle, roster refresh and re-arm cannot permit a second automatic spend. Already consumed input remains uncertain until explicit personal admission evidence; cancellation never claims rollback. A validated genuinely new arrival can reset the latches; a generic world replacement cannot.
-- Capture inputs carry current context and monotonic receipt time. Known captured event tokens remain retired for the arrival, older local snapshots fail the capture-time fence, and pending pre-capture replies are cancelled. A genuinely newer independently identified local event can still qualify. Controller retirement is bounded at128events; overflow cancels instead of forgetting evidence.
+## Historical pure report contracts
 
-`EntryEffect` values are proposed effects for tests and a future admission adapter. No current caller executes them. The dry run composes the requester/responder directly and has a distinct Party/Notice-only output type. The existing `SafariTicketSelect` has not been connected to the admission ownership gate.
+`SparklingEntryProtocol`, `EntryReportExchange`, `EntryDryRunSession`, `EntryDryRunTransport` and `SafariEntryController` remain as tested historical pure components. Their SMSE1 query/nonce, three-second reply and five-second sighting rules are **not** the registered .6 entry path. The previous `SafariEntryController` does not execute game inputs; the new `CjsEntryFlow` owns the current WebSocket-based sequence. Historical design/plan documents describe those superseded increments, not extra active gates.
 
-Stateful core objects are confined to one client thread. A future adapter must serialize callbacks and supply elapsed monotonic milliseconds plus a current immutable frame; these objects are not a thread-safe background service.
+## Evidence and limits
 
-A future dispatcher must retain each effect's emitting context/attempt and reject queued work from a previous arrival before asking for a permit. It must not substitute a new arrival's current frame for an old queued action. Manager proposal-to-send revalidation and real ticket-helper integration are also still future work; this core does not claim to verify an absent dispatcher.
+The reported spawn `(-50,68,24)` is out of Manager interaction reach; the human approved movement toward the Manager `(-52,68,21)`. The adapter checks the live correlated body and actual native eye-to-hitbox reach after bounded movement rather than treating those centre coordinates as proof of reach. Exact personal acceptance confirms admission; inputs alone remain uncertain and are never retried.
 
-## Files and validation
+Automated policies, real loopback transport and offline geometry/tests/builds do not certify live Hypixel admission, backend availability, server input acceptance or timing. The selected room criterion deliberately accepts untimestamped outstanding discoveries. No game/session changes, installation, server changes or GitHub publication are part of implementation.
 
-Production: `safari/automation/entry/EntryContext.kt`, `SparklingEntryProtocol.kt`, `EntryReportExchange.kt`, `SafariEntryController.kt`. Tests under the corresponding `src/test` package cover parsing, identity/context scopes, freshness, capture retirement, cancellation, late menus, slot replacement, one-use permission and arrival reset boundaries. The [implementation plan](superpowers/plans/2026-11-04-safari-entry-core.md) links the approved local design.
-
-Automated results belong in the local execution receipts. The external51-case scenario matrix also includes native and live cases; those cases have not been executed simply because pure tests pass. No live Minecraft interaction or Hypixel admission was performed.
-
-## Remaining integration evidence
-
-Reported spawn `(-50,68,24)` and Manager `(-52,68,21)` are about3.61blocks apart. Cached native clients expose a default3block entity interaction attribute; the26.1.2predicate measures current eye-to-hitbox distance. The actual Manager body, server-supplied attribute, orientation and accepted interaction remain unverified. Do not infer reach from centre coordinates alone.
-
-Location packet/world ordering, same-destination association, personal admission sequence and present-day server timing remain unverified. Dry-run transport retains candidate claims only; NPC/menu admission adapters remain unimplemented; the opt-in ordinary-input approach is a separate .4 test adapter. The existing published Hypixel rules also prohibit automated gameplay actions; implementing this core does not establish permission to deploy unattended entry or promise a Sparkling claim.
-
-## Last updated
-
-2026-11-04 — Connected the approved 26.1.2 detection/transport dry run; the admission controller remains inactive. No installation or GitHub publication.
+Last updated: 2026-11-04 (Asia/Dubai).

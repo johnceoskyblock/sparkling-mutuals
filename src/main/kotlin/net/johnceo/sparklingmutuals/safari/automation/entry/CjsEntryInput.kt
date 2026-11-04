@@ -66,7 +66,7 @@ internal class CjsEntryInput(private val approach: CjsApproachInput) {
         val safe=player!=null && client.level!=null && client.connection!=null && client.gameMode!=null &&
             client.isWindowActive && !client.isPaused && player.isAlive && player.onGround() &&
             !player.isInWater && !player.isPassenger && !player.abilities.flying && !player.isSprinting &&
-            !player.horizontalCollision && velocity.isFinite() && velocity<=.16 && approach.userIdle(client) &&
+            !player.horizontalCollision && velocity.isFinite() && velocity<=.16 && approach.userIdle(client) && approach.aimMatches(client) &&
             (expectedMenu || screen==null && client.mouseHandler.isMouseGrabbed)
         val menu=if(expectedMenu && player!=null) {
             val current=player.containerMenu
