@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory
 /** Adapter between per-visit shared observations and Mutuals' existing mode-aware ledgers. */
 object SafariPartySync {
     private val transport=PartySyncTransport()
+    private val entryDiscoveries=PartyRoomDiscoveries()
     private val logger=LoggerFactory.getLogger("sparkling-mutuals/party-sync")
     private var state: PartySyncState?=null
     private var lobby: String?=null
@@ -70,6 +71,8 @@ object SafariPartySync {
     private val discoveryReports=linkedMapOf<String,SafariBiome>()
     fun register() {
         transport.onReady={
+            val status=transport.roomStatus()
+            entryDiscoveries.welcome(status.generation,status.atomic)
             lastNests=-1;lastSparkling="";lastAggregate="";lastHello="";helloAt=0;pendingReports.clear()
             discoveryReports.forEach { (id,biome) -> pendingReports[id]=biome }
             submittedReports.forEach { (code, chat) -> reportQueue.putIfAbsent(code, chat) }
@@ -255,6 +258,26 @@ object SafariPartySync {
         if (alreadyShared) notifiedSparks.add(species)
         return species in notifiedSparks
     }
+    /** Fresh atomic receipt on this socket, scoped to the exact native visit and verified party. */
+    internal fun entryRoom(client: Minecraft): PartyRoomSnapshot? {
+        if(!SafariIsland.onIsland || world!==client.level || client.player==null || client.connection==null ||
+            transferRevision==SafariIsland.locationRevision) return null
+        val current=state ?: return null
+        val server=SafariIsland.serverName?.let(PartySyncProtocol::canonicalLobby) ?: return null
+        if(!server.equals(lobby,true) || roster(client)?.toSet()!=current.roster ||
+            PartySyncProtocol.uuid(client.player!!.uuid.toString())!=current.self) return null
+        val status=transport.drainIncoming()
+        val context=status.context ?: return null
+        if(!status.ready || !status.atomic || !status.drained || !context.lobby.equals(server,true) ||
+            context.self!=current.self || context.roster.toSet()!=current.roster) return null
+        return entryDiscoveries.snapshot(status.generation)
+    }
+    internal fun withEntryRoom(client: Minecraft, expected: PartyRoomSnapshot, action: () -> Boolean): Boolean {
+        if(entryRoom(client)?.let { it.generation==expected.generation && it.active.isNotEmpty() }!=true) return false
+        return transport.withCurrentRoom(expected.generation) {
+            entryRoom(client)?.let { it.generation==expected.generation && it.active.isNotEmpty() }==true && action()
+        }
+    }
     /** CJ consumes only captures, scoped again to the current world/server/verified roster. */
     internal fun capturedSpecies(client: Minecraft): Set<String> {
         if (!SafariIsland.onIsland || world !== client.level ||
@@ -387,7 +410,9 @@ object SafariPartySync {
         val current=state ?: return
         when(PartySyncProtocol.text(root.get("type"))) {
             "sparklings" -> if (transport.roomSparklings) {
-                val payload = PartySyncProtocol.text(root.get("payload"), 64) ?: return
+                val payload = PartySyncProtocol.text(root.get("payload"), 64)
+                entryDiscoveries.receive(transport.roomStatus().generation, payload ?: "")
+                if (payload == null) return
                 if (current.receiveRoomSparklings(payload)) sharedSparklings(current)
             }
             "hotspots" -> if(transport.hotspotCapability && transport.biomeCapability && matchingParty) {
@@ -576,6 +601,7 @@ object SafariPartySync {
     }
     fun reset() {
         val current=state;transport.close(true,current?.nextSequence() ?: 0)
+        entryDiscoveries.reset()
         state=null;lobby=null;world=null;began=0;sampleAt=0;helloAt=0;lastHello="";matchingParty=false
         transferRevision=null;ticketed=false;ticketWindowLocked=false
         SparklingEncounters.reset()

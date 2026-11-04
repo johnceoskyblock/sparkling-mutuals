@@ -63,7 +63,7 @@ internal object PartySyncProtocol {
     val species = listOf("Cavernfish","Flitter","Shyworm","Driftling","Chuckwalla","Rockmite","Scrappy","Snoozle","Gemzie",
         "Strongarm","Tepid","Polaris","Shuddersquid","Billygoat","Mantis Shrimp","Nozzlenose","Troodon","Wumpa",
         "Areita","Bloodbat","Duplico","Gazer","Litterbug","Solsnatcher","Gimmiegold","Hideonwall","Hideyho","Doomspiral",
-        "Foxtrot","Bluebird","Honeybug","Treefrog","Woodchucker","Hideonfloor","Fluffling","Parakeet","Macaw")
+        "Foxtrot","Bluebird","Honeybug","Treefrog","Woodchucker","Fluffling","Hideonfloor","Parakeet","Macaw")
 }
 
 /** All state belongs to one visit, independent of socket generations. */

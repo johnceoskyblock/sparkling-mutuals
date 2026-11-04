@@ -24,10 +24,10 @@ internal class PartySyncTransport(
     @Volatile private var connecting=false
     @Volatile private var retryAt=0L
     private var context: Context?=null
-    var ready=false; private set
+    @Volatile var ready=false; private set
     var hotspotCapability=false; private set
     var biomeCapability=false; private set
-    var roomSparklings=false; private set
+    @Volatile var roomSparklings=false; private set
     private var mapping=emptyMap<String,String>()
     private var failures=0
     private var openedAt=0L
@@ -60,11 +60,7 @@ internal class PartySyncTransport(
             next.roster.size !in 1..4 || next.roster.toSet().size!=next.roster.size || next.self !in next.roster ||
             next.roster.any { PartySyncProtocol.compact(it)==null }) { close(false);return }
         if(context!=next) { close(false); context=next; retryAt=0; failures=0 }
-        while(true) {
-            val item=incoming.poll() ?: break
-            val root=runCatching { JsonParser.parseString(item.text).asJsonObject }.getOrNull() ?: continue
-            dispatch(item.generation,root,next)
-        }
+        drainIncoming()
         val current=socket
         if(current!=null) {
             if(!ready && now-openedAt>12_000) { fail(generation); return }
@@ -77,6 +73,26 @@ internal class PartySyncTransport(
         }
         if(connecting || now<retryAt) return
         connect(next)
+    }
+    data class RoomStatus(val generation: Long, val context: Context?, val ready: Boolean,
+        val atomic: Boolean, val drained: Boolean)
+    @Synchronized fun roomStatus() = RoomStatus(generation,context,ready,roomSparklings,incoming.isEmpty())
+    /** Bounded even when a producer continuously supplies frames. Only called on the client thread. */
+    @Synchronized fun drainIncoming(): RoomStatus {
+        val next=context ?: return roomStatus()
+        repeat(128) {
+            val item=incoming.poll() ?: return roomStatus()
+            if(item.generation!=generation) return@repeat
+            val root=runCatching { JsonParser.parseString(item.text).asJsonObject }.getOrNull()
+            if(root==null) { fail(item.generation);return roomStatus() }
+            dispatch(item.generation,root,next)
+        }
+        return roomStatus()
+    }
+    /** Network delivery and permission consumption share this lock, never a cached ready boolean. */
+    @Synchronized fun withCurrentRoom(expected: Long, action: () -> Boolean): Boolean {
+        val status=drainIncoming()
+        return status.generation==expected && status.ready && status.atomic && status.drained && status.context!=null && action()
     }
     @Synchronized private fun dispatch(attempt: Long, root: JsonObject, next: Context) {
         if (attempt != generation) return
@@ -196,7 +212,10 @@ internal class PartySyncTransport(
             text.append(data)
             if(last) {
                 val value=text.toString(); text.setLength(0)
-                if(value.toByteArray(Charsets.UTF_8).size>8192 || !incoming.offer(Delivery(attempt,value))) fail(attempt)
+                synchronized(this@PartySyncTransport) {
+                    if(attempt==generation && (value.toByteArray(Charsets.UTF_8).size>8192 ||
+                        !incoming.offer(Delivery(attempt,value)))) fail(attempt)
+                }
             }
             webSocket.request(1); return null
         }
