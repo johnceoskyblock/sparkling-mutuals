@@ -1,4 +1,6 @@
-# Sparkling Mutuals
+# CJ’s Revenge
+
+Local experimental build `4.0.2-cjs-revenge.1`, based on Sparkling Mutuals v4.0.2. Keep its artifacts and any future test instance separate from normal profiles. The [Safari entry core](docs/SAFARI_ENTRY_CORE.md) is decision-only and unregistered: this build does not automatically enter Safari.
 
 ## Purpose and audience
 
@@ -12,7 +14,7 @@ A Fabric client mod for Hypixel SkyBlock Safari, Sparkling discoveries, party co
 2. Download an appropriate published build from [Releases](https://github.com/johnceoskyblock/sparkling-mutuals/releases), or `jar-mc<version>` from a successful [Actions run](https://github.com/johnceoskyblock/sparkling-mutuals/actions).
 3. Install **one** matching Sparkling Mutuals JAR in `mods`, replacing the older mod JAR. Do not install source/test/development JARs. [Exact dependencies and filenames](docs/MULTI_VERSION_BUILDS.md#prerequisites).
 
-Current published release: **[v4.0.1](https://github.com/johnceoskyblock/sparkling-mutuals/releases/tag/v4.0.1)**. **v4.0.2 is being prepared** with matching JARs for 26.1.2, 26.2 and 26.3; preparation does not publish assets. Install only the file matching your Minecraft version and remove the older Sparkling Mutuals JAR before updating.
+Normal published release: **[v4.0.2](https://github.com/johnceoskyblock/sparkling-mutuals/releases/tag/v4.0.2)**. CJ’s Revenge is a separate local experiment, not a published update. It retains the same mod ID for compatibility and must use its own game directory if installed for testing.
 
 HM API is bundled. Settings use a native workspace adapted from SafariUtils. Player profile lookups use a Hypixel API key or the optional Shiny Hunter shared API. Keep keys and local authentication files private. Release notes and the availability of published assets belong to their [release descriptions](https://github.com/johnceoskyblock/sparkling-mutuals/releases).
 

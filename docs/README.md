@@ -19,6 +19,7 @@ Players: start with [installation and controls](../README.md). Contributors: rea
 | Gameplay display | [Bird completion](BIRD_COMPLETION.md), [missing panel](MISSING_PANEL.md), [Sparkling detection](SPARKLING_DETECTION.md) |
 | Biome assignments | [Hotspot announcer and UUID-ranked assignments](HOTSPOT_ASSIGNMENTS.md) |
 | Controls | [Configuration](CONFIG_DEFAULTS.md), [entry guard](SAFARI_ENTRY_GUARD.md), [warp alerts](WARP_ALERTS.md) |
+| CJ’s Revenge local experiment | [Unregistered Safari sighting/report and admission decision core](SAFARI_ENTRY_CORE.md) |
 | Contest and Canyon | [Contest/downtime](CONTEST_DOWNTIME.md), [Honeyhives](HONEYHIVES.md) |
 | SkyBlock helpers (general valuation shelved) | [Hunting Box total value](HUNTING_BOX_VALUE.md), [item and chest values](ITEM_VALUES.md), [Skills overflow tooltips](SKILL_OVERFLOW.md) |
 | Misc Endgame Features | [Garden Phantomleaf Solver](PHANTOMLEAF_SOLVER.md) |
