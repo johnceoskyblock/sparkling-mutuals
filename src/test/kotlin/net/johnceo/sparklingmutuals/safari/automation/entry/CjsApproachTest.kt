@@ -5,6 +5,33 @@ import org.junit.jupiter.api.Test
 import java.util.UUID
 
 class CjsApproachTest {
+    @Test fun `prime native crouch before allowing the first forward tick`() {
+        val a=CjsApproach()
+        val first=a.tick(frame().copy(crouched=false),0)
+        assertTrue(first.crouch);assertFalse(first.forward)
+        assertFalse(a.tick(frame().copy(crouched=false),50).forward)
+        assertTrue(a.tick(frame().copy(crouched=true),100).forward)
+    }
+    @Test fun `native speed point two and ordinary friction coast within one block`() {
+        val a=CjsApproach();var position=0.0;var velocity=0.0;var previousSneak=false;var crouched=false
+        repeat(60) { tick ->
+            val action=a.tick(frame(z=position).copy(crouched=crouched,velocity=velocity,acceleration=.05880001,drag=.5460001),tick*50L)
+            crouched=previousSneak
+            previousSneak=action.crouch || action.forward
+            val acceleration=if(action.forward) { if(crouched) .0588 else .196 } else 0.0
+            val step=velocity+acceleration
+            position+=step;velocity=step*.546
+        }
+        assertTrue(position<=1.0,"Native walk and coast travelled $position")
+        assertTrue(position>.5,"Test must exercise a real approach, not permanently refuse")
+    }
+    @Test fun `sideways and backwards corrections cancel rather than count as progress`() {
+        for (drift in listOf(frame(x=.1),frame(z=-.1))) {
+            val a=CjsApproach();a.tick(frame(),0);a.tick(frame(),50)
+            assertFalse(a.tick(drift,100).forward)
+            assertFalse(a.tick(frame(),150).forward)
+        }
+    }
     private val c = EntryFixtures.context()
     private val target = UUID.fromString("00000000-0000-0000-0000-000000000099")
     private val sight = EntrySighting(c, "Bluebird", EntryFixtures.event, 0, 5000)

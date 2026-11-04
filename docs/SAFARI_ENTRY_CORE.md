@@ -35,7 +35,7 @@ Automated results belong in the local execution receipts. The external51-case sc
 
 Reported spawn `(-50,68,24)` and Manager `(-52,68,21)` are about3.61blocks apart. Cached native clients expose a default3block entity interaction attribute; the26.1.2predicate measures current eye-to-hitbox distance. The actual Manager body, server-supplied attribute, orientation and accepted interaction remain unverified. Do not infer reach from centre coordinates alone.
 
-Location packet/world ordering, same-destination association, personal admission sequence and present-day server timing remain unverified. Dry-run transport retains candidate claims only; all gameplay admission adapters remain unimplemented. The existing published Hypixel rules also prohibit automated gameplay actions; implementing this core does not establish permission to deploy unattended entry or promise a Sparkling claim.
+Location packet/world ordering, same-destination association, personal admission sequence and present-day server timing remain unverified. Dry-run transport retains candidate claims only; NPC/menu admission adapters remain unimplemented; the opt-in ordinary-input approach is a separate .4 test adapter. The existing published Hypixel rules also prohibit automated gameplay actions; implementing this core does not establish permission to deploy unattended entry or promise a Sparkling claim.
 
 ## Last updated
 

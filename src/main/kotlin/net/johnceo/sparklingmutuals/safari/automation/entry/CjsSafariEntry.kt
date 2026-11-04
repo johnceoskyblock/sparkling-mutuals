@@ -142,7 +142,7 @@ object CjsSafariEntry {
     fun startTick(client: Minecraft) {
         if (!supported) return
         val at=now();val frame=frame(client,at)
-        approach.tick(client,frame,session.fresh(frame,at),ConfigManager.safariEntryApproach,
+        approach.tick(client,frame,session.fresh(frame,at,SafariAssist.entryVisibleIdentities()),ConfigManager.safariEntryApproach,
             warp.allows(frame.context,profiles(client),at),warp.generation,at) { text ->
             logger.info("CJ_ENTRY_APPROACH {}",text)
             client.player?.sendSystemMessage(LocalChat.component("[CJ approach] $text."))
@@ -156,7 +156,7 @@ object CjsSafariEntry {
         logger.info("CJ_ENTRY_DRY_RUN {}", line)
     }
 
-    fun debug() = listOf("CJ entry: supported=$supported setting=${ConfigManager.safariEntryDryRun} actions=disabled") +
+    fun debug() = listOf("CJ entry: supported=$supported setting=${ConfigManager.safariEntryDryRun} npcAndTicketActions=disabled approachSetting=${ConfigManager.safariEntryApproach}") +
         session.debug() + trace.toList()
 
     fun reset() {

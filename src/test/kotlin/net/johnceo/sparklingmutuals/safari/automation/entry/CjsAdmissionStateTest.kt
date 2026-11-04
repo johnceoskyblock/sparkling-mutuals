@@ -4,6 +4,12 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class CjsAdmissionStateTest {
+    @Test fun `local source removed between end scan and next input cannot move`() {
+        val session=EntryDryRunSession();val frame=EntryDryRunFrame(EntryFixtures.context(),true,true,false,0)
+        session.scan(frame,listOf(EntryDryRunObservation(EntryFixtures.self,"Bluebird")),0)
+        assertNotNull(session.fresh(frame,10,setOf(EntryFixtures.self)))
+        assertNull(session.fresh(frame,20,emptySet()))
+    }
     @Test fun `Critter Safari arrival remains query eligible until personal ticket acceptance`() {
         val state = CjsAdmissionState(); state.world(Any())
         state.chat("ᛜ Self joined the Critter Safari.")
@@ -16,11 +22,11 @@ class CjsAdmissionStateTest {
         val session = EntryDryRunSession()
         val q = session.tick(frame, 1340).filterIsInstance<EntryDryRunOutput.Party>().single().message as EntryMessage.Query
         session.receive(frame, EntryPeer(EntryFixtures.leader, "Leader"), EntryFixtures.live(q.nonce), 1400)
-        assertNotNull(session.fresh(frame, 1401))
+        assertNotNull(session.fresh(frame, 1401, emptySet()))
         state.chat("[NPC] Safari Manager: §fLooks good to me. Have fun out there!")
         val admitted = state.frame(guest, true, 0, true, 1000)
         assertTrue(admitted.activeRun); assertFalse(admitted.atEntry)
-        assertNull(session.fresh(admitted, 1402))
+        assertNull(session.fresh(admitted, 1402, emptySet()))
     }
     @Test fun `admission is bound to world and exact personal evidence`() {
         val s = CjsAdmissionState(); val world = Any(); s.world(world)

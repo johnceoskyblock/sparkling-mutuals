@@ -5,9 +5,10 @@ import kotlin.math.*
 
 data class CjsApproachFrame(val context: EntryContext?, val enabled: Boolean, val sighting: EntrySighting?,
     val target: UUID?, val x: Double, val y: Double, val z: Double, val managerX: Double, val managerZ: Double,
-    val yaw: Float, val pitch: Float, val safe: Boolean, val eyeY: Double = y + 1.62, val managerY: Double = y + 1.62)
+    val yaw: Float, val pitch: Float, val safe: Boolean, val eyeY: Double = y + 1.62, val managerY: Double = y + 1.62,
+    val crouched: Boolean = true, val velocity: Double = 0.0, val acceleration: Double = .03, val drag: Double = .546)
 data class CjsApproachAction(val forward: Boolean = false, val yaw: Float? = null, val pitch: Float? = null,
-    val status: String)
+    val status: String, val crouch: Boolean = false)
 
 /** One instance per independently observed world arrival. Only ordinary input is proposed. */
 class CjsApproach {
@@ -22,6 +23,7 @@ class CjsApproach {
     private var terminal = false
     private var status = "Waiting for fresh evidence and clear approach"
     fun cancel() { stop("Approach cancelled") }
+    fun heading(): Float? = yaw.takeIf { origin!=null }
     private fun stop(reason: String): CjsApproachAction {
         terminal = true; status = reason
         return CjsApproachAction(status = reason)
@@ -33,7 +35,9 @@ class CjsApproach {
         val current=f.context
         val valid=current != null && current.account != current.party.leader && current.party.members.size>1 &&
             f.enabled && f.safe && f.target != null && f.sighting?.valid(current,now)==true &&
-            listOf(f.x,f.y,f.z,f.managerX,f.managerZ,f.eyeY,f.managerY,f.yaw.toDouble(),f.pitch.toDouble()).all { it.isFinite() }
+            listOf(f.x,f.y,f.z,f.managerX,f.managerZ,f.eyeY,f.managerY,f.yaw.toDouble(),f.pitch.toDouble(),
+                f.velocity,f.acceleration,f.drag).all { it.isFinite() } &&
+            f.velocity in 0.0.. .16 && f.acceleration in 0.0.. .2 && f.drag in .45.. .638
         val first=origin
         if (!valid) return if (first != null) stop("Approach cancelled: context, input or evidence unavailable") else CjsApproachAction(status=status)
         if (first == null) {
@@ -43,7 +47,7 @@ class CjsApproach {
             yaw=(atan2(-dx,dz)*180/PI).toFloat()
             pitch=(-atan2(f.managerY-f.eyeY,distance)*180/PI).toFloat().coerceIn(-80f,80f)
             status="Facing Manager"
-            return CjsApproachAction(yaw=yaw,pitch=pitch,status=status)
+            return CjsApproachAction(yaw=yaw,pitch=pitch,status=status,crouch=true)
         }
         if (f.context != first.context || f.target != first.target ||
             hypot(f.managerX-first.managerX,f.managerZ-first.managerZ)>.2 || abs(f.y-first.y)>.2)
@@ -53,10 +57,19 @@ class CjsApproach {
         if (yawError>3 || abs(f.pitch-pitch)>3) return stop("Approach cancelled: camera takeover")
         val old=last!!;val step=hypot(f.x-old.x,f.z-old.z)
         if (step>.35) return stop("Approach cancelled: unexpected displacement")
-        if (step>.002) progressed=now
+        val directionX=-sin(yaw*PI/180);val directionZ=cos(yaw*PI/180)
+        val along=(f.x-old.x)*directionX+(f.z-old.z)*directionZ
+        val cross=abs((f.x-first.x)*directionZ-(f.z-first.z)*directionX)
+        if(along<-.01 || cross>.03) return stop("Approach cancelled: left checked corridor")
+        if (along>.002) progressed=now
         travelled+=step;last=f
         if (travelled>=.85) return stop("Approach complete: movement budget used")
+        // Native first forward tick otherwise uses the PREVIOUS input's crouch state.
+        if(!f.crouched) return CjsApproachAction(yaw=yaw,pitch=pitch,status="Priming crouch",crouch=true)
+        // One more commanded tick plus all subsequent ordinary coast must fit the budget.
+        if(travelled+(f.velocity+f.acceleration)/(1-f.drag)>.99)
+            return stop("Approach complete: reserved stopping distance")
         status="Approaching Manager (one-block maximum)"
-        return CjsApproachAction(true,yaw,pitch,status)
+        return CjsApproachAction(true,yaw,pitch,status,crouch=true)
     }
 }

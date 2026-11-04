@@ -31,9 +31,9 @@
 
 **Interfaces:** `CjsAdmissionState.world(Any?)`, `chat(String)`, `admitted`; `EntryDryRunSession.fresh(frame, now): EntrySighting?` returns only a current noncancelled at-entry observation. Native frame uses mapped0 plus lack of personal admission, independent of generic inside label.
 
-- [ ] Write/run RED tests for current-world admission and a real session query/reply before the Manager acceptance.
-- [ ] Implement those contracts, retaining all one-query/freshness rules.
-- [ ] Run targeted tests; inspect outputs and commit.
+- [x] Write/run RED tests for current-world admission and a real session query/reply before the Manager acceptance.
+- [x] Implement those contracts, retaining all one-query/freshness rules.
+- [x] Run targeted tests; inspect outputs and commit.
 
 ### Task 2: One-use bounded approach and native ownership
 
@@ -41,11 +41,13 @@
 
 **Interfaces:** Pure `CjsApproach.tick(frame, now): CjsApproachAction`; immutable context, current sighting/target, position, safety/user input flags. Actions contain only walk/stop and yaw/pitch. Native adapter finds current manager, computes swept safety, applies keys at start tick and releases on all exits.
 
-- [ ] Write/run RED tests for movement toward target, 0.85-stop/one-block budget, stale/captured/context/target loss, timeout/stall/rollback, manual/screen/focus interruption and no rearm.
-- [ ] Implement pure/native policy and config persistence, and verify native API signatures by compiling.
-- [ ] Run full `:26.1.2:test :26.1.2:build` with the existing external temp-root init script.
-- [ ] Obtain one fresh whole-change review, fix Important findings with RED/GREEN regressions, rerun full suite, commit and package .4 locally.
+- [x] Write/run RED tests for movement toward target, 0.85-stop/one-block budget, stale/captured/context/target loss, timeout/stall/rollback, manual/screen/focus interruption and no rearm.
+- [x] Implement pure/native policy and config persistence, and verify native API signatures by compiling.
+- [x] Run full `:26.1.2:test :26.1.2:build` with the existing external temp-root init script.
+- [x] Obtain one fresh whole-change review, fix Important findings with RED/GREEN regressions, rerun full suite, commit and package .4 locally.
 
 ## Execution record
 
 Base: 5f7e47688f193d69b0a9f7bc90ccd52b89dd140d. Direct movement approval in this chat applies; no repeat approval needed for its bounded implementation. Earlier Native execution is retained. The off-by-default approach toggle is an implementer choice to keep diagnostic opt-in distinct from gameplay input.
+
+Task 2 ruling: require an anchored server party-warp notice, the next world and the uniquely mapped current leader profile before native movement. Cost: missing evidence conservatively prevents movement. Full pre-review suite: 1412/1412, build succeeded. Independent review found four Important issues; all corrected with RED/GREEN regressions and final 1419/1419 suite. Native ToggleKeyMapping and ordinary-ground recurrence are exercised; live movement remains unverified.

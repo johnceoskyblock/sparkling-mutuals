@@ -150,7 +150,8 @@ class EntryDryRunSession {
     }
 
     /** Current observation for the separately opted-in approach; never returns cancelled or admitted evidence. */
-    fun fresh(frame: EntryDryRunFrame, now: Long): EntrySighting? {
+    fun fresh(frame: EntryDryRunFrame, now: Long, loaded: Set<UUID>): EntrySighting? {
+        retainLoaded(frame,loaded,now)
         val current = prepare(frame, now) ?: return null
         if (cancelled || !frame.atEntry || frame.activeRun || now >= entryDeadline(arrivedAt, 12000)) return null
         return remote?.takeIf { it.valid(current, now) } ?: sightings.freshest(current, now)
