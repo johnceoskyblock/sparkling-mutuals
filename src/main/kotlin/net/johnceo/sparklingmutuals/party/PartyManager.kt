@@ -16,6 +16,8 @@ object PartyManager {
     var revision = 0L
         private set
     val hasInfo get() = roster.known
+    /** Equal refreshes preserve this; invalidation is visible even if refreshed between ticks. */
+    val continuity get() = roster.continuity
     private val callbacks = mutableListOf<() -> Unit>()
     private var requestedAt = 0L
     private var refreshAgain = false
