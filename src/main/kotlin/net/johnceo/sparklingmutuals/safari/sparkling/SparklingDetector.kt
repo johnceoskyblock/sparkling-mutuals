@@ -21,12 +21,24 @@ object SparklingSkins {
 
 data class SparklingEntity(val id: Int, val uuid: UUID, val x: Double, val y: Double, val z: Double,
     val name: String? = null, val texture: String? = null, val realPlayer: Boolean = false,
-    val skinCarrier: Boolean = false, val body: Boolean = false)
+    val skinCarrier: Boolean = false, val body: Boolean = false, val capsule: Boolean = false)
 data class SparklingDetection(val species: String, val body: Int, val label: Int, val aliases: Set<UUID>)
 
 /** Positive identification feeds alerts, glow and the nearby HUD without gating completion. */
 object SparklingDetector {
-    fun detect(entities: List<SparklingEntity>): List<SparklingDetection> {
+    internal fun captureMarkers(entities: List<SparklingEntity>) = entities.filter {
+        it.capsule || !it.realPlayer && it.name?.let(SafariRules::strip)?.trimStart()?.startsWith("CAPTURING", true) == true
+    }
+
+    internal fun atCapture(x: Double, y: Double, z: Double, markers: List<SparklingEntity>) = markers.any {
+        val dx = it.x - x
+        val dz = it.z - z
+        dx * dx + dz * dz <= .75 * .75 && kotlin.math.abs(it.y - y) <= 2.5
+    }
+
+    fun detect(snapshots: List<SparklingEntity>): List<SparklingDetection> {
+        val markers = captureMarkers(snapshots)
+        val entities = snapshots.filterNot { atCapture(it.x, it.y, it.z, markers) }
         fun skin(e: SparklingEntity): String? {
             if (!e.skinCarrier || e.realPlayer) return null
             val species = SparklingSkins.species(e.texture) ?: return null

@@ -16,8 +16,6 @@ object PartyManager {
     var revision = 0L
         private set
     val hasInfo get() = roster.known
-    /** Equal refreshes preserve this; invalidation is visible even if refreshed between ticks. */
-    val continuity get() = roster.continuity
     private val callbacks = mutableListOf<() -> Unit>()
     private var requestedAt = 0L
     private var refreshAgain = false
@@ -87,6 +85,18 @@ object PartyManager {
     }
 
     fun reset() { roster.reset(); revision++; callbacks.clear(); requestedAt = 0; refreshAgain = false }
+    fun hasTeammates(client: Minecraft): Boolean {
+        val self = client.player?.uuid?.toString() ?: return false
+        return (withLocal(self)?.size ?: 0) > 1
+    }
+
+    fun sendPartyChat(client: Minecraft, message: String): Boolean {
+        val connection = client.connection ?: return false
+        if (!hasTeammates(client)) return false
+        connection.sendCommand("pc $message")
+        return true
+    }
+
     fun isLeader(uuid: String) = roster.isLeader(uuid)
     fun getMembers(): List<String> = roster.members
     fun withLocal(local: String) = roster.withLocal(local)

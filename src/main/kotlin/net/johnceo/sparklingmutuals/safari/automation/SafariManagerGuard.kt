@@ -104,17 +104,23 @@ object SafariManagerGuard {
         onClientTick(client)
         val guard = ConfigManager.holdManagerOnKick
         val downtime = SafariDowntime.entryHold
+        val shift = shiftDown(client)
+        if (shift) net.johnceo.sparklingmutuals.contest.ContestTracker.bypassPartyContest()
+        val contestWaiting = if (stage() == EntryStage.TORRHUS)
+            net.johnceo.sparklingmutuals.contest.ContestTracker.contestWaiting() else emptyList()
         val active = activeRun(client)
         val warpContestHold = stage() in setOf(EntryStage.TORRHUS,EntryStage.SAFARI) && !active &&
             net.johnceo.sparklingmutuals.alerts.SparkleWarping.contestPaused(client)
-        val blocked = warpContestHold && !shiftDown(client) || (guard || ConfigManager.downtimeCommand) && EntryGuardDecision.block(stage(),
+        val blocked = (warpContestHold || contestWaiting.isNotEmpty()) && !shift || (guard || ConfigManager.downtimeCommand) && EntryGuardDecision.block(stage(),
             downtime, guard && kick.active, !guard || presence.ready,
             when (stage()) {
                 EntryStage.TORRHUS -> ConfigManager.downtimeCommand && SafariPartyInput.pendingDowntime
                 EntryStage.SAFARI -> guard && SafariPartyInput.pendingKick
                 else -> SafariPartyInput.pending
-            }, shiftDown(client))
-        val reason = if (warpContestHold) "Reach Uncommon in the contest before the next warp run" else when (stage()) {
+            }, shift)
+        val reason = if (contestWaiting.isNotEmpty())
+            "Waiting for ticket confirmation from ${contestWaiting.joinToString(", ") { SafariPartyInput.nameOf(it) ?: "name loading" }}"
+        else if (warpContestHold) "Reach Uncommon in the contest before the next warp run" else when (stage()) {
             EntryStage.TORRHUS -> if (SafariPartyInput.overflowReadiness) "Everyone must say r or Ticket earned! in party chat"
                 else if (SafariPartyInput.pendingDowntime) "Checking party readiness" else "Waiting for ${SafariDowntime.waitingFor()}"
             EntryStage.UNKNOWN -> "Waiting for server info"
@@ -144,12 +150,6 @@ object SafariManagerGuard {
     fun debug() = listOf("Entry guard: stage=${stage()} setting=${ConfigManager.holdManagerOnKick} " +
         "downtime=${ConfigManager.downtimeCommand} holders=${SafariDowntime.holders()} rosterKnown=${PartyManager.hasInfo} " +
         "ready=${presence.ready} missing=${presence.missing} kick=${kick.active} identityPending=${SafariPartyInput.pending}", lastDecision)
-    /** Readiness only. Does not pretend an NPC click occurred or apply the Shift override. */
-    fun allowsCjApproach(client: Minecraft): Boolean {
-        onClientTick(client)
-        return inSafariInstance() && PartyManager.hasInfo && presence.ready &&
-            !SafariPartyInput.pending && (!ConfigManager.holdManagerOnKick || !kick.active)
-    }
     private fun isManager(client: Minecraft, entity: Entity): Boolean {
         fun named(e: Entity) = SafariRules.strip(e.customName?.string ?: e.name.string).equals("Safari Manager", true)
         val world = client.level ?: return false

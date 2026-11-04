@@ -17,6 +17,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo
 class SafariShinyMixin {
     @Inject(method = ["extractRenderState(Lnet/minecraft/world/entity/Entity;Lnet/minecraft/client/renderer/entity/state/EntityRenderState;F)V"], at = [At("TAIL")])
     private fun highlight(entity: Entity, state: EntityRenderState, delta: Float, info: CallbackInfo) {
+        if (!SafariAssist.visualsActive()) return
         if (TeammateEsp.isTeammate(entity)) {
             if (ConfigManager.highlightTeammates)
                 state.outlineColor = TeammateEsp.COLOR

@@ -14,7 +14,7 @@ object SafariMessages {
         if (playerChat.containsMatchIn(SafariRules.strip(raw))) {
             fullClearRun?.resources?.partyNotice(raw)
             partyChecks?.chat(raw, manualAllowed = true)
-            fullClearRun?.partyFullClear(raw)
+            fullClearRun?.manualBiomeReport(raw)
             return emptyList()
         }
         return raw.split(separators).map(SafariRules::strip).filter(String::isNotEmpty)

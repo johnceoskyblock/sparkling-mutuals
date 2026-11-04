@@ -3,7 +3,7 @@ package net.johnceo.sparklingmutuals.safari.esp
 import net.johnceo.sparklingmutuals.compat.*
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.config.SafariEspConfig
-import net.johnceo.sparklingmutuals.hud.SkyblockSidebar
+import net.johnceo.sparklingmutuals.safari.SafariAssist
 import net.johnceo.sparklingmutuals.party.PartyManager
 import net.minecraft.client.Minecraft
 import net.minecraft.world.entity.Entity
@@ -15,7 +15,7 @@ object TeammateEsp {
     fun isTeammate(entity: Entity): Boolean {
         val client = Minecraft.getInstance()
         return entity is Player && !entity.isRemoved && client.level?.getEntity(entity.id) === entity &&
-            TeammateEspRules.eligible(SkyblockSidebar.inSkyblock(client), PartyManager.hasInfo,
+            TeammateEspRules.eligible(SafariAssist.visualsActive(client), PartyManager.hasInfo,
                 entity.uuid, client.player?.uuid, PartyManager.getMembers())
     }
     fun register() {
@@ -23,7 +23,7 @@ object TeammateEsp {
             if (!ConfigManager.showTeammateNames) return@register
             val client = Minecraft.getInstance()
             val world = client.level ?: return@register
-            if (!PartyManager.hasInfo || !SkyblockSidebar.inSkyblock(client)) return@register
+            if (!PartyManager.hasInfo || !SafariAssist.visualsActive(client)) return@register
             val camera = client.gameRenderer.smCamera.position()
                 val delta = client.deltaTracker.getGameTimeDeltaPartialTick(false)
             for (player in world.players()) {

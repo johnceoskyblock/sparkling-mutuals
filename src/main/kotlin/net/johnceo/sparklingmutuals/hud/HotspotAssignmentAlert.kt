@@ -22,6 +22,7 @@ object HotspotAssignmentAlert {
     private var published=false
     private var lastInstructionAt=0L
     private var shown: SafariBiome?=null
+    private var requested: SafariBiome? = null
     private var shownAt=0L
     private val wins=mutableMapOf<String,Int>()
     private var sessionRoster: Set<String>?=null
@@ -45,6 +46,7 @@ object HotspotAssignmentAlert {
     /** Called by the existing immediate hotspot announcer; no extra profile requests. */
     fun announcement(label: String): String? {
         sync() ?: return null
+        if (net.johnceo.sparklingmutuals.sync.SafariPartySync.backendCoordination) return "[SM] Hotspot: $label"
         val client=Minecraft.getInstance()
         val player=client.player ?: return null
         val members=members(client) ?: return null
@@ -87,8 +89,15 @@ object HotspotAssignmentAlert {
         val actual=current.entry.hotspot ?: return
         val now=System.currentTimeMillis()
         assignments.begin(player.name.string,actual,now)
-        if (!enabled()) { shown=null;return }
+        if (!enabled()) { clearAlert();return }
         val members=members(client) ?: return
+        val backend=net.johnceo.sparklingmutuals.sync.SafariPartySync
+        if(backend.pauseHotspotChat) {
+            if(backend.backendCoordination) backend.assignment()?.let { target ->
+                requestAlert(current, target)
+            }
+            return
+        }
         val identities=members.ids
         val verifiedNames=identities.keys
         // Keep pending reports until membership/names are known, without performing profile requests.
@@ -103,7 +112,7 @@ object HotspotAssignmentAlert {
         if(verifiedNames.size==members.expected && members.leader!=null) {
             while(pendingWins.isNotEmpty()) {
                 val snapshot=pendingWins.removeFirst()
-                if(!leader && assignments.acceptWins(snapshot,members.leader,verifiedNames,now)) { shown=null;shownAt=0 }
+                if(!leader && assignments.acceptWins(snapshot,members.leader,verifiedNames,now)) clearAlert()
             }
             while(pendingAssignments.isNotEmpty()) {
                 val result=pendingAssignments.removeFirst()
@@ -112,10 +121,11 @@ object HotspotAssignmentAlert {
         }
         if(leader && members.expected>1 && !leaderAnnounced) return
         assignments.assignment(verifiedNames,now,identities,members.expected)?.let { target ->
-            if (shown != target) { shown=target;shownAt=now }
+            requestAlert(current, target)
         }
+        assignments.finalPlan?.let(backend::finalized)
         if(leader && members.expected>1 && !published && client.connection!=null) assignments.finalPlan?.let { plan ->
-            client.connection!!.sendCommand("pc ${HotspotProtocol.assignmentMessage(plan,members.names)}")
+            PartyManager.sendPartyChat(client, "${HotspotProtocol.assignmentMessage(plan,members.names)}")
             published=true
             lastInstructionAt=now
         }
@@ -127,11 +137,23 @@ object HotspotAssignmentAlert {
             if(id!=null) {
                 val display=client.connection!!.onlinePlayers.firstOrNull { it.profile.id.toString()==id }?.profile?.name
                     ?: SafariPartyInput.nameOf(id) ?: name
-                client.connection!!.sendCommand("pc $display you are assigned ${biome.label} biome!")
+                PartyManager.sendPartyChat(client, "$display you are assigned ${biome.label} biome!")
                 lastInstructionAt=now
             }
         }
     }
+    private fun requestAlert(current: SafariRun, target: SafariBiome) {
+        if (requested == target) return
+        clearAlert()
+        requested = target
+        SafariAlertSequence.queue.submit(this, 5_000,
+            valid = { enabled() && SafariAssist.inSafari && SafariTracking.ledger.current === current },
+            finish = { shown = null }) {
+            shown = target
+            shownAt = System.currentTimeMillis()
+        }
+    }
+    private fun clearAlert() { SafariAlertSequence.queue.clear(this);requested = null }
     fun render(graphics: GuiGraphicsExtractor) {
         val client=Minecraft.getInstance()
         if (!enabled() || !SafariAssist.inSafari || SafariTracking.ledger.current !== run || client.player == null ||
@@ -162,6 +184,7 @@ object HotspotAssignmentAlert {
         centered("Assigned biome · Hotspot: ${run?.entry?.hotspot?.label}",height/2f+12, minOf(1.5f,(width-20f)/client.font.width("Assigned biome · Hotspot: Haunted")),(alpha shl 24) or 0xFFFFFF)
     }
     private fun resetRun() {
+        clearAlert()
         run=null;assignments=HotspotAssignments(wins);pending.clear();pendingWins.clear();pendingAssignments.clear()
         instructions.clear();leaderAnnounced=false;published=false;lastInstructionAt=0;shown=null;shownAt=0
     }

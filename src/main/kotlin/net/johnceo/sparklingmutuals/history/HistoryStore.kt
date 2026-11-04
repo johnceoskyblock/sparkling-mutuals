@@ -3,7 +3,7 @@ package net.johnceo.sparklingmutuals.history
 import com.google.gson.GsonBuilder
 import java.nio.file.Files
 import java.nio.file.Path
-import net.fabricmc.loader.api.FabricLoader
+import net.johnceo.sparklingmutuals.config.ConfigStorage
 import org.slf4j.LoggerFactory
 
 /** JSON files in the config folder for the history features, each read once and rewritten whole. */
@@ -12,7 +12,7 @@ object HistoryStore {
     private val gson = GsonBuilder().setPrettyPrinting().create()
     /** Overridable for tests. */
     var directory: Path? = null
-    private fun path(name: String) = (directory ?: FabricLoader.getInstance().configDir).resolve("sparkling-mutuals-$name.json")
+    private fun path(name: String) = (directory ?: ConfigStorage.directory).resolve("sparkling-mutuals-$name.json")
 
     fun <T> load(name: String, type: Class<T>, empty: () -> T): T {
         val file = path(name)

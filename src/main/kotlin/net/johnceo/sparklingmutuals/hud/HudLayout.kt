@@ -62,12 +62,14 @@ enum class SafariHud(private val defaultLabel: String, val layout: HudLayout) {
     INCENSE("All Incense alert", HudLayout(.34f, .26f, 1.5f)),
     RUN_COMPLETE("Run completion alert", HudLayout(.35f, .42f, 1.5f)),
     WARP("Warping Now", HudLayout(.37f, .34f, 1.5f)),
-    DOOM_THROW("Doomspiral throw timer", HudLayout(.40f, .56f, 1.5f));
+    DOOM_THROW("Doomspiral throw timer", HudLayout(.40f, .56f, 1.5f)),
+    DEVELOPER("Safari developer", HudLayout(.34f, .24f));
     val label get() = if (this == MISSING && net.johnceo.sparklingmutuals.config.ConfigManager.sparklingMode)
         "Unchecked critters" else defaultLabel
     companion object {
-        fun load(properties: Properties) = entries.forEach { it.layout.load(properties, it.name.lowercase()) }
-        fun save(properties: Properties) = entries.forEach { it.layout.save(properties, it.name.lowercase()) }
+        val available get() = entries.filter { it != DEVELOPER || net.johnceo.sparklingmutuals.debug.SafariDeveloper.enabled }
+        fun load(properties: Properties) = available.forEach { it.layout.load(properties, it.name.lowercase()) }
+        fun save(properties: Properties) = available.forEach { it.layout.save(properties, it.name.lowercase()) }
         fun resetDefaults() = load(net.johnceo.sparklingmutuals.config.FreshInstallDefaults.main())
     }
 }

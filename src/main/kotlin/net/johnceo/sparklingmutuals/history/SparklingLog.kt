@@ -1,5 +1,6 @@
 package net.johnceo.sparklingmutuals.history
 
+import net.johnceo.sparklingmutuals.party.PartyManager
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents
 import net.johnceo.sparklingmutuals.history.importing.SparklingHistoryMerge
 import net.johnceo.sparklingmutuals.safari.SafariMessages
@@ -53,7 +54,7 @@ object SparklingLog {
         if (net.johnceo.sparklingmutuals.config.ConfigManager.sparklingCatchCount &&
             net.johnceo.sparklingmutuals.safari.SafariAssist.inSafari &&
             net.johnceo.sparklingmutuals.party.PartyManager.getMembers().size>1)
-            client.connection?.sendCommand("pc ${SparklingCatchCount.text(entry,data.entries)}")
+            PartyManager.sendPartyChat(client, "${SparklingCatchCount.text(entry,data.entries)}")
     }
 
     /** Compare the pre-catch party snapshot; never fetch a delayed API response to verify a live catch. */

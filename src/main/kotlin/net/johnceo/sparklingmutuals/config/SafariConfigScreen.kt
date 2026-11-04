@@ -18,16 +18,17 @@ class SafariConfigScreen(private val settings: SafariSettings = SafariSettings()
     private val catalog=SettingsCatalog(settings)
     private data class Area(val name: String,val pages: List<Int>)
     private val areas=listOf(Area("HUDs",listOf(0,7,10)),Area("Safari",listOf(1,6,3,12)),Area("Party",listOf(2,5)),
-        Area("ESP",listOf(9)),Area("History",listOf(4)),Area("Advanced",listOf(8,11)))
+        Area("ESP",listOf(13,14,9)),Area("History",listOf(4)),Area("Advanced",listOf(8,11)))
     private val tabNames=mapOf(0 to "Overview",7 to "HUDs",1 to "Modes",6 to "Helpers",3 to "Contest",2 to "Interactions",5 to "Sparkle Warping",9 to "Highlights",10 to "Appearance",4 to "History",8 to "API",11 to "SkyBlock",12 to "Banner")
-    private val areaTabs=mutableMapOf<String,Int>()
+    private val areaTabs=rememberedNavigation.areaTabs.toMutableMap()
     private var contentTop=88
-    private var selected=rememberedPage.coerceIn(catalog.pages.indices)
-    private val expanded=rememberedExpanded.toMutableSet()
-    private val scrolls=mutableMapOf<Int,Int>()
-    private var scroll=0
-    private var skyblockTab=0
-    private var navScroll=0
+    private var selected=rememberedNavigation.page.coerceIn(catalog.pages.indices)
+    private val expanded=rememberedNavigation.expanded.toMutableSet()
+    private val scrolls=rememberedNavigation.scrolls.toMutableMap()
+    private var scroll=rememberedNavigation.scroll
+    private var skyblockTab=rememberedNavigation.skyblockTab
+    private var navScroll=rememberedNavigation.navScroll
+    private var initialQuery=rememberedNavigation.query
     private var contentHeight=0
     private lateinit var search: EditBox
     private var contentDrawing=false
@@ -70,12 +71,13 @@ class SafariConfigScreen(private val settings: SafariSettings = SafariSettings()
         if(!targetApplied) {
             targetApplied=true
             initialTarget?.let(catalog::locate)?.let { (page,chain) ->
+                initialQuery=""
                 selected=page;chain.dropLast(1).forEach { expanded.add(it.path) }
                 if(page==11) skyblockTab=if(chain.first().field.name=="endgame") 1 else 0
                 focusPath=chain.last().path;scrollToFocus=true;highlightUntil=System.currentTimeMillis()+8000
             }
         }
-        val query=if(::search.isInitialized) search.value else ""
+        val query=if(::search.isInitialized) search.value else initialQuery
         val header=ConfigLayout.header(left,right)
         search=EditBox(font,left+9,19,(header.searchWidth-18).coerceAtLeast(16),18,Component.literal("Search settings"))
         search.setBordered(false);search.setMaxLength(160);search.setHint(Component.empty())
@@ -83,11 +85,16 @@ class SafariConfigScreen(private val settings: SafariSettings = SafariSettings()
         editor?.let { addRenderableWidget(it) };multilineEditor?.let { previous -> multilineEditor=createTextEditor(modal?.name.orEmpty(),previous.value);addRenderableWidget(multilineEditor!!) };ModUpdates.check()
     }
     override fun tick() { settings.apply(notifyMode=true);ModUpdates.check() }
-    override fun removed() { settings.apply(notifyMode=true);settings.saveTextFields();super.removed() }
+    override fun removed() {
+        rememberedNavigation = navigation()
+        settings.apply(notifyMode=true)
+        settings.saveTextFields()
+        super.removed()
+    }
     override fun isPauseScreen()=false
     override fun onClose() {
         if(modal!=null || choices!=null) { closeModal();return }
-        rememberedPage=selected;rememberedExpanded=expanded.toSet();minecraft.smSetScreen(returnTo)
+        minecraft.smSetScreen(returnTo)
     }
     private fun closeModal() {
         editor?.let(::removeWidget);multilineEditor?.let(::removeWidget)
@@ -254,8 +261,22 @@ class SafariConfigScreen(private val settings: SafariSettings = SafariSettings()
             Card(row,x,w,h,title,desc,Rect(x+w-12-columns.controlWidth,(h-24)/2,columns.controlWidth,24),(h-textHeight)/2)
         }
     }
+    private fun navigation() = Navigation(selected, expanded.toSet(), scrolls.toMap(), scroll, skyblockTab,
+        navScroll, areaTabs.toMap(), if (::search.isInitialized) search.value else initialQuery)
+
     fun freshForReturn()=SafariConfigScreen(returnTo=returnTo).also {
-        it.selected=selected;it.expanded.addAll(expanded);it.scroll=scroll;it.skyblockTab=skyblockTab
+        val state = navigation()
+        it.selected=state.page
+        it.expanded.clear()
+        it.expanded.addAll(state.expanded)
+        it.scrolls.clear()
+        it.scrolls.putAll(state.scrolls)
+        it.scroll=state.scroll
+        it.skyblockTab=state.skyblockTab
+        it.navScroll=state.navScroll
+        it.areaTabs.clear()
+        it.areaTabs.putAll(state.areaTabs)
+        it.initialQuery=state.query
     }
     private fun visibleRows(): List<Pair<SettingsCatalog.Row,Int>> = buildList {
         val query=search.value.trim()
@@ -414,5 +435,10 @@ class SafariConfigScreen(private val settings: SafariSettings = SafariSettings()
         }
         return super.keyPressed(event)
     }
-    companion object { private var rememberedPage=0;private var rememberedExpanded=emptySet<String>() }
+    private data class Navigation(
+        val page: Int = 0, val expanded: Set<String> = emptySet(), val scrolls: Map<Int,Int> = emptyMap(),
+        val scroll: Int = 0, val skyblockTab: Int = 0, val navScroll: Int = 0,
+        val areaTabs: Map<String,Int> = emptyMap(), val query: String = ""
+    )
+    companion object { private var rememberedNavigation=Navigation() }
 }

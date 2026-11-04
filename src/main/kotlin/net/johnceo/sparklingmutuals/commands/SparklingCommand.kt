@@ -32,6 +32,18 @@ object SparklingCommand {
 
     fun register() {
         ClientCommandRegistrationCallback.EVENT.register { dispatcher, _ ->
+            if (net.johnceo.sparklingmutuals.debug.SafariDeveloper.enabled) {
+                dispatcher.register(ClientCommands.literal("testing").executes {
+                    val message = runCatching {
+                        net.johnceo.sparklingmutuals.debug.SafariDeveloper.toggleTesting(Minecraft.getInstance())
+                    }.getOrElse { error ->
+                        org.slf4j.LoggerFactory.getLogger("sparkling-mutuals/testing").warn("Could not start testing log", error)
+                        "[SM] Could not start testing log. See latest.log."
+                    }
+                    it.source.sendFeedback(LocalChat.component(message))
+                    1
+                })
+            }
             dispatcher.register(
                 ClientCommands.literal("sm")
                     .executes { open(::SafariConfigScreen) }
@@ -53,15 +65,22 @@ object SparklingCommand {
                         open { HistoryScreen(null, HistoryScreen.Tab.STATS) } })
                     .then(ClientCommands.literal("debug").executes { context ->
                         SafariEsp.debug(Minecraft.getInstance())
-                        net.johnceo.sparklingmutuals.safari.automation.entry.CjsSafariEntry.debug().forEach {
-                            org.slf4j.LoggerFactory.getLogger("sparkling-mutuals/cj-entry-dryrun").info(it)
-                        }
                         net.johnceo.sparklingmutuals.safari.automation.SafariManagerGuard.debug().forEach {
                             org.slf4j.LoggerFactory.getLogger("sparkling-mutuals/entry-guard").info(it)
                         }
                         BeeNests.debug(Minecraft.getInstance())
                         HoneyHives.debug(Minecraft.getInstance())
-                        context.source.sendFeedback(LocalChat.component("[SM] Entity, nest and honeyhive diagnostics saved to latest.log."))
+                        val message = if (net.johnceo.sparklingmutuals.debug.SafariDeveloper.enabled) {
+                            runCatching { net.johnceo.sparklingmutuals.debug.SafariDeveloper.snapshot(Minecraft.getInstance()) }
+                                .fold({
+                                    net.johnceo.sparklingmutuals.debug.SafariDeveloper.event("Manual snapshot · ${it.fileName}")
+                                    "[SM] Developer snapshot saved to $it"
+                                }, {
+                                    org.slf4j.LoggerFactory.getLogger("sparkling-mutuals/debug").warn("Could not write developer snapshot", it)
+                                    "[SM] Could not save developer snapshot. See latest.log."
+                                })
+                        } else "[SM] Entity, nest and honeyhive diagnostics saved to latest.log."
+                        context.source.sendFeedback(LocalChat.component(message))
                         1
                     })
             )

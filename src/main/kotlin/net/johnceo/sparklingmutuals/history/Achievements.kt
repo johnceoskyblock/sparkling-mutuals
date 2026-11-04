@@ -1,5 +1,6 @@
 package net.johnceo.sparklingmutuals.history
 
+import net.johnceo.sparklingmutuals.party.PartyManager
 import net.johnceo.sparklingmutuals.compat.*
 import java.time.Instant
 import java.time.ZoneId
@@ -13,7 +14,7 @@ import net.johnceo.sparklingmutuals.safari.SafariRoster
 import net.minecraft.client.Minecraft
 import net.minecraft.network.chat.Component
 import net.minecraft.network.chat.HoverEvent
-import net.minecraft.sounds.SoundEvents
+import net.johnceo.sparklingmutuals.ui.AlertSounds
 
 /** Rarity, lowest first, with its chat colour and ARGB. */
 enum class AchievementTier(val code: String, val argb: Int) {
@@ -346,17 +347,22 @@ object Achievements {
         queueLocal(LocalChat.component("[SM] §6§lACHIEVEMENT UNLOCKED! ${tier.code}§l${achievement.name}").copy()
             .withStyle { it.withHoverEvent(HoverEvent.ShowText(hover)) },
             LocalChat.component("[SM]   §7${achievement.description} §8(${tier.code}${tier.name}§8)"))
-        if (ConfigManager.achievementSound) {
-            // Mythic and Divine get the challenge-advancement fanfare; the rest a lighter chime.
-            if (tier.ordinal >= AchievementTier.MYTHIC.ordinal) player.playSound(SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 1f, 1f)
-            else player.playSound(SoundEvents.PLAYER_LEVELUP, .6f, 1.6f)
+        val showTitle = tier.ordinal >= AchievementTier.LEGENDARY.ordinal
+        if (ConfigManager.achievementSound || showTitle) {
+            net.johnceo.sparklingmutuals.hud.SafariAlertSequence.queue.submit(this, if (showTitle) 3_500 else 1_000,
+                valid = { ConfigManager.achievements && client.player != null }, minimumTicks = if (showTitle) 70 else 0) {
+                if (ConfigManager.achievementSound) {
+                    if (tier.ordinal >= AchievementTier.MYTHIC.ordinal) AlertSounds.play(client, 0, 1f, 1f)
+                    else AlertSounds.play(client, 1, .6f, 1.6f)
+                }
+                if (showTitle) {
+                    client.gui.smSetTimes(5, 50, 15)
+                    client.gui.smSetSubtitle(Component.literal("${tier.code}${achievement.name}"))
+                    client.gui.smSetTitle(Component.literal("§6§lACHIEVEMENT"))
+                }
+            }
         }
-        if (tier.ordinal >= AchievementTier.LEGENDARY.ordinal) {
-            client.gui.smSetTimes(5, 50, 15)
-            client.gui.smSetSubtitle(Component.literal("${tier.code}${achievement.name}"))
-            client.gui.smSetTitle(Component.literal("§6§lACHIEVEMENT"))
-        }
-        if (ConfigManager.achievementsToParty) player.connection.sendCommand("pc Achievement unlocked: ${net.johnceo.sparklingmutuals.commands.PartyWording.shiny(achievement.name)}!")
+        if (ConfigManager.achievementsToParty) PartyManager.sendPartyChat(Minecraft.getInstance(), "Achievement unlocked: ${net.johnceo.sparklingmutuals.commands.PartyWording.shiny(achievement.name)}!")
     }
 
     /** First run: unlock what the history already earns, quietly, and say how many in one line. */

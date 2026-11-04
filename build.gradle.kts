@@ -68,7 +68,7 @@ if (targetMinecraft == "26.1.2") tasks.register<JavaExec>("replayShardMarket") {
     }
 }
 tasks.processResources {
-    val properties = mapOf("version" to modVersion, "minecraft" to targetMinecraft)
+    val properties = mapOf("version" to modVersion, "minecraft" to targetMinecraft, "developer" to "false")
     inputs.properties(properties)
     filesMatching("fabric.mod.json") { expand(properties) }
 }

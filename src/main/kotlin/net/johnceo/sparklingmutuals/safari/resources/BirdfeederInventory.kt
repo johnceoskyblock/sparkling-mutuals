@@ -35,16 +35,16 @@ object BirdfeederInventory {
             SafariTracking.ledger.current?.birds?.feeder(food,stack.count)
         } else if(++emptyTicks>=2) SafariTracking.ledger.current?.birds?.feeder(null,0)
     }
-    fun carried(client: Minecraft): List<Pair<String,Int>> {
+    fun snapshot(client: Minecraft): List<Pair<String,Int>> {
         tick(client)
         val player=client.player ?: return emptyList()
         val screen=client.smScreen as? AbstractContainerScreen<*>
-        val stack=screen?.menu?.carried
-        val real=if(stack==null || stack.isEmpty) emptyList() else listOf(SafariRules.strip(stack.hoverName.string).trim() to stack.count)
-        val held=(0 until player.inventory.containerSize).map { player.inventory.getItem(it) }.filterNot { it.isEmpty }
-            .groupBy { SafariRules.strip(it.hoverName.string).trim() }.mapValues { (_,stacks) -> stacks.sumOf { it.count } }.filterKeys { it in foods }
-        val extra=cursor.extra(held,real.filter { it.first in foods }.toMap(),screen?.title?.string=="Birdfeeder",
-            SafariTracking.ledger.current?.birds?.feederFood,System.currentTimeMillis())
-        return real.filter { it.first !in foods }+extra.map { it.key to it.value }
+        val stack=player.containerMenu.carried
+        val real=if(stack.isEmpty) emptyList() else listOf(SafariRules.strip(stack.hoverName.string).trim() to stack.count)
+        val held = (0 until player.inventory.containerSize).map { player.inventory.getItem(it) }.filterNot { it.isEmpty }
+            .groupingBy { SafariRules.strip(it.hoverName.string).trim() }.fold(0) { count, item -> count + item.count }
+        val extra=cursor.extra(held.filterKeys { it in foods },real.filter { it.first in foods }.toMap(),screen?.title?.string=="Birdfeeder",
+            SafariTracking.ledger.current?.birds?.localFeederFood,System.currentTimeMillis())
+        return held.toList() + real.filter { it.first !in foods } + extra.toList()
     }
 }

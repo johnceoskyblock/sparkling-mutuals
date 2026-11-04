@@ -26,9 +26,7 @@ object SafariBiomeClearTracking {
         if (SafariAssist.location != SafariLocation.INSIDE) return
         val snapshot = SafariEsp.observations()
         if (!snapshot.scanned) return
-        val inventory = player.inventory
-        run.inventoryEvidence((0 until inventory.containerSize).map { inventory.getItem(it) }
-            .filterNot { it.isEmpty }.map { it.hoverName.string to it.count } + net.johnceo.sparklingmutuals.safari.resources.BirdfeederInventory.carried(client))
+        run.inventoryEvidence(net.johnceo.sparklingmutuals.safari.resources.BirdfeederInventory.snapshot(client))
         run.localPlayer(player.name.string)
         // Forest food markers are visible Safari-wide, including the central boat and other biomes.
         run.scanBirdSources(

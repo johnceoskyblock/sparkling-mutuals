@@ -20,23 +20,42 @@ object SparkleWarping {
     private var cleanupRequested=false
     private var setupRequested=false
     private var setupCleanup=false
+    private var setupDeadline = 0L
+    private var requestedPartyList = false
+    private val setupRoster = StartPartyRoster()
     private var requestedNames: Set<String>?=null
     private var resolvedNames=emptyMap<String,String>()
     private var session=0L
     private val cleanup=ArrayDeque<String>()
     private var nextCleanupAt=0L
     private var returning=emptyList<String>()
+    private var returningIds = emptySet<String>()
+    private var returningNamesById = emptyMap<String, String>()
+    private var returningPinned = false
     private val leech=LeechInvitation()
     private val contestReminder=WarpContestReminder()
     internal val preparingParty get()=setupRequested || setupCleanup
-    fun returningPlayers()=returning.filter { ConfigManager.sparkleWarpMode == 0 || !it.equals(ConfigManager.warpDuo,true) }
+    fun returningPlayers(): List<String> {
+        val lookup = net.johnceo.sparklingmutuals.commands.SafariLookup
+        val counts = returningIds.mapNotNull { id ->
+            val name = returningNamesById[id] ?: SafariPartyInput.nameOf(id) ?: resolvedNames[id.replace("-", "")]
+            val count = lookup.known(id)?.size
+            if (name == null || count == null) null else name.lowercase() to count
+        }.toMap()
+        return returning.filter { ConfigManager.sparkleWarpMode == 0 || !it.equals(ConfigManager.warpDuo,true) }
+            .sortedBy { counts[it.lowercase()] ?: Int.MAX_VALUE }
+    }
     fun beginRun() { wasSafari=true }
     /** Only /start explicitly prepares a full party before the first run. */
     fun prepareOnEnable() {
         setupRequested=true;setupCleanup=false;cleanupRequested=false;wasSafari=false;cleanup.clear()
+        setupDeadline = System.currentTimeMillis() + 10_000
+        requestedPartyList = false
+        setupRoster.clear()
+        nextCleanupAt = 0
         org.slf4j.LoggerFactory.getLogger("sparkling-mutuals/warping").info("Initial party preparation requested: mode={} leech={}",ConfigManager.sparkleWarpMode,ConfigManager.leechMode)
     }
-    fun cancelSetup() { setupRequested=false;setupCleanup=false;cleanup.clear();cleanupRequested=false;wasSafari=false }
+    fun cancelSetup() { setupRequested=false;setupCleanup=false;cleanup.clear();cleanupRequested=false;wasSafari=false;setupRoster.clear() }
     fun canLead(client: Minecraft): Boolean {
         val player=client.player ?: return false
         return !ConfigManager.leechMode && PartyManager.hasInfo &&
@@ -78,6 +97,12 @@ object SparkleWarping {
         }
         ClientReceiveMessageEvents.GAME.register { message, overlay ->
             if (!overlay) Minecraft.getInstance().execute {
+                if (setupRequested && requestedPartyList) {
+                    if (net.johnceo.sparklingmutuals.party.PartyRosterSignals.changed(message.string)) {
+                        setupRoster.clear()
+                        requestedPartyList = false
+                    } else SafariMessages.lines(message.string).forEach(setupRoster::observe)
+                }
                 if (!ConfigManager.leechMode) return@execute
                 val client=Minecraft.getInstance()
                 if (!net.johnceo.sparklingmutuals.JoinWelcomeState.hypixel(client.currentServer?.ip)) return@execute
@@ -106,22 +131,43 @@ object SparkleWarping {
         return null
     }
     /** Resolve and save the roster before sending any disband/kick command. False means wait. */
-    private fun prepareParty(client: Minecraft): Boolean {
-        val members=names(client) ?: return false
+    private fun prepareParty(client: Minecraft, members: List<String>? = names(client)): Boolean {
+        if (members == null) return false
         val mode=SparkleWarpMode.entries[ConfigManager.sparkleWarpMode.coerceIn(0,1)]
         val plan=SparkleWarpPolicy.cleanup(mode,client.player!!.name.string,ConfigManager.warpDuo,members)
         if (plan == null) {
             client.player?.sendSystemMessage(LocalChat.component("[SM] Duo warping needs your /duo runner in the party. Set the runner, then run /start."))
             return true
         }
-        if (plan.commands.isNotEmpty()) {
+        if (plan.commands.isNotEmpty() && (setupRequested || !returningPinned)) {
             returning=plan.leechers
+            returningPinned = setupRequested
             val self=client.player!!
-            retainPartyData(client,PartyManager.withLocal(self.uuid.toString()).orEmpty())
+            returningIds = PartyManager.withLocal(self.uuid.toString()).orEmpty() - self.uuid.toString()
+            val online = client.connection?.onlinePlayers.orEmpty().associate { it.profile.id.toString() to it.profile.name }
+            returningNamesById = returningIds.mapNotNull { id ->
+                (online[id] ?: SafariPartyInput.nameOf(id) ?: resolvedNames[id.replace("-", "")])?.let { id to it }
+            }.toMap()
+            resolveReturningNames(client)
+            retainPartyData(client, returningIds + self.uuid.toString())
         }
         cleanup.addAll(plan.commands)
         org.slf4j.LoggerFactory.getLogger("sparkling-mutuals/warping").info("Party prepared: mode={} returning={} commands={}",mode,returning,plan.commands)
         return true
+    }
+    private fun resolveReturningNames(client: Minecraft) {
+        val saved = returning
+        val roster = returningIds.associateBy { it.replace("-", "") }
+        val knownNames = returningNamesById.values.mapTo(mutableSetOf(), String::lowercase)
+        saved.filter { it.lowercase() !in knownNames }.forEach { name ->
+            java.util.concurrent.CompletableFuture.supplyAsync {
+                runCatching { net.johnceo.sparklingmutuals.api.HypixelApi.getPlayerUuid(name) }.getOrNull()
+            }.thenAccept { uuid -> client.execute {
+                if (returning === saved) roster[uuid?.replace("-", "")]?.let { id ->
+                    returningNamesById = returningNamesById + (id to name)
+                }
+            } }
+        }
     }
     private fun retainPartyData(client: Minecraft, members: Set<String>) {
         val self=client.player ?: return
@@ -143,23 +189,52 @@ object SparkleWarping {
         if (contestReminder.poll(net.johnceo.sparklingmutuals.contest.ContestTracker.absoluteWindow(java.time.LocalDateTime.now()),
                 onHypixel && ConfigManager.warpAlertsEnabled && !ConfigManager.leechMode,leader,
                 PartyManager.getMembers().size)) {
-            client.connection?.sendCommand("pc New contest! Grab contest between warps while the party is disbanded.")
+            PartyManager.sendPartyChat(client, "New contest! Grab contest between warps while the party is disbanded.")
         }
         if (!ConfigManager.leechMode) leech.clear() else {
             PartyManager.withLocal(client.player!!.uuid.toString())?.takeIf { it.size > 1 }?.let {
                 retainPartyData(client,it)
             }
-            val inParty=if (PartyManager.hasInfo) PartyManager.getMembers().size > 1 || PartyManager.isLeader(client.player!!.uuid.toString()) else null
-            leech.next(now,inParty)?.let { client.connection?.sendCommand(it) }
-            if (leech.pending && !PartyManager.hasInfo) PartyManager.requestPartyInfo()
+            if (leech.pending) {
+                val self = client.player!!
+                val members = PartyManager.getMembers()
+                val inParty = if (PartyManager.hasInfo) members.isNotEmpty() else null
+                val protected = if (inParty == true) {
+                    val leader = members.firstOrNull(PartyManager::isLeader)
+                    val name = if (leader == self.uuid.toString()) self.name.string else leader?.let { id ->
+                        client.connection?.onlinePlayers?.firstOrNull { it.profile.id.toString().equals(id, true) }?.profile?.name
+                            ?: SafariPartyInput.nameOf(id) ?: resolvedNames[id.replace("-", "")]
+                    }
+                    if (name == null && leader != null) names(client)
+                    name?.let { SparkleWarpPolicy.inviteAllowed(it, ConfigManager.leechWhitelist) }
+                } else false
+                leech.next(now, inParty, protected)?.let { client.connection?.sendCommand(it) }
+                if (leech.pending && (!PartyManager.hasInfo || inParty == true && members.none(PartyManager::isLeader)))
+                    PartyManager.requestPartyInfo()
+            }
         }
         if (!ConfigManager.warpAlertsEnabled || ConfigManager.leechMode) { cancelSetup();return }
         if (!net.johnceo.sparklingmutuals.JoinWelcomeState.hypixel(client.currentServer?.ip)) return
         if (setupRequested || setupCleanup) {
+            if (now >= setupDeadline) {
+                cancelSetup()
+                client.player?.sendSystemMessage(LocalChat.component("[SM] Could not verify your party for /start. Try again."))
+                return
+            }
             if (!PartyManager.hasInfo) { PartyManager.requestPartyInfo();return }
             if (!canLead(client)) { cancelSetup();return }
             if (setupRequested) {
-                if (!prepareParty(client)) return
+                val self = client.player!!
+                val rosterSize = PartyManager.withLocal(self.uuid.toString())?.size ?: return
+                val members = setupRoster.members(self.name.string, rosterSize) ?: names(client)
+                if (members == null) {
+                    if (!requestedPartyList) {
+                        client.connection?.sendCommand("p list")
+                        requestedPartyList = true
+                    }
+                    return
+                }
+                if (!prepareParty(client, members)) return
                 setupRequested=false;setupCleanup=cleanup.isNotEmpty()
             }
             if (setupCleanup) {
@@ -191,6 +266,6 @@ object SparkleWarping {
     fun reset() {
         net.johnceo.sparklingmutuals.commands.SafariLookup.retainWarpParty(emptySet())
         session++;cancelSetup();requestedNames=null;resolvedNames=emptyMap();contestReminder.reset()
-        cleanup.clear();returning=emptyList();nextCleanupAt=0;leech.clear()
+        cleanup.clear();returning=emptyList();returningIds=emptySet();returningNamesById=emptyMap();returningPinned=false;nextCleanupAt=0;leech.clear()
     }
 }

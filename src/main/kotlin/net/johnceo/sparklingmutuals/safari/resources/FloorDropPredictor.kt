@@ -29,16 +29,19 @@ class FloorDropPredictor {
     fun reset() = groups.clear()
     fun scan(displays: List<FloorDisplay>, now: Long = System.currentTimeMillis()): List<PredictedFloorDrop> {
         groups.values.forEach { it.live = false }
-        val byId = displays.associateBy { it.id }
+        // Spawn packets can arrive before item metadata. Empty/decorative triples must never
+        // become persistent anchors: their IDs would shift every later resource prediction.
+        val markers = displays.filter { it.description == "minecraft:string" || it.description.startsWith("minecraft:string:") }
+        val byId = markers.associateBy { it.id }
         val consumed = mutableSetOf<Int>()
-        for (a in displays.sortedBy { it.id }) {
+        for (a in markers.sortedBy { it.id }) {
             if (a.id in consumed) continue
             val triple = listOf(a, byId[a.id + 1] ?: continue, byId[a.id + 2] ?: continue)
             if (triple.any { it.id in consumed } || triple.any { p -> triple.any { q ->
                     (p.x-q.x)*(p.x-q.x)+(p.y-q.y)*(p.y-q.y)+(p.z-q.z)*(p.z-q.z) > 2.25
                 } }) continue
-            consumed.addAll(triple.map { it.id })
             if (triple.map { it.description }.distinct().size != 1) continue
+            consumed.addAll(triple.map { it.id })
             val x = round(triple.sumOf { it.x } / 3 * 100) / 100
             val y = round(triple.sumOf { it.y } / 3 * 100) / 100
             val z = round(triple.sumOf { it.z } / 3 * 100) / 100

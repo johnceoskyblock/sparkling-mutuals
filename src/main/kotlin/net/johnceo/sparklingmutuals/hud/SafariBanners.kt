@@ -15,7 +15,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.network.chat.Component
 
 object SafariBanners {
-    private val queue=BannerQueue()
+    private var activeBanner: ActiveBanner? = null
     private var run: SafariRun?=null
     private val fired=mutableSetOf<String>()
     private val cooldown=mutableMapOf<String,Long>()
@@ -32,7 +32,7 @@ object SafariBanners {
     private fun now()=System.nanoTime()/1_000_000
     private fun sync() {
         val current=SafariTracking.ledger.current
-        if(current!==run) { run=current;fired.clear();cooldown.clear();chamberTarget=null;previousBiome=null;feeder=0;heldFood=0;queue.clear() }
+        if(current!==run) { run=current;fired.clear();cooldown.clear();chamberTarget=null;previousBiome=null;feeder=0;heldFood=0 }
     }
     fun fire(kind: BannerKind,biome: SafariBiome?=null,critter: String?=null,text: String?=null,preview: Boolean=false) {
         if(!kind.supported) return
@@ -47,17 +47,26 @@ object SafariBanners {
         val color=if(biome!=null && kind in setOf(BannerKind.HOTSPOT,BannerKind.FLOOR_DROPS,BannerKind.BIOME_DONE)) biome.color
             else if(kind==BannerKind.BIRDS && critter!=null) SafariRoster.named(critter)?.color ?: (0xFF000000.toInt() or kind.rgb)
             else SafariEspConfig.rgb(option.color)
-        queue.submit(BannerNotice(kind,formatted,color,(option.duration*1000).toLong(),option.sound,
-            if(option.playback==1) 0f else option.volume/100f,option.pitch,option.playback==2),now())
+        val notice = BannerNotice(kind,formatted,color,(option.duration*1000).toLong(),option.sound,
+            if(option.playback==1) 0f else option.volume/100f,option.pitch,option.playback==2)
+        val requestRun = SafariTracking.ledger.current
+        val contest = kind.name.startsWith("CONTEST_") || kind == BannerKind.TICKET
+        SafariAlertSequence.queue.submit(this, notice.duration, kind to formatted,
+            valid = { Minecraft.getInstance().player != null && (preview ||
+                BannerConfig.enabled && BannerConfig.options.getValue(kind).enabled &&
+                (contest || SafariTracking.ledger.current === requestRun)) },
+            finish = { activeBanner = null }) {
+            if (!notice.soundOnly) activeBanner = ActiveBanner(notice, now())
+            AlertSounds.play(Minecraft.getInstance(), notice.sound, notice.volume, notice.pitch)
+        }
     }
     fun preview(kind: BannerKind=BannerKind.GEMS) {
         val client=Minecraft.getInstance()
-        client.smSetScreen(null)
-        sync();queue.clear()
+        if (BannerConfig.options.getValue(kind).playback != 2) client.smSetScreen(null)
         fire(kind,kind.encounterBiome ?: SafariBiome.CAVERN,"Bluebird",preview=true)
     }
-    fun clear(kind: BannerKind)=queue.clear(kind)
-    fun silence() { queue.clear();AlertSounds.clearTransientAlerts() }
+    fun clear(kind: BannerKind)=SafariAlertSequence.queue.clear(this) { (it as? Pair<*, *>)?.first == kind }
+    fun silence() { SafariAlertSequence.queue.clear(this);AlertSounds.clearTransientAlerts() }
     private fun once(key: String,kind: BannerKind,biome: SafariBiome?=null) { if(fired.add(key)) fire(kind,biome) }
     private fun encounter(kind: BannerKind,biome: SafariBiome,key: String=kind.name) {
         if(BannerConfig.localEncounters && SafariAssist.biome!=biome) return
@@ -67,9 +76,8 @@ object SafariBanners {
     fun chat(text: String) { /* Stage banners were retired; encounters now use witnessed inventory edges. */ }
     fun caught(species: String) { }
     fun tick(client: Minecraft) {
-        sync();queue.advance(now())
+        sync()
         if(client.player==null) { reset();return }
-        queue.sounds().filter { it.volume>0 }.forEach { AlertSounds.play(client,it.sound,it.volume,it.pitch) }
         AlertSounds.tick()
         if(++tick%5!=0) return
         contest(client)
@@ -109,7 +117,7 @@ object SafariBanners {
             due.minOrNull()?.let { minute -> fire(when(minute) { 5 -> BannerKind.CONTEST_FIVE;3 -> BannerKind.CONTEST_THREE;else -> BannerKind.CONTEST_ONE }) }
         }
     }
-    fun reset() { queue.clear();fired.clear();cooldown.clear();run=null;chamberTarget=null;previousBiome=null;feeder=0;heldFood=0;contestActive=null;contestWindow=-1;contestWarnings.clear();ticket=false;AlertSounds.onConnectionExit() }
+    fun reset() { SafariAlertSequence.queue.clear(this);fired.clear();cooldown.clear();run=null;chamberTarget=null;previousBiome=null;feeder=0;heldFood=0;contestActive=null;contestWindow=-1;contestWarnings.clear();ticket=false;AlertSounds.onConnectionExit() }
     fun previewPanel(measure: (Component) -> Int = { Minecraft.getInstance().font.width(it) }): HudPanel {
         val text=Component.literal("Safari Banner").withStyle { it.withBold(BannerConfig.font in setOf(1,3)).withItalic(BannerConfig.font in setOf(2,3)) }
         return HudPanel("Safari Banner",0xFFFFAA00.toInt(),emptyList(),widthOverride=measure(text)+16,heightOverride=18)
@@ -118,7 +126,7 @@ object SafariBanners {
     fun render(g: GuiGraphicsExtractor) {
         val client=Minecraft.getInstance()
         if(client.player==null || client.options.smHideGui || client.smScreen is ContestGui) return
-        queue.advance(now());val active=queue.current ?: return
+        val active=activeBanner ?: return
         val preview=previewPanel();val window=client.window;val width=window.guiScaledWidth;val height=window.guiScaledHeight
         val anchor=preview.bounds(SafariHud.BANNER,width,height)
         val base=SafariHud.BANNER.layout.effectiveScale(width,height,preview.width(client.font::width),preview.height)

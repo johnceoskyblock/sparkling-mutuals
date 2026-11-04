@@ -30,10 +30,12 @@ object SafariPanels {
         val seconds = (run?.elapsed(now) ?: 0) / 1000
         val time = "%d:%02d".format(seconds / 60, seconds % 60)
         val title = when { run == null -> "Critter Safari (ready)"; run.endedAt != null -> "Last Safari  $time"; else -> "Critter Safari  $time" }
+        val mode = SafariFullClear.mode
         fun bar(label: String, critters: List<SafariCritter>, color: Int): HudRow {
-            if (SafariFullClear.mode == SafariMode.SPARKLING && !party.ready) return HudRow(label, "?", color, color)
-            val targets = if (SafariFullClear.mode == SafariMode.SPARKLING) critters.filter { party.needs(it.name) } else critters
-            val count = run?.completed(SafariFullClear.mode, targets, party) ?: 0
+            if (mode == SafariMode.SPARKLING && !party.ready) return HudRow(label, "?", color, color)
+            val targets = if (mode == SafariMode.SPARKLING) critters.filter { party.needs(it.name) } else critters
+            val count = if (mode == SafariMode.UNIQUE) run?.uniqueBarProgress(targets) ?: 0
+                else run?.completed(mode, targets, party) ?: 0
             val areas=critters.map { it.biome }.distinct()
             val complete=run?.let { areas.all { area -> it.biomeComplete(SafariFullClear.mode,area,party) } } ?: false
             return HudRow(label, "$count/${targets.size}", color, color,
@@ -47,7 +49,12 @@ object SafariPanels {
                 add(HudRow("Profit",if(coins<0) "Loading…" else net.johnceo.sparklingmutuals.history.BazaarPrices.format(coins),0xFFFFCC66.toInt()))
             }
         }
-        return HudPanel(title, rows = listOf(bar(if (SafariFullClear.mode == SafariMode.SPARKLING) { if (party.ready) "Checked" else "Loading discoveries" } else "Completed", SafariRoster.all, HudRow.WHITE), HudRow()) +
+        val overall = when (mode) {
+            SafariMode.SPARKLING -> if (party.ready) "Fully Checked" else "Loading discoveries"
+            SafariMode.UNIQUE -> "Completed"
+            SafariMode.FULL_CLEAR -> "Fully Collected"
+        }
+        return HudPanel(title, rows = listOf(bar(overall, SafariRoster.all, HudRow.WHITE), HudRow()) +
             SafariBiome.entries.map { bar(it.label, it.critters, it.color) } + if(extras.isEmpty()) emptyList() else listOf(HudRow())+extras)
 
     }
@@ -72,15 +79,23 @@ object SafariPanels {
             HudRow(critter.name, fixedCounter(critter.name, run, SafariFullClear.mode, party), critter.color, HudRow.GRAY, icon = null)
         }
         return HudPanel("${biome.label} ${if (sparkling) "Unchecked" else "Biome"} — ${listed.size} left", biome.color,
-            rows.ifEmpty { listOf(completedRow(missingCompleteText(sparkling))) })
+            rows.ifEmpty { listOf(completedRow(if (SafariFullClear.mode == SafariMode.UNIQUE) "All caught!" else missingCompleteText(sparkling))) })
     }
     /** Separate objectives layout and biome colors adapted from SafariUtils PartyObjectiveHud (MIT). */
     fun objectives(run: SafariRun?, biome: SafariBiome, unique: Boolean, nests: Int, mounds: Int = 0,
         walls: WallSummary = WallSummary(emptyList()), party: PartySparklingState = SafariSparklingMode.state): HudPanel {
         val sparkling = SafariFullClear.mode == SafariMode.SPARKLING
+        val supplies = net.johnceo.sparklingmutuals.sync.SafariPartySync.objectiveSupplies(run, biome).map { (player, items) ->
+            HudRow(player, icon = null, counters = items.map { (item, count) ->
+                net.johnceo.sparklingmutuals.hud.HudIconCount(
+                    net.johnceo.sparklingmutuals.hud.UiIcons.forLabel(item.label)!!, count,
+                    net.johnceo.sparklingmutuals.hud.ObjectivePalette.color(item.label))
+            })
+        }
         if(run?.biomeComplete(SafariFullClear.mode,biome,party)==true)
-            return HudPanel("Biome Objectives",biome.color,listOf(completedRow("All objectives complete!")),net.johnceo.sparklingmutuals.hud.UiIcons.forLabel(biome.label))
+            return HudPanel("Biome Objectives",biome.color,listOf(completedRow("All objectives complete!")) + supplies,net.johnceo.sparklingmutuals.hud.UiIcons.forLabel(biome.label))
         val helpers = buildList {
+            addAll(supplies)
             val mode = SafariFullClear.mode
             if(missingCritters(run,biome,party).isNotEmpty()) add(HudRow(when(mode) {
                 SafariMode.UNIQUE -> "Capture all uniques"
@@ -92,8 +107,9 @@ object SafariPanels {
             val birdsDone=run!=null && run.completed(mode,requiredBirds,party,localOnly=true)==requiredBirds.size
             val showBirds=biome==SafariBiome.FOREST && requiredBirds.isNotEmpty() && !birdsDone
             if (biome == SafariBiome.ICY && (!sparkling || party.needs("Wumpa")) &&
+                !net.johnceo.sparklingmutuals.sync.SafariPartySync.objectiveDone("Wumpa") &&
                 run?.sparklingComplete("Wumpa", party, localOnly = true) != true)
-                add(HudRow("Capture Wumpa", icon = net.johnceo.sparklingmutuals.hud.UiIcons.Kind.SNOWFLAKE))
+                add(HudRow("Capture Wumpa", icon = net.johnceo.sparklingmutuals.hud.UiIcons.Kind.RAVAGER))
             if (biome == SafariBiome.FOREST && SafariHelperRules.showNestCounter(mode, run, party))
                 add(HudRow("Bee nests", if(nests>0) "$nests" else "?", HudRow.GOLD, HudRow.GRAY))
             if (showBirds && run?.birdSpawnsComplete()!=true)
@@ -111,7 +127,11 @@ object SafariPanels {
                 val spawned=birdNames.filter { birds.spawnedCount(it)>0 }
                 if(spawned.isNotEmpty()) add(HudRow("Spawned",icon=null,counters=spawned.map { bird ->
                     net.johnceo.sparklingmutuals.hud.HudIconCount(net.johnceo.sparklingmutuals.hud.UiIcons.Kind.BIRD,
-                        birds.spawnedCount(bird),SafariRoster.named(bird)!!.color)
+                        birds.spawnedCount(bird), when (bird) {
+                            "Bluebird" -> 0xFF5555FF.toInt()
+                            "Parakeet" -> 0xFF55FF55.toInt()
+                            else -> SafariRoster.named(bird)!!.color
+                        })
                 }))
             }
             if (biome == SafariBiome.CAVERN) {

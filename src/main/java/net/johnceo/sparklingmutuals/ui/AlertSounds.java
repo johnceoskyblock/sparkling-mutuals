@@ -237,6 +237,31 @@ public final class AlertSounds {
 	};
 	private static long tick;
 	private static final ThreadLocal<Boolean> PLAYING_ALERT = ThreadLocal.withInitial(() -> false);
+	private static final List<SoundInstance> ACTIVE_BANNER_SOUNDS = new ArrayList<>();
+
+	private static void playBannerNote(Minecraft client, SoundEvent sound, float volume, float pitch) {
+		SoundInstance instance = SimpleSoundInstance.forUI(sound, pitch, volume);
+		ACTIVE_BANNER_SOUNDS.add(instance);
+		boolean previous = PLAYING_ALERT.get();
+		PLAYING_ALERT.set(true);
+		try {
+			client.getSoundManager().play(instance);
+		} finally {
+			PLAYING_ALERT.set(previous);
+		}
+	}
+
+	/** Includes notes that have not started and the audible tail of the last note. */
+	public static boolean bannerAudioPlaying() {
+		return !PENDING.isEmpty() || !ACTIVE_BANNER_SOUNDS.isEmpty();
+	}
+
+	public static void clearBannerSounds() {
+		PENDING.clear();
+		Minecraft client = Minecraft.getInstance();
+		for (SoundInstance instance : ACTIVE_BANNER_SOUNDS) client.getSoundManager().stop(instance);
+		ACTIVE_BANNER_SOUNDS.clear();
+	}
 
 	/** Identifies our playback call, not the vanilla sound ID another source might use. */
 	public static boolean playingAlert() {
@@ -292,7 +317,7 @@ public final class AlertSounds {
 		if (melody.isEmpty()) {
 			for (int layer = 0; layer < layers; layer++) {
 				float layerVolume = Math.min(1f, volume - layer);
-				playNote(client, sound(id), layerVolume, pitch);
+				playBannerNote(client, sound(id), layerVolume, pitch);
 			}
 			return;
 		}
@@ -306,7 +331,7 @@ public final class AlertSounds {
 
 	/** Stops an earlier preview so rapidly auditioning melodies stays intelligible. */
 	public static void preview(Minecraft client, int id, float volume, float pitch) {
-		PENDING.clear();
+		clearBannerSounds();
 		play(client, id, volume, pitch);
 	}
 
@@ -524,7 +549,7 @@ public final class AlertSounds {
 
 	/** Clears short banner sounds and the persistent ticket reminder at a lifecycle boundary. */
 	public static void clearTransientAlerts() {
-		PENDING.clear();
+		clearBannerSounds();
 		TICKET_REMINDER_PENDING.clear();
 		ticketReminderActive = false;
 	}
@@ -844,6 +869,7 @@ public final class AlertSounds {
 		} else if (activeSparklingSong >= 0) {
 			playSparklingScoreTick(client);
 		}
+		ACTIVE_BANNER_SOUNDS.removeIf(sound -> !client.getSoundManager().isActive(sound));
 		drain(client, PENDING);
 		drain(client, TICKET_REMINDER_PENDING);
 		if (ticketReminderActive && TICKET_REMINDER_PENDING.isEmpty()) {
@@ -858,7 +884,8 @@ public final class AlertSounds {
 			Pending pending = iterator.next();
 			if (pending.dueTick > tick) continue;
 			for (int layer = 0; layer < pending.layers; layer++) {
-				playNote(client, pending.sound, pending.volume, pending.pitch);
+				if (sounds == PENDING) playBannerNote(client, pending.sound, pending.volume, pending.pitch);
+				else playNote(client, pending.sound, pending.volume, pending.pitch);
 			}
 			iterator.remove();
 		}

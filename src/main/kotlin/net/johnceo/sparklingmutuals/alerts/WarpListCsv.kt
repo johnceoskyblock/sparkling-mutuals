@@ -5,7 +5,8 @@ import java.io.Reader
 
 /** Only the header and its ten name rows belong to a Warp List export. */
 object WarpListCsv {
-    fun read(source: Reader): Map<String, List<String>> {
+    data class Entry(val name: String, val priority: Int)
+    fun read(source: Reader): Map<String, List<Entry>> {
         val rows = records(source)
         val headers = rows.firstOrNull() ?: throw IllegalArgumentException("CSV is empty.")
         val known = WarpList.critters.associateBy(String::lowercase)
@@ -14,10 +15,12 @@ object WarpListCsv {
         }
         require(columns.isNotEmpty()) { "No supported critter headers found in row 1." }
         require(columns.map { it.second }.distinct().size == columns.size) { "Duplicate critter headers in row 1." }
-        val result = WarpList.critters.associateWith { emptyList<String>() }.toMutableMap()
+        val result = WarpList.critters.associateWith { emptyList<Entry>() }.toMutableMap()
+        val ign = Regex("[A-Za-z0-9_]{1,16}")
         columns.forEach { (column, critter) ->
-            result[critter] = rows.drop(1).mapNotNull { it.getOrNull(column)?.trim() }
-                .filter { it.matches(Regex("[A-Za-z0-9_]{1,16}")) }.distinctBy(String::lowercase).take(10)
+            result[critter] = rows.drop(1).mapIndexedNotNull { index, row ->
+                row.getOrNull(column)?.trim()?.takeIf(ign::matches)?.let { Entry(it, index + 1) }
+            }.distinctBy { it.name.lowercase() }
         }
         return result
     }
