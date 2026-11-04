@@ -9,13 +9,18 @@ class BeeNestSurvey {
     private var partyCleared=false
     fun acceptPartyClear() { partyCleared=true; punched.addAll(states.filterValues { it == NestBlock.NEST }.keys) }
     private val punched = mutableSetOf<Triple<Int, Int, Int>>()
-    val remaining get() = states.filterValues { it == NestBlock.NEST }.keys - punched
-    val unverified get() = states.filterValues { it == NestBlock.UNKNOWN }.keys.toSet()
+    private val localPunches = mutableSetOf<Triple<Int,Int,Int>>()
+    private val sharedResolved = mutableSetOf<Triple<Int,Int,Int>>()
+    fun acceptResolved(pos: Triple<Int,Int,Int>) { if(pos in states) sharedResolved.add(pos) }
+    val locallyResolved get() = states.filterValues { it==NestBlock.HIVE }.keys + localPunches
+    val remaining get() = states.filterValues { it == NestBlock.NEST }.keys - punched - sharedResolved
+    val unverified get() = (states.filterValues { it == NestBlock.UNKNOWN }.keys - sharedResolved).toSet()
     val nestCount get() = states.values.count { it == NestBlock.NEST }
     fun classification(pos: Triple<Int, Int, Int>) = states[pos] ?: NestBlock.UNKNOWN
     val punchedCount get() = punched.size
-    val allChecked get() = partyCleared || states.values.none { it == NestBlock.UNKNOWN } &&
-        states.values.any { it == NestBlock.NEST } && remaining.isEmpty()
+    val resolvedNestCount get() = (punched + sharedResolved.filter { states[it] == NestBlock.NEST }).size
+    val allChecked get() = partyCleared || unverified.isEmpty() &&
+        (states.values.any { it == NestBlock.NEST } || sharedResolved.size==positions.size) && remaining.isEmpty()
     /** null means no client block data. Only an inspected nest or hive establishes coverage. */
     fun scan(blockAt: (Triple<Int, Int, Int>) -> NestBlock?) {
         positions.forEach { site -> blockAt(site)?.let { observe(site, it) } }
@@ -27,8 +32,11 @@ class BeeNestSurvey {
         if (pos in states && block != NestBlock.UNKNOWN && states[pos] != NestBlock.NEST) states[pos] = block
         if(partyCleared && block == NestBlock.NEST) punched.add(pos)
     }
-    fun punch(pos: Triple<Int, Int, Int>) = states[pos] == NestBlock.NEST && punched.add(pos)
-    fun reset() { partyCleared=false; states.keys.forEach { states[it] = NestBlock.UNKNOWN }; punched.clear() }
+    fun punch(pos: Triple<Int, Int, Int>): Boolean {
+        if(states[pos]!=NestBlock.NEST) return false
+        localPunches.add(pos); return punched.add(pos)
+    }
+    fun reset() { partyCleared=false; states.keys.forEach { states[it] = NestBlock.UNKNOWN }; punched.clear();sharedResolved.clear();localPunches.clear() }
     companion object {
         // Live block diagnostics confirmed the original Y values pointed at fences above these blocks.
         val positions = listOf(Triple(-17, 68, 41), Triple(-22, 68, 39), Triple(25, 70, 41),

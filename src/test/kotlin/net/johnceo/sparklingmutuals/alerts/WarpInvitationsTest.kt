@@ -5,6 +5,17 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class WarpInvitationsTest {
+    @Test fun `offline response releases the current invite delay`() {
+        val queue = WarpInvitations()
+        queue.start(24_000)
+        queue.add("Hideyho", listOf("Offline", "Next"))
+        assertEquals("Offline", queue.next(23_000, emptySet()))
+        assertNull(queue.next(23_100, emptySet()))
+        queue.rejectedOffline(23_100)
+        assertEquals("Next", queue.next(23_100, emptySet()))
+        queue.rejectedOffline(24_000)
+        assertNull(queue.next(24_000, emptySet()))
+    }
     @Test fun `one invitation every two seconds skips members and stops at warp`() {
         val queue = WarpInvitations()
         queue.start(23000)

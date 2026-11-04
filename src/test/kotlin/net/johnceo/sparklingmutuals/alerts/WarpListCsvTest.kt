@@ -10,8 +10,8 @@ class WarpListCsvTest {
             (1..10).joinToString("\r\n") { "Player$it,Other$it,Shrimp$it" } +
             "\r\nShouldNotImport,Extra,Nope\r\n\"malformed footer"
         val imported = WarpListCsv.read(StringReader(csv))
-        assertEquals((1..10).map { "Player$it" }, imported["Foxtrot"])
-        assertEquals((1..10).map { "Shrimp$it" }, imported["Mantis Shrimp"])
+        assertEquals((1..10).map { WarpListCsv.Entry("Player$it", it) }, imported["Foxtrot"])
+        assertEquals((1..10).map { WarpListCsv.Entry("Shrimp$it", it) }, imported["Mantis Shrimp"])
         assertEquals(emptyList<String>(), imported["Tepid"])
         assertEquals(WarpList.critters.toSet(), imported.keys)
     }
@@ -21,17 +21,17 @@ class WarpListCsvTest {
             "first_name,fox,ignored\n" +
             "Second,,\n/p Someone,Not-an-IGN,\n"
         val imported = WarpListCsv.read(StringReader(csv))
-        assertEquals(listOf("First_Name", "Second"), imported["Mantis Shrimp"])
-        assertEquals(listOf("Fox"), imported["Foxtrot"])
+        assertEquals(listOf(WarpListCsv.Entry("First_Name", 1), WarpListCsv.Entry("Second", 3)), imported["Mantis Shrimp"])
+        assertEquals(listOf(WarpListCsv.Entry("Fox", 1)), imported["Foxtrot"])
     }
-    @Test fun `replacement clears previous names including unsupported columns`() {
+    @Test fun `import keeps previous names including unsupported columns`() {
         WarpList.load(java.util.Properties())
         WarpList.set("Foxtrot", "Old")
         WarpList.set("Tepid", "AlsoOld")
         val imported = WarpListCsv.read(StringReader("Foxtrot\nNew\n"))
-        imported.forEach { (critter, names) -> WarpList.set(critter, names.joinToString(" ")) }
-        assertEquals(listOf("New"), WarpList.names("Foxtrot"))
-        assertTrue(WarpList.names("Tepid").isEmpty())
+        WarpList.append(imported)
+        assertEquals(listOf("Old", "New"), WarpList.names("Foxtrot"))
+        assertEquals(listOf("AlsoOld"), WarpList.names("Tepid"))
         WarpList.load(java.util.Properties())
     }
     @Test fun `invalid files fail before replacing anything`() {

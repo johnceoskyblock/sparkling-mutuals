@@ -34,6 +34,9 @@ class FloorDropState {
         .filter { it.biome == SafariBiome.HAUNTED && it.type == FloorDropType.INCENSE }
         .map { it.id }.toSet()
     private fun amount(type: FloorDropType) = maxOf((acquired[type] ?: 0) + (heldMaximum[type] ?: 0), inventoryPeak[type] ?: 0)
+    fun gemDebug() = listOf(FloorDropType.LIME, FloorDropType.PURPLE, FloorDropType.ORANGE).joinToString { type ->
+        "${type.name}(picked=${acquired[type] ?: 0},starting=${heldMaximum[type] ?: 0},peak=${inventoryPeak[type] ?: 0})"
+    }
     private var gemsReady = false
     private val gems = mutableSetOf<String>()
     private val gemNames = setOf("Purple Gem", "Lime Gem", "Orange Gem")
@@ -106,6 +109,7 @@ object SafariFloorDrops {
         SafariEspRules.profitableEsp("Gimmiegold", ConfigManager.sparklingProfitableShardEsp)
     fun selected(drop: PredictedFloorDrop, incenseIds: Set<Int>): Boolean {
         val type = drop.type ?: return false
+        if(type == FloorDropType.INCENSE && net.johnceo.sparklingmutuals.sync.SafariPartySync.doomSummoned()) return false
         if (type == FloorDropType.GENERIC) return SafariEspConfig.rewardDrops && SafariEspConfig.groups.getValue("floor").enabled
         val mode = SafariFullClear.mode
         val party = SafariSparklingMode.state

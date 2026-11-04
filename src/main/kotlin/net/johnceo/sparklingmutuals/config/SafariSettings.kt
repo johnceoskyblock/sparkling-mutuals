@@ -7,6 +7,7 @@ import net.johnceo.sparklingmutuals.commands.CommandHelp
 import net.johnceo.sparklingmutuals.contest.ContestGui
 import net.johnceo.sparklingmutuals.history.importing.LogImporter
 import net.johnceo.sparklingmutuals.history.ui.HistoryScreen
+import net.johnceo.sparklingmutuals.safari.SafariBiome
 import net.johnceo.sparklingmutuals.safari.SafariMode
 import net.johnceo.sparklingmutuals.safari.completion.SafariFullClear
 import net.johnceo.sparklingmutuals.safari.sparkling.SparklingEncounters
@@ -32,6 +33,10 @@ class SafariSettings {
 
     @JvmField @Category(name = "SkyBlock", desc = "") val skyblock = SkyBlock()
     @JvmField @Category(name = "Banner", desc = "") val banner = BannerSettings()
+    @JvmField @Category(name = "Mode-wide Critter Toggles", desc = "")
+    val modWideCritters = CritterToggleSettings(SafariEspConfig::modWideEnabled)
+    @JvmField @Category(name = "Profitable Critter Toggles", desc = "")
+    val profitableCritters = CritterToggleSettings { SafariEspConfig.profitableToggles.getValue(it) }
     init {
         esp.critterColors = customization.critters
         esp.waypointColors = customization.waypoints
@@ -103,7 +108,7 @@ class SafariSettings {
         @ConfigEditorBoolean var profitable = ConfigManager.profitableShardEsp
     }
     class Party {
-        @JvmField @ConfigOption(name = "Auto biome reports", desc = "Send fd, cd, id or hd when done.")
+        @JvmField @ConfigOption(name = "Auto biome reports", desc = "Announce completed biomes in party chat. Backend sync stays on.")
         @ConfigEditorBoolean var biomeReports = ConfigManager.autoBiomeReports
         @JvmField @ConfigOption(name = "Announce starting quest items", desc = "Includes unused-item reminders.")
         @ConfigEditorBoolean var startingItems = ConfigManager.announceStartingItems
@@ -119,7 +124,7 @@ class SafariSettings {
         var ticketMode = ContestConfig.ticketMode
         @JvmField @ConfigOption(name = "Contest tracking", desc = "")
         @ConfigEditorBoolean var enabled = ContestConfig.trackContest
-        @JvmField @ConfigOption(name = "Auto !dt contest", desc = "Leader only.")
+        @JvmField @ConfigOption(name = "Party Contest Guard Entry", desc = "Guard entry into safari until all party members send ticket earned confirmation message. Party leader only.")
         @ConfigEditorBoolean var autoContestDowntime = ContestConfig.autoContestDowntime
         @JvmField @ConfigOption(name = "Honeyhive beacons", desc = "Ready hives until your contest target.")
         @ConfigEditorBoolean var honeyHives = ConfigManager.honeyHives
@@ -179,17 +184,19 @@ class SafariSettings {
         @ConfigEditorBoolean var toParty = ConfigManager.achievementsToParty
     }
     class Warp {
-        @JvmField @ConfigOption(name = "Sparkle warping", desc = "Let leechers join without using a ticket. Run /start to save and prepare your party: Solo disbands; Duo keeps your runner. Previous leechers are invited together at 19s, then warped at the set delay. Returning to Torrhus repeats the cycle. Reach Uncommon each contest before the next run.")
+        @JvmField @ConfigOption(name = "Sparkle warping", desc = "This method allows players to get warped into runs before the 30s warp window is up, allowing for players to roll for sparkling critters that take more than 30s to find without using a ticket. Run /start with the party you want to bring back. It saves the roster and starts the cycle. Solo disbands the party, and Duo keeps your runner. Run /start again with a different roster to replace the saved party. Previous leechers are invited together at 24s, then warped at the set delay. Returning to Torrhus repeats the cycle. Auto partying enables you to have a warp list of players that need specific sparkling critters that can be detected within 24s of you starting the run. Then, when you find a sparkling critter, it will attempt to party the players in the list in priority order.")
         @StandaloneDescription var description = false
         @JvmField @ConfigOption(name = "Leader mode", desc = "Solo: disband. Duo: keep your runner.")
         @ConfigEditorDropdown(values = ["Solo", "Duo"]) var mode = ConfigManager.sparkleWarpMode
         @JvmField @ConfigOption(name = "Duo runner", desc = "Set with /duo <IGN>.")
         @ConfigEditorText var duo = ConfigManager.warpDuo
-        @JvmField @ConfigOption(name = "Auto-party", desc = "Warp List invites until 19s.")
+        @JvmField @ConfigOption(name = "Auto-party", desc = "Warp List invites until 24s.")
         @ConfigEditorBoolean var autoParty = ConfigManager.autoParty
+        @JvmField @ConfigOption(name = "Invite online players only", desc = net.johnceo.sparklingmutuals.alerts.WarpPlayerStatus.DESCRIPTION)
+        @ConfigEditorBoolean var autoPartyOnlineOnly = ConfigManager.autoPartyOnlineOnly
         @JvmField @ConfigOption(name = "Warp List", desc = "Who to invite for each critter.")
         @ConfigEditorButton(runnableId = 12, buttonText = "Warp List") var list = false
-        @JvmField @ConfigOption(name = "Auto warping", desc = "/start begins the cycle. Timer starts at boat exit.")
+        @JvmField @ConfigOption(name = "Auto warping", desc = "/start begins the cycle. Uses the Safari progress timer.")
         @ConfigEditorBoolean var enabled = ConfigManager.warpAlertsEnabled
         @JvmField @ConfigOption(name = "Leech", desc = "Accept whitelisted invites; leave your current party.")
         @ConfigEditorBoolean var leech = ConfigManager.leechMode
@@ -198,16 +205,19 @@ class SafariSettings {
         @JvmField @ConfigOption(name = "Delay in seconds", desc = "")
         @ConfigEditorText var delay = ConfigManager.warpDelaySeconds.toString()
         @JvmField var saveDelay = false
-        @JvmField @ConfigOption(name = "Default delay", desc = "25 seconds.")
-        @ConfigEditorButton(runnableId = 5, buttonText = "Reset to 25s") var reset = false
+        @JvmField @ConfigOption(name = "Default delay", desc = "28 seconds.")
+        @ConfigEditorButton(runnableId = 5, buttonText = "Reset to 28s") var reset = false
+        @JvmField @ConfigOption(name = "Sparkling Auto-entry", desc = "Automatically uses a ticket when party detects a sparkling critter.\nUSE AT YOUR OWN RISK!!!!")
+        @DescriptionColor(rgb = 0xFF5555)
+        @ConfigEditorBoolean var autoEnter = ConfigManager.safariEntryAutoEnter
     }
     class Safari {
         @JvmField @ConfigOption(name = "Safari entry", desc = "") @Accordion val entry = SafariEntrySettings()
+        @JvmField @ConfigOption(name = "Sparkling detection and alerts", desc = "") @Accordion val alerts = Alerts()
         @JvmField @ConfigOption(name = "Capture tools", desc = "") @Accordion val capture = SafariCaptureSettings()
         @JvmField @ConfigOption(name = "Biome interactions", desc = "") @Accordion val interactions = SafariInteractionSettings()
         @JvmField @ConfigOption(name = "Party visibility", desc = "") @Accordion val teammates = SafariTeammateSettings()
         @JvmField @ConfigOption(name = "Visual cleanup", desc = "") @Accordion val visibility = SafariVisibilitySettings()
-        @JvmField @ConfigOption(name = "Sparkling detection and alerts", desc = "") @Accordion val alerts = Alerts()
         var holdManagerOnKick
             get() = entry.holdManagerOnKick
             set(value) { entry.holdManagerOnKick = value }
@@ -323,12 +333,28 @@ class SafariSettings {
         @ConfigEditorSlider(minValue = .5f, maxValue = 4f, minStep = .25f)
         var textScale = SafariEspConfig.teammateTextScale
     }
+    class WaterOpacitySettings {
+        @JvmField @ConfigOption(name = "Forest", desc = "")
+        @ConfigEditorSlider(minValue = 0f, maxValue = 100f, minStep = 1f)
+        var forest = ConfigManager.waterOpacityFor(SafariBiome.FOREST)
+        @JvmField @ConfigOption(name = "Cavern", desc = "")
+        @ConfigEditorSlider(minValue = 0f, maxValue = 100f, minStep = 1f)
+        var cavern = ConfigManager.waterOpacityFor(SafariBiome.CAVERN)
+        @JvmField @ConfigOption(name = "Icy", desc = "")
+        @ConfigEditorSlider(minValue = 0f, maxValue = 100f, minStep = 1f)
+        var icy = ConfigManager.waterOpacityFor(SafariBiome.ICY)
+        @JvmField @ConfigOption(name = "Haunted", desc = "")
+        @ConfigEditorSlider(minValue = 0f, maxValue = 100f, minStep = 1f)
+        var haunted = ConfigManager.waterOpacityFor(SafariBiome.HAUNTED)
+
+        fun values() = mapOf(SafariBiome.FOREST to forest, SafariBiome.CAVERN to cavern,
+            SafariBiome.ICY to icy, SafariBiome.HAUNTED to haunted).mapValues { it.value.coerceIn(0, 100) }
+    }
     class SafariVisibilitySettings {
         @JvmField @ConfigOption(name = "Clear water", desc = "Safari only.")
         @ConfigEditorBoolean var clearWater = ConfigManager.clearWater
-        @JvmField @ConfigOption(name = "Water opacity", desc = "0% transparent; 100% opaque.")
-        @ConfigEditorSlider(minValue = 0f, maxValue = 100f, minStep = 1f)
-        var waterOpacity = ConfigManager.waterOpacity
+        @JvmField @ConfigOption(name = "Water opacity", desc = "0% transparent, 100% opaque.") @Accordion
+        val waterOpacity = WaterOpacitySettings()
         @JvmField @ConfigOption(name = "Hide useless chats in safari", desc = "Routine critter and capture messages.")
         @ConfigEditorBoolean var hideCaptureChat = ConfigManager.hideCaptureChat
         @JvmField @ConfigOption(name = "Hide capsules on ground", desc = "")
@@ -348,6 +374,8 @@ class SafariSettings {
         @ConfigEditorBoolean var catchCount = ConfigManager.sparklingCatchCount
         @JvmField @ConfigOption(name = "Unique Sparkling catch alert", desc = "New discoveries only.")
         @ConfigEditorBoolean var caught = ConfigManager.specialCatchAlert
+        @JvmField @ConfigOption(name = "Always play Sparkling catch celebration", desc = "Celebrate every Sparkling catch, including duplicates.")
+        @ConfigEditorBoolean var alwaysCelebrate = ConfigManager.alwaysCelebrateSparkling
         @JvmField @ConfigOption(name = "Catch celebration", desc = "")
         @ConfigEditorDropdown(values = ["Prismatic Whisper", "Prismatic Gleam", "Starlight Drift", "Starlight Waltz", "Aurora Rise", "Aurora Cascade", "Comet Shower", "Comet Tempest", "Firework Bloom", "Firework Symphony", "Celestial Chorus", "Celestial Carnival", "Nebula Surge", "Nebula Rhapsody", "Galactic Pulse", "Galactic Tempest", "Astral Reverie", "Astral Ascension", "Supernova", "Hypernova", "Cosmic Jubilee", "Cosmic Overdrive", "Radiant Singularity", "Celestial Transcendence", "Event Horizon", "Infinite Radiance", "Endless Cosmos", "Chromatic Zenith", "Ethereal Genesis", "Ethereal Ascendance", "Mythic Dominion", "Mythic Eternity", "Celestial Genesis", "Celestial Ascendance", "Infinite Transcendence", "Infinite Apotheosis", "Eternal Dawn", "Eternal Resonance", "Eternal Dominion", "Eternal Transcendence", "Eternal Apotheosis"]) var caughtStyle = ConfigManager.specialCatchStyle
         @JvmField @ConfigOption(name = "Preview catch celebration", desc = "")
@@ -425,9 +453,9 @@ class SafariSettings {
                 client.player?.sendSystemMessage(LocalChat.component(CommandHelp.localLines().joinToString("\n")))
             }
             4 -> client.execute { client.smSetScreen(ApiKeyScreen(client.smScreen)) }
-            5 -> { warp.delay = "25"; saveDelay() }
+            5 -> { warp.delay = "28"; saveDelay() }
             6 -> saveDelay()
-            7 -> { apply(); saveSound(); client.smSetScreen(null)
+            7 -> { apply(); saveSound()
                 Identifier.tryParse(ContestConfig.contestSound)?.let { id ->
                     net.minecraft.core.registries.BuiltInRegistries.SOUND_EVENT.getOptional(id).orElse(null)?.let { sound ->
                         client.soundManager.play(net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(sound,1f,ContestConfig.contestSoundVolume/100f))
@@ -435,10 +463,11 @@ class SafariSettings {
                 }
             }
             8 -> { apply(); client.execute { client.smSetScreen(CatchCountScreen(client.smScreen)) } }
-            9 -> { apply(); if (saveSparklingSound()) { client.smSetScreen(null); SparklingEncounters.playSound(client) } }
+            9 -> { apply(); if (saveSparklingSound()) SparklingEncounters.playSound(client) }
             10 -> { apply(); client.execute { client.smSetScreen(HistoryScreen(client.smScreen)) } }
             13 -> { apply(); client.smSetScreen(CatchCelebrationPreviewScreen(client.smScreen ?: SafariConfigScreen(this))) }
-            12 -> { apply(); client.execute { client.smSetScreen(net.johnceo.sparklingmutuals.alerts.WarpListScreen(client.smScreen) { warp.autoParty=it }) } }
+            12 -> { apply(); client.execute { client.smSetScreen(net.johnceo.sparklingmutuals.alerts.WarpListScreen(client.smScreen,
+                autoPartyChanged = { warp.autoParty = it }, onlineOnlyChanged = { warp.autoPartyOnlineOnly = it })) } }
             11 -> { apply(); client.execute {
                 client.smSetScreen(null)
                 LogImporter.runImport(LogImporter.defaultLogs())
@@ -487,16 +516,19 @@ class SafariSettings {
             ConfigManager.leechWhitelist=whitelist
             net.johnceo.sparklingmutuals.alerts.SparkleWarping.whitelistChanged()
         }
+        if (warp.enabled && !ConfigManager.warpAlertsEnabled) warp.leech = false
+        if (warp.leech) warp.enabled = false
+        val warpModesChanged = net.johnceo.sparklingmutuals.alerts.SparkleWarping.setModes(warp.enabled, warp.leech)
         val warpConfigurationChanged = warp.mode.coerceIn(0,1) != ConfigManager.sparkleWarpMode ||
-            duoName != ConfigManager.warpDuo || warp.leech != ConfigManager.leechMode
+            duoName != ConfigManager.warpDuo
         if (warpConfigurationChanged) {
             ConfigManager.sparkleWarpMode=warp.mode.coerceIn(0,1)
             ConfigManager.warpDuo=duoName
-            ConfigManager.leechMode=warp.leech
             net.johnceo.sparklingmutuals.alerts.SparkleWarping.configurationChanged()
         }
-        if (warp.enabled != ConfigManager.warpAlertsEnabled) AlertManager.toggleAlert()
-        val changes = listOf(ConfigManager::sparklingCatchCount to safari.alerts.catchCount, ConfigManager::specialCatchAlert to safari.alerts.caught,ConfigManager::doomspiralThrowTimer to safari.capture.doomTimer, ConfigManager::autoParty to warp.autoParty, ConfigManager::autoBiomeReports to party.biomeReports,
+        val changes = listOf(ConfigManager::safariEntryAutoEnter to warp.autoEnter, ConfigManager::sparklingCatchCount to safari.alerts.catchCount, ConfigManager::specialCatchAlert to safari.alerts.caught,
+            ConfigManager::alwaysCelebrateSparkling to safari.alerts.alwaysCelebrate,
+            ConfigManager::doomspiralThrowTimer to safari.capture.doomTimer, ConfigManager::autoParty to warp.autoParty, ConfigManager::autoPartyOnlineOnly to warp.autoPartyOnlineOnly, ConfigManager::autoBiomeReports to party.biomeReports,
             ConfigManager::uniqueHideCritterEsp to modes.unique.hideCritters, ConfigManager::uniqueHideFloorDropEsp to modes.unique.hideDrops,
             ConfigManager::fullClearHideCritterEsp to modes.fullClear.hideCritters, ConfigManager::fullClearHideFloorDropEsp to modes.fullClear.hideDrops,
             ConfigManager::sparklingHideCritterEsp to modes.sparkling.hideCritters, ConfigManager::sparklingHideFloorDropEsp to modes.sparkling.hideDrops, ConfigManager::announceStartingItems to party.startingItems, ConfigManager::huntingBoxValue to skyblock.helpers.huntingBoxValue, ConfigManager::shardSaleGuidance to skyblock.helpers.shardSaleGuidance, ConfigManager::skillOverflow to skyblock.helpers.skillOverflow, ConfigManager::skillOverflowChat to skyblock.helpers.skillOverflowChat, ConfigManager::skillOverflowNumbers to skyblock.helpers.skillOverflowNumbers, ConfigManager::estimatedItemValue to skyblock.helpers.estimatedItemValue, ConfigManager::estimatedChestValue to skyblock.helpers.estimatedChestValue, ConfigManager::phantomleafSolver to miscEndgame.phantomleafSolver, ConfigManager::highlightTeammates to safari.highlightTeammates, ConfigManager::showTeammateNames to safari.showTeammateNames, ConfigManager::profitableShardEsp to modes.unique.profitable, ConfigManager::sparklingProfitableShardEsp to modes.sparkling.profitable, ConfigManager::partyCommandsEnabled to party.enabled, ConfigManager::downtimeCommand to party.downtime, ConfigManager::useCloudApi to api.cloud, ConfigManager::hideHauntedPaintings to safari.paintings,
@@ -514,18 +546,22 @@ class SafariSettings {
             ConfigManager::allCoinsAlert to safari.alerts.coins, ConfigManager::allIncenseAlert to safari.alerts.incense, ConfigManager::runCompleteAlert to safari.alerts.runComplete,
             ConfigManager::hideGroundCapsules to safari.hideGroundCapsules, ConfigManager::hideFlyingCapsules to safari.hideFlyingCapsules)
         val espChanged = esp.apply()
+        val modWideCrittersChanged = modWideCritters.apply(SafariEspConfig.modWideToggles)
+        val profitableCrittersChanged = profitableCritters.apply(SafariEspConfig.profitableToggles)
         val customizationChanged = customization.apply()
         val distance = ConfigManager.validCapsuleDistance(safari.capsuleHideDistance)
         val pathWidth = ConfigManager.validCapsulePathWidth(safari.capsulePathWidth)
-        val generalChanged = bannerChanged || ConfigManager.specialCatchStyle != safari.alerts.caughtStyle || whitelistChanged || warpConfigurationChanged || ConfigManager.doomspiralEmergenceTicks != safari.capture.doomTicks.coerceIn(1, 600) ||
-            ConfigManager.doomspiralThrowLeadTicks != safari.capture.doomLead.coerceIn(0, 40) || ConfigManager.waterOpacity != safari.visibility.waterOpacity.coerceIn(0, 100) || ConfigManager.capsulePathWidth != pathWidth || espChanged || customizationChanged || changes.any { (property, value) -> property.get() != value } ||
+        val waterOpacity = safari.visibility.waterOpacity.values()
+        val generalChanged = espChanged || modWideCrittersChanged || profitableCrittersChanged ||
+            bannerChanged || ConfigManager.specialCatchStyle != safari.alerts.caughtStyle || whitelistChanged || warpModesChanged || warpConfigurationChanged || ConfigManager.doomspiralEmergenceTicks != safari.capture.doomTicks.coerceIn(1, 600) ||
+            ConfigManager.doomspiralThrowLeadTicks != safari.capture.doomLead.coerceIn(0, 40) || ConfigManager.biomeWaterOpacity != waterOpacity || ConfigManager.capsulePathWidth != pathWidth || customizationChanged || changes.any { (property, value) -> property.get() != value } ||
             ConfigManager.safariTicketPreference != safari.ticketPreference || ConfigManager.showWhere != tracking.where || ConfigManager.capsuleHideDistance != distance ||
             ConfigManager.runCompleteVolume != safari.alerts.runVolume.coerceIn(0, 100) || ConfigManager.sparklingSoundVolume != safari.alerts.volume.coerceIn(0, 100)
         changes.forEach { (property, value) -> property.set(value) }
         ConfigManager.safariTicketPreference = safari.ticketPreference.coerceIn(0, 1)
         ConfigManager.showWhere = tracking.where.coerceIn(0, 2)
         ConfigManager.capsuleHideDistance = distance
-        ConfigManager.waterOpacity = safari.visibility.waterOpacity
+        ConfigManager.biomeWaterOpacity = waterOpacity
         ConfigManager.capsulePathWidth = pathWidth
         ConfigManager.doomspiralEmergenceTicks = safari.capture.doomTicks.coerceIn(1, 600)
         ConfigManager.doomspiralThrowLeadTicks = safari.capture.doomLead.coerceIn(0, 40)

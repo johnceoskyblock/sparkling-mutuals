@@ -98,7 +98,7 @@ class StartingResourceDeliveryTest {
         assertEquals(2, StartingResourceReminder.parse(run.resources.notices("Local", SafariBiome.CAVERN,
             party("Gimmiegold")).single(), party("Gimmiegold"))!!.quantity)
     }
-    @Test fun `late first inventory keeps floor pickups separate from silent starting food`() {
+    @Test fun `late first inventory keeps floor pickups separate from silent starting food`() = net.johnceo.sparklingmutuals.config.withStartingItems {
         val run = SafariRun(0)
         run.resources.pickup("FLOOR DROP! Shining Coin")
         run.inventoryEvidence(listOf("Shining Coin" to 3, "Yogi Berry" to 2), 10000)
@@ -188,7 +188,7 @@ class StartingResourceDeliveryTest {
         assertFalse(run.resourceReminders.dispatch(9000, "Local", SafariBiome.CAVERN, party("Gimmiegold", "Macaw")) { _, r -> output.addAll(r.items) })
     }
 
-    @Test fun `late sampled food does not count a reported floor pickup as another starting grant`() {
+    @Test fun `late sampled food does not count a reported floor pickup as another starting grant`() = net.johnceo.sparklingmutuals.config.withStartingItems {
         val run = SafariRun(0)
         run.resources.pickup("FLOOR DROP! Yogi Berry")
         run.recordBirdFood("FLOOR DROP! Yogi Berry", SafariBiome.CAVERN, 10000)
@@ -236,6 +236,8 @@ class StartingResourceDeliveryTest {
         SafariBiome.CAVERN.critters.forEach { run.record(SafariCatch(it, false)) }
         run.moundSurvey.scan(emptySet()) { true }
         run.observeCavernSources(false, false, true)
+        assertEquals("cd", run.completion.announcement(run, SafariBiome.CAVERN, SafariMode.UNIQUE, needs))
+        run.completion.sent(SafariBiome.CAVERN)
         assertNull(run.completion.announcement(run, SafariBiome.CAVERN, SafariMode.UNIQUE, needs))
         assertTrue(run.completion.locallyComplete(run, SafariBiome.CAVERN, SafariMode.UNIQUE, needs))
         // Runtime polls the local clear every half-second: this must not postpone delivery forever.

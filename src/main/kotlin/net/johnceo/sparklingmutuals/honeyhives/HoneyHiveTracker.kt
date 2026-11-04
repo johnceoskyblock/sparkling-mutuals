@@ -76,7 +76,8 @@ class HoneyHiveTracker(private var refillAt: MutableMap<String, Long>, private v
         val status = label?.let(SafariRules::strip)?.replace('\u00a0', ' ')?.trim() ?: return false
         val countdown = countdownMillis(status)
         // Chat is immediate; allow the old hologram two seconds to catch up after a loot or Queen Bee proc.
-        if (confirmedAt[key]?.let { now - it in 0 until SERVER_GRACE } == true) return false
+        val recentLoot = maxOf(confirmedAt[key] ?: 0L, lootedAt[key] ?: 0L)
+        if (now - recentLoot in 0 until SERVER_GRACE && (key in confirmedAt || key in lootedAt)) return false
         val previous = refillAt[key]
         val fullBefore = key in queenFull
         val lootBefore = lootedAt[key]

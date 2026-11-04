@@ -22,6 +22,22 @@ class BiomeObjectivesCleanupTest {
             assertFalse(rows.any { it.label=="All objectives complete!" })
         }
     }
+    @Test fun `first Forest entry controls whether opted-out starting food counts`() {
+        ConfigManager.init(dir)
+        ConfigManager.announceStartingItems = false
+        val food = listOf("Wriggleworm" to 1)
+        for ((entryAt, expected) in listOf(30_000L to 4, 30_001L to 3)) {
+            val run = SafariRun(0)
+            run.inventoryEvidence(food, 0)
+            run.visitBiome(SafariBiome.FOREST, entryAt)
+            run.scanBirdSources(3)
+            for (now in listOf(entryAt, 40_000L)) {
+                run.inventoryEvidence(food, now)
+                assertEquals(expected, run.knownBirdFoodLeftToUse)
+                assertEquals(expected - 3, run.birds.held("Wriggleworm"))
+            }
+        }
+    }
     @Test fun `Forest shows only positive food and spawned species and removes bird rows after mode completion`() {
         ConfigManager.init(dir);ConfigManager.fullClearMode=false;ConfigManager.sparklingMode=false
         val run=SafariRun(0).apply {
@@ -35,7 +51,10 @@ class BiomeObjectivesCleanupTest {
         assertEquals(1,rows().single { it.counters.isNotEmpty() }.counters.size)
         assertEquals(1,rows().single { it.counters.isNotEmpty() }.counters.single().count)
         run.birds.spawn("A Bluebird was attracted to the Birdfeeder!")
+        run.scanBirdSources(0, listOf("Bluebird"), qualified = false)
         assertEquals(1,rows().single { it.label=="Spawned" }.counters.size)
+        run.scanBirdSources(0, qualified = false)
+        assertTrue(rows().none { it.label == "Spawned" })
         run.inventoryEvidence(emptyList(),11000)
         run.scanBirdSources(0,List(9) { "Bluebird" })
         run.record(SafariCatch(SafariRoster.named("Bluebird")!!))
@@ -45,5 +64,9 @@ class BiomeObjectivesCleanupTest {
         val birds=net.johnceo.sparklingmutuals.safari.resources.SafariBirdLedger()
         birds.floor(2);birds.floorTypes(mapOf("Bag of Seeds" to 0,"Wriggleworm" to 2,"Yogi Berry" to 0))
         assertEquals(0,birds.remaining("Bag of Seeds"));assertEquals(2,birds.remaining("Wriggleworm"))
+        birds.floor(3); birds.floorTypes(null)
+        assertEquals(2, birds.remaining("Wriggleworm"), "A partial scan must not replace classified counts with guesses")
+        birds.floor(1); birds.floorTypes(mapOf("Bag of Seeds" to 0, "Wriggleworm" to 1, "Yogi Berry" to 0))
+        assertEquals(1, birds.remaining("Wriggleworm"))
     }
 }

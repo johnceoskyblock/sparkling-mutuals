@@ -2,6 +2,8 @@ package net.johnceo.sparklingmutuals.safari.automation
 
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents
 import net.fabricmc.fabric.api.client.screen.v1.ScreenMouseEvents
+import net.fabricmc.fabric.api.client.screen.v1.ScreenKeyboardEvents
+import net.johnceo.sparklingmutuals.safari.automation.entry.CjsSafariEntry
 import net.minecraft.client.gui.screens.Screen
 import net.johnceo.sparklingmutuals.compat.smScreen
 import net.johnceo.sparklingmutuals.config.ConfigManager
@@ -58,7 +60,9 @@ object SafariTicketSelect {
 
     fun register() {
         ScreenEvents.AFTER_INIT.register { _, screen, _, _ ->
+            ScreenKeyboardEvents.allowKeyPress(screen).register { _, _ -> CjsSafariEntry.manualInput();true }
             if (screen is AbstractContainerScreen<*>) ScreenMouseEvents.allowMouseClick(screen).register { _, _ ->
+                CjsSafariEntry.manualInput()
                 val hidden=hideScreen(screen)
                 // A visible menu belongs to the user once they begin clicking it.
                 if (!hidden && entryMenu(screen.title.string) && contextAllows(Minecraft.getInstance())) {
@@ -76,6 +80,7 @@ object SafariTicketSelect {
         val client = Minecraft.getInstance()
         val now = System.currentTimeMillis()
         syncSession(client)
+        if (CjsSafariEntry.suppressesAutomaticMenu(client)) return false
         if (!contextAllows(client) || client.smScreen !== screen || screen !is AbstractContainerScreen<*> ||
             !entryMenu(screen.title.string)) return false
         observeMenu(client.player!!.containerMenu, now)
@@ -95,8 +100,12 @@ object SafariTicketSelect {
         if (Regex("(?i)\\bclick to (?:enter|use|select|redeem|consume)").containsMatchIn(text)) return true
         return null
     }
-    internal fun choose(options: List<Option>, preference: Int): Option? {
-        val tiers = if (preference == 1) SafariTicketType.entries else SafariTicketType.entries.reversed()
+    internal fun choose(options: List<Option>, preference: Int): Option? =
+        if (preference == 1) chooseLowest(options) else chooseInOrder(options, SafariTicketType.entries.reversed())
+
+    internal fun chooseLowest(options: List<Option>): Option? = chooseInOrder(options, SafariTicketType.entries)
+
+    private fun chooseInOrder(options: List<Option>, tiers: List<SafariTicketType>): Option? {
         // Unknown availability might be the preferred ticket while menu data is still loading.
         for (tier in tiers) {
             val option = options.singleOrNull { it.tier == tier } ?: return null
@@ -105,6 +114,16 @@ object SafariTicketSelect {
         }
         return null
     }
+    internal fun options(client: Minecraft): List<Option> {
+        val player=client.player ?: return emptyList()
+        val current=player.containerMenu
+        return current.slots.mapIndexedNotNull { index, slot ->
+            if (slot.container === player.inventory || !slot.item.`is`(Items.NAME_TAG)) return@mapIndexedNotNull null
+            val name = SafariRules.strip(slot.item.hoverName.string).replace('-', ' ')
+            val tier = SafariTicketType.entries.firstOrNull { name.contains(it.label, true) } ?: return@mapIndexedNotNull null
+            Option(index, tier, available(slot.item.get(DataComponents.LORE)?.lines().orEmpty().map { it.string }))
+        }
+    }
     fun managerClicked(client: Minecraft) {
         // Preload the roster; opening the entry menu itself is the trigger.
         if (locationAllows(client) && !PartyManager.hasInfo) PartyManager.requestPartyInfo()
@@ -112,6 +131,7 @@ object SafariTicketSelect {
     fun tick(client: Minecraft) {
         val now = System.currentTimeMillis()
         syncSession(client)
+        if (CjsSafariEntry.suppressesAutomaticMenu(client)) { revealed=true; return }
         if (!ConfigManager.autoSelectSafariTicket) { reset(); return }
         val player = client.player ?: return
         val screen = client.smScreen as? AbstractContainerScreen<*> ?: run {
@@ -123,12 +143,7 @@ object SafariTicketSelect {
         val current = player.containerMenu
         observeMenu(current, now)
         if (clicked || now - shownAt < 250 || now - lastAttempt < 250) return
-        val options = current.slots.mapIndexedNotNull { index, slot ->
-            if (slot.container === player.inventory || !slot.item.`is`(Items.NAME_TAG)) return@mapIndexedNotNull null
-            val name = SafariRules.strip(slot.item.hoverName.string).replace('-', ' ')
-            val tier = SafariTicketType.entries.firstOrNull { name.contains(it.label, true) } ?: return@mapIndexedNotNull null
-            Option(index, tier, available(slot.item.get(DataComponents.LORE)?.lines().orEmpty().map { it.string }))
-        }
+        val options = options(client)
         if (options.map { it.tier }.toSet().size != SafariTicketType.entries.size) return
         val option = choose(options, ConfigManager.safariTicketPreference) ?: run {
             if (options.all { it.available != null }) revealed = true

@@ -25,31 +25,34 @@ object SafariCompletion {
         val party = SafariSparklingMode.state
         val now = System.currentTimeMillis()
         // Sample held food before deciding whether any Forest report may be queued or sent.
-        client.player?.inventory?.let { inventory ->
-            run.inventoryEvidence((0 until inventory.containerSize).map { inventory.getItem(it) }
-                .filterNot { it.isEmpty }.map { it.hoverName.string to it.count } + net.johnceo.sparklingmutuals.safari.resources.BirdfeederInventory.carried(client), now)
+        if (client.player != null) {
+            run.inventoryEvidence(net.johnceo.sparklingmutuals.safari.resources.BirdfeederInventory.snapshot(client), now)
         }
         SafariBiome.entries.forEach { area ->
-            run.completion.announcement(run, area, mode, party, ConfigManager.autoBiomeReports)?.let { queue.addLast(area to it) }
+            run.completion.announcement(run, area, mode, party)?.let { queue.addLast(area to it) }
         }
         // Revalidate queued completions after contradictory local evidence or a mode change.
-        queue.removeAll { (area, _) -> !ConfigManager.autoBiomeReports || !run.completion.reportAllowed(run,area,mode,party) || !run.canReportBiome(area, party) || area != biome || mode == SafariMode.SPARKLING && !party.ready || run.completed(mode,
-            area.critters.filter { mode != SafariMode.SPARKLING || party.needs(it.name) }, party, localOnly = true) !=
-            area.critters.count { mode != SafariMode.SPARKLING || party.needs(it.name) } }
+        queue.removeAll { (area, _) -> !run.canReportBiome(area, party, mode) || area != biome || !run.completion.locallyComplete(run, area, mode, party) }
         run.completion.armSharedClearReminder(run, biome, mode, party, now)
         if (run.completion.locallyComplete(run, biome, mode, party)) run.resourceReminders.afterBiomeClear(now)
         run.resourceReminders.dispatch(now, client.player?.name?.string ?: "Player", biome, party, enabled=ConfigManager.announceStartingItems) { _, reminder ->
-            client.gui.smSetTimes(5, 50, 15)
-            client.gui.smSetTitle(net.minecraft.network.chat.Component.literal(reminder.title)
-                .withStyle { it.withColor(SafariTheme.ACCENT).withBold(true) })
-            client.gui.smSetSubtitle(net.minecraft.network.chat.Component.literal(reminder.detail))
+            net.johnceo.sparklingmutuals.hud.SafariAlertSequence.queue.submit(this, 3_500,
+                valid = { net.johnceo.sparklingmutuals.safari.SafariTracking.ledger.current === run &&
+                    ConfigManager.announceStartingItems }, minimumTicks = 70) {
+                client.gui.smSetTimes(5, 50, 15)
+                client.gui.smSetTitle(net.minecraft.network.chat.Component.literal(reminder.title)
+                    .withStyle { it.withColor(SafariTheme.ACCENT).withBold(true) })
+                client.gui.smSetSubtitle(net.minecraft.network.chat.Component.literal(reminder.detail))
+            }
         }
         if (ConfigManager.announceStartingItems && client.connection != null && PartyManager.hasInfo && PartyManager.getMembers().size > 1 &&
             now - sentAt >= 1500 && run.partyResourceReminders.dispatch(now, party,
-                { message -> client.connection!!.sendCommand("pc $message") })) sentAt = now
-        if (client.connection != null && queue.isNotEmpty() && now - sentAt >= 3000) {
+                { message -> PartyManager.sendPartyChat(client, "$message") })) sentAt = now
+        if (client.connection != null && queue.isNotEmpty() && now - sentAt >= 3000 &&
+            !net.johnceo.sparklingmutuals.sync.SafariPartySync.waitingForAuthority) {
             val (area, word) = queue.removeFirst()
-            client.connection!!.sendCommand("pc $word")
+            val chat = ConfigManager.autoBiomeReports && !run.manualReportReceived(area) && run.completion.chatReportAllowed(area, mode)
+            if (!net.johnceo.sparklingmutuals.sync.SafariPartySync.completion(word, chat) && chat) PartyManager.sendPartyChat(client, word)
             run.completion.sent(area); sentAt = now
             run.resourceReminders.afterBiomeClear(now)
             run.partyResourceReminders.afterBiomeReport(now)

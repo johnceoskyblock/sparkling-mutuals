@@ -14,29 +14,29 @@ class SafariCompletionEvents {
     fun reopen(biome: SafariBiome) { announced.remove(biome); pending.remove(biome); alerted = false }
     /** Local clearing can trigger supplies even if a teammate's report suppresses our announcement. */
     fun locallyComplete(run: SafariRun, biome: SafariBiome, mode: SafariMode, party: PartySparklingState): Boolean {
-        if (run.lastBiome != biome || !run.hasCaptureEvidence(biome) || run.hasUnusedStartingForBiome(biome, party) ||
+        if (run.sharedSuppliesPending(biome) || run.lastBiome != biome || !run.hasCaptureEvidence(biome) || run.hasUnusedStartingForBiome(biome) ||
             mode == SafariMode.SPARKLING && !party.ready) return false
         val targets = biome.critters.filter { mode != SafariMode.SPARKLING || party.needs(it.name) }
-        return run.completed(mode, targets, party, localOnly = true) == targets.size
+        return run.completed(mode, targets, party, localOnly = true) == targets.size &&
+            (mode != SafariMode.UNIQUE || allNeededChecked(run, biome, party, localOnly = true))
     }
+    fun allNeededChecked(run: SafariRun, biome: SafariBiome, party: PartySparklingState, localOnly: Boolean = false) =
+        party.ready && biome.critters.none { party.needs(it.name) && !run.sparklingComplete(it.name, party, localOnly) }
+
     /** Completion feedback belongs to each client even when a peer sent the shared biome report first. */
     fun armSharedClearReminder(run: SafariRun, biome: SafariBiome, mode: SafariMode, party: PartySparklingState, now: Long) {
         if ((biome in announced || run.uniqueReportReceived(biome) || biome == SafariBiome.ICY && run.count("Wumpa") > 0) && locallyComplete(run, biome, mode, party))
             run.partyResourceReminders.afterBiomeReport(now)
     }
-    fun reportAllowed(run: SafariRun, biome: SafariBiome, mode: SafariMode, party: PartySparklingState): Boolean {
-        if (biome != SafariBiome.ICY || mode == SafariMode.FULL_CLEAR) return true
-        if (run.count("Wumpa") > 0) return false
-        if (mode == SafariMode.SPARKLING)
-            return party.ready && !party.needs("Wumpa") && biome.critters.any { it.name != "Wumpa" && party.needs(it.name) }
-        return true
-    }
+    fun chatReportAllowed(biome: SafariBiome, mode: SafariMode) =
+        biome != SafariBiome.ICY || mode != SafariMode.UNIQUE
     fun announcement(run: SafariRun, biome: SafariBiome, mode: SafariMode, party: PartySparklingState, enabled: Boolean = true): String? {
-        if (!enabled || !reportAllowed(run,biome,mode,party)) { pending.remove(biome); return null }
-        if (!run.canReportBiome(biome, party)) { pending.remove(biome); return null }
-        if (run.lastBiome != biome) { pending.remove(biome); return null }
-        if ((mode == SafariMode.UNIQUE || biome == SafariBiome.FOREST || biome == SafariBiome.HAUNTED) &&
-            run.uniqueReportReceived(biome)) { pending.remove(biome); return null }
+        if (!enabled || mode == SafariMode.SPARKLING && biome.critters.none { party.needs(it.name) }) {
+            pending.remove(biome)
+            return null
+        }
+        if (!run.canReportBiome(biome, party, mode)) { pending.remove(biome); return null }
+        if (run.sharedSuppliesPending(biome) || run.lastBiome != biome) { pending.remove(biome); return null }
         if (!locallyComplete(run, biome, mode, party)) {
             pending.remove(biome)
             return null

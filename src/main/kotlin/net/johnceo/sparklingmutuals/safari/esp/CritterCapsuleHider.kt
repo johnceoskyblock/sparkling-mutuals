@@ -14,16 +14,18 @@ import net.minecraft.world.entity.item.ItemEntity
 
 object CritterCapsuleHider {
     fun hidden(entity: Entity, cameraX: Double, cameraY: Double, cameraZ: Double): Boolean {
-        if (!SafariAssist.inSafari) return false
+        if (!SafariAssist.visualsActive()) return false
         val flying = entity is Display.ItemDisplay
         if (if (flying) !ConfigManager.hideFlyingCapsules else !ConfigManager.hideGroundCapsules) return false
+        return CritterCapsuleRules.hidden(true, flying, itemId(entity), entity.distanceToSqr(cameraX, cameraY, cameraZ),
+            ConfigManager.hideGroundCapsules, ConfigManager.hideFlyingCapsules, ConfigManager.capsuleHideDistance)
+    }
+    internal fun itemId(entity: Entity): String? {
         val stack = when (entity) {
             is Display.ItemDisplay -> entity.itemStack
             is ItemEntity -> entity.item
-            else -> return false
+            else -> return null
         }
-        val id = stack.get(DataComponents.CUSTOM_DATA)?.copyTag()?.getStringOr("id", "")
-        return CritterCapsuleRules.hidden(true, flying, id, entity.distanceToSqr(cameraX, cameraY, cameraZ),
-            ConfigManager.hideGroundCapsules, ConfigManager.hideFlyingCapsules, ConfigManager.capsuleHideDistance)
+        return stack.get(DataComponents.CUSTOM_DATA)?.copyTag()?.getStringOr("id", "")
     }
 }

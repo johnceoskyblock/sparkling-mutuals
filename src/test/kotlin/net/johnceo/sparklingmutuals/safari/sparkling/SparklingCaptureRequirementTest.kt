@@ -142,9 +142,13 @@ class SparklingCaptureRequirementTest {
         assertFalse(run.sparklePending("Gazer"))
     }
     @Test fun `new Sparkling sightings cannot reopen an announced biome or cancel local completion`() {
-        val run = SafariRun(0); val state = party()
+        val run = SafariRun(0)
+        val state = PartySparklingState().apply {
+            select(setOf("me")); accept(setOf("me"), mapOf("me" to SafariRoster.all.map { it.name }.toSet() - "Gazer"))
+        }
         run.visitBiome(SafariBiome.HAUNTED)
         run.updateCaptureEvidence(SafariBiome.HAUNTED, emptySet(), true)
+        run.sparklingChecks.scan(SafariBiome.HAUNTED, -4.0, -64.0, List(4) { "Gazer" to UUID.randomUUID() })
         assertEquals("hd", run.completion.announcement(run, SafariBiome.HAUNTED, SafariMode.SPARKLING, state))
         run.completion.sent(SafariBiome.HAUNTED)
         run.observeSparkling(UUID.randomUUID(), "Gazer")

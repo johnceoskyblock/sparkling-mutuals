@@ -6,13 +6,13 @@ Describe settings actually loaded and saved by the reviewed implementation. Fres
 
 ## Controls and defaults
 
-On joining Hypixel (including Alpha), a short local welcome appears once the player/world is ready and two seconds have elapsed. It explains `/sm`, `/sm help`, Unique/Full Clear/Sparkle, HUD editing and history. It is shown once per connection, not on ordinary lobby/world transfers or respawns, and may appear again after disconnecting and reconnecting. Hypixel is recognized by its server hostname or explicit scoreboard address. The welcome sends no party messages, commands or API requests.
+On first entering SkyBlock on Hypixel (including Alpha), a short local welcome appears after two seconds and the shared release check has finished. A newer compatible stable release adds a clickable GitHub version link. It explains `/sm`, `/sm help`, Unique/Full Clear/Sparkle, HUD editing and history. It is shown once per connection, not on ordinary lobby/world transfers or respawns, and may appear again after disconnecting and reconnecting. Hypixel is recognized by its server hostname or explicit scoreboard address. The welcome uses the same cached GitHub release check as the settings screen. It stays in local chat.
 
 `/sm help` lists slash commands with short descriptions in local chat. General → Command help shows the same list. Party `!commands` retains its separate mode-aware reply.
 
 The welcome is one compact MOTD-style block with a gold heading/dividers and light body text, without repeated `[SM]` prefixes. Commands are gold, clickable, and show explanatory hover text. Ordinary local feedback retains its usual prefix.
 
-Open `/sm` for settings. Fresh installs use [bundled main defaults](../src/main/resources/defaults/sparkling-mutuals.properties) and [contest defaults](../src/main/resources/defaults/sparkling-mutuals-contest.properties), copied from the author’s Skyblock instance settings (2026-11-02), with the requested automation defaults disabled. Most feature switches are on, with these notable preferences:
+Open `/sm` for settings. Fresh installs use [bundled main defaults](../src/main/resources/defaults/sparkling-mutuals.properties) and [contest defaults](../src/main/resources/defaults/sparkling-mutuals-contest.properties), copied from the author’s JohnFounder instance settings (2026-11-04), with Unique mode selected and hotspot announcing off. Most feature switches are on, with these notable preferences:
 
 | Setting | Saved key | Default |
 | --- | --- | --- |
@@ -20,16 +20,16 @@ Open `/sm` for settings. Fresh installs use [bundled main defaults](../src/main/
 | Hotspot announcer | `hotspotAnnouncer` | Off |
 | Leech auto-accept | `leechMode` | Off; inviter whitelist retained |
 | Starting quest-item announcements and reminder titles | `announceStartingItems` | Off |
-| Warp List | `warpList.*` | Empty |
+| Warp List | `warpList.*` | JohnFounder entries and invite priorities |
 | Coins at insta-sell | `runCoinsInstaSell` | Off (sell-offer valuation) |
 | Achievements to party | `achievementsToParty` | Off |
 | XP / Essence / Shard floor drops | `esp.floor.rewards.enabled` | On, current biome only |
-| HUD borders | `appearance.<panel>.borderEnabled` | Match the Skyblock snapshot for each HUD |
+| HUD borders | `appearance.<panel>.borderEnabled` | Match the JohnFounder snapshot for each HUD |
 | Five-minute contest warning | `contestWarnMinutes` | Off; warnings at 3 and 1 minutes |
 
 Achievements themselves and achievement sound default on. A button's backing field is not an enable switch. Mode selectors are mutually exclusive: fresh configuration selects **Unique** (`fullClearMode=false`, `sparklingMode=false`); they are not an all-on feature group.
 
-Capture projections and automatic ticket selection default on. **Preferred ticket** is **Basic** for fresh installs. Existing files preserve their preferences and retain First Class as the older missing/invalid-field fallback. The curated profile is applied only when the corresponding main or contest config file does not exist, including when a user explicitly deletes that file.
+Capture projections and automatic ticket selection default on. The generic ticket helper prefers **First Class** for fresh installs and when the preference is missing or invalid. Existing files preserve their explicit preferences. Sparkling auto entry is off by default and selects the lowest available ticket when enabled. The curated profile is applied only when the corresponding main or contest config file does not exist, including when a user explicitly deletes that file.
 
 ### Fresh-install profile and portable HUDs
 
@@ -102,8 +102,11 @@ Other ESP text scale applies to critter timers, nest labels and unknown sparklin
 
 ## Lifecycle and persistence
 
-| File under `config/` | Owner/data |
+Active saves live in `config/sparkling-mutuals/`. On startup, legacy active files move into this folder before any settings load. Existing destination files take precedence, and duplicate legacy files and old backups are preserved in `backups/legacy/`. The retired market-price cache is deleted.
+
+| File under `config/sparkling-mutuals/` | Owner/data |
 | --- | --- |
+
 | `sparkling-mutuals.properties` | General settings, API preference/key, ESP appearance and HUD layouts. |
 | `sparkling-mutuals-contest.properties` | Contest HUD, warnings and automatic downtime. |
 | `sparkling-mutuals-pbs.properties` | Boss solo/duo, biome Full Clear/Unique, party Unique, observed-member records and selected biome category. |
@@ -134,7 +137,11 @@ Each mode dropdown has independent Hide critter ESP and Hide floor-drop ESP togg
 
 ## Last updated
 
+2026-11-04 — Replaced the fresh-install snapshot with JohnFounder settings, HUD placements, Warp List and Leech whitelist.
+
 2026-11-03 (America/New_York) — Added the default-off experimental shard sale guidance switch.
+
+2026-11-03 — Shared Safari sync is always active for eligible Safari parties, with no configuration toggle, sharing objective observations and backend hotspot assignments with protocol-compatible SafariUtils clients. Existing configurations retain their other settings. Auto biome reports uses the relay after backend authority is adopted and the existing chat fallback otherwise. No collection API requests are added. See [Shared Safari sync](PARTY_SYNC.md).
 
 2026-11-02 — Refreshed bundled main/contest preferences and all HUD placements from the current Skyblock instance. Hotspot announcing, Sparkle Warping, Leech and starting quest-item announcements default off. All Warp List entries start empty; the inviter whitelist is retained. No credentials, PBs, run/sparkling histories, achievement state, playtime, hive cooldowns or other account statistics are included. Existing config files remain authoritative. Starting quest-item local title reminders now obey the same toggle as the party announcements.
 

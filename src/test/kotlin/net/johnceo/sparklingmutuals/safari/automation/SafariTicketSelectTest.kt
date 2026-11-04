@@ -39,7 +39,7 @@ class SafariTicketSelectTest {
         } finally { config.autoSelectSafariTicket=previous }
     }
     @org.junit.jupiter.api.io.TempDir lateinit var dir: java.nio.file.Path
-    @Test fun `ticket helper defaults on and GUI saves opt out and preference`() {
+    @Test fun `generic ticket helper defaults on and GUI saves opt out and preference`() {
         val config = net.johnceo.sparklingmutuals.config.ConfigManager
         config.init(dir)
         assertTrue(config.autoSelectSafariTicket)

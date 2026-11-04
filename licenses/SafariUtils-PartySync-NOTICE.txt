@@ -1,0 +1,13 @@
+SafariUtils party-sync interoperability
+
+The sync adapter implements the shared aggregate v2, hotspots-v1 and biome-reports-v1
+contracts supplied by Serkosea in PARTY_SYNC.md, PARTY_SYNC_REFERENCE.md and the
+Party Sync Java Class References archive on 2026-11-03. Protocol parsing, visit
+lifecycle, coalescing, source masks and transport behavior were developed with those
+MIT-licensed SafariUtils reference implementations. See SafariUtils-MIT.txt.
+
+Upstream: https://github.com/Serkosea/safariutils
+Mutuals source: https://github.com/johnceoskyblock/sparkling-mutuals
+
+This is an independent client adapter; it does not bundle the SafariUtils mod or
+its backend and does not contain service secrets or Minecraft session credentials.

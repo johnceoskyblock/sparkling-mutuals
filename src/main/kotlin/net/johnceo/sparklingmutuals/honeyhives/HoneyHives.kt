@@ -8,7 +8,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents
 import net.fabricmc.fabric.api.event.player.AttackBlockCallback
 import net.fabricmc.fabric.api.event.player.UseBlockCallback
-import net.fabricmc.loader.api.FabricLoader
+import net.johnceo.sparklingmutuals.config.ConfigStorage
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.contest.ContestTracker
 import net.johnceo.sparklingmutuals.hud.SkyblockSidebar
@@ -26,7 +26,6 @@ import org.slf4j.LoggerFactory
 /** Personal honeyhive beacons, driven by confirmed loot/refill chat and loaded server holograms. */
 object HoneyHives {
     private val logger = LoggerFactory.getLogger("sparkling-mutuals/honeyhives")
-    private const val RANGE = 256.0
     private const val FULL = 0xFF55FF55.toInt()
     private val hives = linkedMapOf<String, Hive>()
     /** Scope -> hive key -> when it refills: the one thing that decides whether a hive is full. */
@@ -35,7 +34,7 @@ object HoneyHives {
     private val lootedAt = mutableMapOf<String, MutableMap<String, Long>>()
     private val queenFull = mutableMapOf<String, MutableSet<String>>()
     /** The last scope seen, saved, so loots apply straight away after a restart or a server switch. */
-    private var lastScope: String? = null
+    private val lastScopes = mutableMapOf<String, String>()
     private var profile: String? = null
     private var scope: String? = null
     private var tracker: HoneyHiveTracker? = null
@@ -44,7 +43,7 @@ object HoneyHives {
     private var level: Any? = null
     private var onTorrhus = false
     private var beamsBroken = false
-    private val file get() = FabricLoader.getInstance().configDir.resolve("sparkling-mutuals-honeyhives.properties")
+    private val file get() = ConfigStorage.directory.resolve("sparkling-mutuals-honeyhives.properties")
 
     private val lines = WorldRenderCompat.renderType("honeyhive_lines")
 
@@ -85,7 +84,7 @@ object HoneyHives {
     /** Until the join's profile line arrives, track fresh loots under this player only. */
     private fun updateScope(client: Minecraft) {
         val player = client.player?.uuid?.toString()?.replace("-", "")
-        val selected = HoneyHiveRules.resumeScope(player, profile, lastScope)
+        val selected = HoneyHiveRules.resumeScope(player, profile, lastScopes[player])
         val next = selected ?: player?.let { "$it.unknown" }
         ContestTracker.selectScope(selected)
         if (next == scope) return
@@ -103,12 +102,21 @@ object HoneyHives {
                 }
             } else HoneyHiveTracker(times, full, provisional = selected == null, lootedAt = loots, observedRefills = observations)
         }
-        if (selected != null && selected != lastScope) { lastScope = selected; save() }
+        if (player != null && selected != null && lastScopes.put(player, selected) != selected) save()
+    }
+
+    fun disconnect() {
+        profile = null
+        tracker?.resetSession()
+        scope = null
+        tracker = null
+        visible = emptyList()
+        onTorrhus = false
     }
 
     fun tick(client: Minecraft) {
         // Only a disconnect forgets the profile: the player is briefly missing on every server switch too.
-        if (client.connection == null) { profile = null; tracker?.resetSession(); scope = null; tracker = null }
+        if (client.connection == null) disconnect()
         if (client.level !== level) { level = client.level; onTorrhus = false; visible = emptyList(); tracker?.resetSession() }
         updateScope(client)
         if (++ticks % 20 != 0) return
@@ -130,13 +138,11 @@ object HoneyHives {
     }
 
     private fun refreshVisible(client: Minecraft, now: Long) {
-        val player = client.player ?: return
-        if (!ConfigManager.honeyHives || !onTorrhus || ContestTracker.isComplete()) { visible = emptyList(); return }
+        if (client.player == null || scope?.endsWith(".unknown") != false ||
+            !ConfigManager.honeyHives || !onTorrhus || ContestTracker.isComplete()) { visible = emptyList(); return }
         val refills = scope?.let { refillAt[it] }.orEmpty()
         val shown = mutableListOf<Pair<Hive, Int>>()
         for (hive in hives.values) {
-            if (!waypointExists(client, hive)) continue
-            if (player.distanceToSqr(hive.x + .5, hive.y + .5, hive.z + .5) > RANGE * RANGE) continue
             val refill = refills[hive.key]
             when (tracker?.state(hive.key, now) ?: HoneyHiveRules.state(now, refill)) {
                 HiveState.FULL -> shown += hive to FULL
@@ -144,13 +150,6 @@ object HoneyHives {
             }
         }
         visible = shown
-    }
-
-    private fun waypointExists(client: Minecraft, hive: Hive): Boolean {
-        val world = client.level ?: return false
-        val pos = BlockPos(hive.x, hive.y, hive.z)
-        val loaded = world.hasChunkAt(pos)
-        return HoneyHiveRules.waypointExists(hive.key, loaded, loaded && world.getBlockState(pos).`is`(Blocks.BEE_NEST))
     }
 
     private fun verifyHolograms(client: Minecraft, now: Long) {
@@ -162,8 +161,6 @@ object HoneyHives {
         }
         var changed = false
         for (hive in hives.values) {
-            val pos = BlockPos(hive.x, hive.y, hive.z)
-            if (!world.hasChunkAt(pos) || !world.getBlockState(pos).`is`(Blocks.BEE_NEST)) continue
             if (current.observe(hive.key, HoneyHiveLabels.forHive(hive, hives.values, labels), now = now)) changed = true
         }
         if (changed) save()
@@ -202,8 +199,7 @@ object HoneyHives {
             val animation = Math.floorMod(world.gameTime, 40L) + client.deltaTracker.getGameTimeDeltaPartialTick(false)
             val poses = context.poseStack()
             for ((hive, color) in visible) {
-                if (!waypointExists(client, hive)) continue
-                // Beams have no transparency, so an unknown hive's dimmer colour becomes a darker one.
+                // Beams use RGB without alpha.
                 val rgb = if (color ushr 24 < 0xFF) (color and 0xFEFEFE) shr 1 else color and 0xFFFFFF
                 poses.pushPose()
                 poses.translate(hive.x - camera.x, hive.y - camera.y, hive.z - camera.z)
@@ -224,7 +220,6 @@ object HoneyHives {
         fun box(minX: Double, minY: Double, minZ: Double, maxX: Double, maxY: Double, maxZ: Double, color: Int) =
             WorldRenderCompat.box(context, lines, net.minecraft.world.phys.AABB(minX, minY, minZ, maxX, maxY, maxZ), color)
         for ((hive, color) in visible) {
-            if (!waypointExists(client, hive)) continue
             box(hive.x.toDouble(), hive.y.toDouble(), hive.z.toDouble(), hive.x + 1.0, hive.y + 1.0, hive.z + 1.0, color)
             if (beamsBroken) box(hive.x + .35, hive.y + 1.0, hive.z + .35, hive.x + .65, hive.y + 64.0, hive.z + .65, color)
         }
@@ -261,7 +256,16 @@ object HoneyHives {
                 lootedAt.getOrPut(owner) { mutableMapOf() }[key] = at
             }
         }
-        lastScope = saved.getProperty("scope.last")
+        saved.getProperty("scope.last")?.let { lastScopes[it.substringBefore('.')] = it }
+        saved.stringPropertyNames().filter { it.startsWith("scope.last.") }.forEach { key ->
+            val player = key.removePrefix("scope.last.")
+            HoneyHiveRules.resumeScope(player, null, saved.getProperty(key))?.let { lastScopes[player] = it }
+        }
+        // Legacy files stored only one last scope. A single saved profile for another
+        // account is safe to resume while waiting for that account's profile line.
+        (refillAt.keys + lootedAt.keys + observedRefills.keys + queenFull.keys)
+            .filterNot { it.endsWith(".unknown") }.groupBy { it.substringBefore('.') }
+            .forEach { (player, owners) -> owners.singleOrNull()?.let { lastScopes.putIfAbsent(player, it) } }
         save()
     }
 
@@ -279,7 +283,7 @@ object HoneyHives {
             out.setProperty("state.$owner.$key", current.name.lowercase())
         } }
         queenFull.forEach { (owner, keys) -> keys.forEach { key -> out.setProperty("queenFull.$owner.$key", "1") } }
-        lastScope?.let { out.setProperty("scope.last", it) }
+        lastScopes.forEach { (player, owner) -> out.setProperty("scope.last.$player", owner) }
         runCatching { Files.createDirectories(file.parent); Files.newOutputStream(file).use { out.store(it, "Sparkling Mutuals honeyhives") } }
             .onFailure { logger.warn("Couldn't save honeyhives", it) }
     }

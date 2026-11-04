@@ -30,7 +30,7 @@ object SafariMissingReply {
     fun current(biome: SafariBiome?, run: SafariRun? = SafariTracking.ledger.current): String {
         val selected = biome ?: run?.biomeAtThirtySeconds ?: return "Missing: None"
         return format(selected) { requirements(run, selected, SafariFullClear.mode, SafariSparklingMode.state,
-            SafariStructures.nearbyMounds, SafariStructures.walls.remaining,
+            run?.moundSurvey?.remaining ?: 0, SafariStructures.walls.remaining,
             BeeNests.unpunchedCount.takeIf { run?.beeNestCountKnown == true || run?.trustLateForestNestReport == true }) }
     }
     /** Reads retained run evidence plus currently rendered source counts; never fetches API data. */

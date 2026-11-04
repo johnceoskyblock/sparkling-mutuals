@@ -5,6 +5,7 @@ import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents
 import net.johnceo.sparklingmutuals.api.HypixelApi
 import net.johnceo.sparklingmutuals.commands.PartyChat
 import net.johnceo.sparklingmutuals.config.ConfigManager
+import net.johnceo.sparklingmutuals.contest.ContestTracker
 import net.johnceo.sparklingmutuals.party.PartyManager
 import net.johnceo.sparklingmutuals.party.PartyRosterSignals
 import net.johnceo.sparklingmutuals.safari.SafariEntryPresence
@@ -50,14 +51,19 @@ object SafariPartyInput {
         if (SafariDowntime.travel(text)) return
         if (PartyRosterSignals.changed(text)) {
             // Membership notices are server system lines, never strings quoted within party chat.
-            if (SafariDowntime.partyResetSignal(text)) resetPending()
+            if (SafariDowntime.partyResetSignal(text)) {
+                resetPending()
+                ContestTracker.clearPartyContest()
+            }
             SafariDowntime.chat(text, SafariManagerGuard.activeRun(client), client.player?.name?.string.orEmpty())
             return
         }
         val chat = PartyChat.parse(text) ?: return
         // Reports only suppress duplicate announcements; they never release a readiness or kick hold.
         SafariDowntime.observeAnnouncement(chat.body)
-        val downtime = ConfigManager.downtimeCommand &&
+        if (chat.body.contains(", still waiting on ticket earned confirmation message", true)) return
+        val contest = ContestTracker.contestWaiting().isNotEmpty() && confirmsTicket(chat.body)
+        val downtime = contest || ConfigManager.downtimeCommand &&
             (chat.body.matches(Regex("^!dt(?:\\s+.*)?$", RegexOption.IGNORE_CASE)) ||
                 SafariDowntime.readyMessage(chat.body) || SafariDowntime.ticketMessage(chat.body))
         val kick = ConfigManager.holdManagerOnKick && SafariManagerGuard.inSafariInstance() &&
@@ -69,9 +75,10 @@ object SafariPartyInput {
         tick(client)
     }
     fun tick(client: Minecraft) {
-        if (!ConfigManager.downtimeCommand) queue.disableDowntime()
+        val contest = ContestTracker.contestWaiting().isNotEmpty()
+        if (!ConfigManager.downtimeCommand && !contest) queue.disableDowntime()
         if (!ConfigManager.holdManagerOnKick) queue.disableKick()
-        if (!ConfigManager.downtimeCommand && !ConfigManager.holdManagerOnKick) { resetPending(); return }
+        if (!ConfigManager.downtimeCommand && !ConfigManager.holdManagerOnKick && !contest) { resetPending(); return }
         val world = client.level ?: return
         queue.observeWorld(world)
         val connection = client.connection ?: return
@@ -120,9 +127,11 @@ object SafariPartyInput {
             if (id != null) {
                 queue.remove(key)
                 if (id !in roster) return@forEach
-                if (item.downtime) queue.validated(id,
+                if (contest && item.downtime && PartyChat.parse(item.text)?.body?.let(::confirmsTicket) == true)
+                    ContestTracker.confirmPartyTicket(id, item.receivedAt)
+                if (item.downtime && ConfigManager.downtimeCommand) queue.validated(id,
                     PartyChat.parse(item.text)?.body?.let { SafariDowntime.readyMessage(it) || SafariDowntime.ticketMessage(it) } == true, roster)
-                if (item.downtime) SafariDowntime.chat(item.text, SafariManagerGuard.activeRun(client), self.name.string,
+                if (item.downtime && ConfigManager.downtimeCommand) SafariDowntime.chat(item.text, SafariManagerGuard.activeRun(client), self.name.string,
                     if (PartyManager.getMembers().any { PartyManager.isLeader(it) && SafariEntryPresence.normalize(it) == id })
                         roster.map { nameOf(it) ?: it } else emptyList())
                     ?.let(SafariDowntime::queueAnnouncement)
@@ -145,6 +154,9 @@ object SafariPartyInput {
         if (ids.size > 64) ids.keys.retainAll(queue.entries().map { it.second.sender }.toSet() + SafariDowntime.holders().split(", ").map(String::lowercase) + connection.onlinePlayers.map { it.profile.name.lowercase() } + ids.filterValues { it in roster }.keys)
         displayNames.keys.retainAll(ids.keys + queue.entries().map { it.second.sender })
     }
+    private fun confirmsTicket(body: String) = SafariDowntime.readyMessage(body) ||
+        (!body.startsWith("!") && !body.startsWith("[Reminder]", true) && SafariDowntime.ticketMessage(body))
+
     private fun resetPending() { epoch++; queue.clear(); resolving.clear(); retryAt.clear(); resolvingNames.clear(); nameRetryAt.clear() }
     /** Preserve requests elsewhere, but never replay an old session's unverified chat. */
     fun disconnect() { epoch++; resolving.clear(); retryAt.clear(); resolvingNames.clear(); nameRetryAt.clear(); queue.transfer() }

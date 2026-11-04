@@ -49,7 +49,7 @@ class UniqueCompletionTest {
         assertTrue(complete(run, "Rockmite", state)); assertTrue(complete(run, "Snoozle", state))
         assertTrue(complete(run, "Rockmite", party()))
     }
-    @Test fun `Unique Forest advances from first captures without local source checks`() {
+    @Test fun `Unique Forest advances from first captures without local source checks`() = net.johnceo.sparklingmutuals.config.withStartingItems {
         val run = SafariRun(0); val state = party("Honeybug", "Bluebird")
         run.visitBiome(SafariBiome.FOREST); caught(run, "Honeybug", "Bluebird", "Parakeet", "Macaw")
         assertFalse(complete(run, "Honeybug", state), "needed Sparkling confirmation is separate from the first-catch missing row")
@@ -67,13 +67,14 @@ class UniqueCompletionTest {
         run.inventoryEvidence(listOf("Bag of Seeds" to 1), 11000)
         assertFalse(complete(run, "Bluebird", state), "newly held local food does reopen the source requirement")
     }
-    @Test fun `Unique local completion announces once and never echoes remote completion`() {
+    @Test fun `Unique local completion announces once and is independent of remote report chat suppression`() {
         val run = SafariRun(0); val state = party()
         SafariBiome.CAVERN.critters.forEach { caught(run, it.name) }
         run.partyFullClear("Party > Friend: cd")
         assertNull(run.completion.announcement(run, SafariBiome.CAVERN, SafariMode.UNIQUE, state))
         run.visitBiome(SafariBiome.CAVERN); run.updateCaptureEvidence(SafariBiome.CAVERN, emptySet(), true)
-        assertNull(run.completion.announcement(run, SafariBiome.CAVERN, SafariMode.UNIQUE, state))
+        assertEquals("cd", run.completion.announcement(run, SafariBiome.CAVERN, SafariMode.UNIQUE, state))
+        run.completion.sent(SafariBiome.CAVERN)
         assertNull(run.completion.announcement(run, SafariBiome.CAVERN, SafariMode.UNIQUE, state))
     }
     @Test fun `ordinary Unique species complete from shared catches regardless of missing discoveries`() {
@@ -130,13 +131,14 @@ class UniqueCompletionTest {
         assertFalse(rows.any { it.label == "Snoozle" })
         assertTrue(SafariPanels.objectives(run, SafariBiome.CAVERN, true, 0, mounds = 2, party = state).rows.any { it.label == "Mounds" })
     }
-    @Test fun `Unique Haunted reports completion while caught Wumpa suppresses redundant Icy report`() {
+    @Test fun `Unique completion tokens preserve separate Icy chat suppression`() {
         for (biome in listOf(SafariBiome.ICY, SafariBiome.HAUNTED)) {
             val run = SafariRun(0)
             run.visitBiome(biome)
             biome.critters.forEach { caught(run, it.name) }
             run.updateCaptureEvidence(biome, emptySet(), true)
-            assertEquals(if (biome == SafariBiome.ICY) null else "hd", run.completion.announcement(run, biome, SafariMode.UNIQUE, party()))
+            assertEquals(biome != SafariBiome.ICY, run.completion.chatReportAllowed(biome, SafariMode.UNIQUE))
+            assertEquals(if (biome == SafariBiome.ICY) "id" else "hd", run.completion.announcement(run, biome, SafariMode.UNIQUE, party()))
         }
     }
 }

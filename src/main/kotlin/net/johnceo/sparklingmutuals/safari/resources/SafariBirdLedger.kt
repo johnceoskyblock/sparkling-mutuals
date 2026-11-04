@@ -11,6 +11,9 @@ class SafariBirdLedger {
     private val startingFoods = mutableMapOf<String, Int>()
     private val startingPickups = mutableMapOf<String, Int>()
     private val renderedTotals = mutableMapOf<String, Int>()
+    private var visibleBirds = emptyMap<String, Int>()
+    fun observeVisibleBirds(live: List<String>) { visibleBirds = live.groupingBy { it }.eachCount() }
+    fun visibleCount(species: String) = visibleBirds[species] ?: 0
     private var floorDropsRemaining: Int? = null
     private var currentPopulation: Int? = null
     private var verifiedPopulation = 0
@@ -21,13 +24,30 @@ class SafariBirdLedger {
     var spawnEvents=0
         private set
     private val feeder=BirdfeederState()
-    val feederFood get()=feeder.food
-    val feederCount get()=feeder.count
-    fun feeder(name: String?, count: Int,now: Long=System.currentTimeMillis()) { feeder.observe(name,count,now) }
+    private var shared: IntArray?=null
+    private var sharedFeederAt=0L
+    private var localFeederAt=0L
+    val localFeederFood get()=feeder.food
+    val localFeederCount get()=feeder.count
+    internal val localFeederObserved get() = localFeederAt != 0L
+    private val sharedFeeder get()=shared?.let { it[0]>spawnEvents || it[0]==spawnEvents && sharedFeederAt>localFeederAt }==true
+    val feederFood get()=if(sharedFeeder) foods.getOrNull(shared!![4]) else feeder.food
+    val feederCount get()=if(sharedFeeder) shared!![5] else feeder.count
+    fun sharedUsage(usage: IntArray) {
+        val previous=shared
+        if(previous==null || usage[0]>previous[0]) { shared=usage.copyOf();sharedFeederAt=System.currentTimeMillis() }
+        else if(usage[0]==previous[0]) {
+            for(i in 1..3) previous[i]=minOf(previous[i],usage[i])
+            if(previous[4]!=usage[4] || previous[5]!=usage[5]) {
+                previous[4]=usage[4];previous[5]=usage[5];sharedFeederAt=System.currentTimeMillis()
+            }
+        }
+    }
+    fun feeder(name: String?, count: Int,now: Long=System.currentTimeMillis()) { feeder.observe(name,count,now);localFeederAt=now }
     fun feederOpened() { feeder.newMenu() }
     fun held(name: String)=heldByType[name] ?: 0
     fun remaining(name: String)=(if(floorDropsRemaining == 0) 0 else floorByType?.get(name) ?: maxOf(0,3-(forest[name] ?: 0)))+held(name)
-    /** Per-type marker predictions refine HUD counts only; total source proof is tracked separately. */
+    /** Keep the last classified counts through partial scans. Total source proof is tracked separately. */
     fun floorTypes(counts: Map<String,Int>?) { if(counts!=null) floorByType=counts.toMap() }
 
     private var reportedExtras = 0
@@ -44,10 +64,9 @@ class SafariBirdLedger {
         if (floorDropsRemaining == 0 && heldFoods == 0)
             verifiedPopulation = maxOf(verifiedPopulation, currentPopulation ?: 0)
     }
-    fun reenter() { currentPopulation = null }
+    fun reenter() { currentPopulation = null; visibleBirds = emptyMap() }
     /** Food markers remain visible Safari-wide; travel must not erase a known remaining drop. */
     fun floor(dropsRemaining: Int) {
-        if(dropsRemaining>=0 && floorByType?.values?.sum()?.let { it!=dropsRemaining }==true) floorByType=null
         floorDropsRemaining = if (dropsRemaining >= 0) dropsRemaining else floorDropsRemaining?.takeIf { it > 0 }
         retainSpawnProof()
     }
@@ -64,7 +83,7 @@ class SafariBirdLedger {
     /** Includes uncollected food and known party extras; render evidence estimates food already used. */
     val foodLeftToUse get() = maxOf(0, feedingTarget - maxOf(accountedFeedings, verifiedPopulation),
         (heldFoods ?: 0) + (floorDropsRemaining ?: 0))
-    val accountedFeedings get() = maxOf(currentPopulation ?: 0,spawnEvents)
+    val accountedFeedings get() = maxOf(currentPopulation ?: 0,spawnEvents,shared?.get(0) ?: 0)
     val knownFoodUnresolved get() = (heldFoods ?: 0) > 0 || (floorDropsRemaining ?: 0) > 0
     val feedingResolved get() = floorDropsRemaining == 0 && heldFoods == 0 &&
         maxOf(accountedFeedings, verifiedPopulation) >= feedingTarget && feederCount == 0
@@ -80,7 +99,8 @@ class SafariBirdLedger {
         val early = startingPickups[food] ?: 0
         return maxOf(startingFoods[food] ?: 0, early) + (picked[food] ?: 0) - (forest[food] ?: 0) - early
     }
-    private val localExtras get() = foods.sumOf(::localExtra)
+    var includeStartingFood = true
+    private val localExtras get() = if (includeStartingFood) foods.sumOf(::localExtra) else 0
     val feedingTarget get() = maxOf(9, forestCollected) + localExtras + reportedExtras + inferredExtras
     val sparklingTarget get() = feedingTarget
     /** Sender/type maxima deduplicate repeated notices; local notices overlap starting inventory. */

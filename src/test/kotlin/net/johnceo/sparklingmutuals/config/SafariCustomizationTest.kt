@@ -52,7 +52,7 @@ class SafariCustomizationTest {
         assertTrue(ConfigManager.showMoundCount)
         assertTrue(ConfigManager.showBeeNests)
         assertFalse(ConfigManager.showMoundStats)
-        AppearanceConfig.panels.forEach { (id,style) -> assertEquals(id in setOf("miria","progress","missing","captures","objectives","sparklings"),style.borderEnabled) }
+        AppearanceConfig.panels.forEach { (id,style) -> assertEquals(id in setOf("coins","developer"),style.borderEnabled) }
         for (id in listOf("miria", "progress", "missing", "captures", "sparklings")) {
             val style = AppearanceConfig.panels.getValue(id)
             assertEquals(20, style.transparency)
@@ -126,7 +126,7 @@ class SafariCustomizationTest {
     }
     @Test fun `warnings live in their accordion and mode-owned structure controls are absent`() {
         fun names(type: Class<*>) = type.fields.mapNotNull { it.getAnnotation(net.johnceo.sparklingmutuals.config.ConfigOption::class.java)?.name }
-        assertEquals(setOf("Ticket mode", "Contest tracking", "Auto !dt contest", "Honeyhive beacons"), names(SafariSettings.Miria::class.java).toSet())
+        assertEquals(setOf("Ticket mode", "Contest tracking", "Party Contest Guard Entry", "Honeyhive beacons"), names(SafariSettings.Miria::class.java).toSet())
         assertTrue(names(SafariSettings.Unique::class.java).contains("Profitable critter ESP"))
         assertEquals(setOf("5 minute warning", "3 minute warning", "1 minute warning", "No contest warnings", "Warning titles", "Sound volume", "Warning sound", "Preview sound"), names(SafariSettings.Warning::class.java).toSet())
         assertEquals(setOf("Command help", "Move and resize HUDs"), names(SafariSettings.General::class.java).toSet())

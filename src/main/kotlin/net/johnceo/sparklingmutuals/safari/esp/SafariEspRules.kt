@@ -20,6 +20,7 @@ object SafariEspRules {
     fun thrownSpecies(text: String) = throwMessage.matchEntire(text)?.groupValues?.get(1)?.let(::labelSpecies)
     fun escapedSpecies(text: String) = escapeMessage.matchEntire(text)?.groupValues?.get(1)?.let(::labelSpecies)
     fun profitableEsp(species: String, enabled: Boolean) = enabled && species != "Rockmite" &&
+        net.johnceo.sparklingmutuals.config.SafariEspConfig.profitableEnabled(species) &&
         species in net.johnceo.sparklingmutuals.commands.ProfitableCritters.cachedSpecies()
     fun neededForRun(species: String, mound: Boolean, run: SafariRun?, fullClear: Boolean, profitable: Boolean = true,
         party: PartySparklingState? = null) =

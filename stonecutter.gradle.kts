@@ -41,7 +41,7 @@ gradle.projectsEvaluated {
         p.tasks.register("verifyTargetJar") {
             group = "verification"
             dependsOn(p.tasks.named("build"))
-            doLast { verifyJar(p.tasks.named<Jar>("jar").get().archiveFile.get().asFile.toPath(), spec(p), releaseVersion.get()) }
+            doLast { verifyJar(p.tasks.named<Jar>("jar").get().archiveFile.get().asFile.toPath(), spec(p), p.version.toString()) }
         }
     }
     buildAllTargets.configure {

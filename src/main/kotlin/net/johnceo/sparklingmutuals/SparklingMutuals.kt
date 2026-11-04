@@ -7,6 +7,7 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements
 import net.fabricmc.loader.api.FabricLoader
+import net.johnceo.sparklingmutuals.config.ConfigStorage
 import net.johnceo.sparklingmutuals.alerts.AlertManager
 import net.johnceo.sparklingmutuals.commands.AlertCommand
 import net.johnceo.sparklingmutuals.commands.ApiKeyCommand
@@ -56,7 +57,7 @@ object SparklingMutuals : ModInitializer {
 
     override fun onInitialize() {
         logger.info("Sparkling Mutuals loaded!")
-        val configDirectory = FabricLoader.getInstance().configDir
+        val configDirectory = ConfigStorage.migrate(FabricLoader.getInstance().configDir)
         ConfigManager.init(configDirectory)
         ContestConfig.init(configDirectory)
         registerCommands()
@@ -81,7 +82,6 @@ object SparklingMutuals : ModInitializer {
         HideyhoSpotter.register()
         SafariTracking.register()
         net.johnceo.sparklingmutuals.hud.HotspotAssignmentAlert.register()
-        AlertManager.onInitialize()
         RunHistory.register()
         SparklingLog.register()
         TicketCounter.register()
@@ -89,19 +89,21 @@ object SparklingMutuals : ModInitializer {
         PlaytimeReader.register()
         BeeNests.register()
         HoneyHives.register()
+        ContestTracker.register()
         PhantomleafSolver.register()
         net.johnceo.sparklingmutuals.skyblock.SkillOverflow.register()
         net.johnceo.sparklingmutuals.skyblock.market.ShardSaleGuidance.register()
         SafariEsp.register()
-        SafariAssist.register()
         TeammateEsp.register()
         SafariIsland.register()
         SafariManagerGuard.register()
+        net.johnceo.sparklingmutuals.safari.automation.entry.CjsSafariEntry.register()
         CapsulePreview.register()
     }
 
     private fun registerCallbacks() {
         ClientTickEvents.START_CLIENT_TICK.register(AutoClicker::tick)
+        ClientTickEvents.START_CLIENT_TICK.register(net.johnceo.sparklingmutuals.safari.automation.entry.CjsSafariEntry::startTick)
         ClientTickEvents.END_CLIENT_TICK.register(::onClientTick)
         ClientPlayConnectionEvents.DISCONNECT.register { _, _ -> resetSession() }
         HudElementRegistry.attachElementBefore(
@@ -111,6 +113,7 @@ object SparklingMutuals : ModInitializer {
             ContestHud.render(graphics, deltaTracker)
             SafariAssist.render(graphics)
             SafariTracking.render(graphics)
+            net.johnceo.sparklingmutuals.debug.SafariDeveloper.render(graphics, Minecraft.getInstance())
             net.johnceo.sparklingmutuals.hud.HotspotAssignmentAlert.render(graphics)
             SparklingEncounters.render(graphics)
             SmallAlerts.render(graphics)
@@ -128,6 +131,7 @@ object SparklingMutuals : ModInitializer {
         net.johnceo.sparklingmutuals.hud.SafariBanners.tick(client)
         JoinWelcome.tick(client)
         PartyManager.onClientTick(client)
+        TeammateEsp.tick(client)
         net.johnceo.sparklingmutuals.alerts.SparkleWarping.tick(client)
         net.johnceo.sparklingmutuals.alerts.SparkleAutoParty.tick(client)
         PartyCommands.onClientTick(client)
@@ -137,6 +141,8 @@ object SparklingMutuals : ModInitializer {
         SafariAssist.onClientTick(client)
         net.johnceo.sparklingmutuals.safari.ClearWater.tick(client)
         SafariTracking.onClientTick(client)
+        AlertManager.tick(client)
+        net.johnceo.sparklingmutuals.sync.SafariPartySync.tick(client)
         net.johnceo.sparklingmutuals.hud.HotspotAssignmentAlert.tick(client)
         RunHistory.tick(client)
         Achievements.tick(client)
@@ -154,12 +160,18 @@ object SparklingMutuals : ModInitializer {
         HideyhoSpotter.onClientTick(client)
         SafariDowntime.onClientTick(client)
         SafariManagerGuard.onClientTick(client)
+        net.johnceo.sparklingmutuals.safari.automation.entry.CjsSafariEntry.tick(client)
         net.johnceo.sparklingmutuals.safari.automation.SafariTicketSelect.tick(client)
         CapsulePreview.tick(client)
+        net.johnceo.sparklingmutuals.hud.SafariAlertSequence.tick()
     }
 
     private fun resetSession() {
+        net.johnceo.sparklingmutuals.safari.automation.entry.CjsSafariEntry.reset()
+        HoneyHives.disconnect()
+        net.johnceo.sparklingmutuals.hud.SafariAlertSequence.queue.reset()
         net.johnceo.sparklingmutuals.skyblock.market.ShardSaleGuidance.reset()
+        net.johnceo.sparklingmutuals.sync.SafariPartySync.reset()
         net.johnceo.sparklingmutuals.skyblock.SkillOverflow.reset()
         net.johnceo.sparklingmutuals.hud.SafariBanners.reset()
         net.johnceo.sparklingmutuals.safari.ClearWater.reset()

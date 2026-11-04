@@ -6,7 +6,8 @@ plugins {
 }
 
 val targetMinecraft = property("minecraft_version").toString()
-val modVersion = property("mod_version").toString()
+val developerBuild = providers.gradleProperty("developerBuild").map { it.toBooleanStrict() }.orElse(false)
+val modVersion = property("mod_version").toString() + if (developerBuild.get()) "-dev" else ""
 version = modVersion
 group = "net.johnceo.sparklingmutuals"
 base.archivesName = "sparkling-mutuals"
@@ -68,7 +69,7 @@ if (targetMinecraft == "26.1.2") tasks.register<JavaExec>("replayShardMarket") {
     }
 }
 tasks.processResources {
-    val properties = mapOf("version" to modVersion, "minecraft" to targetMinecraft)
+    val properties = mapOf("version" to modVersion, "minecraft" to targetMinecraft, "developer" to developerBuild.get())
     inputs.properties(properties)
     filesMatching("fabric.mod.json") { expand(properties) }
 }

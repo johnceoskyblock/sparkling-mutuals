@@ -23,6 +23,7 @@ object CapsulePreviewRenderer {
         if (IrisCapsuleCompat.isShadowPass()) return
         pending = null
         val client=Minecraft.getInstance()
+        if (!net.johnceo.sparklingmutuals.safari.SafariAssist.visualsActive(client)) return
         val frame=CapsulePreview.frame(client) ?: return
         val mesh=frame.mesh ?: return
         val through=ConfigManager.showCapsuleGuideThroughTerrain

@@ -94,6 +94,8 @@ data class StartingResourceNotice(val items: List<StartingResourceReminder>) {
 /** Grants overlap inventory; pickups add resources. Neither is a catch or a spawn. */
 class SafariResources {
     private val starting = mutableMapOf<FloorDropType, Int>()
+    private val seenStarting = mutableMapOf<FloorDropType, Int>()
+    private val unusedStarting = mutableMapOf<FloorDropType, Int>()
     private val pickups = mutableMapOf<FloorDropType, Int>()
     private val startingPickups = mutableMapOf<FloorDropType, Int>()
     private val held = mutableMapOf<FloorDropType, Int>()
@@ -125,6 +127,13 @@ class SafariResources {
         FloorDropType.entries.forEach { type ->
             held[type] = stacks.filter { SafariRules.strip(it.first).trim() == type.label }.sumOf { it.second.coerceAtLeast(0) }
             if (initial) starting[type] = maxOf(starting[type] ?: 0, held.getValue(type) - (pickups[type] ?: 0) + (startingPickups[type] ?: 0))
+            if (optionalStarting(type)) {
+                val amount = heldCount(type)
+                val knownStarting = startingCount(type)
+                val newStarting = if (amount > 0) knownStarting - (seenStarting[type] ?: 0) else 0
+                if (amount > 0) seenStarting[type] = knownStarting
+                unusedStarting[type] = ((unusedStarting[type] ?: 0) + newStarting).coerceIn(0, amount)
+            }
         }
     }
     fun pickup(text: String, startingPickup: Boolean = false) {
@@ -137,7 +146,22 @@ class SafariResources {
         }
     }
     fun heldCount(type: FloorDropType) = held[type] ?: 0
+    fun coordinatedHeld(type: FloorDropType, includeStarting: Boolean) =
+        (heldCount(type) - if (includeStarting || !optionalStarting(type)) 0 else unusedStarting[type] ?: 0).coerceAtLeast(0)
+
+    fun coordinatedDiscovered(type: FloorDropType, includeStarting: Boolean) =
+        if (includeStarting || !optionalStarting(type)) discoveredCount(type) else floorPickupCount(type)
+
+    private fun optionalStarting(type: FloorDropType) = destination(type) != null
+
+    fun hasHeldStarting(biome: SafariBiome) =
+        unusedStarting.any { (type, amount) -> amount > 0 && destination(type) == biome }
+
+    fun unusedStartingCount(type: FloorDropType) = unusedStarting[type] ?: 0
+
     fun startingCount(type: FloorDropType) = starting[type] ?: 0
+    fun floorPickupCount(type: FloorDropType) = (pickups[type] ?: 0) - (startingPickups[type] ?: 0)
+    fun discoveredCount(type: FloorDropType) = startingCount(type) + floorPickupCount(type)
     fun headStart(text: String) {
         val name = Regex("^HEAD START! You started with a (.+)!$").matchEntire(text)?.groupValues?.get(1) ?: return
         FloorDropType.entries.firstOrNull { it.label == name }?.let { starting[it] = maxOf(starting[it] ?: 0, 1) }
@@ -199,6 +223,10 @@ class SafariResources {
     }
     private val startingReporters = mutableSetOf<String>()
     fun startingReporters(): Set<String> = startingReporters.toSet()
+    fun reportedStartingFood(player: String, type: FloorDropType): Int {
+        val key = player.lowercase() to type
+        return if (key in earlyReports) reportedFood[key] ?: 0 else 0
+    }
     private fun contribution(player: String, type: FloorDropType, amount: Int) {
         val key = player.lowercase() to type
         if (type == FloorDropType.COIN) reportedCoins[key.first] = maxOf(reportedCoins[key.first] ?: 0, amount)

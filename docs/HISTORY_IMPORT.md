@@ -59,7 +59,7 @@ A Hunting Hotspot starts a run and associates a nearby Manager ticket confirmati
 
 Recognized messages rebuild personal captures, loot shares, shard rewards, feathers, Macaw bonuses, Sparkling finds and party biome-completion splits. Party species coverage is the union of personal/shared species; participant count includes only message-established participants. Failed files are reported/skipped; a damaged gzip contributes no partial events, while valid files still import.
 
-Before accepting a file, verify its non-chat `Setting user:` owner against the active IGN. Foreign or unverifiable sessions are skipped and counted in the import result. JSON exports need an explicit root `owner`, `self` or `username`, or equivalent identifiable session metadata; a sparkling catcher is not proof of session ownership. An account switch during an import cancels merging. Earlier imports were not owner-filtered, and old mixed-account rows cannot be safely identified retroactively. See the [read-only log audit](HISTORY_LOG_AUDIT.md).
+Before accepting a file, verify its non-chat `Setting user:` owner against the active IGN. Foreign or unverifiable sessions are skipped and counted in the import result. JSON exports need an explicit root `owner`, `self` or `username`, or equivalent identifiable session metadata; a sparkling catcher is not proof of session ownership. An account switch during an import cancels merging. Earlier imports were not owner-filtered, and old mixed-account rows cannot be safely identified retroactively. See the [read-only log audit](https://github.com/johnceoskyblock/sparkling-mutuals/blob/0d33d8e475e21140202a93280897575411a2cb16/docs/HISTORY_LOG_AUDIT.md).
 
 Reward summary rows provide actual essence, Hunting XP and total shards even when capture messages were hidden. Modern logger prefixes, observed mode changes, hotspot biome and elapsed times embedded in biome completion reports are retained. Missing species distribution and original ticket tier remain unknown.
 
@@ -144,7 +144,7 @@ Missing messages/dates cannot be reconstructed, and close run starts can be ambi
 
 2026-10-27 — Manual import always rescans all eligible log files, including previously imported files. Matched rows are enriched in place; the completion message reports both newly added and updated existing runs. Repeated unchanged scans add no duplicates and report no updated rows. Newly available prices can also replace a zero-value imported estimate.
 
-2026-10-27 — Audited 981 logs across JohnFounder/Skyblock. Added strict import ownership checks, summary rewards and essence profit, enrichment of matched records, modern prefixes, observed modes and timed splits, history searches and AFK-filtered average duration. See HISTORY_LOG_AUDIT.md for evidence and limitations.
+2026-10-27 — Audited 981 logs across JohnFounder/Skyblock. Added strict import ownership checks, summary rewards and essence profit, enrichment of matched records, modern prefixes, observed modes and timed splits, history searches and AFK-filtered average duration. See the [historical log audit](https://github.com/johnceoskyblock/sparkling-mutuals/blob/0d33d8e475e21140202a93280897575411a2cb16/docs/HISTORY_LOG_AUDIT.md) for evidence and limitations.
 
 2026-10-26 — Prevented reentrant live finalization and repeated native start insertion; added backed-up exact-duplicate cleanup and import-batch deduplication.
 

@@ -17,7 +17,7 @@ class CatchCelebrationPreviewScreen(private val parent: Screen) : Screen(Compone
         SpecialCatchAlert.render(g)
         super.extractRenderState(g,mx,my,delta)
     }
-    override fun onClose() { SpecialCatchAlert.reset();minecraft.smSetScreen(parent) }
-    override fun removed() { SpecialCatchAlert.reset();super.removed() }
+    override fun onClose() { SpecialCatchAlert.closePreview();minecraft.smSetScreen(parent) }
+    override fun removed() { SpecialCatchAlert.closePreview();super.removed() }
     override fun isPauseScreen()=false
 }

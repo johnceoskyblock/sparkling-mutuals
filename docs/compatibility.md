@@ -1,5 +1,11 @@
 # Hotspot assignment compatibility
 
+## Shared backend
+
+Updated clients use Serkosea's `hotspots-v1` authority with the SafariUtils v2 objective relay. Both mods follow the backend's assignments and fairness history. Exact lobby/roster matching, confirmed attendance, locked assignments on recovery, and leader-only non-display instructions follow the [shared sync contract](PARTY_SYNC.md).
+
+While backend authority is active, hotspot reports, final assignment maps and automatic biome completion codes do not go to party chat. If the backend is unavailable before authority is adopted, the leader-owned chat protocol below remains the fallback. Once choices are finalized, neither reconnect nor a transport change may reshuffle them. A backend-owned visit never starts a competing chat allocation during an outage.
+
 ## What changed
 
 Previously, each client kept its own hotspot-win history and calculated its assignment independently. Missed reports, reconnects or different versions could produce conflicting assignments.

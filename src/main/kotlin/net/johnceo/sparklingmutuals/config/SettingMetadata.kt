@@ -16,3 +16,6 @@ annotation class ConfigEditorSlider(val minValue: Float, val maxValue: Float, va
 annotation class ConfigEditorDropdown(val values: Array<String>)
 @Target(AnnotationTarget.FIELD) @Retention(AnnotationRetention.RUNTIME)
 annotation class ConfigEditorButton(val runnableId: Int = -1, val buttonText: String = "Open")
+
+@Target(AnnotationTarget.FIELD) @Retention(AnnotationRetention.RUNTIME)
+annotation class DescriptionColor(val rgb: Int)

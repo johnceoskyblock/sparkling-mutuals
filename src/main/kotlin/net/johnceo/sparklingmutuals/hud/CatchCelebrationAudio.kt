@@ -37,7 +37,11 @@ object CatchCelebrationAudio {
             volume=initial*(left/1000f).coerceIn(0f,1f)
         }
     }
-    fun start(style: SparklingAlertStyle) { stop();current=style;started=now();ends=started+style.displayMillis();indices=IntArray(13);cycle=-1 }
+    val playing get() = current != null
+    fun start(style: SparklingAlertStyle) {
+        stop()
+        if (ConfigManager.sparklingSoundVolume <= 0 || scores.songs.getOrNull(style.soundSong()) == null) return
+        current=style;started=now();ends=started+style.displayMillis();indices=IntArray(13);cycle=-1 }
     fun tick(client: Minecraft) {
         val style=current?:return
         if(client.player==null || now()>=ends) { stop();return }

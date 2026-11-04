@@ -5,6 +5,13 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class SparklingParticleLocationsTest {
+    @Test fun `moving particle evidence expires after the alert correlation window`() {
+        val points = SparklingParticleLocations()
+        points.observe(true, true, 0.0, 50.0, -60.0, 0)
+        points.observe(true, true, 10.0, 50.0, -60.0, 900)
+        assertEquals(10.0, points.recentUnknown(1_001).single().x)
+        assertTrue(points.recentUnknown(1_901).isEmpty())
+    }
     @Test fun `confirmed Foxtrot catch clears its anonymous trail but preserves other biomes and future sightings`() {
         val run = net.johnceo.sparklingmutuals.safari.SafariRun(0)
         val points = run.sparklingParticles

@@ -4,6 +4,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.util.Properties
 import net.johnceo.sparklingmutuals.hud.SafariHud
+import net.johnceo.sparklingmutuals.safari.SafariBiome
 import net.johnceo.sparklingmutuals.safari.SafariMode
 import net.johnceo.sparklingmutuals.safari.completion.SafariFullClear
 import net.johnceo.sparklingmutuals.safari.completion.SafariPersonalBests
@@ -46,13 +47,15 @@ object ConfigManager {
     var sparklingHotspotAnnouncer = false
     var timesaveOnly = true
     var warpAlertsEnabled = false
-    var warpDelaySeconds = 25
+    var warpDelaySeconds = 28
     var autoParty = false
+    var autoPartyOnlineOnly = false
     var sparkleWarpMode = 0
     var warpDuo = ""
     var settingsTheme = 4
     var sparklingCatchCount = true
     var specialCatchAlert = true
+    var alwaysCelebrateSparkling = false
     var specialCatchStyle = 0
     var leechMode = false
     var leechWhitelist = "JohnCEO _cj Rqach"
@@ -61,6 +64,7 @@ object ConfigManager {
     var doomspiralThrowLeadTicks = 4
     var hideyhoAutoAccept = true
     var autoSelectSafariTicket = true
+    var safariEntryAutoEnter = false
     var safariTicketPreference = 0
     var profitsTicketMode = 0
     var hideyhoInsideOutside = true
@@ -82,6 +86,9 @@ object ConfigManager {
     var clearWater = true
     var waterOpacity = 60
         set(value) { field = value.coerceIn(0, 100) }
+    var biomeWaterOpacity: Map<SafariBiome, Int> = emptyMap()
+    fun waterOpacityFor(biome: SafariBiome) = biomeWaterOpacity[biome] ?: waterOpacity
+
     var sparklingAlert = true
     var sparklingSound = "minecraft:block.amethyst_block.chime"
     var sparklingSoundVolume = 100
@@ -123,10 +130,10 @@ object ConfigManager {
     var capsuleHideDistance = 2f
     var showWhere = 1
     val personalBests = SafariPersonalBests()
-    private val flags = mapOf(::hudSnapping to true, ::doomspiralThrowTimer to true, ::autoParty to false, ::autoBiomeReports to true, ::uniqueHideCritterEsp to false, ::uniqueHideFloorDropEsp to false,
+    private val flags = mapOf(::hudSnapping to true, ::doomspiralThrowTimer to true, ::autoParty to false, ::autoPartyOnlineOnly to false, ::autoBiomeReports to true, ::uniqueHideCritterEsp to false, ::uniqueHideFloorDropEsp to false,
         ::fullClearHideCritterEsp to false, ::fullClearHideFloorDropEsp to false,
         ::sparklingHideCritterEsp to false, ::sparklingHideFloorDropEsp to false, ::announceStartingItems to false, ::hotspotAnnouncer to false, ::uniqueHotspotAnnouncer to false, ::fullClearHotspotAnnouncer to false, ::sparklingHotspotAnnouncer to false, ::highlightTeammates to true, ::showTeammateNames to true, ::partyCommandsEnabled to true, ::useCloudApi to true, ::fullClearMode to false, ::sparklingMode to false, ::sparklingProfitableShardEsp to true, ::profitableShardEsp to true, ::timesaveOnly to true, ::warpAlertsEnabled to false,
-        ::hideyhoAutoAccept to true, ::autoSelectSafariTicket to true, ::hideyhoInsideOutside to true, ::hideHauntedPaintings to true, ::shinyDetection to true,
+        ::hideyhoAutoAccept to true, ::autoSelectSafariTicket to true, ::safariEntryAutoEnter to false, ::hideyhoInsideOutside to true, ::hideHauntedPaintings to true, ::shinyDetection to true,
         ::progressHud to true, ::progressProfit to true, ::progressHotspot to true, ::countUniqueOnly to false, ::missingPanel to true, ::biomeObjectives to true,
         ::highlightBeeNests to true, ::removeDarkness to true, ::clearWater to true, ::sparklingAlert to true, ::sparklingCatchCount to true,
         ::sparklingPartyAnnouncer to true, ::catchCountPanel to false, ::autoClicker to true, ::candleHitbox to true, ::holdManagerOnKick to true, ::downtimeCommand to true, ::honeyHives to true, ::huntingBoxValue to true, ::shardSaleGuidance to false, ::skillOverflow to true, ::skillOverflowChat to true, ::skillOverflowNumbers to false, ::estimatedItemValue to true, ::estimatedChestValue to true, ::phantomleafSolver to true, ::runHistory to true, ::achievements to true, ::achievementSound to true, ::achievementsToParty to false, ::runCoinsInstaSell to false,
@@ -146,6 +153,7 @@ object ConfigManager {
         if (Files.exists(configPath)) Files.newInputStream(configPath).use(properties::load)
         settingsTheme = properties.getProperty("settingsTheme")?.toIntOrNull()?.coerceIn(0,33) ?: 4
         specialCatchAlert = properties.getProperty("specialCatchAlert")?.toBooleanStrictOrNull() ?: true
+        alwaysCelebrateSparkling = properties.getProperty("alwaysCelebrateSparkling")?.toBooleanStrictOrNull() ?: false
         specialCatchStyle = properties.getProperty("specialCatchStyle")?.toIntOrNull()?.coerceIn(0,40) ?: 0
         apiKey = properties.getProperty("apiKey", "")
         sparklingSound = validSparklingSound(properties.getProperty("sparklingSound"))
@@ -157,7 +165,7 @@ object ConfigManager {
         if (!properties.containsKey("hotspotAnnouncer")) hotspotAnnouncer = uniqueHotspotAnnouncer || fullClearHotspotAnnouncer || sparklingHotspotAnnouncer
         if (uniqueHideCritterEsp || uniqueHideFloorDropEsp) profitableShardEsp=false
         if (sparklingHideCritterEsp || sparklingHideFloorDropEsp) sparklingProfitableShardEsp=false
-        warpDelaySeconds = properties.getProperty("warpDelaySeconds", "25").toIntOrNull()?.coerceIn(1, 86400) ?: 25
+        warpDelaySeconds = properties.getProperty("warpDelaySeconds", "28").toIntOrNull()?.coerceIn(1, 86400) ?: 28
         sparkleWarpMode = properties.getProperty("sparkleWarpMode", "0").toIntOrNull()?.coerceIn(0,1) ?: 0
         warpDuo = properties.getProperty("warpDuo", "").trim().takeIf { Regex("[A-Za-z0-9_]{1,16}").matches(it) }.orEmpty()
         leechMode = properties.getProperty("leechMode", "false").toBoolean()
@@ -166,6 +174,9 @@ object ConfigManager {
         profitsTicketMode = properties.getProperty("profitsTicketMode")?.toIntOrNull()?.takeIf { it in 0..3 } ?: 0
         showWhere = properties.getProperty("showWhere")?.toIntOrNull()?.takeIf { it in 0..2 } ?: 1
         waterOpacity = properties.getProperty("waterOpacity")?.toIntOrNull() ?: 60
+        biomeWaterOpacity = SafariBiome.entries.associateWith { biome ->
+            properties.getProperty("waterOpacity.${biome.name.lowercase()}")?.toIntOrNull()?.coerceIn(0, 100) ?: waterOpacity
+        }
         capsuleHideDistance = validCapsuleDistance(properties.getProperty("capsuleHideDistance")?.toFloatOrNull())
         capsulePathWidth = validCapsulePathWidth(properties.getProperty("capsulePathWidth")?.toFloatOrNull())
         net.johnceo.sparklingmutuals.alerts.WarpList.load(properties)
@@ -197,6 +208,7 @@ object ConfigManager {
             setProperty("warpDuo", warpDuo)
             setProperty("settingsTheme", settingsTheme.toString())
             setProperty("specialCatchAlert", specialCatchAlert.toString())
+            setProperty("alwaysCelebrateSparkling", alwaysCelebrateSparkling.toString())
             setProperty("specialCatchStyle", specialCatchStyle.toString())
             setProperty("leechMode", leechMode.toString())
             setProperty("leechWhitelist", leechWhitelist)
@@ -206,6 +218,9 @@ object ConfigManager {
             setProperty("profitsTicketMode", profitsTicketMode.coerceIn(0, 3).toString())
             setProperty("showWhere", showWhere.coerceIn(0, 2).toString())
             setProperty("waterOpacity", waterOpacity.toString())
+            biomeWaterOpacity.forEach { (biome, value) ->
+                setProperty("waterOpacity.${biome.name.lowercase()}", value.toString())
+            }
             setProperty("capsuleHideDistance", validCapsuleDistance(capsuleHideDistance).toString())
             setProperty("capsulePathWidth", validCapsulePathWidth(capsulePathWidth).toString())
             net.johnceo.sparklingmutuals.alerts.WarpList.save(this)

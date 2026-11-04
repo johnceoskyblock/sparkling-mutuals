@@ -6,7 +6,7 @@ Detect changed documentation and review its relationship to source. The current 
 
 ## Prerequisites
 
-Read [contributing](../CONTRIBUTING.md), [the documentation index](README.md), [the common conventions](DOCUMENTATION_GUIDE.md), and the assigned issue with its comments. Inspect [the synchronization script](../scripts/DocumentationSync.ps1) and [its manifest](source-documentation.json) before recording anything. Use PowerShell 7 for its current APIs.
+Read [the documentation index](README.md), [the common conventions](DOCUMENTATION_GUIDE.md), and the assigned issue with its comments. Inspect [the synchronization script](../scripts/DocumentationSync.ps1) and [its manifest](source-documentation.json) before recording anything. Use PowerShell 7 for its current APIs.
 
 ## Procedure
 

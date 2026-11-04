@@ -10,30 +10,48 @@ import java.util.Properties
 class SafariBannerTest {
     @TempDir lateinit var dir: Path
     private fun notice(kind: BannerKind)=BannerNotice(kind,kind.text,-1,2000,9,1f,1f)
-    @Test fun `priority queue preserves remaining time without repeating interrupted sound`() {
-        val queue=BannerQueue()
-        queue.submit(notice(BannerKind.GEMS),0)
-        assertEquals(1,queue.sounds().size)
-        queue.submit(notice(BannerKind.GEMS),100)
-        assertTrue(queue.sounds().isEmpty())
-        queue.submit(notice(BannerKind.WARP),500)
-        assertEquals(BannerKind.WARP,queue.current!!.notice.kind)
-        assertEquals(1,queue.sounds().size)
-        queue.advance(2500)
-        assertEquals(BannerKind.GEMS,queue.current!!.notice.kind)
-        assertEquals(1500,queue.current!!.notice.duration)
-        assertEquals(0f,queue.sounds().single().volume)
-        queue.advance(4000);assertNull(queue.current)
+    @Test fun `visual ends on time while audio holds the next alert`() {
+        var playing = false
+        val queue = AlertSequence { playing }
+        val events = mutableListOf<String>()
+        queue.submit("run", 500, finish = { events.add("hide") }) { playing = true }
+        queue.submit("next", 500) { events.add("next") }
+        queue.tick(0)
+        queue.tick(500)
+        assertEquals(listOf("hide"), events)
+        assertTrue(queue.busy)
+        playing = false
+        queue.tick(750)
+        assertEquals(listOf("hide", "next"), events)
     }
-    @Test fun `sound only leaves the active banner alone and clearing removes queued events`() {
-        val queue=BannerQueue();queue.submit(notice(BannerKind.GEMS),0);queue.sounds()
-        queue.submit(notice(BannerKind.WUMPA_DONE).copy(soundOnly=true),50)
-        assertEquals(BannerKind.GEMS,queue.current!!.notice.kind)
-        assertTrue(queue.sounds().single().soundOnly)
-        queue.submit(notice(BannerKind.BIRDS),100)
-        queue.clear(BannerKind.BIRDS);queue.advance(2000)
-        assertNull(queue.current)
-        queue.submit(notice(BannerKind.GEMS),3000);queue.clear();assertTrue(queue.sounds().isEmpty())
+    @Test fun `banners and celebrations run FIFO and start sound once`() {
+        val queue = AlertSequence()
+        val events = mutableListOf<String>()
+        queue.submit("banner", 2_000, "gems", finish = { events.add("finish gems") }) { events.add("gems") }
+        queue.submit("banner", 2_000, "gems") { fail<Unit>("duplicate banner") }
+        queue.submit("catch", 3_000, finish = { events.add("finish catch") }) { events.add("catch") }
+        queue.submit("banner", 2_000, "warp") { events.add("warp") }
+        queue.tick(0)
+        queue.tick(1_999)
+        assertEquals(listOf("gems"), events)
+        queue.tick(2_000)
+        queue.tick(4_999)
+        assertEquals(listOf("gems", "finish gems", "catch"), events)
+        queue.tick(5_000)
+        assertEquals(listOf("gems", "finish gems", "catch", "finish catch", "warp"), events)
+    }
+    @Test fun `sound only waits its turn and stale requests can be skipped`() {
+        val queue = AlertSequence()
+        val events = mutableListOf<String>()
+        queue.submit("banner", 2_000, "visual") { events.add("visual") }
+        queue.submit("banner", 1_000, "sound") { events.add("sound") }
+        queue.submit("hotspot", 2_000, valid = { false }) { fail<Unit>("stale alert") }
+        queue.submit("detection", 2_000) { events.add("detection") }
+        queue.tick(0)
+        queue.tick(2_000)
+        assertEquals(listOf("visual", "sound"), events)
+        queue.tick(3_000)
+        assertEquals(listOf("visual", "sound", "detection"), events)
     }
     @Test fun `fade and duration bar follow elapsed time`() {
         val active=ActiveBanner(notice(BannerKind.GEMS),100)

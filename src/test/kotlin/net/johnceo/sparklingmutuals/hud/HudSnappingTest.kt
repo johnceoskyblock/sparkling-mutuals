@@ -5,6 +5,16 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class HudSnappingTest {
+    @Test fun `snaps to peer edges and centers using the closest alignment`() {
+        val peers = listOf(HudBounds(120, 60, 80, 70), HudBounds(240, 180, 70, 40))
+        assertEquals(HudSnapping.Position(120, 130, false, false, 120, 130),
+            HudSnapping.position(123.0, 132.0, 640, 360, 40, 30, peers))
+        assertEquals(HudSnapping.Position(140, 80, false, false, 160, 95),
+            HudSnapping.position(142.0, 78.0, 640, 360, 40, 30, peers))
+        assertEquals(HudSnapping.Position(270, 173, false, false, 310, null),
+            HudSnapping.position(273.0, 173.0, 640, 360, 40, 30, peers))
+    }
+
     @Test fun `drag aligns to centers and edges inside SafariUtils thresholds only`() {
         assertEquals(HudSnapping.Position(270,155,true,true),HudSnapping.position(275.0,150.0,640,360,100,50))
         assertEquals(HudSnapping.Position(276,149,false,false),HudSnapping.position(276.0,149.0,640,360,100,50))

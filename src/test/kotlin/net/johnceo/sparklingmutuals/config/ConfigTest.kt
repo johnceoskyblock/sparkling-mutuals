@@ -9,6 +9,32 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 
 class ConfigTest {
+    @Test fun `config folder migration preserves saves and archives older duplicates`() {
+        val settings = "sparkling-mutuals.properties"
+        val runs = "sparkling-mutuals-runs.json"
+        val backup = "$runs.pre-import.bak"
+        val cache = "sparkling-mutuals-market-prices.json"
+        Files.writeString(dir.resolve(settings), "waterOpacity=0.6")
+        Files.writeString(dir.resolve(runs), "history")
+        Files.writeString(dir.resolve(backup), "backup")
+        Files.writeString(dir.resolve(cache), "old cache")
+
+        val target = ConfigStorage.migrate(dir)
+        assertEquals("waterOpacity=0.6", Files.readString(target.resolve(settings)))
+        assertEquals("history", Files.readString(target.resolve(runs)))
+        val archive = target.resolve("backups/legacy")
+        assertEquals("backup", Files.readString(archive.resolve(backup)))
+        assertFalse(Files.exists(dir.resolve(cache)))
+        assertFalse(Files.exists(archive.resolve(cache)))
+        assertFalse(Files.exists(dir.resolve(runs)))
+
+        Files.writeString(dir.resolve(settings), "older copy")
+        ConfigStorage.migrate(dir)
+        assertEquals("waterOpacity=0.6", Files.readString(target.resolve(settings)))
+        assertEquals("older copy", Files.readString(archive.resolve(settings)))
+        assertEquals(target, ConfigStorage.migrate(dir))
+    }
+
     @Test fun `each new warp setting persists when changed on its own`() {
         ConfigManager.init(dir); ContestConfig.init(dir)
         SafariSettings().apply()
@@ -31,16 +57,21 @@ class ConfigTest {
         val defaults = FreshInstallDefaults.main()
         assertFalse(defaults.containsKey("apiKey"))
         assertFalse(defaults.stringPropertyNames().any { it.startsWith("pb.") || it.contains("uuid", true) })
-        assertTrue(defaults.stringPropertyNames().filter { it.startsWith("warpList.") }.all { defaults.getProperty(it).isEmpty() })
+        assertFalse(defaults.getProperty("warpList.players").isBlank())
         for(key in listOf("hotspotAnnouncer","warpAlertsEnabled","leechMode","announceStartingItems"))
             assertEquals("false",defaults.getProperty(key),key)
         assertFalse(defaults.getProperty("leechWhitelist").isBlank())
         ConfigManager.init(dir); ContestConfig.init(dir)
         assertEquals(0, ConfigManager.safariTicketPreference)
-        assertTrue(AppearanceConfig.panels.getValue("progress").borderEnabled)
-        assertEquals(.013541667f, SafariHud.PROGRESS.layout.x)
+        assertFalse(AppearanceConfig.panels.getValue("progress").borderEnabled)
+        assertEquals(.0140625f, SafariHud.PROGRESS.layout.x)
         val contest = ContestConfig.layoutFor(640, 360).bounds(640, 360, 150, 42)
-        assertEquals(102, contest.x); assertEquals(9, contest.y)
+        assertEquals(104, contest.x); assertEquals(8, contest.y)
+        assertFalse(ConfigManager.fullClearMode)
+        assertFalse(ConfigManager.sparklingMode)
+        assertFalse(ConfigManager.hotspotAnnouncer)
+        assertFalse(net.johnceo.sparklingmutuals.alerts.WarpList.names("Hideyho").isEmpty())
+        assertEquals(defaults.getProperty("leechWhitelist"), ConfigManager.leechWhitelist)
         for((w,h) in listOf(320 to 240,640 to 360,1280 to 720)) for(hud in SafariHud.entries) {
             val box=hud.layout.bounds(w,h,180,100)
             assertTrue(box.x>=0 && box.y>=0 && box.x+box.width<=w && box.y+box.height<=h,hud.name)
@@ -163,7 +194,7 @@ class ConfigTest {
         Files.writeString(dir.resolve("sparkling-mutuals.properties"), "apiKey=example-key\n")
         ConfigManager.init(dir)
         assertEquals("example-key", ConfigManager.apiKey)
-        assertEquals(25, ConfigManager.warpDelaySeconds)
+        assertEquals(28, ConfigManager.warpDelaySeconds)
         assertFalse(ConfigManager.warpAlertsEnabled)
         assertTrue(ConfigManager.partyCommandsEnabled)
     }
@@ -189,7 +220,7 @@ class ConfigTest {
         assertFalse(ConfigManager.partyCommandsEnabled)
         Files.writeString(dir.resolve("sparkling-mutuals.properties"), "warpDelaySeconds=invalid\n")
         ConfigManager.init(dir)
-        assertEquals(25, ConfigManager.warpDelaySeconds)
+        assertEquals(28, ConfigManager.warpDelaySeconds)
         assertEquals(0, ConfigManager.sparkleWarpMode)
         assertEquals("", ConfigManager.warpDuo)
         assertFalse(ConfigManager.leechMode)

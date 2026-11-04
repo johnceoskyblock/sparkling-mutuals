@@ -9,6 +9,15 @@ class SettingsCatalog(settings: SafariSettings) {
                    val path: String, val children: List<Row> = emptyList()) {
         val group get()=field.isAnnotationPresent(Accordion::class.java)
         val standalone get()=field.isAnnotationPresent(StandaloneDescription::class.java)
+        fun descriptionText(): net.minecraft.network.chat.Component {
+            val text = net.minecraft.network.chat.Component.literal(description.substringBeforeLast('\n', ""))
+            val lastLine = net.minecraft.network.chat.Component.literal(description.substringAfterLast('\n'))
+            field.getAnnotation(DescriptionColor::class.java)?.let { color ->
+                lastLine.withStyle { it.withColor(color.rgb) }
+            }
+            if (text.string.isNotEmpty()) text.append("\n")
+            return text.append(lastLine)
+        }
         fun read(): Any?=field.get(owner)
         fun write(value: Any) { field.set(owner,value) }
         fun matches(query: String): Boolean=(name+" "+description+" "+path).contains(query,true)

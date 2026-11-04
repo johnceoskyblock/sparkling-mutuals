@@ -2,7 +2,7 @@ package net.johnceo.sparklingmutuals.skyblock.market
 
 import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents
-import net.fabricmc.loader.api.FabricLoader
+import net.johnceo.sparklingmutuals.config.ConfigStorage
 import net.johnceo.sparklingmutuals.LocalChat
 import net.johnceo.sparklingmutuals.commands.ProfitableCritters
 import net.johnceo.sparklingmutuals.compat.smScreen
@@ -22,15 +22,15 @@ import java.util.concurrent.Executors
 /** One client-owned integration and one lazy daemon worker. No collectors while Minecraft is closed. */
 object ShardSaleGuidance {
     private val worker by lazy {Executors.newSingleThreadExecutor {task ->Thread(task,"SM shard ranges").apply {isDaemon=true}}}
-    private val watchFile by lazy {OrderWatchPersistence(FabricLoader.getInstance().configDir.resolve("sparkling-mutuals-sale-watches.json"))}
-    private val boxFile by lazy {SavedHuntingBoxStore(FabricLoader.getInstance().configDir.resolve("sparkling-mutuals-box-guidance.json"))}
-    private val totalFile by lazy {WholeBoxTotalStore(FabricLoader.getInstance().configDir.resolve("sparkling-mutuals-box-total.json"))}
+    private val watchFile by lazy {OrderWatchPersistence(ConfigStorage.directory.resolve("sparkling-mutuals-sale-watches.json"))}
+    private val boxFile by lazy {SavedHuntingBoxStore(ConfigStorage.directory.resolve("sparkling-mutuals-box-guidance.json"))}
+    private val totalFile by lazy {WholeBoxTotalStore(ConfigStorage.directory.resolve("sparkling-mutuals-box-total.json"))}
     private val total=WholeBoxTotal(BazaarPrices::ensureGuidanceFresh)
     private val watches=SellOfferWatch()
     private val profitSelection by lazy {ProfitGuidanceSelection(ProfitableCritters::cachedSpecies,BazaarPrices::ensureGuidanceFresh)}
     private val market by lazy {ShardMarketService(SaleMarketProducts.ids,System::currentTimeMillis,worker,
         FinanceHistoryTransport(),{job,raw,now ->FinanceHistoryParsing.runtime(raw,now,job.part)},
-        MarketHistoryStore(FabricLoader.getInstance().configDir.resolve("sparkling-mutuals-shard-history.json"),SaleMarketProducts.ids),
+        MarketHistoryStore(ConfigStorage.directory.resolve("sparkling-mutuals-shard-history.json"),SaleMarketProducts.ids),
         {BazaarPrices.guidanceQuotes},{BazaarPrices.ensureGuidanceFresh()},{null},experimental=true)}
     private var lastDemand: List<Any>?=null
     private var demandAt=0L

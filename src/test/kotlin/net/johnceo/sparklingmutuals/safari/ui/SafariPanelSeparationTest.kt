@@ -88,6 +88,7 @@ class SafariPanelSeparationTest {
         }
         val rows = SafariPanels.objectives(run, SafariBiome.FOREST, true, 3, party = party).rows
         assertEquals("?", rows.first { it.label == "Bird food left to use" }.value)
+        run.inventoryEvidence(emptyList(), 0)
         run.inventoryEvidence(listOf("Bag of Seeds" to 2), 10000)
         run.scanBirdSources(2)
         assertEquals("4", SafariPanels.objectives(run, SafariBiome.FOREST, true, 3, party = party).rows

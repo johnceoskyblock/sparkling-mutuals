@@ -10,7 +10,7 @@ Track Miria's contest window, warn while incomplete, and coordinate party readin
 | --- | --- | --- |
 | **Miria contest → Contest tracking** | On | Enables contest tracking and warnings. |
 | **HUDs → HUDs → Safari contest timer** | On | Shows the timer and score without affecting tracking or ticket logic. |
-| **Auto !dt contest** | On | Allows one automatic leader request at a newly observed contest start. |
+| **Party Contest Guard Entry** | On | Holds Torrhus entry while the leader waits for ticket confirmations. |
 | **5 / 3 / 1 minute warning** | All on | Selects warning thresholds while below Uncommon. |
 | Warning title/sound | On; `minecraft:block.bell.use`, volume 100 | Local incomplete-contest warning. |
 | **Party Interactions → Respect !dt requests** | On | Records readiness requests and holds Torrhus entry. |
@@ -23,7 +23,9 @@ Contest controls persist in `config/sparkling-mutuals-contest.properties`; downt
 
 Every ten client ticks, the tracker uses the computer's local clock: twenty-minute windows offset to minute 15, with a thirty-second end gap. Absolute window keys distinguish dates. This is the implemented schedule, not an independently synchronized server clock. Warning thresholds are only 5, 3 and 1 minutes. Repeated scans warn once per selected threshold; joining late coalesces elapsed thresholds into one warning.
 
-The automatic request sends literal `/pc !dt contest` only when a different window is observed in its first ten seconds, with a loaded player/world, SkyBlock detection, a known party of more than one member and a server-confirmed local Party Leader role. The first observation establishes a baseline. Disabled, solo, unknown-leader, member/moderator and non-SkyBlock transitions are consumed without sending; enabling/joining/becoming leader mid-window does not catch up.
+The leader announces `New Contest Started!` only when a different window is observed in its first ten seconds, with a loaded player/world, SkyBlock detection, a known party of more than one member and a server-confirmed local Party Leader role. The first observation establishes a baseline. Disabled, solo, unknown-leader, member/moderator and non-SkyBlock transitions are consumed without sending; enabling/joining/becoming leader mid-window does not catch up.
+
+The guard waits for the other players on the roster at announcement time. The 30-second timer starts in Torrhus while the local player is leader. After an unrecognized return from an active Safari, it waits until a teammate is on the same server. It sends one reminder naming up to three teammates still waiting. Shift-clicking a Safari entry interaction clears this guard for the current contest. Each verified party member clears their own hold with readiness or ticket chat. Departures remove that member from the wait. The legacy manual downtime flow below is separate.
 
 ### Requests and readiness
 
@@ -31,7 +33,7 @@ Any verified current party member may send `!dt [reason]`. Requests during an ac
 
 Each sender releases only their own outstanding request by a party message containing `ticket` (case-insensitive, for any reason), or an accepted affirmative readiness message. Accepted examples: `r`, `rdy`, `ready`, `I'm ready`, `ready to go`, `ready when you are`, punctuation/case variants, short r-spam and a single adjacent-key typo such as `r/`, `rrr`, `rt` or `er`. Questions, `nr`, `not ready`, `almost ready`, `I will be ready`, `party`, `red` and `brb` do not count. The same parser is used while identity verification is pending.
 
-Under Miria Contest, **Ticket mode** selects Basic (default: Uncommon or higher, announcing **Ticket earned!**) or First-Class (Legendary / 5,000 points, announcing **First-Class Ticket earned!**). The announcer is always enabled, including with the contest HUD disabled. Current Miria scoreboard evidence at least ten seconds into the window establishes the selected target, clears only the local contest hold, and announces with known party membership of more than one. Announcements are deduplicated per player/window/target: changing to First-Class can announce the higher reward, while changing back cannot repeat an already announced Basic reward. Contest warnings and hive completion visibility follow the selected target. Received ticket-containing party messages retain their existing readiness behavior. The selector persists in the contest config and is independent of the automatic Safari entry ticket preference.
+Under Miria Contest, **Ticket mode** selects Basic (default: Uncommon or higher, announcing **Ticket earned!**) or First-Class (Legendary / 5,000 points, announcing **First-Class Ticket earned!**). The announcer is always enabled, including with the contest HUD disabled. Current Miria scoreboard evidence at least ten seconds into the window establishes the selected target and clears the local contest hold. An already-earned tier on the first score read within ten seconds of arriving in Torrhus restores completion silently. Announcements are deduplicated per player/window/target: changing to First-Class can announce the higher reward, while changing back cannot repeat an already announced Basic reward. Contest warnings and hive completion visibility follow the selected target. Received ticket-containing party messages retain their existing readiness behavior. The selector persists in the contest config and is independent of the automatic Safari entry ticket preference.
 
 ### Combined reminder
 
@@ -45,7 +47,7 @@ With an outstanding contest request, queue `[Reminder] Everyone get your ticket!
 
 ## Chat volume
 
-Automatic `!dt contest`, the leader-only ticket reminder in Torrhus and the ticket-earned party announcement remain. Routine local bookkeeping notices have been removed. Contest warnings retain their existing title/sound controls; the automatic warning chat line is also removed. No new API requests are introduced.
+The automatic contest guard sends one start message and at most one follow-up. Manual contest requests retain their separate Torrhus reminder. Routine local bookkeeping notices have been removed. Contest warnings retain their existing title/sound controls; the automatic warning chat line is also removed. No new API requests are introduced.
 
 ## Lifecycle and persistence
 
@@ -67,6 +69,8 @@ Contest completion, tier, score and warnings are retained in memory per account/
 - Existing secondary coverage: [ContestTicketAndAutoWarpTest](../src/test/kotlin/net/johnceo/sparklingmutuals/contest/ContestTicketAndAutoWarpTest.kt), [SafariDowntimeTest](../src/test/kotlin/net/johnceo/sparklingmutuals/safari/automation/SafariDowntimeTest.kt), [DowntimeAnnouncementTest](../src/test/kotlin/net/johnceo/sparklingmutuals/safari/automation/DowntimeAnnouncementTest.kt). No tests or live session ran in this audit. Live checks should cross starts with each role/setting, earn tiers across rollovers, exercise multiple independent holders, transfers, staggered reports and same-window profile refreshes.
 
 ## Last updated
+
+2026-11-04 — Replaced the automatic downtime request with leader-owned ticket confirmations.
 
 2026-11-01 — Independent contest HUD visibility; short leader-only ticket reminders replace verbose party summaries.
 

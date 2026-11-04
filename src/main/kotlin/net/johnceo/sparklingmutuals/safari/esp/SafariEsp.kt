@@ -203,7 +203,7 @@ object SafariEsp {
         contactRevision++
         val strings = mutableListOf<EspDrop>()
         val entities = client.level!!.entitiesForRendering().filter { !it.isRemoved && client.level!!.getEntity(it.id) === it }.toList()
-        predictedDrops = dropPredictor.scan(entities.filterIsInstance<Display.ItemDisplay>().map {
+        predictedDrops = dropPredictor.scan(entities.filterIsInstance<Display.ItemDisplay>().filter(::activeFloorDisplay).map {
             FloorDisplay(it.id, it.x, it.y, it.z,
                 net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(it.itemStack.item).toString() + ":" + SafariRules.strip(it.itemStack.hoverName.string))
         })
@@ -300,6 +300,12 @@ object SafariEsp {
         entity !is Player && live(Target(entity,species,false),client)
     private fun live(target: Target, client: Minecraft, forEsp: Boolean = false): Boolean {
         val entity = target.entity
+        if (target.species == "Rockmite" && entity is Display.ItemDisplay) {
+            val pos = entity.blockPosition()
+            val block = Triple(pos.x, pos.y, pos.z)
+            val site = net.johnceo.sparklingmutuals.sync.PartySyncSites.moundAt(block) ?: block
+            if (SafariTracking.ledger.current?.moundSurvey?.confirmedBroken(site) == true) return false
+        }
         // The quest NPC can stay loaded or change UUID after its successful reward.
         if (target.species == "Hideyho" && (SafariTracking.ledger.current?.count("Hideyho") ?: 0) > 0) return false
         if (SafariTracking.ledger.current?.sparklingCaptures?.resolved(entity.uuid) == true) return false
@@ -335,7 +341,57 @@ object SafariEsp {
             else !ConfigManager.fullClearMode && ConfigManager.profitableShardEsp)
             else current && labeled
     }
+    internal fun developerSnapshot(client: Minecraft): Map<String, Any?> {
+        val entities = client.level?.entitiesForRendering()?.filterNot { it.isRemoved }?.toList().orEmpty()
+        val incenseIds = SafariFloorDrops.state.incenseDropIds(dropPredictor.knownDrops)
+        val playerBiome = SafariAssist.biome
+        val targetsById = targets.associateBy { it.entity.id }
+        return mapOf(
+            "loadedEntityCount" to entities.size,
+            "loadedEntityTypes" to entities.groupingBy { it.type.toShortString() }.eachCount(),
+            "entities" to entities.mapNotNull { entity ->
+                val descriptor = describe(entity)
+                val species = SafariEspRules.identify(descriptor)
+                val target = targetsById[entity.id]
+                val label = entity.customName?.string?.let(SafariEspRules::labelSpecies)
+                if (species == null && target == null && label == null &&
+                    entity !is Display && descriptor.type != "interaction") return@mapNotNull null
+                mapOf(
+                    "id" to entity.id, "uuid" to entity.uuid, "descriptor" to descriptor,
+                    "species" to (target?.species ?: species?.name), "labelSpecies" to label,
+                    "position" to listOf(entity.x, entity.y, entity.z),
+                    "name" to entity.customName?.string, "labelVisible" to entity.isCustomNameVisible,
+                    "box" to entity.boundingBox.let { listOf(it.minX, it.minY, it.minZ, it.maxX, it.maxY, it.maxZ) },
+                    "modelLabel" to modelLabels.label(entity.uuid), "retired" to captures.hidden(entity.uuid),
+                    "liveForTracking" to target?.let { live(it, client) },
+                    "liveForEsp" to target?.let { live(it, client, forEsp = true) },
+                    "espDecision" to target?.let {
+                        if (!drawable(it, client)) "Model no longer drawable"
+                        else critterEspDecision(it, client, playerBiome, System.currentTimeMillis())
+                    },
+                    "floorMarker" to activeFloorDisplay(entity),
+                    "displayItem" to (entity as? Display.ItemDisplay)?.itemStack?.let {
+                        net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(it.item).toString()
+                    }
+                )
+            },
+            "observations" to observations(),
+            "knownFloorDrops" to dropPredictor.knownDrops,
+            "floorEspCandidates" to predictedDrops.map {
+                mapOf("id" to it.id, "selected" to SafariFloorDrops.selected(it, incenseIds),
+                    "activeTriple" to (0..2).all { offset -> activeFloorDisplay(client.level?.getEntity(it.id + offset)) },
+                    "renderEligible" to floorEspEligible(it, client, playerBiome, incenseIds))
+            },
+            "retainedShyworms" to shyworms.missingMarkers(),
+            "retainedLitterbugs" to litterbugs.missingMarkers(System.currentTimeMillis()),
+            "sparklingDetections" to SafariAssist.diagnostics(),
+            "hideCritterEsp" to ConfigManager.hideCritterEsp(),
+            "hideFloorDropEsp" to ConfigManager.hideFloorDropEsp()
+        )
+    }
+
     fun debug(client: Minecraft) {
+        logger.info("Shared party sync: {}",net.johnceo.sparklingmutuals.sync.SafariPartySync.diagnostics())
         val player = client.player ?: return
         val entities = client.level?.entitiesForRendering()?.filter { !it.isRemoved && player.distanceToSqr(it) <= 6400 }?.toList() ?: return
         ShywormBodyDiagnostics.capture(client,entities).forEach { logger.info("SM_SHYWORM_BODY {}",it) }
@@ -355,8 +411,19 @@ object SafariEsp {
         SafariTracking.run?.let { logger.info("Forest report: {}", it.forestReportDebug(
             net.johnceo.sparklingmutuals.safari.completion.SafariFullClear.mode, SafariSparklingMode.state)) }
         val incenseIds = SafariFloorDrops.state.incenseDropIds(dropPredictor.knownDrops)
-        predictedDrops.forEach { logger.info("Floor prediction: id={} biome={} pos={},{},{} predicted={} actual={} selected={}",
-            it.id, it.biome, it.x, it.y, it.z, it.type?.label, it.actual, SafariFloorDrops.selected(it, incenseIds)) }
+        val run = SafariTracking.ledger.current
+        logger.info("Gem ESP gates: mode={} playerBiome={} hiddenByMode={} cavernEnabled={} partyNeedsGemzie={} captured={} placed={} chamberOpened={} completed={} inventory={}",
+            net.johnceo.sparklingmutuals.safari.completion.SafariFullClear.mode, SafariAssist.biome, ConfigManager.hideFloorDropEsp(),
+            SafariFloorDrops.enabled(SafariBiome.CAVERN), SafariSparklingMode.state.needs("Gemzie"), run?.count("Gemzie"),
+            run?.gems?.placed, run?.gems?.opened, run?.completed(net.johnceo.sparklingmutuals.safari.completion.SafariFullClear.mode,
+                listOf(SafariRoster.named("Gemzie")!!), SafariSparklingMode.state), SafariFloorDrops.state.gemDebug())
+        predictedDrops.forEach { drop -> logger.info("Floor prediction: id={} biome={} pos={},{},{} predicted={} actual={} selected={} completeLiveTriple={} onlyInBiome={}",
+            drop.id, drop.biome, drop.x, drop.y, drop.z, drop.type?.label, drop.actual, SafariFloorDrops.selected(drop, incenseIds),
+            (0..2).all { activeFloorDisplay(client.level?.getEntity(drop.id + it)) }, SafariEspConfig.dropOnlyInBiome(drop.type)) }
+        entities.filterIsInstance<Display.ItemDisplay>().filter { SafariEspRules.biomeAt(it.x,it.z)==SafariBiome.CAVERN }
+            .take(128).forEach { logger.info("Cavern floor candidate: id={} pos={} invisible={} item={} name={} activeMarker={}",
+                it.id,it.position(),it.isInvisible,net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(it.itemStack.item),
+                it.itemStack.hoverName.string,activeFloorDisplay(it)) }
         entities.mapNotNull { entity -> SafariEspRules.identify(describe(entity))?.let { entity to it.name } }.forEach { (entity, species) ->
             val tag = modelLabels.label(entity.uuid)
             val label = entities.firstOrNull { it.uuid == tag }
@@ -411,9 +478,38 @@ object SafariEsp {
         val box = visual?.let { AABB(it.min.x,it.min.y,it.min.z,it.max.x,it.max.y,it.max.z) } ?: e.boundingBox
         return EspBoxSize.padded(box.move(e.getPosition(delta).subtract(e.position())), target.species)
     }
+    private fun floorEspEligible(drop: net.johnceo.sparklingmutuals.safari.resources.PredictedFloorDrop,
+        client: Minecraft, biome: SafariBiome?, incenseIds: Set<Int>): Boolean =
+        !ConfigManager.hideFloorDropEsp() && drop.actual == null &&
+            (0..2).all { client.level?.getEntity(drop.id + it)?.isRemoved == false } &&
+            SafariEspRules.visible(true, SafariFloorDrops.selected(drop, incenseIds), SafariEspConfig.dropOnlyInBiome(drop.type), biome, drop.biome)
+
+    private fun critterEspDecision(target: Target, client: Minecraft, playerBiome: SafariBiome?, now: Long): String {
+        if (!SafariAssist.inSafari || client.options.smHideGui) return "HUD hidden or outside Safari"
+        if (ConfigManager.hideCritterEsp()) return "Critter ESP hidden by mode"
+        val entity = target.entity
+        val mob = SafariRoster.named(target.species) ?: return "Unknown species"
+        val group = SafariEspConfig.groups.getValue(mob.biome.name.lowercase())
+        val actualBiome = SafariEspRules.biomeAt(entity.x, entity.z)
+        val display = entity is Display.ItemDisplay
+        val run = SafariTracking.ledger.current
+        val party = SafariSparklingMode.state
+        val forceIcy = mob.biome == SafariBiome.ICY && party.needs("Wumpa") && (run?.count(mob.name) ?: 0) == 0
+        if (!forceIcy && !live(target, client, forEsp = true)) return "Inactive model or label"
+        val needed = forceIcy || if (ConfigManager.sparklingMode)
+            SafariEspRules.neededForSparkling(mob.name, mob.name == "Rockmite" && display,
+                party, ConfigManager.sparklingProfitableShardEsp, run, entity.uuid, now)
+        else SafariEspRules.neededForRun(mob.name, display, run, ConfigManager.fullClearMode, ConfigManager.profitableShardEsp, party)
+        if (!needed) return "Species not needed for current mode"
+        if (!SafariEspConfig.entityEnabled(mob.name, display)) return "Species ESP disabled"
+        if (actualBiome != mob.biome) return "Model outside species biome"
+        if (!SafariEspRules.visible(true, group.enabled, group.onlyInBiome, playerBiome, actualBiome)) return "Biome visibility restricted"
+        return "Eligible"
+    }
+
     private fun render(context: LevelRenderContext) {
         val client = Minecraft.getInstance()
-        if (!SafariAssist.inSafari || client.player == null || client.level == null || client.options.smHideGui) return
+        if (!SafariAssist.visualsActive(client) || client.player == null || client.options.smHideGui) return
         val camera = client.gameRenderer.smCamera.position()
         val playerBiome = SafariAssist.biome
         fun frame(box: AABB, color: Int) = WorldRenderCompat.box(context, lines, box, color)
@@ -425,18 +521,7 @@ object SafariEsp {
         for (target in targets) {
             val e = target.entity
             val mob = SafariRoster.named(target.species)!!
-            val group = SafariEspConfig.groups.getValue(mob.biome.name.lowercase())
-            val mobBiome = SafariEspRules.biomeAt(e.x, e.z)
-            val forceIcy = mob.biome == SafariBiome.ICY && SafariSparklingMode.state.needs("Wumpa") &&
-                (SafariTracking.ledger.current?.count(mob.name) ?: 0) == 0
-            if (!forceIcy && !live(target, client, forEsp = true)) continue
-            val needed = if (forceIcy) true else if (ConfigManager.sparklingMode)
-                SafariEspRules.neededForSparkling(mob.name, mob.name == "Rockmite" && e is Display.ItemDisplay,
-                    SafariSparklingMode.state, ConfigManager.sparklingProfitableShardEsp, SafariTracking.ledger.current, e.uuid, now)
-            else SafariEspRules.neededForRun(mob.name, e is Display.ItemDisplay, SafariTracking.ledger.current, ConfigManager.fullClearMode,
-                ConfigManager.profitableShardEsp, SafariSparklingMode.state)
-            if (needed &&
-                SafariEspConfig.entityEnabled(mob.name, e is Display.ItemDisplay) && mobBiome == mob.biome && SafariEspRules.visible(true, group.enabled, group.onlyInBiome, playerBiome, mobBiome)) {
+            if (critterEspDecision(target, client, playerBiome, now) == "Eligible") {
                 val box = bounds(target, delta)
                 val height = when (mob.name) {
                     "Litterbug" -> litterbugs.hiddenHeight(e.uuid, e.x, e.y, e.z)
@@ -455,10 +540,6 @@ object SafariEsp {
                 }
                 if (mob.name == "Shyworm" && !ConfigManager.sparklingMode) {
                     shyworms.timer(e.uuid, now)?.let { timers.add(Triple(it.text, it.color, projected)) }
-                    shyworms.path(e.uuid, now)?.let {
-                        val y = it.height + .02
-                        frame(AABB(it.minX, y, it.minZ, it.maxX, y, it.maxZ), 0xFFFF0000.toInt())
-                    }
                 }
             }
         }
@@ -497,10 +578,7 @@ object SafariEsp {
         }
         }
         val incenseIds = SafariFloorDrops.state.incenseDropIds(dropPredictor.knownDrops)
-        val selectedDrops = if (ConfigManager.hideFloorDropEsp()) emptyList() else predictedDrops.filter { drop ->
-            drop.actual == null && (0..2).all { client.level?.getEntity(drop.id + it)?.isRemoved == false } &&
-                SafariEspRules.visible(true, SafariFloorDrops.selected(drop, incenseIds), SafariEspConfig.dropOnlyInBiome(drop.type), playerBiome, drop.biome)
-        }
+        val selectedDrops = predictedDrops.filter { floorEspEligible(it, client, playerBiome, incenseIds) }
         val tiles = selectedDrops.map { it.marker() to SafariEspConfig.rgb(SafariEspConfig.dropColor(it.type!!)) }
         tiles.forEach { (tile, color) -> frame(AABB(tile.x.toDouble(), tile.y + 1.0, tile.z.toDouble(), tile.x + 1.0, tile.y + 1.0, tile.z + 1.0), color) }
         WorldRenderCompat.flush(context, lines)
