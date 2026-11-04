@@ -255,6 +255,15 @@ object SafariPartySync {
         if (alreadyShared) notifiedSparks.add(species)
         return species in notifiedSparks
     }
+    /** CJ consumes only captures, scoped again to the current world/server/verified roster. */
+    internal fun capturedSpecies(client: Minecraft): Set<String> {
+        if (!SafariIsland.onIsland || world !== client.level ||
+            transferRevision == SafariIsland.locationRevision) return emptySet()
+        val server = SafariIsland.serverName?.let(PartySyncProtocol::canonicalLobby) ?: return emptySet()
+        val current = state ?: return emptySet()
+        if (server != lobby || roster(client)?.toSet() != current.roster) return emptySet()
+        return current.capturedSpecies()
+    }
     private fun caught(species: String) {
         if (transferRevision == SafariIsland.locationRevision) return
         found(species)

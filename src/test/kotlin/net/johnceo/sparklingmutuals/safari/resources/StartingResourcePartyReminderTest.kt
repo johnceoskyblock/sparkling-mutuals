@@ -88,7 +88,8 @@ class StartingResourcePartyReminderTest {
         run.resources.inventory(listOf("Shining Coin" to 1), true)
         val party = state()
         run.partyFullClear("Party > OtherModUser: id")
-        assertNull(run.completion.announcement(run, SafariBiome.ICY, SafariMode.UNIQUE, party))
+        assertEquals("id", run.completion.announcement(run, SafariBiome.ICY, SafariMode.UNIQUE, party))
+        assertFalse(run.completion.chatReportAllowed(SafariBiome.ICY, SafariMode.UNIQUE))
         run.completion.armSharedClearReminder(run, SafariBiome.ICY, SafariMode.UNIQUE, party, 10000)
         val sent = mutableListOf<String>()
         assertTrue(run.partyResourceReminders.dispatch(11500, party, sent::add))
@@ -97,12 +98,12 @@ class StartingResourcePartyReminderTest {
         assertFalse(run.partyResourceReminders.dispatch(22000, party, sent::add))
     }
 
-    @Test fun `destination report waits for still held needed starting items`() {
+    @Test fun `destination report waits for still held needed starting items`() = net.johnceo.sparklingmutuals.config.withStartingItems {
         val run = SafariRun(0)
         val party = state()
         assertTrue(run.canReportBiome(SafariBiome.HAUNTED, party))
         run.resources.inventory(listOf("Shining Coin" to 1), true)
-        assertTrue(run.hasUnusedStartingForBiome(SafariBiome.HAUNTED, party))
+        assertTrue(run.hasUnusedStartingForBiome(SafariBiome.HAUNTED))
         assertFalse(run.canReportBiome(SafariBiome.HAUNTED, party))
         run.resources.inventory(emptyList(), false)
         assertTrue(run.canReportBiome(SafariBiome.HAUNTED, party))

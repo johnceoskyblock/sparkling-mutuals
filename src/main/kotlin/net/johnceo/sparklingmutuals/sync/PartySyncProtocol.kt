@@ -80,6 +80,10 @@ internal class PartySyncState(val self: String, roster: Set<String>) {
     var inventoriesCurrent = false
     var nestMask = 0; private set
     val sparkling = IntArray(4)
+    /** Negative evidence only. Discovery bits carry no observation time. */
+    internal fun capturedSpecies(): Set<String> = PartySyncProtocol.species.filterIndexed { index, _ ->
+        sparkling[if (index < 30) 2 else 3] and (1 shl (index % 30)) != 0
+    }.toSet()
     val facts = IntArray(38)
     var usage: IntArray? = null; private set
     private var feederReporter: String? = null

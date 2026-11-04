@@ -29,12 +29,12 @@ class SparkleWarpPolicyTest {
         assertNull(SparkleWarpPolicy.cleanup(SparkleWarpMode.DUO,"Leader","Missing",members))
         assertNull(SparkleWarpPolicy.cleanup(SparkleWarpMode.DUO,"Leader","Leader",members))
     }
-    @Test fun `only solo or leaders with room start a window and fallback begins exactly at nineteen seconds`() {
+    @Test fun `only solo or leaders with room start a window and fallback begins exactly at twenty four seconds`() {
         for (n in 0..3) assertTrue(SparkleWarpPolicy.canStart(true,n))
         assertFalse(SparkleWarpPolicy.canStart(true,4))
         assertFalse(SparkleWarpPolicy.canStart(false,2))
-        assertFalse(SparkleWarpPolicy.returningPhase(1000,19999))
-        assertTrue(SparkleWarpPolicy.returningPhase(1000,20000))
+        assertFalse(SparkleWarpPolicy.returningPhase(1000,24999))
+        assertTrue(SparkleWarpPolicy.returningPhase(1000,25000))
         val invites=WarpInvitations()
         invites.start(25000)
         invites.add("Flitter",listOf("Priority","Other"))
@@ -62,8 +62,9 @@ class SparkleWarpPolicyTest {
         assertEquals("p leave",pending.next(1,true))
         assertNull(pending.next(2,true))
         pending.leftParty()
-        assertEquals("p accept _cj",pending.next(3,null))
-        assertNull(pending.next(4,false))
+        assertNull(pending.next(50,null))
+        assertEquals("p accept _cj",pending.next(51,null))
+        assertNull(pending.next(52,false))
         pending.offer("Other",5)
         assertEquals("p accept Other",pending.next(5,false))
         pending.offer("Expired",0)

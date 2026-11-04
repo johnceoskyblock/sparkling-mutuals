@@ -21,8 +21,8 @@ class ForestMidRunAndEspScaleTest {
     @TempDir lateinit var dir: Path
     @Test fun `ESP scale defaults larger applies through GUI and persists across restart`() {
         ConfigManager.init(dir); ContestConfig.init(dir)
-        assertEquals(2.75f, SafariEspConfig.textScale)
-        assertEquals(.025f * 2.75f, SafariEspConfig.labelWorldScale)
+        assertEquals(2f, SafariEspConfig.textScale)
+        assertEquals(.025f * 2f, SafariEspConfig.labelWorldScale)
         val settings = SafariSettings()
         settings.esp.textScale = 3.25f
         settings.apply()

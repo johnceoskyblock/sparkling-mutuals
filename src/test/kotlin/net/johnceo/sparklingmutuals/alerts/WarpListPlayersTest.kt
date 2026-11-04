@@ -20,13 +20,16 @@ class WarpListPlayersTest {
         WarpList.removePlayer("bOB")
         assertFalse(WarpList.critters.any { WarpList.selected("Bob",it) })
     }
-    @Test fun `CSV replacement populates player cards with exactly imported flags`() {
+    @Test fun `CSV append retains existing cards and adds imported flags and row priorities`() {
         WarpList.load(Properties());WarpList.addPlayer("OldPlayer");WarpList.select("OldPlayer","Foxtrot",true)
         val imported=WarpListCsv.read(StringReader("Foxtrot,Polaris\nAlice,Bob\nBob,\n"))
-        WarpList.replace(imported)
-        assertEquals(listOf("Bob","Alice"),WarpList.players(),"Cards retain canonical critter ordering while per-critter CSV order remains unchanged")
-        assertEquals(listOf("Alice","Bob"),WarpList.names("Foxtrot"))
+        WarpList.append(imported)
+        WarpList.append(imported)
+        assertEquals(listOf("OldPlayer","Bob","Alice"),WarpList.players(),"Existing cards survive the new append import")
+        assertEquals(listOf("OldPlayer","Alice","Bob"),WarpList.names("Foxtrot"))
         assertEquals(listOf("Bob"),WarpList.names("Polaris"))
-        assertFalse(WarpList.players().contains("OldPlayer"))
+        assertTrue(WarpList.players().contains("OldPlayer"))
+        assertEquals(1,WarpList.priority("Alice","Foxtrot"))
+        assertEquals(2,WarpList.priority("Bob","Foxtrot"))
     }
 }

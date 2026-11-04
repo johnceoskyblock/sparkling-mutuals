@@ -10,9 +10,9 @@ class WarpListCsvTest {
             (1..10).joinToString("\r\n") { "Player$it,Other$it,Shrimp$it" } +
             "\r\nShouldNotImport,Extra,Nope\r\n\"malformed footer"
         val imported = WarpListCsv.read(StringReader(csv))
-        assertEquals((1..10).map { "Player$it" }, imported["Foxtrot"])
-        assertEquals((1..10).map { "Shrimp$it" }, imported["Mantis Shrimp"])
-        assertEquals(emptyList<String>(), imported["Tepid"])
+        assertEquals((1..10).map { "Player$it" }, imported["Foxtrot"]?.map { it.name })
+        assertEquals((1..10).map { "Shrimp$it" }, imported["Mantis Shrimp"]?.map { it.name })
+        assertEquals(emptyList<WarpListCsv.Entry>(), imported["Tepid"])
         assertEquals(WarpList.critters.toSet(), imported.keys)
     }
     @Test fun `quoted BOM headers names blanks and duplicates work`() {
@@ -21,17 +21,19 @@ class WarpListCsvTest {
             "first_name,fox,ignored\n" +
             "Second,,\n/p Someone,Not-an-IGN,\n"
         val imported = WarpListCsv.read(StringReader(csv))
-        assertEquals(listOf("First_Name", "Second"), imported["Mantis Shrimp"])
-        assertEquals(listOf("Fox"), imported["Foxtrot"])
+        assertEquals(listOf("First_Name", "Second"), imported["Mantis Shrimp"]?.map { it.name })
+        assertEquals(listOf(1, 3), imported["Mantis Shrimp"]?.map { it.priority })
+        assertEquals(listOf("Fox"), imported["Foxtrot"]?.map { it.name })
     }
-    @Test fun `replacement clears previous names including unsupported columns`() {
+    @Test fun `append preserves previous names and imports row priority`() {
         WarpList.load(java.util.Properties())
         WarpList.set("Foxtrot", "Old")
         WarpList.set("Tepid", "AlsoOld")
         val imported = WarpListCsv.read(StringReader("Foxtrot\nNew\n"))
-        imported.forEach { (critter, names) -> WarpList.set(critter, names.joinToString(" ")) }
-        assertEquals(listOf("New"), WarpList.names("Foxtrot"))
-        assertTrue(WarpList.names("Tepid").isEmpty())
+        WarpList.append(imported)
+        assertEquals(listOf("Old", "New"), WarpList.names("Foxtrot"))
+        assertEquals(listOf("AlsoOld"), WarpList.names("Tepid"))
+        assertEquals(1, WarpList.priority("New", "Foxtrot"))
         WarpList.load(java.util.Properties())
     }
     @Test fun `invalid files fail before replacing anything`() {

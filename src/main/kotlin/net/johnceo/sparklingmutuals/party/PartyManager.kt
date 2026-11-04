@@ -16,6 +16,7 @@ object PartyManager {
     var revision = 0L
         private set
     val hasInfo get() = roster.known
+    val continuity get() = roster.continuity
     private val callbacks = mutableListOf<() -> Unit>()
     private var requestedAt = 0L
     private var refreshAgain = false

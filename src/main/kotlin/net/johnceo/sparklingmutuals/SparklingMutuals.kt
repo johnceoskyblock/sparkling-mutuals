@@ -97,11 +97,13 @@ object SparklingMutuals : ModInitializer {
         TeammateEsp.register()
         SafariIsland.register()
         SafariManagerGuard.register()
+        net.johnceo.sparklingmutuals.safari.automation.entry.CjsSafariEntry.register()
         CapsulePreview.register()
     }
 
     private fun registerCallbacks() {
         ClientTickEvents.START_CLIENT_TICK.register(AutoClicker::tick)
+        ClientTickEvents.START_CLIENT_TICK.register(net.johnceo.sparklingmutuals.safari.automation.entry.CjsSafariEntry::startTick)
         ClientTickEvents.END_CLIENT_TICK.register(::onClientTick)
         ClientPlayConnectionEvents.DISCONNECT.register { _, _ -> resetSession() }
         HudElementRegistry.attachElementBefore(
@@ -157,12 +159,14 @@ object SparklingMutuals : ModInitializer {
         HideyhoSpotter.onClientTick(client)
         SafariDowntime.onClientTick(client)
         SafariManagerGuard.onClientTick(client)
+        net.johnceo.sparklingmutuals.safari.automation.entry.CjsSafariEntry.tick(client)
         net.johnceo.sparklingmutuals.safari.automation.SafariTicketSelect.tick(client)
         CapsulePreview.tick(client)
         net.johnceo.sparklingmutuals.hud.SafariAlertSequence.tick()
     }
 
     private fun resetSession() {
+        net.johnceo.sparklingmutuals.safari.automation.entry.CjsSafariEntry.reset()
         HoneyHives.disconnect()
         net.johnceo.sparklingmutuals.hud.SafariAlertSequence.queue.reset()
         net.johnceo.sparklingmutuals.skyblock.market.ShardSaleGuidance.reset()

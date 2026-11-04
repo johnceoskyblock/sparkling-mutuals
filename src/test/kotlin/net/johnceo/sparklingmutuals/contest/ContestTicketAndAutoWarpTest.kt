@@ -55,11 +55,10 @@ class ContestTicketAndAutoWarpTest {
         assertFalse(timer.consume(second, true))
         assertTrue(timer.consume(timer.arm(), true))
     }
-    @Test fun `only a real hotspot line schedules an automatic warp`() {
-        val hotspot = "HOTSPOT! Your Hunting Hotspot is the Haunted Biome!"
-        assertTrue(AlertManager.isTrigger("§a$hotspot"))
-        for (prefix in listOf("Party > Player: ", "Guild > Player: ", "From Player: ", "[SM] "))
-            assertFalse(AlertManager.isTrigger(prefix + hotspot))
-        assertFalse(AlertManager.isTrigger("HOTSPOT! Your Hunting Hotspot is mentioned here"))
+    @Test fun `warp deadline is anchored to run start rather than a later hotspot`() {
+        val run=net.johnceo.sparklingmutuals.safari.SafariRun(1000)
+        assertEquals(29000L,net.johnceo.sparklingmutuals.alerts.SparkleWarpPolicy.warpDeadline(run.startedAt,28))
+        assertFalse(net.johnceo.sparklingmutuals.alerts.SparkleWarpPolicy.returningPhase(run.startedAt,24999))
+        assertTrue(net.johnceo.sparklingmutuals.alerts.SparkleWarpPolicy.returningPhase(run.startedAt,25000))
     }
 }

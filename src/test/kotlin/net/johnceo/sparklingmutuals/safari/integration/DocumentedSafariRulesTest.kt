@@ -110,15 +110,21 @@ class DocumentedSafariRulesTest {
         assertEquals(1, run.count("Gemzie"))
     }
 
-    @Test fun `party reports never supply Unique catches and reentry revalidates other modes`() {
+    @Test fun `manual reports credit aggregate completion without fabricating catches or local proof`() {
         for ((biome, word) in listOf(SafariBiome.FOREST to "fd", SafariBiome.CAVERN to "cd", SafariBiome.ICY to "id", SafariBiome.HAUNTED to "hd")) {
             val run = SafariRun(0)
             SafariMessages.forRun("Party > Friend: $word", run, true)
-            assertEquals(biome.critters.count { it.name in setOf("Rockmite", "Snoozle", "Bluebird", "Parakeet", "Macaw") }, run.completed(SafariMode.UNIQUE, biome.critters, party()))
-            assertEquals(biome.critters.count { SafariFullClear.minimum(it.name) == 0 && it.name !in setOf("Bluebird", "Parakeet", "Macaw") }, run.completed(SafariMode.FULL_CLEAR, biome.critters, party()))
+            assertEquals(biome.critters.count { it.name in setOf("Rockmite", "Snoozle", "Bluebird", "Parakeet", "Macaw") }, run.uniqueBarProgress(biome.critters))
+            assertEquals(biome.critters.size, run.completed(SafariMode.UNIQUE, biome.critters, party()))
+            assertTrue(biome.critters.all { run.count(it.name) == 0 && run.personalCount(it.name) == 0 })
+            assertEquals(0, run.completed(SafariMode.UNIQUE, biome.critters, party(), localOnly = true))
+            assertEquals(biome.critters.size, run.completed(SafariMode.FULL_CLEAR, biome.critters, party()))
             run.visitBiome(biome)
-            assertEquals(0, run.completed(SafariMode.SPARKLING, biome.critters, party()),
-                "current biome requires local checking")
+            assertTrue(run.reportedComplete(SafariMode.SPARKLING, biome, party()), "A visit alone is not contradictory evidence")
+            val checking = party(*biome.critters.map { it.name }.toTypedArray())
+            run.updateCaptureEvidence(biome, biome.critters.map { it.name }.toSet(), false)
+            assertFalse(run.reportedComplete(SafariMode.SPARKLING, biome, checking))
+            assertFalse(run.biomeComplete(SafariMode.SPARKLING, biome, checking))
         }
     }
 
@@ -247,7 +253,7 @@ class DocumentedSafariRulesTest {
         assertEquals(10, birds.feedingTarget)
     }
 
-    @Test fun `own extra coin requires an additional checked spawn and a Full Clear catch`() {
+    @Test fun `own extra coin requires an additional checked spawn and a Full Clear catch`() = net.johnceo.sparklingmutuals.config.withStartingItems {
         val run = SafariRun(0)
         (1..3).forEach { run.gimmiegoldCheck.floor(it, false) }
         run.inventoryEvidence(emptyList(), 10000)

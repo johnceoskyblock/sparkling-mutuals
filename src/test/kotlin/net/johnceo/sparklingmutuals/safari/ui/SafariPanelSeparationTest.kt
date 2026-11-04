@@ -79,6 +79,7 @@ class SafariPanelSeparationTest {
     @Test fun `Unique captured birds and source critters leave checklist before source progress completes`() {
         ConfigManager.init(dir)
         val run = SafariRun(0)
+        run.inventoryEvidence(emptyList(), 0)
         val party = net.johnceo.sparklingmutuals.safari.PartySparklingState()
         for (name in listOf("Bluebird", "Parakeet", "Macaw", "Rockmite", "Snoozle")) {
             val critter = SafariRoster.named(name)!!

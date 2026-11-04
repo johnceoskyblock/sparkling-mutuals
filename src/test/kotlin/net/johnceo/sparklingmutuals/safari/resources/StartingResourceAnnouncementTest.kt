@@ -165,7 +165,7 @@ class StartingResourceAnnouncementTest {
         assertEquals(listOf("[SM] Starting items: 1x Shining Coin"), sent)
     }
 
-    @Test fun `waiting on boat before admission does not lose the second ticket reward`() {
+    @Test fun `waiting on boat before admission does not lose the second ticket reward`() = net.johnceo.sparklingmutuals.config.withStartingItems {
         val run = SafariRun(0)
         run.inventoryEvidence(emptyList(), 0)
         run.startingGrantWindow(60000)
@@ -214,7 +214,7 @@ class StartingResourceAnnouncementTest {
         assertFalse(run.startingAnnouncement.dispatch(2003, party("Macaw")) {})
     }
 
-    @Test fun `early mixed reports update both source totals without delayed-notice obligations or echo doubling`() {
+    @Test fun `early mixed reports update both source totals without delayed-notice obligations or echo doubling`() = net.johnceo.sparklingmutuals.config.withStartingItems {
         val run = SafariRun(0)
         run.localPlayer("Me")
         run.inventoryEvidence(listOf("Bag of Seeds" to 2, "Shining Coin" to 1), 0)
@@ -269,7 +269,7 @@ class StartingResourceAnnouncementTest {
         assertTrue(run.sparklingComplete("Gimmiegold", party("Gimmiegold")))
     }
 
-    @Test fun `late Haunted entrant can send hd after qualified captures plus renders without an earlier report`() {
+    @Test fun `late Haunted entrant can send hd after qualified captures plus renders without an earlier report`() = net.johnceo.sparklingmutuals.config.withStartingItems {
         val run = SafariRun(0)
         run.localPlayer("Me")
         run.visitBiome(SafariBiome.CAVERN)
@@ -287,8 +287,9 @@ class StartingResourceAnnouncementTest {
         assertEquals("hd", run.completion.announcement(run, SafariBiome.HAUNTED, SafariMode.SPARKLING, state))
         run.completion.sent(SafariBiome.HAUNTED)
         assertNull(run.completion.announcement(run, SafariBiome.HAUNTED, SafariMode.SPARKLING, state))
-        run.partyFullClear("Party > Friend: hd")
-        assertFalse(run.canReportBiome(SafariBiome.HAUNTED), "a queued hd must be cancelled too")
+        net.johnceo.sparklingmutuals.safari.SafariMessages.forRun("Party > Friend: hd", run, true)
+        assertTrue(run.manualReportReceived(SafariBiome.HAUNTED))
+        assertTrue(run.canReportBiome(SafariBiome.HAUNTED), "Logical eligibility is distinct from peer-chat suppression")
         assertNull(run.completion.announcement(run, SafariBiome.HAUNTED, SafariMode.SPARKLING, state))
     }
 }

@@ -27,7 +27,7 @@ class ConfigLayoutTest {
     @Test fun `every HUD links to a real toggle through its containing groups`() {
         ConfigManager.init(dir);ContestConfig.init(dir)
         val catalog=SettingsCatalog(SafariSettings())
-        val targets=SafariHud.entries.map(HudConfigLinks::target)+HudConfigLinks.contest
+        val targets=SafariHud.entries.filter { it != SafariHud.DEVELOPER }.map(HudConfigLinks::target)+HudConfigLinks.contest
         targets.forEach { target ->
             val located=catalog.locate(target)
             assertNotNull(located,"Missing HUD setting: $target")

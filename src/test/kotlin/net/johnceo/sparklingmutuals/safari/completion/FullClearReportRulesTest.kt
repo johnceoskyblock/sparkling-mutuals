@@ -117,6 +117,7 @@ class FullClearReportRulesTest {
     }
     @Test fun `known held food and extra coins cannot be waived by an old completion report`() {
         val birds = SafariRun(0)
+        birds.inventoryEvidence(emptyList(), 0)
         caught(birds, "Macaw", 1)
         caught(birds, "Bluebird", 8)
         birds.partyFullClear("Party > Friend: fd")

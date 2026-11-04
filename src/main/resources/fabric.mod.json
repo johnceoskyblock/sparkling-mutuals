@@ -3,7 +3,7 @@
 	"id": "sparkling-mutuals",
 	"version": "${version}",
 	"custom": { "sparkling-mutuals:developer": "${developer}" },
-	"name": "Sparkling Mutuals",
+	"name": "CJ’s Revenge",
 	"description": "Hypixel SkyBlock Safari helpers with critter highlights, party sparkling lookups, run tracking, personal bests, history, achievements, profit estimates and Miria contest alerts.",
 	"authors": [
 		"JohnCEO",

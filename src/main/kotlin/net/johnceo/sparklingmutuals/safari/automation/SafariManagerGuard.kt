@@ -150,6 +150,26 @@ object SafariManagerGuard {
     fun debug() = listOf("Entry guard: stage=${stage()} setting=${ConfigManager.holdManagerOnKick} " +
         "downtime=${ConfigManager.downtimeCommand} holders=${SafariDowntime.holders()} rosterKnown=${PartyManager.hasInfo} " +
         "ready=${presence.ready} missing=${presence.missing} kick=${kick.active} identityPending=${SafariPartyInput.pending}", lastDecision)
+    /** Readiness only: never simulates an NPC click or grants the Shift bypass. */
+    fun allowsCjApproach(client: Minecraft): Boolean {
+        onClientTick(client)
+        val currentStage = stage()
+        val guard = ConfigManager.holdManagerOnKick
+        val contestHold = currentStage in setOf(EntryStage.TORRHUS, EntryStage.SAFARI) && !activeRun(client) &&
+            net.johnceo.sparklingmutuals.alerts.SparkleWarping.contestPaused(client)
+        val ticketHold = currentStage == EntryStage.TORRHUS &&
+            net.johnceo.sparklingmutuals.contest.ContestTracker.contestWaiting().isNotEmpty()
+        val entryHold = (guard || ConfigManager.downtimeCommand) && EntryGuardDecision.block(currentStage,
+            SafariDowntime.entryHold, guard && kick.active, !guard || presence.ready,
+            when (currentStage) {
+                EntryStage.TORRHUS -> ConfigManager.downtimeCommand && SafariPartyInput.pendingDowntime
+                EntryStage.SAFARI -> guard && SafariPartyInput.pendingKick
+                else -> SafariPartyInput.pending
+            })
+        return net.johnceo.sparklingmutuals.safari.automation.entry.CjsApproachReadiness.allows(
+            inSafariInstance(), PartyManager.hasInfo, presence.ready, SafariPartyInput.pending,
+            guard && kick.active, contestHold || ticketHold || entryHold)
+    }
     private fun isManager(client: Minecraft, entity: Entity): Boolean {
         fun named(e: Entity) = SafariRules.strip(e.customName?.string ?: e.name.string).equals("Safari Manager", true)
         val world = client.level ?: return false
