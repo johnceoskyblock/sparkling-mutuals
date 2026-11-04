@@ -144,7 +144,8 @@ object CjsSafariEntry {
     fun startTick(client: Minecraft) {
         if (!supported) return
         val at=now();val frame=frame(client,at)
-        approach.tick(client,frame,session.fresh(frame,at,SafariAssist.entryVisibleIdentities()),ConfigManager.safariEntryApproach,
+        approach.tick(client,frame,net.johnceo.sparklingmutuals.sync.SafariPartySync.entryRoom(client)?.let { room ->
+            frame.context?.let { CjsRoomSignal(it,room.generation,room.active) } },ConfigManager.safariEntryApproach,
             warp.allows(frame.context,profiles(client),at),warp.generation,at) { text ->
             logger.info("CJ_ENTRY_APPROACH {}",text)
             client.player?.sendSystemMessage(LocalChat.component("[CJ approach] $text."))

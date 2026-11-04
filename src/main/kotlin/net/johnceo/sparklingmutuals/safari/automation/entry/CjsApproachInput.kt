@@ -20,7 +20,15 @@ class CjsApproachInput {
     private var policy = CjsApproach()
     private var input: CjsWalkingKeys? = null
     private var lastStatus = ""
-    private fun physical(client: Minecraft, binding: KeyMapping): Boolean {
+    var outcome=CjsApproachOutcome.WAITING; private set
+    val ownsKeys get()=input?.owns==true
+    fun userIdle(client: Minecraft): Boolean {
+        val o=client.options
+        return listOf(o.keyUp,o.keyDown,o.keyLeft,o.keyRight,o.keyJump,o.keyShift,o.keySprint,o.keyAttack,o.keyUse).none {
+            physical(client,it) || it.isDown && (!ownsKeys || it!==o.keyUp && it!==o.keyShift)
+        }
+    }
+    internal fun physical(client: Minecraft, binding: KeyMapping): Boolean {
         val key = InputConstants.getKey(binding.saveString())
         if (key.value < 0) return false
         return when (key.type) {
@@ -29,13 +37,13 @@ class CjsApproachInput {
             else -> true // Cannot verify a scancode binding; do not claim idle input.
         }
     }
-    private fun release(client: Minecraft) {
+    fun release(client: Minecraft) {
         input?.drive(false,false)
     }
     fun reset(client: Minecraft) {
-        release(client); world=null;generation=-1; policy=CjsApproach(); lastStatus=""
+        release(client); world=null;generation=-1; policy=CjsApproach(); lastStatus="";outcome=CjsApproachOutcome.WAITING
     }
-    private fun manager(client: Minecraft, frame: EntryDryRunFrame): Entity? {
+    internal fun manager(client: Minecraft, frame: EntryDryRunFrame): Entity? {
         val level=client.level ?: return null
         val self=client.player ?: return null
         val entities=level.entitiesForRendering().filter { !it.isRemoved && level.getEntity(it.id)===it }.toList()
@@ -75,11 +83,11 @@ class CjsApproachInput {
         }
         return true
     }
-    fun tick(client: Minecraft, frame: EntryDryRunFrame, sighting: EntrySighting?, enabled: Boolean,
+    fun tick(client: Minecraft, frame: EntryDryRunFrame, signal: CjsRoomSignal?, enabled: Boolean,
         warpAllowed: Boolean, warpGeneration: Long, now: Long, report: (String)->Unit) {
         if(world!==client.level) { release(client);policy.cancel();world=client.level }
         if(generation!=warpGeneration && warpAllowed) {
-            release(client);policy=CjsApproach();generation=warpGeneration;lastStatus=""
+            release(client);policy=CjsApproach();generation=warpGeneration;lastStatus="";outcome=CjsApproachOutcome.WAITING
         }
         val player=client.player
         try {
@@ -104,17 +112,18 @@ class CjsApproachInput {
                 speed.isFinite() && speed in .001.. .4 && sneak.isFinite() && sneak in .05.. .31 &&
                 !foreignLogical && keys.none { physical(client,it) } && target!=null && pathClear(client,target,friction) &&
                 SafariManagerGuard.allowsCjApproach(client)
-            val f=CjsApproachFrame(frame.context,enabled && frame.enabled,sighting,target?.uuid,
+            val f=CjsApproachFrame(frame.context,enabled && frame.enabled,signal,target?.uuid,
                 player?.x ?: Double.NaN,player?.y ?: Double.NaN,player?.z ?: Double.NaN,
                 target?.x ?: Double.NaN,target?.z ?: Double.NaN,player?.yRot ?: 0f,player?.xRot ?: 0f,safe,
                 player?.eyeY ?: Double.NaN,target?.let { it.y+it.bbHeight*.7 } ?: Double.NaN,
                 player?.isCrouching ?: false,velocity,acceleration,drag)
             val action=policy.tick(f,now)
+            outcome=action.outcome
             driver.drive(action.forward,action.crouch)
             if(action.yaw!=null && player!=null) { player.yRot=action.yaw;player.xRot=action.pitch!! }
             if(action.status!=lastStatus && (enabled || driver.owns)) { lastStatus=action.status;report(action.status) }
         } catch(e: Exception) {
-            policy.cancel()
+            policy.cancel();outcome=CjsApproachOutcome.CANCELLED
             try { release(client) } finally { report("Approach cancelled: ${e.javaClass.simpleName}") }
         }
     }

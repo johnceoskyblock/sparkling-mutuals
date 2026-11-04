@@ -5,6 +5,13 @@ import org.junit.jupiter.api.Test
 import java.util.UUID
 
 class CjsApproachTest {
+    @Test fun `room discovery starts after five seconds and changed socket cancels`() {
+        val a=CjsApproach()
+        assertEquals(CjsApproachOutcome.MOVING,a.tick(frame(),6000).outcome)
+        assertTrue(a.tick(frame(),6050).forward)
+        assertEquals(CjsApproachOutcome.CANCELLED,a.tick(frame().copy(signal=sight.copy(generation=8)),6100).outcome)
+        assertFalse(a.tick(frame(),6150).forward)
+    }
     @Test fun `prime native crouch before allowing the first forward tick`() {
         val a=CjsApproach()
         val first=a.tick(frame().copy(crouched=false),0)
@@ -34,7 +41,7 @@ class CjsApproachTest {
     }
     private val c = EntryFixtures.context()
     private val target = UUID.fromString("00000000-0000-0000-0000-000000000099")
-    private val sight = EntrySighting(c, "Bluebird", EntryFixtures.event, 0, 5000)
+    private val sight = CjsRoomSignal(c, 7, setOf("Bluebird"))
     private fun frame(x: Double = 0.0, z: Double = 0.0) = CjsApproachFrame(c, true, sight, target,
         x, 68.0, z, 0.0, 3.6, 0f, 0f, true)
     @Test fun `face the Manager before walking rather than following original yaw`() {
@@ -54,11 +61,11 @@ class CjsApproachTest {
         assertFalse(a.tick(frame().copy(context=c.copy(party=EntryParty(c.party.leader,c.party.members,3))),300).forward)
         assertFalse(a.tick(frame().copy(enabled=false),350).forward)
         assertFalse(a.tick(frame(),400).forward)
-        assertFalse(a.tick(frame().copy(context=c.copy(world=2,arrival=2),sighting=sight.copy(context=c.copy(world=2,arrival=2))),450).forward)
+        assertFalse(a.tick(frame().copy(context=c.copy(world=2,arrival=2),signal=sight.copy(context=c.copy(world=2,arrival=2))),450).forward)
     }
     @Test fun `safety interruption or changed target context cancels rather than waiting to resume`() {
         val changes=listOf<(CjsApproachFrame)->CjsApproachFrame>(
-            {it.copy(safe=false)}, {it.copy(enabled=false)}, {it.copy(sighting=null)},
+            {it.copy(safe=false)}, {it.copy(enabled=false)}, {it.copy(signal=null)},
             {it.copy(target=null)}, {it.copy(target=UUID.randomUUID())}, {it.copy(context=null)},
             {it.copy(context=c.copy(server="miniOther"))}, {it.copy(y=68.3)},
             {it.copy(yaw=45f)}, {it.copy(x=2.0)}, {it.copy(x=Double.NaN)})

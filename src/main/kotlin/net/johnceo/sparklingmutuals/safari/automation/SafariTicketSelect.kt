@@ -105,6 +105,16 @@ object SafariTicketSelect {
         }
         return null
     }
+    internal fun options(client: Minecraft): List<Option> {
+        val player=client.player ?: return emptyList()
+        val current=player.containerMenu
+        return current.slots.mapIndexedNotNull { index, slot ->
+            if (slot.container === player.inventory || !slot.item.`is`(Items.NAME_TAG)) return@mapIndexedNotNull null
+            val name = SafariRules.strip(slot.item.hoverName.string).replace('-', ' ')
+            val tier = SafariTicketType.entries.firstOrNull { name.contains(it.label, true) } ?: return@mapIndexedNotNull null
+            Option(index, tier, available(slot.item.get(DataComponents.LORE)?.lines().orEmpty().map { it.string }))
+        }
+    }
     fun managerClicked(client: Minecraft) {
         // Preload the roster; opening the entry menu itself is the trigger.
         if (locationAllows(client) && !PartyManager.hasInfo) PartyManager.requestPartyInfo()
@@ -123,12 +133,7 @@ object SafariTicketSelect {
         val current = player.containerMenu
         observeMenu(current, now)
         if (clicked || now - shownAt < 250 || now - lastAttempt < 250) return
-        val options = current.slots.mapIndexedNotNull { index, slot ->
-            if (slot.container === player.inventory || !slot.item.`is`(Items.NAME_TAG)) return@mapIndexedNotNull null
-            val name = SafariRules.strip(slot.item.hoverName.string).replace('-', ' ')
-            val tier = SafariTicketType.entries.firstOrNull { name.contains(it.label, true) } ?: return@mapIndexedNotNull null
-            Option(index, tier, available(slot.item.get(DataComponents.LORE)?.lines().orEmpty().map { it.string }))
-        }
+        val options = options(client)
         if (options.map { it.tier }.toSet().size != SafariTicketType.entries.size) return
         val option = choose(options, ConfigManager.safariTicketPreference) ?: run {
             if (options.all { it.available != null }) revealed = true
