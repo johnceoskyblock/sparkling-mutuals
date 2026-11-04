@@ -21,6 +21,8 @@ The user named the experiment **CJ’s Revenge** and requested separation from n
 
 `EntryEffect` values are proposed effects for tests and a future adapter. No current caller executes them. In particular, the existing `SafariTicketSelect` has not yet been connected to the ownership gate; there is no new live automatic attempt that needs that gate in this increment.
 
+Stateful core objects are confined to one client thread. A future adapter must serialize callbacks and supply elapsed monotonic milliseconds plus a current immutable frame; these objects are not a thread-safe background service.
+
 A future dispatcher must retain each effect's emitting context/attempt and reject queued work from a previous arrival before asking for a permit. It must not substitute a new arrival's current frame for an old queued action. Manager proposal-to-send revalidation and real ticket-helper integration are also still future work; this core does not claim to verify an absent dispatcher.
 
 ## Files and validation
