@@ -1,6 +1,6 @@
-# CJ’s Revenge
+# Sparkling Mutuals
 
-Local experimental build `4.0.2-cjs-revenge.5`, based on the supplied unpublished Sparkling Mutuals v4.0.2 source. It retains the new party synchronization, warp/invitation logic and configuration migration. This increment targets **Minecraft 26.1.2 only**. Keep its artifacts and test instance separate from normal profiles. The [Safari entry dry run](docs/CJS_ENTRY_DRY_RUN.md) connects fresh leader reports, corrected pre-admission detection and an optional bounded Manager approach. Manager/ticket clicks remain manual.
+**CJ’s Revenge — Sparkling auto entry:** this PR integrates the supplied newer Sparkling Mutuals 4.0.2 source and adds opt-in WebSocket-driven Safari entry on **26.1.2, 26.2 and 26.3**. Enable **sparkling auto entry** at the bottom of **Party → Party warping**; it defaults off and displays **USE AT YOUR OWN RISK!!!!** in red. Current-room uncaught discoveries can trigger one bounded approach, Manager interaction and configured ticket selection. See [setup, safeguards and test limits](docs/CJS_ENTRY_DRY_RUN.md).
 
 ## Purpose and audience
 
@@ -14,7 +14,7 @@ A Fabric client mod for Hypixel SkyBlock Safari, Sparkling discoveries, party co
 2. Download an appropriate published build from [Releases](https://github.com/johnceoskyblock/sparkling-mutuals/releases), or `jar-mc<version>` from a successful [Actions run](https://github.com/johnceoskyblock/sparkling-mutuals/actions).
 3. Install **one** matching Sparkling Mutuals JAR in `mods`, replacing the older mod JAR. Do not install source/test/development JARs. [Exact dependencies and filenames](docs/MULTI_VERSION_BUILDS.md#prerequisites).
 
-Normal published release: **[v4.0.2](https://github.com/johnceoskyblock/sparkling-mutuals/releases/tag/v4.0.2)**. CJ’s Revenge is a separate local experiment, not a published update. It retains the same mod ID for compatibility and must use its own game directory if installed for testing.
+Normal published release: **[v4.0.2](https://github.com/johnceoskyblock/sparkling-mutuals/releases/tag/v4.0.2)**. CJ’s Revenge is the change heading for the new opt-in entry feature; the mod remains Sparkling Mutuals. This PR is not a new published release. Use a separate profile for testing, with only one `sparkling-mutuals` JAR installed.
 
 HM API is bundled. Settings use a native workspace adapted from SafariUtils. Player profile lookups use a Hypixel API key or the optional Shiny Hunter shared API. Keep keys and local authentication files private. Release notes and the availability of published assets belong to their [release descriptions](https://github.com/johnceoskyblock/sparkling-mutuals/releases).
 

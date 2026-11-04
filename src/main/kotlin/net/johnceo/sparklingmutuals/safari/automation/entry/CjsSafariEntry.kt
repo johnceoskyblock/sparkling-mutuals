@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory
 import net.johnceo.sparklingmutuals.sync.SafariPartySync
 import net.johnceo.sparklingmutuals.sync.PartySyncProtocol
 
-/** 26.1.2 experiment. Positive coordination uses only the existing shared WebSocket. */
+/** Opt-in Sparkling auto entry. Positive coordination uses only the existing shared WebSocket. */
 object CjsSafariEntry {
     private val logger = LoggerFactory.getLogger("sparkling-mutuals/cj-entry")
     private val origin = System.nanoTime()
@@ -39,7 +39,7 @@ object CjsSafariEntry {
 
     fun register() {
         supported = FabricLoader.getInstance().getModContainer("minecraft").orElse(null)
-            ?.metadata?.version?.friendlyString == "26.1.2"
+            ?.metadata?.version?.friendlyString in setOf("26.1.2", "26.2", "26.3")
         if (!supported) return
         // SafariIsland owns the existing subscription; this listener retains its fresh server claim.
         HypixelPacketEvents.LOCATION_UPDATE.register { packet ->

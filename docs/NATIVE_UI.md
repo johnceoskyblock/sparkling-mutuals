@@ -90,4 +90,4 @@ Release validation, 2026-11-02: all 1,139 tests passed on each of 26.1.2, 26.2 a
 
 2026-11-02 — Locked secret achievements hide progress. Biome Objectives includes a concise remaining-critter instruction per mode. Forest omits zero food/bird counters, removes bird rows only after mode completion, and reconciles feeder slot/chat consumption with consistent cursor-safe inventory and transaction buffering.
 
-2026-11-04 — Local CJ .7 adds one default-off sparkling auto entry control at the bottom of Party → Party warping. Field description color metadata renders USE AT YOUR OWN RISK!!!! in fixed red, with ordinary descriptions keeping their theme color. Separate CJ report/approach controls are retired.
+2026-11-04 — CJ’s Revenge adds one default-off sparkling auto entry control at the bottom of Party → Party warping. Field description color metadata renders USE AT YOUR OWN RISK!!!! in fixed red, with ordinary descriptions keeping their theme color. Separate CJ report/approach controls are retired.

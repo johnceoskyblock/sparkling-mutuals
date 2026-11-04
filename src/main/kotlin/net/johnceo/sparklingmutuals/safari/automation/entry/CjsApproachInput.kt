@@ -11,7 +11,11 @@ import net.minecraft.world.entity.Entity
 import net.minecraft.world.entity.EntitySelector
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.entity.ai.attributes.Attributes
+//? if >=26.3 {
+/*import org.lwjgl.sdl.SDLMouse
+*///? } else {
 import org.lwjgl.glfw.GLFW
+//? }
 import kotlin.math.*
 
 /** Native input owner, revalidated at START_CLIENT_TICK before vanilla consumes walking keys. */
@@ -34,8 +38,13 @@ class CjsApproachInput {
         val key = InputConstants.getKey(binding.saveString())
         if (key.value < 0) return false
         return when (key.type) {
+            //? if >=26.3 {
+            /*InputConstants.Type.KEYBOARD -> InputConstants.isKeyDown(key.value)
+            InputConstants.Type.MOUSE -> cjsSdlMouseDown(SDLMouse.nSDL_GetMouseState(0L,0L),key.value)
+            *///? } else {
             InputConstants.Type.KEYSYM -> InputConstants.isKeyDown(client.window, key.value)
             InputConstants.Type.MOUSE -> GLFW.glfwGetMouseButton(client.window.handle(),key.value)==GLFW.GLFW_PRESS
+            //? }
             else -> true // Cannot verify a scancode binding; do not claim idle input.
         }
     }
@@ -136,3 +145,6 @@ class CjsApproachInput {
         }
     }
 }
+
+internal fun cjsSdlMouseDown(mask: Int, button: Int): Boolean =
+    button in 1..32 && mask and (1 shl (button-1)) != 0

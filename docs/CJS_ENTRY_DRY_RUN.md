@@ -2,11 +2,11 @@
 
 ## Scope
 
-Local experiment **4.0.2-cjs-revenge.8**, Minecraft **26.1.2 only**, based on the supplied unpublished SM 4.0.2 source. The current WebSocket room’s uncaught Sparkling discoveries can authorize the full approach → Safari Manager interaction → configured ticket selection. The old five-second visible-sighting requirement and registered CJ SMSE1 party-chat exchange are removed. The normal shared detector still publishes observations through the existing shared socket; it is not a direct CJ input fallback.
+Sparkling Mutuals **4.0.2** PR, with **CJ’s Revenge** as the entry feature’s change heading, for Minecraft **26.1.2, 26.2 and 26.3**, based on the supplied unpublished SM 4.0.2 source. The current WebSocket room’s uncaught Sparkling discoveries can authorize the full approach → Safari Manager interaction → configured ticket selection. The old five-second visible-sighting requirement and registered CJ SMSE1 party-chat exchange are removed. The normal shared detector still publishes observations through the existing shared socket; it is not a direct CJ input fallback.
 
 ## Setup
 
-Use the separate CJ’s Revenge Fabric 26.1.2 profile with Java 25, matching Fabric API and Fabric Language Kotlin. Keep only one JAR with mod ID `sparkling-mutuals`; CJ and normal SM cannot coexist in the same mods folder. Existing settings migrate under `config/sparkling-mutuals/` and explicit saved choices remain.
+Use a separate Sparkling Mutuals test profile for the chosen supported Minecraft version with Java 25, matching Fabric API and Fabric Language Kotlin. Keep only one JAR with mod ID `sparkling-mutuals`; two Sparkling Mutuals builds cannot coexist in the same mods folder. Existing settings migrate under `config/sparkling-mutuals/` and explicit saved choices remain.
 
 On the joining nonleader, open `/sm` → **Party** → **Party warping**. The last control below the other warping settings is **sparkling auto entry**, with the red description **USE AT YOUR OWN RISK!!!!**. It defaults **off** and controls the complete WebSocket discovery → bounded approach → Manager interaction → configured ticket sequence.
 
@@ -32,7 +32,7 @@ Start with one leader and one joiner. Record both views from before the delayed 
 
 Automated tests include real local HTTP/WebSocket fixtures, all 37 upstream species bits, atomic catch withdrawal, reconnect, complete policy/permit dispatch, native geometry, movement/coast ownership and configuration persistence. Offline tests/build/review do not establish live backend availability, accepted Hypixel NPC/menu interactions, server timing or final displacement under latency. Species masks cannot distinguish two Sparkling individuals of the same species or prove current visual presence; using outstanding room discoveries is the human-approved criterion.
 
-This fix does not install, launch/close Minecraft, upload to GitHub or modify the server. The human separately requested sending the verified .8 build and instructions to Johnceo on Discord. Earlier .3–.6 report/dry-run/multiple-toggle instructions are historical; source and delivered packages remain retained. The [approved design](superpowers/specs/2026-11-04-cjs-websocket-entry-design.md) and [plan](superpowers/plans/2026-11-04-cjs-websocket-entry.md) describe the current increment.
+The human authorized publishing this branch as a GitHub PR with all three supported game versions and the Sparkling Mutuals name. CJ’s Revenge is a change heading. The earlier separate .8 test artifact was sent to Johnceo on Discord. This PR does not merge into master, publish a release, install a JAR, launch/close Minecraft or modify the server. The normal three-target CI and distribution verification apply. Earlier .3–.6 report/dry-run/multiple-toggle instructions are historical; source and delivered packages remain retained. The [approved design](superpowers/specs/2026-11-04-cjs-websocket-entry-design.md) and [plan](superpowers/plans/2026-11-04-cjs-websocket-entry.md) describe the current increment.
 
 Last updated: 2026-11-04 (Asia/Dubai).
 

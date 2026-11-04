@@ -194,7 +194,7 @@ Successful profile/discovery reads and IGN-to-UUID lookups are reused for 60 min
 
 ## Experimental shard ranges
 
-Local CJ's Revenge .7 has one **Party → Party warping → sparkling auto entry** switch, saved as `safariEntryAutoEnter`, default off. It controls discovery authorization and the full approach/Manager/ticket sequence. Retired `safariEntryDryRun`/`safariEntryApproach` keys are ignored and removed on the next config save. Explicit existing full-entry choices remain. See [current setup](CJS_ENTRY_DRY_RUN.md).
+Sparkling Mutuals has one **Party → Party warping → sparkling auto entry** switch, saved as `safariEntryAutoEnter`, default off. It controls discovery authorization and the full approach/Manager/ticket sequence. Retired `safariEntryDryRun`/`safariEntryApproach` keys are ignored and removed on the next config save. Explicit existing full-entry choices remain. See [current setup](CJS_ENTRY_DRY_RUN.md).
 
 SkyBlock → Helpers → Shard sale guidance (experimental) uses persisted `shardSaleGuidance`, default **off** for both new and existing settings. It adds Hunting Box range colors, an always-present Safari Essence advice row and passive observed-order advisories. The combined Hunting Box total remains an independent switch; general item/chest valuation stays shelved. See [meaning and limitations](SHARD_SALE_GUIDANCE.md).
 

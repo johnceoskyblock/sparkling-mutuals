@@ -1,6 +1,6 @@
 # CJ’s Revenge Safari entry core
 
-The local **4.0.2-cjs-revenge.8** experiment now registers the complete WebSocket-driven entry flow on **26.1.2 only**. See [setup, actions and limits](CJS_ENTRY_DRY_RUN.md), the [approved design](superpowers/specs/2026-11-04-cjs-websocket-entry-design.md), and [implementation plan](superpowers/plans/2026-11-04-cjs-websocket-entry.md). The separate normal instance is not modified or installed by this delivery.
+Sparkling Mutuals now registers the complete opt-in WebSocket-driven entry flow on **26.1.2, 26.2 and 26.3**, under the **CJ’s Revenge** change heading. See [setup, actions and limits](CJS_ENTRY_DRY_RUN.md), the [approved design](superpowers/specs/2026-11-04-cjs-websocket-entry-design.md), and [implementation plan](superpowers/plans/2026-11-04-cjs-websocket-entry.md). The separate normal instance is not modified or installed by this delivery.
 
 ## Current ownership
 
@@ -20,6 +20,6 @@ Full entry has one saved opt-in (`safariEntryAutoEnter=false` by default), shown
 
 The reported spawn `(-50,68,24)` is out of Manager interaction reach; the human approved movement toward the Manager `(-52,68,21)`. The adapter checks the live correlated body and actual native eye-to-hitbox reach after bounded movement rather than treating those centre coordinates as proof of reach. Exact personal acceptance confirms admission; inputs alone remain uncertain and are never retried.
 
-Automated policies, real loopback transport and offline geometry/tests/builds do not certify live Hypixel admission, backend availability, server input acceptance or timing. The selected room criterion deliberately accepts untimestamped outstanding discoveries. No game/session changes, installation, server changes or GitHub publication are part of implementation.
+Automated policies, real loopback transport and offline geometry/tests/builds do not certify live Hypixel admission, backend availability, server input acceptance or timing. The selected room criterion deliberately accepts untimestamped outstanding discoveries. The human requested a GitHub PR for all three targets while retaining Sparkling Mutuals branding. No game/session changes, installation, server changes, merge or release publication are part of that request.
 
 Last updated: 2026-11-04 (Asia/Dubai).
