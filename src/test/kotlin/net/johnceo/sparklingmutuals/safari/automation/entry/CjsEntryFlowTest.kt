@@ -103,4 +103,18 @@ class CjsEntryFlowTest {
         val far=CjsEntryFlow();far.tick(frame(),6000);far.tick(completed().copy(reachable=false),6200)
         assertEquals(CjsEntryPhase.CANCELLED,far.phase)
     }
+    @Test fun `cancellation identifies revoked authority instead of reporting an indistinguishable generic error`() {
+        for ((changed,reason) in listOf(
+            frame().copy(warpAllowed=false) to "warp authorization",
+            frame().copy(guardAllows=false) to "entry guard",
+            frame().copy(signal=null) to "room discovery",
+            frame().copy(context=c.copy(world=2)) to "arrival context",
+            frame().copy(safe=false) to "input, focus or movement")) {
+            val flow=CjsEntryFlow();flow.tick(frame(),6000)
+            assertNull(flow.tick(changed,6100))
+            assertEquals(CjsEntryPhase.CANCELLED,flow.phase)
+            assertTrue(flow.status.contains(reason),flow.status)
+            assertNull(flow.tick(completed(),6200))
+        }
+    }
 }

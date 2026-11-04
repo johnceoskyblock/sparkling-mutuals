@@ -8,6 +8,7 @@ import net.minecraft.client.KeyMapping
 import net.minecraft.client.Minecraft
 import net.minecraft.core.BlockPos
 import net.minecraft.world.entity.Entity
+import net.minecraft.world.entity.EntitySelector
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.entity.ai.attributes.Attributes
 import org.lwjgl.glfw.GLFW
@@ -59,6 +60,12 @@ class CjsApproachInput {
         val npcPlayers=bodies.filterIsInstance<Player>()
         return if(npcPlayers.isNotEmpty()) npcPlayers.singleOrNull() else bodies.singleOrNull()
     }
+    // Use the same team-aware push rule that the other entity applies to the local player.
+    // A remote player is not automatically a wall, particularly on no-collision server teams.
+    internal fun blocksApproach(self: Entity, target: Entity, other: Entity): Boolean =
+        other.isAlive && other!==target &&
+            (self.canCollideWith(other) || EntitySelector.pushableBy(other).test(self))
+
     private fun pathClear(client: Minecraft, target: Entity, friction: Double): Boolean {
         val p=client.player ?: return false
         val level=client.level ?: return false
@@ -69,7 +76,7 @@ class CjsApproachInput {
         val z=heading?.let { cos(it*PI/180) } ?: (dz/distance)
         if (!level.noCollision(p,p.boundingBox.expandTowards(x*1.05,0.0,z*1.05))) return false
         val swept=p.boundingBox.expandTowards(x*1.05,0.0,z*1.05)
-        if (level.getEntities(p,swept).any { it.isAlive && it!==target && (it is Player || it.isPushable) }) return false
+        if (level.getEntities(p,swept).any { blocksApproach(p,target,it) }) return false
         val radius=p.bbWidth/2.0
         for (step in 0..4) for (ox in listOf(-radius,radius)) for (oz in listOf(-radius,radius)) {
             val sx=p.x+x*step*.25+ox;val sz=p.z+z*step*.25+oz

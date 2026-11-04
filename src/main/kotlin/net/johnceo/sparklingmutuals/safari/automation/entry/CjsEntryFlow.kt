@@ -53,10 +53,23 @@ class CjsEntryFlow {
         cancel("Automatic entry cancelled: manual input")
         return true
     }
-    private fun valid(f: CjsEntryFrame, now: Long): Boolean = clock.accept(now) && now<deadline &&
-        f.context==context && context!=null && f.enabled && f.atEntry && !f.admitted && f.safe && f.guardAllows &&
-        !f.manualCancel && !f.unexpectedScreen && f.warpAllowed && f.warpGeneration==warp &&
-        f.signal?.valid(context!!)==true && f.signal.generation==socket && f.manager==target
+    private fun invalidReason(f: CjsEntryFrame, now: Long): String? = when {
+        !clock.accept(now) -> "clock rollback"
+        now>=deadline -> "arrival window expired"
+        context==null || f.context!=context -> "arrival context changed"
+        !f.enabled -> "sparkling auto entry disabled"
+        f.admitted || !f.atEntry -> "no longer awaiting entry"
+        f.manualCancel -> "manual input"
+        f.unexpectedScreen -> "unexpected screen"
+        !f.safe -> "input, focus or movement changed"
+        !f.guardAllows -> "entry guard is blocking"
+        !f.warpAllowed || f.warpGeneration!=warp -> "warp authorization expired or changed"
+        f.signal?.valid(context!!)!=true -> "room discovery unavailable"
+        f.signal.generation!=socket -> "room connection replaced"
+        f.manager!=target -> "Manager target changed"
+        else -> null
+    }
+    private fun valid(f: CjsEntryFrame, now: Long)=invalidReason(f,now)==null
     fun tick(f: CjsEntryFrame, now: Long): CjsEntryEffect? {
         if(!clock.accept(now)) { cancel("Automatic entry cancelled: clock rollback");return null }
         if(f.warpAllowed && f.warpGeneration>warp && f.context!=null) {
@@ -69,7 +82,9 @@ class CjsEntryFlow {
         }
         if(terminal() || context==null) return null
         if(now>=deadline) { cancel("Automatic entry expired");phase=CjsEntryPhase.EXPIRED;return null }
-        if(claimed && !valid(f,now)) { cancel("Automatic entry cancelled: room, context, guard or input changed");return null }
+        if(claimed) invalidReason(f,now)?.let {
+            cancel("Automatic entry cancelled: $it");return null
+        }
         if(!claimed) {
             val c=context!!
             if(f.context!=c || now<f.arrivedAt || !f.enabled || !f.atEntry || !f.safe || !f.guardAllows ||
