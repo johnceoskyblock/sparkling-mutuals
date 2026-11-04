@@ -1,5 +1,7 @@
 # Documentation index
 
+Local CJ's Revenge 26.1.2 experiment: [entry detection and dry-run setup](CJS_ENTRY_DRY_RUN.md). Automatic admission remains inactive.
+
 ## Purpose and audience
 
 Players: start with [installation and controls](../README.md). Contributors: read [contributing](../CONTRIBUTING.md), then the relevant rule owner. This is a current-implementation reference at the [audited revision](IMPLEMENTATION_AUDIT.md), with live uncertainties stated separately.
@@ -108,3 +110,4 @@ Last updated: 2026-11-02 — Added Skills overflow tooltip reference.
 
 Last updated: 2026-11-02 — Added banner system and HUD customization reference.
 Last updated: 2026-11-03 — Added experimental shard range and observed-offer guidance reference.
+Last updated: 2026-11-04 — Added local 26.1.2 CJ's Revenge dry-run reference.

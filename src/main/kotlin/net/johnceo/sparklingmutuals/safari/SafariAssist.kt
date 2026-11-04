@@ -23,7 +23,7 @@ import net.minecraft.world.entity.player.Player
 
 /** Positive name/skin scan of loaded entities for run-owned alerts and detection presentation. */
 object SafariAssist {
-    private data class Shiny(val label: Entity, val body: Entity, val name: String, val biome: SafariBiome)
+    private data class Shiny(val label: Entity, val body: Entity, val name: String, val biome: SafariBiome, val identity: java.util.UUID)
     private var shinies = emptyList<Shiny>()
     private var ticks = 0
     private var lastLevel: Any? = null
@@ -84,7 +84,9 @@ object SafariAssist {
         inHaunted = inSafari && (SafariRules.isHaunted(lines) || biome == SafariBiome.HAUNTED)
         SafariTracking.ensureRun(client)
         if (!inSafari) {
-            shinies = emptyList(); SparklingEncounters.leave(); return
+            shinies = emptyList(); SparklingEncounters.leave()
+            net.johnceo.sparklingmutuals.safari.automation.entry.CjsSafariEntry.scanned(emptyList())
+            return
         }
         val entities = client.level!!.entitiesForRendering().filterNot { it.isRemoved }.toList()
         val realPlayers = client.connection?.listedOnlinePlayers?.map { it.profile.id }?.toSet().orEmpty() + player.uuid
@@ -110,8 +112,11 @@ object SafariAssist {
             }
             if (SafariTracking.ledger.current?.sparklingCaptures?.resolved(identity) == true) return@mapNotNull null
             SparklingEncounters.observe(identity, match.species, biome, body.blockPosition())
-            Shiny(label, body, match.species, biome)
+            Shiny(label, body, match.species, biome, identity)
         }.sortedBy { player.distanceToSqr(it.body) }
+        net.johnceo.sparklingmutuals.safari.automation.entry.CjsSafariEntry.scanned(shinies.map {
+            net.johnceo.sparklingmutuals.safari.automation.entry.EntryDryRunObservation(it.identity, it.name)
+        })
         SafariTracking.ledger.current?.sparklingParticles?.unknown()?.forEach { point ->
             SparklingEncounters.observeUnknown(point.id, point.biome,
                 net.minecraft.core.BlockPos.containing(point.x, point.y, point.z))
@@ -126,6 +131,13 @@ object SafariAssist {
         } + shinies.map { "Sparkling detection: species=${it.name} biome=${it.biome} " +
             "source=${if (it.label.customName?.string?.let(SafariRules::sparklingSpecies) != null) "name" else "skin"} " +
             "body=${it.body.uuid} label=${it.label.uuid} distance=${sqrt(player.distanceToSqr(it.body)).toInt()}m" }
+    }
+    /** Withdrawal only: callers must never use this retained list to refresh observation age. */
+    fun entryVisibleIdentities(): Set<java.util.UUID> {
+        val world = Minecraft.getInstance().level ?: return emptySet()
+        return shinies.filter { !it.body.isRemoved && !it.label.isRemoved && world.getEntity(it.body.id) === it.body &&
+            world.getEntity(it.label.id) === it.label && SafariTracking.ledger.current?.sparklingCaptures?.resolved(it.identity) != true
+        }.mapTo(hashSetOf()) { it.identity }
     }
     @JvmStatic fun hidePaintings() = ConfigManager.hideHauntedPaintings && inHaunted
     @JvmStatic fun isHighlighted(id: Int): Boolean {

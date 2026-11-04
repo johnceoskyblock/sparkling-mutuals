@@ -1,6 +1,6 @@
 # CJ’s Revenge
 
-Local experimental build `4.0.2-cjs-revenge.1`, based on Sparkling Mutuals v4.0.2. Keep its artifacts and any future test instance separate from normal profiles. The [Safari entry core](docs/SAFARI_ENTRY_CORE.md) is decision-only and unregistered: this build does not automatically enter Safari.
+Local experimental build `4.0.2-cjs-revenge.2`, based on Sparkling Mutuals v4.0.2. This increment targets **Minecraft 26.1.2 only**. Keep its artifacts and test instance separate from normal profiles. The [Safari entry dry run](docs/CJS_ENTRY_DRY_RUN.md) connects fresh leader reports and detection diagnostics; this build does not automatically enter Safari.
 
 ## Purpose and audience
 

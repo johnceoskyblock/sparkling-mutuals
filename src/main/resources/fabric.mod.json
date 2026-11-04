@@ -3,7 +3,7 @@
 	"id": "sparkling-mutuals",
 	"version": "${version}",
 	"name": "CJ’s Revenge",
-	"description": "Local experimental Sparkling Mutuals build. Safari entry core is unregistered; use a separate test instance.",
+	"description": "Local experimental Sparkling Mutuals build. 26.1.2 Safari entry dry run exchanges status only; no automatic entry. Use a separate test instance.",
 	"authors": [
 		"JohnCEO",
 		"JohnKuudra"

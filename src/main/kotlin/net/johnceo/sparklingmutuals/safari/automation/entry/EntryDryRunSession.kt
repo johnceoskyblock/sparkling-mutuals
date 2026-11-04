@@ -8,7 +8,7 @@ data class EntryDryRunFrame(val context: EntryContext?, val enabled: Boolean, va
 
 /** Deliberately cannot represent movement, entity interaction, a menu action or a ticket permit. */
 sealed interface EntryDryRunOutput {
-    data class Party(val context: EntryContext, val message: EntryMessage) : EntryDryRunOutput
+    data class Party(val context: EntryContext, val message: EntryMessage, val proposedAt: Long) : EntryDryRunOutput
     data class Notice(val text: String, val elapsedMs: Long) : EntryDryRunOutput
 }
 
@@ -29,6 +29,7 @@ class EntryDryRunSession {
     private var status = "Off"
     private var emitted = ""
     private var evidenceSeen = false
+    private var missingContext = false
 
     private fun prepare(frame: EntryDryRunFrame, now: Long): EntryContext? {
         val current = frame.context
@@ -37,18 +38,23 @@ class EntryDryRunSession {
         if (newArrival) {
             context = current; arrivedAt = frame.arrivedAt; clock = EntryClock(); clock.reset(now)
             sightings = EntrySightings(); requester = EntryReportRequester(); responder = EntryReportResponder(sightings)
-            requester.beginArrival(current!!, arrivedAt)
+            requester.beginArrival(current, arrivedAt)
             remote = null; query = null; answered = false; cancelled = false; wasEnabled = false
-            evidenceSeen = false; emitted = ""
+            evidenceSeen = false; emitted = ""; missingContext = false
         }
         if (!clock.accept(now) || arrivedAt < 0 || arrivedAt > now) {
             cancelled = true; requester.cancel(); remote = null; status = "Cancelled: invalid monotonic timing"; return null
         }
         if (current == null) {
-            if (old != null) { cancelled = true; requester.cancel(); remote = null }
+            if (old != null) {
+                cancelled = true; requester.cancel(); remote = null
+                if (!missingContext) { sightings = EntrySightings(); responder = EntryReportResponder(sightings) }
+            }
+            missingContext = true
             status = if (frame.enabled) "Waiting for current Safari location and party" else "Off"
             return null
         }
+        missingContext = false
         if (context != current) {
             // Current leaders may serve newly verified members, but no old request or observation survives.
             requester.cancel(); cancelled = true; remote = null
@@ -108,7 +114,7 @@ class EntryDryRunSession {
         if (current != null) {
             if (current.account == current.party.leader) {
                 responder.poll(current, now, true, frame.activeRun, true)?.let {
-                    out.add(EntryDryRunOutput.Party(current, it.message))
+                    out.add(EntryDryRunOutput.Party(current, it.message, now))
                 }
                 status = if (frame.activeRun) "Leader listening for fresh-status queries" else "Leader waiting outside the run"
             } else when {
@@ -127,7 +133,7 @@ class EntryDryRunSession {
                         }
                         else -> {
                             requester.request(current, now)?.let {
-                                query = it; queriedAt = now; out.add(EntryDryRunOutput.Party(current, it))
+                                query = it; queriedAt = now; out.add(EntryDryRunOutput.Party(current, it, now))
                             }
                             status = "Waiting for fresh leader reply"
                         }

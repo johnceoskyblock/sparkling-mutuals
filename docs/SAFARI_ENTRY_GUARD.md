@@ -4,7 +4,7 @@
 
 Cancel recognized Safari entry interactions before their normal packet path while party readiness or presence is unresolved. The guard only blocks interactions. An independently configurable ticket-selection helper can finish a manually initiated Manager interaction, through the same guard. [Contest and downtime](CONTEST_DOWNTIME.md) owns requests, readiness parsing and ticket release.
 
-The separate local **CJ’s Revenge** branch also contains an [unregistered entry decision core](SAFARI_ENTRY_CORE.md). It performs no gameplay actions and does not change this live guard or the existing ticket selector.
+The separate local **CJ’s Revenge** branch contains an [unregistered admission decision core](SAFARI_ENTRY_CORE.md) and [26.1.2 detection/transport dry run](CJS_ENTRY_DRY_RUN.md). The experiment adds no gameplay actions and does not change this live guard or the existing ticket selector.
 
 ## Controls and defaults
 
@@ -69,6 +69,8 @@ Both switches persist in the [general configuration](CONFIG_DEFAULTS.md). Presen
 Detect the exact entry menu directly inside a verified Safari instance. Neither a local entry notice nor Manager click is required. The log showed that entry notices name the party leader, so local-name matching could leave non-leaders unarmed. Menu detection also survives delayed roster, sidebar and Mod API data. Torrhus conversion menus remain visible and manual. Only known non-leaders can auto-select, and every selection still passes the entry guard.
 
 ## Last updated
+
+2026-11-04 — Linked CJ's Revenge dry-run integration; the existing guard and ticket-selection behavior are unchanged.
 
 2026-10-28 - Replaced entry-message arming with direct Safari ticket-menu detection.
 

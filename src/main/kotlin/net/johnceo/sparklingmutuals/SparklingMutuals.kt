@@ -97,6 +97,7 @@ object SparklingMutuals : ModInitializer {
         TeammateEsp.register()
         SafariIsland.register()
         SafariManagerGuard.register()
+        net.johnceo.sparklingmutuals.safari.automation.entry.CjsSafariEntry.register()
         CapsulePreview.register()
     }
 
@@ -154,11 +155,13 @@ object SparklingMutuals : ModInitializer {
         HideyhoSpotter.onClientTick(client)
         SafariDowntime.onClientTick(client)
         SafariManagerGuard.onClientTick(client)
+        net.johnceo.sparklingmutuals.safari.automation.entry.CjsSafariEntry.tick(client)
         net.johnceo.sparklingmutuals.safari.automation.SafariTicketSelect.tick(client)
         CapsulePreview.tick(client)
     }
 
     private fun resetSession() {
+        net.johnceo.sparklingmutuals.safari.automation.entry.CjsSafariEntry.reset()
         net.johnceo.sparklingmutuals.skyblock.market.ShardSaleGuidance.reset()
         net.johnceo.sparklingmutuals.skyblock.SkillOverflow.reset()
         net.johnceo.sparklingmutuals.hud.SafariBanners.reset()

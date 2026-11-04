@@ -41,7 +41,7 @@
 
 **Files:** Create `EntryDryRunSession.kt`, `EntryDryRunSessionTest.kt`.
 
-**Interfaces:** `EntryDryRunFrame(context: EntryContext?, enabled: Boolean, atEntry: Boolean, activeRun: Boolean, arrivedAt: Long)`; session `tick(frame, now): List<EntryDryRunOutput>`, `receive(frame, peer, message, now)`, `observe(frame, id, species, now)`, `captured(frame, species, now)`, `reset()`, `debug()`. Output algebra has only `Party(context, message)` and `Notice(text, elapsedMs)`, with no action executor interface. Integrate existing `EntrySightings`, `EntryReportRequester`, `EntryReportResponder` unchanged unless a reproduced contract bug requires a focused fix.
+**Interfaces:** `EntryDryRunFrame(context: EntryContext?, enabled: Boolean, atEntry: Boolean, activeRun: Boolean, arrivedAt: Long)`; session `tick(frame, now): List<EntryDryRunOutput>`, `receive(frame, peer, message, now)`, `scan(frame, observed: List<EntryDryRunObservation>, now)`, `retainLoaded(frame, ids: Set<UUID>, now)`, `captured(frame, species, now)`, `debug()`. Reset replaces the session object. Output algebra has only `Party(context, message, proposedAt)` and `Notice(text, elapsedMs)`, with no action executor interface. Complete scans and send-time withdrawal do not refresh retained observation age. Extend `EntrySightings` only with visibility withdrawal; keep capture retirement and requester/responder contracts.
 
 - [ ] Write tests: two real sessions query/reply end-to-end; wrong sender/server; one query; no packet replay after disable/context gap; arrival-anchored expiry; capture before queued send; local observation freshness; third peer pacing expiry; no hint authorization; no fresh observation wording; monotonic rollback.
 - [ ] Run tests RED, implement session, run GREEN.
@@ -51,7 +51,7 @@
 
 **Files:** Create `CjsSafariEntry.kt`; modify initializer, `SparklingEncounters.kt`, configuration `ConfigManager.kt`/`SafariSettings.kt`, `/sm debug` command, version and affected feature docs. Extend `ConfigTest.kt`.
 
-**Interfaces:** `CjsSafariEntry.register/tick/reset/observe/captured/debug`. Native adapter supplies current immutable frames, serializes callbacks on client thread, uses fresh location context, and checks the originating context immediately before each `pc` send. Current sender identity derives only from connection profiles and current roster. No standard CHAT handler or automatic name lookup. Route capture/positive-scan callbacks through existing detector consumers. Restrict registration to 26.1.2.
+**Interfaces:** `CjsSafariEntry.register/tick/reset/scanned/debug`. Native adapter supplies current immutable frames, serializes callbacks on client thread, uses fresh location context, and checks the originating context immediately before each `pc` send through `EntryDryRunDispatch.command`. Current sender identity derives only from connection profiles and current roster. No standard CHAT handler or automatic name lookup. Complete positive scans come from SafariAssist; capture notices use the anchored existing global capture grammar, including at the entrance. Restrict registration to 26.1.2.
 
 - [ ] Write settings default/persistence regression, observe RED, implement setting and apply binding; GREEN.
 - [ ] Connect native event boundary and diagnostics; use actual loader version check and compile current 26.1.2 APIs.

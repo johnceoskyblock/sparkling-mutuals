@@ -53,6 +53,9 @@ object SparklingCommand {
                         open { HistoryScreen(null, HistoryScreen.Tab.STATS) } })
                     .then(ClientCommands.literal("debug").executes { context ->
                         SafariEsp.debug(Minecraft.getInstance())
+                        net.johnceo.sparklingmutuals.safari.automation.entry.CjsSafariEntry.debug().forEach {
+                            org.slf4j.LoggerFactory.getLogger("sparkling-mutuals/cj-entry-dryrun").info(it)
+                        }
                         net.johnceo.sparklingmutuals.safari.automation.SafariManagerGuard.debug().forEach {
                             org.slf4j.LoggerFactory.getLogger("sparkling-mutuals/entry-guard").info(it)
                         }

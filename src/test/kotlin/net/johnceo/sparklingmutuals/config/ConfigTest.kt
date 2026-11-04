@@ -9,6 +9,20 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 
 class ConfigTest {
+    @Test fun `CJ entry dry run defaults off and persists without changing warp timing`() {
+        ConfigManager.init(dir); ContestConfig.init(dir)
+        assertFalse(ConfigManager.safariEntryDryRun)
+        ConfigManager.warpDelaySeconds = 27
+        ConfigManager.save()
+        SafariSettings().apply { safari.entry.dryRun = true }.apply()
+        ConfigManager.init(dir)
+        assertTrue(ConfigManager.safariEntryDryRun)
+        assertEquals(27, ConfigManager.warpDelaySeconds)
+        SafariSettings().apply { safari.entry.dryRun = false }.apply()
+        ConfigManager.init(dir)
+        assertFalse(ConfigManager.safariEntryDryRun)
+        assertEquals(27, ConfigManager.warpDelaySeconds)
+    }
     @Test fun `each new warp setting persists when changed on its own`() {
         ConfigManager.init(dir); ContestConfig.init(dir)
         SafariSettings().apply()

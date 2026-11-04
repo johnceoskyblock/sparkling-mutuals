@@ -108,6 +108,14 @@ class EntryDryRunSessionTest {
         assertTrue(l.tick(changed, 25010).wire().single() is EntryMessage.Live)
     }
 
+    @Test fun `leader verification gap drops queued response even before identical context returns`() {
+        val l = EntryDryRunSession(); l.tick(lf, 0)
+        l.scan(lf, listOf(EntryDryRunObservation(creature, "Doomspiral")), 24900)
+        l.receive(lf, EntryPeer(guest, "Guest"), EntryMessage.Query("a".repeat(32), "main", "mini1"), 25000)
+        l.tick(lf.copy(context = null), 25010)
+        assertTrue(l.tick(lf, 25020).wire().isEmpty())
+    }
+
     @Test fun `disable verification gaps and changed context cannot rearm a spent arrival`() {
         for (change in listOf(gf.copy(enabled = false), gf.copy(context = null),
             gf.copy(context = gc.copy(party = EntryParty(other, party.members, 1))), gf.copy(context = gc.copy(server = "mini2")))) {
