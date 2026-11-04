@@ -9,6 +9,8 @@ class SettingsCatalog(settings: SafariSettings) {
                    val path: String, val children: List<Row> = emptyList()) {
         val group get()=field.isAnnotationPresent(Accordion::class.java)
         val standalone get()=field.isAnnotationPresent(StandaloneDescription::class.java)
+        fun descriptionColor(fallback: Int): Int = field.getAnnotation(DescriptionColor::class.java)?.rgb
+            ?.let { 0xFF000000.toInt() or (it and 0xFFFFFF) } ?: fallback
         fun read(): Any?=field.get(owner)
         fun write(value: Any) { field.set(owner,value) }
         fun matches(query: String): Boolean=(name+" "+description+" "+path).contains(query,true)

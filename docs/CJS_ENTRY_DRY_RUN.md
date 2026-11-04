@@ -2,20 +2,17 @@
 
 ## Scope
 
-Local experiment **4.0.2-cjs-revenge.6**, Minecraft **26.1.2 only**, based on the supplied unpublished SM 4.0.2 source. The current WebSocket room’s uncaught Sparkling discoveries can authorize the full approach → Safari Manager interaction → configured ticket selection. The old five-second visible-sighting requirement and registered CJ SMSE1 party-chat exchange are removed. The normal shared detector still publishes observations through the existing shared socket; it is not a direct CJ input fallback.
+Local experiment **4.0.2-cjs-revenge.7**, Minecraft **26.1.2 only**, based on the supplied unpublished SM 4.0.2 source. The current WebSocket room’s uncaught Sparkling discoveries can authorize the full approach → Safari Manager interaction → configured ticket selection. The old five-second visible-sighting requirement and registered CJ SMSE1 party-chat exchange are removed. The normal shared detector still publishes observations through the existing shared socket; it is not a direct CJ input fallback.
 
 ## Setup
 
 Use the separate CJ’s Revenge Fabric 26.1.2 profile with Java 25, matching Fabric API and Fabric Language Kotlin. Keep only one JAR with mod ID `sparkling-mutuals`; CJ and normal SM cannot coexist in the same mods folder. Existing settings migrate under `config/sparkling-mutuals/` and explicit saved choices remain.
 
-On the joining nonleader, open `/sm` → Safari helpers → Safari entry:
+On the joining nonleader, open `/sm` → **Party** → **Party warping**. The last control below the other warping settings is **sparkling auto entry**, with the red description **USE AT YOUR OWN RISK!!!!**. It defaults **off** and controls the complete WebSocket discovery → bounded approach → Manager interaction → configured ticket sequence.
 
-- **WebSocket Safari discoveries: ON** (saved key `safariEntryDryRun`, default on).
-- **Automatic Safari entry: ON** (new `safariEntryAutoEnter`, default off). This includes the approach; the approach-only test switch is not required.
-- Choose **Preferred ticket**. CJ reuses the existing available-tier preference/fallback policy, reading actual menu lore. Unknown availability waits; no usable ticket means no click.
-- The separate generic **Auto-select Safari ticket** helper is not required for CJ full entry. It remains independently configurable outside CJ-owned attempts.
+Turn that one switch on for the test. There are no separate CJ discovery or approach-only gates. The existing `safariEntryAutoEnter` saved choice is retained; retired `safariEntryDryRun`/`safariEntryApproach` entries are ignored and disappear on the next actual config save. Existing explicit full-entry choices remain; merely having enabled an older approach test never opts into full entry.
 
-For movement-only testing, leave Automatic Safari entry off and enable **Approach Manager (one-block test)**. It uses the same WebSocket criterion and never clicks Manager/tickets.
+Choose **Preferred ticket** under Safari → Helpers → Safari entry (Basic for an initial test). CJ reads actual menu lore and uses the existing preferred-tier/fallback policy. Unknown availability waits; no usable ticket means no click. The generic **Auto-select Safari ticket** helper remains independent and is not required by this switch.
 
 Keep the existing party leader’s warp/auto-party configuration and joining client’s appropriate invite/leech settings. This increment changes neither timing nor invitations. The supplied source’s fresh warp default remains 28 seconds, with explicit saved timing preserved. Backend-compatible clients in the same canonical Safari lobby and exact party roster must provide discoveries; the joining client receives room state before personal ticket use. No special CJ party-chat commands are needed.
 
@@ -35,7 +32,7 @@ Start with one leader and one joiner. Record both views from before the delayed 
 
 Automated tests include real local HTTP/WebSocket fixtures, all 37 upstream species bits, atomic catch withdrawal, reconnect, complete policy/permit dispatch, native geometry, movement/coast ownership and configuration persistence. Offline tests/build/review do not establish live backend availability, accepted Hypixel NPC/menu interactions, server timing or final displacement under latency. Species masks cannot distinguish two Sparkling individuals of the same species or prove current visual presence; using outstanding room discoveries is the human-approved criterion.
 
-This delivery does not install, launch/close Minecraft, upload to GitHub, modify the server or send to Discord. Earlier .3–.5 report/dry-run/approach instructions are historical; source and delivered packages remain retained. The [approved design](superpowers/specs/2026-11-04-cjs-websocket-entry-design.md) and [plan](superpowers/plans/2026-11-04-cjs-websocket-entry.md) describe the current increment.
+This delivery does not install, launch/close Minecraft, upload to GitHub, modify the server or send to Discord. Earlier .3–.6 report/dry-run/multiple-toggle instructions are historical; source and delivered packages remain retained. The [approved design](superpowers/specs/2026-11-04-cjs-websocket-entry-design.md) and [plan](superpowers/plans/2026-11-04-cjs-websocket-entry.md) describe the current increment.
 
 Last updated: 2026-11-04 (Asia/Dubai).
 

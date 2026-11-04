@@ -19,7 +19,7 @@ class SafariConfigScreen(private val settings: SafariSettings = SafariSettings()
     private data class Area(val name: String,val pages: List<Int>)
     private val areas=listOf(Area("HUDs",listOf(0,7,10)),Area("Safari",listOf(1,6,3,12)),Area("Party",listOf(2,5)),
         Area("ESP",listOf(13,14,9)),Area("History",listOf(4)),Area("Advanced",listOf(8,11)))
-    private val tabNames=mapOf(0 to "Overview",7 to "HUDs",1 to "Modes",6 to "Helpers",3 to "Contest",2 to "Interactions",5 to "Sparkle Warping",9 to "Highlights",10 to "Appearance",4 to "History",8 to "API",11 to "SkyBlock",12 to "Banner")
+    private val tabNames=mapOf(0 to "Overview",7 to "HUDs",1 to "Modes",6 to "Helpers",3 to "Contest",2 to "Interactions",5 to "Party warping",9 to "Highlights",10 to "Appearance",4 to "History",8 to "API",11 to "SkyBlock",12 to "Banner")
     private val areaTabs=rememberedNavigation.areaTabs.toMutableMap()
     private var contentTop=88
     private var selected=rememberedNavigation.page.coerceIn(catalog.pages.indices)
@@ -216,7 +216,7 @@ class SafariConfigScreen(private val settings: SafariSettings = SafariSettings()
                 } else {
                     card.title.forEachIndexed { i,line -> g.text(font,line,x+12,y+card.textTop+i*11,if(row.standalone) SettingsPalette.accent else SettingsPalette.text,false) }
                     val descY=y+card.textTop+card.title.size*11+if(row.description.isBlank()) 0 else 4
-                    if(row.description.isNotBlank()) card.description.forEachIndexed { i,line -> g.text(font,line,x+12,descY+i*11,SettingsPalette.muted,false) }
+                    if(row.description.isNotBlank()) card.description.forEachIndexed { i,line -> g.text(font,line,x+12,descY+i*11,row.descriptionColor(SettingsPalette.muted),false) }
                     card.control?.let { c -> control(g,row,Rect(c.x,y+c.y,c.w,c.h),px,py) }
                 }
             }

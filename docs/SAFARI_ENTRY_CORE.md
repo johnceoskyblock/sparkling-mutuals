@@ -1,6 +1,6 @@
 # CJ’s Revenge Safari entry core
 
-The local **4.0.2-cjs-revenge.6** experiment now registers the complete WebSocket-driven entry flow on **26.1.2 only**. See [setup, actions and limits](CJS_ENTRY_DRY_RUN.md), the [approved design](superpowers/specs/2026-11-04-cjs-websocket-entry-design.md), and [implementation plan](superpowers/plans/2026-11-04-cjs-websocket-entry.md). The separate normal instance is not modified or installed by this delivery.
+The local **4.0.2-cjs-revenge.7** experiment now registers the complete WebSocket-driven entry flow on **26.1.2 only**. See [setup, actions and limits](CJS_ENTRY_DRY_RUN.md), the [approved design](superpowers/specs/2026-11-04-cjs-websocket-entry-design.md), and [implementation plan](superpowers/plans/2026-11-04-cjs-websocket-entry.md). The separate normal instance is not modified or installed by this delivery.
 
 ## Current ownership
 
@@ -10,7 +10,7 @@ The local **4.0.2-cjs-revenge.6** experiment now registers the complete WebSocke
 - `CjsEntryInput`: native geometry/reach, visible exact menu, current ticket options and normal guarded game-mode calls. Proposals retain emitting context/warp/socket generation and are revalidated at dispatch. No raw interaction packets, extra reach or repeated spend.
 - `CjsSafariEntry`: current Hypixel location/party/warp/personal admission lifecycle and START-tick composition. No registered report-session transport or local detector forwarding remains. Screen/manual callbacks cancel owned automation; generic ticket-helper tick/hide paths honor the retained owner.
 
-Full entry has a distinct saved opt-in (`safariEntryAutoEnter=false` by default). Old approach-only settings never acquire ticket spending. `safariEntryDryRun` is retained as the WebSocket observation setting for compatibility. Preferred ticket and all explicit existing choices are preserved.
+Full entry has one saved opt-in (`safariEntryAutoEnter=false` by default), shown last under **Party → Party warping** as **sparkling auto entry** with the red warning **USE AT YOUR OWN RISK!!!!**. Separate CJ discovery/approach-only gates are removed; obsolete saved keys cannot activate or block entry. Preferred ticket and other explicit existing choices are preserved. Passive genuine-warp observation continues while off so the previous arrival’s cancelled-menu ownership can retire correctly; being off never grants input.
 
 ## Historical pure report contracts
 

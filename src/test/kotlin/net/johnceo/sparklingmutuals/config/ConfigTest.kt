@@ -9,33 +9,18 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 
 class ConfigTest {
-    @Test fun `CJ recording defaults enable dry run disable ticket helper and preserve saved choices`() {
-        ConfigManager.init(dir); ContestConfig.init(dir)
-        assertTrue(ConfigManager.safariEntryDryRun)
+    @Test fun `CJ single switch defaults off and preserves independent ticket helper and timing choices`() {
+        ConfigManager.init(dir);ContestConfig.init(dir)
+        assertFalse(ConfigManager.safariEntryAutoEnter)
         assertFalse(ConfigManager.autoSelectSafariTicket)
-        assertTrue(ConfigManager.shinyDetection)
-        assertFalse(ConfigManager.safariEntryApproach)
-        ConfigManager.warpDelaySeconds = 27
-        ConfigManager.save()
-        SafariSettings().apply { safari.entry.dryRun = true }.apply()
+        ConfigManager.warpDelaySeconds=27;ConfigManager.save()
+        SafariSettings().apply { warp.autoEnter=true }.apply();ConfigManager.init(dir)
+        assertTrue(ConfigManager.safariEntryAutoEnter);assertEquals(27,ConfigManager.warpDelaySeconds)
+        SafariSettings().apply { warp.autoEnter=false }.apply();ConfigManager.init(dir)
+        assertFalse(ConfigManager.safariEntryAutoEnter);assertEquals(27,ConfigManager.warpDelaySeconds)
+        Files.writeString(dir.resolve("sparkling-mutuals.properties"),"safariEntryAutoEnter=invalid\nautoSelectSafariTicket=true\nsafariEntryApproach=true\n")
         ConfigManager.init(dir)
-        assertTrue(ConfigManager.safariEntryDryRun)
-        assertEquals(27, ConfigManager.warpDelaySeconds)
-        SafariSettings().apply { safari.entry.dryRun = false }.apply()
-        ConfigManager.init(dir)
-        assertFalse(ConfigManager.safariEntryDryRun)
-        assertEquals(27, ConfigManager.warpDelaySeconds)
-        Files.writeString(dir.resolve("sparkling-mutuals.properties"), "safariEntryDryRun=invalid\nautoSelectSafariTicket=invalid\n")
-        ConfigManager.init(dir)
-        assertTrue(ConfigManager.safariEntryDryRun)
-        assertFalse(ConfigManager.autoSelectSafariTicket)
-        Files.writeString(dir.resolve("sparkling-mutuals.properties"), "safariEntryDryRun=false\nautoSelectSafariTicket=true\n")
-        ConfigManager.init(dir)
-        assertFalse(ConfigManager.safariEntryDryRun)
-        assertTrue(ConfigManager.autoSelectSafariTicket)
-        SafariSettings().apply { safari.entry.approach = true }.apply()
-        ConfigManager.init(dir)
-        assertTrue(ConfigManager.safariEntryApproach)
+        assertFalse(ConfigManager.safariEntryAutoEnter);assertTrue(ConfigManager.autoSelectSafariTicket)
     }
     @Test fun `each new warp setting persists when changed on its own`() {
         ConfigManager.init(dir); ContestConfig.init(dir)

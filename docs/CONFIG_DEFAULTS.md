@@ -17,9 +17,7 @@ Open `/sm` for settings. Fresh installs use [bundled main defaults](../src/main/
 | Setting | Saved key | Default |
 | --- | --- | --- |
 | Sparkle Warping | `warpAlertsEnabled` | Off |
-| CJ's Revenge WebSocket Safari discoveries (26.1.2 only) | `safariEntryDryRun` | On in CJ .6; current atomic room discoveries for opted-in entry modes |
-| CJ's Revenge automatic Safari entry | `safariEntryAutoEnter` | Off; distinct opt-in for approach, Manager and configured ticket |
-| CJ's Revenge one-block approach test | `safariEntryApproach` | Off; movement only, requires WebSocket discoveries and verified party warp |
+| Party → Party warping → sparkling auto entry | `safariEntryAutoEnter` | Off; single control for complete CJ entry, red USE AT YOUR OWN RISK!!!! warning |
 | Hotspot announcer | `hotspotAnnouncer` | Off |
 | Leech auto-accept | `leechMode` | Off; inviter whitelist retained |
 | Starting quest-item announcements and reminder titles | `announceStartingItems` | Off |
@@ -196,7 +194,7 @@ Successful profile/discovery reads and IGN-to-UUID lookups are reused for 60 min
 
 ## Experimental shard ranges
 
-Local CJ's Revenge .6 keeps `safariEntryDryRun` as **WebSocket Safari discoveries**, default on. **Automatic Safari entry** (`safariEntryAutoEnter`) is separately off by default and includes the approach plus Manager/ticket clicks. The old approach-only switch does not spend tickets. Existing saved choices and preferred ticket survive migration. See [current setup](CJS_ENTRY_DRY_RUN.md).
+Local CJ's Revenge .7 has one **Party → Party warping → sparkling auto entry** switch, saved as `safariEntryAutoEnter`, default off. It controls discovery authorization and the full approach/Manager/ticket sequence. Retired `safariEntryDryRun`/`safariEntryApproach` keys are ignored and removed on the next config save. Explicit existing full-entry choices remain. See [current setup](CJS_ENTRY_DRY_RUN.md).
 
 SkyBlock → Helpers → Shard sale guidance (experimental) uses persisted `shardSaleGuidance`, default **off** for both new and existing settings. It adds Hunting Box range colors, an always-present Safari Essence advice row and passive observed-order advisories. The combined Hunting Box total remains an independent switch; general item/chest valuation stays shelved. See [meaning and limitations](SHARD_SALE_GUIDANCE.md).
 
@@ -205,3 +203,5 @@ Last updated: 2026-11-04 — Integrated the supplied SM config migration and def
 The supplied SM source moves stores under `config/sparkling-mutuals/` before opening them. CJ settings use that migration, retain their saved keys, and preserve explicit saved values. Its 28-second fresh warp delay and configured appearance/Warp List preferences remain intact.
 
 2026-11-04 — CJ .6 replaces status exchange with WebSocket room authority and adds a separate off-by-default full-entry opt-in.
+
+2026-11-04 — CJ .7 consolidates all entry controls into one default-off switch at the bottom of Party warping, with an explicit red risk description.

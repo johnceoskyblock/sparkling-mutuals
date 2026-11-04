@@ -70,7 +70,7 @@ object CjsSafariEntry {
 
     private fun frame(client: Minecraft, at: Long): EntryDryRunFrame {
         sync(client, at)
-        val enabled = supported && ConfigManager.safariEntryDryRun
+        val enabled = supported && ConfigManager.safariEntryAutoEnter
         val hypixel = JoinWelcomeState.hypixel(client.currentServer?.ip)
         val player = client.player
         val ids = PartyManager.withLocal(player?.uuid?.toString().orEmpty())?.mapNotNull {
@@ -93,10 +93,10 @@ object CjsSafariEntry {
         if (!supported) return
         val client = Minecraft.getInstance()
         val at = now()
-        val frame = frame(client, at)
+        frame(client, at)
         admission.chat(text)
-        if (!frame.enabled) return
-        warp.observe(text,at)
+        // Observing a later genuine warp retires old cancellation ownership even while switched off.
+        if (JoinWelcomeState.hypixel(client.currentServer?.ip)) warp.observe(text,at)
     }
 
     private fun profiles(client: Minecraft) = client.connection?.onlinePlayers.orEmpty().mapNotNull {
@@ -167,16 +167,7 @@ object CjsSafariEntry {
                     lastStatus=flow.status;record(lastStatus,at)
                     client.player?.sendSystemMessage(LocalChat.component("[CJ entry] $lastStatus."))
                 }
-            } else {
-                val room=SafariPartySync.entryRoom(client)
-                val ran=room!=null && SafariPartySync.withEntryRoom(client,room) {
-                    val b=base()
-                    approach.tick(client,b,signal(client,b),ConfigManager.safariEntryApproach,
-                        warp.allows(b.context,profiles(client),now()),warp.generation,now()) { record(it,now()) }
-                    true
-                }
-                if(!ran) approach.tick(client,initial,null,ConfigManager.safariEntryApproach,allowed,warp.generation,at) { record(it,at) }
-            }
+            } else approach.release(client)
         } catch(error: Exception) {
             flow.cancel("Automatic entry cancelled: ${error.javaClass.simpleName}")
             approach.release(client);record(flow.status,now())
@@ -190,7 +181,7 @@ object CjsSafariEntry {
         logger.info("CJ_ENTRY {}", line)
     }
 
-    fun debug() = listOf("CJ entry: supported=$supported WebSocket=${ConfigManager.safariEntryDryRun} autoEntry=${ConfigManager.safariEntryAutoEnter} approachOnly=${ConfigManager.safariEntryApproach}",
+    fun debug() = listOf("CJ entry: supported=$supported sparklingAutoEntry=${ConfigManager.safariEntryAutoEnter}",
         "CJ phase=${flow.phase} status=${flow.status} genericMenuSuppressed=${flow.suppressesAutomaticMenus} warp=${warp.generation}") + trace.toList()
 
     fun reset() {
