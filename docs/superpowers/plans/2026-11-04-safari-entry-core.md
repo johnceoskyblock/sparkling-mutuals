@@ -50,7 +50,7 @@ Documentation: `docs/SAFARI_ENTRY_CORE.md`, small navigation/entry-guard notes. 
 ### Task 2: Fresh report exchange
 
 **Consumes:** Task 1 immutable context and message types.
-**Interfaces:** `EntryReportRequester.beginArrival(context, now)`, `request(context, now): Query?`, `receive(context, sender: EntryPeer, reply, now): EntrySighting?`; `EntrySightings.observe(context, entity: UUID, species, now)`, `captured(context,species)`, `freshest(context, now)`; `EntryReportResponder.offer(context,peer,query,now,enabled,activeRun,destinationAssociated)`, `poll(context,now): EntryReply?`.
+**Interfaces:** `EntryReportRequester.beginArrival(context, now)`, `request(context, now): Query?`, `receive(context, sender: EntryPeer, reply, now): EntrySighting?`; `EntrySightings.observe(context, entity: UUID, species, now)`, `captured(context,species)`, `freshest(context, now)`; `EntryReportResponder.offer(context,peer,query,now,enabled,activeRun,destinationAssociated)`, `poll(context,now,enabled,activeRun,destinationAssociated): EntryReply?` (send-time evidence rechecked explicitly).
 
 - [ ] Write failing tests for missed original notices, one query/no retry, intended requester/nonce/leader/context/realm/server checks, strict expiry/RTT, rollback, NONE consumption, capture/new identity, mutable roster and bounded queues.
 - [ ] Run focused requester/responder tests; expect missing types.
@@ -60,7 +60,7 @@ Documentation: `docs/SAFARI_ENTRY_CORE.md`, small navigation/entry-guard notes. 
 ### Task 3: Admission controller and ownership
 
 **Consumes:** immutable context, `EntrySighting` and report requester.
-**Interfaces:** `SafariEntryController.beginArrival(context, now, confirmedNewArrival)`, `observe(sighting)`, `tick(frame: EntryFrame, now): List<EntryEffect>`, `cancel()`, `rearm()`, `allowsAutomaticTicket(context,containerId,now): Boolean`. Frames explicitly supply destination, guard, current Manager reach/identity, exact menu, selected available slot and personal admission evidence; they perform no action. Effects describe query/Manager/ticket intent only.
+**Interfaces:** `SafariEntryController.beginArrival(context, now, confirmedNewArrival)`, `observe(sighting)`, `tick(frame: EntryFrame, now): List<EntryEffect>`, `cancel()`, `rearm()`, `allowsAutomaticTicket(context,containerId,now): Boolean`, `consumeTicketPermit(frame,now): Boolean`. Frames explicitly supply destination, guard, current Manager reach/identity, exact menu, selected available slot and personal admission evidence; they perform no action. Effects describe query/Manager/ticket intent only; the complete current frame must atomically consume a one-use ticket permission at the future packet boundary.
 
 - [ ] Write failing tests for guarded flow, no action with unavailable evidence, one Manager and ticket effect, precise menu ownership, expiry between stages, cancel/late menu, re-arm/toggle locks, uncertain result, context/world mismatch, and proven-new-arrival requirements.
 - [ ] Run controller tests; expect missing class.
