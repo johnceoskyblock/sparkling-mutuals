@@ -50,6 +50,8 @@ object SafariEspConfig {
     val mobs = SafariEspRules.mobs.associate { it.name to Mob(true, defaultColor(palette.getValue(it.name))) }
     internal val modWideToggles = mobs.keys.associateWith { true }.toMutableMap()
     internal val profitableToggles = mobs.keys.associateWith { true }.toMutableMap()
+    internal val alwaysOnToggles = mobs.keys.associateWith { it == "Hideyho" }.toMutableMap()
+    fun alwaysOn(name: String) = alwaysOnToggles[name] == true
     fun modWideEnabled(name: String) = modWideToggles[name] != false
     fun profitableEnabled(name: String) = modWideEnabled(name) && profitableToggles[name] != false
     const val DEFAULT_TEXT_SCALE = 2f
@@ -119,6 +121,7 @@ object SafariEspConfig {
         mobs.forEach { (name, mob) ->
             modWideToggles[name] = properties.getProperty("esp.${key(name)}.modWide")?.toBooleanStrictOrNull() ?: true
             profitableToggles[name] = properties.getProperty("esp.${key(name)}.profitable")?.toBooleanStrictOrNull() ?: true
+            alwaysOnToggles[name] = properties.getProperty("esp.${key(name)}.alwaysOn")?.toBooleanStrictOrNull() ?: (name == "Hideyho")
             mob.enabled = properties.getProperty("esp.${key(name)}.enabled")?.toBooleanStrictOrNull() ?: true
             mob.color = validColor(properties.getProperty("esp.${key(name)}.color"), defaultColor(palette.getValue(name)))
         }
@@ -150,6 +153,7 @@ object SafariEspConfig {
         mobs.forEach { (name, mob) ->
             properties.setProperty("esp.${key(name)}.modWide", modWideEnabled(name).toString())
             properties.setProperty("esp.${key(name)}.profitable", profitableToggles.getValue(name).toString())
+            properties.setProperty("esp.${key(name)}.alwaysOn", alwaysOn(name).toString())
             properties.setProperty("esp.${key(name)}.enabled", mob.enabled.toString())
             properties.setProperty("esp.${key(name)}.color", mob.color)
         }

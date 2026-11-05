@@ -20,6 +20,7 @@ enum class BannerKind(val label: String,val text: String,val rgb: Int=0x55FF55,v
     DOOM_READY("Doomspiral ritual","Doomspiral Ready",0xFFAA00,0),
     DOOM_STARTED("Doomspiral summoned","Doomspiral Started",0xFF5555,0,priority=20),
     DOOM_DONE("Doomspiral caught or retreated","Doomspiral Done!",sound=27),
+    HIDEYHO_LOCATION("Hideyho inside/outside","Hideyho: <LOCATION>",0x9955FF,17),
     HIDEYHO("Hideyho found","Hideyho Found",0x9955FF,17),
     MACAW("Macaw spawned","Macaw Spawned",0xFFAA00,29),
     BIRDS("Bluebird or Parakeet spawned","<CRITTER> Spawned",sound=0),
@@ -33,7 +34,7 @@ enum class BannerKind(val label: String,val text: String,val rgb: Int=0x55FF55,v
     CONTEST_END("Contest ended","Contest Ended",0xFF5555,30),
     TICKET("Ticket earned","<TICKET> Ticket Earned!",sound=49,priority=20),
     WARP("Warping now","Warping Now",0xFF5555,9,priority=30);
-    val supported get()=this in setOf(FULL_PARTY,BIOME_DONE,RUN_COMPLETE,GEMS,BIRD_FOOD,COINS,INCENSE,FEEDER_EMPTY,
+    val supported get()=this in setOf(FULL_PARTY,BIOME_DONE,RUN_COMPLETE,GEMS,BIRD_FOOD,COINS,INCENSE,FEEDER_EMPTY,HIDEYHO_LOCATION,
         CONTEST_START,CONTEST_FIVE,CONTEST_THREE,CONTEST_ONE,CONTEST_END,TICKET,WARP)
     val encounterBiome get()=when(this) { GEMS -> net.johnceo.sparklingmutuals.safari.SafariBiome.CAVERN
         BIRD_FOOD,FEEDER_EMPTY -> net.johnceo.sparklingmutuals.safari.SafariBiome.FOREST

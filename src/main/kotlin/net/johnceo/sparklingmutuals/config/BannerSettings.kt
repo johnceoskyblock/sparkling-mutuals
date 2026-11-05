@@ -33,6 +33,8 @@ class SafariBannerOptions {
     @JvmField @ConfigOption(name="Warping now",desc="") @Accordion val warp=BannerOption(BannerKind.WARP)
 }
 class EncountersBanners {
+    @JvmField @ConfigOption(name="Hideyho inside/outside",desc="Unique and Full Clear only. Use <LOCATION> for Inside or Outside.")
+    @Accordion val hideyho=BannerOption(BannerKind.HIDEYHO_LOCATION)
     @JvmField @ConfigOption(name="All bird food collected",desc="") @Accordion val food=BannerOption(BannerKind.BIRD_FOOD)
     @JvmField @ConfigOption(name="Birdfeeder empty",desc="") @Accordion val feeder=BannerOption(BannerKind.FEEDER_EMPTY)
     @JvmField @ConfigOption(name="All gems ready",desc="") @Accordion val gems=BannerOption(BannerKind.GEMS)

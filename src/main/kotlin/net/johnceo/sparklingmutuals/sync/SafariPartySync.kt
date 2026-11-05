@@ -62,6 +62,7 @@ object SafariPartySync {
     private var lastRoster=emptySet<String>()
     private val reportQueue = linkedSetOf<String>()
     private val submittedReports = mutableSetOf<String>()
+    private val biomeReportRetryAt = mutableMapOf<String, Long>()
     private val biomeChatDue = linkedMapOf<String, Long>()
     private val startingFoodBalances = mutableMapOf<Pair<String, FloorDropType>, StartingFoodBalance>()
     private val startingFoodSlots = mapOf(FloorDropType.SEEDS to 10, FloorDropType.WORM to 11, FloorDropType.BERRY to 12)
@@ -97,8 +98,9 @@ object SafariPartySync {
             transferRevision == SafariIsland.locationRevision) return
         val pos = entity.blockPosition()
         val observed = Triple(pos.x, pos.y, pos.z)
-        val site = PartySyncSites.moundAt(observed)
-        if (site == null || !SafariStructures.isMoundAttack(entity, site, Minecraft.getInstance())) {
+        val site = PartySyncSites.moundAt(observed) ?: observed
+        val client = Minecraft.getInstance()
+        if (!SafariStructures.isMoundAttack(entity, site, client) && !net.johnceo.sparklingmutuals.safari.esp.SafariEsp.isRockmiteMound(entity, client)) {
             SafariDeveloper.event("Unmatched cavern attack · ${entity.type} · $observed", showOnHud = false)
             return
         }
@@ -162,7 +164,14 @@ object SafariPartySync {
             }
         }
         if(ticketed && now>=sampleAt && run!=null) { sampleAt=now+500;sample(client,run);apply(run) }
-        if(transport.ready) {
+        if (transport.ready) {
+            biomeReportRetryAt.entries.removeIf { (code, at) ->
+                when {
+                    current.biomeReports.any { it.second == code } -> true
+                    now >= at -> { reportQueue.add(code); true }
+                    else -> false
+                }
+            }
             if(localNests!=lastNests && send("N",localNests.toString())) lastNests=localNests
             val sparkle=localSparkling.joinToString(",")
             if(sparkle!=lastSparkling && send("S",sparkle)) lastSparkling=sparkle
@@ -183,13 +192,12 @@ object SafariPartySync {
                 !run.sharedSuppliesPending(biome) && !run.hasUnusedStartingForBiome(biome)
             }?.let { code ->
                 if (current.biomeReports.none { it.second == code } && send("B", code)) {
-                    submittedReports.add(code)
+                    if (submittedReports.add(code)) biomeReportRetryAt[code] = now + 4_000
                     reportQueue.remove(code)
                 } else if (current.biomeReports.any { it.second == code }) reportQueue.remove(code)
             }
         }
         biomeChatDue.entries.firstOrNull { now >= it.value }?.let { (code, _) ->
-            biomeChatDue.remove(code)
             val biome = PartySyncProtocol.codes.getValue(code)
             val reporters = current.biomeReports.filter { it.second == code }.map { it.first }
             val speaker = when {
@@ -198,9 +206,16 @@ object SafariPartySync {
                 code in submittedReports -> (reporters + current.self).minOrNull()
                 else -> reporters.first()
             }
-            if (run != null && ConfigManager.autoBiomeReports && !run.manualReportReceived(biome) &&
-                !run.sharedSuppliesPending(biome) && !run.hasUnusedStartingForBiome(biome) &&
-                speaker == current.self) PartyManager.sendPartyChat(client, code)
+            when {
+                run == null || run.endedAt != null || !ConfigManager.autoBiomeReports ||
+                    run.manualReportReceived(biome) || speaker != current.self -> biomeChatDue.remove(code)
+                run.sharedSuppliesPending(biome) || run.hasUnusedStartingForBiome(biome) -> biomeChatDue[code] = now + 1_000
+                PartyManager.sendPartyChat(client, code) -> biomeChatDue.remove(code)
+                else -> {
+                    if (!PartyManager.hasInfo) PartyManager.requestPartyInfo()
+                    biomeChatDue[code] = now + 1_000
+                }
+            }
         }
         if(ConfigManager.hotspotAnnouncer && current.authority && !current.conflict && matchingParty && transport.ready &&
             PartyManager.isLeader(client.player!!.uuid.toString()) && current.leader==current.self && now-lastInstructionAt>=1500) {
@@ -655,7 +670,7 @@ object SafariPartySync {
         transferRevision=null;ticketed=false;ticketWindowLocked=false
         local.fill(0);local[17]=-1;local[33]=PartySyncProtocol.AGGREGATE_VERSION;localSparkling.fill(0);localNests=0;lastNests=-1;lastSparkling=""
         lastAggregate="";produced="";liveFingerprint="";due=0;pendingLive=false;seenWalls=0;lastRoster=emptySet()
-        reportQueue.clear();submittedReports.clear();biomeChatDue.clear();pendingReports.clear();discoveryReports.clear();notifiedSparks.clear();lastInstructionAt=0
+        reportQueue.clear();submittedReports.clear();biomeReportRetryAt.clear();biomeChatDue.clear();pendingReports.clear();discoveryReports.clear();notifiedSparks.clear();lastInstructionAt=0
         seenTroodon=0;appliedRun=null;appliedReports.clear()
         startingFoodBalances.clear()
         pendingMoundHits.clear();openedWalls.clear()

@@ -13,7 +13,9 @@ import net.johnceo.sparklingmutuals.history.AchievementRules
 import net.johnceo.sparklingmutuals.history.SparklingDexType
 import net.johnceo.sparklingmutuals.history.BazaarPrices
 import net.johnceo.sparklingmutuals.history.PlaytimeReader
-import net.johnceo.sparklingmutuals.history.ProfitDays
+import net.johnceo.sparklingmutuals.history.ProfitPeriods
+import net.johnceo.sparklingmutuals.history.ProfitTimeframe
+import net.johnceo.sparklingmutuals.history.ProfitTotals
 import net.johnceo.sparklingmutuals.history.RunHistory
 import net.johnceo.sparklingmutuals.history.RunRecord
 import net.johnceo.sparklingmutuals.history.HistoryQueries
@@ -51,6 +53,8 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
     private var sparklingRunsOnly = false
     private var runSort = RunSort.NEWEST
     private var selectedRun = -1
+    private var profitTimeframe = ProfitTimeframe.DAY
+    private var selectedProfitSession: Int? = null
     private var mineOnly = false
     private var dexType=SparklingDexType.SPARKLING
     private var dexMenu=false
@@ -182,7 +186,7 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
                 "Coins" -> "Reward value before fees and ticket costs."
                 "Length" -> "Recorded run duration."
                 "Per hour" -> "Reward value divided by recorded run time."
-                "Best run" -> "Highest reward value that day."
+                "Best run" -> "Highest reward value in this period."
                 else -> ""
             }
             if (help.isNotEmpty()) tip(g, mx, my, x - font.width(h) / 2 - 3, headerY - 1, font.width(h) + 6, ROW, h, help)
@@ -537,14 +541,19 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
 
     private fun profit(g: GuiGraphicsExtractor, mx: Int, my: Int) {
         val runs = RunHistory.runs
-        val days = ProfitDays.of(runs)
-        val coins = runs.sumOf { maxOf(0L, it.coins) }
-        val played = runs.sumOf { it.length }
-        g.text(font, "Profit", px + 8, py + 6, GOLD)
+        val sessionStarts = RunHistory.sessionStarts
+        val periods = ProfitPeriods.rows(runs, profitTimeframe, sessionStarts)
+        val selectedSession = if (profitTimeframe == ProfitTimeframe.SESSION)
+            periods.firstOrNull { it.session == selectedProfitSession } ?: periods.firstOrNull()
+        else null
+        fun sessionLabel(index: Int) = if (index == sessionStarts.size) "Current" else "#${index + 1}"
+        val totals = selectedSession?.totals ?: ProfitTotals.of(runs)
+        val title = selectedSession?.session?.let { "Profit · Session ${sessionLabel(it)}" } ?: "Profit"
+        g.text(font, title, px + 8, py + 6, GOLD)
         (if (ConfigManager.runCoinsInstaSell) "Insta-sell prices" else "Sell-offer prices").let { g.text(font, "§7$it", px + pw - 8 - font.width(it), py + 6, MUTED) }
-        centred(g, "§e${BazaarPrices.format(coins)} §7total  §8·  §e${if (played > 0) BazaarPrices.format(coins * 3_600_000L / played) else "-"} §7an hour  §8·  §e" +
-            "${if (runs.isEmpty()) "-" else BazaarPrices.format(coins / runs.size)} §7a run  §8·  §d${runs.sumOf { it.feathers }} §7Rainbow Feathers", px + pw / 2, py + 19, TEXT)
-        val headers = listOf("Day", "Runs", "Time", "Coins", "Per hour", "Best run")
+        centred(g, "§e${BazaarPrices.format(totals.coins)} §7total  §8·  §e${if (totals.millis > 0) BazaarPrices.format(totals.perHour) else "-"} §7an hour  §8·  §e" +
+            "${if (totals.runs == 0) "-" else BazaarPrices.format(totals.perRun)} §7a run  §8·  §d${totals.feathers} §7Rainbow Feathers", px + pw / 2, py + 19, TEXT)
+        val headers = listOf(profitTimeframe.header, "Runs", "Time", "Coins", "Per hour", "Best run")
         val at = floatArrayOf(.10f, .26f, .40f, .55f, .71f, .87f)
         val headerY = py + 33
         headers.forEachIndexed { i, h ->
@@ -557,28 +566,39 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
                 "Coins" -> "Reward value before fees and ticket costs."
                 "Length" -> "Recorded run duration."
                 "Per hour" -> "Reward value divided by recorded run time."
-                "Best run" -> "Highest reward value that day."
+                "Best run" -> "Highest reward value in this period."
                 else -> ""
             }
             if (help.isNotEmpty()) tip(g, mx, my, x - font.width(h) / 2 - 3, headerY - 1, font.width(h) + 6, ROW, h, help)
         }
-        listTop = headerY + 12; listBottom = py + ph - 26; listRows = maxOf(1, (listBottom - listTop) / ROW); listSize = days.size
+        listTop = headerY + 12; listBottom = py + ph - 26; listRows = maxOf(1, (listBottom - listTop) / ROW); listSize = periods.size
         val offset = clampScroll(Tab.PROFIT)
         if (!BazaarPrices.ready() && runs.any { it.coins < 0 }) centred(g, "§7Loading bazaar prices...", px + pw / 2, listTop + 20, MUTED)
-        else if (days.isEmpty()) centred(g, "§7No runs yet.", px + pw / 2, listTop + 20, MUTED)
-        val best = days.maxOfOrNull { it.coins } ?: 0
+        else if (periods.isEmpty()) centred(g, "§7No runs yet.", px + pw / 2, listTop + 20, MUTED)
+        val best = periods.maxOfOrNull { it.totals.coins } ?: 0
         for (i in 0 until listRows) {
-            val day = days.getOrNull(offset + i) ?: break
+            val period = periods.getOrNull(offset + i) ?: break
+            val values = period.totals
             val y = listTop + i * ROW
-            // The best day stands out, so a good session is easy to find.
-            if (day.coins == best && best > 0) g.fill(px + 4, y - 1, px + pw - 4, y + ROW - 1, 0x22FFD84A)
-            val cells = listOf(DAY.format(day.date), "${day.runs}", hours(day.millis), BazaarPrices.format(day.coins),
-                BazaarPrices.format(day.perHour), day.best?.let { "#${it.number} ${BazaarPrices.format(it.coins)}" } ?: "-")
+            val session = period.session
+            val hover = session != null && mx in px + 4 until px + pw - 12 && my in y - 1 until y + ROW - 1
+            if (period == selectedSession || hover || session == null && values.coins == best && best > 0)
+                g.fill(px + 4, y - 1, px + pw - 12, y + ROW - 1, if (period == selectedSession) 0x44FFD84A else 0x22FFD84A)
+            if (session != null) hits += Hit(px + 4, y - 1, pw - 16, ROW) { selectedProfitSession = session }
+            val label = session?.let(::sessionLabel) ?: period.date?.let(DAY::format).orEmpty()
+            val cells = listOf(label, "${values.runs}", hours(values.millis), BazaarPrices.format(values.coins),
+                BazaarPrices.format(values.perHour), values.best?.let { "#${it.number} ${BazaarPrices.format(it.coins)}" } ?: "-")
             val colours = intArrayOf(TEXT, MUTED, MUTED, GOLD, 0xFFFFE08A.toInt(), 0xFF88DD88.toInt())
             cells.forEachIndexed { c, text -> centred(g, text, px + Math.round(pw * at[c]), y, colours[c]) }
         }
         scrollbar(g, offset, px + pw - 8)
-        button(g, mx, my, px + 8, py + ph - 20, 140, if (ConfigManager.runCoinsInstaSell) "Price: insta-sell" else "Price: sell offer") {
+        val priceWidth = if (pw >= 340) 140 else 108
+        val timeframeWidth = if (pw >= 340) 120 else 102
+        button(g, mx, my, px + 14 + priceWidth, py + ph - 20, timeframeWidth, "Timeframe: ${profitTimeframe.name.lowercase()}") {
+            profitTimeframe = ProfitTimeframe.entries[(profitTimeframe.ordinal + 1) % ProfitTimeframe.entries.size]
+            scroll[Tab.PROFIT] = 0
+        }
+        button(g, mx, my, px + 8, py + ph - 20, priceWidth, if (ConfigManager.runCoinsInstaSell) "Price: insta-sell" else "Price: sell offer") {
             ConfigManager.runCoinsInstaSell = !ConfigManager.runCoinsInstaSell; ConfigManager.save()
             RunHistory.reprice()
         }

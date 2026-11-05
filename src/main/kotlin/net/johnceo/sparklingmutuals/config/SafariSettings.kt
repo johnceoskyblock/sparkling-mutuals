@@ -37,6 +37,8 @@ class SafariSettings {
     val modWideCritters = CritterToggleSettings(SafariEspConfig::modWideEnabled)
     @JvmField @Category(name = "Profitable Critter Toggles", desc = "")
     val profitableCritters = CritterToggleSettings { SafariEspConfig.profitableToggles.getValue(it) }
+    @JvmField @Category(name = "Always On Toggle", desc = "")
+    val alwaysOnCritters = CritterToggleSettings(SafariEspConfig::alwaysOn)
     init {
         esp.critterColors = customization.critters
         esp.waypointColors = customization.waypoints
@@ -248,9 +250,6 @@ class SafariSettings {
         var hideyhoAutoAccept
             get() = interactions.hideyhoAutoAccept
             set(value) { interactions.hideyhoAutoAccept = value }
-        var hideyhoInsideOutside
-            get() = interactions.hideyhoInsideOutside
-            set(value) { interactions.hideyhoInsideOutside = value }
         var highlightTeammates
             get() = teammates.highlightTeammates
             set(value) { teammates.highlightTeammates = value }
@@ -319,8 +318,6 @@ class SafariSettings {
         @ConfigEditorBoolean var candleHitbox = ConfigManager.candleHitbox
         @JvmField @ConfigOption(name = "Auto-accept Hideyho", desc = "")
         @ConfigEditorBoolean var hideyhoAutoAccept = ConfigManager.hideyhoAutoAccept
-        @JvmField @ConfigOption(name = "Hideyho inside/outside", desc = "Unique and Full Clear only.")
-        @ConfigEditorBoolean var hideyhoInsideOutside = ConfigManager.hideyhoInsideOutside
     }
     class SafariTeammateSettings {
         @JvmField @ConfigOption(name = "Highlight teammates", desc = "")
@@ -532,7 +529,7 @@ class SafariSettings {
             ConfigManager::uniqueHideCritterEsp to modes.unique.hideCritters, ConfigManager::uniqueHideFloorDropEsp to modes.unique.hideDrops,
             ConfigManager::fullClearHideCritterEsp to modes.fullClear.hideCritters, ConfigManager::fullClearHideFloorDropEsp to modes.fullClear.hideDrops,
             ConfigManager::sparklingHideCritterEsp to modes.sparkling.hideCritters, ConfigManager::sparklingHideFloorDropEsp to modes.sparkling.hideDrops, ConfigManager::announceStartingItems to party.startingItems, ConfigManager::huntingBoxValue to skyblock.helpers.huntingBoxValue, ConfigManager::shardSaleGuidance to skyblock.helpers.shardSaleGuidance, ConfigManager::skillOverflow to skyblock.helpers.skillOverflow, ConfigManager::skillOverflowChat to skyblock.helpers.skillOverflowChat, ConfigManager::skillOverflowNumbers to skyblock.helpers.skillOverflowNumbers, ConfigManager::estimatedItemValue to skyblock.helpers.estimatedItemValue, ConfigManager::estimatedChestValue to skyblock.helpers.estimatedChestValue, ConfigManager::phantomleafSolver to miscEndgame.phantomleafSolver, ConfigManager::highlightTeammates to safari.highlightTeammates, ConfigManager::showTeammateNames to safari.showTeammateNames, ConfigManager::profitableShardEsp to modes.unique.profitable, ConfigManager::sparklingProfitableShardEsp to modes.sparkling.profitable, ConfigManager::partyCommandsEnabled to party.enabled, ConfigManager::downtimeCommand to party.downtime, ConfigManager::useCloudApi to api.cloud, ConfigManager::hideHauntedPaintings to safari.paintings,
-            ConfigManager::shinyDetection to safari.shiny, ConfigManager::hideyhoAutoAccept to safari.hideyhoAutoAccept, ConfigManager::autoSelectSafariTicket to safari.autoSelectTicket, ConfigManager::hideyhoInsideOutside to safari.hideyhoInsideOutside,
+            ConfigManager::shinyDetection to safari.shiny, ConfigManager::hideyhoAutoAccept to safari.hideyhoAutoAccept, ConfigManager::autoSelectSafariTicket to safari.autoSelectTicket,
             ConfigManager::progressHud to tracking.progress, ConfigManager::progressProfit to tracking.progressHud.profit, ConfigManager::progressHotspot to tracking.progressHud.hotspot, ConfigManager::catchCountPanel to tracking.captures,
             ConfigManager::experimentalCapsulePath to safari.experimentalCapsulePath,
             ConfigManager::gemzieGemAutoSelect to safari.gemzieGemAutoSelect,
@@ -552,7 +549,8 @@ class SafariSettings {
         val distance = ConfigManager.validCapsuleDistance(safari.capsuleHideDistance)
         val pathWidth = ConfigManager.validCapsulePathWidth(safari.capsulePathWidth)
         val waterOpacity = safari.visibility.waterOpacity.values()
-        val generalChanged = espChanged || modWideCrittersChanged || profitableCrittersChanged ||
+        val alwaysOnCrittersChanged = alwaysOnCritters.apply(SafariEspConfig.alwaysOnToggles)
+        val generalChanged = espChanged || modWideCrittersChanged || profitableCrittersChanged || alwaysOnCrittersChanged ||
             bannerChanged || ConfigManager.specialCatchStyle != safari.alerts.caughtStyle || whitelistChanged || warpModesChanged || warpConfigurationChanged || ConfigManager.doomspiralEmergenceTicks != safari.capture.doomTicks.coerceIn(1, 600) ||
             ConfigManager.doomspiralThrowLeadTicks != safari.capture.doomLead.coerceIn(0, 40) || ConfigManager.biomeWaterOpacity != waterOpacity || ConfigManager.capsulePathWidth != pathWidth || customizationChanged || changes.any { (property, value) -> property.get() != value } ||
             ConfigManager.safariTicketPreference != safari.ticketPreference || ConfigManager.showWhere != tracking.where || ConfigManager.capsuleHideDistance != distance ||

@@ -447,7 +447,9 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
         if(targets.isEmpty()) return true
         val icy=biome==SafariBiome.ICY && count("Wumpa")>0
         if(lastBiome==biome && !icy) return completion.locallyComplete(this,biome,mode,party)
-        if(lastBiome!=biome && !icy && biome !in biomeReports && !completion.reported(biome)) return false
+        if (lastBiome != biome && completion.locallyReported(biome, mode) &&
+            !sparklingCaptures.pending(biome) && !sharedSuppliesPending(biome) && !hasUnusedStartingForBiome(biome)) return true
+        if(lastBiome!=biome && !icy && biome !in biomeReports) return false
         return completed(mode,targets,party)==targets.size
     }
     private fun uniqueReportedComplete(name: String): Boolean {

@@ -11,3 +11,5 @@ Mutuals source: https://github.com/johnceoskyblock/sparkling-mutuals
 
 This is an independent client adapter; it does not bundle the SafariUtils mod or
 its backend and does not contain service secrets or Minecraft session credentials.
+
+Waypoint catalog and floor-drop and Scrappy inference adapted from SafariUtils upstream commit 851a3574d475209a9def33640cd1d2a1fe1bcac5 under the same MIT license.

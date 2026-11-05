@@ -52,7 +52,7 @@ object SafariDowntime {
     private val announcement = DowntimeAnnouncement()
     /** Torrhus entry checks banked requests before the next run-exit tick. */
     val entryHold get() = requests.isNotEmpty() && ConfigManager.downtimeCommand
-    fun ticketMessage(body: String) = body.contains("ticket", ignoreCase = true)
+    fun ticketMessage(body: String) = !body.startsWith(DowntimeAnnouncement.REQUEST_PREFIX) && body.contains("ticket", ignoreCase = true)
     fun observeAnnouncement(body: String) { announcement.observe(body) }
 
     /** Handles one chat line; returns a party message this client should send, if any. */
@@ -191,8 +191,11 @@ object SafariDowntime {
     internal fun localNotice() = "[SM] ${if (requests.values.all { it.equals("contest", true) }) "Contest" else "Downtime"}: wait for ${waitingFor()} to say r or report a ticket in party chat." +
         (if (requests.values.any { it.equals("contest", true) }) " Other players' contest holds also clear 20s after a Torrhus party warp." else "") +
         " Hold Shift to enter anyway."
-    private fun summary(): String? = DowntimeAnnouncement.TICKET_REMINDER.takeIf {
-        requests.values.any { it.equals("contest", true) }
+    private fun summary(): String? {
+        val manual = requests.filterValues { !it.equals("contest", true) }.entries.joinToString(" · ") { (name, reason) ->
+            "${DowntimeAnnouncement.REQUEST_PREFIX}${displayName(name)} (Reason: ${reason.ifBlank { "Not specified" }.take(60)})"
+        }
+        return manual.ifEmpty { DowntimeAnnouncement.TICKET_REMINDER.takeIf { requests.isNotEmpty() } }
     }
     fun queueAnnouncement(message: String) {
         // Only the current leader may publish it, once the Canyon location is confirmed.

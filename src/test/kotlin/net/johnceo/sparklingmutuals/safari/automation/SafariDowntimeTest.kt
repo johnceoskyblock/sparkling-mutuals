@@ -127,7 +127,7 @@ class SafariDowntimeTest {
     @Test fun `contest request preserves another members existing downtime reason`() {
         SafariDowntime.chat("Party > Friend: !dt food", false, "Me")
         val summary = SafariDowntime.chat("Party > Leader: !dt contest", false, "Me", listOf("Leader", "Friend", "Me"))
-        assertEquals(DowntimeAnnouncement.TICKET_REMINDER,summary)
+        assertEquals("DT request by Friend (Reason: food)",summary)
         assertFalse(SafariDowntime.ticketEarned("Friend"))
         assertTrue(SafariDowntime.localNotice().contains("Friend (food), Leader (contest), Me (contest)"))
     }
@@ -169,17 +169,17 @@ class SafariDowntimeTest {
         assertFalse(SafariDowntime.holding)
         assertEquals("", SafariDowntime.holders())
     }
-    @Test fun `a manual request becomes a hold without a verbose party announcement`() {
+    @Test fun `a manual request queues a named party announcement`() {
         assertNull(SafariDowntime.chat("Party > [MVP+] Farmer: !dt food", inSafari = true, self = "Other"))
         assertFalse(SafariDowntime.holding)
-        assertNull(SafariDowntime.leftSafari("Other"))
+        assertEquals("DT request by Farmer (Reason: food)", SafariDowntime.leftSafari("Other"))
         assertTrue(SafariDowntime.holding)
         SafariDowntime.reset()
         SafariDowntime.chat("Party > Farmer: !dt food", inSafari = true, self = "Farmer")
-        assertNull(SafariDowntime.leftSafari("Farmer"))
+        assertEquals("DT request by Farmer (Reason: food)", SafariDowntime.leftSafari("Farmer"))
     }
     @Test fun `asked outside the Safari it holds straight away`() {
-        assertNull(SafariDowntime.chat("Party > Farmer: !DT", inSafari = false, self = "Farmer"))
+        assertEquals("DT request by Farmer (Reason: Not specified)", SafariDowntime.chat("Party > Farmer: !DT", inSafari = false, self = "Farmer"))
         assertTrue(SafariDowntime.holding)
     }
     @Test fun `a requester ready before the run ends cancels their pending downtime`() {
@@ -268,11 +268,11 @@ class SafariDowntimeTest {
         assertNull(SafariDowntime.chat("Party > Farmer: !dtx", inSafari = false, self = "Farmer"))
         assertFalse(SafariDowntime.holding)
     }
-    @Test fun `contest return queues one short ticket reminder while keeping named requests locally`() {
+    @Test fun `mixed return reports manual requests together`() {
         SafariDowntime.chat("Party > Alex: !dt food", true, "Me")
         SafariDowntime.chat("Party > Steve: !dt contest", true, "Me")
         SafariDowntime.chat("Party > Bob: !dt", true, "Me")
-        assertEquals(DowntimeAnnouncement.TICKET_REMINDER, SafariDowntime.leftSafari("Me"))
+        assertEquals("DT request by Alex (Reason: food) · DT request by Bob (Reason: Not specified)", SafariDowntime.leftSafari("Me"))
         assertNull(SafariDowntime.leftSafari("Me"))
     }
 
@@ -280,7 +280,7 @@ class SafariDowntimeTest {
         SafariDowntime.chat("Party > Farmer: !dt food", true, "Me")
         SafariDowntime.transfer()
         assertTrue(SafariDowntime.holding, "banked request becomes the next-entry hold on transfer")
-        assertNull(SafariDowntime.leftSafari("Farmer"))
+        assertEquals("DT request by Farmer (Reason: food)", SafariDowntime.leftSafari("Farmer"))
         assertNull(SafariDowntime.leftSafari("Farmer"), "announce once")
         assertEquals("Farmer", SafariDowntime.holders())
         SafariDowntime.leftSafari("Me")
@@ -294,7 +294,7 @@ class SafariDowntimeTest {
     }
     @Test fun `case variants update one request and quoted readiness never releases somebody else`() {
         SafariDowntime.chat("Party > Farmer: !dt food", false, "Me")
-        assertNull(SafariDowntime.chat("Party > fArMeR: !dt brb", false, "Me"))
+        assertEquals("DT request by Farmer (Reason: brb)", SafariDowntime.chat("Party > fArMeR: !dt brb", false, "Me"))
         assertEquals("Farmer", SafariDowntime.holders())
         SafariDowntime.chat("Party > Steve: Farmer r", false, "Me")
         SafariDowntime.chat("Party > Steve: Farmer Ticket earned!", false, "Me")

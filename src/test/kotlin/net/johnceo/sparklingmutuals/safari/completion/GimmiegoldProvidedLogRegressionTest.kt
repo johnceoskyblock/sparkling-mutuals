@@ -31,6 +31,17 @@ class GimmiegoldProvidedLogRegressionTest {
         run.gimmiegoldCheck.inventory(1)
         assertFalse(run.sparklingComplete("Gimmiegold", party()), "held coins still block completion")
     }
+    @Test fun `five captures complete after two provisional coin markers are reclassified`() {
+        val run = SafariRun(0).apply { visitBiome(SafariBiome.HAUNTED) }
+        (1..7).forEach { run.gimmiegoldCheck.floor(it, true) }
+        coins(run, 5)
+        repeat(5) { run.record(SafariCatch(SafariRoster.named("Gimmiegold")!!)) }
+        scan(run, emptyList())
+        assertFalse(run.fullClearComplete("Gimmiegold"))
+        run.gimmiegoldCheck.discardFloors(setOf(6, 7))
+        scan(run, emptyList())
+        assertTrue(run.fullClearComplete("Gimmiegold"))
+    }
     private val live = listOf(
         "Gimmiegold" to UUID.fromString("fb6d1f04-d5d8-b124-de98-581d4b89a3e0"),
         "Gimmiegold" to UUID.fromString("0ca20a18-6f87-440d-9df2-0a46da4911d0"))

@@ -8,7 +8,7 @@ import net.johnceo.sparklingmutuals.safari.SafariRun
 
 /** Run-owned notification memory never changes capture or PB evidence. */
 class SafariCompletionEvents {
-    private val announced = mutableSetOf<SafariBiome>()
+    private val announced = mutableMapOf<SafariBiome, SafariMode?>()
     private val pending = mutableSetOf<SafariBiome>()
     private var alerted = false
     fun reopen(biome: SafariBiome) { announced.remove(biome); pending.remove(biome); alerted = false }
@@ -44,10 +44,11 @@ class SafariCompletionEvents {
         if (biome in announced || !pending.add(biome)) return null
         return when (biome) { SafariBiome.FOREST -> "fd"; SafariBiome.CAVERN -> "cd"; SafariBiome.ICY -> "id"; SafariBiome.HAUNTED -> "hd" }
     }
-    fun sent(biome: SafariBiome) {
-        if (pending.remove(biome)) announced.add(biome)
+    fun sent(biome: SafariBiome, mode: SafariMode? = null) {
+        if (pending.remove(biome)) announced[biome] = mode
     }
     fun reported(biome: SafariBiome)=biome in announced
+    fun locallyReported(biome: SafariBiome, mode: SafariMode) = announced[biome] == mode
     fun alert(run: SafariRun, mode: SafariMode, party: PartySparklingState, enabled: Boolean): Boolean {
         if (!enabled || alerted || mode == SafariMode.SPARKLING && !party.ready) return false
         val targets = SafariRoster.all.filter { mode != SafariMode.SPARKLING || party.needs(it.name) }

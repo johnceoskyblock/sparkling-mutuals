@@ -54,7 +54,11 @@ class SafariFeatureIntegrationTest {
             "modes.fullClear.hideDrops", "modes.sparkling.hideCritters", "modes.sparkling.hideDrops")
         val modes = setOf("modes.unique.enabled", "modes.fullClear.enabled", "modes.sparkling.enabled")
         assertAll(switches.filterKeys { it !in modes && !it.startsWith("banner.") }.map { (name,value) ->
-            org.junit.jupiter.api.function.Executable { assertEquals(name !in exceptions && !name.endsWith(".borderEnabled"),value,name) }
+            org.junit.jupiter.api.function.Executable {
+                val expected = if (name.startsWith("alwaysOnCritters.")) name == "alwaysOnCritters.hideyho"
+                    else name !in exceptions && !name.endsWith(".borderEnabled")
+                assertEquals(expected, value, name)
+            }
         })
         assertTrue(modes.none { it in switches }, "Modes are selected through commands")
         assertEquals(0, SafariSettings().safari.entry.ticketPreference)

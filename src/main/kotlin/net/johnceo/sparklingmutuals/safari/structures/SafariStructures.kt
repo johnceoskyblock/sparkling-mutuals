@@ -11,7 +11,9 @@ import net.johnceo.sparklingmutuals.safari.SafariBiome
 import net.johnceo.sparklingmutuals.safari.SafariTracking
 import net.johnceo.sparklingmutuals.safari.esp.EspEntity
 import net.johnceo.sparklingmutuals.safari.esp.SafariEspRules
+import net.johnceo.sparklingmutuals.safari.esp.SafariEsp
 import net.johnceo.sparklingmutuals.sync.PartySyncSites
+import net.johnceo.sparklingmutuals.safari.resources.SafariWaypointSites
 import net.minecraft.client.Minecraft
 import net.minecraft.core.BlockPos
 import net.minecraft.world.entity.Entity
@@ -84,13 +86,14 @@ object SafariStructures {
             val pos = box.blockPosition()
             val occupied = creatures.any { kotlin.math.abs(it.x - box.x) <= .35 &&
                 kotlin.math.abs(it.z - box.z) <= .35 && kotlin.math.abs(it.y - box.y) <= 1.0 }
-            val exact = Triple(pos.x, pos.y, pos.z) in PartySyncSites.mounds
+            val exact = Triple(pos.x, pos.y, pos.z) in SafariWaypointSites.mounds
             catalogMound(box, client) && (exact || !occupied) ||
                 level.getFluidState(pos).isEmpty && level.getFluidState(pos.below()).isEmpty &&
                 SafariMounds.detected(MoundShape(box.x, box.y, box.z, box.boundingBox.xsize, box.boundingBox.ysize,
                     player.distanceToSqr(box), occupied), limitRange = false)
-        }.map(::site).filterNot(run.moundSurvey::confirmedBroken).toSet()
-        nearbyMounds = mounds.size
+        }.map(::site).toSet() + SafariEsp.renderedMoundSites(client).filter { it in SafariWaypointSites.mounds }
+        val unopened = mounds.filterNot(run.moundSurvey::confirmedBroken).toSet()
+        nearbyMounds = unopened.size
         if (SafariAssist.biome == SafariBiome.CAVERN || mounds.isNotEmpty() || run.moundSurvey.hasSites) {
             val loadedInteractions = interactions.mapTo(mutableSetOf(), ::site)
             val now = System.currentTimeMillis()
@@ -98,7 +101,7 @@ object SafariStructures {
                 pos !in loadedInteractions && SafariAssist.biome == SafariBiome.CAVERN &&
                     player.distanceToSqr(pos.first + .5, pos.second + .5, pos.third + .5) <= 48.0 * 48
             }
-            run.moundSurvey.scan(mounds) { pos ->
+            run.moundSurvey.scan(unopened) { pos ->
                 val (x, y, z) = pos
                 SafariAssist.biome == SafariBiome.CAVERN && pos !in loadedInteractions &&
                     level.isLoaded(BlockPos(x, y, z)) &&
@@ -106,7 +109,7 @@ object SafariStructures {
                     now - absentSince.getOrPut(pos) { now } >= 250
             }
         }
-        run.observeCavernSources(mounds.isNotEmpty(), walls.intact > 0, walls.allBroken,
+        run.observeCavernSources(unopened.isNotEmpty(), walls.intact > 0, walls.allBroken,
             intactWalls.any { level.isLoaded(it) })
     }
     fun reset() { states = snooperPositions.associateWith { WallState.UNKNOWN }; nearbyMounds = 0; ticks = 0; sharedWalls=0; absentSince.clear() }

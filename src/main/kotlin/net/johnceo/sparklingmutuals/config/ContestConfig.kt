@@ -30,6 +30,7 @@ object ContestConfig {
     var autoContestDowntime = true
     var ticketMode = 0 // Basic = 0, First-Class = 1; independent of entry ticket preference.
     val firstClassTicket get() = ticketMode == 1
+    internal val ticketAnnouncements = mutableMapOf<String, Long>()
     var contestWarnEnabled = true
     var contestWarnMinutes = "5, 3, 1"
     var contestWarnTitle = true
@@ -64,6 +65,10 @@ object ContestConfig {
             showScore = getProperty("showScore","true").toBooleanStrictOrNull() ?: true
             trackContest = getProperty("trackContest", "true").toBoolean()
             autoContestDowntime = getProperty("autoContestDowntime", "true").toBooleanStrictOrNull() ?: true
+            ticketAnnouncements.clear()
+            stringPropertyNames().filter { it.startsWith("ticketAnnounced.") }.forEach { key ->
+                getProperty(key).toLongOrNull()?.let { ticketAnnouncements[key.removePrefix("ticketAnnounced.")] = it }
+            }
             ticketMode = getProperty("ticketMode", "0").toIntOrNull()?.takeIf { it in 0..1 } ?: 0
             contestWarnEnabled = getProperty("contestWarnEnabled", "true").toBoolean()
             contestWarnMinutes = getProperty("contestWarnMinutes", "5, 3, 1")
@@ -100,6 +105,7 @@ object ContestConfig {
             setProperty("trackContest", trackContest.toString())
             setProperty("autoContestDowntime", autoContestDowntime.toString())
             setProperty("ticketMode", ticketMode.toString())
+            ticketAnnouncements.forEach { (key, window) -> setProperty("ticketAnnounced.$key", window.toString()) }
             setProperty("contestWarnEnabled", contestWarnEnabled.toString())
             setProperty("contestWarnMinutes", contestWarnMinutes)
             setProperty("contestWarnTitle", contestWarnTitle.toString())

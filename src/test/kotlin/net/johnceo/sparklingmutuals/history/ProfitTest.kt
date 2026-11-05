@@ -6,6 +6,21 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class ProfitTest {
+    @Test fun `legacy runs are current until a session boundary and rows keep their own totals`() {
+        val first = RunRecord(start = 1000, length = 1_800_000, coins = 500, feathers = 3)
+        val second = RunRecord(start = 2000, length = 3_600_000, coins = 900, feathers = 1)
+        val runs = listOf(second, first)
+        val legacy = ProfitPeriods.rows(runs, ProfitTimeframe.SESSION, emptyList()).single()
+        assertEquals(0, legacy.session)
+        assertEquals(1400L, legacy.totals.coins)
+        val sessions = ProfitPeriods.rows(runs, ProfitTimeframe.SESSION, listOf(2000L))
+        assertEquals(listOf(1, 0), sessions.map { it.session })
+        assertEquals(900L, sessions[0].totals.perRun)
+        assertEquals(1, sessions[0].totals.feathers)
+        assertEquals(1000L, sessions[1].totals.perHour)
+        assertEquals(3, sessions[1].totals.feathers)
+    }
+
     @Test fun `fast consumer shares in flight fetch and stops accelerating when demand ends`() {
         var now = 1_000_000L
         var requests = 0

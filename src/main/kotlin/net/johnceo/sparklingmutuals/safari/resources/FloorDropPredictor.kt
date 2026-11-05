@@ -24,6 +24,29 @@ data class PredictedFloorDrop(val id: Int, val x: Double, val y: Double, val z: 
 /** Order prediction documented in FLOOR_DROPS.md. History anchors survive unloads and pickups.
  * Labels are predictions only; this class never supplies resource or completion evidence. */
 class FloorDropPredictor {
+    // Layout consensus adapted from SafariUtils FloorDropPattern (MIT).
+    private data class Layout(val base: Int, val coins: Int, val ice: Int) {
+        fun kind(id: Int): FloorDropType? {
+            val delta = id - base
+            if (delta < 0) return null
+            if (delta >= (20 + coins + ice) * 3) return FloorDropType.GENERIC
+            if (delta % 3 != 0) return null
+            val slot = delta / 3
+            return when {
+                slot < 6 -> gems[slot % 3]
+                slot < 15 -> food[(slot - 6) / 3]
+                slot < 20 -> FloorDropType.INCENSE
+                slot < 20 + coins -> FloorDropType.COIN
+                else -> FloorDropType.ICEBREAKER
+            }
+        }
+    }
+
+    private companion object {
+        val gems = listOf(FloorDropType.LIME, FloorDropType.PURPLE, FloorDropType.ORANGE)
+        val food = listOf(FloorDropType.WORM, FloorDropType.BERRY, FloorDropType.SEEDS)
+    }
+
     private val groups = sortedMapOf<Int, PredictedFloorDrop>()
     val knownDrops: List<PredictedFloorDrop> get() = groups.values.toList()
     fun reset() = groups.clear()
@@ -45,9 +68,35 @@ class FloorDropPredictor {
             val x = round(triple.sumOf { it.x } / 3 * 100) / 100
             val y = round(triple.sumOf { it.y } / 3 * 100) / 100
             val z = round(triple.sumOf { it.z } / 3 * 100) / 100
-            groups.getOrPut(a.id) { PredictedFloorDrop(a.id, x, y, z, SafariEspRules.biomeAt(x, z)) }.also {
+            groups.getOrPut(a.id) { PredictedFloorDrop(a.id, x, y, z, SafariWaypointSites.floorBiome(x, y, z) ?: SafariEspRules.biomeAt(x, z)) }.also {
                 it.live = true; it.seenAt = now
             }
+        }
+        val base = groups.keys.firstOrNull()
+        if (base != null && (0 until 20).all { slot ->
+                groups[base + slot * 3]?.biome == when {
+                    slot < 6 -> SafariBiome.CAVERN
+                    slot < 15 -> SafariBiome.FOREST
+                    else -> SafariBiome.HAUNTED
+                }
+            }) {
+            val layouts = (3..6).flatMap { coins -> (4..5).map { ice -> Layout(base, coins, ice) } }.filter { layout ->
+                groups.values.all { group ->
+                    val kind = layout.kind(group.id)
+                    kind != null && (kind == FloorDropType.GENERIC || when (kind) {
+                        in gems -> group.biome == SafariBiome.CAVERN
+                        in food -> group.biome == SafariBiome.FOREST
+                        FloorDropType.ICEBREAKER -> group.biome == SafariBiome.ICY
+                        else -> group.biome == SafariBiome.HAUNTED
+                    }) && (group.actual == null || group.actual?.type == kind)
+                }
+            }
+            val preferred = layouts.filter { it.ice == 5 }.ifEmpty { layouts }
+            groups.values.forEach { group ->
+                val kinds = preferred.map { it.kind(group.id) }.distinct()
+                group.type = group.actual?.type ?: kinds.singleOrNull()
+            }
+            return groups.values.filter { it.live }
         }
         var phase = 0
         var anchor: Int? = null
@@ -63,7 +112,7 @@ class FloorDropPredictor {
             group.type = if (tail) FloorDropType.GENERIC else when (group.biome) {
                 SafariBiome.CAVERN -> listOf(FloorDropType.LIME, FloorDropType.PURPLE, FloorDropType.ORANGE).getOrNull(i % 3)?.takeIf { i < 6 }
                 SafariBiome.FOREST -> listOf(FloorDropType.WORM, FloorDropType.BERRY, FloorDropType.SEEDS).getOrNull(i / 3)
-                SafariBiome.HAUNTED -> if (i < 5) FloorDropType.INCENSE else FloorDropType.COIN
+                SafariBiome.HAUNTED -> if (i < 5) FloorDropType.INCENSE else FloorDropType.COIN.takeIf { i < 11 }
                 SafariBiome.ICY -> FloorDropType.ICEBREAKER.takeIf { i < 5 }
                 else -> null
             } ?: FloorDropType.GENERIC.also { tail = true }
