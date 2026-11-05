@@ -14,13 +14,13 @@ A Fabric client mod for Hypixel SkyBlock’s Critter Safari.
 | Feature | What it does |
 | --- | --- |
 | Safari modes | Track Sparkling checks, one catch per species, or a Full Clear with `/sparkle`, `/unique`, or `/fc`. |
-| Safari HUD and highlights | See progress, remaining objectives, critters, floor drops, bee nests, and other spawn sources. Clear water improves underwater visibility in Safari. |
+| Safari HUD and highlights | See progress, remaining objectives, critters, biome-specific floor drops, bee nests, and other spawn sources. Clear water improves underwater visibility in Safari. |
 | Sparkling alerts and lookups | Highlight detected Sparklings, compare party discoveries with `/sparkling`, and see rate estimates with `/rates`. |
 | Capture helpers | Preview estimated capsule paths and landing points, and select the matching hotbar gem at Gemzie podiums. |
 | Party coordination | [Share Safari objectives and Hotspot assignments](docs/PARTY_SYNC.md) with compatible SafariUtils parties. Manage downtime, entry readiness, and timed Sparkle Warping. |
 | Sparkling auto entry | Opt in to joining a party member’s Safari when shared sync reports an outstanding Sparkling. |
 | Miria contests and Honeyhives | Track contest progress and ticket readiness, and see Honeyhive locations and refill timers. |
-| History and achievements | Review runs, catches, personal bests, achievements, and profit. Open `/sm history` to view history and import older runs from Minecraft logs. |
+| History and achievements | Review runs, catches, personal bests, achievements, and daily, weekly, or session profit. Use `/newsession` to start a new profit session. Open `/sm history` to view history and import older runs from Minecraft logs. |
 | Hunting Box and Bazaar | Estimate Hunting Box value, view experimental shard and Safari Essence sale guidance, and rank critters by ticket type with `/profit`. |
 | Other SkyBlock helpers | Garden Phantomleaf Solver and Skills overflow tooltips. |
 | Customization | Move and resize HUDs with `/sm gui`, and customize highlights, banners, alerts, and catch effects in settings. |
