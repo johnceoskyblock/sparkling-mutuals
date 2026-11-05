@@ -140,7 +140,9 @@ object CjsSafariEntry {
         val initial=frame(client,at)
         val allowed=warp.allows(initial.context,profiles(client),at)
         if(allowed && lastApproachWarp!=warp.generation) {
-            approach.reset(client);lastApproachWarp=warp.generation
+            approach.reset(client)
+            lastApproachWarp=warp.generation
+            lastStatus=""
         }
         fun current(): CjsEntryFrame {
             val b=base()

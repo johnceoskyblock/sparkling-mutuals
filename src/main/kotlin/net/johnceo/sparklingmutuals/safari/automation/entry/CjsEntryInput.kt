@@ -72,19 +72,31 @@ internal class CjsEntryInput(private val approach: CjsApproachInput) {
             flow.phase in setOf(CjsEntryPhase.WAITING_MENU,CjsEntryPhase.WAITING_ADMISSION)
         val target=approach.manager(client,base)
         val velocity=player?.deltaMovement?.horizontalDistance() ?: Double.NaN
-        val safe=player!=null && client.level!=null && client.connection!=null && client.gameMode!=null &&
-            !client.isPaused && player.isAlive && player.onGround() &&
-            !player.isInWater && !player.isPassenger && !player.abilities.flying && !player.isSprinting &&
-            !player.horizontalCollision && velocity.isFinite() && velocity<=.16 && approach.userIdle(client) && approach.aimMatches(client) &&
-            (expectedMenu || approach.gameplayAvailable(client))
+        val activeBinding = approach.activeUserBinding(client)
+        val unsafeReason = when {
+            player == null || client.level == null || client.connection == null || client.gameMode == null ->
+                "client context unavailable"
+            client.isPaused -> "game paused"
+            !player.isAlive -> "player unavailable"
+            !player.onGround() -> "player airborne"
+            player.isInWater || player.isPassenger || player.abilities.flying || player.isSprinting ->
+                "player movement mode changed"
+            player.horizontalCollision -> "horizontal collision"
+            !velocity.isFinite() || velocity > .16 -> "horizontal speed $velocity exceeded the safe limit"
+            activeBinding != null -> "movement or action binding active: $activeBinding"
+            !approach.aimMatches(client) -> "camera moved away from the Manager"
+            !expectedMenu && !approach.gameplayAvailable(client) ->
+                "gameplay input unavailable (focused=${client.isWindowActive}, mouseGrabbed=${client.mouseHandler.isMouseGrabbed})"
+            else -> null
+        }
         val menu=if(expectedMenu && player!=null) {
             val current=player.containerMenu
             ticketMenu(current, current.containerId, SafariTicketSelect.options(client))
         } else null
         return CjsEntryFrame(base.context,signal,generation,warpAllowed,base.arrivedAt,enabled && base.enabled,base.atEntry,
-            base.activeRun,SafariManagerGuard.allowsCjApproach(client),safe,false,screen!=null && !expectedMenu,
+            base.activeRun,SafariManagerGuard.allowsCjApproach(client),unsafeReason==null,false,screen!=null && !expectedMenu,
             target?.uuid,target?.let { hit(client,it)!=null }==true,velocity<.01 && !approach.ownsKeys,
-            approach.outcome,menu)
+            approach.outcome,menu,unsafeReason)
     }
     fun dispatch(client: Minecraft, flow: CjsEntryFlow, effect: CjsEntryEffect,
         base: () -> EntryDryRunFrame, frame: () -> CjsEntryFrame, now: Long): Boolean {
