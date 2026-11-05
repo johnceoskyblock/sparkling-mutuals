@@ -2,6 +2,7 @@ package net.johnceo.sparklingmutuals.safari.automation.entry
 
 import java.util.UUID
 import net.johnceo.sparklingmutuals.compat.smScreen
+import net.johnceo.sparklingmutuals.safari.SafariTicketType
 import net.johnceo.sparklingmutuals.safari.automation.SafariManagerGuard
 import net.johnceo.sparklingmutuals.safari.automation.SafariTicketSelect
 import net.johnceo.sparklingmutuals.sync.SafariPartySync
@@ -46,6 +47,15 @@ internal object CjsEntryDispatch {
 
 /** No timers or raw packets. The normal guarded Minecraft interaction methods are the only inputs. */
 internal class CjsEntryInput(private val approach: CjsApproachInput) {
+    internal fun ticketMenu(identity: Any, containerId: Int, options: List<SafariTicketSelect.Option>): CjsTicketMenu {
+        val choice = SafariTicketSelect.chooseLowest(options)
+        // Higher tiers are irrelevant once the lowest available ticket has been confirmed.
+        val allUnavailable = SafariTicketType.entries.all { tier ->
+            options.singleOrNull { it.tier == tier }?.available == false
+        }
+        return CjsTicketMenu(identity, containerId, true, choice != null || allUnavailable, choice?.slot, choice?.tier)
+    }
+
     private fun hit(client: Minecraft, target: Entity): Vec3? {
         val player=client.player ?: return null
         val level=client.level ?: return null
@@ -69,11 +79,7 @@ internal class CjsEntryInput(private val approach: CjsApproachInput) {
             (expectedMenu || screen==null && client.mouseHandler.isMouseGrabbed)
         val menu=if(expectedMenu && player!=null) {
             val current=player.containerMenu
-            val options=SafariTicketSelect.options(client)
-            val ready=options.map { it.tier }.toSet().size==net.johnceo.sparklingmutuals.safari.SafariTicketType.entries.size &&
-                options.all { it.available!=null }
-            val choice=if(ready) SafariTicketSelect.chooseLowest(options) else null
-            CjsTicketMenu(current,current.containerId,true,ready,choice?.slot,choice?.tier)
+            ticketMenu(current, current.containerId, SafariTicketSelect.options(client))
         } else null
         return CjsEntryFrame(base.context,signal,generation,warpAllowed,base.arrivedAt,enabled && base.enabled,base.atEntry,
             base.activeRun,SafariManagerGuard.allowsCjApproach(client),safe,false,screen!=null && !expectedMenu,

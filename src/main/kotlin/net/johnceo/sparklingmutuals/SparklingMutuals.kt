@@ -30,6 +30,7 @@ import net.johnceo.sparklingmutuals.misc.phantomleaf.PhantomleafSolver
 import net.johnceo.sparklingmutuals.hud.SmallAlerts
 import net.johnceo.sparklingmutuals.party.PartyManager
 import net.johnceo.sparklingmutuals.safari.SafariAssist
+import net.johnceo.sparklingmutuals.safari.DoomspiralLottery
 import net.johnceo.sparklingmutuals.safari.SafariIsland
 import net.johnceo.sparklingmutuals.safari.SafariSparklingMode
 import net.johnceo.sparklingmutuals.safari.SafariTracking
@@ -71,6 +72,7 @@ object SparklingMutuals : ModInitializer {
         SparklingCommand.register()
         SparklingLookup.register()
         net.johnceo.sparklingmutuals.safari.DoomspiralThrowTimer.register()
+        DoomspiralLottery.register()
         AlertCommand.register()
         net.johnceo.sparklingmutuals.alerts.SparkleAutoParty.register()
         net.johnceo.sparklingmutuals.alerts.WarpListRanks.register()
@@ -111,6 +113,7 @@ object SparklingMutuals : ModInitializer {
             VanillaHudElements.CHAT,
             id("contest_hud")
         ) { graphics, deltaTracker ->
+            if (DoomspiralLottery.active) return@attachElementBefore
             ContestHud.render(graphics, deltaTracker)
             SafariAssist.render(graphics)
             SafariTracking.render(graphics)
@@ -164,7 +167,8 @@ object SparklingMutuals : ModInitializer {
         net.johnceo.sparklingmutuals.safari.automation.entry.CjsSafariEntry.tick(client)
         net.johnceo.sparklingmutuals.safari.automation.SafariTicketSelect.tick(client)
         CapsulePreview.tick(client)
-        net.johnceo.sparklingmutuals.hud.SafariAlertSequence.tick()
+        DoomspiralLottery.tick(client)
+        if (!DoomspiralLottery.active) net.johnceo.sparklingmutuals.hud.SafariAlertSequence.tick()
     }
 
     private fun resetSession() {
@@ -178,6 +182,7 @@ object SparklingMutuals : ModInitializer {
         net.johnceo.sparklingmutuals.safari.ClearWater.reset()
         net.johnceo.sparklingmutuals.hud.MaxWin.reset()
         net.johnceo.sparklingmutuals.safari.DoomspiralThrowTimer.reset()
+        DoomspiralLottery.reset()
         net.johnceo.sparklingmutuals.hud.SpecialCatchAlert.reset()
         JoinWelcome.reset()
         Achievements.resetAnnouncements()

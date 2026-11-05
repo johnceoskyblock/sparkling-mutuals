@@ -16,7 +16,7 @@ Start with [installation and features](../README.md), then use this index for ga
 | Cached-data estimates | [Profitable critters](PROFITABLE_CRITTERS.md), [Sparkling rates](SPARKLING_RATES.md) |
 | Banners and HUD themes | [Safari banners, customization ownership and ticket progress](BANNERS.md) |
 | Gameplay display | [Bird completion](BIRD_COMPLETION.md), [missing panel](MISSING_PANEL.md), [Sparkling detection](SPARKLING_DETECTION.md) |
-| Biome assignments | [Hotspot announcer and UUID-ranked assignments](HOTSPOT_ASSIGNMENTS.md) |
+| Biome assignments | [Hotspot assigning](HOTSPOT_ASSIGNMENTS.md) |
 | Native UI | [Settings and catch celebrations](NATIVE_UI.md) |
 | Controls | [Configuration](CONFIG_DEFAULTS.md), [entry guard](SAFARI_ENTRY_GUARD.md), [warp alerts](WARP_ALERTS.md) |
 | Contest and Canyon | [Contest/downtime](CONTEST_DOWNTIME.md), [Honeyhives](HONEYHIVES.md) |

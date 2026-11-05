@@ -119,17 +119,19 @@ object SkillOverflow {
             val parsed=OverflowTooltipParsing.plan(stack.hoverName.string,lines.map { it.string }) ?: return@register
             val plan=if(ConfigManager.skillOverflowNumbers) parsed.copy(roman=false) else parsed
             if(lines.isEmpty()) return@register
-            lines[0]=Component.literal(plan.title).setStyle(lines[0].style)
-            lines[plan.progressIndex]=Component.literal("Progress to Level ${plan.level(plan.value.level+1)}: ").withStyle(ChatFormatting.GRAY)
+            lines[0]=Component.literal(plan.title).setStyle(lines[0].style.withColor(ChatFormatting.GREEN))
+            lines[plan.progressIndex]=Component.literal("Progress to Level ${plan.value.level + 1}: ").withStyle(ChatFormatting.GRAY)
                 .append(Component.literal(String.format(Locale.ROOT,"%.1f%%",plan.value.fraction*100)).withStyle(ChatFormatting.YELLOW))
             val filled=(plan.value.fraction*20).toInt().coerceIn(0,20)
-            fun count(value: Long)=String.format(Locale.ROOT,"%,d",value)
-            lines[plan.xpIndex]=Component.literal("▏".repeat(filled)).withStyle(ChatFormatting.GREEN)
-                .append(Component.literal("▏".repeat(20-filled)).withStyle(ChatFormatting.DARK_GRAY))
-                .append(Component.literal(" ${count(plan.value.current)}/${count(plan.value.required)}").withStyle(ChatFormatting.YELLOW))
+            fun count(value: Long) = String.format(Locale.ROOT, "%,d", value)
+            lines[plan.xpIndex]=Component.literal("─".repeat(filled)).withStyle(ChatFormatting.DARK_GREEN)
+                .append(Component.literal("─".repeat(20-filled)).withStyle(ChatFormatting.WHITE))
+                .append(Component.literal(" ${count(plan.value.current)}").withStyle(ChatFormatting.YELLOW))
+                .append(Component.literal("/").withStyle(ChatFormatting.GOLD))
+                .append(Component.literal(count(plan.value.required)).withStyle(ChatFormatting.YELLOW))
             lines.addAll(plan.xpIndex+1,listOf(Component.empty(),
-                Component.literal("OVERFLOW XP: ").withStyle(ChatFormatting.AQUA)
-                    .append(Component.literal(count(plan.value.overflow)).withStyle(ChatFormatting.GRAY))))
+                Component.literal("OVERFLOW XP:").withStyle(ChatFormatting.AQUA, ChatFormatting.BOLD),
+                Component.literal("▸ ${count(plan.value.overflow)}").withStyle(ChatFormatting.GRAY)))
         }
     }
 }

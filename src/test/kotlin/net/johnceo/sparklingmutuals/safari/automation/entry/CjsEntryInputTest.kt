@@ -1,12 +1,29 @@
 package net.johnceo.sparklingmutuals.safari.automation.entry
 
 import java.util.UUID
+import net.johnceo.sparklingmutuals.safari.SafariTicketType
+import net.johnceo.sparklingmutuals.safari.automation.SafariTicketSelect
 import net.minecraft.world.phys.AABB
 import net.minecraft.world.phys.Vec3
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class CjsEntryInputTest {
+    @Test fun `Basic first entry can dispatch while higher ticket lore is still loading`() {
+        val input = CjsEntryInput(CjsApproachInput())
+        val menu = Any()
+        val basic = SafariTicketSelect.Option(10, SafariTicketType.BASIC, true)
+        val economy = SafariTicketSelect.Option(12, SafariTicketType.ECONOMY, true)
+        val premium = SafariTicketSelect.Option(14, SafariTicketType.PREMIUM, null)
+        val selected = input.ticketMenu(menu, 2, listOf(basic, economy, premium))
+        assertTrue(selected.ready)
+        assertEquals(10, selected.slot)
+        assertEquals(SafariTicketType.BASIC, selected.tier)
+        assertFalse(input.ticketMenu(menu, 2, listOf(basic.copy(available = null), economy)).ready)
+        val fallback = input.ticketMenu(menu, 2, listOf(basic.copy(available = false), economy, premium))
+        assertTrue(fallback.ready)
+        assertEquals(SafariTicketType.ECONOMY, fallback.tier)
+    }
     @Test fun `manager ray requires real hitbox reach aim and clear line of sight`() {
         val box=AABB(-.3,0.0,2.5,.3,1.8,3.1)
         val eye=Vec3(0.0,1.6,0.0);val forward=Vec3(0.0,0.0,1.0)

@@ -123,8 +123,10 @@ object CjsSafariEntry {
         val client=Minecraft.getInstance()
         if(window==client.window.handle() && client.smScreen==null) manualInput()
     }
-    fun suppressesAutomaticMenu(client: Minecraft): Boolean =
-        supported && client.connection!=null && flow.suppressesAutomaticMenus
+    fun suppressesAutomaticMenu(client: Minecraft): Boolean {
+        val claim = flow.claimedContext ?: return false
+        return supported && environment.matchesWorld(claim, client.connection, client.level)
+    }
 
     /** Drain known room changes and revalidate before vanilla consumes walking input. */
     fun startTick(client: Minecraft) {
@@ -165,8 +167,10 @@ object CjsSafariEntry {
                 }
                 if(flow.status!=lastStatus) {
                     lastStatus=flow.status;record(lastStatus,at)
-                    if (flow.confirmedAutomaticAdmission)
+                    if (flow.confirmedAutomaticAdmission) {
                         client.player?.sendSystemMessage(LocalChat.component("[SM] Safari ticket automatically used."))
+                        PartyManager.sendPartyChat(client, "[SM] In the run!")
+                    }
                 }
             } else approach.release(client)
         } catch(error: Exception) {

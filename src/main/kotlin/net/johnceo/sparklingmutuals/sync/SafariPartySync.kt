@@ -297,6 +297,16 @@ object SafariPartySync {
                 net.johnceo.sparklingmutuals.safari.SafariRoster.named(species)?.biome == biome
         }
     }
+    internal fun hasOutstandingSharedSparkling(species: String): Boolean {
+        if (!SafariIsland.onIsland || world !== Minecraft.getInstance().level ||
+            transferRevision == SafariIsland.locationRevision) return false
+        val shared = state?.sparkling ?: return false
+        val index = PartySyncProtocol.species.indexOf(species)
+        if (index < 0) return false
+        val word = index / 30
+        val bit = 1 shl (index % 30)
+        return shared[word] and (shared[word + 2] or localSparkling[word + 2]).inv() and bit != 0
+    }
     fun found(species: String): Boolean {
         val i=PartySyncProtocol.species.indexOf(species)
         if(i<0 || !SafariIsland.onIsland || transferRevision == SafariIsland.locationRevision) return false

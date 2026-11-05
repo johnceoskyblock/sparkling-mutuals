@@ -17,7 +17,7 @@ Open `/sm` for settings. Fresh installs use [bundled main defaults](../src/main/
 | Setting | Saved key | Default |
 | --- | --- | --- |
 | Sparkle Warping | `warpAlertsEnabled` | Off |
-| Hotspot announcer | `hotspotAnnouncer` | Off |
+| Hotspot assigning | `hotspotAnnouncer` | Off |
 | Leech auto-accept | `leechMode` | Off; inviter whitelist retained |
 | Starting quest-item announcements and reminder titles | `announceStartingItems` | Off |
 | Warp List | `warpList.*` | JohnFounder entries and invite priorities |

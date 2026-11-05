@@ -12,6 +12,8 @@ import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.world.entity.monster.warden.Warden
 
+internal const val DOOMSPIRAL_STIRS = "Something stirs in the Haunted Biome..."
+
 /** Counts observed server ticks, never client frames or elapsed wall time. */
 class DoomspiralCountdown {
     private var triggered = false
@@ -20,7 +22,7 @@ class DoomspiralCountdown {
     private var throwAt = 0
     val remaining: Int? get() = if (active) (throwAt - elapsed).coerceAtLeast(0) else null
     fun trigger(raw: String, inSafari: Boolean, emergenceTicks: Int, leadTicks: Int): Boolean {
-        if (!inSafari || triggered || SafariMessages.lines(raw).none { it == "Something stirs in the Haunted Biome..." }) return false
+        if (!inSafari || triggered || SafariMessages.lines(raw).none { it == DOOMSPIRAL_STIRS }) return false
         triggered = true
         active = true
         elapsed = 0
@@ -44,7 +46,7 @@ object DoomspiralThrowTimer {
     private var connection: Any? = null
     fun register() {
         ClientReceiveMessageEvents.GAME.register { message, overlay ->
-            if (!overlay && SafariMessages.lines(message.string).any { it == "Something stirs in the Haunted Biome..." }) Minecraft.getInstance().execute {
+            if (!overlay && SafariMessages.lines(message.string).any { it == DOOMSPIRAL_STIRS }) Minecraft.getInstance().execute {
                 val client = Minecraft.getInstance()
                 if (!ConfigManager.doomspiralThrowTimer || !SafariAssist.inSafari) return@execute
                 SafariTracking.ensureRun(client)

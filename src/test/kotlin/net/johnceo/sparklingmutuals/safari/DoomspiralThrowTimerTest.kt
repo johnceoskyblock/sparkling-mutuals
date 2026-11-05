@@ -11,6 +11,13 @@ import org.junit.jupiter.api.io.TempDir
 class DoomspiralThrowTimerTest {
     private val trigger = "Something stirs in the Haunted Biome..."
     @TempDir lateinit var directory: Path
+    @Test fun `lottery starts around the ritual block and rejects the floor above`() {
+        assertTrue(DoomspiralLottery.inRange(-5.5, 46.0, -23.5))
+        assertTrue(DoomspiralLottery.inRange(9.5, 46.0, -23.5))
+        assertFalse(DoomspiralLottery.inRange(9.6, 46.0, -23.5))
+        assertTrue(DoomspiralLottery.inRange(-5.5, 56.0, -23.5))
+        assertFalse(DoomspiralLottery.inRange(-5.5, 56.1, -23.5))
+    }
     @Test fun `server ticks count to throw cue and then expire`() {
         val timer = DoomspiralCountdown()
         assertNull(timer.remaining)

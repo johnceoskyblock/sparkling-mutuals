@@ -19,7 +19,7 @@ class SafariConfigScreen(private val settings: SafariSettings = SafariSettings()
     private data class Area(val name: String,val pages: List<Int>)
     private val areas=listOf(Area("HUDs",listOf(0,7,10)),Area("Safari",listOf(1,6,3,12)),Area("Party",listOf(2,5)),
         Area("ESP",listOf(13,14,15,16,9)),Area("History",listOf(4)),Area("Advanced",listOf(8,11)))
-    private val tabNames=mapOf(0 to "Overview",7 to "HUDs",1 to "Modes",6 to "Helpers",3 to "Contest",2 to "Interactions",5 to "Party warping",9 to "Highlights",10 to "Appearance",4 to "History",8 to "API",11 to "SkyBlock",12 to "Banner")
+    private val tabNames=mapOf(0 to "Overview",7 to "HUDs",1 to "Modes",6 to "Helpers",3 to "Contest",2 to "Interactions",5 to "Sparkle Warping",9 to "Highlights",10 to "Appearance",4 to "History",8 to "API",11 to "SkyBlock",12 to "Banner")
     private val areaTabs=rememberedNavigation.areaTabs.toMutableMap()
     private var contentTop=88
     private var selected=rememberedNavigation.page.coerceIn(catalog.pages.indices)
