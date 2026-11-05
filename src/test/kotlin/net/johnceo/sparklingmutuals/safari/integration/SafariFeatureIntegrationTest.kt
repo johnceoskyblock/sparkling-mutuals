@@ -56,6 +56,9 @@ class SafariFeatureIntegrationTest {
         assertAll(switches.filterKeys { it !in modes && !it.startsWith("banner.") }.map { (name,value) ->
             org.junit.jupiter.api.function.Executable {
                 val expected = if (name.startsWith("alwaysOnCritters.")) name == "alwaysOnCritters.hideyho"
+                    else if (name.startsWith("alwaysOnFloorDrops.")) name.substringAfter('.') in setOf("lime", "purple", "orange")
+                    else if (name.startsWith("safari.visibility.chatToggles."))
+                        net.johnceo.sparklingmutuals.config.SafariChatCategory.valueOf(name.substringAfterLast('.').uppercase()).defaultHidden
                     else name !in exceptions && !name.endsWith(".borderEnabled")
                 assertEquals(expected, value, name)
             }

@@ -17,7 +17,9 @@ class ForestBirdFoodDropsTest {
         assertEquals(3, ForestBirdFoodDrops.remaining(raw, listOf(generic, worm, unknown)))
         assertEquals(4, ForestBirdFoodDrops.remaining(raw, emptyList()), "incomplete triples cannot establish non-food")
         generic.actual = FloorPickup(FloorDropType.SEEDS, 1)
-        assertEquals(4, ForestBirdFoodDrops.remaining(raw, listOf(generic, worm, unknown)), "actual food outranks prediction")
+        assertEquals(3, ForestBirdFoodDrops.remaining(raw, listOf(generic, worm, unknown)), "verified prediction survives a misassigned pickup")
+        unknown.actual = FloorPickup(FloorDropType.GENERIC, 1)
+        assertEquals(2, ForestBirdFoodDrops.remaining(raw, listOf(generic, worm, unknown)), "pickup evidence resolves an unknown prediction")
         assertEquals(1, ForestBirdFoodDrops.remaining(listOf(EspDrop(201, 1, 51, 41)), listOf(worm)), "IDs bind boundary-straddling members")
     }
 

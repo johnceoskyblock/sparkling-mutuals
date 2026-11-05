@@ -407,6 +407,17 @@ object SafariEsp {
         SafariAssist.biome?.let { biome -> SafariTracking.run?.captureDebug(biome)?.forEach { (name, evidence) ->
             logger.info("Full clear evidence: {} {}", name, evidence)
         } }
+        SafariTracking.run?.let { run ->
+            val mode = net.johnceo.sparklingmutuals.safari.completion.SafariFullClear.mode
+            val party = SafariSparklingMode.state
+            SafariBiome.entries.forEach { biome ->
+                logger.info("Biome gate: biome={} mode={} current={} complete={} local={} evidence={} sharedItems={} startingItems={} pendingSparkling={} checksLeft={}",
+                    biome, mode, run.lastBiome, run.biomeComplete(mode, biome, party),
+                    run.completion.locallyComplete(run, biome, mode, party), run.hasCaptureEvidence(biome),
+                    run.sharedSuppliesPending(biome), run.hasUnusedStartingForBiome(biome), run.sparklingCaptures.pending(biome),
+                    biome.critters.filter { party.needs(it.name) && !run.sparklingComplete(it.name, party, localOnly = true) }.map { it.name })
+            }
+        }
         logger.info("Party discovery cache: {}", SafariSparklingMode.state.debug { id ->
             client.connection?.onlinePlayers?.firstOrNull { it.profile.id.toString() == id }?.profile?.name
                 ?: net.johnceo.sparklingmutuals.safari.automation.SafariPartyInput.nameOf(id) ?: id
@@ -418,6 +429,8 @@ object SafariEsp {
             net.johnceo.sparklingmutuals.safari.completion.SafariFullClear.mode, SafariSparklingMode.state)) }
         val incenseIds = SafariFloorDrops.state.incenseDropIds(dropPredictor.knownDrops)
         val run = SafariTracking.ledger.current
+        logger.info("Gem placement evidence: {}", run?.gems?.debug())
+        logger.info("Gem podium blocks: {}", run?.gems?.podiumDebug(client))
         logger.info("Gem ESP gates: mode={} playerBiome={} hiddenByMode={} cavernEnabled={} partyNeedsGemzie={} captured={} placed={} chamberOpened={} completed={} inventory={}",
             net.johnceo.sparklingmutuals.safari.completion.SafariFullClear.mode, SafariAssist.biome, ConfigManager.hideFloorDropEsp(),
             SafariFloorDrops.enabled(SafariBiome.CAVERN), SafariSparklingMode.state.needs("Gemzie"), run?.count("Gemzie"),

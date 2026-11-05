@@ -20,15 +20,20 @@ class FloorDropMetadataTest {
 
     @Test fun `catalog and ID layout distinguish coins from generic Haunted loot`() {
         val predictor = FloorDropPredictor()
-        val result = predictor.scan((0..30).flatMap { slot ->
+        val displays = (0..30).flatMap { slot ->
             val (x, y, z) = when (slot) {
                 in 0..5 -> Triple(-110.0, 60.0, 50.0)
                 in 6..14 -> Triple(-17.58, 65.78, 15.52)
-                in 15..24, 30 -> Triple(9.42, 68.78, -93.48)
+                30 -> Triple(30.42, 55.78, 47.52)
+                in 15..24 -> Triple(9.42, 68.78, -93.48)
                 else -> Triple(-118.58, 78.78, -105.48)
             }
             List(3) { FloorDisplay(100 + slot * 3 + it, x, y, z, "minecraft:string:String") }
-        })
+        }
+        predictor.scan(displays, 1000)
+        assertNotNull(predictor.pickup(FloorPickup(FloorDropType.SEEDS, 1), 30.42, 55.78, 47.52, 1100))
+        val result = predictor.scan(displays, 1200)
+        assertEquals(9, result.count { it.type in setOf(FloorDropType.WORM, FloorDropType.BERRY, FloorDropType.SEEDS) })
         assertEquals(5, result.count { it.type == FloorDropType.COIN })
         assertEquals(5, result.count { it.type == FloorDropType.ICEBREAKER })
         assertEquals(FloorDropType.GENERIC, result.last().type)

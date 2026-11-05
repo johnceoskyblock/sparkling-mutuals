@@ -71,6 +71,9 @@ object SafariEspConfig {
     val teammateLabelWorldScale get() = .025f * teammateTextScale
     var teammateColor = defaultColor(0xFF55FF55.toInt())
     var rewardDrops = false
+    private fun defaultFloorAlwaysOn(type: FloorDropType) = type in setOf(FloorDropType.LIME, FloorDropType.PURPLE, FloorDropType.ORANGE)
+    internal val floorAlwaysOnToggles = FloorDropType.entries.associateWith(::defaultFloorAlwaysOn).toMutableMap()
+    fun floorAlwaysOn(type: FloorDropType) = floorAlwaysOnToggles[type] == true
     val floorOnlyInBiome = FloorDropType.entries.associateWith { it == FloorDropType.GENERIC }.toMutableMap()
     fun dropOnlyInBiome(type: FloorDropType?) = floorOnlyInBiome[type] ?: true
     private fun defaultDropColor(type: FloorDropType) = defaultColor(if (type == FloorDropType.GENERIC) 0xFF6D6D75.toInt() else 0xFF00FF00.toInt())
@@ -99,6 +102,10 @@ object SafariEspConfig {
     fun rgb(color: String) = SettingsColor.argb(color)
     private fun key(name: String) = name.lowercase().replace(' ', '_')
     fun load(properties: Properties) {
+        floorAlwaysOnToggles.keys.forEach { type ->
+            floorAlwaysOnToggles[type] = properties.getProperty("esp.floor.${type.name.lowercase()}.alwaysOn")
+                ?.toBooleanStrictOrNull() ?: defaultFloorAlwaysOn(type)
+        }
         rewardDrops = properties.getProperty("esp.floor.rewards.enabled")?.toBooleanStrictOrNull() ?: false
         floorOnlyInBiome.keys.forEach { type ->
             floorOnlyInBiome[type] = properties.getProperty("esp.floor.${type.name.lowercase()}.onlyInBiome")
@@ -134,6 +141,9 @@ object SafariEspConfig {
             properties.getProperty("esp.rockmite.color")?.let { mobs.getValue("Rockmite").color } ?: defaultColor(0xFFFFFFFF.toInt()))
     }
     fun save(properties: Properties) {
+        floorAlwaysOnToggles.forEach { (type, value) ->
+            properties.setProperty("esp.floor.${type.name.lowercase()}.alwaysOn", value.toString())
+        }
         properties.setProperty("esp.floor.rewards.enabled", rewardDrops.toString())
         floorOnlyInBiome.forEach { (type, value) ->
             properties.setProperty("esp.floor.${type.name.lowercase()}.onlyInBiome", value.toString())

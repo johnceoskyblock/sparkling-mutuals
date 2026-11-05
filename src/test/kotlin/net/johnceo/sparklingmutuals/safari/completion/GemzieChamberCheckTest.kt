@@ -16,7 +16,7 @@ class GemzieChamberCheckTest {
         accept(setOf("me"), mapOf("me" to SafariRoster.all.map { it.name }.toSet() - "Gemzie"))
     }
 
-    @Test fun `chamber checks Gemzie after five seconds in both checking modes without catches or scans`() {
+    @Test fun `chamber opening requires distinct Gemzie checks in both checking modes`() {
         ConfigManager.init(dir)
         for (mode in listOf(SafariMode.SPARKLING, SafariMode.UNIQUE)) {
             SafariFullClear.select(mode)
@@ -27,9 +27,15 @@ class GemzieChamberCheckTest {
             now = 5999
             assertFalse(run.sparklingComplete("Gemzie", state))
             assertEquals("0/3 checked", SafariPanels.fixedCounter("Gemzie", run, mode, state))
-            // A duplicate cannot restart the original five-second delay.
+            // Opening the chamber and waiting cannot establish checks.
             run.sparklingChecks.chat(message)
             now = 6000
+            assertFalse(run.sparklingComplete("Gemzie", state, localOnly = true))
+            assertEquals("0/3 checked", SafariPanels.fixedCounter("Gemzie", run, mode, state))
+            val sightings = List(3) { "Gemzie" to java.util.UUID.randomUUID() }
+            run.sparklingChecks.scan(SafariBiome.CAVERN, -141.0, 51.0, sightings.take(2))
+            assertFalse(run.sparklingComplete("Gemzie", state, localOnly = true))
+            run.sparklingChecks.scan(SafariBiome.CAVERN, -141.0, 51.0, sightings)
             assertTrue(run.sparklingComplete("Gemzie", state, localOnly = true))
             assertEquals("3/3 checked", SafariPanels.fixedCounter("Gemzie", run, mode, state))
             assertEquals(0, run.count("Gemzie"))
@@ -56,6 +62,9 @@ class GemzieChamberCheckTest {
         assertFalse(run.sparklingChecks.checked("Gemzie"))
         run.sparklingChecks.chat(message)
         now = 15000
+        assertFalse(run.sparklingChecks.checked("Gemzie"))
+        run.sparklingChecks.scan(SafariBiome.CAVERN, -141.0, 51.0,
+            List(3) { "Gemzie" to java.util.UUID.randomUUID() })
         assertTrue(run.sparklingChecks.checked("Gemzie"))
         assertFalse(SafariRun(now) { now }.sparklingChecks.checked("Gemzie"))
     }

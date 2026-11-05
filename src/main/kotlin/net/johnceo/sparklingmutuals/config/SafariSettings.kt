@@ -39,6 +39,8 @@ class SafariSettings {
     val profitableCritters = CritterToggleSettings { SafariEspConfig.profitableToggles.getValue(it) }
     @JvmField @Category(name = "Always On Toggle", desc = "")
     val alwaysOnCritters = CritterToggleSettings(SafariEspConfig::alwaysOn)
+    @JvmField @Category(name = "Floor Drop Always On Toggle", desc = "")
+    val alwaysOnFloorDrops = FloorDropToggleSettings()
     init {
         esp.critterColors = customization.critters
         esp.waypointColors = customization.waypoints
@@ -352,8 +354,10 @@ class SafariSettings {
         @ConfigEditorBoolean var clearWater = ConfigManager.clearWater
         @JvmField @ConfigOption(name = "Water opacity", desc = "0% transparent, 100% opaque.") @Accordion
         val waterOpacity = WaterOpacitySettings()
-        @JvmField @ConfigOption(name = "Hide useless chats in safari", desc = "Routine critter and capture messages.")
+        @JvmField @ConfigOption(name = "Hide useless chats in safari", desc = "")
         @ConfigEditorBoolean var hideCaptureChat = ConfigManager.hideCaptureChat
+        @JvmField @ConfigOption(name = "Chat Toggles", desc = "") @Accordion
+        val chatToggles = SafariChatToggleSettings()
         @JvmField @ConfigOption(name = "Hide capsules on ground", desc = "")
         @ConfigEditorBoolean var hideGroundCapsules = ConfigManager.hideGroundCapsules
         @JvmField @ConfigOption(name = "Hide flying capsules", desc = "Near your camera.")
@@ -550,7 +554,9 @@ class SafariSettings {
         val pathWidth = ConfigManager.validCapsulePathWidth(safari.capsulePathWidth)
         val waterOpacity = safari.visibility.waterOpacity.values()
         val alwaysOnCrittersChanged = alwaysOnCritters.apply(SafariEspConfig.alwaysOnToggles)
-        val generalChanged = espChanged || modWideCrittersChanged || profitableCrittersChanged || alwaysOnCrittersChanged ||
+        val alwaysOnFloorDropsChanged = alwaysOnFloorDrops.apply()
+        val chatTogglesChanged = safari.visibility.chatToggles.apply()
+        val generalChanged = espChanged || modWideCrittersChanged || profitableCrittersChanged || alwaysOnCrittersChanged || alwaysOnFloorDropsChanged || chatTogglesChanged ||
             bannerChanged || ConfigManager.specialCatchStyle != safari.alerts.caughtStyle || whitelistChanged || warpModesChanged || warpConfigurationChanged || ConfigManager.doomspiralEmergenceTicks != safari.capture.doomTicks.coerceIn(1, 600) ||
             ConfigManager.doomspiralThrowLeadTicks != safari.capture.doomLead.coerceIn(0, 40) || ConfigManager.biomeWaterOpacity != waterOpacity || ConfigManager.capsulePathWidth != pathWidth || customizationChanged || changes.any { (property, value) -> property.get() != value } ||
             ConfigManager.safariTicketPreference != safari.ticketPreference || ConfigManager.showWhere != tracking.where || ConfigManager.capsuleHideDistance != distance ||
