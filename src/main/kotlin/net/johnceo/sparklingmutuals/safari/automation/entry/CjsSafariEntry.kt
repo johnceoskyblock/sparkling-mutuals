@@ -121,8 +121,12 @@ object CjsSafariEntry {
     fun gameplayInput(window: Long, action: Int) {
         if(!supported || action<=0 || !flow.suppressesAutomaticMenus) return
         val client=Minecraft.getInstance()
-        if(window==client.window.handle() && client.smScreen==null) manualInput()
+        if(window==client.window.handle() && client.isWindowActive && client.smScreen==null) manualInput()
     }
+    internal fun allowsBackgroundEntry(client: Minecraft): Boolean =
+        supported && ConfigManager.safariEntryAutoEnter && client.connection != null &&
+            JoinWelcomeState.hypixel(client.currentServer?.ip)
+
     fun suppressesAutomaticMenu(client: Minecraft): Boolean {
         val claim = flow.claimedContext ?: return false
         return supported && environment.matchesWorld(claim, client.connection, client.level)

@@ -25,6 +25,8 @@ With /hotspot enabled, clients still announce their actual hotspot in party chat
 
 Enable **Sparkling auto entry** in **Party → Party warping**. It defaults off. After a verified leader warp, an uncaught Sparkling in the current shared room can trigger the approach to the Safari Manager and selection of the lowest available Safari ticket. The entry attempt is bounded to the current arrival. Manual input, an unavailable room, or loss of entry readiness cancels the attempt.
 
+Auto entry continues while Minecraft is in the background. While the feature is enabled on Hypixel, Minecraft skips the automatic pause menu when its window loses focus.
+
 ## Connection and privacy
 
 Service: `https://api-dev.serkosea.dev`; socket: `wss://api-dev.serkosea.dev/v1/sync`. Authentication sends only the local player's compact UUID to `/v1/auth/uuid/session`. Short-lived tokens are reused across reconnects. Minecraft session credentials, passwords and private keys are never used. The service receives public roster UUIDs, the Safari server ID, and the bounded objective data above—not a complete inventory dump.

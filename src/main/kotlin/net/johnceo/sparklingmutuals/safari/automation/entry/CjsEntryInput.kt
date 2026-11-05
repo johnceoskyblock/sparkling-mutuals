@@ -73,10 +73,10 @@ internal class CjsEntryInput(private val approach: CjsApproachInput) {
         val target=approach.manager(client,base)
         val velocity=player?.deltaMovement?.horizontalDistance() ?: Double.NaN
         val safe=player!=null && client.level!=null && client.connection!=null && client.gameMode!=null &&
-            client.isWindowActive && !client.isPaused && player.isAlive && player.onGround() &&
+            !client.isPaused && player.isAlive && player.onGround() &&
             !player.isInWater && !player.isPassenger && !player.abilities.flying && !player.isSprinting &&
             !player.horizontalCollision && velocity.isFinite() && velocity<=.16 && approach.userIdle(client) && approach.aimMatches(client) &&
-            (expectedMenu || screen==null && client.mouseHandler.isMouseGrabbed)
+            (expectedMenu || screen==null)
         val menu=if(expectedMenu && player!=null) {
             val current=player.containerMenu
             ticketMenu(current, current.containerId, SafariTicketSelect.options(client))
