@@ -39,7 +39,7 @@ class SafariSettings {
     val profitableCritters = CritterToggleSettings { SafariEspConfig.profitableToggles.getValue(it) }
     @JvmField @Category(name = "Always On Toggle", desc = "")
     val alwaysOnCritters = CritterToggleSettings(SafariEspConfig::alwaysOn)
-    @JvmField @Category(name = "Floor Drop Always On Toggle", desc = "Show remaining drops even after objectives are complete.")
+    @JvmField @Category(name = "Floor Drop Always On Toggle", desc = "")
     val alwaysOnFloorDrops = FloorDropToggleSettings()
     init {
         esp.critterColors = customization.critters

@@ -24,6 +24,9 @@ class UniqueHelperPriorityTest {
                 SafariMode.SPARKLING -> {
                     run.sparklingChecks.chat("A rumbling sound can be heard, and the door at the back of the chamber opens...")
                     now = 6000
+                    assertEquals(0, run.completed(mode, listOf(SafariRoster.named("Gemzie")!!), needs))
+                    run.sparklingChecks.scan(SafariBiome.CAVERN, -141.0, 51.0,
+                        List(3) { "Gemzie" to java.util.UUID.randomUUID() })
                 }
             }
             assertEquals(1, run.completed(mode, listOf(SafariRoster.named("Gemzie")!!), needs))
