@@ -6,6 +6,24 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class ObjectiveEvidenceTest {
+    @Test fun `nearby empty podium corrects retained placement and repeated shared bits`() {
+        val state = GemzieObjective()
+        state.observe(GemzieGem.LIME, true, true)
+        state.shared(7, false)
+        assertTrue(state.opened)
+        state.observe(GemzieGem.LIME, true, false, confirmedEmpty = true)
+        state.shared(7, false)
+        assertFalse(state.placed(FloorDropType.LIME))
+        assertFalse(state.opened)
+        assertFalse(GemzieGem.LIME in state.locallyPlaced)
+        state.observe(GemzieGem.LIME, true, true)
+        assertTrue(state.opened)
+        val fromChat = GemzieObjective()
+        fromChat.chat("Party > Friend: You placed the Lime Gem on its podium!")
+        assertTrue(fromChat.locallyPlaced.isEmpty())
+        fromChat.chat("You placed the Lime Gem on its podium!")
+        assertEquals(setOf(GemzieGem.LIME), fromChat.locallyPlaced)
+    }
     @Test fun `gems acquired separately and placed podiums survive empty inventory`() {
         val state=GemzieObjective()
         GemzieGem.entries.forEach { state.inventory(listOf(it.label to 1)); state.inventory(emptyList()) }

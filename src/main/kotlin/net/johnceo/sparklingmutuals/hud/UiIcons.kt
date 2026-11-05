@@ -5,7 +5,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor
 
 /** SafariUtils pixel sprites (MIT). No font-specific Unicode or texture-pack dependency. */
 object UiIcons {
-    enum class Kind { BIRD,BERRY,WORM,SEED_BAG,INCENSE,GEM,MOUNTAIN,SNOWFLAKE,RAVAGER,SKULL,LEAF,NEST,WALL,MOUND,COIN,EYE,CHECK,CROSS }
+    enum class Kind { BIRD,BERRY,WORM,SEED_BAG,INCENSE,GEM,MOUNTAIN,SNOWFLAKE,RAVAGER,SKULL,LEAF,NEST,WALL,MOUND,COIN,EYE,CHECK,CROSS,QUESTION }
     private val sprites=mapOf(
         Kind.BIRD to arrayOf(".....ss....","....s##ss..","....wwwd#s.","...hhw###oo",".wwww####s.","smww####s..","mmmmms##s..",".mmmms#s...","..mm..ss..."),
         Kind.BERRY to arrayOf("....bb....","...#b#....","..#hh###..","..hh#####.",".########s",".########s",".#######ss","..######s.","...####s.."),
@@ -24,7 +24,8 @@ object UiIcons {
         Kind.COIN to arrayOf("...hhhh...","..h####s..",".h##hh##s.",".h###h##s.",".h##hh##s.","..h####s..","...ssss..."),
         Kind.EYE to arrayOf("..........","...hhhh...",".hh####ss.","h###dd###s",".hh####ss.","...ssss..."),
         Kind.CHECK to arrayOf("........#", ".......##", "......##.", "#....##..", "##..##...", ".####....", "..##....."),
-        Kind.CROSS to arrayOf("##.....##", ".##...##.", "..##.##..", "...###...", "..##.##..", ".##...##.", "##.....##")
+        Kind.CROSS to arrayOf("##.....##", ".##...##.", "..##.##..", "...###...", "..##.##..", ".##...##.", "##.....##"),
+        Kind.QUESTION to arrayOf("..#####..", ".##...##.", "......##.", ".....##..", "...###...", "...##....", ".........", "...##....", "...##....")
     )
     fun forLabel(label: String): Kind? {
         if (SafariRoster.named(label) != null) return null

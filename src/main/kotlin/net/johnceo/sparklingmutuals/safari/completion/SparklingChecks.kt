@@ -14,11 +14,10 @@ class SparklingChecks(private val clock: () -> Long = System::currentTimeMillis)
     private var gemzieChamberOpenedAt: Long? = null
     fun confirmGemzieChamber() { if (gemzieChamberOpenedAt == null) gemzieChamberOpenedAt=clock() }
     val gemzieChamberOpened get() = gemzieChamberOpenedAt != null
-    private fun gemzieChamberChecked() = gemzieChamberOpenedAt?.let { clock() - it >= 5000L } == true
     private val completed = mutableSetOf<String>()
     private val partyCompleted = mutableSetOf<String>()
     fun locallyChecked(name: String) = if (requiresCapture(name)) (captured[name] ?: 0) > 0
-        else name in completed || name == "Gazer" && checkCount(name) >= 4 || name == "Gemzie" && gemzieChamberChecked()
+        else name in completed || name == "Gazer" && checkCount(name) >= 4
     fun partyChecked(name: String) = name in partyCompleted
     fun cavernSourceEvidence(moundsCleared: Boolean, wallsCleared: Boolean) {
         if (moundsCleared) completed.add("Rockmite")
@@ -75,7 +74,6 @@ class SparklingChecks(private val clock: () -> Long = System::currentTimeMillis)
     }
     fun checkCount(name: String) = when {
         name == "Gazer" -> maxOf(gazerPopulationChecked, retainedCheckCount(name)).coerceAtMost(4)
-        name == "Gemzie" && gemzieChamberChecked() -> maxOf(3, retainedCheckCount(name))
         else -> retainedCheckCount(name)
     }
     fun localScan(biome: SafariBiome) { partyCompleted.removeAll(biome.critters.map { it.name }.toSet()) }

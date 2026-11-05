@@ -61,7 +61,7 @@ object SafariInventoryAlerts {
         if (!SafariAssist.inSafari || player == null) { readiness.reset(); ticks = 0; return }
         val run=SafariTracking.ledger.current
         run?.gems?.tick(client)
-        if (run?.gems?.opened == true) run.sparklingChecks.confirmGemzieChamber()
+        if (run?.gems?.sharedOpen == true) run.sparklingChecks.confirmGemzieChamber()
         val stacks = BirdfeederInventory.snapshot(client)
         run?.gems?.inventory(stacks.map { SafariRules.strip(it.first).trim() to it.second })
         SafariTracking.ledger.current?.inventoryEvidence(stacks)

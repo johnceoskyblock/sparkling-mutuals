@@ -192,6 +192,7 @@ object SafariPartySync {
                 !run.sharedSuppliesPending(biome) && !run.hasUnusedStartingForBiome(biome)
             }?.let { code ->
                 if (current.biomeReports.none { it.second == code } && send("B", code)) {
+                    run.backendBiomeReportSent(PartySyncProtocol.codes.getValue(code))
                     if (submittedReports.add(code)) biomeReportRetryAt[code] = now + 4_000
                     reportQueue.remove(code)
                 } else if (current.biomeReports.any { it.second == code }) reportQueue.remove(code)
@@ -423,6 +424,7 @@ object SafariPartySync {
         local[18]=run.birds.localFeederCount.coerceIn(0,64)
         listOf(FloorDropType.LIME,FloorDropType.ORANGE,FloorDropType.PURPLE,FloorDropType.INCENSE).forEachIndexed { i,type -> local[19+i]=run.resources.heldCount(type).coerceIn(0,64) }
         local[PartySyncProtocol.HELD_COINS] = run.resources.coordinatedHeld(FloorDropType.COIN, includeStarting).coerceIn(0, 64)
+        local[23] = 0
         listOf(GemzieGem.LIME,GemzieGem.ORANGE,GemzieGem.PURPLE).forEachIndexed { i,gem -> if(gem in run.gems.locallyPlaced) local[23]=local[23] or (1 shl i) }
         SafariStructures.localWallStates.forEachIndexed { i,wall ->
             if(wall==WallState.INTACT) seenWalls=seenWalls or (1 shl i)
@@ -540,7 +542,9 @@ object SafariPartySync {
     private fun name(client: Minecraft,id: String): String? = client.connection?.onlinePlayers?.firstOrNull {
         PartySyncProtocol.uuid(it.profile.id.toString())==id }?.profile?.name ?: runCatching { SafariPartyInput.nameOf(java.util.UUID.fromString(
             "${id.substring(0,8)}-${id.substring(8,12)}-${id.substring(12,16)}-${id.substring(16,20)}-${id.substring(20)}").toString()) }.getOrNull()
-    fun diagnostics() = "ready=${transport.ready} authority=$backendCoordination conflict=${state?.conflict} roster=${state?.roster?.size ?: 0} matchingParty=$matchingParty sequence=${state?.sequence ?: 0} peers=${state?.inventories?.size ?: 0}"
+    fun diagnostics() = "ready=${transport.ready} authority=$backendCoordination conflict=${state?.conflict} roster=${state?.roster?.size ?: 0} matchingParty=$matchingParty sequence=${state?.sequence ?: 0} peers=${state?.inventories?.size ?: 0}" +
+        " lobby=$lobby serverRun=${state?.serverRun} transport=${transport.developerSnapshot()}" +
+        " gemMaskLocal=${local[23]} gemMaskReceived=${state?.facts?.get(23)} pendingBiomes=$reportQueue"
     fun objectiveDone(species: String): Boolean = state?.facts?.let { when(species) {
         "Gemzie" -> it[31]!=0
         "Wumpa" -> it[29]!=0

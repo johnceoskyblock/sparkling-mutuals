@@ -88,13 +88,19 @@ class FloorDropPredictor {
                         in food -> group.biome == SafariBiome.FOREST
                         FloorDropType.ICEBREAKER -> group.biome == SafariBiome.ICY
                         else -> group.biome == SafariBiome.HAUNTED
-                    }) && (group.actual == null || group.actual?.type == kind)
+                    })
                 }
             }
-            val preferred = layouts.filter { it.ice == 5 }.ifEmpty { layouts }
+            // Pickup chat is matched by proximity. A wrong match must never erase a verified ID prefix.
+            val corroborated = layouts.filter { layout ->
+                groups.values.none { group -> group.actual?.let { it.type != layout.kind(group.id) } == true }
+            }.ifEmpty { layouts }
+            val preferred = corroborated.filter { it.ice == 5 }.ifEmpty { corroborated }
+            val shortest = Layout(base, coins = 3, ice = 4)
+            val longest = Layout(base, coins = 6, ice = 5)
             groups.values.forEach { group ->
                 val kinds = preferred.map { it.kind(group.id) }.distinct()
-                group.type = group.actual?.type ?: kinds.singleOrNull()
+                group.type = kinds.singleOrNull() ?: shortest.kind(group.id)?.takeIf { it == longest.kind(group.id) }
             }
             return groups.values.filter { it.live }
         }

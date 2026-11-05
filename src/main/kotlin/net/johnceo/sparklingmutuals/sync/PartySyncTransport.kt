@@ -32,6 +32,7 @@ internal class PartySyncTransport(
     private var failures=0
     private var openedAt=0L
     private var pingAt=0L
+    @Volatile private var lastInboundAt=0L
     private var token=""
     private var tokenOwner=""
     private var tokenUntil=0L
@@ -53,7 +54,7 @@ internal class PartySyncTransport(
         "status" to developerStatus(), "generation" to generation, "failures" to failures,
         "retryAtMillis" to retryAt, "incomingQueue" to incoming.size, "outgoingQueue" to queued,
         "hotspotCapability" to hotspotCapability, "biomeCapability" to biomeCapability, "roomSparklings" to roomSparklings,
-        "mappedPlayers" to mapping.toMap()
+        "mappedPlayers" to mapping.toMap(), "lastInboundAtMillis" to lastInboundAt
     )
     fun tick(next: Context,now: Long) {
         if(!next.lobby.matches(Regex("[A-Za-z0-9_-]{1,64}")) || PartySyncProtocol.compact(next.self)==null ||
@@ -64,6 +65,8 @@ internal class PartySyncTransport(
         val current=socket
         if(current!=null) {
             if(!ready && now-openedAt>12_000) { fail(generation); return }
+            // A successful ping write alone does not prove the room is still reachable.
+            if(ready && now-lastInboundAt>75_000) { fail(generation); return }
             if(now>=pingAt) {
                 pingAt=now+25_000
                 val attempt=generation
@@ -202,12 +205,13 @@ internal class PartySyncTransport(
         override fun onOpen(webSocket: WebSocket) {
             synchronized(this@PartySyncTransport) {
                 if(attempt!=generation) { webSocket.abort(); return }
-                socket=webSocket; connecting=false; openedAt=System.currentTimeMillis(); pingAt=openedAt+25_000
+                socket=webSocket; connecting=false; openedAt=System.currentTimeMillis(); lastInboundAt=openedAt; pingAt=openedAt+25_000
             }
             webSocket.request(1)
         }
         override fun onText(webSocket: WebSocket,data: CharSequence,last: Boolean): CompletionStage<*>? {
             if(attempt!=generation) { webSocket.request(1); return null }
+            lastInboundAt=System.currentTimeMillis()
             if(text.length+data.length>8192) { fail(attempt); return null }
             text.append(data)
             if(last) {
@@ -221,11 +225,15 @@ internal class PartySyncTransport(
         }
         override fun onPing(webSocket: WebSocket,message: ByteBuffer): CompletionStage<*>? {
             if(attempt!=generation) { webSocket.request(1);return null }
+            lastInboundAt=System.currentTimeMillis()
             if(queued>=64) { fail(attempt);webSocket.abort();return null }
             val bytes=ByteBuffer.allocate(message.remaining()).put(message).flip()
             val reply=enqueue { webSocket.sendPong(bytes) }; webSocket.request(1); return reply
         }
-        override fun onPong(webSocket: WebSocket,message: ByteBuffer): CompletionStage<*>? { webSocket.request(1); return null }
+        override fun onPong(webSocket: WebSocket,message: ByteBuffer): CompletionStage<*>? {
+            if(attempt==generation) lastInboundAt=System.currentTimeMillis()
+            webSocket.request(1); return null
+        }
         override fun onClose(webSocket: WebSocket,statusCode: Int,reason: String): CompletionStage<*>? { fail(attempt); return null }
         override fun onError(webSocket: WebSocket,error: Throwable) { fail(attempt,error) }
     }

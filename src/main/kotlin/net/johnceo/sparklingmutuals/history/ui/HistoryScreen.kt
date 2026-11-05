@@ -44,30 +44,39 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
     private enum class RunSort(val label: String) { NEWEST("Newest"), OLDEST("Oldest"), FASTEST("Fastest"), LONGEST("Longest"), CAUGHT("Most caught"), COINS("Most coins"), PARTY("Coverage"), YOU("Caught types") }
     private enum class Filter(val label: String) { ALL("All"), UNLOCKED("Unlocked"), LOCKED("Locked") }
     private enum class AchievementSort(val label: String) { DEFAULT("Unlocked first"), RARITY_UP("Rarity: low"), RARITY_DOWN("Rarity: high"), CLOSEST("Closest"), RECENT("Recent"), NAME("Name") }
+    private data class Navigation(
+        val scroll: Map<Tab, Int> = emptyMap(),
+        val sparklingRunsOnly: Boolean = false, val runSort: RunSort = RunSort.NEWEST,
+        val selectedRun: Int = -1, val runQuery: String = "",
+        val profitTimeframe: ProfitTimeframe = ProfitTimeframe.DAY, val selectedProfitSession: Int? = null,
+        val mineOnly: Boolean = false, val dexType: SparklingDexType = SparklingDexType.SPARKLING,
+        val critterQuery: String = "", val filter: Filter = Filter.ALL,
+        val achievementSort: AchievementSort = AchievementSort.DEFAULT)
     private class Hit(val x: Int, val y: Int, val w: Int, val h: Int, val action: () -> Unit) {
         fun contains(mx: Double, my: Double) = mx >= x && mx < x + w && my >= y && my < y + h
     }
 
     private val hits = mutableListOf<Hit>()
-    private val scroll = mutableMapOf<Tab, Int>()
-    private var sparklingRunsOnly = false
-    private var runSort = RunSort.NEWEST
-    private var selectedRun = -1
-    private var profitTimeframe = ProfitTimeframe.DAY
-    private var selectedProfitSession: Int? = null
-    private var mineOnly = false
-    private var dexType=SparklingDexType.SPARKLING
+    private val restored = rememberedNavigation
+    private val scroll = restored.scroll.toMutableMap()
+    private var sparklingRunsOnly = restored.sparklingRunsOnly
+    private var runSort = restored.runSort
+    private var selectedRun = filteredRuns().indexOfFirst { it.number == restored.selectedRun }
+    private var profitTimeframe = restored.profitTimeframe
+    private var selectedProfitSession: Int? = restored.selectedProfitSession
+    private var mineOnly = restored.mineOnly
+    private var dexType=restored.dexType
     private var dexMenu=false
     private var dexMenuScroll=0
     private var dexButton=IntArray(4)
     private var dexVisible=10
-    private var filter = Filter.ALL
-    private var achievementSort = AchievementSort.DEFAULT
+    private var filter = restored.filter
+    private var achievementSort = restored.achievementSort
     private var listTop = 0; private var listBottom = 0; private var listRows = 1; private var listSize = 0
     private var px = 0; private var py = 0; private var pw = 0; private var ph = 0
-    private var runQuery = ""
+    private var runQuery = restored.runQuery
     private var pendingRunJump = false
-    private var critterQuery = ""
+    private var critterQuery = restored.critterQuery
     private lateinit var runSearch: EditBox
     private lateinit var critterSearch: EditBox
     private data class ScrollHandle(val tab: Tab, val x: Int, val track: HistoryScrollTrack)
@@ -93,6 +102,11 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
     }
 
     override fun onClose() { minecraft.smSetScreen(parent) }
+    override fun removed() {
+        rememberedNavigation = Navigation(scroll.toMap(), sparklingRunsOnly, runSort, filteredRuns().getOrNull(selectedRun)?.number ?: -1, runQuery,
+            profitTimeframe, selectedProfitSession, mineOnly, dexType, critterQuery, filter, achievementSort)
+        super.removed()
+    }
     override fun isPauseScreen() = false
 
     override fun extractRenderState(g: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, delta: Float) {
@@ -712,6 +726,7 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
     }
 
     companion object {
+        private var rememberedNavigation = Navigation()
         private const val BORDER = 0xFFE8A33A.toInt()
         private const val BACKGROUND = 0xE0141210.toInt()
         private const val ROW = 11

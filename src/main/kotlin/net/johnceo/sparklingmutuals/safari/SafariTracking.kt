@@ -93,6 +93,7 @@ object SafariTracking {
             ledger.current?.recordWumpaSpawn(text)
             ledger.current?.sparklingBroadcast(text, now)
             ledger.current?.entry?.chat(text)
+            ledger.current?.gems?.chat(text)
             ledger.current?.startingAnnouncement?.observeHotspot(text, now)
             if(text.startsWith("HOTSPOT!")) ledger.current?.let { announceStarting(client,it,now) }
             if (text.startsWith("HEAD START!")) ledger.current?.startingGrantWindow(now)

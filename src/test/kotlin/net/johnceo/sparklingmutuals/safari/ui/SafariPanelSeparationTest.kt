@@ -16,6 +16,69 @@ import org.junit.jupiter.api.io.TempDir
 
 class SafariPanelSeparationTest {
     @TempDir lateinit var dir: Path
+    @Test fun `capture icons separate counts from local confirmation`() {
+        ConfigManager.init(dir)
+        val run = SafariRun(0)
+        val party = net.johnceo.sparklingmutuals.safari.PartySparklingState()
+        fun icon(name: String) = SafariPanels.captures(run, SafariRoster.named(name)!!.biome, party)
+            .rows.first { it.label == name }.displayIcon
+        val icons = net.johnceo.sparklingmutuals.hud.UiIcons.Kind.entries.associateBy { it.name }
+        ConfigManager.fullClearMode = true; ConfigManager.sparklingMode = false
+        assertEquals(icons["CROSS"], icon("Driftling"))
+        repeat(3) { run.record(SafariCatch(SafariRoster.named("Driftling")!!)) }
+        run.sharedBiomeReport(SafariBiome.CAVERN)
+        assertEquals(icons["QUESTION"], icon("Driftling"))
+        run.visitBiome(SafariBiome.CAVERN)
+        run.updateCaptureEvidence(SafariBiome.CAVERN, emptySet(), true)
+        assertEquals(icons["CHECK"], icon("Driftling"))
+        ConfigManager.fullClearMode = false
+        assertEquals(icons["CROSS"], icon("Scrappy"))
+        run.record(SafariCatch(SafariRoster.named("Scrappy")!!))
+        assertEquals(icons["CHECK"], icon("Scrappy"))
+        ConfigManager.sparklingMode = true
+        assertEquals(icons["QUESTION"], icon("Tepid"))
+        party.select(setOf("me")); party.accept(setOf("me"), mapOf("me" to setOf("Tepid")))
+        assertEquals(icons["CHECK"], icon("Tepid"))
+        assertEquals(icons["QUESTION"], icon("Wumpa"))
+        run.record(SafariCatch(SafariRoster.named("Wumpa")!!))
+        assertEquals(icons["QUESTION"], icon("Wumpa"))
+        run.visitBiome(SafariBiome.ICY)
+        run.updateCaptureEvidence(SafariBiome.ICY, emptySet(), true)
+        assertEquals(icons["CHECK"], icon("Wumpa"))
+    }
+
+    @Test fun `manual report icon survives entry until positive incomplete evidence`() {
+        ConfigManager.init(dir)
+        ConfigManager.fullClearMode = true; ConfigManager.sparklingMode = false
+        val run = SafariRun(0)
+        fun complete() = SafariPanels.progress(run, false, 1000).rows.first { it.label == "Cavern" }.complete
+        run.manualBiomeReport("Party > Friend: cd")
+        assertEquals(true, complete())
+        run.visitBiome(SafariBiome.CAVERN)
+        assertEquals(true, complete())
+        run.updateCaptureEvidence(SafariBiome.CAVERN, emptySet(), true)
+        assertEquals(true, complete())
+        run.updateCaptureEvidence(SafariBiome.CAVERN, setOf("Flitter"), true)
+        assertEquals(false, complete())
+        run.visitBiome(SafariBiome.HAUNTED)
+        assertEquals(false, complete())
+        run.manualBiomeReport("Party > Friend: cd")
+        assertEquals(true, complete())
+    }
+    @Test fun `backend biome report controls the progress icon across modes and local holds`() {
+        ConfigManager.init(dir)
+        val run = SafariRun(0)
+        run.sharedBiomeReport(SafariBiome.HAUNTED)
+        run.sharedHeldObjectives(false, true)
+        for (mode in net.johnceo.sparklingmutuals.safari.SafariMode.entries) {
+            ConfigManager.fullClearMode = mode == net.johnceo.sparklingmutuals.safari.SafariMode.FULL_CLEAR
+            ConfigManager.sparklingMode = mode == net.johnceo.sparklingmutuals.safari.SafariMode.SPARKLING
+            val panel = SafariPanels.progress(run, true, 1000)
+            val haunted = panel.rows.single { it.label == "Haunted" }
+            assertEquals(true, haunted.complete)
+            assertEquals(net.johnceo.sparklingmutuals.hud.UiIcons.Kind.SKULL, haunted.displayIcon)
+        }
+    }
     @Test fun `remote biome completion waits for report in every mode despite complete capture evidence`() {
         ConfigManager.init(dir)
         val party=net.johnceo.sparklingmutuals.safari.PartySparklingState().apply {

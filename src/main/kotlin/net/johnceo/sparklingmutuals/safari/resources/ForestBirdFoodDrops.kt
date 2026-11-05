@@ -12,7 +12,7 @@ object ForestBirdFoodDrops {
         for(marker in raw) {
             if(SafariEspRules.biomeAt(marker.x.toDouble(),marker.z.toDouble())!=SafariBiome.FOREST) continue
             val group=completeGroups.firstOrNull { it.live && it.biome==SafariBiome.FOREST && marker.id in it.id..it.id+2 } ?: return null
-            val type=group.actual?.type ?: group.type ?: return null
+            val type=group.type ?: group.actual?.type ?: return null
             if(type in food) counts[type.label]=counts.getValue(type.label)+1
         }
         return counts
@@ -24,7 +24,7 @@ object ForestBirdFoodDrops {
         }
         // Use full, active reward triples regardless of ESP selection. Unknown/partial markers
         // still block, but a complete XP/essence/shard group is not remaining bird food.
-        val type = group?.actual?.type ?: group?.type
+        val type = group?.type ?: group?.actual?.type
         group == null || type == null || type in food
     }
 }

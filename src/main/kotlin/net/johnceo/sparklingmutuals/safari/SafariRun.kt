@@ -217,7 +217,8 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
         if (forest) sharedSupplyBlocks.add(SafariBiome.FOREST)
         if (haunted) sharedSupplyBlocks.add(SafariBiome.HAUNTED)
     }
-    fun sharedSuppliesPending(biome: SafariBiome) = biome in sharedSupplyBlocks
+    fun sharedSuppliesPending(biome: SafariBiome) = biome in sharedSupplyBlocks &&
+        (biome != SafariBiome.HAUNTED || SafariFullClear.mode == SafariMode.FULL_CLEAR || SafariSparklingMode.state.needs("Gimmiegold"))
     fun canReportBiome(biome: SafariBiome, party: PartySparklingState = SafariSparklingMode.state, mode: SafariMode = SafariMode.UNIQUE): Boolean {
         if (sharedSuppliesPending(biome) || hasUnusedStartingForBiome(biome)) return false
         if (biome != SafariBiome.FOREST || mode == SafariMode.SPARKLING && birdSpecies.none(party::needs)) return true
@@ -236,17 +237,34 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
     private val manualReports = mutableSetOf<SafariBiome>()
     private val sharedReports = mutableSetOf<SafariBiome>()
     private val evidenceAfterReport = mutableSetOf<SafariBiome>()
+    private val contradictedManualIcons = mutableSetOf<Pair<SafariMode, SafariBiome>>()
     private var manualWallContradiction = false
 
     fun manualBiomeReport(raw: String) {
         val biome = SparklingChecks.doneBiome(raw) ?: return
         if (biome in sharedReports) return
+        contradictedManualIcons.removeAll { it.second == biome }
         if (manualReports.add(biome)) evidenceAfterReport.remove(biome)
         partyFullClear(raw)
     }
 
     fun manualReportReceived(biome: SafariBiome) = biome in manualReports
 
+    /** An unverified scan is not evidence against a party member's completion report. */
+    fun manualBiomeIconComplete(mode: SafariMode, biome: SafariBiome, party: PartySparklingState): Boolean {
+        if (biome !in manualReports) return false
+        val key = mode to biome
+        if (lastBiome == biome && biome in evidenceAfterReport &&
+            (sparklingCaptures.pending(biome) || !manualReportEvidenceComplete(mode, biome, party)))
+            contradictedManualIcons.add(key)
+        return key !in contradictedManualIcons
+    }
+
+    fun visitedBiome(biome: SafariBiome) = biome in visited
+
+    private val sentBackendReports = mutableSetOf<SafariBiome>()
+    fun backendBiomeReportSent(biome: SafariBiome) { sentBackendReports.add(biome) }
+    fun backendBiomeReportReceived(biome: SafariBiome) = biome in sharedReports || biome in sentBackendReports
     fun sharedBiomeReport(biome: SafariBiome) { sharedReports.add(biome) }
 
     fun reportedComplete(mode: SafariMode, biome: SafariBiome, party: PartySparklingState): Boolean {
@@ -254,6 +272,10 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
         if (sharedSuppliesPending(biome) || hasUnusedStartingForBiome(biome)) return false
         if (biome in sharedReports) return true
         if (biome !in manualReports) return false
+        return manualReportEvidenceComplete(mode, biome, party)
+    }
+
+    private fun manualReportEvidenceComplete(mode: SafariMode, biome: SafariBiome, party: PartySparklingState): Boolean {
         fun needs(name: String) = mode == SafariMode.FULL_CLEAR || party.needs(name) ||
             mode == SafariMode.UNIQUE && count(name) == 0
         if (biome == SafariBiome.CAVERN && manualWallContradiction && needs("Snoozle")) return false

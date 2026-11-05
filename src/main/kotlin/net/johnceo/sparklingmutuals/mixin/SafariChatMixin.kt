@@ -14,6 +14,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo
 class SafariChatMixin {
     @Inject(method = ["addServerSystemMessage"], at = [At("HEAD")], cancellable = true)
     private fun hideCaptureSpam(message: Component, result: CallbackInfo) {
-        if (SafariChatFilter.hidden(message.string, ConfigManager.hideCaptureChat)) result.cancel()
+        if (net.johnceo.sparklingmutuals.safari.SafariAssist.inSafari &&
+            SafariChatFilter.hidden(message.string, ConfigManager.hideCaptureChat)) result.cancel()
     }
 }

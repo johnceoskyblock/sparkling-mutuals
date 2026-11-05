@@ -96,6 +96,12 @@ class DocumentedSafariRulesTest {
     }
 
     @Test fun `Gemzie announcement alone is pending and distinct run UUID checks persist`() {
+        var now = 0L
+        val checks = net.johnceo.sparklingmutuals.safari.completion.SparklingChecks { now }
+        checks.confirmGemzieChamber()
+        now = 30_000
+        assertEquals(0, checks.checkCount("Gemzie"), "Elapsed chamber time must never invent checks")
+        assertFalse(checks.locallyChecked("Gemzie"))
         val run = SafariRun(0)
         run.sparklingChecks.chat("A rumbling sound can be heard, and the door at the back of the chamber opens...", true)
         assertFalse(run.sparklingChecks.checked("Gemzie"))

@@ -109,6 +109,7 @@ object SafariFloorDrops {
         SafariEspRules.profitableEsp("Gimmiegold", ConfigManager.sparklingProfitableShardEsp)
     fun selected(drop: PredictedFloorDrop, incenseIds: Set<Int>): Boolean {
         val type = drop.type ?: return false
+        if (SafariEspConfig.floorAlwaysOn(type)) return SafariEspConfig.groups.getValue("floor").enabled
         if(type == FloorDropType.INCENSE && net.johnceo.sparklingmutuals.sync.SafariPartySync.doomSummoned()) return false
         if (type == FloorDropType.GENERIC) return SafariEspConfig.rewardDrops && SafariEspConfig.groups.getValue("floor").enabled
         val mode = SafariFullClear.mode
