@@ -18,6 +18,22 @@ class FloorDropMetadataTest {
         assertEquals(FloorDropType.ORANGE,predictor.scan(gems.takeLast(3)).single().type)
     }
 
+    @Test fun `catalog and ID layout distinguish coins from generic Haunted loot`() {
+        val predictor = FloorDropPredictor()
+        val result = predictor.scan((0..30).flatMap { slot ->
+            val (x, y, z) = when (slot) {
+                in 0..5 -> Triple(-110.0, 60.0, 50.0)
+                in 6..14 -> Triple(-17.58, 65.78, 15.52)
+                in 15..24, 30 -> Triple(9.42, 68.78, -93.48)
+                else -> Triple(-118.58, 78.78, -105.48)
+            }
+            List(3) { FloorDisplay(100 + slot * 3 + it, x, y, z, "minecraft:string:String") }
+        })
+        assertEquals(5, result.count { it.type == FloorDropType.COIN })
+        assertEquals(5, result.count { it.type == FloorDropType.ICEBREAKER })
+        assertEquals(FloorDropType.GENERIC, result.last().type)
+    }
+
     @Test fun `rejected overlapping triple does not consume a valid gem marker`() {
         val predictor = FloorDropPredictor()
         val stray = FloorDisplay(9,-110.0,60.0,50.0,"minecraft:string:Loading")

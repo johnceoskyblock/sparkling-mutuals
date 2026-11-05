@@ -1,6 +1,6 @@
 package net.johnceo.sparklingmutuals.config
 
-/** Shared layout for the two independent critter ESP filters. */
+/** Shared layout for the independent critter ESP controls. */
 class CritterToggleSettings(enabled: (String) -> Boolean) {
     @JvmField @ConfigOption(name = "Foxtrot", desc = "")
     @ConfigEditorBoolean var foxtrot = enabled("Foxtrot")

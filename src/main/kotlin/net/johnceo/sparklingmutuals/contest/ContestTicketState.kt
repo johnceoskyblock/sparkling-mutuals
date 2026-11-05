@@ -3,10 +3,12 @@ package net.johnceo.sparklingmutuals.contest
 /** One local announcement per player and absolute contest window, independent of profile/HUD refreshes. */
 class ContestTicketState {
     private val announced = mutableSetOf<Triple<String, Long, Boolean>>()
-    fun claim(player: String, window: Long, tier: String, secondsIntoWindow: Int, firstClass: Boolean = false, points: Int = -1): Boolean {
+    fun claim(player: String, window: Long, tier: String, secondsIntoWindow: Int, firstClass: Boolean = false, points: Int = -1,
+              dispatch: () -> Boolean = { true }): Boolean {
         if (player.isBlank() || secondsIntoWindow < 10 || !earned(tier, firstClass, points)) return false
         announced.removeAll { it.second < window - 2 }
-        return announced.add(Triple(player.lowercase(), window, firstClass))
+        val key = Triple(player.lowercase(), window, firstClass)
+        return key !in announced && dispatch() && announced.add(key)
     }
     companion object {
         val earnedTiers = setOf("UNCOMMON", "RARE", "EPIC", "LEGENDARY", "MYTHIC", "DIVINE", "SPECIAL")

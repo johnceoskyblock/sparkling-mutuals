@@ -44,8 +44,27 @@ object SparklingCommand {
                     1
                 })
             }
+            val historyTabs = mapOf(
+                HistoryScreen.Tab.BESTS to listOf("best", "bests"),
+                HistoryScreen.Tab.SPARKLINGS to listOf("sparkling", "sparklings"),
+                HistoryScreen.Tab.STATS to listOf("stat", "stats"),
+                HistoryScreen.Tab.PROFIT to listOf("profit", "profits"),
+                HistoryScreen.Tab.ACHIEVEMENTS to listOf("achievements")
+            )
+            val historyShortcuts = ClientCommands.literal("sm")
+            historyTabs.forEach { (tab, aliases) ->
+                aliases.forEach { alias -> historyShortcuts.then(ClientCommands.literal(alias).executes {
+                    open { HistoryScreen(null, tab) }
+                }) }
+            }
+            dispatcher.register(ClientCommands.literal("newsession").executes { context ->
+                net.johnceo.sparklingmutuals.history.RunHistory.newSession().fold(
+                    { context.source.sendFeedback(LocalChat.component("[SM] Previous session saved. New session started.")); 1 },
+                    { context.source.sendError(LocalChat.component("[SM] Could not save the new session. See latest.log.")); 0 }
+                )
+            })
             dispatcher.register(
-                ClientCommands.literal("sm")
+                historyShortcuts
                     .executes { open(::SafariConfigScreen) }
                     .then(ClientCommands.literal("config").executes { open(::SafariConfigScreen) })
                     .then(ClientCommands.literal("help").executes { context ->
@@ -59,10 +78,6 @@ object SparklingCommand {
                                     com.mojang.brigadier.arguments.StringArgumentType.getString(it, "folder").replace("\"", ""))); 1 })
                             .executes { LogImporter.runImport(LogImporter.defaultLogs()); 1 })
                         .executes { open { HistoryScreen(null) } })
-                    .then(ClientCommands.literal("achievements").executes {
-                        open { HistoryScreen(null, HistoryScreen.Tab.ACHIEVEMENTS) } })
-                    .then(ClientCommands.literal("stats").executes {
-                        open { HistoryScreen(null, HistoryScreen.Tab.STATS) } })
                     .then(ClientCommands.literal("debug").executes { context ->
                         SafariEsp.debug(Minecraft.getInstance())
                         net.johnceo.sparklingmutuals.safari.automation.entry.CjsSafariEntry.debug().forEach {

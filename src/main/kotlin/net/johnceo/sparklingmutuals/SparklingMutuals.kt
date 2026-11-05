@@ -73,6 +73,7 @@ object SparklingMutuals : ModInitializer {
         net.johnceo.sparklingmutuals.safari.DoomspiralThrowTimer.register()
         AlertCommand.register()
         net.johnceo.sparklingmutuals.alerts.SparkleAutoParty.register()
+        net.johnceo.sparklingmutuals.alerts.WarpListRanks.register()
         net.johnceo.sparklingmutuals.alerts.SparkleWarping.register()
     }
 

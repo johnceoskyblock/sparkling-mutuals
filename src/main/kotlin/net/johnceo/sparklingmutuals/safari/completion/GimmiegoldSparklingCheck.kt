@@ -32,6 +32,9 @@ class GimmiegoldSparklingCheck {
         if (!resolved) validated = false
         floors[id] = resolved
     }
+    fun discardFloors(ids: Set<Int>) {
+        ids.forEach(floors::remove)
+    }
     fun reenter() { validated = false }
     fun inventory(amount: Int) {
         held = amount.coerceAtLeast(0)

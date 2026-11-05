@@ -48,14 +48,17 @@ object SafariCompletion {
         if (ConfigManager.announceStartingItems && client.connection != null && PartyManager.hasInfo && PartyManager.getMembers().size > 1 &&
             now - sentAt >= 1500 && run.partyResourceReminders.dispatch(now, party,
                 { message -> PartyManager.sendPartyChat(client, "$message") })) sentAt = now
-        if (client.connection != null && queue.isNotEmpty() && now - sentAt >= 3000 &&
-            !net.johnceo.sparklingmutuals.sync.SafariPartySync.waitingForAuthority) {
-            val (area, word) = queue.removeFirst()
+        if (client.connection != null && queue.isNotEmpty() && now - sentAt >= 3000) {
+            val (area, word) = queue.first()
             val chat = ConfigManager.autoBiomeReports && !run.manualReportReceived(area) && run.completion.chatReportAllowed(area, mode)
-            if (!net.johnceo.sparklingmutuals.sync.SafariPartySync.completion(word, chat) && chat) PartyManager.sendPartyChat(client, word)
-            run.completion.sent(area); sentAt = now
-            run.resourceReminders.afterBiomeClear(now)
-            run.partyResourceReminders.afterBiomeReport(now)
+            val queuedForSync = net.johnceo.sparklingmutuals.sync.SafariPartySync.completion(word, chat)
+            if (queuedForSync || !chat || PartyManager.hasInfo) {
+                if (!queuedForSync && chat) PartyManager.sendPartyChat(client, word)
+                queue.removeFirst()
+                run.completion.sent(area, mode); sentAt = now
+                run.resourceReminders.afterBiomeClear(now)
+                run.partyResourceReminders.afterBiomeReport(now)
+            } else PartyManager.requestPartyInfo()
         }
         if (run.completion.alert(run, mode, party, true)) {
             SmallAlerts.show(SafariHud.RUN_COMPLETE)

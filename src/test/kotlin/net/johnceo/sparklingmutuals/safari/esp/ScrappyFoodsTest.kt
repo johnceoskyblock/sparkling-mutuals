@@ -7,11 +7,11 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class ScrappyFoodsTest {
-    @Test fun `food ordering waits for three and survives partial sightings and captures`() {
+    @Test fun `outer IDs resolve the trio and survive partial sightings and captures`() {
         val foods = ScrappyFoods()
         val wheat = UUID.randomUUID(); val fish = UUID.randomUUID(); val lily = UUID.randomUUID()
         foods.observe(listOf(lily to 121783, wheat to 121777))
-        assertNull(foods.food(wheat))
+        assertEquals(ScrappyFood.WHEAT, foods.food(wheat))
         foods.observe(listOf(fish to 121780))
         assertEquals(ScrappyFood.WHEAT, foods.food(wheat))
         assertEquals(ScrappyFood.FISH, foods.food(fish))
@@ -23,9 +23,18 @@ class ScrappyFoodsTest {
         assertEquals(ScrappyFood.FISH, foods.food(fish))
         foods.reset()
         assertNull(foods.food(wheat))
-        foods.observe(listOf(lily to 7, fish to 8, wheat to 9))
+        foods.observe(listOf(lily to 7, fish to 10, wheat to 13))
         assertEquals(ScrappyFood.WHEAT, foods.food(lily))
         assertEquals(ScrappyFood.LILY_PAD, foods.food(wheat))
+    }
+    @Test fun `observed non-Scrappy IDs can resolve a partially loaded trio`() {
+        val foods = ScrappyFoods()
+        val fish = UUID.randomUUID()
+        foods.observe(emptyList(), listOf(94, 106))
+        foods.observe(listOf(fish to 100), listOf(100))
+        assertEquals(ScrappyFood.FISH, foods.food(fish))
+        foods.observe(emptyList())
+        assertEquals(ScrappyFood.FISH, foods.food(fish))
     }
     @Test fun `independent food colors and shared label size round trip through customization`() {
         val before = Properties().also(SafariEspConfig::save)

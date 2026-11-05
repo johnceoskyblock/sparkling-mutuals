@@ -1,11 +1,11 @@
 package net.johnceo.sparklingmutuals.safari.automation
 
-/** One ticket reminder per request cycle, sent only by the leader in Torrhus Canyon. */
+/** One downtime reminder per request cycle, sent only by the leader in Torrhus Canyon. */
 class DowntimeAnnouncement {
     private val observed = mutableSetOf<String>()
     private var pending: String? = null
     private var due = 0L
-    fun observe(message: String) { if (message == TICKET_REMINDER || message.startsWith("Downtime requested: ")) observed.add(message) }
+    fun observe(message: String) { if (message == TICKET_REMINDER || message.startsWith(REQUEST_PREFIX)) observed.add(message) }
     fun queue(message: String, now: Long, rank: Int) {
         pending = message
         due = now + 500 + rank * 1200L
@@ -22,6 +22,7 @@ class DowntimeAnnouncement {
     fun clear() { pending = null; observed.clear() }
 
     companion object {
+        const val REQUEST_PREFIX = "DT request by "
         const val TICKET_REMINDER = "[Reminder] Everyone get your ticket!"
     }
 }

@@ -36,12 +36,16 @@ class WarpListScreen(private val parent: Screen?, private val autoPartyChanged: 
     private val sidebar get()=(width/3).coerceIn(120,190)
     private val contentLeft get()=sidebar+24
     private val right get()=width-16
-    private val preferenceTop = 79
-    private val inputTop get() = if (right - contentLeft < 220) 114 else 104
-    private val actionsTop get()=inputTop+32
-    private val rowsTop get()=inputTop+55
-    private fun statusLines()=font.split(Component.literal(status),(width-112).coerceAtLeast(40))
-    private val footerTop get()=height-29-statusLines().size*10
+    private val headerControlsShareRow get() = font.width(title.string) + 16 <= right - 234
+    private val sectionTop get() = if (headerControlsShareRow) 42 else 65
+    private val preferenceTop get() = sectionTop + 25
+    private val inputTop get() = preferenceTop + 20
+    private val actionsTop get() = inputTop + 30
+    private val rowsTop get() = actionsTop + 26
+    private fun statusLines() = listOf(status, "Right-click a critter to change invite priority.").flatMap {
+        font.split(Component.literal(it), (width - 100).coerceAtLeast(40))
+    }
+    private val footerTop get()=height-15-statusLines().size*10
     private val rowsBottom get()=maxOf(rowsTop, footerTop-6)
     private val playerTop get()=rowsTop
     private val playerRows get()=((rowsBottom-playerTop+3)/32).coerceAtLeast(1)
@@ -68,34 +72,35 @@ class WarpListScreen(private val parent: Screen?, private val autoPartyChanged: 
     override fun extractRenderState(g: GuiGraphicsExtractor,mx: Int,my: Int,delta: Float) {
         hits.clear();g.fill(0,0,width,height,SettingsPalette.background)
         g.fill(8,8,width-8,height-8,SettingsPalette.surface)
-        text(g,"Sparkle Warping · Warp List",16,18,SettingsPalette.accent)
-        button(g,if(ConfigManager.autoParty) "Auto-party: On" else "Auto-party: Off",right-106,12,106,mx,my) {
+        text(g,font.plainSubstrByWidth(title.string,(right-134).coerceAtLeast(30)),16,18,SettingsPalette.accent)
+        button(g,if(ConfigManager.autoParty) "Auto-party: On" else "Auto-party: Off",if (headerControlsShareRow) right-230 else right-112,12,112,mx,my) {
             val enabled=!ConfigManager.autoParty;ConfigManager.autoParty=enabled;autoPartyChanged(enabled);save()
         }
-        button(g,if(ConfigManager.autoPartyOnlineOnly) "Online only: On" else "Online only: Off",right-106,35,106,mx,my) {
+        button(g,if(ConfigManager.autoPartyOnlineOnly) "Online only: On" else "Online only: Off",right-112, if (headerControlsShareRow) 12 else 35,112,mx,my) {
             val enabled = !ConfigManager.autoPartyOnlineOnly
             ConfigManager.autoPartyOnlineOnly = enabled
             onlineOnlyChanged(enabled)
             status = "Online checks run every 2 hours and need a personal Hypixel API key (/apikey)."
             save()
         }
-        text(g,"Players",16,64,SettingsPalette.muted)
+        text(g,"Players",16,sectionTop+6,SettingsPalette.muted)
         name.setY(inputTop+7);filter.setY(inputTop+7)
         card(g,16,inputTop,sidebar-4,24)
         card(g,contentLeft,inputTop,right-contentLeft,24)
         if(name.value.isEmpty()) text(g,"Player IGN…",24,inputTop+7,SettingsPalette.muted)
         if(filter.value.isEmpty()) text(g,"Filter critters…",contentLeft+8,inputTop+7,SettingsPalette.muted)
         val people=WarpList.players()
+        val rankColors = WarpListRanks.colors(minecraft)
         val rows=people.drop(playerScroll).take(playerRows)
         g.enableScissor(16,playerTop,sidebar+12,rowsBottom)
         rows.forEachIndexed { index,player ->
             val y=playerTop+index*32
             val over=mx in 16..sidebar+10 && my in y until y+29
             card(g,16,y,sidebar-4,29,selected==player,over)
-            text(g,font.plainSubstrByWidth(player,sidebar-18),22,y+5)
+            text(g,font.plainSubstrByWidth(player,sidebar-18),22,y+5,rankColors[player.lowercase()] ?: SettingsPalette.text)
             val count=WarpList.critters.count { WarpList.selected(player,it) }
             text(g,"$count/${WarpList.critters.size} selected",22,y+17,SettingsPalette.muted)
-            hits.add(Hit(16,y,sidebar-4,29) { selected=player;flagScroll=0 })
+            hits.add(Hit(16,y,sidebar-4,minOf(29,rowsBottom-y).coerceAtLeast(0)) { selected=player;flagScroll=0 })
         }
         g.disableScissor()
         if(people.size>playerRows) {
@@ -103,17 +108,18 @@ class WarpListScreen(private val parent: Screen?, private val autoPartyChanged: 
             val y=playerTop+(track-h)*playerScroll/(people.size-playerRows).coerceAtLeast(1)
             g.fill(sidebar+6,y,sidebar+9,y+h,SettingsPalette.accent)
         }
-        button(g,"Add",16,actionsTop,(sidebar/2-7).coerceAtLeast(35),mx,my) { addPlayer() }
-        button(g,if(importing) "Importing…" else "Import CSV",16+sidebar/2,actionsTop,(sidebar/2-6).coerceAtLeast(42),mx,my) { importCsv() }
+        val leftButtonWidth = (sidebar-10)/2
+        button(g,"Add",16,actionsTop,leftButtonWidth,mx,my) { addPlayer() }
+        button(g,if(importing) "Importing…" else "Import CSV",22+leftButtonWidth,actionsTop,sidebar-10-leftButtonWidth,mx,my) { importCsv() }
         if(people.isEmpty()) {
             val lines=font.split(Component.literal("No players yet. Add an IGN or import a CSV."),sidebar-20)
             lines.forEachIndexed { i,line -> g.text(font,line,22,playerTop+12+i*11,SettingsPalette.muted,false) }
         }
         val current=selected?.takeIf { it in people }
         if(current!=null) {
-            text(g, font.plainSubstrByWidth(current, (right-contentLeft-100).coerceAtLeast(1)), contentLeft, 64, SettingsPalette.gold)
-            button(g,"All",right-98,56,46,mx,my) { WarpList.critters.forEach { WarpList.select(current,it,true) };save() }
-            button(g,"None",right-46,56,46,mx,my) { WarpList.critters.forEach { WarpList.select(current,it,false) };save() }
+            text(g, font.plainSubstrByWidth(current, (right-contentLeft-100).coerceAtLeast(1)), contentLeft, sectionTop+6, rankColors[current.lowercase()] ?: SettingsPalette.text)
+            button(g,"All",right-98,sectionTop,46,mx,my) { WarpList.critters.forEach { WarpList.select(current,it,true) };save() }
+            button(g,"None",right-46,sectionTop,46,mx,my) { WarpList.critters.forEach { WarpList.select(current,it,false) };save() }
             invitePreferences(g, current)
             val tabW=((right-contentLeft-9)/4).coerceAtLeast(30)
             SafariBiome.entries.forEachIndexed { index,entry ->
@@ -137,7 +143,7 @@ class WarpListScreen(private val parent: Screen?, private val autoPartyChanged: 
                 val priority = "#${WarpList.priority(current, critter)}"
                 val priorityWidth = font.width(priority)
                 text(g,font.plainSubstrByWidth(critter,(cellW-30-priorityWidth).coerceAtLeast(1)),x+22,y+8,if(enabled) SettingsPalette.text else SettingsPalette.muted)
-                text(g, priority, x+cellW-priorityWidth-4, y+13, SettingsPalette.muted)
+                if (enabled) text(g, priority, x+cellW-priorityWidth-5, y+8, SettingsPalette.muted)
                 hits.add(Hit(x,y,cellW,minOf(23,rowsBottom-y),critter) { WarpList.select(current,critter,!enabled);save() })
             }
             g.disableScissor()
@@ -146,14 +152,13 @@ class WarpListScreen(private val parent: Screen?, private val autoPartyChanged: 
                 val y=rowsTop+(track-h)*flagScroll/(totalRows-visible).coerceAtLeast(1)
                 g.fill(right-3,y,right,y+h,SettingsPalette.accent)
             }
-            button(g,"Remove player",16,86,100,mx,my) {
+            button(g,"Remove",sidebar-45,sectionTop,57,mx,my) {
                 WarpList.removePlayer(current);selected=WarpList.players().firstOrNull();playerScroll=0;save()
             }
         } else {
             text(g,"Choose a player to edit invite flags.",contentLeft,rowsTop+16,SettingsPalette.muted)
         }
         statusLines().forEachIndexed { i,line -> g.text(font,line,16,footerTop+i*10,SettingsPalette.muted,false) }
-        text(g,"Right click on critter to change auto party priority",16,height-28,SettingsPalette.muted)
         button(g,"Done",right-60,height-34,60,mx,my) { onClose() }
         super.extractRenderState(g,mx,my,delta)
         priorityPopup?.let { (player, critter) -> renderPriorityPopup(g, player, critter, mx, my) }
@@ -161,7 +166,7 @@ class WarpListScreen(private val parent: Screen?, private val autoPartyChanged: 
     private fun invitePreferences(g: GuiGraphicsExtractor, player: String) {
         val settings = WarpList.settings(player)
         val labelWidth = right - contentLeft - 23
-        val lines = font.split(Component.literal("Always invite this player regardless of online status"), labelWidth.coerceAtLeast(40))
+        val lines = font.split(Component.literal("Always invite"), labelWidth.coerceAtLeast(40))
         card(g, contentLeft, preferenceTop, 14, 14, settings.alwaysInvite)
         if (settings.alwaysInvite) UiIcons.draw(g, contentLeft+2, preferenceTop+2, UiIcons.Kind.CHECK, SettingsPalette.green)
         lines.forEachIndexed { index, line ->
@@ -180,7 +185,7 @@ class WarpListScreen(private val parent: Screen?, private val autoPartyChanged: 
         val top = (height-62)/2
         card(g,left,top,panelWidth,62)
         text(g,"$critter priority",left+7,top+8,SettingsPalette.gold)
-        text(g,player,left+7,top+20,SettingsPalette.muted)
+        text(g,player,left+7,top+20,WarpListRanks.colors(minecraft)[player.lowercase()] ?: SettingsPalette.muted)
         for (priority in 1..10) {
             val x = left+7+(priority-1)*(size+2)
             val y = top+36

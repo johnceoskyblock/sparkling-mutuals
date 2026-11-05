@@ -49,6 +49,7 @@ class MoundSurvey {
     fun seenUnopened(position: Triple<Int, Int, Int>) = sites[position] == false
     private var scanned = false
     val allBroken get() = scanned && sites.values.all { it }
+    val unopenedSites get() = sites.filterValues { !it }.keys
     val remaining get() = sites.values.count { !it }
     val hasSites get() = sites.isNotEmpty()
     fun scan(present: Set<Triple<Int, Int, Int>>, observable: (Triple<Int, Int, Int>) -> Boolean) {

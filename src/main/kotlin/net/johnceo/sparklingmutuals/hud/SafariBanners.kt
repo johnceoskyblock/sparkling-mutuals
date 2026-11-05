@@ -8,7 +8,6 @@ import net.johnceo.sparklingmutuals.party.PartyManager
 import net.johnceo.sparklingmutuals.safari.*
 import net.johnceo.sparklingmutuals.safari.completion.SafariFullClear
 import net.johnceo.sparklingmutuals.safari.esp.SafariEsp
-import net.johnceo.sparklingmutuals.safari.hideyho.HideyhoHiding
 import net.johnceo.sparklingmutuals.ui.AlertSounds
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphicsExtractor
@@ -34,7 +33,7 @@ object SafariBanners {
         val current=SafariTracking.ledger.current
         if(current!==run) { run=current;fired.clear();cooldown.clear();chamberTarget=null;previousBiome=null;feeder=0;heldFood=0 }
     }
-    fun fire(kind: BannerKind,biome: SafariBiome?=null,critter: String?=null,text: String?=null,preview: Boolean=false) {
+    fun fire(kind: BannerKind,biome: SafariBiome?=null,critter: String?=null,text: String?=null,preview: Boolean=false,location: String?=null) {
         if(!kind.supported) return
         if(!preview && kind.encounterBiome?.let { SafariAssist.biome!=it }==true) return
         if(kind==BannerKind.GEMZIE_DONE) { clear(BannerKind.GEMZIE_READY);clear(BannerKind.GEMS) }
@@ -43,7 +42,7 @@ object SafariBanners {
         val option=BannerConfig.options.getValue(kind)
         if(!preview && (!BannerConfig.enabled || !option.enabled)) return
         val formatted=(text ?: option.text).replace("<BIOME>",biome?.label ?: "Safari").replace("<CRITTER>",critter ?: "Critter")
-            .replace("<TICKET>",if(ContestConfig.firstClassTicket) "First-Class" else "Basic")
+            .replace("<LOCATION>",location ?: "Inside").replace("<TICKET>",if(ContestConfig.firstClassTicket) "First-Class" else "Basic")
         val color=if(biome!=null && kind in setOf(BannerKind.HOTSPOT,BannerKind.FLOOR_DROPS,BannerKind.BIOME_DONE)) biome.color
             else if(kind==BannerKind.BIRDS && critter!=null) SafariRoster.named(critter)?.color ?: (0xFF000000.toInt() or kind.rgb)
             else SafariEspConfig.rgb(option.color)
@@ -54,7 +53,8 @@ object SafariBanners {
         SafariAlertSequence.queue.submit(this, notice.duration, kind to formatted,
             valid = { Minecraft.getInstance().player != null && (preview ||
                 BannerConfig.enabled && BannerConfig.options.getValue(kind).enabled &&
-                (contest || SafariTracking.ledger.current === requestRun)) },
+                (contest || SafariTracking.ledger.current === requestRun) &&
+                (kind != BannerKind.HIDEYHO_LOCATION || SafariAssist.inSafari && SafariFullClear.mode != SafariMode.SPARKLING)) },
             finish = { activeBanner = null }) {
             if (!notice.soundOnly) activeBanner = ActiveBanner(notice, now())
             AlertSounds.play(Minecraft.getInstance(), notice.sound, notice.volume, notice.pitch)

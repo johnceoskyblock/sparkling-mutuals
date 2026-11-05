@@ -16,7 +16,8 @@ import net.minecraft.client.Minecraft
  * is written to `sparkling-mutuals-runs.json` with its captures, shards, feathers, sparklings and biome splits.
  */
 object RunHistory {
-    class Data(var nextNumber: Int = 1, var runs: MutableList<RunRecord> = mutableListOf())
+    class Data(var nextNumber: Int = 1, var runs: MutableList<RunRecord> = mutableListOf(),
+               var sessionStarts: List<Long> = emptyList())
     private var data = Data()
     private val session = LiveHistorySession()
     private val tally get() = session.tally
@@ -29,6 +30,13 @@ object RunHistory {
     private var finishedSummaryOwner: java.util.UUID? = null
 
     val runs: List<RunRecord> get() = data.runs
+    val sessionStarts: List<Long> get() = data.sessionStarts
+
+    fun newSession(now: Long = System.currentTimeMillis()): Result<Unit> {
+        val previous = data.sessionStarts
+        data.sessionStarts = previous + maxOf(now, (previous.lastOrNull() ?: 0L) + 1)
+        return save().onFailure { data.sessionStarts = previous }
+    }
     var lastImportUpdated = 0
         private set
 

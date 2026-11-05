@@ -39,9 +39,6 @@ object ContestTracker {
     private var bypassedWindow = -1L
     private var returnedFromSafari = false
     private var voluntaryReturnAt = 0L
-    private var scoreLevel: Any? = null
-    private var scoreLevelSince = 0L
-    private var restoredTicket = false
 
     private fun inTorrhus(client: Minecraft) =
         SkyblockSidebar.areaName(client) in setOf("Torrhus Canyon", "Torrhus Springs", "Critter Safari Entrance") ||
@@ -116,11 +113,6 @@ object ContestTracker {
         if (client.player == null || client.level == null) return
 
         val now = System.currentTimeMillis()
-        if (client.level !== scoreLevel) {
-            scoreLevel = client.level
-            scoreLevelSince = now
-            restoredTicket = false
-        }
         if (net.johnceo.sparklingmutuals.safari.automation.SafariManagerGuard.activeRun(client)) {
             returnedFromSafari = true
             reminderAt = null
@@ -131,7 +123,6 @@ object ContestTracker {
         rollWindow()
         if (selectedTicketMode != ContestConfig.ticketMode) {
             selectedTicketMode = ContestConfig.ticketMode
-            restoredTicket = false
             complete = false; completedWindow = -1L; warnedMinutes.clear()
         }
         val self = client.player!!.uuid.toString()
@@ -161,7 +152,10 @@ object ContestTracker {
             val deadline = reminderAt ?: (now + 30_000).also { reminderAt = it }
             if (now >= deadline) remindWaiting(client)
         }
-        if (skyblock) readSidebar(client)
+        if (skyblock) {
+            readSidebar(client)
+            announceTicket(client)
+        }
         if (ContestConfig.trackContest) maybeWarn(client)
     }
 
@@ -190,7 +184,6 @@ object ContestTracker {
 
         val first = windowKey == -1L
         clearPartyContest()
-        restoredTicket = false
         windowKey = key
         complete = false
         warnedMinutes.clear()
@@ -218,10 +211,6 @@ object ContestTracker {
         } ?: return
         val observedTier = match.groupValues[1]
         val observedPoints = parseInt(match.groupValues[2])
-        if (points < 0 && observedPoints >= 0 && inTorrhus(client) &&
-            System.currentTimeMillis() - scoreLevelSince <= 10_000 &&
-            ContestTicketState.earned(observedTier, ContestConfig.firstClassTicket, observedPoints))
-            restoredTicket = true
         if (!observeScore(observedTier, observedPoints)) return
 
         if (
@@ -234,11 +223,24 @@ object ContestTracker {
             completedWindow = windowKey
             val player = client.player ?: return
             SafariDowntime.ticketEarned(player.name.string)
-            if (!restoredTicket && ticketNotices.claim(player.uuid.toString(), windowKey, tier, secondsIntoWindow, ContestConfig.firstClassTicket, points) &&
-                PartyManager.hasInfo &&
-                PartyManager.getMembers().size > 1)
-                PartyManager.sendPartyChat(client, "${ContestTicketState.message(ContestConfig.firstClassTicket)}")
             println("Sparkling Mutuals: Contest complete — $tier with $points")
+        }
+    }
+    private fun announceTicket(client: Minecraft) {
+        if (!complete || completedWindow != windowKey || betweenContests()) return
+        val player = client.player ?: return
+        val firstClass = ContestConfig.firstClassTicket
+        val key = "${player.uuid}.${ContestConfig.ticketMode}"
+        val saved = ContestConfig.ticketAnnouncements
+        if (saved[key] == windowKey) return
+        if (ticketNotices.claim(player.uuid.toString(), windowKey, tier, secondsIntoWindow, firstClass, points) {
+                PartyManager.sendPartyChat(client, ContestTicketState.message(firstClass))
+            }) {
+            saved.entries.removeIf { it.value < windowKey - 2 }
+            saved[key] = windowKey
+            runCatching { ContestConfig.save() }.onFailure {
+                org.slf4j.LoggerFactory.getLogger("sparkling-mutuals/contest").warn("Could not save ticket announcement", it)
+            }
         }
     }
     /** Contest points increase within a profile/window; reconnect placeholders must not replace them. */

@@ -1,11 +1,11 @@
 package net.johnceo.sparklingmutuals.safari.hideyho
 
-import net.johnceo.sparklingmutuals.compat.*
 import kotlin.math.floor
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents
-import net.johnceo.sparklingmutuals.LocalChat
-import net.johnceo.sparklingmutuals.config.ConfigManager
-import net.johnceo.sparklingmutuals.config.SafariTheme
+import net.johnceo.sparklingmutuals.config.BannerConfig
+import net.johnceo.sparklingmutuals.hud.BannerKind
+import net.johnceo.sparklingmutuals.hud.SafariBanners
+import net.johnceo.sparklingmutuals.safari.SafariTracking
 import net.johnceo.sparklingmutuals.safari.SafariAssist
 import net.johnceo.sparklingmutuals.safari.SafariBiome
 import net.johnceo.sparklingmutuals.safari.SafariMode
@@ -13,7 +13,6 @@ import net.johnceo.sparklingmutuals.safari.SafariRules
 import net.johnceo.sparklingmutuals.safari.completion.SafariFullClear
 import net.johnceo.sparklingmutuals.safari.esp.SafariEsp
 import net.minecraft.client.Minecraft
-import net.minecraft.network.chat.Component
 import org.slf4j.LoggerFactory
 
 /** Where Hideyho can hide and the mansion's outline: the pure part of [HideyhoSpotter], so it can be tested. */
@@ -68,7 +67,7 @@ object HideyhoHiding {
 }
 
 /**
- * Says whether Hideyho hid inside or outside the mansion, as a title and a chat line in the mod's theme. Adapted
+ * Tracks the initial and hidden locations for the encounter banner. Adapted
  * from Shiny Hunter's HideyhoSpotter (MIT).
  *
  * Accepting the quest arms a watch. Hideyho vanishes and is re-sent at its hiding spot, surfacing from below, so the
@@ -80,20 +79,22 @@ class HideyhoLocationWatch {
     private var armedAt: Long? = null
     private var spotBefore: HideyhoHiding.Spot? = null
     private var announced: HideyhoHiding.Spot? = null
+    private var hidingAnnounced = false
     val armed get() = armedAt != null
     fun context(enabled: Boolean, biome: SafariBiome?, mode: SafariMode = SafariMode.UNIQUE): Boolean {
         if (enabled && biome == SafariBiome.HAUNTED && mode != SafariMode.SPARKLING) { active = true; return true }
-        reset()
+        active = false
+        armedAt = null
         return false
     }
     fun chat(text: String, now: Long, spot: HideyhoHiding.Spot?) {
         if (!active) return
         when {
-            HideyhoHiding.accepted(text) -> {
-                if (!armed) spotBefore = spot
+            HideyhoHiding.accepted(text) && !armed && !hidingAnnounced -> {
+                spotBefore = spot ?: announced
                 armedAt = now
             }
-            HideyhoHiding.found(text) -> armedAt = null
+            HideyhoHiding.found(text) -> { armedAt = null; hidingAnnounced = true }
         }
     }
     fun settled(spot: HideyhoHiding.Spot?, now: Long): HideyhoHiding.Spot? {
@@ -103,11 +104,12 @@ class HideyhoLocationWatch {
         if (armed) {
             if (spot == spotBefore) return null
             armedAt = null
-        } else if (spot == announced) return null
+            hidingAnnounced = true
+        } else if (announced != null || hidingAnnounced) return null
         announced = spot
         return spot
     }
-    fun reset() { active = false; armedAt = null; spotBefore = null; announced = null }
+    fun reset() { active = false; armedAt = null; spotBefore = null; announced = null; hidingAnnounced = false }
 }
 
 object HideyhoSpotter {
@@ -117,7 +119,10 @@ object HideyhoSpotter {
 
     private val watch = HideyhoLocationWatch()
     private var ticks = 0
-    private var level: Any? = null
+    private var run: Any? = null
+    private val kind = BannerKind.HIDEYHO_LOCATION
+    private fun enabled() = BannerConfig.enabled && BannerConfig.options.getValue(kind).enabled
+    private fun context() = watch.context(enabled(), SafariBiome.HAUNTED.takeIf { SafariAssist.inSafari }, SafariFullClear.mode)
 
     fun register() {
         ClientReceiveMessageEvents.GAME.register { message, overlay ->
@@ -126,36 +131,29 @@ object HideyhoSpotter {
     }
 
     private fun chat(text: String) {
-        if (!watch.context(ConfigManager.hideyhoInsideOutside, SafariAssist.biome.takeIf { SafariAssist.inSafari }, SafariFullClear.mode)) return
-        watch.chat(text, System.currentTimeMillis(), position()?.let { (x, y, z) -> HideyhoHiding.nearestSpot(x, y, z) })
+        if (!context()) return
+        watch.chat(text, System.currentTimeMillis(), position())
     }
 
     fun onClientTick(client: Minecraft) {
-        if (client.level !== level) { reset(); level = client.level }
-        if (!watch.context(ConfigManager.hideyhoInsideOutside && client.player != null, SafariAssist.biome.takeIf { SafariAssist.inSafari }, SafariFullClear.mode)) { ticks = 0; return }
+        val current = SafariTracking.ledger.current
+        if (current !== run) { reset(); run = current }
+        if (current == null || client.player == null || current.count("Hideyho") > 0 || !context()) return
         if (++ticks < if (watch.armed) SCAN_TICKS else IDLE_TICKS) return
         ticks = 0
-        val spot = position()?.let { (x, y, z) -> HideyhoHiding.nearestSpot(x, y, z) }
-        watch.settled(spot, System.currentTimeMillis())?.let { announce(client, it) }
-    }
-
-    private fun position(): Triple<Double, Double, Double>? =
-        SafariEsp.observations().critters.firstOrNull { it.species == "Hideyho" }?.let { Triple(it.x, it.y, it.z) }
-
-    private fun announce(client: Minecraft, spot: HideyhoHiding.Spot) {
-        if (!watch.context(ConfigManager.hideyhoInsideOutside, SafariAssist.biome.takeIf { SafariAssist.inSafari }, SafariFullClear.mode)) return
-        val inside = HideyhoHiding.inside(spot)
-        logger.info("Hideyho settled at {}: {}", spot, if (inside) "inside" else "outside")
-        val world = client.level
-        net.johnceo.sparklingmutuals.hud.SafariAlertSequence.queue.submit(this, 3_500,
-            valid = { client.level === world && SafariAssist.inSafari && ConfigManager.hideyhoInsideOutside &&
-                SafariFullClear.mode != net.johnceo.sparklingmutuals.safari.SafariMode.SPARKLING }, minimumTicks = 70) {
-            client.gui.smSetTimes(5, 50, 15)
-            client.gui.smSetTitle(LocalChat.hideyho(inside, bold = true))
-            client.gui.smSetSubtitle(Component.literal(spot.toString()).withStyle { it.withColor(SafariTheme.MUTED) })
+        val spot = position(knownOnly = watch.armed)
+        watch.settled(spot, System.currentTimeMillis())?.let { spot ->
+            val location = if (HideyhoHiding.inside(spot)) "Inside" else "Outside"
+            logger.info("Hideyho location: {} ({})", spot, location)
+            SafariBanners.fire(kind, SafariBiome.HAUNTED, location = location)
         }
-        client.player?.sendSystemMessage(LocalChat.component(LocalChat.hideyho(inside)))
     }
 
-    fun reset() { watch.reset(); ticks = 0 }
+    private fun position(knownOnly: Boolean = false): HideyhoHiding.Spot? {
+        val pos = SafariEsp.hideyhoPosition() ?: return null
+        return HideyhoHiding.nearestSpot(pos.x, pos.y, pos.z)
+            ?: if (knownOnly) null else HideyhoHiding.Spot(floor(pos.x).toInt(), floor(pos.y).toInt(), floor(pos.z).toInt())
+    }
+
+    fun reset() { watch.reset(); ticks = 0; run = null }
 }

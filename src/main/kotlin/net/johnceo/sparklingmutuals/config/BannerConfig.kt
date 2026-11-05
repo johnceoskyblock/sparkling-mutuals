@@ -20,7 +20,7 @@ object BannerConfig {
         gradient=int("gradient",2,0,2);tint=bool("tint",true);border=bool("border",true);thickness=int("thickness",1,1,4)
         font=int("font",0,0,3);shadow=bool("shadow",false);topBar=int("topBar",0,0,2);bottomBar=int("bottomBar",1,0,2)
         biomeBorders=bool("biomeBorders",true);localEncounters=bool("localEncounters",true)
-        val legacy=mapOf(BannerKind.GEMS to "allGemsAlert",BannerKind.BIRD_FOOD to "allBirdFoodAlert",BannerKind.COINS to "allCoinsAlert",BannerKind.INCENSE to "allIncenseAlert",BannerKind.RUN_COMPLETE to "runCompleteAlert")
+        val legacy=mapOf(BannerKind.HIDEYHO_LOCATION to "hideyhoInsideOutside",BannerKind.GEMS to "allGemsAlert",BannerKind.BIRD_FOOD to "allBirdFoodAlert",BannerKind.COINS to "allCoinsAlert",BannerKind.INCENSE to "allIncenseAlert",BannerKind.RUN_COMPLETE to "runCompleteAlert")
         BannerKind.entries.forEach { kind ->
             val base=defaults(kind);val key=kind.name.lowercase()+"."
             options[kind]=base.copy(enabled=bool(key+"enabled",legacy[kind]?.let { p.getProperty(it)?.toBooleanStrictOrNull() } ?: true),

@@ -92,6 +92,7 @@ object BeeNests {
         val level = client.level ?: return
         if (ConfigManager.hideCritterEsp() || client.player == null || client.options.smHideGui || !SafariAssist.visualsActive(client)) return
         val camera = client.gameRenderer.smCamera.position()
+        val run = SafariTracking.ledger.current
         val markers = when {
             SafariAssist.biome == SafariBiome.FOREST &&
                 SafariHelperRules.showNests(SafariFullClear.mode, SafariTracking.ledger.current, SafariSparklingMode.state) ->
@@ -112,13 +113,27 @@ object BeeNests {
                     it.distToCenterSqr(camera) < 40000 }.map { Triple(it, "Snoozle wall", SafariEspConfig.rgb(AppearanceConfig.snooperColor)) }
             else -> emptyList()
         }
-        lastRenderedMarkers = markers.size
-        for ((pos, _, color) in markers) {
+        val moundGroup = SafariEspConfig.groups.getValue("cavern")
+        val alwaysShowMounds = SafariEspConfig.alwaysOn("Rockmite")
+        val retainedMounds = if (moundGroup.enabled && SafariEspConfig.entityEnabled("Rockmite", mound = true) &&
+            (SafariAssist.biome == SafariBiome.CAVERN || !moundGroup.onlyInBiome || alwaysShowMounds) &&
+            (alwaysShowMounds || SafariHelperRules.needed("Rockmite", SafariFullClear.mode, run, SafariSparklingMode.state))) {
+            val rendered = net.johnceo.sparklingmutuals.safari.esp.SafariEsp.renderedMoundSites(client)
+            run?.moundSurvey?.unopenedSites.orEmpty().filter { it !in rendered }.mapNotNull { (x, y, z) ->
+                val pos = BlockPos(x, y, z)
+                // A vanished nearby mound model must not turn into a waypoint on break.
+                if (pos.distToCenterSqr(camera) !in (16.0 * 16)..40000.0) null
+                else Triple(pos, "Rockmite mound", SafariEspConfig.rgb(SafariEspConfig.entityColor("Rockmite", mound = true)))
+            }
+        } else emptyList()
+        val allMarkers = markers + retainedMounds
+        lastRenderedMarkers = allMarkers.size
+        for ((pos, _, color) in allMarkers) {
             WorldRenderCompat.box(context, lines, net.minecraft.world.phys.AABB(
                 pos.x - .005, pos.y - .005, pos.z - .005, pos.x + 1.005, pos.y + 1.005, pos.z + 1.005), color, 3f)
         }
         WorldRenderCompat.flush(context, lines)
-        for ((pos, label, color) in markers) {
+        for ((pos, label, color) in allMarkers) {
             val text = "$label · ${kotlin.math.sqrt(pos.distToCenterSqr(camera)).toInt()}m"
             WorldRenderCompat.label(context, text, color, pos.x + .5, pos.y + 1.4, pos.z + .5, SafariEspConfig.labelWorldScale)
         }
