@@ -34,7 +34,7 @@ class NativeSettingsTest {
         assertNotNull(catalog.locate(SettingsTarget("HUDs",listOf("progressHud","profit"))))
         assertNotNull(catalog.locate(SettingsTarget("HUDs",listOf("contestHud","score"))))
         val edits=catalog.pages.first { it.name=="Party Interactions" }.rows
-        assertTrue(edits.none { it.name == "Hotspot announcer" })
+        assertTrue(edits.none { it.name == "Hotspot assigning" })
         assertTrue(catalog.pages.first { it.name=="Modes" }.rows.all { it.children.none { row -> row.name.endsWith("mode",true) && !row.group } })
     }
     @Test fun `replacement colors preserve alpha hue and legacy speed encoding`() {

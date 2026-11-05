@@ -17,6 +17,7 @@ A Fabric client mod for Hypixel SkyBlock’s Critter Safari.
 | Safari HUD and highlights | See progress, remaining objectives, critters, biome-specific floor drops, bee nests, and other spawn sources. Clear water improves underwater visibility in Safari. |
 | Sparkling alerts and lookups | Highlight detected Sparklings, compare party discoveries with `/sparkling`, and see rate estimates with `/rates`. |
 | Capture helpers | Preview estimated capsule paths and landing points, and select the matching hotbar gem at Gemzie podiums. |
+| Doomspiral Lottery | Watch a slot machine reveal whether the summoned Doomspiral is Sparkling. |
 | Party coordination | [Share Safari objectives and Hotspot assignments](docs/PARTY_SYNC.md) with compatible SafariUtils parties. Manage downtime, entry readiness, and timed Sparkle Warping. |
 | Sparkling auto entry | Opt in to joining a party member’s Safari when shared sync reports an outstanding Sparkling. |
 | Miria contests and Honeyhives | Track contest progress and ticket readiness, and see Honeyhive locations and refill timers. |

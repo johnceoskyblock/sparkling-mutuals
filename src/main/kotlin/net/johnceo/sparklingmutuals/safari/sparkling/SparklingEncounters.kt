@@ -7,6 +7,7 @@ import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.config.SafariEspConfig
 import net.johnceo.sparklingmutuals.hud.HudPanel
 import net.johnceo.sparklingmutuals.hud.HudRow
+import net.johnceo.sparklingmutuals.safari.DoomspiralLottery
 import net.johnceo.sparklingmutuals.safari.SafariAssist
 import net.johnceo.sparklingmutuals.safari.SafariBiome
 import net.minecraft.client.Minecraft
@@ -67,6 +68,10 @@ object SparklingEncounters {
         requestAlert(SparklingNotice(UUID.randomUUID(), name, "Party discovery"))
     }
 
+    internal fun doomspiralRevealed() {
+        requestAlert(SparklingNotice(UUID.randomUUID(), "Doomspiral", "Haunted Biome"))
+    }
+
     fun observeUnknown(id: UUID, biome: SafariBiome, pos: BlockPos) =
         observe(id, SparklingAlert.UNKNOWN, biome, pos, unknown = true)
     fun identify(ids: Collection<UUID>): Boolean {
@@ -94,7 +99,13 @@ object SparklingEncounters {
     }
     private fun requestAlert(notice: SparklingNotice, alreadyAlertedByParticle: Boolean = false) {
         if (memory.alert(notice.id, ConfigManager.sparklingAlert, notice.name)) {
-            if (!alreadyAlertedByParticle) enqueue(notice)
+            if (DoomspiralLottery.active && notice.name == "Doomspiral") {
+                if (alreadyAlertedByParticle) {
+                    net.johnceo.sparklingmutuals.hud.SafariAlertSequence.queue.clear(this) { it == SparklingAlert.UNKNOWN }
+                    queuedParticle = null
+                }
+                enqueue(notice)
+            } else if (!alreadyAlertedByParticle) enqueue(notice)
             else if (queuedParticle != null) queuedParticle = notice
             else banner = notice
         }

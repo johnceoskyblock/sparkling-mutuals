@@ -1,4 +1,4 @@
-# Hotspot announcements and biome assignments
+# Hotspot assigning
 
 `/hotspot` toggles actual-hotspot announcements and assigned-biome alerts in every mode. There are no config toggles. The preference is saved; existing enabled per-mode preferences migrate to the command toggle.
 

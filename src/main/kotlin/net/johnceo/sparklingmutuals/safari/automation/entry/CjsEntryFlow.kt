@@ -112,7 +112,10 @@ class CjsEntryFlow {
                     cancel("Entry menu replaced");return null
                 }
                 menu=current
-                if(!current.ready) return null
+                if (!current.ready) {
+                    status = "Waiting for Basic-first ticket availability"
+                    return null
+                }
                 val slot=current.slot
                 if(slot==null || slot<0 || current.tier==null) { cancel("No Safari ticket available");return null }
                 ticket=current;phase=CjsEntryPhase.WAITING_ADMISSION;status="Selecting ${current.tier.label} ticket"

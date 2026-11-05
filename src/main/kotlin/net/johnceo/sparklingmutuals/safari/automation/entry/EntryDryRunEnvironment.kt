@@ -15,6 +15,10 @@ class EntryDryRunEnvironment {
     var arrivedAt = 0L
         private set
 
+    fun matchesWorld(claim: EntryContext, connection: Any?, level: Any?) =
+        connection != null && level != null && this.connection === connection && this.level === level &&
+            claim.connection == connectionId && claim.world == worldId
+
     fun world(connection: Any?, world: Any?, now: Long) {
         if (this.connection === connection && level === world) return
         if (this.connection !== connection) { this.connection = connection; connectionId++ }

@@ -23,7 +23,7 @@ object CommandHelp {
         "/captures" to "Run captures",
         "/rates" to "Expected runs per sparkling",
         "/profits [ticket]" to "Top 10 coins/run; /profit also works",
-        "/hotspot" to "Toggle hotspot assignments",
+        "/hotspot" to "Toggle Hotspot assigning",
         "/sm history" to "Run history",
         "/sm bests | sparklings | stats | profits" to "Open a history tab",
         "/newsession" to "Start a new profit session",

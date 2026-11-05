@@ -188,7 +188,7 @@ class SafariSettings {
         @ConfigEditorBoolean var toParty = ConfigManager.achievementsToParty
     }
     class Warp {
-        @JvmField @ConfigOption(name = "Sparkle warping", desc = "This method allows players to get warped into runs before the 30s warp window is up, allowing for players to roll for sparkling critters that take more than 30s to find without using a ticket. Run /start with the party you want to bring back. It saves the roster and starts the cycle. Solo disbands the party, and Duo keeps your runner. Run /start again with a different roster to replace the saved party. Previous leechers are invited together at 24s, then warped at the set delay. Returning to Torrhus repeats the cycle. Auto partying enables you to have a warp list of players that need specific sparkling critters that can be detected within 24s of you starting the run. Then, when you find a sparkling critter, it will attempt to party the players in the list in priority order.")
+        @JvmField @ConfigOption(name = "Sparkle Warping", desc = "This method allows players to get warped into runs before the 30s warp window is up, allowing for players to roll for sparkling critters that take more than 30s to find without using a ticket. Run /start with the party you want to bring back. It saves the roster and starts the cycle. Solo disbands the party, and Duo keeps your runner. Run /start again with a different roster to replace the saved party. Previous leechers are invited together at 24s, then warped at the set delay. Returning to Torrhus repeats the cycle. Auto partying enables you to have a warp list of players that need specific sparkling critters that can be detected within 24s of you starting the run. Then, when you find a sparkling critter, it will attempt to party the players in the list in priority order.")
         @StandaloneDescription var description = false
         @JvmField @ConfigOption(name = "Leader mode", desc = "Solo: disband. Duo: keep your runner.")
         @ConfigEditorDropdown(values = ["Solo", "Duo"]) var mode = ConfigManager.sparkleWarpMode
@@ -222,6 +222,7 @@ class SafariSettings {
         @JvmField @ConfigOption(name = "Biome interactions", desc = "") @Accordion val interactions = SafariInteractionSettings()
         @JvmField @ConfigOption(name = "Party visibility", desc = "") @Accordion val teammates = SafariTeammateSettings()
         @JvmField @ConfigOption(name = "Visual cleanup", desc = "") @Accordion val visibility = SafariVisibilitySettings()
+        @JvmField @ConfigOption(name = "Gambling", desc = "") @Accordion val gambling = SafariGamblingSettings()
         var holdManagerOnKick
             get() = entry.holdManagerOnKick
             set(value) { entry.holdManagerOnKick = value }
@@ -349,6 +350,10 @@ class SafariSettings {
         fun values() = mapOf(SafariBiome.FOREST to forest, SafariBiome.CAVERN to cavern,
             SafariBiome.ICY to icy, SafariBiome.HAUNTED to haunted).mapValues { it.value.coerceIn(0, 100) }
     }
+    class SafariGamblingSettings {
+        @JvmField @ConfigOption(name = "Doomspiral Gambling", desc = "Must be within 15 blocks of Doomspiral spawning area")
+        @ConfigEditorBoolean var doomspiral = ConfigManager.doomspiralLottery
+    }
     class SafariVisibilitySettings {
         @JvmField @ConfigOption(name = "Clear water", desc = "Safari only.")
         @ConfigEditorBoolean var clearWater = ConfigManager.clearWater
@@ -356,7 +361,7 @@ class SafariSettings {
         val waterOpacity = WaterOpacitySettings()
         @JvmField @ConfigOption(name = "Hide useless chats in safari", desc = "")
         @ConfigEditorBoolean var hideCaptureChat = ConfigManager.hideCaptureChat
-        @JvmField @ConfigOption(name = "Chat Toggles", desc = "") @Accordion
+        @JvmField @ConfigOption(name = "Hide Chat Toggles", desc = "") @Accordion
         val chatToggles = SafariChatToggleSettings()
         @JvmField @ConfigOption(name = "Hide capsules on ground", desc = "")
         @ConfigEditorBoolean var hideGroundCapsules = ConfigManager.hideGroundCapsules
@@ -529,7 +534,8 @@ class SafariSettings {
         }
         val changes = listOf(ConfigManager::safariEntryAutoEnter to warp.autoEnter, ConfigManager::sparklingCatchCount to safari.alerts.catchCount, ConfigManager::specialCatchAlert to safari.alerts.caught,
             ConfigManager::alwaysCelebrateSparkling to safari.alerts.alwaysCelebrate,
-            ConfigManager::doomspiralThrowTimer to safari.capture.doomTimer, ConfigManager::autoParty to warp.autoParty, ConfigManager::autoPartyOnlineOnly to warp.autoPartyOnlineOnly, ConfigManager::autoBiomeReports to party.biomeReports,
+            ConfigManager::doomspiralThrowTimer to safari.capture.doomTimer, ConfigManager::doomspiralLottery to safari.gambling.doomspiral,
+            ConfigManager::autoParty to warp.autoParty, ConfigManager::autoPartyOnlineOnly to warp.autoPartyOnlineOnly, ConfigManager::autoBiomeReports to party.biomeReports,
             ConfigManager::uniqueHideCritterEsp to modes.unique.hideCritters, ConfigManager::uniqueHideFloorDropEsp to modes.unique.hideDrops,
             ConfigManager::fullClearHideCritterEsp to modes.fullClear.hideCritters, ConfigManager::fullClearHideFloorDropEsp to modes.fullClear.hideDrops,
             ConfigManager::sparklingHideCritterEsp to modes.sparkling.hideCritters, ConfigManager::sparklingHideFloorDropEsp to modes.sparkling.hideDrops, ConfigManager::announceStartingItems to party.startingItems, ConfigManager::huntingBoxValue to skyblock.helpers.huntingBoxValue, ConfigManager::shardSaleGuidance to skyblock.helpers.shardSaleGuidance, ConfigManager::skillOverflow to skyblock.helpers.skillOverflow, ConfigManager::skillOverflowChat to skyblock.helpers.skillOverflowChat, ConfigManager::skillOverflowNumbers to skyblock.helpers.skillOverflowNumbers, ConfigManager::estimatedItemValue to skyblock.helpers.estimatedItemValue, ConfigManager::estimatedChestValue to skyblock.helpers.estimatedChestValue, ConfigManager::phantomleafSolver to miscEndgame.phantomleafSolver, ConfigManager::highlightTeammates to safari.highlightTeammates, ConfigManager::showTeammateNames to safari.showTeammateNames, ConfigManager::profitableShardEsp to modes.unique.profitable, ConfigManager::sparklingProfitableShardEsp to modes.sparkling.profitable, ConfigManager::partyCommandsEnabled to party.enabled, ConfigManager::downtimeCommand to party.downtime, ConfigManager::useCloudApi to api.cloud, ConfigManager::hideHauntedPaintings to safari.paintings,
