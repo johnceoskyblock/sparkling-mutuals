@@ -28,6 +28,9 @@ class CjsApproachInput {
     var outcome=CjsApproachOutcome.WAITING; private set
     fun aimMatches(client: Minecraft)=client.player?.let { policy.aimMatches(it.yRot,it.xRot) }==true
     val ownsKeys get()=input?.owns==true
+    internal fun gameplayAvailable(client: Minecraft) =
+        client.smScreen == null && (!client.isWindowActive || client.mouseHandler.isMouseGrabbed)
+
     fun userIdle(client: Minecraft): Boolean {
         val o=client.options
         return listOf(o.keyUp,o.keyDown,o.keyLeft,o.keyRight,o.keyJump,o.keyShift,o.keySprint,o.keyAttack,o.keyUse).none {
@@ -35,6 +38,8 @@ class CjsApproachInput {
         }
     }
     internal fun physical(client: Minecraft, binding: KeyMapping): Boolean {
+        // SDL can report keyboard or mouse input while another application has focus.
+        if (!client.isWindowActive) return false
         val key = InputConstants.getKey(binding.saveString())
         if (key.value < 0) return false
         return when (key.type) {
@@ -123,7 +128,7 @@ class CjsApproachInput {
             val drag=friction*.91+.000001
             val foreignLogical=keys.any { it.isDown && (!driver.owns || it!==controls.keyUp && it!==controls.keyShift) }
             val safe=warpAllowed && player!=null && client.level!=null && client.connection!=null && frame.atEntry && !frame.activeRun &&
-                client.isWindowActive && client.mouseHandler.isMouseGrabbed && client.smScreen==null && !client.isPaused &&
+                gameplayAvailable(client) && !client.isPaused &&
                 player.isAlive && player.onGround() && !player.isInWater && !player.isPassenger && !player.abilities.flying &&
                 !player.isSprinting && !player.horizontalCollision && velocity<=.16 && (driver.owns || velocity<.01) &&
                 speed.isFinite() && speed in .001.. .4 && sneak.isFinite() && sneak in .05.. .31 &&
