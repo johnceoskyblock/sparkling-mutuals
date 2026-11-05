@@ -76,7 +76,7 @@ internal class CjsEntryInput(private val approach: CjsApproachInput) {
             !client.isPaused && player.isAlive && player.onGround() &&
             !player.isInWater && !player.isPassenger && !player.abilities.flying && !player.isSprinting &&
             !player.horizontalCollision && velocity.isFinite() && velocity<=.16 && approach.userIdle(client) && approach.aimMatches(client) &&
-            (expectedMenu || screen==null)
+            (expectedMenu || approach.gameplayAvailable(client))
         val menu=if(expectedMenu && player!=null) {
             val current=player.containerMenu
             ticketMenu(current, current.containerId, SafariTicketSelect.options(client))
