@@ -7,6 +7,22 @@ class ReleaseUpdateCheckerTest {
     private fun row(version: String, mc: String = "26.3", flags: String = "") =
         """{"tag_name":"v$version","name":"v$version","body":null,"assets":[{"name":"sparkling-mutuals-$version+mc$mc.jar"}]$flags}"""
 
+    @Test fun `final stable release upgrades the matching installed beta while preview releases remain excluded`() {
+        val body = "[${row("4.0.0")},${row("4.1.0-beta.1", flags=",\"prerelease\":true")}]"
+        val checker = ReleaseUpdateChecker("4.0.0-beta.1", "26.3", { body }, { it() })
+        checker.check()
+        assertEquals("Update available", checker.state.label)
+        assertEquals("v4.0.0", checker.state.release?.tag)
+    }
+
+    @Test fun `version precedence compares preview identifiers numerically and ignores build metadata`() {
+        assertTrue(ReleaseUpdateChecker.compareVersions("4.0.0", "4.0.0-beta.1")!! > 0)
+        assertTrue(ReleaseUpdateChecker.compareVersions("4.0.0-beta.1", "4.0.0")!! < 0)
+        assertTrue(ReleaseUpdateChecker.compareVersions("4.0.0-beta.11", "4.0.0-beta.2")!! > 0)
+        assertEquals(0, ReleaseUpdateChecker.compareVersions("4.0.0-beta.1+mc26.3", "v4.0.0-beta.1+other"))
+        assertEquals(0, ReleaseUpdateChecker.compareVersions("4.0.0+mc26.3", "v4.0.0+other"))
+    }
+
     @Test fun `new release replaces current status without reopening settings and manual check bypasses TTL`() {
         var now = 0L
         var body = "[${row("4.0.0")}]"
