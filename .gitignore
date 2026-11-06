@@ -47,3 +47,6 @@ logs/
 # Stonecutter generated per-target sources and IDE runs
 versions/*/src/
 versions/*/run/
+
+# Python workflow sender tests
+__pycache__/

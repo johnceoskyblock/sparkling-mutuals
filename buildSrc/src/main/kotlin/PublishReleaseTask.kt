@@ -70,6 +70,7 @@ internal class GitHubReleaseApi(private val commit: String, private val transpor
     private val repository = "johnceoskyblock/sparkling-mutuals"
     private val root = "https://api.github.com/repos/$repository"
     private val knownReleases = mutableMapOf<String, Long>()
+    private val releaseKinds = mutableMapOf<Long, Boolean>()
     private fun request(method: String, url: String, body: HttpRequest.BodyPublisher = HttpRequest.BodyPublishers.noBody(), contentType: String = "application/json", allowMissing: Boolean = false) =
         transport.request(method, url, body, contentType, allowMissing)
     private fun jsonBody(value: Any) = HttpRequest.BodyPublishers.ofString(JsonOutput.toJson(value))
@@ -110,8 +111,10 @@ internal class GitHubReleaseApi(private val commit: String, private val transpor
             page++
         }
         require(release["tag_name"] == tag) { "Release tag mismatch" }
+        val prerelease = release["prerelease"] as? Boolean ?: throw IllegalArgumentException("Missing release prerelease classification")
         knownReleases[tag] = releaseId
-        return RemoteRelease(releaseId, ExistingRelease(release["draft"] == true, release["body"] as? String, assets))
+        releaseKinds[releaseId] = prerelease
+        return RemoteRelease(releaseId, ExistingRelease(release["draft"] == true, release["body"] as? String, assets, prerelease))
     }
     private fun findUnpublished(tag: String): Map<*, *>? {
         var match: Map<*, *>? = null
@@ -132,12 +135,15 @@ internal class GitHubReleaseApi(private val commit: String, private val transpor
     }
     override fun createDraft(tag: String, body: String): RemoteRelease {
         verifyTag(tag)
+        val prerelease = prereleaseForTag(tag)
         val created = obj(request("POST", "$root/releases", jsonBody(mapOf("tag_name" to tag, "target_commitish" to commit,
-            "name" to tag, "body" to body, "draft" to true, "prerelease" to false))))
-        require(created["draft"] == true && created["tag_name"] == tag) { "Expected same-tag draft" }
+            "name" to tag, "body" to body, "draft" to true, "prerelease" to prerelease,
+            "make_latest" to if (prerelease) "false" else "true"))))
+        require(created["draft"] == true && created["tag_name"] == tag && created["prerelease"] == prerelease) { "Expected same-tag draft with matching prerelease classification" }
         val createdId = id(created["id"])
         knownReleases[tag] = createdId
-        return RemoteRelease(createdId, ExistingRelease(true, created["body"] as? String, emptyList()))
+        releaseKinds[createdId] = prerelease
+        return RemoteRelease(createdId, ExistingRelease(true, created["body"] as? String, emptyList(), prerelease))
     }
     override fun generatedNotes(tag: String): String = obj(request("POST", "$root/releases/generate-notes", jsonBody(mapOf("tag_name" to tag, "target_commitish" to commit))))["body"] as String
     override fun updateBody(id: Long, body: String) { request("PATCH", "$root/releases/$id", jsonBody(mapOf("body" to body))) }
@@ -147,5 +153,8 @@ internal class GitHubReleaseApi(private val commit: String, private val transpor
         return asset(request("POST", "https://uploads.github.com/repos/$repository/releases/$id/assets?name=$name",
             HttpRequest.BodyPublishers.ofFile(file.path), "application/java-archive"))
     }
-    override fun publish(id: Long) { request("PATCH", "$root/releases/$id", jsonBody(mapOf("draft" to false))) }
+    override fun publish(id: Long) {
+        val prerelease = requireNotNull(releaseKinds[id]) { "Release classification must be read before publication" }
+        request("PATCH", "$root/releases/$id", jsonBody(mapOf("draft" to false, "make_latest" to if (prerelease) "false" else "true")))
+    }
 }

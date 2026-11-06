@@ -7,7 +7,7 @@ import java.net.URI
 class GitHubReleaseApiTest {
     private val sha = "a".repeat(40)
     private val tag = "v3.3.0"
-    private fun release(id: Long, draft: Boolean = true) = mapOf("id" to id, "tag_name" to tag, "draft" to draft, "body" to "Maintainer notes")
+    private fun release(id: Long, draft: Boolean = true) = mapOf("id" to id, "tag_name" to tag, "draft" to draft, "prerelease" to false, "body" to "Maintainer notes")
     private fun asset() = mapOf("id" to 12L, "name" to "sparkling-mutuals-3.3.0+mc26.2.jar", "size" to 123L, "digest" to "sha256:${"a".repeat(64)}")
 
     @Test fun existingDraftOnALaterPageRetainsNotesAndPartialUploadsWithoutCreatingAgain() {

@@ -1,7 +1,7 @@
 package buildlogic
 
 data class ReleaseAsset(val id: Long, val name: String, val size: Long, val sha256: String?)
-data class ExistingRelease(val draft: Boolean, val body: String?, val assets: List<ReleaseAsset>)
+data class ExistingRelease(val draft: Boolean, val body: String?, val assets: List<ReleaseAsset>, val prerelease: Boolean = false)
 enum class ReleaseDecision { CREATE_DRAFT, UPDATE_DRAFT, PUBLISHED_NOOP }
 data class ReleasePlan(val decision: ReleaseDecision, val preserveBody: Boolean)
 data class RemoteRelease(val id: Long, val state: ExistingRelease)
@@ -15,13 +15,15 @@ interface ReleaseApi {
     fun publish(id: Long)
 }
 fun planRelease(tag: String, modVersion: String, files: List<VerifiedJar>, existing: ExistingRelease?): ReleasePlan {
-    require(modVersion.matches(Regex("[0-9]+\\.[0-9]+\\.[0-9]+(?:-[A-Za-z0-9.-]+)?")) && tag == "v$modVersion") { "Tag must match the internal mod version" }
+    val prerelease = prereleaseForTag(tag)
+    require(tag == "v$modVersion") { "Tag must match the internal mod version" }
     require(files.size == 3 && files.map { it.minecraft }.toSet() == setOf("26.1.2", "26.2", "26.3")) { "Publication requires exactly three verified targets" }
     files.forEach {
         require(it.modVersion == modVersion && it.path.fileName.toString() == "sparkling-mutuals-$modVersion+mc${it.minecraft}.jar" &&
             it.size > 0 && it.sha256.matches(Regex("[a-f0-9]{64}"))) { "Invalid verified target: ${it.minecraft}" }
     }
     if (existing == null) return ReleasePlan(ReleaseDecision.CREATE_DRAFT, false)
+    require(existing.prerelease == prerelease) { "Release prerelease classification does not match its tag; review it manually" }
     val jars = existing.assets.filter { it.name.endsWith(".jar", ignoreCase = true) }
     val names = files.map { it.path.fileName.toString() }.toSet()
     require(jars.all { it.name in names } && jars.map { it.name }.distinct().size == jars.size) { "Unexpected or duplicate JAR assets; review them manually" }
@@ -32,6 +34,11 @@ fun planRelease(tag: String, modVersion: String, files: List<VerifiedJar>, exist
         return ReleasePlan(ReleaseDecision.PUBLISHED_NOOP, !existing.body.isNullOrBlank())
     }
     return ReleasePlan(ReleaseDecision.UPDATE_DRAFT, !existing.body.isNullOrBlank())
+}
+
+internal fun prereleaseForTag(tag: String): Boolean {
+    require(tag.matches(Regex("v[0-9]+\\.[0-9]+\\.[0-9]+(?:-beta\\.[0-9]+)?"))) { "Use a stable vX.Y.Z or beta vX.Y.Z-beta.N tag" }
+    return tag.contains("-beta.")
 }
 
 private fun ReleaseAsset.matches(file: VerifiedJar) = size == file.size && sha256?.removePrefix("sha256:") == file.sha256
