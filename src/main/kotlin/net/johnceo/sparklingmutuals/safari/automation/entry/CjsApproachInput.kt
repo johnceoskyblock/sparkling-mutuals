@@ -31,11 +31,18 @@ class CjsApproachInput {
     internal fun gameplayAvailable(client: Minecraft) =
         client.smScreen == null && (!client.isWindowActive || client.mouseHandler.isMouseGrabbed)
 
-    fun userIdle(client: Minecraft): Boolean {
+    internal fun activeUserBinding(client: Minecraft): String? {
         val o=client.options
-        return listOf(o.keyUp,o.keyDown,o.keyLeft,o.keyRight,o.keyJump,o.keyShift,o.keySprint,o.keyAttack,o.keyUse).none {
-            physical(client,it) || it.isDown && (!ownsKeys || it!==o.keyUp && it!==o.keyShift)
+        for (binding in listOf(o.keyUp,o.keyDown,o.keyLeft,o.keyRight,o.keyJump,o.keyShift,o.keySprint,o.keyAttack,o.keyUse)) {
+            if (physical(client, binding)) return "${binding.name} (${binding.saveString()}, physical)"
+            // A latched sprint preference can stay down with the physical key released.
+            // The approach primes crouch before walking and still rejects actual sprinting.
+            val latchedSprint = binding === o.keySprint && o.toggleSprint().get()
+            if (binding.isDown && !latchedSprint && (!ownsKeys || binding !== o.keyUp && binding !== o.keyShift)) {
+                return "${binding.name} (${binding.saveString()}, logical, approachOwnsKeys=$ownsKeys)"
+            }
         }
+        return null
     }
     internal fun physical(client: Minecraft, binding: KeyMapping): Boolean {
         // SDL can report keyboard or mouse input while another application has focus.
@@ -117,22 +124,18 @@ class CjsApproachInput {
                 {client.options.toggleCrouch().get()}, {physical(client,client.options.keyUp)},
                 {physical(client,client.options.keyShift)}).also { input=it }
             val target=if(frame.atEntry) manager(client,frame) else null
-            val controls=client.options
-            val keys=listOf(controls.keyUp,controls.keyDown,controls.keyLeft,controls.keyRight,controls.keyJump,
-                controls.keyShift,controls.keySprint,controls.keyAttack,controls.keyUse)
             val velocity=player?.deltaMovement?.horizontalDistance() ?: Double.NaN
             val friction=player?.let { client.level?.getBlockState(BlockPos.containing(it.x,it.y-.01,it.z))?.block?.friction?.toDouble() } ?: Double.NaN
             val speed=player?.getAttributeValue(Attributes.MOVEMENT_SPEED) ?: Double.NaN
             val sneak=player?.getAttributeValue(Attributes.SNEAKING_SPEED) ?: Double.NaN
             val acceleration=speed*sneak*.98*.21600002/(friction*friction*friction)+.00001
             val drag=friction*.91+.000001
-            val foreignLogical=keys.any { it.isDown && (!driver.owns || it!==controls.keyUp && it!==controls.keyShift) }
             val safe=warpAllowed && player!=null && client.level!=null && client.connection!=null && frame.atEntry && !frame.activeRun &&
                 gameplayAvailable(client) && !client.isPaused &&
                 player.isAlive && player.onGround() && !player.isInWater && !player.isPassenger && !player.abilities.flying &&
                 !player.isSprinting && !player.horizontalCollision && velocity<=.16 && (driver.owns || velocity<.01) &&
                 speed.isFinite() && speed in .001.. .4 && sneak.isFinite() && sneak in .05.. .31 &&
-                !foreignLogical && keys.none { physical(client,it) } && target!=null && pathClear(client,target,friction) &&
+                activeUserBinding(client)==null && target!=null && pathClear(client,target,friction) &&
                 SafariManagerGuard.allowsCjApproach(client)
             val f=CjsApproachFrame(frame.context,enabled && frame.enabled,signal,target?.uuid,
                 player?.x ?: Double.NaN,player?.y ?: Double.NaN,player?.z ?: Double.NaN,

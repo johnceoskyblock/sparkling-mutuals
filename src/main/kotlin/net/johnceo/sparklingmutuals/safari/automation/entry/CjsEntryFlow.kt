@@ -16,7 +16,7 @@ data class CjsEntryFrame(val context: EntryContext?=null, val signal: CjsRoomSig
     val guardAllows: Boolean=false, val safe: Boolean=false, val manualCancel: Boolean=false,
     val unexpectedScreen: Boolean=false, val manager: UUID?=null, val reachable: Boolean=false,
     val settled: Boolean=false, val approach: CjsApproachOutcome=CjsApproachOutcome.WAITING,
-    val menu: CjsTicketMenu?=null)
+    val menu: CjsTicketMenu?=null, val unsafeReason: String?=null)
 sealed interface CjsEntryEffect {
     val context: EntryContext
     val warp: Long
@@ -62,7 +62,7 @@ class CjsEntryFlow {
         f.admitted || !f.atEntry -> "no longer awaiting entry"
         f.manualCancel -> "manual input"
         f.unexpectedScreen -> "unexpected screen"
-        !f.safe -> "input, focus or movement changed"
+        !f.safe -> f.unsafeReason ?: "input, focus or movement changed"
         !f.guardAllows -> "entry guard is blocking"
         !f.warpAllowed || f.warpGeneration!=warp -> "warp authorization expired or changed"
         f.signal?.valid(context!!)!=true -> "room discovery unavailable"
