@@ -73,6 +73,14 @@ The timer passively counts nonzero server ping packets, following the clock appr
 
 A confirmed shared Doomspiral capture clears the cue. Disabling it, leaving Safari, ending/changing runs, changing world/connection or disconnecting clears the timer. Duplicate trigger messages cannot restart it within the same uninterrupted run context. Move/resize its independent HUD using `/sm gui`; panel styling is under Customization > Tracking HUDs > Doomspiral throw timer HUD.
 
+## Lottery cabinet
+
+**Safari → Helpers → Gambling → Doomspiral Gambling** shows a blocky teal slot-machine cabinet with a decorative lever, three vertically scrolling Doomspiral/cross reels and chasing cyan lights. It starts one second after the final-incense system message while near the ritual. The lever is decoration; entry, ritual and capture actions remain manual.
+
+The existing reel motion and server-ping timing are preserved: the stirs message starts 98 server ticks, with settling over the first 93 and the result visible for the final five. Only **Regular Doomspiral** (white) or **Sparkling Doomspiral** (gold) appears as result text. Positive Sparkling evidence cannot turn the cabinet gold before the reveal. Gold rings, star bursts and confetti fit within that same final-five-tick window; the screen takeover is not extended. Server lag stretches the server clock rather than allowing wall time to finish the reels early.
+
+The cabinet, lever and bounded effects scale together to fit the screen. Effects are calculated from the current frame without retained particle emitters. Existing range, screen/HUD visibility, capture, run/world and departure cancellation rules remain in force. This display reveals the observed encounter; it does not roll or change the server's outcome.
+
 ## Implementation and validation
 
 [Shared source/caller map](TRACKING.md#source-and-validation-references) covers capture/event registration, scanner, mode predicates, UI/report consumers, PBs and resets. Species entries: `Doomspiral` in `SafariFullClear.minimum` and `SafariEspRules.mobs`; [SafariCompletionZones.uuidMinimums](../../src/main/kotlin/net/johnceo/sparklingmutuals/safari/completion/SafariCompletionZones.kt).
@@ -81,11 +89,15 @@ A confirmed shared Doomspiral capture clears the cue. Disabling it, leaving Safa
 
 Existing coverage: [SafariPersonalBestTest](../../src/test/kotlin/net/johnceo/sparklingmutuals/safari/completion/SafariPersonalBestTest.kt). Source inspection only; no local runtime suite or live Minecraft validation was performed for this documentation audit. CI results are separate.
 
+Cabinet validation (2026-11-07): the local all-target build passed 1,518 Kotlin tests per target and 25 build-helper tests. Five cabinet regressions cover hidden results, ordinary/Sparkling presentation, original reel landing, server-lag timing and viewport scaling. Isolated offline clients on 26.1.2, 26.2 and 26.3 rendered six fixture frames each, including both results, a gold burst and a small GUI. These fixtures exercise the native renderer without a server connection; live Hypixel ritual/capture behaviour remains unverified.
+
 ## Open questions
 
 Population guarantees and capsule success/escape claims from supplied notes were not live revalidated; see [audit D2](../IMPLEMENTATION_AUDIT.md#d2).
 
 ## Last updated
+
+2026-11-07 (America/New_York) — Replaced the lottery panel with the approved teal cabinet, minimal white/gold result text and bounded Sparkling celebration; kept the original clock and encounter gates.
 
 2026-10-29 — Updated emergence/throw-lead defaults to 98/4 ticks.
 
