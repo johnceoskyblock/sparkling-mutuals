@@ -8,15 +8,8 @@ import net.johnceo.sparklingmutuals.safari.sparkling.SparklingEncounters
 import net.johnceo.sparklingmutuals.sync.SafariPartySync
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphicsExtractor
-import net.minecraft.client.renderer.RenderPipelines
-import net.minecraft.resources.Identifier
 import net.minecraft.world.entity.monster.warden.Warden
 import net.minecraft.world.phys.AABB
-import kotlin.math.cos
-import kotlin.math.ceil
-import kotlin.math.exp
-import kotlin.math.floor
-import kotlin.math.sin
 import kotlin.random.Random
 
 /** A local reveal of Hypixel's encounter, driven by the same ping clock as the throw timer. */
@@ -31,7 +24,6 @@ object DoomspiralLottery {
     private const val LAST_CANDLE = "You used the Soothing Incense to light the candle! The ground beneath your feet starts to shift..."
     private const val SUMMONED = "Your ritual summoned a Doomspiral into this world. Stay still."
     private val ritualBounds = AABB(RITUAL_X, RITUAL_Y, RITUAL_Z, RITUAL_X, RITUAL_Y, RITUAL_Z).inflate(RADIUS)
-    private val icon = Identifier.fromNamespaceAndPath("sparkling-mutuals", "textures/gui/doomspiral_lottery.png")
     private val countdown = DoomspiralCountdown()
     private var run: SafariRun? = null
     private var world: Any? = null
@@ -161,88 +153,11 @@ object DoomspiralLottery {
         val height = client.window.guiScaledHeight
         val elapsed = (now - start) / 1_000_000_000f
         val remaining = countdown.remaining
-        val spinTicks = CAPTURE_TICKS - REVEAL_TICKS
         val settleElapsed = settleAt?.let { ((it - start) / 1_000_000_000f).coerceAtLeast(0f) }
         val ticksSinceStirs = if (remaining == null) 0f else CAPTURE_TICKS - remaining +
             ((now - lastPulse) / 50_000_000f).coerceIn(0f, .99f)
-        val result = resultMask
-        val win = result == JACKPOT
-        val revealed = remaining != null && remaining <= REVEAL_TICKS
-        val accent = if (revealed && win) 0xFFFFD87A.toInt() else 0xFF67D9DB.toInt()
-        g.fill(0, 0, width, height, 0xFF09141B.toInt())
-        g.pose().pushMatrix()
-        g.pose().translate(width / 2f, height / 2f)
-        val scale = minOf(1.6f, width / 224f, height / 148f)
-        g.pose().scale(scale, scale)
-        g.fill(-105, -58, 105, 62, 0xFF11272E.toInt())
-        g.outline(-105, -58, 210, 120, accent)
-        fun centered(text: String, y: Int, color: Int) {
-            g.text(client.font, text, -client.font.width(text) / 2, y, color, true)
-        }
-        centered("DOOMSPIRAL LOTTERY", -47, accent)
-        repeat(3) { index ->
-            val offset = if (settleElapsed == null) spinOffset(elapsed, index) else {
-                val from = spinOffset(settleElapsed, index)
-                val showsDoom = result and (1 shl index) != 0
-                val to = ceil((from + 4) / 6) * 6 + if (showsDoom) 0 else 1
-                val spin = (ticksSinceStirs / spinTicks).coerceIn(0f, 1f)
-                if (spin == 1f) to else from + (to - from) * (1f - (1f - spin) * (1f - spin))
-            }
-            reel(g, (index - 1) * 62, offset, elapsed, index)
-        }
-        if (revealed) centered(if (win) "SPARKLING DOOMSPIRAL!" else "Doomspiral", 37, accent)
-        val revealAge = ticksSinceStirs - spinTicks
-        if (revealed && win && revealAge < 13f) {
-            repeat(12) { index ->
-                val angle = index * Math.PI / 6
-                val radius = 72 + revealAge * .8
-                spark(g, (cos(angle) * radius).toInt(), (sin(angle) * radius * .66).toInt(), accent)
-            }
-        }
-        remaining?.let {
-            g.fill(-90, 52, 90, 54, 0xFF283F46.toInt())
-            g.fill(-90, 52, -90 + 180 * remaining / CAPTURE_TICKS, 54, accent)
-        }
-        g.pose().popMatrix()
+        val frame = DoomspiralCabinet.frame(elapsed, settleElapsed, remaining, ticksSinceStirs, resultMask)
+        DoomspiralCabinetRenderer.render(g, width, height, frame)
         return true
-    }
-
-    private fun spinOffset(seconds: Float, index: Int) =
-        seconds * 7f + 14f * (1f - exp(-seconds / 1.8f)) + index * 2
-
-    // Clipped vertical reels and quadratic easing adapted from SkyOcean's SlotMachineSpinner.
-    private fun reel(g: GuiGraphicsExtractor, x: Int, offset: Float, elapsed: Float, index: Int) {
-        val base = floor(offset).toInt()
-        g.fill(x - 27, -30, x + 27, 29, 0xFF07151B.toInt())
-        g.enableScissor(x - 26, -29, x + 26, 28)
-        for (row in -1..2) {
-            val y = -((offset - base - row) * 56).toInt()
-            if ((base + row) % 6 == 0) {
-                val phase = elapsed * 3f + index
-                val bob = (sin(phase) * 2f).toInt()
-                g.blit(RenderPipelines.GUI_TEXTURED, icon, x - 19, y - 25 + bob,
-                    0f, 0f, 38, 50, 230, 307, 230, 307, -1)
-                repeat(6) { particle ->
-                    val angle = phase + particle * Math.PI / 3
-                    val alpha = (155 + 100 * sin(angle * 2)).toInt()
-                    spark(g, x + (cos(angle) * 21).toInt(), y + (sin(angle) * 20).toInt(),
-                        (alpha shl 24) or if (particle % 2 == 0) 0xFFC960 else 0xFFE6A4)
-                }
-            } else {
-                val font = Minecraft.getInstance().font
-                g.pose().pushMatrix()
-                g.pose().translate(x.toFloat(), y.toFloat())
-                g.pose().scale(2.8f, 2.8f)
-                g.text(font, "✕", -font.width("✕") / 2, -4, 0xFFFF525D.toInt(), true)
-                g.pose().popMatrix()
-            }
-        }
-        g.disableScissor()
-        g.outline(x - 27, -30, 54, 59, 0xFF39616B.toInt())
-    }
-
-    private fun spark(g: GuiGraphicsExtractor, x: Int, y: Int, color: Int) {
-        g.fill(x - 2, y, x + 3, y + 1, color)
-        g.fill(x, y - 2, x + 1, y + 3, color)
     }
 }
