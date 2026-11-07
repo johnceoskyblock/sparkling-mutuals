@@ -23,7 +23,7 @@ class SafariConfigScreen(private val settings: SafariSettings = SafariSettings()
     private val areaTabs=rememberedNavigation.areaTabs.toMutableMap()
     private var contentTop=88
     private var selected=rememberedNavigation.page.coerceIn(catalog.pages.indices)
-    private val expanded=rememberedNavigation.expanded.toMutableSet()
+    private val expanded=rememberedNavigation.expanded.toMutableSet().apply { if(!navigationInitialized) { addAll(catalog.defaultExpanded());navigationInitialized=true } }
     private val scrolls=rememberedNavigation.scrolls.toMutableMap()
     private var scroll=rememberedNavigation.scroll
     private var skyblockTab=rememberedNavigation.skyblockTab
@@ -72,7 +72,7 @@ class SafariConfigScreen(private val settings: SafariSettings = SafariSettings()
             targetApplied=true
             initialTarget?.let(catalog::locate)?.let { (page,chain) ->
                 initialQuery=""
-                selected=page;chain.dropLast(1).forEach { expanded.add(it.path) }
+                selected=page;expanded.addAll(catalog.expansionFor(initialTarget!!))
                 if(page==11) skyblockTab=if(chain.first().field.name=="endgame") 1 else 0
                 focusPath=chain.last().path;scrollToFocus=true;highlightUntil=System.currentTimeMillis()+8000
             }
@@ -213,6 +213,7 @@ class SafariConfigScreen(private val settings: SafariSettings = SafariSettings()
                     text(g,if(row.path in expanded) "−" else "+",x+10,y+(h-8)/2,SettingsPalette.accent)
                     card.title.forEachIndexed { i,line -> g.text(font,line,x+26,y+9+i*11,SettingsPalette.text,false) }
                     hit(r) { if(!expanded.add(row.path)) expanded.remove(row.path) }
+                    if(row.path !in expanded) row.primaryToggle?.let { toggle -> card.control?.let { c -> control(g,toggle,Rect(c.x,y+c.y,c.w,c.h),px,py) } }
                 } else {
                     card.title.forEachIndexed { i,line -> g.text(font,line,x+12,y+card.textTop+i*11,if(row.standalone) SettingsPalette.accent else SettingsPalette.text,false) }
                     val descY=y+card.textTop+card.title.size*11+if(row.description.isBlank()) 0 else 4
@@ -245,11 +246,15 @@ class SafariConfigScreen(private val settings: SafariSettings = SafariSettings()
         val label=when { action!=null -> action.buttonText;dropdown!=null -> dropdown.values.getOrNull((value as Number).toInt()).orEmpty();else -> value?.toString().orEmpty().ifBlank { "Edit…" } }
         val preferred=when { action!=null -> maxOf(88,font.width(label)+20);value is Boolean -> 48;field.isAnnotationPresent(ConfigEditorSlider::class.java) || color -> 120;else -> maxOf(120,font.width(label)+20) }
         val columns=ConfigLayout.columns(w,preferred,value is String && !color || dropdown!=null && preferred>w/2)
-        val textWidth=if(row.group) w-42 else if(row.standalone) w-24 else columns.textWidth
-        val title=font.split(Component.literal(row.name),textWidth.coerceAtLeast(1))
+        val textWidth=if(row.group) w-42-(if(row.primaryToggle!=null) 64 else 0) else if(row.standalone) w-24 else columns.textWidth
+        val heading=if(search.value.isNotBlank()) Component.literal(catalog.location(row)+"\n").withStyle { it.withColor(SettingsPalette.muted) }.append(Component.literal(row.name).withStyle { it.withColor(SettingsPalette.text) }) else Component.literal(row.name)
+        val title=font.split(heading,textWidth.coerceAtLeast(1))
         val desc=font.split(row.descriptionText(),textWidth.coerceAtLeast(1))
         val textHeight=title.size*11+if(row.description.isBlank()) 0 else 4+desc.size*11
-        if(row.group) Card(row,x,w,maxOf(28,18+title.size*11),title,desc,null)
+        if(row.group) {
+            val h=maxOf(if(row.primaryToggle!=null) 40 else 28,18+title.size*11)
+            Card(row,x,w,h,title,desc,if(row.primaryToggle!=null) Rect(x+w-60,(h-24)/2,48,24) else null)
+        }
         else if(row.standalone) Card(row,x,w,24+textHeight,title,desc,null)
         else if(columns.stacked) {
             val controlHeight=if(action==null && value is Boolean || color || field.isAnnotationPresent(ConfigEditorSlider::class.java)) 24
@@ -280,6 +285,7 @@ class SafariConfigScreen(private val settings: SafariSettings = SafariSettings()
     }
     private fun visibleRows(): List<Pair<SettingsCatalog.Row,Int>> = buildList {
         val query=search.value.trim()
+        if(query.isNotEmpty()) { addAll(catalog.search(query).map { it to 0 });return@buildList }
         fun visit(rows: List<SettingsCatalog.Row>,depth: Int) {
             rows.forEach { row ->
                 if(query.isNotEmpty()) { if(!row.group && row.matches(query)) add(row to 0);visit(row.children,0) }
@@ -440,5 +446,5 @@ class SafariConfigScreen(private val settings: SafariSettings = SafariSettings()
         val scroll: Int = 0, val skyblockTab: Int = 0, val navScroll: Int = 0,
         val areaTabs: Map<String,Int> = emptyMap(), val query: String = ""
     )
-    companion object { private var rememberedNavigation=Navigation() }
+    companion object { private var rememberedNavigation=Navigation();private var navigationInitialized=false }
 }
