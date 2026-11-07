@@ -224,7 +224,7 @@ class ConfigTest {
         assertEquals(0, ConfigManager.sparkleWarpMode)
         assertEquals("", ConfigManager.warpDuo)
         assertFalse(ConfigManager.leechMode)
-        assertEquals("JohnCEO _cj Rqach",ConfigManager.leechWhitelist)
+        assertEquals("JohnCEO _cj Rqach johnkuudra",ConfigManager.leechWhitelist)
     }
 
     @Test
