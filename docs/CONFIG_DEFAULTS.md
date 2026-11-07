@@ -19,6 +19,7 @@ Open `/sm` for settings. Fresh installs use [bundled main defaults](../src/main/
 | Sparkle Warping | `warpAlertsEnabled` | Off |
 | Hotspot assigning | `hotspotAnnouncer` | Off |
 | Leech auto-accept | `leechMode` | Off; inviter whitelist retained |
+| Leech whitelist | `leechWhitelist` | Fresh: `JohnCEO JohnFounder _cj Rqach Serkosea johnkuudra`. Missing key in an existing file: `JohnCEO _cj Rqach johnkuudra`. Explicit lists, including empty, are preserved. |
 | Starting quest-item announcements and reminder titles | `announceStartingItems` | Off |
 | Warp List | `warpList.*` | JohnFounder entries and invite priorities |
 | Coins at insta-sell | `runCoinsInstaSell` | Off (sell-offer valuation) |
@@ -136,6 +137,8 @@ Startup normalizes legacy `pb.*` keys from the general file and the earlier `Spa
 Each mode dropdown has independent Hide critter ESP and Hide floor-drop ESP toggles, both off by default. They gate rendering only, including retained critter markers, and never disable scanning or requirements. Turning on either hide toggle disables that mode's profitable-critter ESP (Unique/Sparkle). Party Interactions > Auto biome reports defaults on and controls automatic fd/cd/id/hd messages without disabling progress tracking.
 
 ## Last updated
+
+2026-11-07 (America/New_York) — Refreshed fresh-install and missing-key Leech whitelist defaults.
 
 2026-11-04 — Replaced the fresh-install snapshot with JohnFounder settings, HUD placements, Warp List and Leech whitelist.
 

@@ -23,7 +23,7 @@ Warp List invitations before 24 seconds are sent one at a time, two seconds apar
 
 ## Leech
 
-`/leech` or the Leech toggle enables automatic acceptance of genuine Hypixel party invites **only from IGNs in the Leech whitelist**. Edit the whitelist in the Sparkle Warping tab using spaces, commas or semicolons. Matching is exact and case-insensitive; invalid names and duplicate entries are omitted. The default whitelist is `JohnCEO _cj Rqach`. An explicitly empty list accepts nobody. An unlisted invite neither leaves the current party nor replaces a pending approved invite. If already in a party, send `/p leave`, wait for leave/roster confirmation, then `/p accept <inviter>`. If solo, accept immediately once party state is known. A newer invite replaces the pending target; turning Leech off, editing the whitelist, disconnecting or a 15-second timeout cancels pending acceptance. Player-chat quotes cannot trigger it.
+`/leech` or the Leech toggle enables automatic acceptance of genuine Hypixel party invites **only from IGNs in the Leech whitelist**. Edit the whitelist in the Sparkle Warping tab using spaces, commas or semicolons. Matching is exact and case-insensitive; invalid names and duplicate entries are omitted. The fresh-install whitelist is `JohnCEO JohnFounder _cj Rqach Serkosea johnkuudra`. Existing configs without this setting use `JohnCEO _cj Rqach johnkuudra`; explicit saved lists remain unchanged. An explicitly empty list accepts nobody. An unlisted invite neither leaves the current party nor replaces a pending approved invite. If already in a party, send `/p leave`, wait for leave/roster confirmation, then `/p accept <inviter>`. If solo, accept immediately once party state is known. A newer invite replaces the pending target; turning Leech off, editing the whitelist, disconnecting or a 15-second timeout cancels pending acceptance. Player-chat quotes cannot trigger it.
 
 Leech works in Hypixel lobbies as well as SkyBlock and does not require `/warping` or Auto-party. While Leech is enabled, this client does not run the leader cycle. It defaults off for fresh installs.
 
@@ -37,7 +37,7 @@ Leech works in Hypixel lobbies as well as SkyBlock and does not require `/warpin
 | `/duo <IGN>` / Duo runner | Empty | Save the runner; the command also chooses Duo. |
 | `/autoparty` / Auto-party | On | Prioritize detected critters' Warp List players before 24 seconds. Returning leechers are invited even with this off. |
 | `/leech` / Leech | Off | Accept whitelisted party invites, leaving the current party first. |
-| Leech whitelist | `_cj JohnFounder Rqach` for fresh installs | Approved inviter IGNs; empty accepts nobody. |
+| Leech whitelist | `JohnCEO JohnFounder _cj Rqach Serkosea johnkuudra` for fresh installs | Approved inviter IGNs; empty accepts nobody. |
 | `/warpingdelay <seconds>` / Delay | 28 seconds for fresh installs | Range 1–86400. Existing saved custom delays, including 23 seconds, stay unchanged. The missing-key fallback is 28. |
 
 A delay below 24 seconds ends before returning-leecher invitations can begin. The tab explains the cycle and keeps the normal full-width description text.
@@ -69,6 +69,8 @@ Players with priority 1 are invited first, with UUID order breaking ties. CSV pr
 Focused tests cover Solo/Duo cleanup selection, missing/invalid runners, leader/capacity gating, the 19-second phase boundary, spaced invitations and deadline expiry, exact multiline invitation parsing, leave-before-accept, cancellation/expiry, and settings persistence. Server-side party permissions, transport and invite acceptance need live Hypixel testing.
 
 ## Last updated
+
+2026-11-07 (America/New_York) — Refreshed fresh-install and missing-key Leech whitelist defaults; explicit saved lists stay authoritative.
 
 2026-11-04 — Warp timing uses the Safari progress clock. Warp List invites end and returning-leecher invites begin at 24 seconds, with a 28-second default warp.
 

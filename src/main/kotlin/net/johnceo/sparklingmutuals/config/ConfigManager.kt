@@ -58,7 +58,7 @@ object ConfigManager {
     var alwaysCelebrateSparkling = false
     var specialCatchStyle = 0
     var leechMode = false
-    var leechWhitelist = "JohnCEO _cj Rqach"
+    var leechWhitelist = "JohnCEO _cj Rqach johnkuudra"
     var doomspiralThrowTimer = true
     var doomspiralLottery = true
     var doomspiralEmergenceTicks = 98
@@ -170,7 +170,7 @@ object ConfigManager {
         sparkleWarpMode = properties.getProperty("sparkleWarpMode", "0").toIntOrNull()?.coerceIn(0,1) ?: 0
         warpDuo = properties.getProperty("warpDuo", "").trim().takeIf { Regex("[A-Za-z0-9_]{1,16}").matches(it) }.orEmpty()
         leechMode = properties.getProperty("leechMode", "false").toBoolean()
-        leechWhitelist = net.johnceo.sparklingmutuals.alerts.WarpList.parse(properties.getProperty("leechWhitelist", "JohnCEO _cj Rqach")).joinToString(" ")
+        leechWhitelist = net.johnceo.sparklingmutuals.alerts.WarpList.parse(properties.getProperty("leechWhitelist", "JohnCEO _cj Rqach johnkuudra")).joinToString(" ")
         safariTicketPreference = properties.getProperty("safariTicketPreference")?.toIntOrNull()?.takeIf { it in 0..1 } ?: 0
         profitsTicketMode = properties.getProperty("profitsTicketMode")?.toIntOrNull()?.takeIf { it in 0..3 } ?: 0
         showWhere = properties.getProperty("showWhere")?.toIntOrNull()?.takeIf { it in 0..2 } ?: 1
