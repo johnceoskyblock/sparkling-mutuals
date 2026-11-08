@@ -14,9 +14,9 @@ class PartySyncRoutingTest {
     }
     @Test fun `pending or unrecognized routing never changes provider or enables backup`() {
         val p=PartySyncRoutePolicy("nonce")
-        assertFalse(p.accept("old","backup","nonce",false));assertEquals("primary",p.provider)
+        assertFalse(p.accept("old","backup","nonce",false));assertEquals("primary",p.provider);assertTrue(p.pending)
         assertFalse(p.accept("generation","unknown","nonce",true));assertEquals("primary",p.provider)
-        assertTrue(p.accept("new","primary","nonce",true));assertTrue(p.accept("new","backup","nonce",true))
+        assertTrue(p.accept("new","primary","nonce",true));assertFalse(p.pending);assertTrue(p.accept("new","backup","nonce",true))
         assertEquals("primary",PartySyncRoutePolicy("new nonce").provider)
     }
 }

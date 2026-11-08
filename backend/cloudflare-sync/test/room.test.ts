@@ -21,6 +21,15 @@ it('late/reconnected participant gets no atomic snapshot until its own bootstrap
  const {room,x,y}=setup();f(room,x,'begin');f(room,x,'done');f(room,y,'begin');f(room,y,'done');
  const fresh=attachment(room.route.generation,b,b,[a,b],0);room.sessions=[x,fresh];expect(room.replay(fresh).some((v:any)=>v.type==='sparklings')).toBe(false);
 });
+it('registered late joiner outside the fixed cohort must reconcile before a new allocation',()=>{
+ const {room,x}=setup();room.route.cohort=[a];f(room,x,'begin');f(room,x,'done');
+ room.allocation.hello(a,{display:true,ticketed:true,leader:true,present:[a,b],locked:{}},0);room.allocation.report(a,'FOREST',0);
+ expect(room.allocation.allocate(5000,room.ready)).toBe(false);expect(room.allocation.locks).toEqual({});
+});
+it('bootstrap propagates a prior sticky conflict to the whole backup room',()=>{
+ const {room,x,y}=setup();f(room,x,'begin');f(room,x,'locks',{locked:{[a]:'ICY'},instructed:{},conflict:true});f(room,x,'done');f(room,y,'begin');f(room,y,'done');
+ expect(room.allocation.conflict).toBe(true);expect(room.ready).toBe(false);expect(room.allocation.snapshot(5000,a).notifications).toEqual([]);
+});
 it('enforces 4096 bytes, strict sequence and 40 messages per 10 seconds',()=>{
  const {room,x}=setup();f(room,x,'begin');f(room,x,'done');
  expect(()=>room.receive(x,JSON.stringify({sequence:'4',kind:'N',payload:'1'}),100)).toThrow();

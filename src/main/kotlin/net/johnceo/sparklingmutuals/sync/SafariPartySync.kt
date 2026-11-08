@@ -88,6 +88,7 @@ object SafariPartySync {
                 stage("begin")
                 current.bootstrapFacts().forEach { evidence ->stage("facts") {evidence.entrySet().forEach { (key,value)->add(key,value) }} }
                 stage("locks") {
+                    addProperty("conflict",current.conflict)
                     add("locked",JsonObject().apply {current.locks.forEach { (id,b)->addProperty(id,b.name) }})
                     add("instructed",JsonObject().apply {current.instructedTargets().forEach { (id,b)->addProperty(id,b.name) }})
                 }
@@ -253,6 +254,7 @@ object SafariPartySync {
             }
         }
         if(ConfigManager.hotspotAnnouncer && current.authority && !current.conflict && matchingParty && transport.ready &&
+            (!transport.backup || entryDiscoveries.snapshot(transport.roomStatus().generation)!=null) &&
             PartyManager.isLeader(client.player!!.uuid.toString()) && current.leader==current.self && now-lastInstructionAt>=1500) {
             current.notifications.firstOrNull { it.id !in current.sentNotifications && !current.wasInstructed(it.player,it.biome) }?.let { notice ->
                 val name=name(client,notice.player) ?: return@let
@@ -369,6 +371,7 @@ object SafariPartySync {
     }
     /** Fresh atomic receipt on this socket, scoped to the exact native visit and verified party. */
     internal fun entryRoom(client: Minecraft): PartyRoomSnapshot? {
+        if(routing.pending)return null
         if(!SafariIsland.onIsland || world!==client.level || client.player==null || client.connection==null ||
             transferRevision==SafariIsland.locationRevision) return null
         val current=state ?: return null
@@ -520,6 +523,9 @@ object SafariPartySync {
     private fun receive(root: JsonObject,mapping: Map<String,String>) {
         val current=state ?: return
         when(PartySyncProtocol.text(root.get("type"))) {
+            "reconciling" -> if(transport.backup) {
+                val status=transport.roomStatus();entryDiscoveries.welcome(status.generation,status.atomic)
+            }
             "bootstrap-facts" -> if(transport.backup) {
                 val payload=root.get("payload")?.takeIf {it.isJsonObject}?.asJsonObject ?: return
                 if(current.importBootstrap(payload))SafariTracking.ledger.current?.let(::apply)

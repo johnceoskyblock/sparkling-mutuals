@@ -27,9 +27,9 @@ export class Coordinator extends DurableObject<Env> {
   if(Object.keys(a.backupWins).length&&old?.counts!==counts){this.ctx.storage.sql.exec('DELETE FROM backup_fairness WHERE updated<?',Date.now()-30*86400000);this.ctx.storage.sql.exec('INSERT INTO backup_fairness(roster,updated,counts) VALUES(?,?,?) ON CONFLICT(roster) DO UPDATE SET updated=excluded.updated,counts=excluded.counts',group,Date.now(),counts);this.ctx.storage.sql.exec('DELETE FROM backup_fairness WHERE roster IN (SELECT roster FROM backup_fairness ORDER BY updated DESC LIMIT -1 OFFSET 256)');}
  }
  private sockets(room:string){return this.ctx.getWebSockets().filter(ws=>{const s=ws.deserializeAttachment() as Attachment;return s?.room===room&&s.expires>Date.now();});}
- private room(id:string){const row=this.load(id);if(!row)return null;const sessions=this.sockets(id).map(ws=>ws.deserializeAttachment() as Attachment);return new Room(row.routing,row.allocation,sessions);}
+ private room(id:string){const row=this.load(id);if(!row)return null;const sessions=this.sockets(id).map(ws=>ws.deserializeAttachment() as Attachment).filter(s=>s.roster.join()===row.routing.roster.join());return new Room(row.routing,row.allocation,sessions);}
  private persist(room:Room){const old=this.load(room.route.generation);if(!old||JSON.stringify(old.routing)!==JSON.stringify(room.route)||JSON.stringify(old.allocation)!==JSON.stringify(room.allocation))this.save(room.route,room.allocation);for(const ws of this.sockets(room.route.generation)){const old=ws.deserializeAttachment() as Attachment;const next=room.sessions.find(s=>s.self===old.self&&s.nonce===old.nonce);if(next)ws.serializeAttachment(next);}}
- private deliver(room:Room,frames:unknown[]){for(const ws of this.sockets(room.route.generation)){const s=ws.deserializeAttachment() as Attachment;if(room.route.members[s.self]?.retired)continue;for(const f of frames){const type=(f as {type:string}).type;if(s.bootstrap.stage!=='done'&&(type==='sparklings'||type==='state'&&(f as {kind:string}).kind==='S'))continue;ws.send(JSON.stringify(f));}ws.send(JSON.stringify({type:'hotspots',payload:room.allocation.snapshot(Date.now(),s.self,room.ready&&s.bootstrap.stage==='done')}));}}
+ private deliver(room:Room,frames:unknown[]){for(const ws of this.sockets(room.route.generation)){const s=ws.deserializeAttachment() as Attachment;if(s.roster.join()!==room.route.roster.join()){ws.close(1008,'roster changed');continue;}if(room.route.members[s.self]?.retired)continue;for(const f of frames){const type=(f as {type:string}).type;if(s.bootstrap.stage!=='done'&&(type==='sparklings'||type==='state'&&(f as {kind:string}).kind==='S'))continue;ws.send(JSON.stringify(f));}ws.send(JSON.stringify({type:'hotspots',payload:room.allocation.snapshot(Date.now(),s.self,room.ready&&s.bootstrap.stage==='done')}));}}
  private async schedule(){
   const now=Date.now();let next=Infinity;
   for(const ws of this.ctx.getWebSockets()){const s=ws.deserializeAttachment() as Attachment;if(s.expires<=now)continue;next=Math.min(next,s.expires);const r=this.room(s.room);if(r?.ready&&r.allocation.due!==null)next=Math.min(next,Math.max(now+1,r.allocation.due));
@@ -64,7 +64,8 @@ export class Coordinator extends DurableObject<Env> {
     this.ctx.storage.sql.exec('DELETE FROM rooms WHERE renewed<=?',now-600000);
     check(q,this.ctx.storage.sql.exec<{n:number}>('SELECT count(*) AS n FROM rooms').one().n<128||!!old);
     this.save(result.room,a);
-    if(q.action==='leave'){a.leave(self);this.save(result.room,a);const r=this.room(result.generation);if(r)this.deliver(r,r.ready?[{type:'sparklings',payload:r.union().join(',')}]:[]);}
+    if(q.action==='leave'&&result.room.members[self]?.nonce===q.nonce&&result.room.members[self].retired){a.leave(self);this.save(result.room,a);const r=this.room(result.generation);if(r)this.deliver(r,r.ready?[{type:'sparklings',payload:r.union().join(',')}]:[]);}
+    if(q.action==='check'&&result.provider==='backup'){const r=this.room(result.generation);if(r&&!r.ready)this.deliver(r,[{type:'reconciling'}]);}
     return json({version:1,generation:result.generation,provider:result.provider,admitted:result.admitted,nonce:q.nonce});
    }
    if(url.pathname==='/v1/sync'&&req.headers.get('Upgrade')?.toLowerCase()==='websocket'){
@@ -72,12 +73,15 @@ export class Coordinator extends DurableObject<Env> {
     const gen=text(req.headers.get('X-SM-Generation'),64),nonce=text(req.headers.get('X-SM-Visit'),64),row=this.load(gen),m=row?.routing.members[self];
     check(row,!!row&&row.routing.provider==='backup'&&row.routing.lobby===i.lobby&&row.routing.roster.join()===i.roster.join()&&!!m&&!m.retired&&m.nonce===nonce&&now-row.routing.renewed<600000);
     check(row,this.ctx.getWebSockets().length<40);
+    // Carry irreversible room evidence onto each admitted attachment, including before another witness leaves.
+    const priorRoom=this.room(gen),inheritedUnion=priorRoom?.union()??[0,0,0,0];
+    const inheritedEvidence=[...new Map((priorRoom?.sessions.flatMap(s=>s.evidence)??[]).map(e=>[e.reporter+':'+e.source,e])).values()];
     // Only one active backup connection per current registration.
     for(const old of this.sockets(gen)){const prior=old.deserializeAttachment() as Attachment;if(prior.self===self){prior.expires=0;old.serializeAttachment(prior);old.close(1000,'replaced');}}
     const pair=new WebSocketPair(),client=pair[0],server=pair[1];this.ctx.acceptWebSocket(server);
-    const s=attachment(gen,self,nonce,i.roster,now);server.serializeAttachment(s);
+    const s=attachment(gen,self,nonce,i.roster,now);s.union=inheritedUnion;s.evidence=structuredClone(inheritedEvidence);server.serializeAttachment(s);
     server.send(JSON.stringify({type:'welcome',self,roster:i.roster,features:['hotspots-v1','biome-reports-v1','room-sparklings-v1','failover-bootstrap-v1']}));
-    const room=this.room(gen)!;for(const frame of room.replay(s))server.send(JSON.stringify(frame));
+    const room=this.room(gen)!;this.deliver(room,[{type:'reconciling'}]);for(const frame of room.replay(s))server.send(JSON.stringify(frame));
     await this.schedule();return new Response(null,{status:101,webSocket:client});
    }
    return json({error:'not found'},404);

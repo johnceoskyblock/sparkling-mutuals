@@ -18,14 +18,17 @@ import java.util.concurrent.ThreadLocalRandom
 internal class PartySyncRoutePolicy(val nonce: String) {
     var provider="primary"; private set
     var generation: String?=null; private set
+    var pending=false; private set
     private var unavailableSince: Long?=null
     fun observe(usable: Boolean,now: Long) { if(usable)unavailableSince=null else if(unavailableSince==null)unavailableSince=now }
     fun unusableMillis(now: Long)=(unavailableSince?.let { (now-it).coerceIn(0,86_400_000) } ?: 0)
     fun accept(generation: String,provider: String,nonce: String,admitted: Boolean): Boolean {
-        if(!admitted || nonce!=this.nonce || provider !in setOf("primary","backup") ||
+        if(nonce!=this.nonce || provider !in setOf("primary","backup") || generation.isBlank() || generation.length>64)return false
+        if(!admitted){pending=true;return false}
+        if(
             generation.isBlank() || generation.length>64 || this.generation?.let { it!=generation }==true ||
             this.provider=="backup" && provider!="backup")return false
-        this.generation=generation;this.provider=provider;return true
+        this.generation=generation;this.provider=provider;pending=false;return true
     }
 }
 
@@ -52,6 +55,7 @@ internal class PartySyncRouting(private val origin: URI?=configuredOrigin()) {
     val provider get()=policy.provider
     val generation get()=policy.generation
     val nonce get()=policy.nonce
+    val pending get()=policy.pending
     val backupOrigin get()=origin
     fun tick(next: PartySyncTransport.Context,now: Long,usable: Boolean,eligible: Boolean): Boolean {
         policy.observe(usable,now)

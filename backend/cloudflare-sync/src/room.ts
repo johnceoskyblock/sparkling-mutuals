@@ -6,11 +6,11 @@ export interface Snapshot {sequence:number;kind:string;payload:string;catchUpOnl
 export interface Attachment {
  room:string;self:string;nonce:string;roster:string[];expires:number;rate:number[];sequence:number;
  snapshots:Record<string,Snapshot>;union:number[];evidence:Evidence[];
- bootstrap:{stage:'none'|'open'|'done';facts:Evidence[];locks:Record<string,Biome>;instructed:Record<string,Biome>;fairness:Fairness|null};
+ bootstrap:{stage:'none'|'open'|'done';frames:number;conflict:boolean;facts:Evidence[];locks:Record<string,Biome>;instructed:Record<string,Biome>;fairness:Fairness|null};
 }
 export const FACT_INDICES=[23,24,25,26,27,28,29,30,31,32,34,35,36,37];
 export function attachment(room:string,self:string,nonce:string,roster:string[],now:number):Attachment{
- return {room,self,nonce,roster,expires:now+600000,rate:[],sequence:0,snapshots:{},union:[0,0,0,0],evidence:[],bootstrap:{stage:'none',facts:[],locks:{},instructed:{},fairness:null}};
+ return {room,self,nonce,roster,expires:now+600000,rate:[],sequence:0,snapshots:{},union:[0,0,0,0],evidence:[],bootstrap:{stage:'none',frames:0,conflict:false,facts:[],locks:{},instructed:{},fairness:null}};
 }
 export function evidence(input:unknown,roster:string[]):Evidence{
  const v=object(input),reporter=uuid(v.reporter),source=v.source??'reporter';check(v,roster.includes(reporter)&&(source==='reporter'||source==='room'));const nests=integer(v.nests,0,8191);
@@ -23,7 +23,7 @@ export function evidence(input:unknown,roster:string[]):Evidence{
 }
 export class Room {
  constructor(public route:RouteRoom,public allocation:Allocation,public sessions:Attachment[]){}
- get ready(){return reconciled(this.route)&&!this.allocation.conflict;}
+ get ready(){return reconciled(this.route)&&Object.values(this.route.members).every(m=>m.retired||m.completed)&&this.sessions.every(s=>this.route.members[s.self]?.retired||s.bootstrap.stage==='done')&&!this.allocation.conflict;}
  union(){const result=[0,0,0,0];for(const s of this.sessions)for(let i=0;i<4;i++)result[i]|=s.union[i];return result;}
  private mergeUnion(values:number[]){for(const s of this.sessions)for(let i=0;i<4;i++)s.union[i]|=values[i];}
  receive(s:Attachment,raw:string,now:number):{broadcast:unknown[];private:unknown[];leave:boolean}{
@@ -33,14 +33,16 @@ export class Room {
   if(v.catchUpOnly!==undefined)check(v,kind==='A'&&typeof v.catchUpOnly==='boolean');
   const broadcast:unknown[]=[],privateFrames:unknown[]=[];let leave=false;
   if(kind==='F'){
+   check(s,++s.bootstrap.frames<=12);
    const f=object(JSON.parse(payload));integer(f.version,1,1);const action=text(f.action);
    if(action==='begin'){check(f,s.bootstrap.stage==='none');s.bootstrap.stage='open';}
    else {check(f,s.bootstrap.stage==='open');
     if(action==='facts'){check(f,s.bootstrap.facts.length<8);const e=evidence(f,this.route.roster);check(e,!s.bootstrap.facts.some(old=>old.reporter===e.reporter&&old.source===e.source));s.bootstrap.facts.push(e);}
-    else if(action==='locks'){s.bootstrap.locks=locks(f.locked,this.route.roster);s.bootstrap.instructed=locks(f.instructed,this.route.roster);}
+    else if(action==='locks'){s.bootstrap.locks=locks(f.locked,this.route.roster);s.bootstrap.instructed=locks(f.instructed,this.route.roster);check(f,f.conflict===undefined||typeof f.conflict==='boolean');s.bootstrap.conflict||=f.conflict===true;}
     else if(action==='fairness'){const o=object(f.fairness),counts=object(o.counts),clean:Record<string,number>={};for(const [id,n]of Object.entries(counts)){check(id,this.route.roster.includes(uuid(id)));clean[id]=integer(n,0,1000000);}s.bootstrap.fairness={run:text(o.run),revision:integer(o.revision),counts:clean};}
     else if(action==='done'){
      this.allocation.importLocks(s.bootstrap.locks);this.allocation.importLocks(s.bootstrap.instructed);Object.assign(this.allocation.instructed,s.bootstrap.instructed);
+     this.allocation.conflict||=s.bootstrap.conflict;
      if(s.bootstrap.fairness)this.allocation.seed(s.bootstrap.fairness);
      s.bootstrap.stage='done';const member=this.route.members[s.self];check(member,!!member&&member.nonce===s.nonce&&!member.retired);member.completed=true;
      for(const e of s.bootstrap.facts){this.mergeUnion([0,0,...e.caught]);for(const other of this.sessions){const old=other.evidence.find(v=>v.reporter===e.reporter&&v.source===e.source);if(old){old.nests|=e.nests;FACT_INDICES.forEach(i=>old.facts[i]=i===24?Math.max(old.facts[i],e.facts[i]):old.facts[i]|e.facts[i]);old.caught=old.caught.map((v,i)=>v|e.caught[i]);}else other.evidence.push(structuredClone(e));check(other,other.evidence.length<=8);}broadcast.push({type:'bootstrap-facts',payload:e});}

@@ -26,6 +26,21 @@ it('malformed and excessive messages close sockets instead of publishing',async(
  const token=await auth(a),r=await routing(a,token),x=await socket(a,token,r.generation);let closed=false;x.ws.addEventListener('close',()=>closed=true);
  x.ws.send(JSON.stringify({sequence:'1',kind:'N',payload:'1'}));await flush();expect(closed).toBe(true);
 });
+it('replacement socket inherits room caught negatives when the prior witness leaves',async()=>{
+ const ta=await auth(a),tb=await auth(b);await routing(a,ta,0);await routing(b,tb,0);const r=await routing(a,ta);
+ const x=await socket(a,ta,r.generation);x.ws.send(JSON.stringify({sequence:1,kind:'F',payload:'{"version":1,"action":"begin"}'}));x.ws.send(JSON.stringify({sequence:2,kind:'F',payload:'{"version":1,"action":"done"}'}));x.ws.send(JSON.stringify({sequence:3,kind:'S',payload:'1,0,1,0'}));await flush();
+ const y=await socket(b,tb,r.generation);await flush();
+ const ns=(env as unknown as Env).COORDINATOR,stub=ns.get(ns.idFromName('coordinator-v1'));
+ const caught=await runInDurableObject(stub,(_instance:any,state)=>state.getWebSockets().map(ws=>ws.deserializeAttachment()).find((s:any)=>s.self===b).union[2]);expect(caught).toBe(1);
+ x.ws.close();y.ws.close();
+});
+it('a delayed old nonce leave does not retire the replacement allocator member',async()=>{
+ const token=await auth(a),r=await routing(a,token);const x=await socket(a,token,r.generation);
+ x.ws.send(JSON.stringify({sequence:1,kind:'F',payload:'{"version":1,"action":"begin"}'}));x.ws.send(JSON.stringify({sequence:2,kind:'F',payload:'{"version":1,"action":"done"}'}));x.ws.send(JSON.stringify({sequence:3,kind:'H',payload:JSON.stringify({version:1,action:'hello',display:true,ticketed:true,leader:true,present:[a],locked:{}})}));await flush();
+ const response=await SELF.fetch('https://backup.test/v1/route',{method:'POST',headers:{Authorization:`Bearer ${token}`},body:JSON.stringify({version:1,lobby:'m123',self:a,roster:[a,b],nonce:'oldnonceoldnonce1',action:'leave',unusableMs:0})});expect(response.status).toBe(200);
+ const ns=(env as unknown as Env).COORDINATOR,stub=ns.get(ns.idFromName('coordinator-v1'));
+ const left=await runInDurableObject(stub,(_instance:any,state)=>JSON.parse(state.storage.sql.exec<{allocation:string}>('SELECT allocation FROM rooms WHERE id=?',r.generation).one().allocation).members[a].left);expect(left).toBe(false);x.ws.close();
+});
 it('real sockets reject roster isolation and release no missing-cohort automatic state after lease expiry',async()=>{
  const ta=await auth(a),tb=await auth(b);await routing(a,ta,0);await routing(b,tb,0);const r=await routing(a,ta);
  const wrong=await SELF.fetch('https://backup.test/v1/sync',{headers:{Upgrade:'websocket',Authorization:`Bearer ${ta}`,'X-SafariUtils-Lobby':'m124','X-SafariUtils-Player':a,'X-SafariUtils-Roster':[a,b].join(','),'X-SM-Generation':r.generation,'X-SM-Visit':a}});expect(wrong.status).toBe(400);
