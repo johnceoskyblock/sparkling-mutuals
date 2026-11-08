@@ -35,6 +35,16 @@ The complete confirmed 1–4 UUID roster and Hypixel Mod API server name identif
 
 Network work is asynchronous, queues are bounded, outgoing messages are serialized and capped below the server's 40/10-second limit, and reconnects back off from 2 to 30 seconds (or longer Retry-After). Tokens and raw network errors/headers/payloads are not logged. `/sm debug` includes room readiness, authority, conflict, roster and sequence status. No additional Hypixel collection API requests are made.
 
+## Independent backup (updated Mutuals clients)
+
+The primary remains Serkosea. During an eligible Safari party the optional Cloudflare standby receives an asynchronous room-identity/provider check every 30 seconds with jitter, without live gameplay mirroring. A continuously unusable primary can select the backup after 30 seconds; silent socket failure can take longer because the existing 75-second liveness detection still applies. Healthy clients in the same validated room follow the shared selection on their next successful check. Backup stays selected until the visit ends; a new visit prefers primary. Solo/non-Safari play sends no routing requests.
+
+Migration preserves local observations, sequence numbers, irreversible received evidence, finalized roles and submitted instruction targets. Peer inventories are cleared until their reporters send fresh backup snapshots. Original reporters and room-snapshot provenance remain distinct from local discoveries. The fixed migration cohort must reconcile catches/locks or positively depart before automatic entry or new roles are enabled. An expired participant lease alone does not waive that barrier. A fresh atomic room snapshot from the exact current socket is still required for auto entry. Contradictions freeze new assignments and instructions; no captures, rewards or saved history are fabricated.
+
+The client shows a brief notice on a real provider switch and reports primary/backup state in the existing developer status. There is no mid-visit competing allocator if backup also fails. Reused server IDs with ambiguous/new player visit nonces fail closed instead of importing old gameplay. Different rosters cannot exchange objectives. Unmodified SafariUtils/older Mutuals cannot follow this backup, and seamless mixed-mod outage behavior is not promised.
+
+The separately hosted service, local runtime tests, deployment/kill-switch instructions and Free-plan usage worksheet are in `backend/cloudflare-sync/README.md`. UUID claims are not proof of Minecraft ownership. Tokens are origin-scoped; no service signing/deployment secret belongs in the mod. Account setup/real deployed TLS smoke and live Hypixel testing must be recorded separately from local tests. The initial requested test artifact targets Minecraft 26.1.2 only.
+
 ## Testing with SafariUtils
 
 Use protocol-compatible builds on the same Safari server and roster. Verify:

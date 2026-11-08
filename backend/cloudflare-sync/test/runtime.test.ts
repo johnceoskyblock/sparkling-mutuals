@@ -1,0 +1,39 @@
+import {it,expect,afterEach} from 'vitest';
+import {SELF,env,reset,evictDurableObject,runInDurableObject} from 'cloudflare:test';
+import type {Env,Coordinator} from '../src/index';
+const a='1'.repeat(32),b='2'.repeat(32);
+afterEach(()=>reset());
+async function auth(id:string){const r=await SELF.fetch('https://backup.test/v1/auth/uuid/session',{method:'POST',body:JSON.stringify({uuid:id})});expect(r.status).toBe(200);return (await r.json() as any).token;}
+async function routing(id:string,token:string,unusableMs=30000){const r=await SELF.fetch('https://backup.test/v1/route',{method:'POST',headers:{Authorization:`Bearer ${token}`},body:JSON.stringify({version:1,lobby:'m123',self:id,roster:[a,b],nonce:id,action:'check',unusableMs})});expect(r.status).toBe(200);return r.json() as Promise<any>;}
+async function socket(id:string,token:string,gen:string){const r=await SELF.fetch('https://backup.test/v1/sync',{headers:{Upgrade:'websocket',Authorization:`Bearer ${token}`,'X-SafariUtils-Lobby':'m123','X-SafariUtils-Player':id,'X-SafariUtils-Roster':[a,b].join(','),'X-SM-Generation':gen,'X-SM-Visit':id}});expect(r.status).toBe(101);const ws=r.webSocket!;ws.accept();const frames:any[]=[];ws.addEventListener('message',e=>{frames.push(JSON.parse(e.data as string));});return {ws,frames};}
+async function flush(){await new Promise(resolve=>setTimeout(resolve,30));}
+it('real HTTP auth rejects foreign claims and isolates origin-scoped tokens',async()=>{
+ expect((await SELF.fetch('https://backup.test/v1/route',{method:'POST',body:'{}'})).status).toBe(401);
+ const token=await auth(a);expect((await SELF.fetch('https://other.test/v1/route',{method:'POST',headers:{Authorization:`Bearer ${token}`},body:'{}'})).status).toBe(401);
+ expect((await SELF.fetch('https://backup.test/v1/route',{method:'POST',headers:{Authorization:`Bearer ${token}`},body:JSON.stringify({version:1,lobby:'m123',self:b,roster:[a,b],nonce:b,action:'check',unusableMs:30000})})).status).toBe(400);
+});
+it('real hibernating sockets withhold atomic positives until the fixed cohort catches reconcile',async()=>{
+ const ta=await auth(a),tb=await auth(b);await routing(a,ta,0);await routing(b,tb,0);const route=await routing(a,ta);
+ const x=await socket(a,ta,route.generation),y=await socket(b,tb,route.generation);await flush();
+ let seq=0;const send=(ws:WebSocket,body:any)=>ws.send(JSON.stringify({sequence:++seq,kind:'F',payload:JSON.stringify({version:1,...body})}));
+ send(x.ws,{action:'begin'});send(x.ws,{action:'done'});x.ws.send(JSON.stringify({sequence:++seq,kind:'S',payload:'1,0,0,0'}));await flush();expect(x.frames.some(f=>f.type==='sparklings')).toBe(false);
+ const ns=(env as unknown as Env).COORDINATOR,stub=ns.get(ns.idFromName('coordinator-v1'));
+ await evictDurableObject(stub);send(y.ws,{action:'begin'});send(y.ws,{action:'facts',reporter:a,nests:0,facts:Array(38).fill(0),caught:[1,0]});send(y.ws,{action:'done'});await flush();
+ const atom=x.frames.find(f=>f.type==='sparklings');expect(atom).toBeDefined();expect(atom.payload.split(',').map(Number)[2]).toBe(1);
+ x.ws.close();y.ws.close();
+});
+it('malformed and excessive messages close sockets instead of publishing',async()=>{
+ const token=await auth(a),r=await routing(a,token),x=await socket(a,token,r.generation);let closed=false;x.ws.addEventListener('close',()=>closed=true);
+ x.ws.send(JSON.stringify({sequence:'1',kind:'N',payload:'1'}));await flush();expect(closed).toBe(true);
+});
+it('real sockets reject roster isolation and release no missing-cohort automatic state after lease expiry',async()=>{
+ const ta=await auth(a),tb=await auth(b);await routing(a,ta,0);await routing(b,tb,0);const r=await routing(a,ta);
+ const wrong=await SELF.fetch('https://backup.test/v1/sync',{headers:{Upgrade:'websocket',Authorization:`Bearer ${ta}`,'X-SafariUtils-Lobby':'m124','X-SafariUtils-Player':a,'X-SafariUtils-Roster':[a,b].join(','),'X-SM-Generation':r.generation,'X-SM-Visit':a}});expect(wrong.status).toBe(400);
+ const x=await socket(a,ta,r.generation);x.ws.send(JSON.stringify({sequence:1,kind:'F',payload:'{"version":1,"action":"begin"}'}));x.ws.send(JSON.stringify({sequence:2,kind:'F',payload:'{"version":1,"action":"done"}'}));await flush();
+ const ns=(env as unknown as Env).COORDINATOR,stub=ns.get(ns.idFromName('coordinator-v1'));
+ await runInDurableObject(stub,(_instance:any,state)=>{
+  const row=state.storage.sql.exec<{routing:string}>('SELECT routing FROM rooms WHERE id=?',r.generation).one();const routing=JSON.parse(row.routing);routing.members[b].renewed=0;
+  state.storage.sql.exec('UPDATE rooms SET routing=? WHERE id=?',JSON.stringify(routing),r.generation);
+ });
+ x.ws.send(JSON.stringify({sequence:3,kind:'S',payload:'1,0,0,0'}));await flush();expect(x.frames.some(f=>f.type==='sparklings')).toBe(false);x.ws.close();
+});

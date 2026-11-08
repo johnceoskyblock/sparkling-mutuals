@@ -11,9 +11,26 @@ import org.slf4j.LoggerFactory
 
 /** One asynchronous socket. Network callbacks enqueue bounded data; only tick mutates game state. */
 internal class PartySyncTransport(
-    private val authEndpoint: URI=URI.create("https://api-dev.serkosea.dev/v1/auth/uuid/session"),
-    private val syncEndpoint: URI=URI.create("wss://api-dev.serkosea.dev/v1/sync")
+    private var authEndpoint: URI=URI.create("https://api-dev.serkosea.dev/v1/auth/uuid/session"),
+    private var syncEndpoint: URI=URI.create("wss://api-dev.serkosea.dev/v1/sync")
 ) {
+    private val primaryAuth=authEndpoint
+    private val primarySync=syncEndpoint
+    var backup=false; private set
+    private var routingGeneration: String?=null
+    private var visitNonce: String?=null
+    @Synchronized fun useBackup(origin: URI,generation: String,nonce: String) {
+        require(origin.scheme=="https" && origin.host!=null && generation.isNotBlank() && nonce.isNotBlank())
+        close(false);token="";tokenOwner="";tokenUntil=0;retryAt=0;failures=0
+        authEndpoint=origin.resolve("/v1/auth/uuid/session")
+        syncEndpoint=URI("wss",null,origin.host,origin.port,"/v1/sync",null,null)
+        routingGeneration=generation;visitNonce=nonce;backup=true
+    }
+    @Synchronized fun usePrimary() {
+        if(!backup)return
+        close(false);token="";tokenOwner="";tokenUntil=0;retryAt=0;failures=0
+        authEndpoint=primaryAuth;syncEndpoint=primarySync;routingGeneration=null;visitNonce=null;backup=false
+    }
     data class Context(val lobby: String,val self: String,val roster: List<String>)
     private data class Delivery(val generation: Long,val text: String)
     private val logger=LoggerFactory.getLogger("sparkling-mutuals/party-sync")
@@ -43,7 +60,7 @@ internal class PartySyncTransport(
     var onMessage: (JsonObject,Map<String,String>) -> Unit={ _,_ -> }
     var onUnavailable: () -> Unit={}
     fun developerStatus(): String = when {
-        ready -> "Connected"
+        ready -> if(backup) "Backup connected" else "Primary connected"
         socket != null -> "Awaiting welcome"
         connecting -> "Connecting"
         retryAt > System.currentTimeMillis() -> "Retry backoff"
@@ -105,6 +122,7 @@ internal class PartySyncTransport(
                     val map=PartySyncProtocol.welcome(root,next.self,next.roster)
                     if(map==null) { fail(attempt); return }
                     val features=root.get("features")?.takeIf { it.isJsonArray }?.asJsonArray?.mapNotNull { PartySyncProtocol.text(it) }.orEmpty()
+                    if(backup && "failover-bootstrap-v1" !in features) { fail(attempt);return }
                     mapping=map; ready=true; failures=0
                     hotspotCapability="hotspots-v1" in features; biomeCapability="biome-reports-v1" in features
                     roomSparklings="room-sparklings-v1" in features
@@ -137,10 +155,11 @@ internal class PartySyncTransport(
         }
         auth.thenCompose { bearer ->
             if(attempt!=generation) return@thenCompose CompletableFuture.failedFuture<WebSocket>(CancellationException())
-            http.newWebSocketBuilder().connectTimeout(Duration.ofSeconds(10))
+            val builder=http.newWebSocketBuilder().connectTimeout(Duration.ofSeconds(10))
                 .header("Authorization","Bearer $bearer").header("X-SafariUtils-Lobby",desired.lobby)
                 .header("X-SafariUtils-Player",desired.self).header("X-SafariUtils-Roster",desired.roster.joinToString(","))
-                .buildAsync(syncEndpoint,Listener(attempt))
+            if(backup)builder.header("X-SM-Generation",routingGeneration!!).header("X-SM-Visit",visitNonce!!)
+            builder.buildAsync(syncEndpoint,Listener(attempt))
         }.whenComplete { _,error -> if(error!=null) fail(attempt,error) }
     }
     private class Admission(val status: Int,val delay: Long): RuntimeException()
