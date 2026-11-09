@@ -9,6 +9,7 @@ class SettingsCatalog(settings: SafariSettings) {
                    val path: String, val children: List<Row> = emptyList()) {
         val group get()=field.isAnnotationPresent(Accordion::class.java)
         val standalone get()=field.isAnnotationPresent(StandaloneDescription::class.java)
+        val primaryToggle get()=children.firstOrNull { it.field.name=="enabled" && it.field.isAnnotationPresent(ConfigEditorBoolean::class.java) }
         fun descriptionText(): net.minecraft.network.chat.Component {
             val text = net.minecraft.network.chat.Component.literal(description.substringBeforeLast('\n', ""))
             val lastLine = net.minecraft.network.chat.Component.literal(description.substringAfterLast('\n'))
@@ -27,6 +28,44 @@ class SettingsCatalog(settings: SafariSettings) {
             field.isAccessible=true
             Page(meta.name,rows(field.get(settings),meta.name))
         }
+    }
+    private val locations=java.util.IdentityHashMap<Row,String>().apply {
+        val routes=mapOf("General" to "HUDs → Overview","HUDs" to "HUDs → HUDs","Customization" to "HUDs → Appearance",
+            "Modes" to "Safari → Modes","Safari helpers" to "Safari → Helpers","Miria contest" to "Safari → Contest",
+            "Banner" to "Safari → Banner","Party Interactions" to "Party → Interactions","Sparkle Warping" to "Party → Sparkle Warping",
+            "History" to "History → History","API key" to "Advanced → API","SkyBlock" to "Advanced → SkyBlock","ESP" to "ESP → Highlights")
+        fun collect(rows: List<Row>,parent: String) { rows.forEach { row ->
+            put(row,parent);collect(row.children,"$parent → ${row.name}")
+        } }
+        pages.forEach { collect(it.rows,routes[it.name] ?: "ESP → ${it.name}") }
+    }
+    fun location(row: Row): String=locations.getValue(row)
+
+    /** Keep different bindings distinct, but show shared appearance aliases only once. */
+    fun search(query: String): List<Row> {
+        val words=query.trim().split(Regex("\\s+")).filter(String::isNotEmpty)
+        val seen=mutableSetOf<Pair<Any,Field>>()
+        return buildList {
+            fun visit(rows: List<Row>) { rows.forEach { row ->
+                if(!row.group && words.all {
+                    (location(row)+" "+row.name+" "+row.description).contains(it,true)
+                } && seen.add(row.owner to row.field)) add(row)
+                visit(row.children)
+            } }
+            pages.forEach { visit(it.rows) }
+        }
+    }
+    fun defaultExpanded(): Set<String> = pages.flatMap { it.rows }.filter {
+        it.group && it.children.size<=4
+    }.mapTo(mutableSetOf()) { it.path }
+
+    fun expansionFor(target: SettingsTarget): Set<String> {
+        val (page,chain)=locate(target) ?: return emptySet()
+        val paths=chain.filter { it.group }.mapTo(mutableSetOf()) { it.path }
+        fun open(row: Row) { if(row.group) { paths.add(row.path);row.children.forEach(::open) } }
+        (listOf(pages[page].rows)+chain.dropLast(1).map { it.children }).flatten()
+            .filter { it.field.name.contains("appearance",true) }.forEach(::open)
+        return paths
     }
     /** Returns the owning page and ancestor chain without depending on displayed labels. */
     fun locate(target: SettingsTarget): Pair<Int,List<Row>>? {

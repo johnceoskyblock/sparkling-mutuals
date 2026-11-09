@@ -4,6 +4,10 @@ The settings workspace is adapted from Serkosea's SafariUtils v3.3.0, commit `2e
 
 ## Settings
 
+Search results show their visible area, tab/subtab and parent groups above each setting, wrapping on narrow screens. Results stay together by tab; different settings with the same name remain distinct, while shared appearance aliases appear only once. Search words may match different parts of the location and label.
+
+HUD/banner groups expose their existing enable switch directly in the group header, so enabling a feature does not require expanding it. Small first-level sections start open; manual collapse choices remain remembered during the session. Right-click navigation from `/sm gui` expands the owning section and its related appearance controls, retaining the existing save bindings and return to the HUD editor.
+
 The v4.0.2 candidate restores **SkyBlock → Helpers → Hunting Box total value** as an independent saved switch for one cumulative sell-offer estimate above the inventory. General item/chest valuation stays shelved. See [Hunting Box total](HUNTING_BOX_VALUE.md).
 
 The Hunting Box total and top-ten guidance list use the Safari Progress HUD's existing panel style, including its saved border/background/transparency. The total displays one named coin amount; the shard list omits auxiliary ownership/session/profile footer text.
@@ -89,3 +93,5 @@ Release validation, 2026-11-02: all 1,139 tests passed on each of 26.1.2, 26.2 a
 2026-11-02 — Leader-owned hotspot coordination adds pre-run Hotspot wins to the leader announcement and publishes one Biomes map. Followers validate the current leader and full roster, replace local counts, and follow the final map even after missed reports or a local fallback. Duplicate messages do not double-credit wins. Individual instructions remain leader-only for non-mod reporters. No additional API requests.
 
 2026-11-02 — Locked secret achievements hide progress. Biome Objectives includes a concise remaining-critter instruction per mode. Forest omits zero food/bird counters, removes bird rows only after mode completion, and reconciles feeder slot/chat consumption with consistent cursor-safe inventory and transaction buffering.
+
+2026-11-07 (America/New_York) — Search results show visible navigation locations; shared appearance aliases are deduplicated, compact sections start open, collapsed feature groups expose their enable switch, and HUD right-click opens related customization. Local tests and offline native layouts verified on all three supported versions; saved setting keys are unchanged.
