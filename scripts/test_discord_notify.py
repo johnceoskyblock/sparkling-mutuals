@@ -13,7 +13,7 @@ from unittest.mock import patch
 
 REPOSITORY = 'johnceoskyblock/sparkling-mutuals'
 SECRET = 'a' * 64
-READ_TOKEN = 'ghs_' + 'b' * 36
+READ_TOKEN = 'ghs_12345_' + ('a-_' * 60) + '.' + ('b' * 180) + '.' + ('c' * 180)
 STAMP = '1700000000'
 WORKFLOW = Path(__file__).resolve().parents[1] / '.github/workflows/discord-notify.yml'
 
@@ -110,12 +110,19 @@ class SenderTest(unittest.TestCase):
         self.assertNotEqual(code, 0); self.assertNotIn('private upstream detail', output)
 
     def test_sender_requires_temporary_read_token_and_only_read_permissions(self):
-        for token in ['', 'not-an-actions-token']:
+        for token in ['', 'not-an-actions-token', 'ghs_' + 'b' * 36 + '\n', 'ghs_' + 'b' * 4093]:
             code, requests, _, _ = self.execute(extra_env={'SM_GITHUB_READ_TOKEN': token})
             self.assertNotEqual(code, 0); self.assertEqual(requests, [])
         text = WORKFLOW.read_text(encoding='utf-8')
         self.assertIn('  actions: read', text)
         self.assertIn('SM_GITHUB_READ_TOKEN: ${{ github.token }}', text)
+
+    def test_legacy_token_remains_accepted_and_current_token_is_treated_as_opaque(self):
+        for token in ['ghs_' + 'b' * 36, READ_TOKEN]:
+            code, requests, _, output = self.execute(extra_env={'SM_GITHUB_READ_TOKEN': token})
+            self.assertEqual(code, 0)
+            self.assertEqual(json.loads(requests[0][0].data)['githubReadToken'], token)
+            self.assertNotIn(token, output)
 
 
 if __name__ == '__main__':
