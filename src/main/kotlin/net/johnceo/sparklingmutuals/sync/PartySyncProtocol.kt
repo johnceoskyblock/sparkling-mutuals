@@ -13,7 +13,8 @@ internal object PartySyncProtocol {
 
     fun canonicalLobby(raw: String): String? {
         if (!lobbyId.matches(raw)) return null
-        val mini = miniLobby.matchEntire(raw) ?: return raw
+        val normalized=raw.lowercase()
+        val mini = miniLobby.matchEntire(normalized) ?: return normalized
         return "m${mini.groupValues[1]}"
     }
     const val MAX_SEQUENCE = 9_007_199_254_740_991L
@@ -68,8 +69,35 @@ internal object PartySyncProtocol {
 
 /** All state belongs to one visit, independent of socket generations. */
 internal class PartySyncState(val self: String, roster: Set<String>) {
+    private val bootstrap=PartySyncBootstrap()
+    private var provider="primary"
+    private var providerGeneration: String?=null
+    private val instructed=linkedMapOf<String,SafariBiome>()
+    var primaryFairness: JsonObject?=null; private set
+    fun transitionAuthority(next: String, generation: String): Boolean {
+        if(next==provider)return providerGeneration==generation
+        if(provider!="primary" || next!="backup" || generation.isBlank())return false
+        provider=next;providerGeneration=generation;serverRun=null;revision=-1;notifications=emptyList()
+        inventories.clear();inventoriesCurrent=false
+        return true
+    }
+    fun bootstrapFacts()=bootstrap.frames()
+    fun localBootstrap(values: IntArray,nests: Int,sparkling: IntArray) {
+        bootstrap.observe(self,"A",values);bootstrap.observe(self,"N",intArrayOf(nests));bootstrap.observe(self,"S",sparkling)
+    }
+    fun importBootstrap(value: JsonObject): Boolean {
+        val validated=bootstrap.accept(value,roster) ?: return false
+        nestMask=nestMask or validated.get("nests").asInt
+        val f=validated.getAsJsonArray("facts")
+        PartySyncBootstrap.indices.forEach { i -> facts[i]=if(i==24) maxOf(facts[i],f[i].asInt) else facts[i] or f[i].asInt }
+        val c=validated.getAsJsonArray("caught");for(i in 0..1)sparkling[i+2]=sparkling[i+2] or c[i].asInt
+        return true
+    }
+    fun markInstructed(player: String,biome: SafariBiome) { instructed[player]=biome }
+    fun wasInstructed(player: String,biome: SafariBiome)=instructed[player]==biome
+    fun instructedTargets()=instructed.toMap()
     var roster=roster; private set
-    fun expand(next: Set<String>) { require(next.size<=4 && next.containsAll(roster));roster=next }
+    fun expand(next: Set<String>) { require(next.size<=4 && next.containsAll(roster));if(next!=roster)primaryFairness=null;roster=next }
     var sequence = 0L; private set
     fun nextSequence() = (++sequence).also { check(it <= PartySyncProtocol.MAX_SEQUENCE) }
     private val received = mutableMapOf<String,LinkedHashSet<Long>>()
@@ -104,6 +132,7 @@ internal class PartySyncState(val self: String, roster: Set<String>) {
         val seen = received.getOrPut(sender) { linkedSetOf() }
         if (!seen.add(sequence)) return false
         if(seen.size > 256) seen.remove(seen.first())
+        if(values!=null)bootstrap.observe(sender,kind,values)
         when(kind) {
             "B" -> biomeReports.add(sender to payload)
             "N" -> nestMask = nestMask or values!![0]
@@ -122,6 +151,7 @@ internal class PartySyncState(val self: String, roster: Set<String>) {
     fun receiveRoomSparklings(payload: String): Boolean {
         val values = PartySyncProtocol.numbers("S", payload) ?: return false
         mergeSparklings(values)
+        bootstrap.observe(self,"S",values,"room")
         return true
     }
     private fun mergeSparklings(values: IntArray) {
@@ -179,6 +209,9 @@ internal class PartySyncState(val self: String, roster: Set<String>) {
         PartySyncProtocol.bool(payload.get("initialDone")) ?: return false
         if(!importLocks(next)) return false
         serverRun=run; revision=rev; authority=true; conflict=conflict || hasConflict; leader=nextLeader
+        if(provider=="primary")primaryFairness=JsonObject().apply {
+            addProperty("run",run);addProperty("revision",rev);add("counts",fair.deepCopy())
+        }
         notifications=if(conflict) emptyList() else pending
         true
     }.getOrDefault(false)

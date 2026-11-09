@@ -22,6 +22,8 @@ import org.slf4j.LoggerFactory
 /** Adapter between per-visit shared observations and Mutuals' existing mode-aware ledgers. */
 object SafariPartySync {
     private val transport=PartySyncTransport()
+    private val routing=PartySyncRouting()
+    private val bootstrapQueue=ArrayDeque<String>()
     private val entryDiscoveries=PartyRoomDiscoveries()
     private val logger=LoggerFactory.getLogger("sparkling-mutuals/party-sync")
     private var state: PartySyncState?=null
@@ -77,6 +79,22 @@ object SafariPartySync {
         transport.onReady={
             val status = transport.roomStatus()
             entryDiscoveries.welcome(status.generation, status.atomic)
+            bootstrapQueue.clear()
+            if(transport.backup)state?.let { current ->
+                current.localBootstrap(local,localNests,localSparkling)
+                fun stage(action: String,body: JsonObject.()->Unit={}) {bootstrapQueue.add(JsonObject().apply {
+                    addProperty("version",1);addProperty("action",action);body()
+                }.toString())}
+                stage("begin")
+                current.bootstrapFacts().forEach { evidence ->stage("facts") {evidence.entrySet().forEach { (key,value)->add(key,value) }} }
+                stage("locks") {
+                    addProperty("conflict",current.conflict)
+                    add("locked",JsonObject().apply {current.locks.forEach { (id,b)->addProperty(id,b.name) }})
+                    add("instructed",JsonObject().apply {current.instructedTargets().forEach { (id,b)->addProperty(id,b.name) }})
+                }
+                current.primaryFairness?.let { fairness ->stage("fairness") {add("fairness",fairness)} }
+                stage("done")
+            }
             lastNests=-1;lastSparkling="";lastAggregate="";lastHello="";helloAt=0;pendingReports.clear()
             discoveryReports.forEach { (id,biome) -> pendingReports[id]=biome }
             reportQueue.addAll(submittedReports.filter { code -> state?.biomeReports?.none { it.second == code } == true })
@@ -145,7 +163,24 @@ object SafariPartySync {
         val server=lobby ?: return
         val run=SafariTracking.ledger.current
         if (run?.entry?.admission != null || run?.entry?.hotspot != null) ticketed = true
-        transport.tick(PartySyncTransport.Context(server,current.self,current.roster.sorted()),now)
+        val context=PartySyncTransport.Context(server,current.self,current.roster.sorted())
+        val roomStatus=transport.roomStatus()
+        val usable=roomStatus.ready && (!roomStatus.atomic || entryDiscoveries.snapshot(roomStatus.generation)!=null)
+        if(routing.tick(context,now,usable,matchingParty) && routing.provider=="backup") {
+            val generation=routing.generation
+            val origin=routing.backupOrigin
+            if(generation!=null && origin!=null && current.transitionAuthority("backup",generation)) {
+                entryDiscoveries.welcome(-1,false);startingFoodBalances.clear();bootstrapQueue.clear()
+                transport.useBackup(origin,generation,routing.nonce)
+                client.player?.sendSystemMessage(net.minecraft.network.chat.Component.literal("[SM] Shared Safari sync switched to backup."))
+            }
+        }
+        transport.tick(context,now)
+        while(transport.ready && bootstrapQueue.isNotEmpty()) {
+            if(!transport.send(current.nextSequence(),"F",bootstrapQueue.first()))break
+            bootstrapQueue.removeFirst()
+        }
+        if(bootstrapQueue.isNotEmpty()) {current.inventoriesCurrent=false;return}
         current.inventoriesCurrent=transport.ready
         if(ticketed) run?.entry?.hotspot?.let { report(current.self,it) }
         SparklingEncounters.ticketReminder(!ticketed && !ticketWindowLocked && now-began<30_000 &&
@@ -219,17 +254,19 @@ object SafariPartySync {
             }
         }
         if(ConfigManager.hotspotAnnouncer && current.authority && !current.conflict && matchingParty && transport.ready &&
+            (!transport.backup || entryDiscoveries.snapshot(transport.roomStatus().generation)!=null) &&
             PartyManager.isLeader(client.player!!.uuid.toString()) && current.leader==current.self && now-lastInstructionAt>=1500) {
-            current.notifications.firstOrNull { it.id !in current.sentNotifications }?.let { notice ->
+            current.notifications.firstOrNull { it.id !in current.sentNotifications && !current.wasInstructed(it.player,it.biome) }?.let { notice ->
                 val name=name(client,notice.player) ?: return@let
                 if (!PartyManager.sendPartyChat(client, "$name you are assigned ${notice.biome.label} biome!")) return@let
                 current.sentNotifications.add(notice.id);lastInstructionAt=now
+                current.markInstructed(notice.player,notice.biome)
                 acknowledgments.add(notice.id)
             }
         }
     }
     /** Authority stays adopted across an outage. It never starts a competing fallback allocator. */
-    val backendCoordination get() = state?.authority==true
+    val backendCoordination get() = state?.authority==true || transport.backup
     val waitingForAuthority get() = !backendCoordination && shouldWait()
     val pauseHotspotChat get() = backendCoordination || shouldWait()
     private fun shouldWait(): Boolean {
@@ -245,6 +282,11 @@ object SafariPartySync {
         val mapped=plan.mapNotNull { (name,biome) -> ids[name.lowercase()]?.let { it to biome } }.toMap()
         if(mapped.size==plan.size && current.importLocks(mapped)) lastHello=""
     }
+    fun instructionSubmitted(player: String,biome: SafariBiome) {
+        val current=state ?: return
+        val client=Minecraft.getInstance()
+        current.roster.firstOrNull { name(client,it).equals(player,true) }?.let { current.markInstructed(it,biome) }
+    }
     fun report(id: String,biome: SafariBiome) {
         val current=state ?: return
         if(id !in current.roster || discoveryReports.containsKey(id)) return
@@ -252,6 +294,16 @@ object SafariPartySync {
     }
     private fun observeReport(raw: String) {
         if(!SafariIsland.onIsland || transferRevision == SafariIsland.locationRevision) return
+        HotspotProtocol.parseAssignment(raw)?.let { assignment ->
+            val current=state ?: return@let
+            val client=Minecraft.getInstance()
+            val leader=current.roster.firstOrNull { id ->name(client,id).equals(assignment.sender,true) } ?: return@let
+            val dashed=runCatching { java.util.UUID.fromString("${leader.take(8)}-${leader.substring(8,12)}-${leader.substring(12,16)}-${leader.substring(16,20)}-${leader.substring(20)}").toString() }.getOrNull() ?: return@let
+            if(matchingParty && PartyManager.isLeader(dashed)) {
+                finalized(assignment.biomes)
+                assignment.biomes.forEach(::instructionSubmitted)
+            }
+        }
         val parsed=HotspotAssignments.parseReport(raw) ?: return
         val client=Minecraft.getInstance()
         state?.roster?.firstOrNull { name(client,it).equals(parsed.sender,true) }?.let { report(it,parsed.biome) }
@@ -319,6 +371,7 @@ object SafariPartySync {
     }
     /** Fresh atomic receipt on this socket, scoped to the exact native visit and verified party. */
     internal fun entryRoom(client: Minecraft): PartyRoomSnapshot? {
+        if(routing.pending)return null
         if(!SafariIsland.onIsland || world!==client.level || client.player==null || client.connection==null ||
             transferRevision==SafariIsland.locationRevision) return null
         val current=state ?: return null
@@ -470,6 +523,13 @@ object SafariPartySync {
     private fun receive(root: JsonObject,mapping: Map<String,String>) {
         val current=state ?: return
         when(PartySyncProtocol.text(root.get("type"))) {
+            "reconciling" -> if(transport.backup) {
+                val status=transport.roomStatus();entryDiscoveries.welcome(status.generation,status.atomic)
+            }
+            "bootstrap-facts" -> if(transport.backup) {
+                val payload=root.get("payload")?.takeIf {it.isJsonObject}?.asJsonObject ?: return
+                if(current.importBootstrap(payload))SafariTracking.ledger.current?.let(::apply)
+            }
             "sparklings" -> if (transport.roomSparklings) {
                 val payload = PartySyncProtocol.text(root.get("payload"), 64)
                 entryDiscoveries.receive(transport.roomStatus().generation, payload ?: "")
@@ -680,6 +740,7 @@ object SafariPartySync {
     fun reset() {
         entryDiscoveries.reset()
         val current=state;transport.close(true,current?.nextSequence() ?: 0)
+        routing.reset();transport.usePrimary();bootstrapQueue.clear()
         state=null;lobby=null;world=null;began=0;sampleAt=0;helloAt=0;lastHello="";matchingParty=false
         transferRevision=null;ticketed=false;ticketWindowLocked=false
         local.fill(0);local[17]=-1;local[33]=PartySyncProtocol.AGGREGATE_VERSION;localSparkling.fill(0);localNests=0;lastNests=-1;lastSparkling=""

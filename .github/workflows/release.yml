@@ -11,6 +11,24 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  sync-backend:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: backend/cloudflare-sync
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: backend/cloudflare-sync/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npm run check
+      - run: npm test
   build-logic:
     runs-on: ubuntu-24.04
     steps:
@@ -52,7 +70,7 @@ jobs:
           path: versions/${{ matrix.minecraft }}/build/libs/sparkling-mutuals-*+mc${{ matrix.minecraft }}.jar
           if-no-files-found: error
   verify:
-    needs: [build-logic, target]
+    needs: [sync-backend, build-logic, target]
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6

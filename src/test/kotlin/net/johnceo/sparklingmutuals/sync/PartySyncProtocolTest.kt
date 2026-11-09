@@ -8,8 +8,9 @@ import org.junit.jupiter.api.Test
 
 class PartySyncProtocolTest {
     @Test fun `Hypixel mini lobby IDs match SafariUtils room IDs`() {
-        assertEquals("m147AH", PartySyncProtocol.canonicalLobby("mini147AH"))
-        assertEquals("m147AH", PartySyncProtocol.canonicalLobby("m147AH"))
+        assertEquals("m147ah", PartySyncProtocol.canonicalLobby("mini147AH"))
+        assertEquals("m147ah", PartySyncProtocol.canonicalLobby("m147AH"))
+        assertEquals("m147ah", PartySyncProtocol.canonicalLobby("MINI147ah"))
         assertEquals("mini-test", PartySyncProtocol.canonicalLobby("mini-test"))
         assertNull(PartySyncProtocol.canonicalLobby("mini147AH\n"))
     }

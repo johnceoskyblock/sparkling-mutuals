@@ -125,9 +125,11 @@ object HotspotAssignmentAlert {
         }
         assignments.finalPlan?.let(backend::finalized)
         if(leader && members.expected>1 && !published && client.connection!=null) assignments.finalPlan?.let { plan ->
-            PartyManager.sendPartyChat(client, "${HotspotProtocol.assignmentMessage(plan,members.names)}")
-            published=true
-            lastInstructionAt=now
+            if(PartyManager.sendPartyChat(client, "${HotspotProtocol.assignmentMessage(plan,members.names)}")) {
+                plan.forEach(backend::instructionSubmitted)
+                published=true
+                lastInstructionAt=now
+            }
         }
         instructions.addAll(assignments.notifications(leader,player.name.string))
         if(!leader) instructions.clear()
@@ -137,8 +139,10 @@ object HotspotAssignmentAlert {
             if(id!=null) {
                 val display=client.connection!!.onlinePlayers.firstOrNull { it.profile.id.toString()==id }?.profile?.name
                     ?: SafariPartyInput.nameOf(id) ?: name
-                PartyManager.sendPartyChat(client, "$display you are assigned ${biome.label} biome!")
-                lastInstructionAt=now
+                if(PartyManager.sendPartyChat(client, "$display you are assigned ${biome.label} biome!")) {
+                    backend.instructionSubmitted(name,biome)
+                    lastInstructionAt=now
+                }
             }
         }
     }
