@@ -32,4 +32,9 @@ class PartySyncBootstrapTest {
         assertTrue(s.wasInstructed(a,SafariBiome.FOREST));assertFalse(s.wasInstructed(a,SafariBiome.CAVERN))
         s.transitionAuthority("backup","generation");assertTrue(s.wasInstructed(a,SafariBiome.FOREST))
     }
+    @Test fun `confirmed membership expansion invalidates fairness from the old party`() {
+        val s=PartySyncState(a,setOf(a,b));assertTrue(s.hotspots(snapshot("primary")));assertNotNull(s.primaryFairness)
+        s.expand(setOf(a,b,"3".repeat(32)));assertNull(s.primaryFairness)
+        assertEquals(SafariBiome.FOREST,s.locks[a])
+    }
 }

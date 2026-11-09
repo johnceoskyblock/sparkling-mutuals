@@ -5,7 +5,7 @@ const a='1'.repeat(32),b='2'.repeat(32);
 afterEach(()=>reset());
 async function auth(id:string){const r=await SELF.fetch('https://backup.test/v1/auth/uuid/session',{method:'POST',body:JSON.stringify({uuid:id})});expect(r.status).toBe(200);return (await r.json() as any).token;}
 async function routing(id:string,token:string,unusableMs=30000){const r=await SELF.fetch('https://backup.test/v1/route',{method:'POST',headers:{Authorization:`Bearer ${token}`},body:JSON.stringify({version:1,lobby:'m123',self:id,roster:[a,b],nonce:id,action:'check',unusableMs})});expect(r.status).toBe(200);return r.json() as Promise<any>;}
-async function socket(id:string,token:string,gen:string){const r=await SELF.fetch('https://backup.test/v1/sync',{headers:{Upgrade:'websocket',Authorization:`Bearer ${token}`,'X-SafariUtils-Lobby':'m123','X-SafariUtils-Player':id,'X-SafariUtils-Roster':[a,b].join(','),'X-SM-Generation':gen,'X-SM-Visit':id}});expect(r.status).toBe(101);const ws=r.webSocket!;ws.accept();const frames:any[]=[];ws.addEventListener('message',e=>{frames.push(JSON.parse(e.data as string));});return {ws,frames};}
+async function socket(id:string,token:string,gen:string,roster=[a,b]){const r=await SELF.fetch('https://backup.test/v1/sync',{headers:{Upgrade:'websocket',Authorization:`Bearer ${token}`,'X-SafariUtils-Lobby':'m123','X-SafariUtils-Player':id,'X-SafariUtils-Roster':roster.join(','),'X-SM-Generation':gen,'X-SM-Visit':id}});expect(r.status).toBe(101);const ws=r.webSocket!;ws.accept();const frames:any[]=[];ws.addEventListener('message',e=>{frames.push(JSON.parse(e.data as string));});return {ws,frames};}
 async function flush(){await new Promise(resolve=>setTimeout(resolve,30));}
 it('real HTTP auth rejects foreign claims and isolates origin-scoped tokens',async()=>{
  expect((await SELF.fetch('https://backup.test/v1/route',{method:'POST',body:'{}'})).status).toBe(401);
@@ -40,6 +40,19 @@ it('a delayed old nonce leave does not retire the replacement allocator member',
  const response=await SELF.fetch('https://backup.test/v1/route',{method:'POST',headers:{Authorization:`Bearer ${token}`},body:JSON.stringify({version:1,lobby:'m123',self:a,roster:[a,b],nonce:'oldnonceoldnonce1',action:'leave',unusableMs:0})});expect(response.status).toBe(200);
  const ns=(env as unknown as Env).COORDINATOR,stub=ns.get(ns.idFromName('coordinator-v1'));
  const left=await runInDurableObject(stub,(_instance:any,state)=>JSON.parse(state.storage.sql.exec<{allocation:string}>('SELECT allocation FROM rooms WHERE id=?',r.generation).one().allocation).members[a].left);expect(left).toBe(false);x.ws.close();
+});
+it('roster expansion retains caught negatives and requires incumbents to reconcile again',async()=>{
+ const c='3'.repeat(32),ta=await auth(a),tb=await auth(b);await routing(a,ta,0);await routing(b,tb,0);const r=await routing(a,ta);
+ const x=await socket(a,ta,r.generation),y=await socket(b,tb,r.generation);
+ for(const s of [x,y]){s.ws.send(JSON.stringify({sequence:1,kind:'F',payload:'{"version":1,"action":"begin"}'}));s.ws.send(JSON.stringify({sequence:2,kind:'F',payload:'{"version":1,"action":"done"}'}));}
+ x.ws.send(JSON.stringify({sequence:3,kind:'S',payload:'1,0,1,0'}));await flush();
+ const expanded=await SELF.fetch('https://backup.test/v1/route',{method:'POST',headers:{Authorization:`Bearer ${tb}`},body:JSON.stringify({version:1,lobby:'m123',self:b,roster:[a,b,c],nonce:b,action:'check',unusableMs:0,confirmedExpansion:true})});expect(expanded.status).toBe(200);
+ const next=await socket(b,tb,r.generation,[a,b,c]);next.ws.send(JSON.stringify({sequence:4,kind:'F',payload:'{"version":1,"action":"begin"}'}));next.ws.send(JSON.stringify({sequence:5,kind:'F',payload:'{"version":1,"action":"done"}'}));next.ws.send(JSON.stringify({sequence:6,kind:'S',payload:'1,0,0,0'}));await flush();
+ expect(next.frames.some(f=>f.type==='sparklings')).toBe(false);
+ // Even a positive departure by the old witness must not discard an already retained catch.
+ const left=await SELF.fetch('https://backup.test/v1/route',{method:'POST',headers:{Authorization:`Bearer ${ta}`},body:JSON.stringify({version:1,lobby:'m123',self:a,roster:[a,b,c],nonce:a,action:'leave',unusableMs:0})});expect(left.status).toBe(200);await flush();
+ const atoms=next.frames.filter(f=>f.type==='sparklings');expect(atoms.length).toBeGreaterThan(0);expect(atoms.every(f=>f.payload.split(',')[2]==='1')).toBe(true);
+ x.ws.close();y.ws.close();next.ws.close();
 });
 it('real sockets reject roster isolation and release no missing-cohort automatic state after lease expiry',async()=>{
  const ta=await auth(a),tb=await auth(b);await routing(a,ta,0);await routing(b,tb,0);const r=await routing(a,ta);

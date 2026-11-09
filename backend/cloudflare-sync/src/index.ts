@@ -2,7 +2,7 @@ import {DurableObject} from 'cloudflare:workers';
 import {issueToken,verifyToken} from './auth';
 import {Allocation} from './allocator';
 import {RouteRoom,request as routeRequest,route} from './routing';
-import {Attachment,Room,attachment} from './room';
+import {Attachment,Room,attachment,mergeEvidence} from './room';
 import {check,identity,object,text,uuid} from './protocol';
 export interface Env {COORDINATOR:DurableObjectNamespace<Coordinator>;SIGNING_SECRET:string;BACKUP_ENABLED:string}
 const json=(v:unknown,status=200)=>Response.json(v,{status,headers:{'Cache-Control':'no-store'}});
@@ -56,7 +56,13 @@ export class Coordinator extends DurableObject<Env> {
     const raw=await req.text();check(raw,raw.length<=1024);const q=routeRequest(JSON.parse(raw));check(q,q.self===self);
     const rows=this.ctx.storage.sql.exec<{id:string;routing:string;allocation:string}>('SELECT id,routing,allocation FROM rooms WHERE lobby=?',q.lobby).toArray();
     const overlaps=rows.map(row=>({row,r:JSON.parse(row.routing) as RouteRoom})).filter(x=>x.r.roster.some(id=>q.roster.includes(id))&&now-x.r.renewed<600000);
-    check(q,overlaps.length<=1);const old=overlaps[0];const result=route(old?.r,q,now);
+    check(q,overlaps.length<=1);const old=overlaps[0],previousRoster=old?.r.roster.join();const result=route(old?.r,q,now);
+    if(old&&previousRoster!==result.room.roster.join()&&old.r.generation===result.generation){
+     // A bounded routing-epoch bridge, not inventory/history: survive closing old-roster sockets.
+     const carry=result.room.carry??{caught:[0,0],evidence:[]};
+     for(const ws of this.sockets(result.generation)){const s=ws.deserializeAttachment() as Attachment;for(let i=0;i<2;i++)carry.caught[i]|=s.union[i+2];for(const e of s.evidence)mergeEvidence(carry.evidence,e);}
+     result.room.carry=carry;
+    }
     const priorWins=this.ctx.storage.sql.exec<{counts:string}>('SELECT counts FROM backup_fairness WHERE roster=? AND updated>?',result.room.roster.join(','),now-30*86400000).toArray()[0];
     let a=old&&old.r.generation===result.generation?Allocation.restore(JSON.parse(old.row.allocation)):new Allocation(result.room.roster,priorWins?JSON.parse(priorWins.counts):{});
     if(old&&old.r.generation!==result.generation)this.ctx.storage.sql.exec('DELETE FROM rooms WHERE id=?',old.r.generation);
@@ -81,7 +87,7 @@ export class Coordinator extends DurableObject<Env> {
     const pair=new WebSocketPair(),client=pair[0],server=pair[1];this.ctx.acceptWebSocket(server);
     const s=attachment(gen,self,nonce,i.roster,now);s.union=inheritedUnion;s.evidence=structuredClone(inheritedEvidence);server.serializeAttachment(s);
     server.send(JSON.stringify({type:'welcome',self,roster:i.roster,features:['hotspots-v1','biome-reports-v1','room-sparklings-v1','failover-bootstrap-v1']}));
-    const room=this.room(gen)!;this.deliver(room,[{type:'reconciling'}]);for(const frame of room.replay(s))server.send(JSON.stringify(frame));
+    const room=this.room(gen)!;this.persist(room);this.deliver(room,[{type:'reconciling'}]);for(const frame of room.replay(s))server.send(JSON.stringify(frame));
     await this.schedule();return new Response(null,{status:101,webSocket:client});
    }
    return json({error:'not found'},404);

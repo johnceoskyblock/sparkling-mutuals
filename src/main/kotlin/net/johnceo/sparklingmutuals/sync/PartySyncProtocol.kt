@@ -97,7 +97,7 @@ internal class PartySyncState(val self: String, roster: Set<String>) {
     fun wasInstructed(player: String,biome: SafariBiome)=instructed[player]==biome
     fun instructedTargets()=instructed.toMap()
     var roster=roster; private set
-    fun expand(next: Set<String>) { require(next.size<=4 && next.containsAll(roster));roster=next }
+    fun expand(next: Set<String>) { require(next.size<=4 && next.containsAll(roster));if(next!=roster)primaryFairness=null;roster=next }
     var sequence = 0L; private set
     fun nextSequence() = (++sequence).also { check(it <= PartySyncProtocol.MAX_SEQUENCE) }
     private val received = mutableMapOf<String,LinkedHashSet<Long>>()

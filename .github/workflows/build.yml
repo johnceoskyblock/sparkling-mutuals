@@ -8,6 +8,23 @@ permissions:
   contents: read
 
 jobs:
+  sync-backend:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: backend/cloudflare-sync
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: backend/cloudflare-sync/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npm run check
+      - run: npm test
   build-logic:
     runs-on: ubuntu-24.04
     steps:
@@ -73,7 +90,7 @@ jobs:
       - run: ./gradlew verifyDistributions -PdistributionDir=incoming
   build:
     if: always()
-    needs: [build-logic, target, verify-all-targets]
+    needs: [sync-backend, build-logic, target, verify-all-targets]
     runs-on: ubuntu-24.04
     steps:
       - name: Require every applicable build and verification job to pass
@@ -81,7 +98,9 @@ jobs:
           BUILD_LOGIC_RESULT: ${{ needs.build-logic.result }}
           TARGET_RESULT: ${{ needs.target.result }}
           DISTRIBUTION_RESULT: ${{ needs.verify-all-targets.result }}
+          SYNC_BACKEND_RESULT: ${{ needs.sync-backend.result }}
         run: |
           test "$BUILD_LOGIC_RESULT" = success
           test "$TARGET_RESULT" = success
           test "$DISTRIBUTION_RESULT" = success
+          test "$SYNC_BACKEND_RESULT" = success

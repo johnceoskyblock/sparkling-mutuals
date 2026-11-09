@@ -6,7 +6,7 @@ Independent UUID-claim authentication, hibernating WebSocket rooms, monotonic vi
 
 Use Node 24 or later. `npm ci`, `npm test`, `npm run check`. Tests run in Cloudflare's real local Workers/Durable Object runtime, including HTTP auth, WebSocket admission and hibernation recovery. No Cloudflare account is needed locally.
 
-The single `COORDINATOR` SQLite object holds at most 128 retained logical rooms, each with an exact 2–4 player roster. Routes expire after ten minutes without a renewed participant registration; missing cohort participants do not thereby authorize automatic actions. Objective snapshots remain on bounded socket attachments; there is no permanent gameplay-history store. SQLite retains bounded routing, locks, acknowledgments, fairness and admission counters. No raw IP address, token or payload logging.
+The single `COORDINATOR` SQLite object holds at most 128 retained logical rooms, each with an exact 2–4 player roster. Routes expire after ten minutes without a renewed participant registration; missing cohort participants do not thereby authorize automatic actions. Objective snapshots remain on bounded socket attachments; there is no permanent gameplay-history store. SQLite retains bounded routing, locks, acknowledgments, fairness and admission counters. During a confirmed roster revision only, the routing record temporarily bridges caught negatives and up to eight irreversible evidence records while old sockets close. It carries no inventory or positive sightings and is removed after current attachments inherit it and incumbents reconcile or positively depart. No raw IP address, token or payload logging.
 
 ## Deployment (Free account only)
 

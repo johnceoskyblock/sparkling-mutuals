@@ -9,6 +9,11 @@ export interface Attachment {
  bootstrap:{stage:'none'|'open'|'done';frames:number;conflict:boolean;facts:Evidence[];locks:Record<string,Biome>;instructed:Record<string,Biome>;fairness:Fairness|null};
 }
 export const FACT_INDICES=[23,24,25,26,27,28,29,30,31,32,34,35,36,37];
+export function mergeEvidence(target:Evidence[],e:Evidence){
+ const old=target.find(v=>v.reporter===e.reporter&&v.source===e.source);
+ if(old){old.nests|=e.nests;FACT_INDICES.forEach(i=>old.facts[i]=i===24?Math.max(old.facts[i],e.facts[i]):old.facts[i]|e.facts[i]);old.caught=old.caught.map((v,i)=>v|e.caught[i]);}
+ else target.push(structuredClone(e));check(target,target.length<=8);
+}
 export function attachment(room:string,self:string,nonce:string,roster:string[],now:number):Attachment{
  return {room,self,nonce,roster,expires:now+600000,rate:[],sequence:0,snapshots:{},union:[0,0,0,0],evidence:[],bootstrap:{stage:'none',frames:0,conflict:false,facts:[],locks:{},instructed:{},fairness:null}};
 }
@@ -22,9 +27,12 @@ export function evidence(input:unknown,roster:string[]):Evidence{
  return {reporter,source:source as string,nests,facts:[...facts],caught};
 }
 export class Room {
- constructor(public route:RouteRoom,public allocation:Allocation,public sessions:Attachment[]){}
- get ready(){return reconciled(this.route)&&Object.values(this.route.members).every(m=>m.retired||m.completed)&&this.sessions.every(s=>this.route.members[s.self]?.retired||s.bootstrap.stage==='done')&&!this.allocation.conflict;}
- union(){const result=[0,0,0,0];for(const s of this.sessions)for(let i=0;i<4;i++)result[i]|=s.union[i];return result;}
+ constructor(public route:RouteRoom,public allocation:Allocation,public sessions:Attachment[]){
+  if(route.carry){this.mergeUnion([0,0,...route.carry.caught]);for(const s of sessions)for(const e of route.carry.evidence)mergeEvidence(s.evidence,e);}
+ }
+ private get bootstrapped(){return reconciled(this.route)&&Object.values(this.route.members).every(m=>m.retired||m.completed)&&this.sessions.every(s=>this.route.members[s.self]?.retired||s.bootstrap.stage==='done');}
+ get ready(){return this.bootstrapped&&!this.allocation.conflict;}
+ union(){const result=this.route.carry?[0,0,...this.route.carry.caught]:[0,0,0,0];for(const s of this.sessions)for(let i=0;i<4;i++)result[i]|=s.union[i];return result;}
  private mergeUnion(values:number[]){for(const s of this.sessions)for(let i=0;i<4;i++)s.union[i]|=values[i];}
  receive(s:Attachment,raw:string,now:number):{broadcast:unknown[];private:unknown[];leave:boolean}{
   check(raw,new TextEncoder().encode(raw).length<=4096&&now<s.expires);s.rate=s.rate.filter(t=>now-t<10000);check(raw,s.rate.length<40);s.rate.push(now);
@@ -45,7 +53,7 @@ export class Room {
      this.allocation.conflict||=s.bootstrap.conflict;
      if(s.bootstrap.fairness)this.allocation.seed(s.bootstrap.fairness);
      s.bootstrap.stage='done';const member=this.route.members[s.self];check(member,!!member&&member.nonce===s.nonce&&!member.retired);member.completed=true;
-     for(const e of s.bootstrap.facts){this.mergeUnion([0,0,...e.caught]);for(const other of this.sessions){const old=other.evidence.find(v=>v.reporter===e.reporter&&v.source===e.source);if(old){old.nests|=e.nests;FACT_INDICES.forEach(i=>old.facts[i]=i===24?Math.max(old.facts[i],e.facts[i]):old.facts[i]|e.facts[i]);old.caught=old.caught.map((v,i)=>v|e.caught[i]);}else other.evidence.push(structuredClone(e));check(other,other.evidence.length<=8);}broadcast.push({type:'bootstrap-facts',payload:e});}
+     for(const e of s.bootstrap.facts){this.mergeUnion([0,0,...e.caught]);for(const other of this.sessions)mergeEvidence(other.evidence,e);broadcast.push({type:'bootstrap-facts',payload:e});}
     }else check(action,false);
    }
   } else {
@@ -66,6 +74,8 @@ export class Room {
     if(!v.catchUpOnly&&(kind!=='S'||this.ready))broadcast.push({type:'state',sender:s.self,sequence,kind,payload});
    }
   }
+  // The bounded roster-revision bridge is retired after current attachments carry its evidence.
+  if(this.route.carry&&this.bootstrapped&&this.sessions.length)delete this.route.carry;
   this.allocation.allocate(now,this.ready);
   // Atomic room union always precedes S relay and may only exist after the fixed cohort reconciles.
   if(this.ready)broadcast.unshift({type:'sparklings',payload:this.union().join(',')});

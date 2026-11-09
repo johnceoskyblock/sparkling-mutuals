@@ -43,7 +43,7 @@ Migration preserves local observations, sequence numbers, irreversible received 
 
 The client shows a brief notice on a real provider switch and reports primary/backup state in the existing developer status. There is no mid-visit competing allocator if backup also fails. Reused server IDs with ambiguous/new player visit nonces fail closed instead of importing old gameplay. Different rosters cannot exchange objectives. Unmodified SafariUtils/older Mutuals cannot follow this backup, and seamless mixed-mod outage behavior is not promised.
 
-The separately hosted service, local runtime tests, deployment/kill-switch instructions and Free-plan usage worksheet are in `backend/cloudflare-sync/README.md`. UUID claims are not proof of Minecraft ownership. Tokens are origin-scoped; no service signing/deployment secret belongs in the mod. Account setup/real deployed TLS smoke and live Hypixel testing must be recorded separately from local tests. The initial requested test artifact targets Minecraft 26.1.2 only.
+The separately hosted service, local runtime tests, deployment/kill-switch instructions and Free-plan usage worksheet are in `backend/cloudflare-sync/README.md`. UUID claims are not proof of Minecraft ownership. Tokens are origin-scoped; no service signing/deployment secret belongs in the mod. The hosted endpoint passed authenticated TLS/WebSocket and reconciliation/allocator smoke checks. Live Hypixel outage/gameplay testing remains separate and pending. The v4.2.2 release builds this integration for Minecraft 26.1.2, 26.2 and 26.3; the earlier private test artifact was 26.1.2 only. GitHub build/release checks also test the backend in Cloudflare's local runtime; those checks do not redeploy the hosted service.
 
 ## Testing with SafariUtils
 
