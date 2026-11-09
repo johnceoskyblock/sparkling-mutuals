@@ -13,6 +13,7 @@ from unittest.mock import patch
 
 REPOSITORY = 'johnceoskyblock/sparkling-mutuals'
 SECRET = 'a' * 64
+READ_TOKEN = 'ghs_' + 'b' * 36
 STAMP = '1700000000'
 WORKFLOW = Path(__file__).resolve().parents[1] / '.github/workflows/discord-notify.yml'
 
@@ -51,7 +52,8 @@ class SenderTest(unittest.TestCase):
         output = io.StringIO(); code = 0
         environment = {'GITHUB_EVENT_PATH': event_file, 'GITHUB_EVENT_NAME': 'workflow_run',
             'GITHUB_REPOSITORY': REPOSITORY, 'GITHUB_REF': 'refs/heads/master',
-            'SM_NOTIFICATION_URL': 'https://example.test/notifications', 'SM_NOTIFICATION_SECRET': SECRET}
+            'SM_NOTIFICATION_URL': 'https://example.test/notifications', 'SM_NOTIFICATION_SECRET': SECRET,
+            'SM_GITHUB_READ_TOKEN': READ_TOKEN}
         environment.update(extra_env or {})
         try:
             with patch.dict(os.environ, environment), patch('time.time', return_value=int(STAMP)), \
@@ -64,6 +66,7 @@ class SenderTest(unittest.TestCase):
         finally:
             os.unlink(event_file)
         self.assertNotIn(SECRET, output.getvalue())
+        self.assertNotIn(READ_TOKEN, output.getvalue())
         return code, requests, handlers, output.getvalue()
 
     def test_master_push_sends_exact_signed_payload_without_redirects(self):
@@ -71,12 +74,13 @@ class SenderTest(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertEqual(len(requests), 1)
         request, timeout = requests[0]
-        body = b'{"repository":"johnceoskyblock/sparkling-mutuals","kind":"action","runId":"42"}'
+        body = json.dumps({'repository': REPOSITORY, 'kind': 'action', 'runId': '42', 'githubReadToken': READ_TOKEN}, separators=(',', ':')).encode()
         self.assertEqual(request.data, body)
         self.assertEqual(request.get_method(), 'POST')
         self.assertEqual(request.full_url, 'https://example.test/notifications')
         headers = {key.lower(): value for key, value in request.header_items()}
         self.assertEqual(headers['x-sm-timestamp'], STAMP)
+        self.assertEqual(headers['user-agent'], 'Sparkling-Mutuals-Notifications')
         self.assertEqual(headers['x-sm-signature'], 'sha256=' + hmac.new(SECRET.encode(), STAMP.encode() + b'.' + body, hashlib.sha256).hexdigest())
         self.assertEqual(timeout, 45)
         self.assertTrue(any(handler.redirect_request(request, None, 302, '', {}, 'https://other.test') is None for handler in handlers))
@@ -104,6 +108,14 @@ class SenderTest(unittest.TestCase):
             self.assertNotEqual(code, 0); self.assertEqual(requests, [])
         code, _, _, output = self.execute(network_error=RuntimeError('private upstream detail ' + SECRET))
         self.assertNotEqual(code, 0); self.assertNotIn('private upstream detail', output)
+
+    def test_sender_requires_temporary_read_token_and_only_read_permissions(self):
+        for token in ['', 'not-an-actions-token']:
+            code, requests, _, _ = self.execute(extra_env={'SM_GITHUB_READ_TOKEN': token})
+            self.assertNotEqual(code, 0); self.assertEqual(requests, [])
+        text = WORKFLOW.read_text(encoding='utf-8')
+        self.assertIn('  actions: read', text)
+        self.assertIn('SM_GITHUB_READ_TOKEN: ${{ github.token }}', text)
 
 
 if __name__ == '__main__':
