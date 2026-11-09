@@ -36,6 +36,12 @@ describe('routing generations',()=>{
   expect(()=>route(expanded.room,req(),2)).toThrow();
   expect(()=>route(old,req(c,'cccccccccccccccc',{roster:[b,c]}),2)).toThrow();
  });
+ it('allows an existing client to confirm a physically present unmodified new roster member',()=>{
+  const old=route(undefined,req(),0).room;
+  expect(()=>route(structuredClone(old),req(a,undefined,{roster:[a,b,c]}),1)).toThrow();
+  const next=route(old,{...req(a,undefined,{roster:[a,b,c]}),confirmedExpansion:true},1);
+  expect(next.admitted).toBe(true);expect(next.room.generation).toBe(old.generation);expect(next.room.roster).toEqual([a,b,c]);
+ });
  it('old leave cannot retire a replacement generation',()=>{
   let r=route(undefined,req(),0);r=route(r.room,req(a,undefined,{action:'leave'}),1);
   r=route(r.room,req(a,'cccccccccccccccc'),2);const gen=r.room.generation;

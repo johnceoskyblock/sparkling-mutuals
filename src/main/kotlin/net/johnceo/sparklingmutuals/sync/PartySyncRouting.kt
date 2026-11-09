@@ -35,8 +35,8 @@ internal class PartySyncRoutePolicy(val nonce: String) {
 /** Only route identity/provider status is sent while primary works; callbacks never touch game state. */
 internal class PartySyncRouting(private val origin: URI?=configuredOrigin()) {
     companion object {
-        // Set to the verified workers.dev origin only after the authenticated deployed smoke test.
-        private const val DEPLOYED_ORIGIN=""
+        // Authenticated TLS/WebSocket and reconciliation smoke verified on the deployed Free service.
+        private const val DEPLOYED_ORIGIN="https://sm-safari-sync-backup.ethan-desnousse.workers.dev"
         fun configuredOrigin(): URI? = (System.getProperty("sparklingmutuals.sync.backupOrigin") ?: DEPLOYED_ORIGIN)
             .takeIf { it.isNotBlank() }?.let { runCatching { URI.create(it) }.getOrNull() }
             ?.takeIf { it.scheme=="https" && it.host!=null && it.userInfo==null && it.rawQuery==null && it.fragment==null && it.path.orEmpty() in setOf("","/") }
@@ -91,6 +91,8 @@ internal class PartySyncRouting(private val origin: URI?=configuredOrigin()) {
             addProperty("version",1);addProperty("lobby",next.lobby);addProperty("self",next.self)
             add("roster",JsonArray().apply {next.roster.forEach(::add)});addProperty("nonce",policy.nonce)
             addProperty("unusableMs",unusable);addProperty("action",action)
+            // SafariPartySync only expands this frozen roster after new members are positively present.
+            addProperty("confirmedExpansion",true)
         }.toString()
         val auth=if(tokenOwner==next.self && token.isNotBlank() && System.currentTimeMillis()<tokenUntil-120_000)
             CompletableFuture.completedFuture(token)
@@ -112,7 +114,13 @@ internal class PartySyncRouting(private val origin: URI?=configuredOrigin()) {
                 require(r.body().length<=2048);JsonParser.parseString(r.body()).asJsonObject
             }
     }
-    private fun retry(response: HttpResponse<*>): Long = maxOf(30_000,response.headers().firstValue("Retry-After").orElse("").toLongOrNull()?.coerceIn(0,3600)?.times(1000) ?: 0)
+    private fun retry(response: HttpResponse<*>): Long {
+        val value=response.headers().firstValue("Retry-After").orElse("")
+        val delay=value.toLongOrNull()?.coerceIn(0,3600)?.times(1000) ?: runCatching {
+            (java.time.ZonedDateTime.parse(value,java.time.format.DateTimeFormatter.RFC_1123_DATE_TIME).toInstant().toEpochMilli()-System.currentTimeMillis()).coerceIn(0,3_600_000)
+        }.getOrDefault(0)
+        return maxOf(30_000,delay)
+    }
     fun reset() {
         context?.let { if(origin!=null)request(it,"leave",0).exceptionally { null } }
         revision++;context=null;results.clear();busy=false;nextAt=0

@@ -36,7 +36,7 @@ class PartySyncRoutingHttpTest {
             val routing=PartySyncRouting(URI.create("http://127.0.0.1:${server.address.port}"))
             val before=System.nanoTime();assertFalse(routing.tick(context,0,true,true));assertTrue(System.nanoTime()-before<TimeUnit.SECONDS.toNanos(1))
             await { routing.tick(context,1,true,true);routing.provider=="backup" }
-            val body=requests.first();assertEquals(setOf("version","lobby","self","roster","nonce","unusableMs","action"),body.keySet())
+            val body=requests.first();assertEquals(setOf("version","lobby","self","roster","nonce","unusableMs","action","confirmedExpansion"),body.keySet())
             assertEquals(0,body.get("unusableMs").asInt);assertEquals("generation",routing.generation)
             routing.reset();assertEquals("primary",routing.provider)
         } finally {server.stop(0)}
