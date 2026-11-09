@@ -63,6 +63,7 @@ enum class SafariHud(private val defaultLabel: String, val layout: HudLayout) {
     RUN_COMPLETE("Run completion alert", HudLayout(.35f, .42f, 1.5f)),
     WARP("Warping Now", HudLayout(.37f, .34f, 1.5f)),
     DOOM_THROW("Doomspiral throw timer", HudLayout(.40f, .56f, 1.5f)),
+    ENTRY_COOLDOWN("Safari entry cooldown", HudLayout(.40f, .65f)),
     DEVELOPER("Safari developer", HudLayout(.34f, .24f));
     val label get() = if (this == MISSING && net.johnceo.sparklingmutuals.config.ConfigManager.sparklingMode)
         "Unchecked critters" else defaultLabel

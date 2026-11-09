@@ -80,6 +80,7 @@ object SparklingMutuals : ModInitializer {
     }
 
     private fun registerFeatures() {
+        net.johnceo.sparklingmutuals.safari.SafariEntryCooldown.register()
         PartyManager.init()
         HideyhoQuest.register()
         HideyhoSpotter.register()
@@ -116,6 +117,7 @@ object SparklingMutuals : ModInitializer {
             if (DoomspiralLottery.active) return@attachElementBefore
             ContestHud.render(graphics, deltaTracker)
             SafariAssist.render(graphics)
+            net.johnceo.sparklingmutuals.safari.SafariEntryCooldown.render(graphics)
             SafariTracking.render(graphics)
             net.johnceo.sparklingmutuals.debug.SafariDeveloper.render(graphics, Minecraft.getInstance())
             net.johnceo.sparklingmutuals.hud.HotspotAssignmentAlert.render(graphics)
@@ -129,6 +131,7 @@ object SparklingMutuals : ModInitializer {
     }
 
     private fun onClientTick(client: Minecraft) {
+        net.johnceo.sparklingmutuals.safari.SafariEntryCooldown.tick(client)
         net.johnceo.sparklingmutuals.skyblock.market.ShardSaleGuidance.tick(client)
         net.johnceo.sparklingmutuals.safari.DoomspiralThrowTimer.tick(client)
         net.johnceo.sparklingmutuals.hud.SpecialCatchAlert.tick(client)
@@ -172,6 +175,7 @@ object SparklingMutuals : ModInitializer {
     }
 
     private fun resetSession() {
+        net.johnceo.sparklingmutuals.safari.SafariEntryCooldown.reset()
         net.johnceo.sparklingmutuals.safari.automation.entry.CjsSafariEntry.reset()
         HoneyHives.disconnect()
         net.johnceo.sparklingmutuals.hud.SafariAlertSequence.queue.reset()

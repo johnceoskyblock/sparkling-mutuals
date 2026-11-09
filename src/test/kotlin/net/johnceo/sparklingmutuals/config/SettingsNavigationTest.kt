@@ -4,6 +4,15 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class SettingsNavigationTest {
+    @Test fun `entry cooldown lives in Safari helpers and HUD link exposes its customization`() {
+        val catalog=SettingsCatalog(SafariSettings())
+        val target=HudConfigLinks.target(net.johnceo.sparklingmutuals.hud.SafariHud.ENTRY_COOLDOWN)
+        assertEquals(SettingsTarget("Safari helpers",listOf("entryCooldown","enabled")),target)
+        val row=catalog.locate(target)!!.second.last()
+        assertEquals("Safari → Helpers → Safari entry cooldown",catalog.location(row))
+        assertTrue(catalog.search("Safari entry cooldown").contains(row))
+        assertTrue(catalog.expansionFor(target).contains("Safari helpers / Safari entry cooldown / Appearance"))
+    }
     @Test fun `collapsed HUD header toggle edits the existing setting without changing other HUDs`() {
         val settings=SafariSettings()
         val catalog=SettingsCatalog(settings)

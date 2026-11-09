@@ -13,6 +13,19 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 
 class SafariCustomizationTest {
+    @Test fun `cooldown toggle and appearance edits apply and survive restart`() {
+        ConfigManager.init(dir)
+        ContestConfig.init(dir)
+        val settings=SafariSettings()
+        settings.safari.entryCooldown.enabled=false
+        settings.safari.entryCooldown.appearance.transparency=67
+        settings.apply()
+        assertFalse(ConfigManager.safariEntryCooldown)
+        assertEquals(67,AppearanceConfig.panels.getValue("entry_cooldown").transparency)
+        ConfigManager.init(dir)
+        assertFalse(ConfigManager.safariEntryCooldown)
+        assertEquals(67,AppearanceConfig.panels.getValue("entry_cooldown").transparency)
+    }
     @TempDir lateinit var dir: Path
     @Test fun `dark theme upgrades old panel defaults while preserving custom colors and opacity`() {
         val saved = Properties().apply {

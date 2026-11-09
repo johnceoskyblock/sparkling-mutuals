@@ -23,6 +23,7 @@ object HudConfigLinks {
     fun target(hud: net.johnceo.sparklingmutuals.hud.SafariHud): SettingsTarget {
         val huds="HUDs";val safari="Safari helpers";val banner="Banner"
         return when(hud) {
+            net.johnceo.sparklingmutuals.hud.SafariHud.ENTRY_COOLDOWN -> SettingsTarget(safari,listOf("entryCooldown","enabled"))
             net.johnceo.sparklingmutuals.hud.SafariHud.DEVELOPER -> SettingsTarget(huds, emptyList())
             net.johnceo.sparklingmutuals.hud.SafariHud.PROGRESS -> SettingsTarget(huds,listOf("progressHud","enabled"))
             net.johnceo.sparklingmutuals.hud.SafariHud.MISSING -> SettingsTarget(huds,listOf("missingHud","enabled"))
