@@ -20,7 +20,7 @@ data class HudRow(val label: String = "", val value: String? = null, val color: 
         val GOLD = 0xFF000000.toInt() or SafariTheme.ACCENT
     }
 }
-class HudPanel(val title: String, val titleColor: Int = HudRow.GOLD, val rows: List<HudRow>,
+open class HudPanel(val title: String, val titleColor: Int = HudRow.GOLD, val rows: List<HudRow>,
     val titleIcon: UiIcons.Kind? = UiIcons.forLabel(title),private val widthOverride: Int?=null,private val heightOverride: Int?=null) {
     fun width(measure: (String) -> Int): Int {
         widthOverride?.let { return it }
@@ -31,7 +31,7 @@ class HudPanel(val title: String, val titleColor: Int = HudRow.GOLD, val rows: L
             (if (rows.any { it.fraction != null }) 40 else 0)) + 12
     }
     val height get() = heightOverride ?: (12 + 11 * (1 + rows.size))
-    fun draw(graphics: GuiGraphicsExtractor, x: Int, y: Int, scale: Float = 1f,
+    open fun draw(graphics: GuiGraphicsExtractor, x: Int, y: Int, scale: Float = 1f,
         style: PanelStyle = AppearanceConfig.panels.getValue("captures"), borderOverride: Int? = null) {
         val font = Minecraft.getInstance().font
         val w = width(font::width)
