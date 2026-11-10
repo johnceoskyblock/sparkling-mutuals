@@ -12,14 +12,13 @@ object HotspotHud {
     fun panel(preview: Boolean=false): HudPanel {
         val client=Minecraft.getInstance()
         val width=SafariPanels.objectivesPreview().width(client.font::width)
-        val entries=if(preview) listOf(SafariPartySync.HotspotRow("Player",SafariBiome.FOREST,SafariBiome.ICY,2))
+        val entries=if(preview) listOf(
+            SafariPartySync.HotspotRow("Bluaza",SafariBiome.ICY,SafariBiome.HAUNTED,2),
+            SafariPartySync.HotspotRow("JohnCEO",SafariBiome.CAVERN,SafariBiome.CAVERN,2),
+            SafariPartySync.HotspotRow("Pyruuuu",SafariBiome.FOREST,SafariBiome.FOREST,1),
+            SafariPartySync.HotspotRow("Dangerdogs1234",SafariBiome.HAUNTED,SafariBiome.ICY,1))
             else if(SafariPartySync.backendCoordination) SafariPartySync.hotspotRows() else HotspotAssignmentAlert.rows()
-        fun fit(text: String)=client.font.plainSubstrByWidth(text,(width-12).coerceAtLeast(1))
-        val rows=entries.flatMap { row -> listOf(HudRow(fit("${row.name} · Wins: ${row.wins}"),icon=null),
-            HudRow(fit("Hotspot: ${row.actual?.label ?: "Pending"}"),icon=null),
-            HudRow(fit("Assigned: ${row.assigned?.label ?: "Pending"}"),icon=null)) }
-            .ifEmpty { listOf(HudRow("Waiting for party…",icon=null)) }
-        return HudPanel("Hotspots",rows=rows,titleIcon=null,widthOverride=width)
+        return HotspotGridPanel(entries,net.johnceo.sparklingmutuals.alerts.WarpListRanks.colors(client),width)
     }
     fun render(g: GuiGraphicsExtractor) {
         val client=Minecraft.getInstance()
