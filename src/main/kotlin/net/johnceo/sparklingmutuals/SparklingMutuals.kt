@@ -117,6 +117,7 @@ object SparklingMutuals : ModInitializer {
             if (DoomspiralLottery.active) return@attachElementBefore
             ContestHud.render(graphics, deltaTracker)
             SafariAssist.render(graphics)
+            net.johnceo.sparklingmutuals.hud.HotspotHud.render(graphics)
             net.johnceo.sparklingmutuals.safari.SafariEntryCooldown.render(graphics)
             SafariTracking.render(graphics)
             net.johnceo.sparklingmutuals.debug.SafariDeveloper.render(graphics, Minecraft.getInstance())
@@ -131,6 +132,7 @@ object SparklingMutuals : ModInitializer {
     }
 
     private fun onClientTick(client: Minecraft) {
+        net.johnceo.sparklingmutuals.alerts.AutomatedCommands.tick(client)
         net.johnceo.sparklingmutuals.safari.SafariEntryCooldown.tick(client)
         net.johnceo.sparklingmutuals.skyblock.market.ShardSaleGuidance.tick(client)
         net.johnceo.sparklingmutuals.safari.DoomspiralThrowTimer.tick(client)
@@ -175,6 +177,7 @@ object SparklingMutuals : ModInitializer {
     }
 
     private fun resetSession() {
+        net.johnceo.sparklingmutuals.alerts.AutomatedCommands.reset()
         net.johnceo.sparklingmutuals.safari.SafariEntryCooldown.reset()
         net.johnceo.sparklingmutuals.safari.automation.entry.CjsSafariEntry.reset()
         HoneyHives.disconnect()

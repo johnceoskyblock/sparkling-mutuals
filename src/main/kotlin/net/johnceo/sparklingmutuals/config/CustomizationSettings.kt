@@ -139,6 +139,7 @@ open class AppearanceSettingsGroup {
 }
 
 class TrackingAppearanceSettings(private val selection: () -> String) : AppearanceSettingsGroup() {
+    @JvmField @ConfigOption(name="Hotspot GUI",desc="") @Accordion val hotspot=panel("hotspot")
     private fun panel(id: String) = PanelAppearanceSettings(AppearanceConfig.panels.getValue(id), selection)
     @JvmField @ConfigOption(name = "Doomspiral throw timer HUD", desc = "") @Accordion val doomThrow = panel("doom_throw")
     @JvmField @ConfigOption(name = "Progress HUD", desc = "") @Accordion val progress = panel("progress")

@@ -53,8 +53,7 @@ object AlertManager {
         val deadline = SparkleWarpPolicy.warpDeadline(run.startedAt, getDelay())
         if (System.currentTimeMillis() >= deadline) return
         if (!PartyManager.hasInfo) { PartyManager.requestPartyInfo(); return }
-        if (SparkleWarping.contestPaused(client) ||
-            !SparkleWarpPolicy.canStart(SparkleWarping.canLead(client), PartyManager.getMembers().size)) return
+        if (!SparkleWarpPolicy.canStart(SparkleWarping.canLead(client), PartyManager.getMembers().size)) return
         cancelPendingAlert()
         armedRun = run
         val scheduledGeneration = expiry.arm(run)
@@ -70,7 +69,7 @@ object AlertManager {
                 if (expiry.consume(scheduledGeneration, active, current)) {
                     pendingAlert = null
                     SparkleAutoParty.stop()
-                    connection.sendCommand("p warp")
+                    net.johnceo.sparklingmutuals.alerts.AutomatedCommands.send(connection,"p warp")
                     SmallAlerts.show(SafariHud.WARP)
                 }
             }

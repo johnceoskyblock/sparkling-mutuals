@@ -95,7 +95,7 @@ object PartyManager {
     fun sendPartyChat(client: Minecraft, message: String): Boolean {
         val connection = client.connection ?: return false
         if (!hasTeammates(client)) return false
-        connection.sendCommand("pc $message")
+        net.johnceo.sparklingmutuals.alerts.AutomatedCommands.send(connection,"pc $message")
         return true
     }
 

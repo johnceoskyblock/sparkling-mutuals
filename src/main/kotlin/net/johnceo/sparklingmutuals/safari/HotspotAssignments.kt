@@ -14,6 +14,7 @@ class HotspotAssignments(private val wins: MutableMap<String,Int> = mutableMapOf
     private var leaderControlled=false
     private var leaderFinal=false
     val finalPlan get()=allocated?.toMap()
+    fun observedHotspots()=reports.toMap()
     private val notified=mutableSetOf<String>()
     private var self: String?=null
     private var hotspot: SafariBiome?=null
@@ -29,7 +30,7 @@ class HotspotAssignments(private val wins: MutableMap<String,Int> = mutableMapOf
     }
     private fun fresh(now: Long,limit: Long)=beganAt?.let { now-it in 0..limit }==true
     fun acceptWins(message: HotspotProtocol.Wins,leader: String?,members: Set<String>,now: Long): Boolean {
-        if(leader==null || !message.sender.equals(leader,true) || !fresh(now,15_000) || leaderControlled || leaderFinal ||
+        if(leader==null || !message.sender.equals(leader,true) || !fresh(now,60_000) || leaderControlled || leaderFinal ||
             message.counts.keys!=members.map(String::lowercase).toSet() || message.counts.values.any { it !in 0..1_000_000 } ||
             reports[leader.lowercase()]?.let { it!=message.hotspot }==true) return false
         uncredit()
@@ -42,7 +43,7 @@ class HotspotAssignments(private val wins: MutableMap<String,Int> = mutableMapOf
     }
     fun acceptAssignment(message: HotspotProtocol.Assignment,leader: String?,members: Set<String>,now: Long): Boolean {
         val plan=message.biomes
-        if(leader==null || !message.sender.equals(leader,true) || !fresh(now,20_000) || leaderFinal ||
+        if(leader==null || !message.sender.equals(leader,true) || !fresh(now,60_000) || leaderFinal ||
             plan.keys!=members.map(String::lowercase).toSet() || self !in plan || plan.size !in 1..4 ||
             plan.values.toSet().size!=plan.size) return false
         finish(plan)
@@ -62,8 +63,6 @@ class HotspotAssignments(private val wins: MutableMap<String,Int> = mutableMapOf
         allocated=plan.toMap();finalAssignment=plan[self]
     }
     fun report(name: String, biome: SafariBiome, now: Long, modReport: Boolean = false) {
-        if (finalAssignment != null) return
-        if (beganAt?.let { now-it > 10_000 } == true) return
         if (firstReportAt == null) firstReportAt = now
         val key=name.lowercase()
         reports.putIfAbsent(key,biome)
@@ -75,13 +74,12 @@ class HotspotAssignments(private val wins: MutableMap<String,Int> = mutableMapOf
         val actual=hotspot ?: return null
         if (beganAt == null) return null
         finalAssignment?.let { return it }
-        if(leaderControlled && fresh(now,15_000)) return null
+        if(leaderControlled && fresh(now,30_000)) return null
         val expected=members.map(String::lowercase).toSet()+name
         if (expectedSize <= 1) return actual.also { finalAssignment=it }
         val first=firstReportAt ?: return null
         val times=reportTimes.filterKeys { it in expected }.values.sorted()
-        val threshold=minOf(3,expectedSize)
-        val readyAt=if(times.size>=threshold) times[threshold-1]+2000 else first+5000
+        val readyAt=if(times.size>=expectedSize) now else first+30_000
         if(now<readyAt || expected.size<expectedSize) return null
         val ordered=reports.filterKeys { it in expected }.toMutableMap()
         ordered.putIfAbsent(name,actual)
@@ -96,7 +94,7 @@ class HotspotAssignments(private val wins: MutableMap<String,Int> = mutableMapOf
     /** Only the leader sends instructions, once per uncoordinated member per run. */
     fun notifications(leader: Boolean, self: String): List<Pair<String,SafariBiome>> {
         if(!leader) return emptyList()
-        return allocated.orEmpty().filterKeys { it!=self.lowercase() && it !in coordinated && it !in notified }
+        return allocated.orEmpty().filterKeys { it!=self.lowercase() && it !in coordinated && it in reports && it !in notified }
             .map { (name,biome) -> notified.add(name); name to biome }
     }
     companion object {

@@ -32,7 +32,10 @@ class ConfigLayoutTest {
             val located=catalog.locate(target)
             assertNotNull(located,"Missing HUD setting: $target")
             val chain=located!!.second
-            assertTrue(chain.last().read() is Boolean,"HUD destination is not a toggle: $target")
+            if(target==HudConfigLinks.target(SafariHud.HOTSPOT)) {
+                assertTrue(chain.last().group,"Command-controlled Hotspot HUD opens appearance")
+                assertFalse(chain.first().children.any { it.field.name=="enabled" },"/hotspot is the sole enable control")
+            } else assertTrue(chain.last().read() is Boolean,"HUD destination is not a toggle: $target")
             assertTrue(chain.dropLast(1).all { it.group },"Cannot expand HUD ancestors: $target")
         }
     }

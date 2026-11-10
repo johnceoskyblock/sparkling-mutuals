@@ -9,13 +9,14 @@ data class HudBounds(val x: Int, val y: Int, val width: Int, val height: Int) {
 }
 
 /** Normalized positions keep panels on screen when Minecraft's GUI resolution changes. */
-class HudLayout(private val defaultX: Float, private val defaultY: Float, private val defaultScale: Float = 1f) {
+class HudLayout(private val defaultX: Float, private val defaultY: Float, private val defaultScale: Float = 1f,
+    private val defaultReferenceWidth: Float=0f, private val defaultReferenceHeight: Float=0f) {
     var x = defaultX
     var y = defaultY
     var scale = defaultScale
         set(value) { field = if (value.isFinite()) value.coerceIn(.15f, 2f) else defaultScale }
-    private var referenceWidth = 0f
-    private var referenceHeight = 0f
+    private var referenceWidth = defaultReferenceWidth
+    private var referenceHeight = defaultReferenceHeight
     fun effectiveScale(screenWidth: Int, screenHeight: Int, panelWidth: Int, panelHeight: Int): Float {
         if (referenceWidth <= 0 || referenceHeight <= 0) return scale
         val adapted = scale * minOf(screenWidth / referenceWidth, screenHeight / referenceHeight)
@@ -37,8 +38,8 @@ class HudLayout(private val defaultX: Float, private val defaultY: Float, privat
     fun load(properties: Properties, id: String) {
         fun read(key: String, default: Float) = properties.getProperty("hud.$id.$key")?.toFloatOrNull()?.takeIf(Float::isFinite) ?: default
         x = read("x", defaultX).coerceIn(0f, 1f); y = read("y", defaultY).coerceIn(0f, 1f); scale = read("scale", defaultScale)
-        referenceWidth = read("referenceWidth", 0f).coerceAtLeast(0f)
-        referenceHeight = read("referenceHeight", 0f).coerceAtLeast(0f)
+        referenceWidth = read("referenceWidth", defaultReferenceWidth).coerceAtLeast(0f)
+        referenceHeight = read("referenceHeight", defaultReferenceHeight).coerceAtLeast(0f)
     }
     fun save(properties: Properties, id: String) {
         properties.setProperty("hud.$id.x", x.toString()); properties.setProperty("hud.$id.y", y.toString())
@@ -63,6 +64,7 @@ enum class SafariHud(private val defaultLabel: String, val layout: HudLayout) {
     RUN_COMPLETE("Run completion alert", HudLayout(.35f, .42f, 1.5f)),
     WARP("Warping Now", HudLayout(.37f, .34f, 1.5f)),
     DOOM_THROW("Doomspiral throw timer", HudLayout(.40f, .56f, 1.5f)),
+    HOTSPOT("Hotspot GUI", HudLayout(.0140625f, .50f, .7f,640f,360f)),
     ENTRY_COOLDOWN("Safari entry cooldown", HudLayout(.40f, .65f)),
     DEVELOPER("Safari developer", HudLayout(.34f, .24f));
     val label get() = if (this == MISSING && net.johnceo.sparklingmutuals.config.ConfigManager.sparklingMode)

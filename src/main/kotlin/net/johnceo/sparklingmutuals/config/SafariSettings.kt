@@ -47,6 +47,7 @@ class SafariSettings {
         safari.alerts.appearance = customization.alert
         safari.alerts.nearbyAppearance = customization.huds.sparklings
         safari.capture.doomAppearance = customization.huds.doomThrow
+        tracking.hotspotHud.appearance=customization.huds.hotspot
         tracking.progressHud.appearance=customization.huds.progress
         tracking.missingHud.appearance=customization.huds.missing
         tracking.objectivesHud.appearance=customization.huds.objectives
@@ -415,6 +416,7 @@ class SafariSettings {
         @JvmField var runVolume = ConfigManager.runCompleteVolume
     }
     class Tracking {
+        @JvmField @ConfigOption(name="Hotspot GUI",desc="Follows /hotspot. Party hotspots, assigned biomes and hotspot wins.") @Accordion val hotspotHud=HotspotHudOptions()
         @JvmField @ConfigOption(name="Progress HUD",desc="") @Accordion val progressHud=ProgressHudOptions()
         @JvmField @ConfigOption(name="Missing / Unchecked",desc="") @Accordion val missingHud=HudOptions(ConfigManager.missingPanel,"missing")
         @JvmField @ConfigOption(name="Biome Objectives",desc="") @Accordion val objectivesHud=HudOptions(ConfigManager.biomeObjectives,"objectives")
@@ -432,6 +434,12 @@ class SafariSettings {
         @JvmField @ConfigOption(name="Enabled",desc="") @ConfigEditorBoolean var enabled=initial
         @JvmField @ConfigOption(name="Appearance",desc="") @Accordion
         var appearance=PanelAppearanceSettings(AppearanceConfig.panels.getValue(id)) { AppearanceConfig.selectedHex }
+        @JvmField @ConfigOption(name="Position and size",desc="") @ConfigEditorButton(buttonText="Edit HUDs")
+        val placement=Runnable { val client=Minecraft.getInstance();client.smSetScreen(ContestGui(client.smScreen)) }
+    }
+    class HotspotHudOptions {
+        @JvmField @ConfigOption(name="Appearance",desc="") @Accordion
+        var appearance=PanelAppearanceSettings(AppearanceConfig.panels.getValue("hotspot")) { AppearanceConfig.selectedHex }
         @JvmField @ConfigOption(name="Position and size",desc="") @ConfigEditorButton(buttonText="Edit HUDs")
         val placement=Runnable { val client=Minecraft.getInstance();client.smSetScreen(ContestGui(client.smScreen)) }
     }

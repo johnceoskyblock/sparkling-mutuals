@@ -255,13 +255,16 @@ object SafariPartySync {
         }
         if(ConfigManager.hotspotAnnouncer && current.authority && !current.conflict && matchingParty && transport.ready &&
             (!transport.backup || entryDiscoveries.snapshot(transport.roomStatus().generation)!=null) &&
-            PartyManager.isLeader(client.player!!.uuid.toString()) && current.leader==current.self && now-lastInstructionAt>=1500) {
-            current.notifications.firstOrNull { it.id !in current.sentNotifications && !current.wasInstructed(it.player,it.biome) }?.let { notice ->
+            PartyManager.isLeader(client.player!!.uuid.toString()) && current.leader==current.self && now-lastInstructionAt>=500) {
+            val manual=current.locks.entries.firstOrNull { (id,b) -> id in manualHotspotReporters && id!=current.self && !current.wasInstructed(id,b) }
+            val notice=manual?.let { PartySyncState.Notification("manual:${it.key}",it.key,it.value) }
+                ?: current.notifications.firstOrNull { it.player in observedHotspotReporters && it.id !in current.sentNotifications && !current.wasInstructed(it.player,it.biome) }
+            notice?.let { notice ->
                 val name=name(client,notice.player) ?: return@let
                 if (!PartyManager.sendPartyChat(client, "$name you are assigned ${notice.biome.label} biome!")) return@let
                 current.sentNotifications.add(notice.id);lastInstructionAt=now
                 current.markInstructed(notice.player,notice.biome)
-                acknowledgments.add(notice.id)
+                if(!notice.id.startsWith("manual:")) acknowledgments.add(notice.id)
             }
         }
     }
@@ -274,6 +277,15 @@ object SafariPartySync {
         val start=began.takeIf { it>0 } ?: return true
         return System.currentTimeMillis()-start<7000 && lastRoster.size!=1
     }
+    data class HotspotRow(val name: String,val actual: SafariBiome?,val assigned: SafariBiome?,val wins: Int)
+    fun hotspotRows(): List<HotspotRow> {
+        val current=state ?: return emptyList()
+        val client=Minecraft.getInstance()
+        return current.roster.sorted().map { id -> HotspotRow(name(client,id) ?: id.take(8),current.reports[id],
+            current.locks[id].takeUnless { current.conflict },current.hotspotWins[id] ?: 0) }
+    }
+    private val manualHotspotReporters=mutableSetOf<String>()
+    private val observedHotspotReporters=mutableSetOf<String>()
     fun assignment(): SafariBiome? = state?.takeUnless { it.conflict }?.let { it.locks[it.self] }
     fun finalized(plan: Map<String,SafariBiome>) {
         val current=state ?: return
@@ -301,12 +313,15 @@ object SafariPartySync {
             val dashed=runCatching { java.util.UUID.fromString("${leader.take(8)}-${leader.substring(8,12)}-${leader.substring(12,16)}-${leader.substring(16,20)}-${leader.substring(20)}").toString() }.getOrNull() ?: return@let
             if(matchingParty && PartyManager.isLeader(dashed)) {
                 finalized(assignment.biomes)
-                assignment.biomes.forEach(::instructionSubmitted)
             }
         }
         val parsed=HotspotAssignments.parseReport(raw) ?: return
         val client=Minecraft.getInstance()
-        state?.roster?.firstOrNull { name(client,it).equals(parsed.sender,true) }?.let { report(it,parsed.biome) }
+        state?.roster?.firstOrNull { name(client,it).equals(parsed.sender,true) }?.let {
+            observedHotspotReporters.add(it)
+            if(!parsed.coordinated) manualHotspotReporters.add(it)
+            report(it,parsed.biome)
+        }
     }
     private fun hello(client: Minecraft,current: PartySyncState): String = JsonObject().apply {
         addProperty("version",1);addProperty("action","hello");addProperty("display",ConfigManager.hotspotAnnouncer)
@@ -738,6 +753,8 @@ object SafariPartySync {
         }
     }
     fun reset() {
+        manualHotspotReporters.clear()
+        observedHotspotReporters.clear()
         entryDiscoveries.reset()
         val current=state;transport.close(true,current?.nextSequence() ?: 0)
         routing.reset();transport.usePrimary();bootstrapQueue.clear()

@@ -145,13 +145,13 @@ object SafariTracking {
         val connection=client.connection ?: return
         if (PartyManager.hasInfo && PartyManager.getMembers().size > 1) {
             val sync=net.johnceo.sparklingmutuals.sync.SafariPartySync
-            if(sync.pauseHotspotChat && !sync.backendCoordination) return
             val hotspotEnabled = net.johnceo.sparklingmutuals.hud.HotspotAssignmentAlert.enabled()
-            run.startingAnnouncement.dispatch(now, SafariSparklingMode.state, hotspotEnabled, ConfigManager.announceStartingItems,
+            run.startingAnnouncement.dispatchReliable(now, SafariSparklingMode.state, hotspotEnabled, ConfigManager.announceStartingItems,
                 net.johnceo.sparklingmutuals.hud.HotspotAssignmentAlert::announcement) { message ->
-                if (!PartyManager.sendPartyChat(client, message)) return@dispatch
+                if (!PartyManager.sendPartyChat(client, message)) return@dispatchReliable false
                 // Apply our own contribution now; the server's party echo is deduplicated.
                 run.resources.partyNotice("Party > ${player.name.string}: $message")
+                true
             }
         }
     }

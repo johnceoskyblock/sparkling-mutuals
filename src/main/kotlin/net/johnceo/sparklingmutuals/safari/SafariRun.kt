@@ -105,6 +105,9 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
         firstInventoryAt = now
     }
     fun inStartingInventoryWindow(now: Long) = firstInventoryAt?.let { now - it in 0..3000 } == true
+    fun deathLoss(items: Map<String,Int>) {
+        if((items["Soothing Incense"] ?: 0)>0) hadFourIncense=false
+    }
     fun inventoryEvidence(stacks: List<Pair<String, Int>>, now: Long = System.currentTimeMillis()) {
         if (firstInventoryAt == null && now >= startedAt) firstInventoryAt = now
         resources.inventory(stacks, inStartingInventoryWindow(now))

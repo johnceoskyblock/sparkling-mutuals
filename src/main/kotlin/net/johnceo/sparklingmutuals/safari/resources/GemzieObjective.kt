@@ -28,6 +28,9 @@ class GemzieObjective {
     fun inventory(stacks: List<Pair<String,Int>>) {
         GemzieGem.entries.filterTo(acquired) { gem -> stacks.any { it.first == gem.label && it.second > 0 } }
     }
+    fun lostOnDeath(items: Map<String,Int>) {
+        acquired.removeAll { (items[it.label] ?: 0)>0 && it !in placed }
+    }
     fun pickup(raw: String) {
         val type=FloorPickup.parse(raw)?.type ?: return
         GemzieGem.entries.firstOrNull { it.label == type.label }?.let(acquired::add)

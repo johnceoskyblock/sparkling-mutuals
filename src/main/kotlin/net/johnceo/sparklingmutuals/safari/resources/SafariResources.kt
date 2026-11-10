@@ -98,6 +98,7 @@ class SafariResources {
     private val unusedStarting = mutableMapOf<FloorDropType, Int>()
     private val pickups = mutableMapOf<FloorDropType, Int>()
     private val startingPickups = mutableMapOf<FloorDropType, Int>()
+    private val lost = mutableMapOf<FloorDropType,Int>()
     private val held = mutableMapOf<FloorDropType, Int>()
     private val notified = mutableMapOf<FloorDropType, Int>()
     private data class Outstanding(val amount: Int, val population: Int, val events: Int, val credits: Int)
@@ -145,6 +146,16 @@ class SafariResources {
             }
         }
     }
+    fun lostOnDeath(items: Map<String,Int>) {
+        FloorDropType.entries.forEach { type ->
+            val n=items[type.label] ?: 0
+            if(n>0) {
+                lost.merge(type,n,Int::plus)
+                held[type]=((held[type] ?: 0)-n).coerceAtLeast(0)
+                unusedStarting[type]=((unusedStarting[type] ?: 0)-n).coerceAtLeast(0)
+            }
+        }
+    }
     fun heldCount(type: FloorDropType) = held[type] ?: 0
     fun coordinatedHeld(type: FloorDropType, includeStarting: Boolean) =
         (heldCount(type) - if (includeStarting || !optionalStarting(type)) 0 else unusedStarting[type] ?: 0).coerceAtLeast(0)
@@ -159,8 +170,9 @@ class SafariResources {
 
     fun unusedStartingCount(type: FloorDropType) = unusedStarting[type] ?: 0
 
-    fun startingCount(type: FloorDropType) = starting[type] ?: 0
-    fun floorPickupCount(type: FloorDropType) = (pickups[type] ?: 0) - (startingPickups[type] ?: 0)
+    fun startingCount(type: FloorDropType) = ((starting[type] ?: 0)-(lost[type] ?: 0)).coerceAtLeast(0)
+    fun floorPickupCount(type: FloorDropType) = ((pickups[type] ?: 0) - (startingPickups[type] ?: 0) -
+        ((lost[type] ?: 0)-(starting[type] ?: 0)).coerceAtLeast(0)).coerceAtLeast(0)
     fun discoveredCount(type: FloorDropType) = startingCount(type) + floorPickupCount(type)
     fun headStart(text: String) {
         val name = Regex("^HEAD START! You started with a (.+)!$").matchEntire(text)?.groupValues?.get(1) ?: return

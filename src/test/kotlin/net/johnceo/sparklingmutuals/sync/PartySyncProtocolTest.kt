@@ -7,6 +7,16 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class PartySyncProtocolTest {
+    @Test fun `newer death loss snapshot replaces owned inventory and cannot be undone by stale packets`() {
+        val state=PartySyncState(self,setOf(self,peer))
+        val before=aggregate().apply { this[0]=1;this[19]=1 }
+        val after=aggregate()
+        assertTrue(state.receive(peer,1,"A",before.joinToString(",")))
+        assertTrue(state.receive(peer,2,"A",after.joinToString(",")))
+        assertEquals(0,state.inventories[peer]!![0]);assertEquals(0,state.inventories[peer]!![19])
+        assertFalse(state.receive(peer,1,"A",before.joinToString(",")))
+        assertEquals(0,state.inventories[peer]!![19])
+    }
     @Test fun `Hypixel mini lobby IDs match SafariUtils room IDs`() {
         assertEquals("m147ah", PartySyncProtocol.canonicalLobby("mini147AH"))
         assertEquals("m147ah", PartySyncProtocol.canonicalLobby("m147AH"))
