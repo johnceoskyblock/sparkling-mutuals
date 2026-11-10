@@ -171,6 +171,7 @@ class SafariResources {
     fun unusedStartingCount(type: FloorDropType) = unusedStarting[type] ?: 0
 
     fun startingCount(type: FloorDropType) = ((starting[type] ?: 0)-(lost[type] ?: 0)).coerceAtLeast(0)
+    fun lostFloorCount(type: FloorDropType) = ((lost[type] ?: 0)-(starting[type] ?: 0)).coerceAtLeast(0)
     fun floorPickupCount(type: FloorDropType) = ((pickups[type] ?: 0) - (startingPickups[type] ?: 0) -
         ((lost[type] ?: 0)-(starting[type] ?: 0)).coerceAtLeast(0)).coerceAtLeast(0)
     fun discoveredCount(type: FloorDropType) = startingCount(type) + floorPickupCount(type)

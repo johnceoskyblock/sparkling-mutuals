@@ -107,6 +107,9 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
     fun inStartingInventoryWindow(now: Long) = firstInventoryAt?.let { now - it in 0..3000 } == true
     fun deathLoss(items: Map<String,Int>) {
         if((items["Soothing Incense"] ?: 0)>0) hadFourIncense=false
+        birdFoodCheck.lostOnDeath(listOf("Bag of Seeds","Wriggleworm","Yogi Berry").sumOf { items[it] ?: 0 })
+        birds.lostOnDeath(listOf("Bag of Seeds","Wriggleworm","Yogi Berry").sumOf { items[it] ?: 0 })
+        gimmiegoldCheck.lostFloorCoins(resources.lostFloorCount(FloorDropType.COIN))
     }
     fun inventoryEvidence(stacks: List<Pair<String, Int>>, now: Long = System.currentTimeMillis()) {
         if (firstInventoryAt == null && now >= startedAt) firstInventoryAt = now

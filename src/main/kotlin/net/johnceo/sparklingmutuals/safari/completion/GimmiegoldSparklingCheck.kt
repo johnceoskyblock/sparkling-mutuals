@@ -7,11 +7,13 @@ class GimmiegoldSparklingCheck {
     private val floors = linkedMapOf<Int, Boolean>()
     private var held: Int? = null
     private var extras = 0
+    private var lostFloors = 0
     private var validated = false
     private var reportedTarget: Int? = null
     val floorMinimum get() = floors.size
     val remaining get() = floors.values.count { !it }
-    val required get() = floorMinimum + extras
+    val required get() = (floorMinimum-lostFloors).coerceAtLeast(0) + extras
+    fun lostFloorCoins(amount: Int) { lostFloors=amount.coerceAtLeast(0);reopenDemand() }
     val complete get() = floors.isNotEmpty() && remaining == 0 && held == 0 && validated
     fun report() { reportedTarget = required }
     val remoteReady get() = (reportedTarget ?: -1) >= required
