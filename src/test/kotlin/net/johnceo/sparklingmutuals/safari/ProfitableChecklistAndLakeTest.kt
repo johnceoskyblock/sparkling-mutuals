@@ -9,6 +9,30 @@ import org.junit.jupiter.api.Test
 import java.util.Properties
 
 class ProfitableChecklistAndLakeTest {
+    @Test fun `profitable ESP species and parent toggles immediately filter checklist without backfill`() {
+        val profitable = SafariEspConfig.profitableToggles.toMap()
+        val modWide = SafariEspConfig.modWideToggles.toMap()
+        try {
+            SafariEspConfig.profitableToggles.keys.forEach { SafariEspConfig.profitableToggles[it] = true }
+            SafariEspConfig.modWideToggles.keys.forEach { SafariEspConfig.modWideToggles[it] = true }
+            val ranked = listOf("Foxtrot", "Bluebird", "Honeybug", "Treefrog", "Woodchucker", "Fluffling", "Hideonfloor", "Parakeet", "Tepid", "Gazer", "Macaw")
+            assertTrue(ProfitableChecklist.targets(SafariBiome.FOREST, ranked).any { it.name == "Foxtrot" })
+            SafariEspConfig.profitableToggles["Foxtrot"] = false
+            val filtered = ProfitableChecklist.targets(SafariBiome.FOREST, ranked).map { it.name }
+            assertFalse("Foxtrot" in filtered); assertFalse("Macaw" in filtered)
+            assertTrue("Bluebird" in filtered)
+            assertFalse(ProfitableChecklist.panel(SafariRun(0), SafariBiome.FOREST, ranked).rows.any { it.label == "Foxtrot" })
+            SafariEspConfig.profitableToggles["Foxtrot"] = true
+            assertTrue(ProfitableChecklist.targets(SafariBiome.FOREST, ranked).any { it.name == "Foxtrot" })
+            SafariEspConfig.modWideToggles["Foxtrot"] = false
+            assertFalse(ProfitableChecklist.targets(SafariBiome.FOREST, ranked).any { it.name == "Foxtrot" })
+            SafariEspConfig.profitableToggles.keys.forEach { SafariEspConfig.profitableToggles[it] = false }
+            assertTrue(ProfitableChecklist.panel(SafariRun(0), SafariBiome.FOREST, ranked).rows.single().label.contains("No enabled"))
+        } finally {
+            SafariEspConfig.profitableToggles.putAll(profitable)
+            SafariEspConfig.modWideToggles.putAll(modWide)
+        }
+    }
     @Test fun `global top ten is filtered to each biome without backfilling`() {
         val ranked = listOf("Tepid", "Foxtrot", "Gazer", "Gemzie", "Nozzlenose", "Treefrog", "Scrappy", "Honeybug", "Bloodbat", "Mantis Shrimp", "Macaw")
         for (biome in SafariBiome.entries) {

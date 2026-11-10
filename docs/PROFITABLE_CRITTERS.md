@@ -68,3 +68,5 @@ Snoozle walls are spawn opportunities, not a population guarantee. The checklist
 Profit tracking counts every confirmed Macaw, independently of the normal Full Clear mode's permitted Macaw capture waiver. A mode-completion flag cannot erase uncaught profitable birds.
 
 Each individually completed species row shows **All caught** in green rather than `0 left`. Other species keep their own counts or pending-source messages; this is not a combined whole-checklist completion banner.
+
+The checklist also respects **Profitable Critter Toggles** for each species, including its mod-wide parent switch, through the same `profitableEnabled` predicate as profitable ESP. Changes apply immediately. Disabled species are removed after taking the global top ten; lower-ranked critters are not substituted, and the `/profit` ranking itself is unchanged. The checklist retains its own on/off switch independently of the mode-wide profitable-ESP switch.
