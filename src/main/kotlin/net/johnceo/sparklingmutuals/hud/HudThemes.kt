@@ -10,7 +10,7 @@ object HudThemes {
     fun border(hud: SafariHud): Int? {
         if(!BannerConfig.biomeBorders) return null
         val biome=SafariAssist.biome ?: return null
-        if(hud !in setOf(SafariHud.PROGRESS,SafariHud.MISSING,SafariHud.CAPTURES,SafariHud.OBJECTIVES,SafariHud.SPARKLINGS)) return null
+        if(hud !in setOf(SafariHud.PROGRESS,SafariHud.MISSING,SafariHud.PROFITABLE,SafariHud.CAPTURES,SafariHud.OBJECTIVES,SafariHud.SPARKLINGS)) return null
         if(hud==SafariHud.MISSING) {
             val run=SafariTracking.run
             val party=SafariSparklingMode.state

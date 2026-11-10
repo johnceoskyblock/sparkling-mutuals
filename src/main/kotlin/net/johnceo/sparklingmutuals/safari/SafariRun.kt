@@ -40,6 +40,7 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
     }
     fun checkedProgress(name: String) = maxOf(sparklingChecks.checkCount(name), if (withoutShared) 0 else sharedCritters.checks(name))
     fun captureProgress(name: String) = maxOf(count(name), if (withoutShared) 0 else sharedCritters.captures(name))
+    val lakeCatchMilestone = LakeCatchMilestone()
     val entry = SafariEntryEvidence()
     val resources = SafariResources()
     val gems = net.johnceo.sparklingmutuals.safari.resources.GemzieObjective()
@@ -226,6 +227,14 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
             else -> maxOf(SafariFullClear.minimum(name), knownPopulation[name] ?: 0)
         }
         return (target - count(name)).coerceAtLeast(0)
+    }
+    /** Known capture quotas, independent of mode and profit spawn averages. Null means source/population unknown. */
+    fun profitableCapturesLeft(name: String): Int? {
+        if (SafariRoster.named(name) == null) return null
+        if (sharedCritterComplete(name, SafariMode.FULL_CLEAR) || fullClearMissingComplete(name)) return 0
+        val extraShared = (captureProgress(name) - count(name)).coerceAtLeast(0)
+        val left = (maxOf(capturesLeft(name), if (name == "Rockmite") (rockmiteMounds - count(name)).coerceAtLeast(0) else 0) - extraShared).coerceAtLeast(0)
+        return if (left == 0 && !fullClearComplete(name)) null else left
     }
     val knownBirdFoodLeftToUse: Int? get() = birdFoodCheck.leftToUse?.let { maxOf(it,birds.feederCount) }
     val birdFoodLeftToUse: Int get() { syncBirdContributions(); return knownBirdFoodLeftToUse ?: 0 }

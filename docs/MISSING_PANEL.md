@@ -151,3 +151,9 @@ The compact reply uses `Missing <Biome>: ...`, semicolons between tasks and `Non
 ## Per-critter WebSocket progress
 
 The current-run completion extension in [party sync](PARTY_SYNC.md#per-critter-mode-progress-mutuals-extension) supplements all three modes. Fresh peer completion removes corresponding missing/unchecked entries and advances progress; qualified peer counts supply fixed counters and capture display totals using maxima, not addition. Capture/check status icons accept that proof even outside the observing client's biome. Local live remainders and unresolved sources can veto it. Unique first-catch rows can clear from a peer's actual current-run capture count while needed checking still holds its progress unfinished. Icy prerequisites accept actual shared capture counters, never render-only evidence. Local-only reports, personal captures/PBs and permanent history are unchanged.
+
+## Local profitable checklist and lake alert
+
+Profitable mobs is separate from the mode's checklist: it selects only current-biome species in the global `/profit` top ten and shows capture amounts remaining. See [profitability](PROFITABLE_CRITTERS.md#profitable-mobs-checklist-local-2612-test).
+
+The enabled-by-default Lake Cleared alert appears on screen for four seconds after this player has personally caught at least one Tepid, Nozzlenose and Mantis Shrimp in the current run. Loot shares, sightings, peer progress and previous-run history do not qualify. It fires once per run, in every mode. The exact text is **Lake Cleared**; `/sm gui` has an independent entry to move and resize it, with toggle/appearance settings under HUDs → Lake Cleared. No party or local chat announcement is added.

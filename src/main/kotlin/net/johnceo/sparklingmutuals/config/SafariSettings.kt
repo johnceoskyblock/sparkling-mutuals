@@ -419,6 +419,8 @@ class SafariSettings {
         @JvmField @ConfigOption(name="Hotspot GUI",desc="Follows /hotspot. Party hotspots, assigned biomes and hotspot wins.") @Accordion val hotspotHud=HotspotHudOptions()
         @JvmField @ConfigOption(name="Progress HUD",desc="") @Accordion val progressHud=ProgressHudOptions()
         @JvmField @ConfigOption(name="Missing / Unchecked",desc="") @Accordion val missingHud=HudOptions(ConfigManager.missingPanel,"missing")
+        @JvmField @ConfigOption(name="Profitable mobs",desc="Current biome's mobs from /profit's top ten, with known captures remaining.") @Accordion val profitableHud=HudOptions(ConfigManager.profitableChecklist,"profitable")
+        @JvmField @ConfigOption(name="Lake Cleared",desc="Once per run after you catch Tepid, Nozzlenose and Mantis Shrimp. Resize in /sm gui.") @Accordion val lakeClearedHud=HudOptions(ConfigManager.lakeClearAlert,"lake_cleared")
         @JvmField @ConfigOption(name="Biome Objectives",desc="") @Accordion val objectivesHud=HudOptions(ConfigManager.biomeObjectives,"objectives")
         @JvmField @ConfigOption(name="Biome captures",desc="") @Accordion val capturesHud=HudOptions(ConfigManager.catchCountPanel,"captures")
         @JvmField @ConfigOption(name="Safari contest timer",desc="") @Accordion val contestHud=ContestHudOptions()
@@ -555,7 +557,7 @@ class SafariSettings {
             ConfigManager::experimentalCapsulePath to safari.experimentalCapsulePath,
             ConfigManager::gemzieGemAutoSelect to safari.gemzieGemAutoSelect,
             ConfigManager::showCapsuleGuideThroughTerrain to safari.showCapsuleGuideThroughTerrain,
-            ConfigManager::missingPanel to tracking.missing, ConfigManager::biomeObjectives to tracking.objectives,
+            ConfigManager::profitableChecklist to tracking.profitableHud.enabled, ConfigManager::lakeClearAlert to tracking.lakeClearedHud.enabled, ConfigManager::missingPanel to tracking.missing, ConfigManager::biomeObjectives to tracking.objectives,
             ConfigManager::removeDarkness to safari.darkness,
             ConfigManager::clearWater to safari.visibility.clearWater,
             ConfigManager::sparklingAlert to safari.alert, ConfigManager::sparklingPartyAnnouncer to safari.announce,
