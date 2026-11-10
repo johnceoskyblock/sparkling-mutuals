@@ -113,3 +113,7 @@ Send at most one unused starting-item party reminder batch per run after a local
 2026-10-19 - Documented zero-discovery new players and automatic one-minute recovery of Sparkling-mode API failures.
 
 2026-10-19 (America/New_York) — Early discovery-gated quantities replace completion-time resource chat; late-entry fd/hd use local spawning proof and received-report suppression. Reviewed source: working changes on `78885e0`; live validation pending.
+
+## Current-run per-critter completion sharing
+
+Fresh per-species proof from the independent Mutuals completion channel supplements Unique, Sparkling and Full Clear presentation, including biome completion when all mode requirements and shared supply gates pass. A teammate's qualified render check can satisfy the Sparkling predicate; a generic sighting cannot bypass source or boss-catch requirements. Current local contradictions win. This evidence is separate from local-only report, capture, PB and history-split predicates. See [the protocol and lifetime](docs/PARTY_SYNC.md#per-critter-mode-progress-mutuals-extension).

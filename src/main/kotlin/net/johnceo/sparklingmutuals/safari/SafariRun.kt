@@ -21,6 +21,25 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
     var historyExcluded = false
         private set
     fun excludeFromHistory() { historyExcluded = true }
+    val sharedCritters = net.johnceo.sparklingmutuals.safari.completion.SharedCritterProgress(checkClock)
+    /** Peer checks are presentation evidence; localOnly/report/PB paths never consume them. */
+    private var withoutShared = false
+    private fun <T> withoutSharedProgress(action: () -> T): T {
+        val old = withoutShared; withoutShared = true
+        return try { action() } finally { withoutShared = old }
+    }
+    fun sharedCritterComplete(name: String, mode: SafariMode): Boolean {
+        if (withoutShared) return false
+        val biome = SafariRoster.named(name)?.biome ?: return false
+        if (sourcePending(name)) return false
+        if (name in uniqueSourceContradictions && !sparklingChecks.locallyChecked(name)) return false
+        if (name == "Gimmiegold" && (sparklingChecks.hasHeldCoins || sparklingChecks.knownCoinsUnresolved)) return false
+        if (name == "Honeybug" && beeNestCountKnown && !nestsResolved && !beePopulationAccountsForNests) return false
+        if (mode == SafariMode.FULL_CLEAR && lastBiome == biome && name in nearby[biome].orEmpty()) return false
+        return sharedCritters.complete(name, mode)
+    }
+    fun checkedProgress(name: String) = maxOf(sparklingChecks.checkCount(name), if (withoutShared) 0 else sharedCritters.checks(name))
+    fun captureProgress(name: String) = maxOf(count(name), if (withoutShared) 0 else sharedCritters.captures(name))
     val entry = SafariEntryEvidence()
     val resources = SafariResources()
     val gems = net.johnceo.sparklingmutuals.safari.resources.GemzieObjective()
@@ -327,7 +346,7 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
     private val optionalUniqueSpawns = setOf("Rockmite", "Snoozle", "Bluebird", "Parakeet", "Macaw")
     /** HUD credit only. The biome completion icon still follows the mode's full requirements. */
     fun uniqueBarProgress(critters: List<SafariCritter>): Int = critters.count { critter ->
-        count(critter.name) > 0 || critter.name in optionalUniqueSpawns &&
+        captureProgress(critter.name) > 0 || sharedCritterComplete(critter.name, SafariMode.UNIQUE) || critter.name in optionalUniqueSpawns &&
             (critter.biome in biomeReports || critter.biome in sharedReports || completion.reported(critter.biome)) &&
             !encountered(critter.name) && (critter.name !in birdSpecies || birds.spawnedCount(critter.name) == 0)
     }
@@ -339,6 +358,7 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
         else -> SafariFullClear.minimum(name)
     }
     fun fullClearComplete(name: String): Boolean {
+        if (sharedCritterComplete(name, SafariMode.FULL_CLEAR)) return true
         val critter = SafariRoster.named(name) ?: return false
         if (remoteReport(critter.biome)) {
             if (name in birdSpecies) return birdComplete(name, null)
@@ -424,6 +444,7 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
         }
     }
     fun sparklingComplete(name: String, party: PartySparklingState, localOnly: Boolean = false): Boolean {
+        if (!localOnly && sharedCritterComplete(name, SafariMode.SPARKLING)) return true
         val critter = SafariRoster.named(name) ?: return false
         if (name !in birdSpecies && sparklingCaptures.captured(name)) return true
         if (!localOnly && remoteReport(critter.biome)) {
@@ -467,12 +488,17 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
             SafariMode.SPARKLING -> sparklingComplete(it.name, party, localOnly)
         } }
     val completion = SafariCompletionEvents()
-    /** Remote scans/captures retain species evidence, but only a biome report can finish a remote biome. */
-    fun biomeComplete(mode: SafariMode,biome: SafariBiome,party: PartySparklingState): Boolean {
+    /** Complete peer species proof or a biome report can finish remote presentation. */
+    fun biomeComplete(mode: SafariMode,biome: SafariBiome,party: PartySparklingState, includeShared: Boolean = true): Boolean {
+        if (!includeShared) return withoutSharedProgress { biomeComplete(mode, biome, party) }
         if (reportedComplete(mode, biome, party)) return true
         if (biome in manualReports || biome in sharedReports) return false
         val targets=biome.critters.filter { mode!=SafariMode.SPARKLING || party.needs(it.name) }
         if(targets.isEmpty()) return true
+        // Per-species completion can finish the display, but not a local report or PB.
+        if (!sharedSuppliesPending(biome) && !hasUnusedStartingForBiome(biome) &&
+            targets.any { sharedCritterComplete(it.name, mode) } && completed(mode, targets, party) == targets.size &&
+            (mode != SafariMode.UNIQUE || completion.allNeededChecked(this, biome, party))) return true
         val icy=biome==SafariBiome.ICY && count("Wumpa")>0
         if(lastBiome==biome && !icy) return completion.locallyComplete(this,biome,mode,party)
         if (lastBiome != biome && completion.locallyReported(biome, mode) &&
@@ -486,6 +512,8 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
     }
     /** A completed local source/absence survey can waive a variable species that never spawned. */
     fun uniqueComplete(name: String, party: PartySparklingState, localOnly: Boolean = false): Boolean {
+        if (!localOnly && sharedCritterComplete(name, SafariMode.UNIQUE) &&
+            (name !in setOf("Gazer", "Gimmiegold", "Rockmite", "Snoozle") || !party.needs(name) || sparklingComplete(name, party))) return true
         val critter = SafariRoster.named(name) ?: return false
         if (name !in birdSpecies && sparklingCaptures.captured(name)) return true
         if (!localOnly && remoteReport(critter.biome)) {
@@ -651,7 +679,7 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
         return captureCompleteWithZones(name, false, nearby[critter.biome], null, missingScanConfirmed)
     }
     fun missing(critter: SafariCritter, fullClear: Boolean) = if (fullClear)
-        !fullClearMissingComplete(critter.name) else count(critter.name) == 0
+        !sharedCritterComplete(critter.name, SafariMode.FULL_CLEAR) && !fullClearMissingComplete(critter.name) else captureProgress(critter.name) == 0
     fun birdCount(personalOnly: Boolean = false) = birdSpecies.sumOf { if (personalOnly) personalCount(it) else count(it) }
     private fun birdComplete(species: String, speciesInRange: Set<String>?, personalOnly: Boolean = false): Boolean {
         syncBirdContributions()

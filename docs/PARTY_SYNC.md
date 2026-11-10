@@ -37,7 +37,7 @@ Network work is asynchronous, queues are bounded, outgoing messages are serializ
 
 ## Independent backup (updated Mutuals clients)
 
-The primary remains Serkosea. During an eligible Safari party the optional Cloudflare standby receives an asynchronous room-identity/provider check every 30 seconds with jitter, without live gameplay mirroring. A continuously unusable primary can select the backup after 30 seconds; silent socket failure can take longer because the existing 75-second liveness detection still applies. Healthy clients in the same validated room follow the shared selection on their next successful check. Backup stays selected until the visit ends; a new visit prefers primary. Solo/non-Safari play sends no routing requests.
+The primary remains Serkosea. During an eligible Safari party the optional Cloudflare standby receives an asynchronous room-identity/provider check every 30 seconds with jitter, without mirroring existing A/N/U/S/B/H gameplay frames. The separate completion channel below is active independently. A continuously unusable primary can select the backup after 30 seconds; silent socket failure can take longer because the existing 75-second liveness detection still applies. Healthy clients in the same validated room follow the shared selection on their next successful check. Backup stays selected until the visit ends; a new visit prefers primary. Solo/non-Safari play sends no routing requests.
 
 Migration preserves local observations, sequence numbers, irreversible received evidence, finalized roles and submitted instruction targets. Peer inventories are cleared until their reporters send fresh backup snapshots. Original reporters and room-snapshot provenance remain distinct from local discoveries. The fixed migration cohort must reconcile catches/locks or positively depart before automatic entry or new roles are enabled. An expired participant lease alone does not waive that barrier. A fresh atomic room snapshot from the exact current socket is still required for auto entry. Contradictions freeze new assignments and instructions; no captures, rewards or saved history are fabricated.
 
@@ -61,3 +61,13 @@ Local validation includes a real localhost HTTP/WebSocket handshake and ordered 
 ## Last updated
 
 2026-11-03 — Implemented the supplied SafariUtils party-sync v2, hotspot and biome-report contracts. Kept existing mode/capture requirements and chat fallback.
+
+## Per-critter mode progress (Mutuals extension)
+
+Our Cloudflare service is primary for `critter-completion-v1` while Serkosea does not implement it. A separate `/v1/completion-sync` socket reuses the validated exact roster, lobby, visit nonce and route generation even while Serkosea remains the main provider. It has no hotspot allocation, discovery masks, auto-entry authority or main failover bootstrap. Older clients continue their existing sync; they do not supply this extension.
+
+Each client sends a replaceable snapshot of all 37 species in the existing `S` species order. `C` envelopes contain increasing sequence, kind and a JSON-string payload `{version:1,rows:[[flags,checks,captures],...]}`. Flags are Unique completion=1, qualified Sparkling check=2, Full Clear capture/source/absence proof=4. Counts are integers 0–256. Boss checks still require the existing actual-catch predicate. Source waivers and qualified checks are observational client evidence, not server verification of Minecraft actions.
+
+Changed snapshots are sampled every 500ms; unchanged evidence renews every ten seconds. Latest false flags replace earlier true flags. Evidence expires after 45 seconds, with server-supplied age deducted on reconnect replay. Exact visit/roster changes, disconnection or a new run clear received progress. Multiple players' counts use the maximum, never a sum of possibly overlapping UUID sightings or catches. Partial disjoint cohorts are deliberately not combined into a completed check.
+
+Mode progress, missing lists, fixed counters, capture status icons and the `!m` response use this evidence. Live local source contradictions and remaining Full Clear critters still take priority. Local source/capture checklists, local-only biome announcements, personal counts, PB eligibility and saved history splits exclude the new evidence. It cannot create captures, rewards or permanent history and is never echoed as new local proof. Completed run alerts may use shared presentation progress.
