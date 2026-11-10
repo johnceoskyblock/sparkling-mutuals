@@ -98,7 +98,7 @@ object RunHistory {
         val now = System.currentTimeMillis()
         val party = SafariSparklingMode.state
         for (biome in SafariBiome.entries) if (biome.label !in splits &&
-            current.biomeComplete(SafariFullClear.mode, biome, party))
+            current.biomeComplete(SafariFullClear.mode, biome, party, includeShared = false))
             splits[biome.label] = now - current.startedAt
     }
 

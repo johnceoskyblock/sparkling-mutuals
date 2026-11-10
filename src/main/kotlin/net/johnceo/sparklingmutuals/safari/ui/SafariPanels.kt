@@ -23,7 +23,7 @@ object SafariPanels {
     fun fixedCounter(name: String, run: SafariRun?, mode: SafariMode, party: PartySparklingState): String? {
         val total = fixedChecks[name] ?: return null
         if (mode != SafariMode.FULL_CLEAR && !party.needs(name)) return null
-        val count = if (mode == SafariMode.FULL_CLEAR) run?.count(name) ?: 0 else run?.sparklingChecks?.checkCount(name) ?: 0
+        val count = if (mode == SafariMode.FULL_CLEAR) run?.captureProgress(name) ?: 0 else run?.checkedProgress(name) ?: 0
         return "${count.coerceIn(0, total)}/$total " + if (mode == SafariMode.FULL_CLEAR) "captured" else "checked"
     }
     fun progress(run: SafariRun?, unique: Boolean, now: Long, party: PartySparklingState = SafariSparklingMode.state): HudPanel {
@@ -69,9 +69,9 @@ object SafariPanels {
         val sparkling = SafariFullClear.mode == SafariMode.SPARKLING
         return biome.critters.filter { if (sparkling) {
                 party.needs(it.name) && run?.sparklingComplete(it.name, party) != true ||
-                    run?.sparklingChecks?.wumpaPrerequisite(it.name, party) == true && run.count("Wumpa") == 0 && run.count(it.name) == 0
+                    run?.sparklingChecks?.wumpaPrerequisite(it.name, party) == true && run.captureProgress("Wumpa") == 0 && run.captureProgress(it.name) == 0
             }
-            else if (SafariFullClear.mode == SafariMode.UNIQUE) run == null || run.count(it.name) == 0 && !run.uniqueUnavailable(it.name)
+            else if (SafariFullClear.mode == SafariMode.UNIQUE) run == null || run.captureProgress(it.name) == 0 && !run.sharedCritterComplete(it.name, SafariMode.UNIQUE) && !run.uniqueUnavailable(it.name)
             else run?.missing(it, ConfigManager.fullClearMode) != false }
     }
     fun missing(run: SafariRun?, biome: SafariBiome, unique: Boolean, nests: Int, mounds: Int = 0,
@@ -163,10 +163,10 @@ object SafariPanels {
                     add(HudRow("Mounds", "$mounds", HudRow.GOLD, HudRow.GRAY))
             }
             if (biome == SafariBiome.HAUNTED && (mode == SafariMode.UNIQUE || sparkling)) {
-                if (party.needs("Gimmiegold") && run?.sparklingComplete("Gimmiegold", party, localOnly = true) != true)
+                if (party.needs("Gimmiegold") && run?.sparklingComplete("Gimmiegold", party) != true)
                     add(HudRow("Coins left to use", run?.coinsLeftToUse?.toString() ?: "?", HudRow.GOLD, HudRow.GRAY))
-                if (party.needs("Gazer") && run?.sparklingComplete("Gazer", party, localOnly = true) != true)
-                    add(HudRow("Gazers left", "${(4 - (run?.sparklingChecks?.checkCount("Gazer") ?: 0)).coerceAtLeast(0)}",
+                if (party.needs("Gazer") && run?.sparklingComplete("Gazer", party) != true)
+                    add(HudRow("Gazers left", "${(4 - (run?.checkedProgress("Gazer") ?: 0)).coerceAtLeast(0)}",
                         HudRow.GOLD, HudRow.GRAY))
             }
         }
@@ -178,10 +178,11 @@ object SafariPanels {
     private fun captureColor(complete: Boolean, verified: Boolean) = if (!ConfigManager.fullClearMode || !verified) HudRow.WHITE
         else if (complete) 0xFF55FF55.toInt() else 0xFFFF5555.toInt()
     fun captures(run: SafariRun?, biome: SafariBiome, party: PartySparklingState = SafariSparklingMode.state) = HudPanel("${biome.label} captures", biome.color, buildList {
-        biome.critters.forEach { val count = run?.count(it.name) ?: 0
+        biome.critters.forEach { val count = run?.captureProgress(it.name) ?: 0
             val locallyObserved = run?.visitedBiome(biome) == true && run.hasCaptureEvidence(biome)
             val status = when (SafariFullClear.mode) {
                 SafariMode.FULL_CLEAR -> when {
+                    run?.sharedCritterComplete(it.name, SafariMode.FULL_CLEAR) == true -> true
                     run == null || run.capturesLeft(it.name) > 0 -> false
                     locallyObserved && run.captureComplete(it.name) -> true
                     else -> null
@@ -189,16 +190,18 @@ object SafariPanels {
                 SafariMode.UNIQUE -> count > 0
                 SafariMode.SPARKLING -> when {
                     !party.needs(it.name) -> true
+                    run?.sharedCritterComplete(it.name, SafariMode.SPARKLING) == true -> true
                     locallyObserved && run?.sparklingComplete(it.name, party, localOnly = true) == true -> true
                     else -> null
                 }
             }
-            add(HudRow(it.name, if (run?.inferredCapture(it.name) == true) "\u22651" else "$count", it.color, captureColor(run?.fullClearComplete(it.name) == true,
-                run?.hasCaptureEvidence(biome) == true || run?.fullClearReportReceived(biome) == true ||
+            add(HudRow(it.name, if (run?.inferredCapture(it.name) == true && count <= run.count(it.name)) "\u22651" else "$count", it.color, captureColor(run?.fullClearComplete(it.name) == true,
+                run?.sharedCritterComplete(it.name, SafariMode.FULL_CLEAR) == true ||
+                    run?.hasCaptureEvidence(biome) == true || run?.fullClearReportReceived(biome) == true ||
                     it.name == "Honeybug" && run?.beeNestCountKnown == true ||
                     it.name in SafariFullClear.fixedCaptureTargets && count > 0),
                 complete = status, icon = net.johnceo.sparklingmutuals.hud.UiIcons.Kind.QUESTION)) }
-        add(HudRow()); add(HudRow("Total captures", "${biome.critters.sumOf { run?.count(it.name) ?: 0 }}", HudRow.GRAY))
+        add(HudRow()); add(HudRow("Total captures", "${biome.critters.sumOf { run?.captureProgress(it.name) ?: 0 }}", HudRow.GRAY))
         if (biome == SafariBiome.CAVERN && ConfigManager.showMoundStats) {
             add(HudRow())
             add(HudRow("Rockmite Mounds", "${run?.brokenMounds ?: 0}", HudRow.GOLD,

@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory
 object SafariPartySync {
     private val transport=PartySyncTransport()
     private val routing=PartySyncRouting()
+    private val critterSync=PartyCritterSync()
     private val bootstrapQueue=ArrayDeque<String>()
     private val entryDiscoveries=PartyRoomDiscoveries()
     private val logger=LoggerFactory.getLogger("sparkling-mutuals/party-sync")
@@ -175,6 +176,8 @@ object SafariPartySync {
                 client.player?.sendSystemMessage(net.minecraft.network.chat.Component.literal("[SM] Shared Safari sync switched to backup."))
             }
         }
+        critterSync.tick(context, routing.backupOrigin, routing.generation, routing.nonce,
+            run.takeIf { ticketed }, SafariSparklingMode.state, now, matchingParty)
         transport.tick(context,now)
         while(transport.ready && bootstrapQueue.isNotEmpty()) {
             if(!transport.send(current.nextSequence(),"F",bootstrapQueue.first()))break
@@ -695,6 +698,7 @@ object SafariPartySync {
         return mapOf(
             "lobby" to lobby, "roster" to current?.roster, "self" to current?.self,
             "rosterMatches" to matchingParty, "transport" to transport.developerSnapshot(),
+            "critterCompletionTransport" to critterSync.developerSnapshot(),
             "ticketed" to ticketed, "ticketWindowLocked" to ticketWindowLocked,
             "sequence" to current?.sequence, "authority" to backendCoordination,
             "waitingForAuthority" to waitingForAuthority, "conflict" to current?.conflict,
@@ -753,6 +757,7 @@ object SafariPartySync {
         }
     }
     fun reset() {
+        critterSync.reset()
         manualHotspotReporters.clear()
         observedHotspotReporters.clear()
         entryDiscoveries.reset()

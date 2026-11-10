@@ -147,3 +147,7 @@ The compact reply uses `Missing <Biome>: ...`, semicolons between tasks and `Non
 ## Last updated
 
 2026-11-02 — Completed panels retain completion text. Remaining critters keep a concise mode instruction in objectives; Forest food/bird counters omit zero entries and stay until mode completion. Cursor-safe inventory sampling and feeder/chat reconciliation prevent stale or double-decremented feeder contents. Biome completion and report gates are unchanged.
+
+## Per-critter WebSocket progress
+
+The current-run completion extension in [party sync](PARTY_SYNC.md#per-critter-mode-progress-mutuals-extension) supplements all three modes. Fresh peer completion removes corresponding missing/unchecked entries and advances progress; qualified peer counts supply fixed counters and capture display totals using maxima, not addition. Capture/check status icons accept that proof even outside the observing client's biome. Local live remainders and unresolved sources can veto it. Unique first-catch rows can clear from a peer's actual current-run capture count while needed checking still holds its progress unfinished. Icy prerequisites accept actual shared capture counters, never render-only evidence. Local-only reports, personal captures/PBs and permanent history are unchanged.

@@ -16,6 +16,7 @@ internal class PartySyncTransport(
 ) {
     private val primaryAuth=authEndpoint
     private val primarySync=syncEndpoint
+    private var completionOnly=false
     var backup=false; private set
     private var routingGeneration: String?=null
     private var visitNonce: String?=null
@@ -25,6 +26,14 @@ internal class PartySyncTransport(
         authEndpoint=origin.resolve("/v1/auth/uuid/session")
         syncEndpoint=URI("wss",null,origin.host,origin.port,"/v1/sync",null,null)
         routingGeneration=generation;visitNonce=nonce;backup=true
+    }
+    /** Independent extension channel; it cannot select main provider or authorize entry. */
+    @Synchronized fun useCompletion(origin: URI, generation: String, nonce: String) {
+        if(completionOnly && routingGeneration==generation && visitNonce==nonce && authEndpoint==origin.resolve("/v1/auth/uuid/session")) return
+        close(false); token=""; tokenOwner=""; tokenUntil=0; retryAt=0; failures=0
+        authEndpoint=origin.resolve("/v1/auth/uuid/session")
+        syncEndpoint=URI("wss",null,origin.host,origin.port,"/v1/completion-sync",null,null)
+        routingGeneration=generation;visitNonce=nonce;completionOnly=true;backup=false
     }
     @Synchronized fun usePrimary() {
         if(!backup)return
@@ -122,6 +131,7 @@ internal class PartySyncTransport(
                     val map=PartySyncProtocol.welcome(root,next.self,next.roster)
                     if(map==null) { fail(attempt); return }
                     val features=root.get("features")?.takeIf { it.isJsonArray }?.asJsonArray?.mapNotNull { PartySyncProtocol.text(it) }.orEmpty()
+                    if(completionOnly && "critter-completion-v1" !in features) { fail(attempt);return }
                     if(backup && "failover-bootstrap-v1" !in features) { fail(attempt);return }
                     mapping=map; ready=true; failures=0
                     hotspotCapability="hotspots-v1" in features; biomeCapability="biome-reports-v1" in features
@@ -158,7 +168,7 @@ internal class PartySyncTransport(
             val builder=http.newWebSocketBuilder().connectTimeout(Duration.ofSeconds(10))
                 .header("Authorization","Bearer $bearer").header("X-SafariUtils-Lobby",desired.lobby)
                 .header("X-SafariUtils-Player",desired.self).header("X-SafariUtils-Roster",desired.roster.joinToString(","))
-            if(backup)builder.header("X-SM-Generation",routingGeneration!!).header("X-SM-Visit",visitNonce!!)
+            if(backup || completionOnly)builder.header("X-SM-Generation",routingGeneration!!).header("X-SM-Visit",visitNonce!!)
             builder.buildAsync(syncEndpoint,Listener(attempt))
         }.whenComplete { _,error -> if(error!=null) fail(attempt,error) }
     }

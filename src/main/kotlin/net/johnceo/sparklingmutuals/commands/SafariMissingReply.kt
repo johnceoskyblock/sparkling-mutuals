@@ -40,7 +40,7 @@ object SafariMissingReply {
         val result = mutableListOf<String>()
         if (mode == SafariMode.FULL_CLEAR) {
             biome.critters.forEach { critter ->
-                val left = run.capturesLeft(critter.name)
+                val left = if (run.sharedCritterComplete(critter.name, SafariMode.FULL_CLEAR)) 0 else run.capturesLeft(critter.name)
                 if (left > 0) result.add("${critter.name}: $left")
             }
             if (biome == SafariBiome.CAVERN) {
@@ -51,7 +51,7 @@ object SafariMissingReply {
             return result
         }
         if (mode == SafariMode.UNIQUE) {
-            val left=biome.critters.filter { run.count(it.name) == 0 && !run.uniqueUnavailable(it.name) }.map { it.name }
+            val left=biome.critters.filter { run.captureProgress(it.name) == 0 && !run.sharedCritterComplete(it.name, SafariMode.UNIQUE) && !run.uniqueUnavailable(it.name) }.map { it.name }
             result.add("Uniques left to capture: ${left.joinToString(", ").ifEmpty { "None" }}")
         }
         if (!party.ready) return result
@@ -70,7 +70,7 @@ object SafariMissingReply {
             }
             SafariBiome.ICY -> Unit
             SafariBiome.HAUNTED -> {
-                if(needs("Gazer")) (4-run.sparklingChecks.checkCount("Gazer")).coerceAtLeast(0).takeIf { it > 0 }
+                if(needs("Gazer")) (4-run.checkedProgress("Gazer")).coerceAtLeast(0).takeIf { it > 0 }
                     ?.let { result.add("Gazers: $it left to check") }
                 if(needs("Gimmiegold")) run.coinsLeftToUse?.takeIf { it > 0 }?.let { result.add("Shining Coins: $it left to use") }
             }

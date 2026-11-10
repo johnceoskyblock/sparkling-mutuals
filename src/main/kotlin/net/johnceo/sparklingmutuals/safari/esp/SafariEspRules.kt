@@ -25,16 +25,16 @@ object SafariEspRules {
     fun neededForRun(species: String, mound: Boolean, run: SafariRun?, fullClear: Boolean, profitable: Boolean = true,
         party: PartySparklingState? = null) =
         if (fullClear) true
-        else if (species == "Rockmite" && mound) (run?.count(species) ?: 0) == 0 || party?.needs(species) == true
+        else if (species == "Rockmite" && mound) (run?.captureProgress(species) ?: 0) == 0 || party?.needs(species) == true
         else profitableEsp(species, profitable) ||
-            (run?.count(species) ?: 0) == 0 && run?.uniqueUnavailable(species) != true
+            (run?.captureProgress(species) ?: 0) == 0 && run?.uniqueUnavailable(species) != true && run?.sharedCritterComplete(species, net.johnceo.sparklingmutuals.safari.SafariMode.UNIQUE) != true
     @Suppress("UNUSED_PARAMETER")
     fun neededForSparkling(species: String, mound: Boolean, party: PartySparklingState, profitable: Boolean,
         run: SafariRun? = null, uuid: java.util.UUID? = null, now: Long = System.currentTimeMillis()): Boolean {
         if (profitableEsp(species, profitable)) return true
         if (species == "Honeybug" || species == "Rockmite" && !mound) return false
-        if (species == "Doomspiral" || species == "Wumpa") return party.needs(species) && (run?.count(species) ?: 0) == 0
-        if (run?.sparklingChecks?.wumpaPrerequisite(species, party) == true && run.count(species) == 0) return true
+        if (species == "Doomspiral" || species == "Wumpa") return party.needs(species) && (run?.captureProgress(species) ?: 0) == 0
+        if (run?.sparklingChecks?.wumpaPrerequisite(species, party) == true && run.captureProgress(species) == 0) return true
         if (!party.needs(species)) return false
         if (mound && species == "Rockmite") return run?.sparklingComplete(species, party) != true
         return false // Automatic checking needs no ordinary critter highlight or per-UUID linger.
