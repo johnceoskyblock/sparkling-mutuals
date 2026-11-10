@@ -51,6 +51,41 @@ class ProfitableChecklistAndLakeTest {
         assertFalse(SafariRun(1).lakeCatchMilestone.consume { 0 })
         assertEquals("Lake Cleared", LakeClearAlert.preview().title)
     }
+    @Test fun `walls never become Snoozle counts and a cleared empty survey can prove zero`() {
+        val run = SafariRun(0)
+        run.visitBiome(SafariBiome.CAVERN)
+        run.observeCavernSources(false, true, false)
+        fun value() = ProfitableChecklist.panel(run, SafariBiome.CAVERN, listOf("Snoozle")).rows.single().value
+        assertNull(run.profitableCapturesLeft("Snoozle")); assertEquals("Check walls", value())
+        run.observePopulation(List(2) { "Snoozle" to java.util.UUID.randomUUID() })
+        assertEquals(2, run.profitableCapturesLeft("Snoozle")); assertEquals("2+ left", value())
+        run.observeCavernSources(false, false, true)
+        assertEquals("2 left", value(), "remaining opportunities did not add five presumed Snoozles")
+        val empty = SafariRun(0)
+        empty.observeCavernSources(false, false, true)
+        empty.updateCaptureEvidence(SafariBiome.CAVERN, emptySet(), true)
+        assertEquals(0, empty.profitableCapturesLeft("Snoozle"), "walls may contain no Snoozles")
+        assertEquals("All caught", ProfitableChecklist.panel(empty, SafariBiome.CAVERN, listOf("Snoozle")).rows.single().value)
+    }
+    @Test fun `pending food shows an action and only confirmed bird spawns add counts`() {
+        val run = SafariRun(0)
+        run.visitBiome(SafariBiome.FOREST)
+        fun value(name: String) = ProfitableChecklist.panel(run, SafariBiome.FOREST, listOf(name)).rows.single().value
+        for (name in listOf("Bluebird", "Parakeet", "Macaw")) assertEquals("Use bird food", value(name))
+        run.birds.inventory(listOf("Bag of Seeds" to 12))
+        assertNull(run.profitableCapturesLeft("Bluebird"), "food quantity is not a bird population")
+        run.birds.spawn("A Bluebird was attracted to the Birdfeeder!")
+        assertEquals("1+ left", value("Bluebird"))
+        run.record(SafariCatch(SafariRoster.named("Bluebird")!!))
+        assertEquals("Use bird food", value("Bluebird"), "one caught bird cannot finish remaining feeding opportunities")
+    }
+    @Test fun `profit checklist counts every confirmed Macaw instead of using Full Clear waiver`() {
+        val run = SafariRun(0)
+        run.birds.spawn("Two Macaws were attracted to the Birdfeeder!")
+        run.record(SafariCatch(SafariRoster.named("Macaw")!!))
+        run.sharedCritters.replace("peer", 1, mapOf("Macaw" to SharedCritterProgress.Evidence(true, true, true, 2, 1)))
+        assertEquals(1, run.profitableCapturesLeft("Macaw"), "a shared mode-complete flag cannot erase an uncaught profitable Macaw")
+    }
     @Test fun `both new HUDs have persisted independent size and direct settings links`() {
         val saved = Properties()
         val old = SafariHud.LAKE_CLEARED.layout.scale

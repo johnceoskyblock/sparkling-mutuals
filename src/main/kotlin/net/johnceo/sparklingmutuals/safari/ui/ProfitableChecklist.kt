@@ -13,12 +13,19 @@ object ProfitableChecklist {
         val selected = targets(biome, ranked)
         val rows = selected.map { critter ->
             val left = run?.profitableCapturesLeft(critter.name)
-            HudRow(critter.name, left?.let { "$it left" } ?: "? left", critter.color,
-                if (left == 0) 0xFF55FF55.toInt() else HudRow.WHITE, icon = null)
+            val pending = run?.profitableSourcesPending(critter.name) == true
+            val value = when {
+                pending && (left == null || left == 0) -> if (critter.name == "Snoozle") "Check walls" else "Use bird food"
+                pending -> "$left+ left"
+                left == 0 -> "All caught"
+                else -> left?.let { "$it left" } ?: "? left"
+            }
+            HudRow(critter.name, value, critter.color,
+                if (left == 0 && !pending) 0xFF55FF55.toInt() else HudRow.WHITE, icon = null)
         }
         return HudPanel("Profitable ${biome.label} mobs", biome.color, rows.ifEmpty {
             listOf(HudRow(if (ranked.isEmpty()) "Prices loading…" else "No top-ten mobs here", color = HudRow.GRAY, icon = null))
         })
     }
-    fun preview() = panel(SafariRun(0), SafariBiome.FOREST, listOf("Foxtrot", "Treefrog", "Honeybug"))
+    fun preview() = panel(SafariRun(0), SafariBiome.FOREST, listOf("Foxtrot", "Bluebird", "Honeybug"))
 }

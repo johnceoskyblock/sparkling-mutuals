@@ -62,3 +62,9 @@ Automated checks verify all 37 source species, fractional arithmetic, invalid/mi
 ## Profitable mobs checklist (local 26.1.2 test)
 
 A separate, enabled-by-default Profitable mobs HUD uses the exact cached `/profit` top ten, then filters to the currently occupied Safari biome without backfilling. It is independent of the normal Missing/Unchecked panel and active mode. Rarity-colored rows show known remaining capture counts using existing capture/source targets and current-run shared capture maxima. Qualified render-only checks are not captures; average spawn estimates used for ranking are not rounded into live counts. Unknown source/population counts show `? left` instead of a false zero. Prices loading and no matching top-ten species have compact empty states. There are no additional price requests. HUDs → Profitable mobs and `/sm gui` provide its toggle, styling, position and size.
+
+Snoozle walls are spawn opportunities, not a population guarantee. The checklist shows **Check walls** while wall status is unresolved and no uncaught Snoozles are confirmed. Birds show **Use bird food** until feeding/spawning is resolved and a count is known. If confirmed uncaught mobs exist while their sources remain pending, `N+ left` means at least N confirmed mobs, with additional source outcomes still unknown; it does not guarantee another spawn. Wall and food quantities never become predicted mob counts. Once sources are resolved, ordinary confirmed remaining counts are shown, and a verified empty result may be zero.
+
+Profit tracking counts every confirmed Macaw, independently of the normal Full Clear mode's permitted Macaw capture waiver. A mode-completion flag cannot erase uncaught profitable birds.
+
+Each individually completed species row shows **All caught** in green rather than `0 left`. Other species keep their own counts or pending-source messages; this is not a combined whole-checklist completion banner.

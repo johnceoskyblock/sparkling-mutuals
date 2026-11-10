@@ -231,10 +231,21 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
     /** Known capture quotas, independent of mode and profit spawn averages. Null means source/population unknown. */
     fun profitableCapturesLeft(name: String): Int? {
         if (SafariRoster.named(name) == null) return null
+        if (name in birdSpecies) {
+            val spawned = maxOf(birds.spawnedCount(name), knownPopulation[name] ?: 0)
+            val left = (spawned - captureProgress(name)).coerceAtLeast(0)
+            return if (left == 0 && profitableSourcesPending(name)) null else left
+        }
         if (sharedCritterComplete(name, SafariMode.FULL_CLEAR) || fullClearMissingComplete(name)) return 0
         val extraShared = (captureProgress(name) - count(name)).coerceAtLeast(0)
         val left = (maxOf(capturesLeft(name), if (name == "Rockmite") (rockmiteMounds - count(name)).coerceAtLeast(0) else 0) - extraShared).coerceAtLeast(0)
         return if (left == 0 && !fullClearComplete(name)) null else left
+    }
+    /** Unused food and unbroken/unknown walls are opportunities, never predicted critters. */
+    fun profitableSourcesPending(name: String): Boolean = when {
+        name == "Snoozle" -> !cavernSourcesChecked(name) && !sharedCritterComplete(name, SafariMode.FULL_CLEAR)
+        name in birdSpecies -> !birdSpawnsComplete()
+        else -> false
     }
     val knownBirdFoodLeftToUse: Int? get() = birdFoodCheck.leftToUse?.let { maxOf(it,birds.feederCount) }
     val birdFoodLeftToUse: Int get() { syncBirdContributions(); return knownBirdFoodLeftToUse ?: 0 }
