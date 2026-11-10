@@ -59,7 +59,7 @@ Automated checks verify all 37 source species, fractional arithmetic, invalid/mi
 
 2026-10-21 (America/New_York) — Added cached-price local ranking using supplied Full Party averages and the requested 1.5025 shard multiplier.
 
-## Profitable mobs checklist (local 26.1.2 test)
+## Profitable mobs checklist
 
 A separate, disabled-by-default Profitable mobs HUD uses the exact cached `/profit` top ten, then filters to the currently occupied Safari biome without backfilling. It is independent of the normal Missing/Unchecked panel and active mode. Rarity-colored rows show known remaining capture counts using existing capture/source targets and current-run shared capture maxima. Qualified render-only checks are not captures; average spawn estimates used for ranking are not rounded into live counts. Unknown source/population counts show `? left` instead of a false zero. Prices loading and no matching top-ten species have compact empty states. There are no additional price requests. HUDs → Profitable shards checklist and `/sm gui` provide its toggle, styling, position and size.
 
