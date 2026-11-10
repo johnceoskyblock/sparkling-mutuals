@@ -9,11 +9,11 @@ import net.minecraft.client.gui.GuiGraphicsExtractor
 
 class HotspotGrid(val width: Int,count: Int) {
     private val rows=(count.coerceIn(1,4)+1)/2
-    val height=28+rows*62+(rows-1)*8+6
+    val height=17+rows*50+(rows-1)*8+6
     fun cell(index: Int): HudBounds {
         require(index in 0..3)
         val cellWidth=(width-20)/2
-        return HudBounds(6+(index%2)*(cellWidth+8),28+(index/2)*70,cellWidth,62)
+        return HudBounds(6+(index%2)*(cellWidth+8),17+(index/2)*58,cellWidth,50)
     }
     companion object {
         fun biomeColor(biome: SafariBiome?): Int=when(biome) {
@@ -34,23 +34,23 @@ class HotspotGridPanel(private val players: List<SafariPartySync.HotspotRow>,pri
         graphics.pose().pushMatrix();graphics.pose().translate(x.toFloat(),y.toFloat());graphics.pose().scale(scale,scale)
         style.draw(graphics,grid.width,grid.height,borderOverride)
         graphics.text(font,"Hotspots",6,6,HudRow.GOLD,true)
-        graphics.text(font,"H: Hotspot   A: Assigned",6,17,HudRow.GRAY,true)
-        if(players.isEmpty()) graphics.text(font,"Waiting for party…",6,31,HudRow.GRAY,true)
+        if(players.isEmpty()) graphics.text(font,"Waiting for party…",6,20,HudRow.GRAY,true)
         players.take(4).forEachIndexed { i,player ->
             val cell=grid.cell(i)
             graphics.fill(cell.x,cell.y,cell.x+cell.width,cell.y+cell.height,0x22000000)
-            val first=font.plainSubstrByWidth(player.name,(cell.width-6).coerceAtLeast(1))
-            val second=player.name.substring(first.length)
             val nameColor=rankColors[player.name.lowercase()] ?: HudRow.WHITE
-            graphics.text(font,first,cell.x+3,cell.y+3,nameColor,true)
-            if(second.isNotEmpty()) graphics.text(font,second,cell.x+3,cell.y+14,nameColor,true)
+            val nameScale=minOf(1f,(cell.width-6).coerceAtLeast(1).toFloat()/font.width(player.name).coerceAtLeast(1))
+            graphics.pose().pushMatrix();graphics.pose().translate((cell.x+3).toFloat(),(cell.y+3).toFloat())
+            graphics.pose().scale(nameScale,nameScale)
+            graphics.text(font,player.name,0,0,nameColor,true)
+            graphics.pose().popMatrix()
             fun biome(label: String,biome: SafariBiome?,line: Int) {
                 graphics.text(font,label,cell.x+3,cell.y+line,HudRow.GRAY,true)
                 graphics.text(font,biome?.label ?: "?",cell.x+15,cell.y+line,HotspotGrid.biomeColor(biome),true)
             }
-            biome("H:",player.actual,27);biome("A:",player.assigned,38)
-            graphics.text(font,"Wins",cell.x+3,cell.y+50,HudRow.GRAY,true)
-            graphics.text(font,player.wins.toString(),cell.x+28,cell.y+50,HudRow.GOLD,true)
+            biome("H:",player.actual,15);biome("A:",player.assigned,26)
+            graphics.text(font,"Wins",cell.x+3,cell.y+38,HudRow.GRAY,true)
+            graphics.text(font,player.wins.toString(),cell.x+28,cell.y+38,HudRow.GOLD,true)
         }
         graphics.pose().popMatrix()
     }
