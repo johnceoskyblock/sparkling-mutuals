@@ -52,6 +52,8 @@ class EncounterReadiness {
 }
 
 object SafariInventoryAlerts {
+    private var deathRun: net.johnceo.sparklingmutuals.safari.SafariRun?=null
+    private var deathLoss=DeathInventoryLoss()
     private val readiness = EncounterReadiness()
     private var ticks = 0
     private var level: Any? = null
@@ -63,6 +65,14 @@ object SafariInventoryAlerts {
         run?.gems?.tick(client)
         if (run?.gems?.sharedOpen == true) run.sparklingChecks.confirmGemzieChamber()
         val stacks = BirdfeederInventory.snapshot(client)
+        if(deathRun!==run) { deathRun=run;deathLoss=DeathInventoryLoss() }
+        val losses=deathLoss.observe(player.isAlive,stacks,System.currentTimeMillis())
+        if(losses.isNotEmpty() && run!=null) {
+            run.resources.lostOnDeath(losses)
+            run.gems.lostOnDeath(losses)
+            SafariFloorDrops.state.lostOnDeath(losses)
+            run.deathLoss(losses)
+        }
         run?.gems?.inventory(stacks.map { SafariRules.strip(it.first).trim() to it.second })
         SafariTracking.ledger.current?.inventoryEvidence(stacks)
         if (++ticks < 10) return
@@ -87,5 +97,5 @@ object SafariInventoryAlerts {
 
         }
     }
-    fun reset() { readiness.reset(); ticks = 0; level = null; SmallAlerts.resetInventory() }
+    fun reset() { deathRun=null;deathLoss=DeathInventoryLoss();readiness.reset(); ticks = 0; level = null; SmallAlerts.resetInventory() }
 }

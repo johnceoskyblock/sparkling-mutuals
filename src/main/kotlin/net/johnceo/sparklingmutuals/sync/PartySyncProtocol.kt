@@ -121,6 +121,7 @@ internal class PartySyncState(val self: String, roster: Set<String>) {
     private var revision = -1L
     val locks = linkedMapOf<String,SafariBiome>()
     val reports = linkedMapOf<String,SafariBiome>()
+    val hotspotWins = linkedMapOf<String,Int>()
     val sentNotifications = mutableSetOf<String>()
     data class Notification(val id: String,val player: String,val biome: SafariBiome)
     var notifications = emptyList<Notification>(); private set
@@ -212,6 +213,7 @@ internal class PartySyncState(val self: String, roster: Set<String>) {
         if(provider=="primary")primaryFairness=JsonObject().apply {
             addProperty("run",run);addProperty("revision",rev);add("counts",fair.deepCopy())
         }
+        hotspotWins.clear();fair.entrySet().forEach { hotspotWins[it.key]=it.value.asInt }
         notifications=if(conflict) emptyList() else pending
         true
     }.getOrDefault(false)

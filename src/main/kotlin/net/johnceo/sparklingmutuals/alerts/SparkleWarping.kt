@@ -175,7 +175,7 @@ object SparkleWarping {
     }
     private fun sendCleanup(client: Minecraft, now: Long) {
         if (cleanup.isNotEmpty() && now >= nextCleanupAt) {
-            client.connection?.sendCommand(cleanup.removeFirst());nextCleanupAt=now+750
+            client.connection?.let { handler -> net.johnceo.sparklingmutuals.alerts.AutomatedCommands.send(handler,cleanup.removeFirst()) };nextCleanupAt=now+750
         }
     }
     fun tick(client: Minecraft) {
@@ -199,7 +199,7 @@ object SparkleWarping {
                     if (name == null && leader != null) names(client)
                     name?.let { SparkleWarpPolicy.inviteAllowed(it, ConfigManager.leechWhitelist) }
                 } else false
-                leech.next(now, inParty, protected)?.let { client.connection?.sendCommand(it) }
+                leech.next(now, inParty, protected)?.let { client.connection?.let { handler -> net.johnceo.sparklingmutuals.alerts.AutomatedCommands.send(handler,it) } }
                 if (leech.pending && (!PartyManager.hasInfo || inParty == true && members.none(PartyManager::isLeader)))
                     PartyManager.requestPartyInfo()
             }
@@ -220,7 +220,7 @@ object SparkleWarping {
                 val members = setupRoster.members(self.name.string, rosterSize) ?: names(client)
                 if (members == null) {
                     if (!requestedPartyList) {
-                        client.connection?.sendCommand("p list")
+                        client.connection?.let { handler -> net.johnceo.sparklingmutuals.alerts.AutomatedCommands.send(handler,"p list") }
                         requestedPartyList = true
                     }
                     return

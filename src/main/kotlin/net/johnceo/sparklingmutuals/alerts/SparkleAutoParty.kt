@@ -20,6 +20,8 @@ object SparkleAutoParty {
     private var connection: Any? = null
     private var windowStartedAt = 0L
     private val returningInvites = ReturningPartyInvites()
+    private var detectedRun: net.johnceo.sparklingmutuals.safari.SafariRun?=null
+    private val earlyDetections=linkedSetOf<String>()
     fun register() {
         ClientSendMessageEvents.COMMAND.register { command ->
             if (command.trim().matches(Regex("(?:p|party)\\s+warp", RegexOption.IGNORE_CASE))) stop()
@@ -53,14 +55,19 @@ object SparkleAutoParty {
         }
     }
     fun start(client: Minecraft, deadline: Long, startedAt: Long = System.currentTimeMillis()) {
+        val discoveries=earlyDetections.takeIf { detectedRun===SafariTracking.ledger.current }?.toList().orEmpty()
         stop()
         run = SafariTracking.ledger.current
         level = client.level
         connection = client.connection
         invitations.start(deadline)
         windowStartedAt = startedAt
+        discoveries.forEach(::detected)
     }
     fun detected(name: String) {
+        val current=SafariTracking.ledger.current
+        if(detectedRun!==current) { detectedRun=current;earlyDetections.clear() }
+        if(current!=null && ConfigManager.autoParty && ConfigManager.warpAlertsEnabled) earlyDetections.add(name)
         if (ConfigManager.autoParty && ConfigManager.warpAlertsEnabled && SafariAssist.inSafari &&
             run === SafariTracking.ledger.current && !SparkleWarpPolicy.returningPhase(windowStartedAt,System.currentTimeMillis()))
             invitations.add(name, WarpPlayerStatus.ordered(name))
@@ -91,13 +98,13 @@ object SparkleAutoParty {
             invitations.discardPending()
             val handler = client.connection ?: return
             returningInvites.next(now, invitations.deadline, SparkleWarping.returningPlayers(), present, members.size)?.let {
-                handler.sendCommand(it)
+                net.johnceo.sparklingmutuals.alerts.AutomatedCommands.send(handler,it)
             }
             return
         }
         if (maxOf(members.size,present.size) >= SparkleWarpPolicy.PARTY_SIZE) return
         invitations.next(now, present) { WarpPlayerStatus.eligible(it, now) }?.let {
-            client.connection?.sendCommand("p $it")
+            client.connection?.let { handler -> net.johnceo.sparklingmutuals.alerts.AutomatedCommands.send(handler,"p $it") }
         }
     }
     fun stop() { invitations.stop(); joined.clear(); run = null; level = null; connection = null;windowStartedAt=0;returningInvites.reset() }

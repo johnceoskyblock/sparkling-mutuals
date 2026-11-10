@@ -59,6 +59,7 @@ object ConfigManager {
     var specialCatchStyle = 0
     var leechMode = false
     var leechWhitelist = "JohnCEO _cj Rqach johnkuudra"
+    var safariEntryCooldown = true
     var doomspiralThrowTimer = true
     var doomspiralLottery = true
     var doomspiralEmergenceTicks = 98
@@ -131,7 +132,7 @@ object ConfigManager {
     var capsuleHideDistance = 2f
     var showWhere = 1
     val personalBests = SafariPersonalBests()
-    private val flags = mapOf(::hudSnapping to true, ::doomspiralThrowTimer to true, ::doomspiralLottery to true, ::autoParty to false, ::autoPartyOnlineOnly to false, ::autoBiomeReports to true, ::uniqueHideCritterEsp to false, ::uniqueHideFloorDropEsp to false,
+    private val flags = mapOf(::safariEntryCooldown to true, ::hudSnapping to true, ::doomspiralThrowTimer to true, ::doomspiralLottery to true, ::autoParty to false, ::autoPartyOnlineOnly to false, ::autoBiomeReports to true, ::uniqueHideCritterEsp to false, ::uniqueHideFloorDropEsp to false,
         ::fullClearHideCritterEsp to false, ::fullClearHideFloorDropEsp to false,
         ::sparklingHideCritterEsp to false, ::sparklingHideFloorDropEsp to false, ::announceStartingItems to false, ::hotspotAnnouncer to false, ::uniqueHotspotAnnouncer to false, ::fullClearHotspotAnnouncer to false, ::sparklingHotspotAnnouncer to false, ::highlightTeammates to true, ::showTeammateNames to true, ::partyCommandsEnabled to true, ::useCloudApi to true, ::fullClearMode to false, ::sparklingMode to false, ::sparklingProfitableShardEsp to true, ::profitableShardEsp to true, ::timesaveOnly to true, ::warpAlertsEnabled to false,
         ::hideyhoAutoAccept to true, ::autoSelectSafariTicket to true, ::safariEntryAutoEnter to false, ::hideyhoInsideOutside to true, ::hideHauntedPaintings to true, ::shinyDetection to true,

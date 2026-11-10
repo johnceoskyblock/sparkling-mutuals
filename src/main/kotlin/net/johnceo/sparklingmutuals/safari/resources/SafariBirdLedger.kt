@@ -88,7 +88,7 @@ class SafariBirdLedger {
     val feedingResolved get() = floorDropsRemaining == 0 && heldFoods == 0 &&
         maxOf(accountedFeedings, verifiedPopulation) >= feedingTarget && feederCount == 0
     val allNineFloorFoodUsed get() = floorDropsRemaining==0 && heldFoods==0 && feederCount==0 &&
-        maxOf(accountedFeedings,verifiedPopulation)>=feedingTarget && feedingTarget>=9
+        maxOf(accountedFeedings,verifiedPopulation)>=feedingTarget && feedingTarget>=(9-deathLoss).coerceAtLeast(0)
     val sparklingSpawned get() = feedingResolved
     val allSpawned get() = feedingResolved
     val collected get() = picked.values.sum()
@@ -101,7 +101,9 @@ class SafariBirdLedger {
     }
     var includeStartingFood = true
     private val localExtras get() = if (includeStartingFood) foods.sumOf(::localExtra) else 0
-    val feedingTarget get() = maxOf(9, forestCollected) + localExtras + reportedExtras + inferredExtras
+    private var deathLoss = 0
+    fun lostOnDeath(amount: Int) { deathLoss+=amount.coerceAtLeast(0) }
+    val feedingTarget get() = (maxOf(9, forestCollected) + localExtras + reportedExtras + inferredExtras-deathLoss).coerceAtLeast(0)
     val sparklingTarget get() = feedingTarget
     /** Sender/type maxima deduplicate repeated notices; local notices overlap starting inventory. */
     fun contributions(local: String?, notices: Map<Pair<String, FloorDropType>, Int>, reporters: Set<String> = emptySet()) {

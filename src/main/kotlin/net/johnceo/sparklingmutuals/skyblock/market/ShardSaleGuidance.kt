@@ -111,7 +111,7 @@ object ShardSaleGuidance {
         val inSkyblock=client.player!=null && client.connection!=null && SkyblockSidebar.inSkyblock(client)
         val enabled=ConfigManager.shardSaleGuidance
         if(!inSkyblock)profile=null
-        if(profileConfirmation.next(enabled && inSkyblock,hasVerifiedProfile(),now))client.connection?.sendCommand("profileid")
+        if(profileConfirmation.next(enabled && inSkyblock,hasVerifiedProfile(),now))client.connection?.let { handler -> net.johnceo.sparklingmutuals.alerts.AutomatedCommands.send(handler,"profileid") }
         val screen=client.smScreen as? AbstractContainerScreen<*>
         val entries=if((enabled || ConfigManager.huntingBoxValue) && inSkyblock && screen!=null)screen.menu.slots.filter {it.container !is Inventory && it.index in 0..53}.map {slot ->
             val stack=slot.item

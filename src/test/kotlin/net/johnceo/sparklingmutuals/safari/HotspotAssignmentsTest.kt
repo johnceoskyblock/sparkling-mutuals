@@ -15,7 +15,7 @@ class HotspotAssignmentsTest {
             }
         }
     }
-    @Test fun `two second window collects late claims and rotates hotspot wins across runs once`() {
+    @Test fun `complete reports assign immediately and rotates hotspot wins across runs once`() {
         val wins=mutableMapOf<String,Int>()
         fun round(): Map<String,SafariBiome> {
             val states=listOf("a","b").associateWith { name -> HotspotAssignments(wins.toMutableMap()).apply {
@@ -23,7 +23,7 @@ class HotspotAssignmentsTest {
                 report("a",SafariBiome.FOREST,100)
                 report("b",SafariBiome.FOREST,1800)
             } }
-            states.values.forEach { assertNull(it.assignment(states.keys,3799)) }
+            states.values.forEach { assertNotNull(it.assignment(states.keys,1800)) }
             val result=states.mapValues { it.value.assignment(states.keys,3800)!! }
             states.forEach { (name,state) -> assertEquals(result[name],state.assignment(states.keys,9000)) }
             result.filterValues { it==SafariBiome.FOREST }.keys.forEach { wins[it]=(wins[it] ?: 0)+1 }
@@ -54,8 +54,8 @@ class HotspotAssignmentsTest {
         val state=HotspotAssignments().apply {
             begin("Me",SafariBiome.FOREST,0);report("Me",SafariBiome.FOREST,500)
         }
-        assertNull(state.assignment(setOf("me","friend"),5499))
-        assertEquals(SafariBiome.FOREST,state.assignment(setOf("me","friend"),5500))
+        assertNull(state.assignment(setOf("me","friend"),30499))
+        assertEquals(SafariBiome.FOREST,state.assignment(setOf("me","friend"),30500))
         for(body in listOf("My hotspot: Icy","my hotspot: ice!","[CritterMod] My hotspot: Icy Biome","[SafariUtils] Hotspot: Icy"))
             assertEquals("Friend" to SafariBiome.ICY,HotspotAssignments.parse("Party > Friend: $body"),body)
         for(line in listOf("Guild > Friend: My hotspot: Cavern","From Friend: My hotspot: Cavern",
@@ -68,7 +68,7 @@ class HotspotAssignmentsTest {
         assertNull(HotspotAssignments.parse("Guild > First: [SM] Hotspot: Icy"))
         assertNull(HotspotAssignments.parse("Party > First: I think [SM] Hotspot: Icy"))
     }
-    @Test fun `third distinct report starts countdown and leader alone instructs manual or missing reporters`() {
+    @Test fun `missing report waits thirty seconds and leader instructs only reported manual members`() {
         val state=HotspotAssignments().apply {
             begin("a",SafariBiome.FOREST,0)
             report("a",SafariBiome.FOREST,0,true)
@@ -77,14 +77,14 @@ class HotspotAssignmentsTest {
             report("c",SafariBiome.HAUNTED,1000)
         }
         val members=setOf("a","b","c","d")
-        assertNull(state.assignment(members,2499))
-        assertNotNull(state.assignment(members,2500))
+        assertNull(state.assignment(members,29999))
+        assertNotNull(state.assignment(members,30000))
         assertTrue(state.notifications(false,"a").isEmpty())
         val messages=state.notifications(true,"a")
-        assertEquals(setOf("c","d"),messages.map { it.first }.toSet())
-        assertEquals(2,messages.map { it.second }.toSet().size)
+        assertEquals(setOf("c"),messages.map { it.first }.toSet())
+        assertEquals(1,messages.map { it.second }.toSet().size)
         assertTrue(state.notifications(true,"a").isEmpty())
-        state.report("d",SafariBiome.ICY,2600,true)
+        state.report("d",SafariBiome.ICY,31000,true)
         assertTrue(state.notifications(true,"a").isEmpty())
     }
     @Test fun `manual biome abbreviations and typos work without matching ordinary conversations or assignment replies`() {
@@ -107,7 +107,7 @@ class HotspotAssignmentsTest {
                 begin(self.sender,self.biome,0)
                 reports.forEachIndexed { i,report -> report(report.sender,report.biome,i*100L,report.coordinated) }
             }
-            assertNull(state.assignment(members,2199))
+            assertNotNull(state.assignment(members,300))
             val biome=state.assignment(members,2200)!!
             if(self.sender=="JohnFounder") assertEquals(listOf("pyruuuu" to SafariBiome.FOREST),state.notifications(true,self.sender))
             else assertTrue(state.notifications(false,self.sender).isEmpty())

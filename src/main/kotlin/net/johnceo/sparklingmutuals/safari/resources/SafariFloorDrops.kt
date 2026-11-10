@@ -68,6 +68,18 @@ class FloorDropState {
         if (heldGems.containsAll(gemNames)) gemsReady = true
         inventoryPickaxes = maxOf(inventoryPickaxes, stacks.filter { SafariRules.strip(it.first).equals("Icebreaker", true) }.sumOf { it.second.coerceAtLeast(0) })
     }
+    fun lostOnDeath(items: Map<String,Int>) {
+        FloorDropType.entries.forEach { type ->
+            if((items[type.label] ?: 0)>0) {
+                val remaining=(amount(type)-(items[type.label] ?: 0)).coerceAtLeast(0)
+                acquired[type]=remaining;inventoryPeak[type]=remaining;heldMaximum[type]=0
+                if(remaining==0) gems.remove(type.label)
+                if(type.label in gemNames) gemsReady=gemNames.all { it in gems }
+                if(type.label=="Soothing Incense") { incensePickups=remaining;incenseReady=remaining>=4 }
+                if(type.label=="Icebreaker") { pickaxes=remaining;inventoryPickaxes=remaining }
+            }
+        }
+    }
     fun force(enabled: Boolean) { if (biome in setOf(SafariBiome.CAVERN, SafariBiome.ICY)) override = enabled }
     fun enabled(biome: SafariBiome?, fullClear: Boolean, configured: Boolean, forestFoodComplete: Boolean = false,
         partyBirdsComplete: Boolean = false, partyGemzieComplete: Boolean = false,

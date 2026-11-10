@@ -178,3 +178,7 @@ Existing configs without the new keys initialize every drop-type and party-membe
 2026-10-19 - Clarified that no-data party members need all Sparklings and allow each mod user's independent unused starting food/coin report.
 
 2026-10-19 (America/New_York) — Added discovery-gated early party quantities and local-title-only completion reminders. Reviewed source: working changes on `78885e0`; automated validation reported with the implementation, live multi-client validation pending.
+
+## Confirmed death losses
+
+On a locally observed death, retain the last living inventory and wait for a stable respawn inventory before calculating actual lost quantities. The 50% removal chance is never used to assume an item vanished. Ordinary consumption is not treated as death loss. Lost floor resources reduce available discovered/starting contributions, held balances, local gem readiness and pickup suppression; retained items and confirmed podium placements remain valid. The next existing live inventory/objective WebSocket snapshot publishes the reduced values, preserving packet sequence rules. No new protocol or backend deployment is required. A disconnect/new run clears the death comparison.

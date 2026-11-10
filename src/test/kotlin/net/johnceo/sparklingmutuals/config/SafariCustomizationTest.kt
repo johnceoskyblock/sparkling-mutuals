@@ -13,6 +13,30 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 
 class SafariCustomizationTest {
+    @Test fun `hotspot HUD settings and appearance survive reload`() {
+        ConfigManager.init(dir);ContestConfig.init(dir)
+        val settings=SafariSettings()
+        settings.tracking.hotspotHud.appearance.transparency=67
+        settings.apply();ConfigManager.init(dir)
+        assertEquals(67,AppearanceConfig.panels.getValue("hotspot").transparency)
+        val catalog=SettingsCatalog(SafariSettings())
+        val target=HudConfigLinks.target(net.johnceo.sparklingmutuals.hud.SafariHud.HOTSPOT)
+        assertNotNull(catalog.locate(target))
+        assertTrue(catalog.expansionFor(target).contains("HUDs / Hotspot GUI / Appearance"))
+    }
+    @Test fun `cooldown toggle and appearance edits apply and survive restart`() {
+        ConfigManager.init(dir)
+        ContestConfig.init(dir)
+        val settings=SafariSettings()
+        settings.safari.entryCooldown.enabled=false
+        settings.safari.entryCooldown.appearance.transparency=67
+        settings.apply()
+        assertFalse(ConfigManager.safariEntryCooldown)
+        assertEquals(67,AppearanceConfig.panels.getValue("entry_cooldown").transparency)
+        ConfigManager.init(dir)
+        assertFalse(ConfigManager.safariEntryCooldown)
+        assertEquals(67,AppearanceConfig.panels.getValue("entry_cooldown").transparency)
+    }
     @TempDir lateinit var dir: Path
     @Test fun `dark theme upgrades old panel defaults while preserving custom colors and opacity`() {
         val saved = Properties().apply {

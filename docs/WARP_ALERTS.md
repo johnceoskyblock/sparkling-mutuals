@@ -97,3 +97,7 @@ Focused tests cover Solo/Duo cleanup selection, missing/invalid runners, leader/
 Contest handling: leader warp entry requires Uncommon, regardless of the ticket-announcer goal. The party contest guard owns the New Contest Started! announcement. Shift still overrides the entry guard.
 
 2026-11-03 — Fresh profiles retain the copied 26-second delay and Auto-party preference, with master warping and Leech off. Existing saved choices remain unchanged.
+
+## Entry and command reliability
+
+Once inside an entered run, a new contest or unearned Uncommon reward does not prevent arming invitations and the returning-player phase. The contest guard before entry remains independent. Early sparkling discoveries are retained for the current run until the invitation cycle starts. All automatic game commands share a minimum 500 ms send interval, including party chat, invites, leave/accept, cleanup, warp, profile confirmation and automated quest replies. Leech acceptance waits at least 500 ms after initiating leave and still requires confirmed departure. Queued commands expire after five seconds and are dropped on connection/run changes; warp/cleanup and leech commands recheck their mode before sending.

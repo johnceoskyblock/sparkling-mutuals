@@ -10,20 +10,29 @@ class BirdFoodSparklingCheck {
     private var population = 0
     private var verifiedPopulation = 0
     private var feedingTarget = 9
+    private var lostFood = 0
+    private var confirmedSpawns = 0
     private val earlySpawns = ArrayDeque<Long>()
     var pendingSpawns = 0
         private set
     val floorDropsRemaining get() = floor
     val leftToUse: Int? get() = held?.let { h -> floor?.let { it+h } }
     val complete get() = floor == 0 && held == 0 &&
-        (pendingSpawns == 0 && (consumed || population >= 9) || verifiedPopulation >= feedingTarget)
+        (pendingSpawns == 0 && (consumed || population >= (9-lostFood).coerceAtLeast(0)) || verifiedPopulation >= feedingTarget)
+    fun lostOnDeath(amount: Int) {
+        if(amount<=0) return
+        lostFood+=amount
+        feedingTarget=(feedingTarget-amount).coerceAtLeast(0)
+        pendingSpawns=(pendingSpawns-amount).coerceAtLeast(0)
+        consumed=confirmedSpawns>0
+    }
     fun floor(remaining: Int) {
         if (remaining > (floor ?: 0)) clearPopulationProof()
         floor = if(remaining >= 0) remaining else floor?.takeIf { it > 0 }
     }
     /** Qualified captures + current birds can prove a missed announcement, but only with all food resolved. */
     fun population(accountedFeedings: Int, target: Int = 9) {
-        feedingTarget = target.coerceAtLeast(9)
+        feedingTarget = if(lostFood>0) target.coerceAtLeast(0) else target.coerceAtLeast(9)
         population=maxOf(population,accountedFeedings)
         if (floor == 0 && held == 0) verifiedPopulation=maxOf(verifiedPopulation,accountedFeedings)
     }
@@ -46,6 +55,7 @@ class BirdFoodSparklingCheck {
     }
     fun spawn(raw: String, now: Long): Boolean {
         if(SafariRules.strip(raw) !in spawns) return false
+        confirmedSpawns++
         if(pendingSpawns > 0) pendingSpawns-- else earlySpawns.addLast(now)
         return true
     }

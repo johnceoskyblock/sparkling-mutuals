@@ -6,6 +6,10 @@ Cancel recognized Safari entry interactions before their normal packet path whil
 
 ## Controls and defaults
 
+### Safari entry cooldown display
+
+**Safari -> Helpers -> Safari entry cooldown** enables a movable 30-second HUD countdown after the exact server message `You cannot join this instance!` on Hypixel in Torrhus Canyon or Safari. Default on; position, scale and appearance are available through `/sm gui` and the setting group. Player/party chat and action-bar messages cannot trigger it. Repeated denials during an active countdown do not restart it. It disappears at zero, on disable or disconnect; world transfers on the same connection preserve the deadline. This is a local elapsed-time estimate, not confirmation that the server will accept another entry. It does not retry entry or alter ticket/guard behavior.
+
 | Stage | Default-on setting | Blockers |
 | --- | --- | --- |
 | Torrhus Canyon (`foraging_3`) | **Party commands → !dt downtime** | Outstanding readiness requests and pending readiness identity/overflow. |

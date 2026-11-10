@@ -107,7 +107,7 @@ class LeechInvitation {
         }
         if (inParty == true && protectedLeader == false && !leaving) {
             leaving=true
-            acceptAfter=now+50
+            acceptAfter=now+500
             return "p leave"
         }
         return null

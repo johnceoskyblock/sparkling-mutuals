@@ -47,6 +47,7 @@ class SafariSettings {
         safari.alerts.appearance = customization.alert
         safari.alerts.nearbyAppearance = customization.huds.sparklings
         safari.capture.doomAppearance = customization.huds.doomThrow
+        tracking.hotspotHud.appearance=customization.huds.hotspot
         tracking.progressHud.appearance=customization.huds.progress
         tracking.missingHud.appearance=customization.huds.missing
         tracking.objectivesHud.appearance=customization.huds.objectives
@@ -216,6 +217,8 @@ class SafariSettings {
         @ConfigEditorBoolean var autoEnter = ConfigManager.safariEntryAutoEnter
     }
     class Safari {
+        @JvmField @ConfigOption(name = "Safari entry cooldown", desc = "Show a 30-second timer after the server says You cannot join this instance!.")
+        @Accordion val entryCooldown = HudOptions(ConfigManager.safariEntryCooldown,"entry_cooldown")
         @JvmField @ConfigOption(name = "Safari entry", desc = "") @Accordion val entry = SafariEntrySettings()
         @JvmField @ConfigOption(name = "Sparkling detection and alerts", desc = "") @Accordion val alerts = Alerts()
         @JvmField @ConfigOption(name = "Capture tools", desc = "") @Accordion val capture = SafariCaptureSettings()
@@ -413,6 +416,7 @@ class SafariSettings {
         @JvmField var runVolume = ConfigManager.runCompleteVolume
     }
     class Tracking {
+        @JvmField @ConfigOption(name="Hotspot GUI",desc="Follows /hotspot. Party hotspots, assigned biomes and hotspot wins.") @Accordion val hotspotHud=HotspotHudOptions()
         @JvmField @ConfigOption(name="Progress HUD",desc="") @Accordion val progressHud=ProgressHudOptions()
         @JvmField @ConfigOption(name="Missing / Unchecked",desc="") @Accordion val missingHud=HudOptions(ConfigManager.missingPanel,"missing")
         @JvmField @ConfigOption(name="Biome Objectives",desc="") @Accordion val objectivesHud=HudOptions(ConfigManager.biomeObjectives,"objectives")
@@ -430,6 +434,12 @@ class SafariSettings {
         @JvmField @ConfigOption(name="Enabled",desc="") @ConfigEditorBoolean var enabled=initial
         @JvmField @ConfigOption(name="Appearance",desc="") @Accordion
         var appearance=PanelAppearanceSettings(AppearanceConfig.panels.getValue(id)) { AppearanceConfig.selectedHex }
+        @JvmField @ConfigOption(name="Position and size",desc="") @ConfigEditorButton(buttonText="Edit HUDs")
+        val placement=Runnable { val client=Minecraft.getInstance();client.smSetScreen(ContestGui(client.smScreen)) }
+    }
+    class HotspotHudOptions {
+        @JvmField @ConfigOption(name="Appearance",desc="") @Accordion
+        var appearance=PanelAppearanceSettings(AppearanceConfig.panels.getValue("hotspot")) { AppearanceConfig.selectedHex }
         @JvmField @ConfigOption(name="Position and size",desc="") @ConfigEditorButton(buttonText="Edit HUDs")
         val placement=Runnable { val client=Minecraft.getInstance();client.smSetScreen(ContestGui(client.smScreen)) }
     }
@@ -534,6 +544,7 @@ class SafariSettings {
         }
         val changes = listOf(ConfigManager::safariEntryAutoEnter to warp.autoEnter, ConfigManager::sparklingCatchCount to safari.alerts.catchCount, ConfigManager::specialCatchAlert to safari.alerts.caught,
             ConfigManager::alwaysCelebrateSparkling to safari.alerts.alwaysCelebrate,
+            ConfigManager::safariEntryCooldown to safari.entryCooldown.enabled,
             ConfigManager::doomspiralThrowTimer to safari.capture.doomTimer, ConfigManager::doomspiralLottery to safari.gambling.doomspiral,
             ConfigManager::autoParty to warp.autoParty, ConfigManager::autoPartyOnlineOnly to warp.autoPartyOnlineOnly, ConfigManager::autoBiomeReports to party.biomeReports,
             ConfigManager::uniqueHideCritterEsp to modes.unique.hideCritters, ConfigManager::uniqueHideFloorDropEsp to modes.unique.hideDrops,
@@ -555,7 +566,8 @@ class SafariSettings {
         val espChanged = esp.apply()
         val modWideCrittersChanged = modWideCritters.apply(SafariEspConfig.modWideToggles)
         val profitableCrittersChanged = profitableCritters.apply(SafariEspConfig.profitableToggles)
-        val customizationChanged = customization.apply()
+        val cooldownAppearanceChanged = safari.entryCooldown.appearance.apply()
+        val customizationChanged = customization.apply() || cooldownAppearanceChanged
         val distance = ConfigManager.validCapsuleDistance(safari.capsuleHideDistance)
         val pathWidth = ConfigManager.validCapsulePathWidth(safari.capsulePathWidth)
         val waterOpacity = safari.visibility.waterOpacity.values()

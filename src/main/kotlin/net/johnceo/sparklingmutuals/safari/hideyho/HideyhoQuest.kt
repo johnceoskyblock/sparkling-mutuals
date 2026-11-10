@@ -53,7 +53,7 @@ object HideyhoQuest {
         val active = client.connection ?: return false
         reset()
         when (event) {
-            is ClickEvent.RunCommand -> active.sendCommand(event.command().removePrefix("/"))
+            is ClickEvent.RunCommand -> net.johnceo.sparklingmutuals.alerts.AutomatedCommands.send(active,event.command().removePrefix("/"))
             is ClickEvent.Custom -> active.send(ServerboundCustomClickActionPacket(event.id(), event.payload()))
             else -> return false
         }

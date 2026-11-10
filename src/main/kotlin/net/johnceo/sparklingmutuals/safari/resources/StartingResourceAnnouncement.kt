@@ -9,6 +9,20 @@ class StartingResourceAnnouncement(private val resources: SafariResources) {
     private var nextAt = 0L
     private var hotspot: String? = null
     private var hotspotHandled = false
+    private var pendingMessage: String? = null
+
+    fun dispatchReliable(now: Long, party: PartySparklingState, hotspotEnabled: Boolean, startingItemsEnabled: Boolean,
+        hotspotMessage: (String) -> String?, send: (String) -> Boolean): Boolean {
+        pendingMessage?.let { message ->
+            if((message.contains("Hotspot:") && !hotspotEnabled) || (!message.contains("Hotspot:") && !startingItemsEnabled)) pendingMessage=null
+            else { if(send(message)) { pendingMessage=null;return true };return false }
+        }
+        dispatch(now,party,hotspotEnabled,startingItemsEnabled,hotspotMessage) { pendingMessage=it }
+        val message=pendingMessage ?: return false
+        if(!send(message)) return false
+        pendingMessage=null
+        return true
+    }
 
     fun observeHotspot(raw: String, now: Long) {
         val text = net.johnceo.sparklingmutuals.safari.SafariRules.strip(raw)
