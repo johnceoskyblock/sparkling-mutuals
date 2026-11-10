@@ -27,6 +27,8 @@ object HudConfigLinks {
             net.johnceo.sparklingmutuals.hud.SafariHud.ENTRY_COOLDOWN -> SettingsTarget(safari,listOf("entryCooldown","enabled"))
             net.johnceo.sparklingmutuals.hud.SafariHud.DEVELOPER -> SettingsTarget(huds, emptyList())
             net.johnceo.sparklingmutuals.hud.SafariHud.PROGRESS -> SettingsTarget(huds,listOf("progressHud","enabled"))
+            net.johnceo.sparklingmutuals.hud.SafariHud.PROFITABLE -> SettingsTarget(huds,listOf("profitableHud","enabled"))
+            net.johnceo.sparklingmutuals.hud.SafariHud.LAKE_CLEARED -> SettingsTarget(huds,listOf("lakeClearedHud","enabled"))
             net.johnceo.sparklingmutuals.hud.SafariHud.MISSING -> SettingsTarget(huds,listOf("missingHud","enabled"))
             net.johnceo.sparklingmutuals.hud.SafariHud.OBJECTIVES -> SettingsTarget(huds,listOf("objectivesHud","enabled"))
             net.johnceo.sparklingmutuals.hud.SafariHud.CAPTURES -> SettingsTarget(huds,listOf("capturesHud","enabled"))

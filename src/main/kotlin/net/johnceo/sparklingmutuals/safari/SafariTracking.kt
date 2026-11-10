@@ -120,6 +120,8 @@ object SafariTracking {
         SafariAssist.markEntered()
         ensureRun(client)
         ledger.current!!.record(catch, now, client.player!!.name.string)
+        if (ConfigManager.lakeClearAlert && ledger.current!!.lakeCatchMilestone.consume(ledger.current!!::personalCount))
+            LakeClearAlert.show(ledger.current!!)
         net.johnceo.sparklingmutuals.hud.SafariBanners.caught(catch.critter.name)
         checkPartyUnique(client, catch.critter.biome, now)
         SafariEsp.caught(catch.critter.name, catch.personal)
@@ -171,6 +173,7 @@ object SafariTracking {
     fun render(graphics: GuiGraphicsExtractor) {
         val client = Minecraft.getInstance()
         if (client.player == null || client.smScreen is ContestGui || !visible) return
+        LakeClearAlert.render(graphics)
         val run = run
         val unique = ConfigManager.countUniqueOnly
         if (ConfigManager.progressHud) SafariPanels.progress(run, unique, System.currentTimeMillis()).draw(graphics, SafariHud.PROGRESS)
@@ -180,6 +183,8 @@ object SafariTracking {
             val missing=SafariPanels.missing(run,biome,unique,BeeNests.unpunchedCount,SafariStructures.nearbyMounds,SafariStructures.walls)
             if(missing.rows.isNotEmpty()) missing.draw(graphics,SafariHud.MISSING)
         }
+        if (ConfigManager.profitableChecklist) net.johnceo.sparklingmutuals.safari.ui.ProfitableChecklist.panel(run, biome)
+            .draw(graphics, SafariHud.PROFITABLE)
         if (ConfigManager.biomeObjectives) {
             val objectives = SafariPanels.objectives(run, biome, unique, BeeNests.unpunchedCount,
                 run?.moundSurvey?.remaining ?: 0, SafariStructures.walls)

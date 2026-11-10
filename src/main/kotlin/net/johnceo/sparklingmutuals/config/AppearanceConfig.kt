@@ -22,7 +22,7 @@ class PanelStyle {
 
 object AppearanceConfig {
     fun color(rgb: Int) = "0:255:${rgb shr 16 and 255}:${rgb shr 8 and 255}:${rgb and 255}"
-    val panels = listOf("hotspot", "miria", "progress", "missing", "objectives", "captures", "sparklings", "alert", "gems", "bird_food", "incense", "coins", "warp", "run_complete", "doom_throw", "entry_cooldown", "developer").associateWith { PanelStyle() }
+    val panels = listOf("hotspot", "miria", "progress", "profitable", "lake_cleared", "missing", "objectives", "captures", "sparklings", "alert", "gems", "bird_food", "incense", "coins", "warp", "run_complete", "doom_throw", "entry_cooldown", "developer").associateWith { PanelStyle() }
     var runCompleteColor = color(0x55FF55)
     var selectedHex = "#FFD700"
     var nestColor = color(0x55FF55)
@@ -40,7 +40,7 @@ object AppearanceConfig {
         panels.forEach { (id, style) ->
             // Seed the new panel from the existing Missing style, then save/edit it independently.
             fun saved(key: String) = properties.getProperty("appearance.$id.$key")
-                ?: if (id == "objectives") properties.getProperty("appearance.missing.$key") else null
+                ?: if (id in setOf("objectives", "profitable", "lake_cleared")) properties.getProperty("appearance.missing.$key") else null
             style.borderEnabled = saved("borderEnabled")?.toBooleanStrictOrNull() ?: true
             val background = saved("backgroundColor")
             val legacyCompletion = id == "run_complete" && background == color(0xAAFFAA)
