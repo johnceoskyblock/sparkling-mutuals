@@ -19,7 +19,9 @@ it('real hibernating sockets withhold atomic positives until the fixed cohort ca
  send(x.ws,{action:'begin'});send(x.ws,{action:'done'});x.ws.send(JSON.stringify({sequence:++seq,kind:'S',payload:'1,0,0,0'}));await flush();expect(x.frames.some(f=>f.type==='sparklings')).toBe(false);
  const ns=(env as unknown as Env).COORDINATOR,stub=ns.get(ns.idFromName('coordinator-v1'));
  await evictDurableObject(stub);send(y.ws,{action:'begin'});send(y.ws,{action:'facts',reporter:a,nests:0,facts:Array(38).fill(0),caught:[1,0]});send(y.ws,{action:'done'});await flush();
- const atom=x.frames.find(f=>f.type==='sparklings');expect(atom).toBeDefined();expect(atom.payload.split(',').map(Number)[2]).toBe(1);
+ // Hibernation wake-up and WebSocket delivery are asynchronous; 30ms is not a completion barrier.
+ await expect.poll(()=>x.frames.find(f=>f.type==='sparklings'),{timeout:2000,interval:10}).toBeDefined();
+ const atom=x.frames.find(f=>f.type==='sparklings');expect(atom.payload.split(',').map(Number)[2]).toBe(1);
  x.ws.close();y.ws.close();
 });
 it('malformed and excessive messages close sockets instead of publishing',async()=>{
