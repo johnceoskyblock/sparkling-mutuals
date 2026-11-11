@@ -32,7 +32,9 @@ class CritterProgressSyncTest {
         val context = PartySyncTransport.Context("m1", "0".repeat(31) + "1",
             listOf("0".repeat(31) + "1", "0".repeat(31) + "2"))
         val sent = mutableListOf<String>()
-        sync.tick(context, null, null, "visit", run, party(), 0, true, true) {
+        val runId="10000000-0000-0000-0000-000000000001"
+        val visitId="20000000-0000-0000-0000-000000000001"
+        sync.tick(context, null, null, "visit", run, party(), 0, true, true,runId,visitId) {
             sent.add(it); true
         }
         assertEquals(1, sent.size)
@@ -41,17 +43,33 @@ class CritterProgressSyncTest {
         val message = com.google.gson.JsonObject().apply {
             addProperty("type", "state"); addProperty("kind", "C"); addProperty("sender", "peer")
             addProperty("sequence", 10); addProperty("ageMillis", 0)
-            addProperty("payload", CritterProgressProtocol.encode(peerRun, party()))
+            addProperty("runId",runId)
+            addProperty("payload", CritterProgressProtocol.encode(peerRun, party(),runId,visitId))
         }
-        sync.receiveShared(message, mapOf("peer" to context.roster[1]), context.self)
+        sync.receiveShared(message, mapOf("peer" to context.roster[1]), context.self,runId)
+        sync.tick(context,null,null,"visit",run,party(),500,true,true,runId,visitId) { sent.add(it);true }
         assertTrue(run.sharedCritterComplete("Scrappy", SafariMode.UNIQUE))
         assertEquals(0, run.count("Scrappy"))
-        sync.tick(context, null, null, "visit", run, party(), 500, true, true) {
+        sync.tick(context, null, null, "visit", run, party(), 1000, true, true,runId,visitId) {
             sent.add(it); true
         }
         assertEquals(1, sent.size, "received evidence is not echoed")
+        message.addProperty("sequence",1)
+        message.addProperty("payload",CritterProgressProtocol.encode(SafariRun(0),party(),runId,visitId))
+        sync.receiveShared(message,mapOf("peer" to context.roster[1]),context.self,runId)
+        sync.tick(context,null,null,"visit",run,party(),1500,true,true,runId,visitId) { true }
+        assertFalse(run.sharedCritterComplete("Scrappy",SafariMode.UNIQUE),"a replaced sender socket may restart its sequence")
         sync.reset()
         assertFalse(run.sharedCritterComplete("Scrappy", SafariMode.UNIQUE))
+    }
+    @Test fun `shared C rejects another run and the legacy separate payload remains compatible`() {
+        val id="10000000-0000-0000-0000-000000000001"
+        val visit="20000000-0000-0000-0000-000000000001"
+        val payload=CritterProgressProtocol.encode(SafariRun(0),party(),id,visit)
+        assertNotNull(CritterProgressProtocol.decode(payload,id))
+        assertNull(CritterProgressProtocol.decode(payload,"10000000-0000-0000-0000-000000000002"))
+        assertNull(CritterProgressProtocol.decode(payload))
+        assertNotNull(CritterProgressProtocol.decode(CritterProgressProtocol.encode(SafariRun(0),party())))
     }
     @Test fun `local unique catches combine with peer render checks in the current biome`() {
         val run = SafariRun(0)

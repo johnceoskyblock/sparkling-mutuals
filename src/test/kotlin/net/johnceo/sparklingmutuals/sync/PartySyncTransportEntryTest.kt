@@ -15,6 +15,58 @@ import org.junit.jupiter.api.Test
 class PartySyncTransportEntryTest {
     private val self="00000000000000000000000000000001"
     private val peer="00000000000000000000000000000002"
+    @Test fun `protocol two withholds replay until the matching game thread boundary and resumes the same visit`() {
+        Fixture().use { server ->
+            val transport=PartySyncTransport(server.auth,server.ws)
+            val context=PartySyncTransport.Context("m88A",self,listOf(self,peer))
+            val connection="10000000-0000-0000-0000-000000000001"
+            val run="20000000-0000-0000-0000-000000000001"
+            val events=mutableListOf<String>()
+            transport.onMessage={ root,_ ->
+                assertFalse(transport.ready,"replay is applied before readiness")
+                events.add(root["type"].asString)
+            }
+            transport.onReady={ events.add("ready") }
+            fun welcome(id: String) =
+                """{"type":"welcome","self":"s","roster":["s","p"],"connectionId":"$id","features":["run-reconciliation-v1","critter-completion-v1","hotspots-v1","biome-reports-v1","room-sparklings-v1"]}"""
+            fun boundary(type: String,id: String=connection) =
+                """{"type":"$type","version":1,"connectionId":"$id","visitId":"${transport.activeVisitId}","runId":"$run","status":"joined"}"""
+            try {
+                transport.tick(context,System.currentTimeMillis())
+                val socket=server.connections.poll(5,TimeUnit.SECONDS) ?: error("No upgrade")
+                assertEquals("2",server.upgrades.poll(5,TimeUnit.SECONDS)?.get("x-safariutils-sync-protocol"))
+                server.send(socket,welcome(connection))
+                await { transport.drainIncoming();transport.coordinationAvailable }
+                assertFalse(transport.ready)
+                assertTrue(transport.send(1,"H","""{"version":1,"action":"hello"}"""))
+                val hello=com.google.gson.JsonParser.parseString(server.read(socket)).asJsonObject
+                val inner=com.google.gson.JsonParser.parseString(hello["payload"].asString).asJsonObject
+                assertEquals(transport.activeVisitId,inner["visitId"].asString)
+                assertTrue(inner["resumeRunId"].isJsonNull)
+                server.send(socket,boundary("reconcile"))
+                server.send(socket,"""{"type":"state","sender":"p","sequence":1,"kind":"N","payload":"1","runId":"$run"}""")
+                server.send(socket,boundary("replay-complete","30000000-0000-0000-0000-000000000001"))
+                await { transport.drainIncoming();transport.acceptedRunId==run }
+                assertFalse(transport.ready);assertTrue(events.isEmpty())
+                server.send(socket,"""{"type":"sparklings","payload":"0,0,1,0","runId":"$run"}""")
+                server.send(socket,boundary("replay-complete"))
+                await { transport.drainIncoming().ready }
+                assertEquals(listOf("state","sparklings","ready"),events)
+                val visit=transport.activeVisitId
+                transport.close(false)
+                transport.tick(context,System.currentTimeMillis())
+                val next=server.connections.poll(5,TimeUnit.SECONDS) ?: error("No resumed upgrade")
+                val nextConnection="40000000-0000-0000-0000-000000000001"
+                server.send(next,welcome(nextConnection))
+                await { transport.drainIncoming();transport.coordinationAvailable }
+                assertEquals(visit,transport.activeVisitId)
+                assertFalse(transport.ready)
+                assertTrue(transport.send(2,"H","""{"version":1,"action":"hello"}"""))
+                val resumed=com.google.gson.JsonParser.parseString(server.read(next)).asJsonObject
+                assertEquals(run,com.google.gson.JsonParser.parseString(resumed["payload"].asString).asJsonObject["resumeRunId"].asString)
+            } finally { transport.close(false) }
+        }
+    }
     @Test fun `real socket capture is drained before action and loss revokes generation`() {
         Fixture().use { server ->
             val transport=PartySyncTransport(server.auth,server.ws)
@@ -75,6 +127,7 @@ class PartySyncTransportEntryTest {
         val auth=URI("http://127.0.0.1:${server.localPort}/auth")
         val ws=URI("ws://127.0.0.1:${server.localPort}/sync")
         val connections=LinkedBlockingQueue<Socket>()
+        val upgrades=LinkedBlockingQueue<Map<String,String>>()
         init { thread(isDaemon=true,name="cj-local-ws") {
             while(!server.isClosed) {
                 val socket=runCatching { server.accept() }.getOrNull() ?: break
@@ -98,11 +151,23 @@ class PartySyncTransportEntryTest {
                 socket.getOutputStream().write(("HTTP/1.1 200 OK\r\nContent-Length: ${body.length}\r\nConnection: close\r\n\r\n"+body).toByteArray())
                 socket.close()
             } else {
+                upgrades.put(headers)
                 val key=headers["sec-websocket-key"] ?: error("No WS key")
                 val accept=Base64.getEncoder().encodeToString(MessageDigest.getInstance("SHA-1").digest((key+"258EAFA5-E914-47DA-95CA-C5AB0DC85B11").toByteArray()))
                 socket.getOutputStream().write("HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: $accept\r\n\r\n".toByteArray())
                 socket.getOutputStream().flush();connections.put(socket)
             }
+        }
+        fun read(socket: Socket): String {
+            val input=socket.getInputStream()
+            check(input.read()>=0)
+            var size=input.read() and 127
+            if(size==126) size=(input.read() shl 8) or input.read()
+            check(size in 0..8192)
+            val mask=input.readNBytes(4)
+            val body=input.readNBytes(size)
+            body.indices.forEach { body[it]=(body[it].toInt() xor mask[it%4].toInt()).toByte() }
+            return body.toString(Charsets.UTF_8)
         }
         fun send(socket: Socket, value: String) {
             val data=value.toByteArray(Charsets.UTF_8);val out=socket.getOutputStream()

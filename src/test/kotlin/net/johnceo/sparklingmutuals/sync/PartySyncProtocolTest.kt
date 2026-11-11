@@ -7,6 +7,19 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class PartySyncProtocolTest {
+    @Test fun `retained inventory keeps source facts without stale holdings or feeder occupancy`() {
+        val state=PartySyncState(self,setOf(self,peer))
+        val fresh=aggregate().apply { this[10]=2;this[17]=0;this[18]=2;this[23]=1 }
+        assertTrue(state.receiveOrdered(peer,"A",fresh.joinToString(","),true))
+        state.invalidateInventory()
+        assertTrue(state.receiveOrdered(peer,"A",fresh.joinToString(","),false))
+        assertTrue(state.inventories.isEmpty())
+        assertEquals(1,state.facts[23])
+        assertEquals(0,state.usage!![5])
+        assertTrue(state.receiveOrdered(peer,"A",fresh.joinToString(","),true))
+        assertEquals(2,state.inventories.getValue(peer)[10])
+        assertEquals(2,state.usage!![5])
+    }
     @Test fun `newer death loss snapshot replaces owned inventory and cannot be undone by stale packets`() {
         val state=PartySyncState(self,setOf(self,peer))
         val before=aggregate().apply { this[0]=1;this[19]=1 }
