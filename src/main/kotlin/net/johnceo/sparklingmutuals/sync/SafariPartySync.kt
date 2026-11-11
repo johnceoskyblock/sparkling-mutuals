@@ -87,8 +87,6 @@ object SafariPartySync {
             adoptedRunProtocol=adoptedRunProtocol || transport.runCapability
             if(transport.runCapability) state?.invalidateInventory()
             lastHello=""; helloAt=0
-        }
-        transport.onReady={
             bootstrapQueue.clear()
             if(transport.backup)state?.let { current ->
                 current.localBootstrap(local,localNests,localSparkling)
@@ -105,6 +103,9 @@ object SafariPartySync {
                 current.primaryFairness?.let { fairness ->stage("fairness") {add("fairness",fairness)} }
                 stage("done")
             }
+        }
+        transport.onReady={
+            if(transport.runCapability && transport.critterCapability) critterSync.refreshShared()
             lastNests=-1;lastSparkling="";lastAggregate="";pendingReports.clear()
             discoveryReports.forEach { (id,biome) -> pendingReports[id]=biome }
             reportQueue.addAll(submittedReports.filter { code -> state?.biomeReports?.none { it.second == code } == true })
@@ -185,17 +186,18 @@ object SafariPartySync {
             val origin=routing.backupOrigin
             if(generation!=null && origin!=null && current.transitionAuthority("backup",generation)) {
                 entryDiscoveries.welcome(-1,false);startingFoodBalances.clear();bootstrapQueue.clear()
+                acknowledgments.clear();instructionAcknowledgments.clear()
                 transport.useBackup(origin,generation,routing.nonce)
                 client.player?.sendSystemMessage(net.minecraft.network.chat.Component.literal("[SM] Shared Safari sync switched to backup."))
             }
         }
         critterSync.tick(context, routing.backupOrigin, routing.generation, routing.nonce,
             run.takeIf { ticketed }, SafariSparklingMode.state, now, matchingParty && (!transport.runCapability || transport.ready),
-            useShared = transport.ready && !transport.backup && transport.runCapability && transport.critterCapability,
+            useShared = transport.coordinationAvailable && transport.runCapability && transport.critterCapability,
             sharedRunId = transport.acceptedRunId, sharedVisitId = transport.activeVisitId,
             sendShared = { transport.completionIdle && send("C", it) })
         transport.tick(context,now)
-        while(transport.ready && bootstrapQueue.isNotEmpty()) {
+        while(transport.canSend("F") && bootstrapQueue.isNotEmpty()) {
             if(!transport.send(current.nextSequence(),"F",bootstrapQueue.first()))break
             bootstrapQueue.removeFirst()
         }
@@ -570,6 +572,10 @@ object SafariPartySync {
         val current=state ?: return
         when(PartySyncProtocol.text(root.get("type"))) {
             "reconciling" -> if(transport.backup) {
+                if(transport.runCapability) {
+                    current.invalidateInventory()
+                    lastHello=""
+                }
                 val status=transport.roomStatus();entryDiscoveries.welcome(status.generation,status.atomic)
             }
             "bootstrap-facts" -> if(transport.backup) {
@@ -592,7 +598,7 @@ object SafariPartySync {
             }
             "state" -> {
                 if (PartySyncProtocol.text(root.get("kind"),1) == "C") {
-                    if (matchingParty && !transport.backup && transport.runCapability && transport.critterCapability)
+                    if (matchingParty && transport.runCapability && transport.critterCapability)
                         transport.acceptedRunId?.let {
                             if(critterSync.receiveShared(root,mapping,current.self,it))
                                 mapping[PartySyncProtocol.text(root.get("sender"))]?.let(current::assignmentClient)

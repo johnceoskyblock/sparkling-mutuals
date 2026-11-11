@@ -82,6 +82,7 @@ internal class PartyCritterSync {
             if (submitted) { sent = payload; due = now + 10_000 }
         }
     }
+    fun refreshShared() { sent = ""; due = 0; sampleAt = 0 }
     fun developerSnapshot() = mapOf("provider" to if (shared) "shared" else "separate",
         "transport" to transport.developerSnapshot())
     fun reset() {

@@ -1,7 +1,8 @@
+import type {Snapshot} from './room';
 import {check,identity,integer,object,text} from './protocol';
 export interface RouteRequest {version:1;lobby:string;self:string;roster:string[];nonce:string;unusableMs:number;action:'check'|'leave';confirmedExpansion?:boolean}
-export interface Registration {nonce:string;renewed:number;retired:boolean;completed:boolean}
-export interface RouteRoom {generation:string;lobby:string;roster:string[];provider:'primary'|'backup';members:Record<string,Registration>;cohort:string[];renewed:number;carry?:{caught:number[];evidence:Array<{reporter:string;source:string;nests:number;facts:number[];caught:number[]}>}}
+export interface Registration {nonce:string;renewed:number;retired:boolean;completed:boolean;protocolVisit?:string}
+export interface RouteRoom {generation:string;lobby:string;roster:string[];provider:'primary'|'backup';members:Record<string,Registration>;cohort:string[];renewed:number;retained?:Record<string,Record<string,Snapshot>>;caught?:number[];completion?:Record<string,{sequence:number;payload:string;at:number}>;carry?:{caught:number[];evidence:Array<{reporter:string;source:string;nests:number;facts:number[];caught:number[]}>}}
 export interface RouteResult {version:1;room:RouteRoom;generation:string;provider:'primary'|'backup';admitted:boolean;nonce:string}
 export function request(input:unknown):RouteRequest {
  const o=object(input);integer(o.version,1,1);const id=identity(o.lobby,o.self,o.roster),nonce=text(o.nonce,64);

@@ -31,6 +31,10 @@ internal class PartySyncVisit {
         replayComplete = false
         status = "awaiting"
     }
+    fun changeAuthority() {
+        disconnected()
+        runId = null
+    }
     fun newVisit() {
         disconnected()
         visitId = UUID.randomUUID().toString()

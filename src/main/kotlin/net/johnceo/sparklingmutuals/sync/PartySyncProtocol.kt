@@ -94,7 +94,7 @@ internal class PartySyncState(val self: String, roster: Set<String>) {
         if(next==provider)return providerGeneration==generation
         if(provider!="primary" || next!="backup" || generation.isBlank())return false
         provider=next;providerGeneration=generation;serverRun=null;revision=-1;notifications=emptyList()
-        inventories.clear();inventoriesCurrent=false
+        invalidateInventory()
         return true
     }
     fun bootstrapFacts()=bootstrap.frames()
@@ -163,7 +163,11 @@ internal class PartySyncState(val self: String, roster: Set<String>) {
             "B" -> biomeReports.add(sender to payload)
             "N" -> nestMask = nestMask or values!![0]
             "S" -> mergeSparklings(values!!)
-            "U" -> mergeUsage(values!!,sender,freshFeeder(sender,sequence))
+            "U" -> {
+                val usageValues=values!!
+                if(!inventoryFresh) { usageValues[4]=-1; usageValues[5]=0 }
+                mergeUsage(usageValues,sender,inventoryFresh && freshFeeder(sender,sequence))
+            }
             "A" -> {
                 if(sequence > (latest[sender] ?: -1)) {
                     latest[sender]=sequence

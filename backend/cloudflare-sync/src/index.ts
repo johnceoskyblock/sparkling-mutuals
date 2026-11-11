@@ -30,7 +30,43 @@ export class Coordinator extends DurableObject<Env> {
  private sockets(room:string){return this.ctx.getWebSockets().filter(ws=>{const s=ws.deserializeAttachment() as Attachment;return (s as any)?.channel!=='completion'&&s?.room===room&&s.expires>Date.now();});}
  private room(id:string){const row=this.load(id);if(!row)return null;const sessions=this.sockets(id).map(ws=>ws.deserializeAttachment() as Attachment).filter(s=>s.roster.join()===row.routing.roster.join());return new Room(row.routing,row.allocation,sessions);}
  private persist(room:Room){const old=this.load(room.route.generation);if(!old||JSON.stringify(old.routing)!==JSON.stringify(room.route)||JSON.stringify(old.allocation)!==JSON.stringify(room.allocation))this.save(room.route,room.allocation);for(const ws of this.sockets(room.route.generation)){const old=ws.deserializeAttachment() as Attachment;const next=room.sessions.find(s=>s.self===old.self&&s.nonce===old.nonce);if(next)ws.serializeAttachment(next);}}
- private deliver(room:Room,frames:unknown[]){for(const ws of this.sockets(room.route.generation)){const s=ws.deserializeAttachment() as Attachment;if(s.roster.join()!==room.route.roster.join()){ws.close(1008,'roster changed');continue;}if(room.route.members[s.self]?.retired)continue;for(const f of frames){const type=(f as {type:string}).type;if(s.bootstrap.stage!=='done'&&(type==='sparklings'||type==='state'&&(f as {kind:string}).kind==='S'))continue;ws.send(JSON.stringify(f));}ws.send(JSON.stringify({type:'hotspots',payload:room.allocation.snapshot(Date.now(),s.self,room.ready&&s.bootstrap.stage==='done')}));}}
+ private scoped(room:Room,frame:unknown){
+  return {...frame as object,runId:room.allocation.run};
+ }
+ private hotspots(room:Room,s:Attachment,now:number){
+  return {type:'hotspots',payload:room.allocation.snapshot(now,s.self,room.ready&&s.bootstrap.stage==='done')};
+ }
+ private deliver(room:Room,frames:unknown[]){
+  const now=Date.now();
+  for(const ws of this.sockets(room.route.generation)){
+   const s=ws.deserializeAttachment() as Attachment;
+   if(s.roster.join()!==room.route.roster.join()){ws.close(1008,'roster changed');continue;}
+   if(room.route.members[s.self]?.retired)continue;
+   if(s.protocol){
+    if(!room.replayReady&&s.protocol.ready){
+     s.protocol.ready=false;
+     ws.serializeAttachment(s);
+     ws.send(JSON.stringify(this.scoped(room,{type:'reconciling'})));
+    }
+    if(!s.protocol.ready)continue;
+   }
+   for(const f of frames){
+    const {type,kind}=f as {type:string;kind?:string};
+    if(kind==='C'&&!s.protocol?.completion)continue;
+    if(s.bootstrap.stage!=='done'&&(type==='sparklings'||kind==='S'))continue;
+    ws.send(JSON.stringify(s.protocol?this.scoped(room,f):f));
+   }
+   ws.send(JSON.stringify(this.hotspots(room,s,now)));
+  }
+ }
+ private deliverReconciliation(ws:WebSocket,room:Room,s:Attachment,frames:unknown[],now:number){
+  for(const frame of frames)ws.send(JSON.stringify(frame));
+  if(!frames.length||!s.protocol?.ready)return;
+  ws.send(JSON.stringify(this.hotspots(room,s,now)));
+  for(const frame of room.replay(s,now))ws.send(JSON.stringify(this.scoped(room,frame)));
+  ws.send(JSON.stringify({type:'replay-complete',version:1,connectionId:s.protocol.connectionId,
+   visitId:s.protocol.visitId,runId:room.allocation.run}));
+ }
  private completionSockets(room:string){return this.ctx.getWebSockets().filter(ws=>{const s=ws.deserializeAttachment() as CompletionAttachment;return s?.channel==='completion'&&s.room===room&&s.expires>Date.now();});}
  private validCompletion(s:CompletionAttachment,now:number){const r=this.load(s.room)?.routing,m=r?.members[s.self];return !!r&&!!m&&!m.retired&&m.nonce===s.nonce&&r.roster.join()===s.roster.join()&&now-r.renewed<600000&&now<s.expires;}
  private async schedule(){
@@ -100,9 +136,15 @@ export class Coordinator extends DurableObject<Env> {
     // Only one active backup connection per current registration.
     for(const old of this.sockets(gen)){const prior=old.deserializeAttachment() as Attachment;if(prior.self===self){prior.expires=0;old.serializeAttachment(prior);old.close(1000,'replaced');}}
     const pair=new WebSocketPair(),client=pair[0],server=pair[1];this.ctx.acceptWebSocket(server);
-    const s=attachment(gen,self,nonce,i.roster,now);s.union=inheritedUnion;s.evidence=structuredClone(inheritedEvidence);server.serializeAttachment(s);
-    server.send(JSON.stringify({type:'welcome',self,roster:i.roster,features:['hotspots-v1','biome-reports-v1','room-sparklings-v1','failover-bootstrap-v1']}));
-    const room=this.room(gen)!;this.persist(room);this.deliver(room,[{type:'reconciling'}]);for(const frame of room.replay(s))server.send(JSON.stringify(frame));
+    const s=attachment(gen,self,nonce,i.roster,now);
+    if(req.headers.get('X-SafariUtils-Sync-Protocol')==='2')
+     s.protocol={connectionId:crypto.randomUUID(),ready:false,completion:false};
+    const retained=priorRoom?.sessions.find(peer=>peer.self===self&&peer.nonce===nonce);
+    if(s.protocol&&retained)s.snapshots=retained.snapshots;
+s.union=inheritedUnion;s.evidence=structuredClone(inheritedEvidence);server.serializeAttachment(s);
+    server.send(JSON.stringify({type:'welcome',self,roster:i.roster,features:['hotspots-v1','biome-reports-v1','room-sparklings-v1','failover-bootstrap-v1',
+     ...(s.protocol?['run-reconciliation-v1','critter-completion-v1']:[])],connectionId:s.protocol?.connectionId}));
+    const room=this.room(gen)!;this.persist(room);this.deliver(room,[{type:'reconciling'}]);if(!s.protocol)for(const frame of room.replay(s))server.send(JSON.stringify(frame));
     await this.schedule();return new Response(null,{status:101,webSocket:client});
    }
    return json({error:'not found'},404);
@@ -115,10 +157,13 @@ export class Coordinator extends DurableObject<Env> {
     check(message,typeof message==='string'&&this.validCompletion(c,Date.now()));receiveCompletion(c,message as string,Date.now());ws.serializeAttachment(c);
     const frame=completionFrame(c,Date.now());for(const peer of this.completionSockets(c.room)){const p=peer.deserializeAttachment() as CompletionAttachment;if(this.validCompletion(p,Date.now()))peer.send(JSON.stringify(frame));else peer.close(1008,'visit ended');}return;
    }
-   check(message,typeof message==='string');const s=ws.deserializeAttachment() as Attachment,room=this.room(s.room);check(room,!!room);
+   check(message,typeof message==='string');
+   const s=ws.deserializeAttachment() as Attachment,now=Date.now();
+   check(s,s.expires>now&&this.sockets(s.room).includes(ws));
+   const room=this.room(s.room);check(room,!!room);
    const member=room!.route.members[s.self];check(s,!!member&&!member.retired&&member.nonce===s.nonce&&room!.route.roster.join()===s.roster.join());
-   const current=room!.sessions.find(x=>x.self===s.self&&x.nonce===s.nonce)!;const result=room!.receive(current,message as string,Date.now());
-   this.persist(room!);this.deliver(room!,result.broadcast);if(result.leave)ws.close(1000,'departed');await this.schedule();
+   const current=room!.sessions.find(x=>x.self===s.self&&x.nonce===s.nonce)!;const result=room!.receive(current,message as string,now);
+   this.persist(room!);this.deliverReconciliation(ws,room!,current,result.private,now);this.deliver(room!,result.broadcast);if(result.leave)ws.close(1000,'departed');await this.schedule();
   }catch{ws.close(1008,'invalid protocol');}
  }
  async webSocketClose(ws:WebSocket){const s=ws.deserializeAttachment() as Attachment;if((s as any)?.channel==='completion'){await this.schedule();return;}const r=this.room(s.room);if(r&&!this.sockets(s.room).some(other=>other!==ws&&(other.deserializeAttachment() as Attachment).self===s.self)){r.allocation.disconnect(s.self);this.save(r.route,r.allocation);}await this.schedule();}
