@@ -73,6 +73,24 @@ class HotspotAssignments(private val wins: MutableMap<String,Int> = mutableMapOf
         val name=self ?: return null
         val actual=hotspot ?: return null
         if (beganAt == null) return null
+        allocated?.let { locked ->
+            if (!leaderFinal) {
+                val arrivals=reports.filterKeys { it !in locked && it in members.map(String::lowercase) }
+                val first=arrivals.keys.mapNotNull(reportTimes::get).minOrNull()
+                if(first!=null && now-first>=250) {
+                    val free=SafariBiome.entries.filter { it !in locked.values }.toMutableSet()
+                    val added=linkedMapOf<String,SafariBiome>()
+                    val ranked=arrivals.keys.sortedWith(compareBy<String> { preRunWins?.get(it) ?: wins[it] ?: 0 }
+                        .thenBy { identity(it,uuids).hashCode() }.thenBy { identity(it,uuids) })
+                    ranked.forEach { member -> arrivals[member]?.takeIf { it in free }?.let {
+                        added[member]=it;free.remove(it)
+                    } }
+                    ranked.filter { it !in added }.zip(free).forEach { (member,biome) -> added[member]=biome }
+                    if(added.isNotEmpty()) finish(locked+added)
+                }
+            }
+            return finalAssignment
+        }
         finalAssignment?.let { return it }
         if(leaderControlled && fresh(now,30_000)) return null
         val expected=members.map(String::lowercase).toSet()+name
@@ -83,10 +101,8 @@ class HotspotAssignments(private val wins: MutableMap<String,Int> = mutableMapOf
         if(now<readyAt || expected.size<expectedSize) return null
         val ordered=reports.filterKeys { it in expected }.toMutableMap()
         ordered.putIfAbsent(name,actual)
-        val resultMap=allocate(ordered,uuids,wins).toMutableMap()
-        val free=SafariBiome.entries.filter { it !in resultMap.values }
-        expected.filter { it !in resultMap }.sortedWith(compareBy<String> { identity(it,uuids).hashCode() }
-            .thenBy { identity(it,uuids) }).zip(free).forEach { (member,biome) -> resultMap[member]=biome }
+        // A roster entry alone does not prove admission. The chat fallback only knows reporters.
+        val resultMap=allocate(ordered,uuids,wins)
         snapshot(expected)
         finish(resultMap)
         return finalAssignment
@@ -123,10 +139,13 @@ class HotspotAssignments(private val wins: MutableMap<String,Int> = mutableMapOf
             if (allowFreeText) {
                 if (HotspotProtocol.parseAssignment(raw) != null || body.contains("you are assigned")) return null
                 val words = body.split(Regex("[^a-z]+")).filter(String::isNotEmpty)
+                val meaningful=words.filter { it !in filler }
                 val short = mapOf("f" to SafariBiome.FOREST, "c" to SafariBiome.CAVERN,
                     "i" to SafariBiome.ICY, "h" to SafariBiome.HAUNTED)
-                val biome = short[words.singleOrNull()] ?: aliases.filter { (biome, names) ->
-                    words.filter { it !in filler }.any { word -> word == "for" && biome == SafariBiome.FOREST ||
+                val single=short[body.trim()]
+                if(single==null && meaningful.size!=1 && "hotspot" !in words) return null
+                val biome = single ?: aliases.filter { (biome, names) ->
+                    meaningful.any { word -> word == "for" && meaningful.size==1 && biome == SafariBiome.FOREST ||
                         names.any { close(word, it) } }
                 }.keys.singleOrNull() ?: return null
                 return Report(chat.sender, biome, tag?.groupValues?.get(1)?.lowercase() in setOf("sm","su","safariutils"))

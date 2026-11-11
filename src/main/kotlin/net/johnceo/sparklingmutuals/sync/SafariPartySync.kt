@@ -34,6 +34,7 @@ object SafariPartySync {
     private var now=0L
     private var transferRevision: Long? = null
     private var ticketed = false
+    private var adoptedRunProtocol = false
     private var ticketWindowLocked = false
     private val transferMessage = Regex("^Sending to server [A-Za-z0-9_-]+\\.\\.\\.$")
     private var matchingParty=false
@@ -78,9 +79,14 @@ object SafariPartySync {
     private val food=listOf("Bag of Seeds","Wriggleworm","Yogi Berry")
     private val discoveryReports=linkedMapOf<String,SafariBiome>()
     fun register() {
+        transport.onWelcome={
+            val status=transport.roomStatus()
+            entryDiscoveries.welcome(status.generation,status.atomic)
+            adoptedRunProtocol=adoptedRunProtocol || transport.runCapability
+            if(transport.runCapability) state?.invalidateInventory()
+            lastHello=""; helloAt=0
+        }
         transport.onReady={
-            val status = transport.roomStatus()
-            entryDiscoveries.welcome(status.generation, status.atomic)
             bootstrapQueue.clear()
             if(transport.backup)state?.let { current ->
                 current.localBootstrap(local,localNests,localSparkling)
@@ -97,10 +103,13 @@ object SafariPartySync {
                 current.primaryFairness?.let { fairness ->stage("fairness") {add("fairness",fairness)} }
                 stage("done")
             }
-            lastNests=-1;lastSparkling="";lastAggregate="";lastHello="";helloAt=0;pendingReports.clear()
+            lastNests=-1;lastSparkling="";lastAggregate="";pendingReports.clear()
             discoveryReports.forEach { (id,biome) -> pendingReports[id]=biome }
             reportQueue.addAll(submittedReports.filter { code -> state?.biomeReports?.none { it.second == code } == true })
             mark(false);pendingLive=true
+            state?.let {
+                sharedSparklings(it)
+            }
         }
         transport.onMessage=::receive
         ClientReceiveMessageEvents.GAME.register { message,overlay ->
@@ -167,7 +176,8 @@ object SafariPartySync {
         if (run?.entry?.admission != null || run?.entry?.hotspot != null) ticketed = true
         val context=PartySyncTransport.Context(server,current.self,current.roster.sorted())
         val roomStatus=transport.roomStatus()
-        val usable=roomStatus.ready && (!roomStatus.atomic || entryDiscoveries.snapshot(roomStatus.generation)!=null)
+        val usable=roomStatus.ready && (!roomStatus.atomic || entryDiscoveries.snapshot(roomStatus.generation)!=null) ||
+            transport.runCapability && transport.coordinationAvailable
         if(routing.tick(context,now,usable,matchingParty) && routing.provider=="backup") {
             val generation=routing.generation
             val origin=routing.backupOrigin
@@ -178,9 +188,10 @@ object SafariPartySync {
             }
         }
         critterSync.tick(context, routing.backupOrigin, routing.generation, routing.nonce,
-            run.takeIf { ticketed }, SafariSparklingMode.state, now, matchingParty,
-            useShared = transport.ready && !transport.backup && transport.critterCapability && lastHello.isNotEmpty(),
-            sendShared = { send("C", it) })
+            run.takeIf { ticketed }, SafariSparklingMode.state, now, matchingParty && (!transport.runCapability || transport.ready),
+            useShared = transport.ready && !transport.backup && transport.runCapability && transport.critterCapability,
+            sharedRunId = transport.acceptedRunId, sharedVisitId = transport.activeVisitId,
+            sendShared = { transport.completionIdle && send("C", it) })
         transport.tick(context,now)
         while(transport.ready && bootstrapQueue.isNotEmpty()) {
             if(!transport.send(current.nextSequence(),"F",bootstrapQueue.first()))break
@@ -189,13 +200,13 @@ object SafariPartySync {
         if(bootstrapQueue.isNotEmpty()) {current.inventoriesCurrent=false;return}
         current.inventoriesCurrent=transport.ready
         if(ticketed) run?.entry?.hotspot?.let { report(current.self,it) }
-        SparklingEncounters.ticketReminder(!ticketed && !ticketWindowLocked && now-began<30_000 &&
+        SparklingEncounters.ticketReminder(transport.ready && !ticketed && !ticketWindowLocked && now-began<30_000 &&
             (0..1).any { word ->
                 current.sparkling[word] and (current.sparkling[word+2] or localSparkling[word+2]).inv() != 0
             })
-        if(transport.ready && transport.hotspotCapability && transport.biomeCapability && matchingParty) {
+        if(transport.coordinationAvailable && transport.hotspotCapability && transport.biomeCapability && matchingParty) {
             val hello=hello(client,current)
-            if(hello!=lastHello || now-helloAt>=15_000) {
+            if(hello!=lastHello || now-helloAt>=if(transport.runCapability && !transport.ready) 2_000 else 15_000) {
                 if(send("H",hello)) { lastHello=hello;helloAt=now }
             }
             if(lastHello.isNotEmpty()) {
@@ -205,7 +216,7 @@ object SafariPartySync {
                     }
                     hotspotRetryAt = now + 2_000
                 }
-                acknowledgments.firstOrNull()?.let { id -> if(sendH("ack") { addProperty("id",id) }) acknowledgments.remove(id) }
+                if (transport.ready) acknowledgments.firstOrNull()?.let { id -> if(sendH("ack") { addProperty("id",id) }) acknowledgments.remove(id) }
                 val entry=pendingReports.entries.firstOrNull { ticketed || it.key != current.self }
                 if(entry!=null && sendH("report") { addProperty("player",entry.key);addProperty("biome",entry.value.name) }) pendingReports.remove(entry.key)
             }
@@ -282,7 +293,7 @@ object SafariPartySync {
         }
     }
     /** Authority stays adopted across an outage. It never starts a competing fallback allocator. */
-    val backendCoordination get() = state?.authority==true || transport.backup
+    val backendCoordination get() = state?.authority==true || transport.backup || adoptedRunProtocol
     val waitingForAuthority get() = !backendCoordination && shouldWait()
     val pauseHotspotChat get() = backendCoordination || shouldWait()
     private fun shouldWait(): Boolean {
@@ -572,8 +583,8 @@ object SafariPartySync {
             }
             "state" -> {
                 if (PartySyncProtocol.text(root.get("kind"),1) == "C") {
-                    if (matchingParty && !transport.backup && transport.critterCapability)
-                        critterSync.receiveShared(root,mapping,current.self)
+                    if (matchingParty && !transport.backup && transport.runCapability && transport.critterCapability)
+                        transport.acceptedRunId?.let { critterSync.receiveShared(root,mapping,current.self,it) }
                     return
                 }
                 val sender=mapping[PartySyncProtocol.text(root.get("sender"))] ?: return
@@ -584,7 +595,11 @@ object SafariPartySync {
                 if(kind=="B" && !transport.biomeCapability) return
                 val previous = if (SafariDeveloper.enabled && kind == "A") current.inventories[sender] else null
                 val previousNests = current.nestMask
-                if (!current.receive(sender, sequence, kind, payload)) return
+                val inventoryFresh=if(root.has("inventoryFresh")) PartySyncProtocol.bool(root.get("inventoryFresh")) ?: return else true
+                val accepted=if(transport.runCapability)
+                    current.receiveOrdered(sender,kind,payload,inventoryFresh)
+                else current.receive(sender,sequence,kind,payload)
+                if (!accepted) return
                 if (SafariDeveloper.enabled) {
                     val player = name(Minecraft.getInstance(), sender) ?: "Party peer"
                     val detail = when (kind) {
@@ -602,6 +617,7 @@ object SafariPartySync {
         }
     }
     private fun sharedSparklings(current: PartySyncState) {
+        if (!transport.ready) return
         PartySyncProtocol.species.forEachIndexed { i,species ->
             val word=if(i<30) 0 else 1
             val bit=1 shl (i%30)
@@ -773,9 +789,10 @@ object SafariPartySync {
         critterSync.reset()
         entryDiscoveries.reset()
         val current=state;transport.close(true,current?.nextSequence() ?: 0)
+        transport.newVisit()
         routing.reset();transport.usePrimary();bootstrapQueue.clear()
         state=null;lobby=null;world=null;began=0;sampleAt=0;helloAt=0;lastHello="";matchingParty=false
-        transferRevision=null;ticketed=false;ticketWindowLocked=false
+        transferRevision=null;ticketed=false;ticketWindowLocked=false;adoptedRunProtocol=false
         hotspotRetryAt=0
         local.fill(0);local[17]=-1;local[33]=PartySyncProtocol.AGGREGATE_VERSION;localSparkling.fill(0);localNests=0;lastNests=-1;lastSparkling=""
         lastAggregate="";produced="";liveFingerprint="";due=0;pendingLive=false;seenWalls=0;lastRoster=emptySet()

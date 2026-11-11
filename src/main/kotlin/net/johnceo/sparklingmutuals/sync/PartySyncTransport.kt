@@ -23,6 +23,9 @@ internal class PartySyncTransport(
 ) {
     private val primaryAuth=authEndpoint
     private val primarySync=syncEndpoint
+    private val visit=PartySyncVisit()
+    private var welcomed=false
+    private val replay=ArrayDeque<Delivery>()
     private var completionOnly=false
     var backup=false; private set
     private var routingGeneration: String?=null
@@ -61,6 +64,12 @@ internal class PartySyncTransport(
     var hotspotCapability=false; private set
     var biomeCapability=false; private set
     var critterCapability=false; private set
+    var runCapability=false; private set
+    val coordinationAvailable get()=welcomed
+    val acceptedRunId get()=visit.runId.takeIf { runCapability && visit.reconciled }
+    val activeVisitId get()=visit.visitId
+    val completionIdle get()=ready && queued==0
+    fun newVisit() { visit.newVisit() }
     @Volatile var roomSparklings=false; private set
     private var mapping=emptyMap<String,String>()
     private var failures=0
@@ -74,10 +83,12 @@ internal class PartySyncTransport(
     @Volatile private var queued=0
     private val sent=ArrayDeque<Long>()
     var onReady: () -> Unit={}
+    var onWelcome: () -> Unit={}
     var onMessage: (JsonObject,Map<String,String>) -> Unit={ _,_ -> }
     var onUnavailable: () -> Unit={}
     fun developerStatus(): String = when {
         ready -> if(backup) "Backup connected" else "Primary connected"
+        welcomed && runCapability -> "Run ${visit.status}"
         socket != null -> "Awaiting welcome"
         connecting -> "Connecting"
         retryAt > System.currentTimeMillis() -> "Retry backoff"
@@ -89,6 +100,8 @@ internal class PartySyncTransport(
         "retryAtMillis" to retryAt, "incomingQueue" to incoming.size, "outgoingQueue" to queued,
         "hotspotCapability" to hotspotCapability, "biomeCapability" to biomeCapability,
         "critterCapability" to critterCapability, "roomSparklings" to roomSparklings,
+        "runCapability" to runCapability, "visitId" to visit.visitId, "runId" to visit.runId,
+        "replayComplete" to visit.replayComplete,
         "mappedPlayers" to mapping.toMap(), "lastInboundAtMillis" to lastInboundAt
     )
     fun tick(next: Context,now: Long) {
@@ -99,9 +112,9 @@ internal class PartySyncTransport(
         drainIncoming()
         val current=socket
         if(current!=null) {
-            if(!ready && now-openedAt>12_000) { fail(generation); return }
+            if(!welcomed && now-openedAt>12_000) { fail(generation); return }
             // A successful ping write alone does not prove the room is still reachable.
-            if(ready && now-lastInboundAt>75_000) { fail(generation); return }
+            if(welcomed && now-lastInboundAt>75_000) { fail(generation); return }
             if(now>=pingAt) {
                 pingAt=now+25_000
                 val attempt=generation
@@ -142,22 +155,57 @@ internal class PartySyncTransport(
         if (attempt != generation) return
             when(PartySyncProtocol.text(root.get("type"))) {
                 "welcome" -> {
-                    if(ready) { fail(attempt); return }
+                    if(welcomed) { fail(attempt); return }
                     val map=PartySyncProtocol.welcome(root,next.self,next.roster)
                     if(map==null) { fail(attempt); return }
                     val features=root.get("features")?.takeIf { it.isJsonArray }?.asJsonArray?.mapNotNull { PartySyncProtocol.text(it) }.orEmpty()
                     if(completionOnly && "critter-completion-v1" !in features) { fail(attempt);return }
                     if(backup && "failover-bootstrap-v1" !in features) { fail(attempt);return }
-                    mapping=map; ready=true; failures=0
+                    runCapability=!backup && !completionOnly && "run-reconciliation-v1" in features
+                    if (runCapability && !visit.welcome(PartySyncProtocol.text(root.get("connectionId")) ?: "")) {
+                        fail(attempt); return
+                    }
+                    mapping=map; welcomed=true; ready=!runCapability; failures=0
                     hotspotCapability="hotspots-v1" in features; biomeCapability="biome-reports-v1" in features
                     critterCapability="critter-completion-v1" in features
                     roomSparklings="room-sparklings-v1" in features
                     logger.info("Party sync room ready: members={} hotspots={} biomeReports={}",map.size,hotspotCapability,biomeCapability)
                     net.johnceo.sparklingmutuals.debug.SafariDeveloper.event("Connected to party room · ${map.size} players")
+                    onWelcome()
+                    if (ready) onReady()
+                }
+                "reconcile" -> if (runCapability && welcomed) {
+                    if (visit.reconcile(root)) {
+                        ready=false
+                        replay.clear()
+                    } else if (visit.matchesConnection(root)) fail(attempt)
+                }
+                "replay-complete" -> if (runCapability && welcomed && !ready && visit.matchesReplay(root)) {
+                    while (replay.isNotEmpty()) {
+                        val item = replay.removeFirst()
+                        val frame = JsonParser.parseString(item.text).asJsonObject
+                        val age = PartySyncProtocol.integer(frame.get("ageMillis"), 0)
+                        if (age != null && PartySyncProtocol.text(frame.get("kind")) == "C")
+                            frame.addProperty("ageMillis",queuedCompletionAge(age,System.nanoTime()-item.receivedAt))
+                        onMessage(frame,mapping)
+                        if (attempt != generation) return
+                    }
+                    visit.finishReplay()
+                    ready=true
                     onReady()
                 }
                 "hotspots-unavailable" -> { hotspotCapability=false; onUnavailable();fail(generation) }
-                else -> if(ready) onMessage(root,mapping)
+                else -> {
+                    if (runCapability) {
+                        if (!visit.accepts(root)) return
+                        if (!ready) {
+                            if (replay.size >= 128) { fail(attempt); return }
+                            replay.addLast(Delivery(attempt,root.toString()))
+                            return
+                        }
+                    }
+                    if(ready) onMessage(root,mapping)
+                }
             }
     }
     private fun connect(desired: Context) {
@@ -185,6 +233,7 @@ internal class PartySyncTransport(
                 .header("Authorization","Bearer $bearer").header("X-SafariUtils-Lobby",desired.lobby)
                 .header("X-SafariUtils-Player",desired.self).header("X-SafariUtils-Roster",desired.roster.joinToString(","))
             if(backup || completionOnly)builder.header("X-SM-Generation",routingGeneration!!).header("X-SM-Visit",visitNonce!!)
+            else builder.header("X-SafariUtils-Sync-Protocol","2")
             builder.buildAsync(syncEndpoint,Listener(attempt))
         }.whenComplete { _,error -> if(error!=null) fail(attempt,error) }
     }
@@ -204,19 +253,21 @@ internal class PartySyncTransport(
         if(status==401) { token=""; tokenUntil=0 }
         val delay=maxOf((2000L shl minOf(failures++,4)).coerceAtMost(30_000),
             response?.let { retryDelay(it.headers()) } ?: (cause as? Admission)?.delay ?: 0)
-        generation++; socket?.abort(); socket=null; connecting=false; ready=false; hotspotCapability=false; biomeCapability=false; critterCapability=false; roomSparklings=false
+        generation++; socket?.abort(); socket=null; connecting=false; ready=false; welcomed=false; hotspotCapability=false; biomeCapability=false; critterCapability=false; runCapability=false; roomSparklings=false
+        visit.disconnected(); replay.clear()
         incoming.clear(); mapping=emptyMap(); retryAt=System.currentTimeMillis()+delay
         // No exception, URI, headers, response bodies, bearer tokens or payload dumps in logs.
         logger.info("Party sync reconnect scheduled: status={} retryMs={}",status ?: "transport",delay)
         net.johnceo.sparklingmutuals.debug.SafariDeveloper.event("Retry in ${delay / 1000}s · ${status ?: "transport"}")
     }
     fun send(sequence: Long,kind: String,payload: String,catchUpOnly: Boolean=false): Boolean {
-        if(!ready) return false
+        if(!ready && !(welcomed && runCapability && kind=="H")) return false
         val current=socket ?: return false
         val now=System.currentTimeMillis()
         while(sent.firstOrNull()?.let { now-it>=10_000 }==true) sent.removeFirst()
         if(sent.size>=36 || queued>=64) return false
-        val text=PartySyncProtocol.envelope(sequence,kind,payload,catchUpOnly)
+        val scoped=if(runCapability && kind=="H") visit.operation(payload) else payload
+        val text=PartySyncProtocol.envelope(sequence,kind,scoped,catchUpOnly)
         val attempt=generation
         sent.addLast(now)
         // The socket is captured here: accepted sends drain to their original room before close.
@@ -237,8 +288,10 @@ internal class PartySyncTransport(
         val old=socket
         val pending=tail
         val leave=if(explicit && ready && hotspotCapability && leaveSequence>0)
-            PartySyncProtocol.envelope(leaveSequence,"H","{\"version\":1,\"action\":\"leave\"}") else null
-        generation++; ready=false; connecting=false; hotspotCapability=false; biomeCapability=false; critterCapability=false; roomSparklings=false; socket=null
+            PartySyncProtocol.envelope(leaveSequence,"H",if(runCapability)
+                visit.operation("{\"version\":1,\"action\":\"leave\"}") else "{\"version\":1,\"action\":\"leave\"}") else null
+        generation++; ready=false; welcomed=false; connecting=false; hotspotCapability=false; biomeCapability=false; critterCapability=false; runCapability=false; roomSparklings=false; socket=null
+        visit.disconnected(); replay.clear()
         incoming.clear(); mapping=emptyMap(); sent.clear(); context=null
         if(old!=null) pending.handle { _,_ -> null }.thenCompose {
             if(leave!=null) old.sendText(leave,true) else CompletableFuture.completedFuture(old)

@@ -33,6 +33,12 @@ Auto entry continues while Minecraft is in the background. While the feature is 
 
 ## Connection and privacy
 
+The primary socket requests protocol 2 with `X-SafariUtils-Sync-Protocol: 2`. A visit UUID and the accepted server run UUID survive reconnects. H hello advertises `run-reconciliation-v1` and `critter-completion-v1`, with `visitId` and `resumeRunId`; later H operations carry `visitId` and `runId`. Pending reconciliation retries every two seconds and preserves local tracking and finalized assignments.
+
+Shared decisions wait for a matching `replay-complete` boundary after the entire replay has been applied on the game thread. Frames from another run, visit or replaced socket are ignored. Queue overflow reconnects rather than accepting partial replay. Retained aggregates with `inventoryFresh:false` preserve durable source facts without restoring held items or feeder occupancy.
+
+With both capabilities negotiated, completion C uses the primary socket and includes `version`, `runId`, `visitId` and exactly 37 `rows`. Snapshots replace each reporter's previous evidence, even when counts decrease or flags clear. Expiry includes server age and client queue delay. Samples use existing local trackers at most every 500ms, with a ten-second heartbeat and coalesced pending changes. The independent legacy completion service retains its rows-only payload; only one completion channel is active.
+
 Service: `https://api-dev.serkosea.dev`; socket: `wss://api-dev.serkosea.dev/v1/sync`. Authentication sends only the local player's compact UUID to `/v1/auth/uuid/session`. Short-lived tokens are reused across reconnects. Minecraft session credentials, passwords and private keys are never used. The service receives public roster UUIDs, the Safari server ID, and the bounded objective data above—not a complete inventory dump.
 
 The complete confirmed 1–4 UUID roster and Hypixel Mod API server name identify the room. Uncertain roster changes pause hotspot publication. Objective rooms retain the visit roster through temporary disbanding; confirmed physically present additions can expand it. An expansion preserves sequence numbers and local evidence. Leaving/changing Safari clears visit observations and invalidates old socket callbacks. Explicit departure sends `leave` before socket close; transport failures do not send leave.
@@ -64,15 +70,15 @@ Local validation includes a real localhost HTTP/WebSocket handshake and ordered 
 
 ## Last updated
 
-2026-11-03 — Implemented the supplied SafariUtils party-sync v2, hotspot and biome-report contracts. Kept existing mode/capture requirements and chat fallback.
+2026-11-10 — Added negotiated run reconciliation, ordered replay readiness, stale inventory handling and shared per-critter completion. Kept mode/capture requirements and legacy fallback.
 
 ## Per-critter mode progress (Mutuals extension)
 
-Our Cloudflare service is primary for `critter-completion-v1` while Serkosea does not implement it. A separate `/v1/completion-sync` socket reuses the validated exact roster, lobby, visit nonce and route generation even while Serkosea remains the main provider. It has no hotspot allocation, discovery masks, auto-entry authority or main failover bootstrap. Older clients continue their existing sync; they do not supply this extension.
+The negotiated primary socket carries `critter-completion-v1` when run reconciliation is also available. Otherwise a separate `/v1/completion-sync` socket on our Cloudflare service reuses the validated exact roster, lobby, visit nonce and route generation. This fallback has no hotspot allocation, discovery masks, auto-entry authority or main failover bootstrap. Older clients continue their existing sync; they do not supply this extension.
 
-The primary service advertises `critter-completion-v1` in its WebSocket welcome to enable C on the existing main socket. No HTTP support probe is used. Unsupported or unavailable servers retain the separate completion channel. Switching clears received completion evidence and sends fresh local proof. Shared C uses the main connection's sequence and validated sender mapping. Evidence lifetime includes time spent in the client's incoming queue.
+The primary service advertises both capabilities in its WebSocket welcome; C activates after reconciliation and replay. No HTTP support probe is used. Unsupported servers retain the separate completion channel. Switching clears received completion evidence and sends fresh local proof. Shared C uses the main connection's sequence and validated sender mapping. Evidence lifetime includes time spent in the client's incoming queue.
 
-Each client sends a replaceable snapshot of all 37 species in the existing `S` species order. `C` envelopes contain increasing sequence, kind and a JSON-string payload `{version:1,rows:[[flags,checks,captures],...]}`. Flags are Unique completion=1, qualified Sparkling check=2, Full Clear capture/source/absence proof=4. Counts are integers 0–256. Boss checks still require the existing actual-catch predicate. Source waivers and qualified checks are observational client evidence, not server verification of Minecraft actions.
+Each client sends a replaceable snapshot of all 37 species in the existing `S` species order. Shared `C` envelopes contain increasing sequence, kind and a JSON-string payload `{version:1,runId,visitId,rows:[[flags,checks,captures],...]}`. The private legacy fallback omits runId and visitId. Flags are Unique completion=1, qualified Sparkling check=2, Full Clear capture/source/absence proof=4. Counts are integers 0–256. Boss checks still require the existing actual-catch predicate. Source waivers and qualified checks are observational client evidence, not server verification of Minecraft actions.
 
 Changed snapshots are sampled every 500ms; unchanged evidence renews every ten seconds. Latest false flags replace earlier true flags. Evidence expires after 45 seconds, with server-supplied age deducted on reconnect replay. Exact visit/roster changes, disconnection or a new run clear received progress. Multiple players' counts use the maximum, never a sum of possibly overlapping UUID sightings or catches. Partial disjoint cohorts are deliberately not combined into a completed check.
 

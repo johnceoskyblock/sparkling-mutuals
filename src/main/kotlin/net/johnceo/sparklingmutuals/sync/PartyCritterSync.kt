@@ -7,7 +7,7 @@ import java.net.URI
 import net.johnceo.sparklingmutuals.safari.*
 import net.johnceo.sparklingmutuals.safari.completion.SharedCritterProgress
 
-/** Completion-only channel on our service, independent of Serkosea's main room/allocator. */
+/** Uses negotiated shared completion, with the independent completion service as legacy fallback. */
 internal class PartyCritterSync {
     private val transport = PartySyncTransport()
     private var run: SafariRun? = null
@@ -16,6 +16,11 @@ internal class PartyCritterSync {
     private var due = 0L
     private var sampleAt = 0L
     private var shared = false
+    private var sharedRun: String? = null
+    private var receiveOrdinal = 0L
+    private data class Snapshot(val ordinal: Long, val rows: Map<String,SharedCritterProgress.Evidence>,
+        val age: Long, val receivedAt: Long)
+    private val sharedSnapshots = mutableMapOf<String,Snapshot>()
     init {
         transport.onReady = { sent = ""; due = 0 }
         transport.onMessage = { root, mapping ->
@@ -31,12 +36,21 @@ internal class PartyCritterSync {
         val rows = PartySyncProtocol.text(root.get("payload"), 3072)?.let(CritterProgressProtocol::decode)
         if (seq != null && age != null && rows != null) run?.sharedCritters?.replace(sender, seq, rows, age)
     }
-    fun receiveShared(root: JsonObject, mapping: Map<String, String>, self: String) {
-        if (shared) receive(root, mapping, self)
+    fun receiveShared(root: JsonObject, mapping: Map<String, String>, self: String, runId: String) {
+        if (PartySyncProtocol.text(root.get("type")) != "state" || PartySyncProtocol.text(root.get("kind")) != "C") return
+        if (!PartySyncVisit.validId(runId) || PartySyncProtocol.text(root.get("runId")) != runId) return
+        val sender=PartySyncProtocol.text(root.get("sender"))?.let(mapping::get) ?: return
+        if(sender==self || PartySyncProtocol.integer(root.get("sequence"),1)==null) return
+        val age=PartySyncProtocol.integer(root.get("ageMillis"),0,SharedCritterProgress.TTL-1) ?: return
+        val rows=PartySyncProtocol.text(root.get("payload"),3072)?.let { CritterProgressProtocol.decode(it,runId) } ?: return
+        if(sharedRun!=runId) { run?.sharedCritters?.clear(); sharedSnapshots.clear(); sharedRun=runId }
+        // The server orders accepted active-socket messages; sender counters can restart.
+        sharedSnapshots[sender]=Snapshot(++receiveOrdinal,rows,age,System.nanoTime())
     }
     fun tick(context: PartySyncTransport.Context, origin: URI?, generation: String?, nonce: String,
         active: SafariRun?, party: PartySparklingState, now: Long, eligible: Boolean,
-        useShared: Boolean = false, sendShared: (String) -> Boolean = { false }) {
+        useShared: Boolean = false, sharedRunId: String? = null, sharedVisitId: String? = null,
+        sendShared: (String) -> Boolean = { false }) {
         if (!eligible || !useShared && (origin == null || generation == null)) { reset(); return }
         if (shared != useShared) {
             transport.close(false)
@@ -51,8 +65,17 @@ internal class PartyCritterSync {
             if (!transport.ready) { run?.sharedCritters?.clear(); return }
         }
         if (active == null || active.endedAt != null || now < sampleAt) return
+        if(shared) {
+            if(sharedRunId==null || sharedVisitId==null) return
+            if(sharedRun!=sharedRunId) { active.sharedCritters.clear(); sharedSnapshots.clear(); sharedRun=sharedRunId }
+            sharedSnapshots.forEach { (sender,snapshot) ->
+                val age=queuedCompletionAge(snapshot.age,System.nanoTime()-snapshot.receivedAt)
+                active.sharedCritters.replace(sender,snapshot.ordinal,snapshot.rows,age)
+            }
+        }
         sampleAt = now + 500
-        val payload = CritterProgressProtocol.encode(active, party)
+        val payload = CritterProgressProtocol.encode(active, party,
+            sharedRunId.takeIf { shared },sharedVisitId.takeIf { shared })
         if (payload != sent || now >= due) {
             val submitted = if (shared) sendShared(payload) else transport.send(++sequence, "C", payload)
             if (submitted) { sent = payload; due = now + 10_000 }
@@ -60,13 +83,20 @@ internal class PartyCritterSync {
     }
     fun developerSnapshot() = mapOf("provider" to if (shared) "shared" else "separate",
         "transport" to transport.developerSnapshot())
-    fun reset() { transport.close(false); run?.sharedCritters?.clear(); run = null; sent = ""; due = 0; sampleAt = 0; shared = false }
+    fun reset() {
+        transport.close(false); run?.sharedCritters?.clear(); run = null; sent = ""; due = 0; sampleAt = 0; shared = false
+        sharedRun=null; sharedSnapshots.clear(); receiveOrdinal=0
+    }
 }
 
 /** Stable species order is shared with S, but C evidence never enters S/capture/history ledgers. */
 internal object CritterProgressProtocol {
-    fun encode(run: SafariRun, party: PartySparklingState): String = JsonObject().apply {
+    fun encode(run: SafariRun, party: PartySparklingState, runId: String? = null, visitId: String? = null): String = JsonObject().apply {
         addProperty("version", 1)
+        if(runId!=null || visitId!=null) {
+            require(runId!=null && visitId!=null && PartySyncVisit.validId(runId) && PartySyncVisit.validId(visitId))
+            addProperty("runId",runId);addProperty("visitId",visitId)
+        }
         add("rows", JsonArray().apply { PartySyncProtocol.species.forEach { name ->
             // Export only existing local proof, never any newly received C data.
             val unique = run.uniqueComplete(name, party, localOnly = true) || run.uniqueUnavailable(name)
@@ -78,10 +108,13 @@ internal object CritterProgressProtocol {
             })
         } })
     }.toString()
-    fun decode(payload: String): Map<String, SharedCritterProgress.Evidence>? = runCatching {
+    fun decode(payload: String, runId: String? = null): Map<String, SharedCritterProgress.Evidence>? = runCatching {
         if (payload.length > 3072) return null
         val p = JsonParser.parseString(payload).asJsonObject
-        if (p.keySet() != setOf("version", "rows") || PartySyncProtocol.integer(p.get("version"), 1, 1) == null) return null
+        val keys=if(runId==null) setOf("version","rows") else setOf("version","rows","runId","visitId")
+        if (p.keySet() != keys || PartySyncProtocol.integer(p.get("version"), 1, 1) == null) return null
+        if(runId!=null && (PartySyncProtocol.text(p.get("runId"))!=runId ||
+            PartySyncProtocol.text(p.get("visitId"))?.let(PartySyncVisit::validId)!=true)) return null
         val rows = p.getAsJsonArray("rows")
         if (rows.size() != PartySyncProtocol.species.size) return null
         PartySyncProtocol.species.mapIndexed { i, name ->

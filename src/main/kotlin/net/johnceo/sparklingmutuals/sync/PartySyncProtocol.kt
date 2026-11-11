@@ -106,6 +106,12 @@ internal class PartySyncState(val self: String, roster: Set<String>) {
     val inventories = mutableMapOf<String,IntArray>()
     val biomeReports = linkedSetOf<Pair<String,String>>()
     var inventoriesCurrent = false
+    fun invalidateInventory() {
+        inventories.clear()
+        inventoriesCurrent=false
+        usage?.let { it[4]=-1; it[5]=0 }
+        feederReporter=null
+    }
     var nestMask = 0; private set
     val sparkling = IntArray(4)
     /** Negative evidence only. Discovery bits carry no observation time. */
@@ -126,7 +132,10 @@ internal class PartySyncState(val self: String, roster: Set<String>) {
     data class Notification(val id: String,val player: String,val biome: SafariBiome)
     var notifications = emptyList<Notification>(); private set
     var leader: String? = null; private set
-    fun receive(sender: String, sequence: Long, kind: String, payload: String): Boolean {
+    /** Protocol 2 guarantees server ordering across replaced sender sockets, whose counters may restart. */
+    fun receiveOrdered(sender: String, kind: String, payload: String, inventoryFresh: Boolean): Boolean =
+        receive(sender,(received[sender]?.maxOrNull() ?: 0)+1,kind,payload,inventoryFresh)
+    fun receive(sender: String, sequence: Long, kind: String, payload: String, inventoryFresh: Boolean = true): Boolean {
         if (sender !in roster || sender == self && kind != "B" || sequence !in 1..PartySyncProtocol.MAX_SEQUENCE) return false
         val values = if(kind == "B") { if(payload !in PartySyncProtocol.codes) return false; null }
             else PartySyncProtocol.numbers(kind,payload) ?: return false
@@ -140,11 +149,17 @@ internal class PartySyncState(val self: String, roster: Set<String>) {
             "S" -> mergeSparklings(values!!)
             "U" -> mergeUsage(values!!,sender,freshFeeder(sender,sequence))
             "A" -> {
-                if(sequence > (latest[sender] ?: -1)) { latest[sender]=sequence; inventories[sender]=values!!; inventoriesCurrent=true }
+                if(sequence > (latest[sender] ?: -1)) {
+                    latest[sender]=sequence
+                    if(inventoryFresh) { inventories[sender]=values!!; inventoriesCurrent=true }
+                    else inventories.remove(sender)
+                }
                 val v=values!!
                 for(i in listOf(23,25,26,27,28,29,30,31,32,34,35,36,37)) facts[i] = facts[i] or v[i]
                 facts[24]=maxOf(facts[24],v[24])
-                mergeUsage(v.copyOfRange(13,19),sender,freshFeeder(sender,sequence))
+                val usageValues=v.copyOfRange(13,19)
+                if(!inventoryFresh) { usageValues[4]=-1; usageValues[5]=0 }
+                mergeUsage(usageValues,sender,inventoryFresh && freshFeeder(sender,sequence))
             }
         }
         return true
