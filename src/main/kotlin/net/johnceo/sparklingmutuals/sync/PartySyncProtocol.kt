@@ -73,6 +73,22 @@ internal class PartySyncState(val self: String, roster: Set<String>) {
     private var provider="primary"
     private var providerGeneration: String?=null
     private val instructed=linkedMapOf<String,SafariBiome>()
+    private val assignmentClients=mutableSetOf(self)
+    private val instructionGrace=mutableMapOf<String,Long>()
+    fun assignmentClient(player: String) { if(player in roster) assignmentClients.add(player) }
+    fun knownAssignmentClients()=assignmentClients.toSet()
+    /** The roster contains non-mod players too; only positive client evidence suppresses chat. */
+    fun assignmentInstructions(now: Long): List<Notification> {
+        val run=serverRun ?: return emptyList()
+        if(!authority || conflict) return emptyList()
+        locks.keys.forEach { instructionGrace.putIfAbsent(it,now) }
+        val requested=notifications.associateBy { it.player }
+        return locks.mapNotNull { (player,biome) ->
+            if(player in assignmentClients || wasInstructed(player,biome) ||
+                now-(instructionGrace[player] ?: now)<2_000) null
+            else requested[player] ?: Notification("$run:$player",player,biome)
+        }
+    }
     var primaryFairness: JsonObject?=null; private set
     fun transitionAuthority(next: String, generation: String): Boolean {
         if(next==provider)return providerGeneration==generation
@@ -162,6 +178,7 @@ internal class PartySyncState(val self: String, roster: Set<String>) {
                 mergeUsage(usageValues,sender,inventoryFresh && freshFeeder(sender,sequence))
             }
         }
+        assignmentClient(sender)
         return true
     }
     fun receiveRoomSparklings(payload: String): Boolean {
@@ -203,7 +220,7 @@ internal class PartySyncState(val self: String, roster: Set<String>) {
         val run=PartySyncProtocol.text(payload.get("run"),128)?.takeIf { it.isNotBlank() } ?: return false
         val rev=PartySyncProtocol.integer(payload.get("revision")) ?: return false
         if(serverRun!=null && serverRun!=run) { conflict=true; return false }
-        if(rev<=revision) return false
+        if(rev<revision) return false
         val assignments=payload.get("assignments")?.takeIf { it.isJsonObject }?.asJsonObject ?: return false
         val next=assignments.entrySet().associate { (id,value) ->
             if(PartySyncProtocol.compact(id)==null || id !in roster) return false
@@ -223,6 +240,12 @@ internal class PartySyncState(val self: String, roster: Set<String>) {
         }
         val hasConflict=PartySyncProtocol.bool(payload.get("conflict")) ?: return false
         PartySyncProtocol.bool(payload.get("initialDone")) ?: return false
+        // Notification eligibility changes after the display grace period without a new allocation.
+        // Accept that control-only refresh, but never change durable state at the same revision.
+        if(rev==revision) {
+            val counts=fair.entrySet().associate { it.key to it.value.asInt }
+            if(next!=locks || counts!=hotspotWins || nextLeader!=leader || hasConflict!=conflict || pending==notifications) return false
+        }
         if(!importLocks(next)) return false
         serverRun=run; revision=rev; authority=true; conflict=conflict || hasConflict; leader=nextLeader
         if(provider=="primary")primaryFairness=JsonObject().apply {

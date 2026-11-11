@@ -260,8 +260,10 @@ internal class PartySyncTransport(
         logger.info("Party sync reconnect scheduled: status={} retryMs={}",status ?: "transport",delay)
         net.johnceo.sparklingmutuals.debug.SafariDeveloper.event("Retry in ${delay / 1000}s · ${status ?: "transport"}")
     }
+    /** Reconciliation H messages must be able to establish readiness; gameplay waits for replay. */
+    fun canSend(kind: String) = socket != null && (ready || welcomed && runCapability && kind=="H")
     fun send(sequence: Long,kind: String,payload: String,catchUpOnly: Boolean=false): Boolean {
-        if(!ready && !(welcomed && runCapability && kind=="H")) return false
+        if(!canSend(kind)) return false
         val current=socket ?: return false
         val now=System.currentTimeMillis()
         while(sent.firstOrNull()?.let { now-it>=10_000 }==true) sent.removeFirst()

@@ -38,6 +38,9 @@ class PartySyncTransportEntryTest {
                 server.send(socket,welcome(connection))
                 await { transport.drainIncoming();transport.coordinationAvailable }
                 assertFalse(transport.ready)
+                assertTrue(transport.canSend("H"),"adapter must permit the hello that establishes readiness")
+                assertFalse(transport.canSend("A"),"gameplay must wait for replay")
+                assertFalse(transport.canSend("C"),"completion must wait for replay")
                 assertTrue(transport.send(1,"H","""{"version":1,"action":"hello"}"""))
                 val hello=com.google.gson.JsonParser.parseString(server.read(socket)).asJsonObject
                 val inner=com.google.gson.JsonParser.parseString(hello["payload"].asString).asJsonObject
@@ -52,6 +55,8 @@ class PartySyncTransportEntryTest {
                 server.send(socket,boundary("replay-complete"))
                 await { transport.drainIncoming().ready }
                 assertEquals(listOf("state","sparklings","ready"),events)
+                assertTrue(transport.canSend("A"))
+                assertTrue(transport.canSend("C"))
                 val visit=transport.activeVisitId
                 transport.close(false)
                 transport.tick(context,System.currentTimeMillis())
@@ -61,6 +66,7 @@ class PartySyncTransportEntryTest {
                 await { transport.drainIncoming();transport.coordinationAvailable }
                 assertEquals(visit,transport.activeVisitId)
                 assertFalse(transport.ready)
+                assertTrue(transport.canSend("H"),"reconnect hello must also bypass the gameplay gate")
                 assertTrue(transport.send(2,"H","""{"version":1,"action":"hello"}"""))
                 val resumed=com.google.gson.JsonParser.parseString(server.read(next)).asJsonObject
                 assertEquals(run,com.google.gson.JsonParser.parseString(resumed["payload"].asString).asJsonObject["resumeRunId"].asString)

@@ -64,6 +64,7 @@ object SafariPartySync {
     private val appliedReports=mutableSetOf<Pair<String,String>>()
     private var lastInstructionAt=0L
     private val acknowledgments=linkedSetOf<String>()
+    private val instructionAcknowledgments=mutableSetOf<String>()
     private var lastRoster=emptySet<String>()
     private val reportQueue = linkedSetOf<String>()
     private val submittedReports = mutableSetOf<String>()
@@ -279,7 +280,7 @@ object SafariPartySync {
         if(ConfigManager.hotspotAnnouncer && current.authority && !current.conflict && matchingParty && transport.ready &&
             (!transport.backup || entryDiscoveries.snapshot(transport.roomStatus().generation)!=null) &&
             PartyManager.isLeader(client.player!!.uuid.toString()) && current.leader==current.self && now-lastInstructionAt>=500) {
-            val notice=current.notifications.firstOrNull {
+            val notice=current.assignmentInstructions(now).firstOrNull {
                 it.player != current.self && it.id !in current.sentNotifications &&
                     !current.wasInstructed(it.player,it.biome)
             }
@@ -288,7 +289,8 @@ object SafariPartySync {
                 if (!PartyManager.sendPartyChat(client, "$name you are assigned ${notice.biome.label} biome!")) return@let
                 current.sentNotifications.add(notice.id);lastInstructionAt=now
                 current.markInstructed(notice.player,notice.biome)
-                acknowledgments.add(notice.id)
+                if(current.notifications.any { it.id==notice.id } && instructionAcknowledgments.add(notice.id))
+                    acknowledgments.add(notice.id)
             }
         }
     }
@@ -344,6 +346,7 @@ object SafariPartySync {
         if (!parsed.coordinated && !manualWindow) return
         val client=Minecraft.getInstance()
         state?.roster?.firstOrNull { name(client,it).equals(parsed.sender,true) }?.let {
+            if(parsed.coordinated) state?.assignmentClient(it)
             report(it,parsed.biome)
         }
     }
@@ -364,7 +367,7 @@ object SafariPartySync {
     }.toString())
     private fun send(kind: String,payload: String,catchUpOnly: Boolean=false): Boolean {
         val current=state ?: return false
-        if(!transport.ready) return false
+        if(!transport.canSend(kind)) return false
         return transport.send(current.nextSequence(),kind,payload,catchUpOnly)
     }
     fun completion(code: String, chat: Boolean): Boolean {
@@ -580,11 +583,17 @@ object SafariPartySync {
             "hotspots" -> if(transport.hotspotCapability && transport.biomeCapability && matchingParty) {
                 val payload=root.get("payload")?.takeIf { it.isJsonObject }?.asJsonObject ?: return
                 if(!current.hotspots(payload)) logger.debug("Party sync rejected hotspot snapshot")
+                current.notifications.filter { current.wasInstructed(it.player,it.biome) }.forEach {
+                    if(instructionAcknowledgments.add(it.id)) acknowledgments.add(it.id)
+                }
             }
             "state" -> {
                 if (PartySyncProtocol.text(root.get("kind"),1) == "C") {
                     if (matchingParty && !transport.backup && transport.runCapability && transport.critterCapability)
-                        transport.acceptedRunId?.let { critterSync.receiveShared(root,mapping,current.self,it) }
+                        transport.acceptedRunId?.let {
+                            if(critterSync.receiveShared(root,mapping,current.self,it))
+                                mapping[PartySyncProtocol.text(root.get("sender"))]?.let(current::assignmentClient)
+                        }
                     return
                 }
                 val sender=mapping[PartySyncProtocol.text(root.get("sender"))] ?: return
@@ -661,7 +670,9 @@ object SafariPartySync {
             "${id.substring(0,8)}-${id.substring(8,12)}-${id.substring(12,16)}-${id.substring(16,20)}-${id.substring(20)}").toString()) }.getOrNull()
     fun diagnostics() = "ready=${transport.ready} authority=$backendCoordination conflict=${state?.conflict} roster=${state?.roster?.size ?: 0} matchingParty=$matchingParty sequence=${state?.sequence ?: 0} peers=${state?.inventories?.size ?: 0}" +
         " lobby=$lobby serverRun=${state?.serverRun} transport=${transport.developerSnapshot()}" +
-        " gemMaskLocal=${local[23]} gemMaskReceived=${state?.facts?.get(23)} pendingBiomes=$reportQueue"
+        " gemMaskLocal=${local[23]} gemMaskReceived=${state?.facts?.get(23)} pendingBiomes=$reportQueue" +
+        " hotspotChat=${ConfigManager.hotspotAnnouncer} localLeader=${Minecraft.getInstance().player?.let { PartyManager.isLeader(it.uuid.toString()) }}" +
+        " backendLeader=${state?.leader} self=${state?.self} assignmentClients=${state?.knownAssignmentClients()} notifications=${state?.notifications} sentNotifications=${state?.sentNotifications} pendingAcks=$acknowledgments"
     fun objectiveDone(species: String): Boolean = state?.facts?.let { when(species) {
         "Gemzie" -> it[31]!=0
         "Wumpa" -> it[29]!=0
@@ -802,5 +813,6 @@ object SafariPartySync {
         pendingMoundHits.clear();openedWalls.clear()
         lastRenderSummary = ""
         acknowledgments.clear()
+        instructionAcknowledgments.clear()
     }
 }

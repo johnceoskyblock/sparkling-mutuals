@@ -19,7 +19,7 @@ Public encounter chat is processed immediately by the existing trackers. Its agg
 
 ## Hotspot authority and fallback
 
-The backend owns allocation and fairness when `hotspots-v1` and `biome-reports-v1` are advertised. Clients send confirmed presence and actual reports; party membership alone does not establish attendance. The backend's validated final assignment is displayed directly. Only the verified current party leader sends requested non-display player instructions, and acknowledges them after submitting game chat.
+The backend owns allocation and fairness when `hotspots-v1` and `biome-reports-v1` are advertised. Clients send confirmed presence and actual reports; party membership alone does not establish attendance. The backend's validated final assignment is displayed directly. The verified current party leader also derives chat instructions from finalized assignments after a two-second grace period, without requiring backend notifications. Accepted peer sync messages and coordinated SM/SU hotspot reports identify known assignment clients; roster mapping alone does not. Known clients remain recognized through reconnects within the visit. Instructions are deduplicated per recipient and biome. Backend notification IDs are acknowledged only after actual chat submission.
 
 Wait up to seven seconds for initial backend authority. If unavailable, retain the existing leader-owned chat allocation. Finalized chat choices are imported as locks on backend recovery. No displayed assignment may move. A backend-owned visit retains its results and reconnects through outages instead of starting a competing chat allocation. Conflicts freeze new automatic assignments/instructions.
 

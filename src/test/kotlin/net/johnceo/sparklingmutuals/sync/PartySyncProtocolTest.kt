@@ -139,6 +139,50 @@ class PartySyncProtocolTest {
         assertFalse(state.hotspots(snapshot(4,"other")))
         assertEquals("visit",state.serverRun)
     }
+    @Test fun `leader can derive non-mod instructions without backend notifications`() {
+        val state=PartySyncState(self,setOf(self,peer,third))
+        assertTrue(state.hotspots(snapshot(assignments="\"$self\":\"FOREST\",\"$peer\":\"CAVERN\",\"$third\":\"ICY\"")))
+        assertTrue(state.notifications.isEmpty())
+        assertTrue(state.assignmentInstructions(1000).isEmpty())
+        assertTrue(state.assignmentInstructions(2999).isEmpty())
+        // A valid relay identifies a shared client even without an SM/SU chat announcement.
+        assertTrue(state.receive(peer,1,"N","0"))
+        assertEquals(listOf(third),state.assignmentInstructions(3000).map { it.player })
+        state.markInstructed(third,SafariBiome.ICY)
+        assertTrue(state.assignmentInstructions(4000).isEmpty())
+        state.invalidateInventory() // A reconnect must not make a known client look non-modded.
+        assertTrue(state.assignmentInstructions(5000).isEmpty())
+    }
+    @Test fun `mod chat evidence and conflict prevent non-mod instructions`() {
+        val state=PartySyncState(self,setOf(self,peer))
+        state.assignmentClient(peer)
+        assertTrue(state.hotspots(snapshot()))
+        assertTrue(state.assignmentInstructions(0).isEmpty())
+        assertTrue(state.assignmentInstructions(2000).isEmpty())
+        val nonMod=PartySyncState(self,setOf(self,peer))
+        nonMod.hotspots(snapshot());nonMod.assignmentInstructions(0)
+        assertEquals(1,nonMod.assignmentInstructions(2000).size)
+        nonMod.importLocks(mapOf(peer to SafariBiome.FOREST))
+        assertTrue(nonMod.assignmentInstructions(3000).isEmpty())
+    }
+    @Test fun `notification grace refresh at same revision is accepted without changing assignments`() {
+        val state=PartySyncState(self,setOf(self,peer))
+        val initial=snapshot(assignments="\"$self\":\"FOREST\",\"$peer\":\"CAVERN\"")
+        assertTrue(state.hotspots(initial))
+        val refreshed=initial.deepCopy().apply {
+            add("notifications",JsonParser.parseString("""[{"id":"visit:$peer","player":"$peer","biome":"CAVERN"}]"""))
+        }
+        assertTrue(state.hotspots(refreshed))
+        assertEquals(peer,state.notifications.single().player)
+        assertFalse(state.hotspots(refreshed))
+        assertFalse(state.hotspots(refreshed.deepCopy().apply { addProperty("revision",0) }))
+        assertFalse(state.hotspots(initial.deepCopy().apply { getAsJsonObject("fairness").addProperty(self,3) }))
+        assertEquals(2,state.hotspotWins[self])
+        assertFalse(state.hotspots(initial.deepCopy().apply { addProperty("leader",peer) }))
+        assertEquals(self,state.leader)
+        assertTrue(state.hotspots(initial)) // Acknowledged/withdrawn notifications can also refresh.
+        assertTrue(state.notifications.isEmpty())
+    }
     @Test fun `fallback locks recover without changing displayed choices and invalid payloads are atomic`() {
         val state=PartySyncState(self,setOf(self,peer))
         assertTrue(state.importLocks(mapOf(self to SafariBiome.FOREST)))
