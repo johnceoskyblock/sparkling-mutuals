@@ -17,7 +17,7 @@ object CommandHelp {
         "/sm help" to "Commands",
         "/sm gui" to "Move and resize HUDs",
         "/unique" to "Unique mode",
-        "/fc" to "Full clear mode",
+        "/fc | /fullclear | /full clear" to "Full clear mode",
         "/sparkle" to "Sparkle mode",
         "/sparkling [IGN|party]" to "Sparkling collections",
         "/captures" to "Run captures",

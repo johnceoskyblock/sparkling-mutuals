@@ -1,0 +1,14 @@
+Replace the early hotspot allocation deadlines with allocation as soon as all active party members have supplied a current-run actual hotspot. Retain a 30-second fallback from the first confirmed eligible report for missing reports. Duplicate reports and retries must not restart the deadline.
+
+- Tab-list presence establishes attendance only. It does not establish ticket admission or an actual hotspot.
+- Accept `ticketed` in H hello. A valid current-run actual-hotspot report also establishes ticket admission for that player, but still requires attendance evidence.
+- Do not start allocation before an eligible actual-hotspot report. Unadmitted players must not receive assignments.
+- Accept valid hotspot reports before a player's hello, retaining them until attendance and admission can be reconciled.
+- Clients parse manual party messages during the first 30 seconds of their run and forward the identified biome using the existing H report operation. Accept surrounding text and copied Hypixel hotspot lines. Supported forms include forest/fprest/for/f, cavern/cav/c, icy/ice/i and haunted/haunt/haunte/hvant/h. Single-letter aliases must be the whole message. Reject ambiguous messages naming multiple biomes and generated assignment instructions.
+- Clients retry valid unassigned reports every two seconds through the normal serialized queue. Repeated identical reports are idempotent and must not duplicate fairness wins or delay allocation.
+- Keep the existing fairness rule, UUID tie-break, remaining-biome order and finalized-assignment locks. Changing the hotspot toggle or reconnecting must not reroll a completed assignment.
+- Supply assignments and fairness counts through the authoritative hotspot snapshot so all connected clients display the same values. UI filtering to show only the local player is entirely client-side.
+- Party chat carries actual hotspot announcements and individual instructions for players without WebSocket assignment coordination. Send no hotspot-win counter and no full-roster assignment map.
+- The backend designates recipients that have no connected WebSocket assignment client. A manual hotspot report alone must not classify a connected player as a non-mod player. Only the current leader sends the designated instructions and acknowledges actual chat submission. Preserve notification-ID deduplication through reconnects.
+- Scope reports and locks to the current run. A retained old lobby room must be reconciled with the current visit before returning final assignments. Keep fairness history for the same party while isolating new-run reports and locks.
+- Once admission is confirmed, the client displays a valid authoritative assignment even if its actual hotspot is unknown. Unknown actual-hotspot text is omitted. Local calculation still requires the local actual hotspot.

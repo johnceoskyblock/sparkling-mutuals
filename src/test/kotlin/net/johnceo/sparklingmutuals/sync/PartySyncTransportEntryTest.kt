@@ -28,6 +28,7 @@ class PartySyncTransportEntryTest {
                 val socket=server.connections.poll(5,TimeUnit.SECONDS) ?: error("No WebSocket upgrade")
                 server.send(socket,"""{"type":"welcome","self":"s","roster":["s","p"],"features":["room-sparklings-v1"]}""")
                 await { transport.drainIncoming().ready }
+                assertFalse(transport.critterCapability)
                 assertNull(room.snapshot(transport.roomStatus().generation))
                 server.send(socket,"""{"type":"sparklings","payload":"1,0,0,0"}""")
                 await { transport.drainIncoming();room.snapshot(transport.roomStatus().generation)!=null }

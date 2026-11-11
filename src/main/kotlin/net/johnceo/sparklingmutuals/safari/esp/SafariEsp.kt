@@ -411,10 +411,10 @@ object SafariEsp {
             val mode = net.johnceo.sparklingmutuals.safari.completion.SafariFullClear.mode
             val party = SafariSparklingMode.state
             SafariBiome.entries.forEach { biome ->
-                logger.info("Biome gate: biome={} mode={} current={} complete={} local={} evidence={} sharedItems={} startingItems={} pendingSparkling={} checksLeft={}",
+                logger.info("Biome gate: biome={} mode={} current={} complete={} local={} evidence={} startingItems={} pendingSparkling={} checksLeft={}",
                     biome, mode, run.lastBiome, run.biomeComplete(mode, biome, party),
                     run.completion.locallyComplete(run, biome, mode, party), run.hasCaptureEvidence(biome),
-                    run.sharedSuppliesPending(biome), run.hasUnusedStartingForBiome(biome), run.sparklingCaptures.pending(biome),
+                    run.hasUnusedStartingForBiome(biome), run.sparklingCaptures.pending(biome),
                     biome.critters.filter { party.needs(it.name) && !run.sparklingComplete(it.name, party, localOnly = true) }.map { it.name })
             }
         }

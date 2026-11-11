@@ -35,7 +35,9 @@ object SafariPanels {
             val areas = critters.map { it.biome }.distinct()
             val iconComplete = run?.let { current -> areas.all { area ->
                 current.backendBiomeReportReceived(area) || if (current.manualReportReceived(area))
-                    current.manualBiomeIconComplete(mode, area, party) else current.biomeComplete(mode, area, party)
+                    current.manualBiomeIconComplete(mode, area, party) ||
+                        current.lastBiome == area && current.biomeComplete(mode, area, party)
+                else current.biomeComplete(mode, area, party)
             } } == true
             if (mode == SafariMode.SPARKLING && !party.ready) return HudRow(label, "?", color, color,
                 complete = iconComplete, completedIcon = net.johnceo.sparklingmutuals.hud.UiIcons.forLabel(label)
@@ -112,14 +114,13 @@ object SafariPanels {
                 SafariMode.SPARKLING -> "Check needed critters"
             },icon=null))
             val checksLeft = if (run != null && mode == SafariMode.UNIQUE)
-                biome.critters.filter { party.needs(it.name) && !run.sparklingComplete(it.name, party, localOnly = true) }
+                biome.critters.filter { party.needs(it.name) && !run.sparklingComplete(it.name, party) }
             else emptyList()
             if (checksLeft.isNotEmpty()) add(HudRow("Finish shiny checks", icon = null))
-            if (run?.sharedSuppliesPending(biome) == true) add(HudRow("Waiting for party items", icon = null))
             if (run?.hasUnusedStartingForBiome(biome) == true) add(HudRow("Use starting items", icon = null))
             val birdNames=listOf("Bluebird","Parakeet","Macaw")
             val requiredBirds=birdNames.filter { !sparkling || party.needs(it) }.map { SafariRoster.named(it)!! }
-            val birdsDone=run!=null && run.completed(mode,requiredBirds,party,localOnly=true)==requiredBirds.size
+            val birdsDone=run!=null && run.completed(mode,requiredBirds,party)==requiredBirds.size
             val showBirds=biome==SafariBiome.FOREST && requiredBirds.isNotEmpty() && !birdsDone
             if (biome == SafariBiome.ICY && (!sparkling || party.needs("Wumpa")) &&
                 !net.johnceo.sparklingmutuals.sync.SafariPartySync.objectiveDone("Wumpa") &&
@@ -179,9 +180,11 @@ object SafariPanels {
         else if (complete) 0xFF55FF55.toInt() else 0xFFFF5555.toInt()
     fun captures(run: SafariRun?, biome: SafariBiome, party: PartySparklingState = SafariSparklingMode.state) = HudPanel("${biome.label} captures", biome.color, buildList {
         biome.critters.forEach { val count = run?.captureProgress(it.name) ?: 0
+            val knownComplete = SafariFullClear.maximumCaptures[it.name]?.let { maximum -> count >= maximum } == true
             val locallyObserved = run?.visitedBiome(biome) == true && run.hasCaptureEvidence(biome)
             val status = when (SafariFullClear.mode) {
                 SafariMode.FULL_CLEAR -> when {
+                    knownComplete -> true
                     run?.sharedCritterComplete(it.name, SafariMode.FULL_CLEAR) == true -> true
                     run == null || run.capturesLeft(it.name) > 0 -> false
                     locallyObserved && run.captureComplete(it.name) -> true
@@ -195,11 +198,11 @@ object SafariPanels {
                     else -> null
                 }
             }
-            add(HudRow(it.name, if (run?.inferredCapture(it.name) == true && count <= run.count(it.name)) "\u22651" else "$count", it.color, captureColor(run?.fullClearComplete(it.name) == true,
+            add(HudRow(it.name, if (run?.inferredCapture(it.name) == true && count <= run.count(it.name)) "\u22651" else "$count", it.color, captureColor(knownComplete || run?.fullClearComplete(it.name) == true,
                 run?.sharedCritterComplete(it.name, SafariMode.FULL_CLEAR) == true ||
                     run?.hasCaptureEvidence(biome) == true || run?.fullClearReportReceived(biome) == true ||
                     it.name == "Honeybug" && run?.beeNestCountKnown == true ||
-                    it.name in SafariFullClear.fixedCaptureTargets && count > 0),
+                    it.name in SafariFullClear.maximumCaptures && count > 0),
                 complete = status, icon = net.johnceo.sparklingmutuals.hud.UiIcons.Kind.QUESTION)) }
         add(HudRow()); add(HudRow("Total captures", "${biome.critters.sumOf { run?.captureProgress(it.name) ?: 0 }}", HudRow.GRAY))
         if (biome == SafariBiome.CAVERN && ConfigManager.showMoundStats) {

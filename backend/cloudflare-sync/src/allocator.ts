@@ -30,20 +30,26 @@ export class Allocation {
   const h=object(input);check(h,typeof h.display==='boolean'&&typeof h.leader==='boolean'&&(h.ticketed===undefined||typeof h.ticketed==='boolean'));
   check(h,Array.isArray(h.present)&&h.present.length<=4);const present=(h.present as unknown[]).map(uuid);check(h,present.every(p=>this.roster.includes(p)));
   this.importLocks(parseLocks(h.locked,this.roster));
-  for(const p of [id,...present]){check(p,this.roster.includes(p));this.members[p]??={present:true,ticketed:true,display:false,displayed:false,left:false,connected:false};if(!this.members[p].left)this.members[p].present=true;}
+  for(const p of [id,...present]){check(p,this.roster.includes(p));this.members[p]??={present:true,ticketed:!!this.reports[p],display:false,displayed:false,left:false,connected:false};if(!this.members[p].left)this.members[p].present=true;}
   const m=this.members[id];if(m.left)return;
-  Object.assign(m,{connected:true,display:h.display,ticketed:h.ticketed!==false});if(m.display&&this.locks[id])m.displayed=true;
+  Object.assign(m,{connected:true,display:h.display,ticketed:h.ticketed===true||!!this.reports[id]});if(m.display&&this.locks[id])m.displayed=true;
   if(h.leader)this.leader=id;else if(this.leader===id)this.leader=null;
   if(this.initialDone&&this.eligible().some(p=>!this.locks[p]))this.due??=now+250;
   this.schedule(now);this.revision++;
  }
- report(id:string,b:Biome,now:number){check(id,this.roster.includes(id));biome(b);this.reports[id]??=b;this.schedule(now);this.revision++;}
+ report(id:string,b:Biome,now:number){
+  check(id,this.roster.includes(id));biome(b);this.reports[id]??=b;
+  // An actual hotspot report proves ticket admission, but never physical attendance.
+  const member=this.members[id];if(member&&!member.left)member.ticketed=true;
+  this.schedule(now);this.revision++;
+ }
  private eligible(){return this.roster.filter(id=>this.members[id]?.present&&this.members[id].ticketed&&!this.members[id].left);}
  private schedule(now:number){
   if(this.initialDone)return;const eligible=this.eligible(),reported=eligible.filter(id=>this.reports[id]);
   if(reported.length)this.firstReport??=now;
-  if(reported.length>=3||(eligible.length<=2&&eligible.length>0&&reported.length===eligible.length))this.thirdReport??=now;
-  this.due=this.firstReport===null?null:Math.min(this.firstReport+5000,this.thirdReport===null?Infinity:this.thirdReport+2000);
+  const expected=this.roster.filter(id=>!this.members[id]?.left);
+  this.due=this.firstReport===null?null:
+   expected.length>0&&expected.every(id=>reported.includes(id))?now:this.firstReport+30000;
  }
  allocate(now:number,ready=true):boolean{
   if(!ready||this.conflict||this.due===null||now<this.due)return false;

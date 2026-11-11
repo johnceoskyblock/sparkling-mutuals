@@ -115,11 +115,22 @@ class HotspotAssignments(private val wins: MutableMap<String,Int> = mutableMapOf
             val shorter=if(a.length>b.length) b else a
             return longer.indices.any { longer.removeRange(it,it+1)==shorter }
         }
-        fun parseReport(raw: String): Report? {
+        fun parseReport(raw: String, allowFreeText: Boolean = false): Report? {
             HotspotProtocol.parseWins(raw)?.let { return Report(it.sender,it.hotspot,true) }
             val chat=PartyChat.parse(raw) ?: return null
             val tag=prefix.find(chat.body)
             val body=chat.body.removePrefix(tag?.value ?: "").lowercase()
+            if (allowFreeText) {
+                if (HotspotProtocol.parseAssignment(raw) != null || body.contains("you are assigned")) return null
+                val words = body.split(Regex("[^a-z]+")).filter(String::isNotEmpty)
+                val short = mapOf("f" to SafariBiome.FOREST, "c" to SafariBiome.CAVERN,
+                    "i" to SafariBiome.ICY, "h" to SafariBiome.HAUNTED)
+                val biome = short[words.singleOrNull()] ?: aliases.filter { (biome, names) ->
+                    words.filter { it !in filler }.any { word -> word == "for" && biome == SafariBiome.FOREST ||
+                        names.any { close(word, it) } }
+                }.keys.singleOrNull() ?: return null
+                return Report(chat.sender, biome, tag?.groupValues?.get(1)?.lowercase() in setOf("sm","su","safariutils"))
+            }
             val words=body.replace(Regex("[^a-z\\s]")," ").trim().split(Regex("\\s+")).filter { it !in filler }
             if(words.size!=1) return null
             val matches=aliases.filterValues { names -> names.any { close(words.single(),it) } }.keys
@@ -131,6 +142,8 @@ class HotspotAssignments(private val wins: MutableMap<String,Int> = mutableMapOf
             val report=parseReport(raw) ?: return null
             return report.sender to report.biome
         }
+        fun manualReportWindow(startedAt: Long?, now: Long) =
+            startedAt != null && now - startedAt in 0L..30_000L
         private fun identity(name: String,uuids: Map<String,String>)=uuids[name.lowercase()]?.replace("-","")?.lowercase() ?: name.lowercase()
         fun allocate(reports: Map<String,SafariBiome>, uuids: Map<String,String> = emptyMap(), wins: Map<String,Int> = emptyMap()): Map<String,SafariBiome> {
             val assigned=linkedMapOf<String,SafariBiome>()

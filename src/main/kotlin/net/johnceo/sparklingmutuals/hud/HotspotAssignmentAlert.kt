@@ -18,8 +18,6 @@ object HotspotAssignmentAlert {
     private val pendingWins=ArrayDeque<HotspotProtocol.Wins>()
     private val pendingAssignments=ArrayDeque<HotspotProtocol.Assignment>()
     private val instructions=ArrayDeque<Pair<String,SafariBiome>>()
-    private var leaderAnnounced=false
-    private var published=false
     private var lastInstructionAt=0L
     private var shown: SafariBiome?=null
     private var requested: SafariBiome? = null
@@ -45,20 +43,7 @@ object HotspotAssignmentAlert {
         return Members(ids,names,roster.size,ids.entries.firstOrNull { PartyManager.isLeader(it.value) }?.key)
     }
     /** Called by the existing immediate hotspot announcer; no extra profile requests. */
-    fun announcement(label: String): String? {
-        sync() ?: return "[SM] Hotspot: $label"
-        if (net.johnceo.sparklingmutuals.sync.SafariPartySync.backendCoordination) return "[SM] Hotspot: $label"
-        val client=Minecraft.getInstance()
-        val player=client.player ?: return null
-        val members=members(client) ?: return "[SM] Hotspot: $label"
-        if(members.leader==null) return "[SM] Hotspot: $label"
-        if(!PartyManager.isLeader(player.uuid.toString())) return "[SM] Hotspot: $label"
-        if(members.ids.size!=members.expected) return "[SM] Hotspot: $label"
-        val actual=SafariBiome.entries.firstOrNull { it.label==label } ?: return null
-        val message=HotspotProtocol.winsMessage(actual,assignments.snapshot(members.ids.keys),members.names)
-        leaderAnnounced=true
-        return message
-    }
+    fun announcement(label: String): String = "[SM] Hotspot: $label"
     fun enabled() = ConfigManager.hotspotAnnouncer
     fun register() {
         ClientReceiveMessageEvents.GAME.register { message, overlay ->
@@ -80,15 +65,21 @@ object HotspotAssignmentAlert {
             return
         }
         HotspotProtocol.parseWins(raw)?.let { if(pendingWins.size<8) pendingWins.addLast(it) }
-        val report=HotspotAssignments.parseReport(raw) ?: return
-        if (pending.size < 32) pending.addLast(report to System.currentTimeMillis())
+        val now = System.currentTimeMillis()
+        val manualWindow = HotspotAssignments.manualReportWindow(run?.startedAt, now)
+        val report=HotspotAssignments.parseReport(raw, manualWindow) ?: return
+        if (!report.coordinated && !manualWindow) return
+        if (pending.size < 32) pending.addLast(report to now)
     }
     fun tick(client: Minecraft) {
         val current=sync() ?: return
         if (!SafariAssist.inSafari || current.endedAt != null) return
         val player=client.player ?: return
         val now=System.currentTimeMillis()
-        current.entry.hotspot?.let { assignments.begin(player.name.string,it,now) }
+        current.entry.hotspot?.let {
+            assignments.begin(player.name.string,it,now)
+            assignments.report(player.name.string,it,now,true)
+        }
         if (!enabled()) { clearAlert();return }
         val backend=net.johnceo.sparklingmutuals.sync.SafariPartySync
         if(backend.pauseHotspotChat) {
@@ -97,6 +88,7 @@ object HotspotAssignmentAlert {
             }
             return
         }
+        if (current.entry.hotspot == null) return
         val members=members(client) ?: return
         val identities=members.ids
         val verifiedNames=identities.keys
@@ -123,12 +115,6 @@ object HotspotAssignmentAlert {
             requestAlert(current, target)
         }
         assignments.finalPlan?.let(backend::finalized)
-        if(leader && members.expected>1 && !published && client.connection!=null) assignments.finalPlan?.let { plan ->
-            if(PartyManager.sendPartyChat(client, "${HotspotProtocol.assignmentMessage(plan,members.names)}")) {
-                published=true
-                lastInstructionAt=now
-            }
-        }
         instructions.addAll(assignments.notifications(leader,player.name.string))
         if(!leader) instructions.clear()
         if(leader && instructions.isNotEmpty() && now-lastInstructionAt>=500 && client.connection!=null) {
@@ -187,12 +173,15 @@ object HotspotAssignmentAlert {
         val title="${biome.label} Biome"
         val scale=minOf(4f,(width-20f)/client.font.width(title))
         centered(title,height/2f-client.font.lineHeight*scale,scale,color)
-        centered("Assigned biome · Hotspot: ${run?.entry?.hotspot?.label}",height/2f+12, minOf(1.5f,(width-20f)/client.font.width("Assigned biome · Hotspot: Haunted")),(alpha shl 24) or 0xFFFFFF)
+        run?.entry?.hotspot?.let { actual ->
+            centered("Assigned biome · Hotspot: ${actual.label}",height/2f+12,
+                minOf(1.5f,(width-20f)/client.font.width("Assigned biome · Hotspot: Haunted")),(alpha shl 24) or 0xFFFFFF)
+        }
     }
     private fun resetRun() {
         clearAlert()
         run=null;assignments=HotspotAssignments(wins);pending.clear();pendingWins.clear();pendingAssignments.clear()
-        instructions.clear();leaderAnnounced=false;published=false;lastInstructionAt=0;shown=null;shownAt=0;displayedThisRun=false
+        instructions.clear();lastInstructionAt=0;shown=null;shownAt=0;displayedThisRun=false
     }
     fun reset() { resetRun();wins.clear();sessionRoster=null }
 }

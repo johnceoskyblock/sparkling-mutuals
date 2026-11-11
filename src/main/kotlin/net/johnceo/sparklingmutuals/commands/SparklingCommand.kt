@@ -123,6 +123,9 @@ object SparklingCommand {
             dispatcher.register(ClientCommands.literal("unique").executes { mode(it.source, SafariMode.UNIQUE) })
             dispatcher.register(ClientCommands.literal("sparkle").executes { mode(it.source, SafariMode.SPARKLING) })
             dispatcher.register(ClientCommands.literal("fc").executes { mode(it.source, SafariMode.FULL_CLEAR) })
+            dispatcher.register(ClientCommands.literal("fullclear").executes { mode(it.source, SafariMode.FULL_CLEAR) })
+            dispatcher.register(ClientCommands.literal("full").then(
+                ClientCommands.literal("clear").executes { mode(it.source, SafariMode.FULL_CLEAR) }))
         }
     }
 }

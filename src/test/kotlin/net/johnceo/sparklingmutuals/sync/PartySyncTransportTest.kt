@@ -42,8 +42,11 @@ class PartySyncTransportTest {
                         assertEquals("$self,$peer",headers["x-safariutils-roster"])
                         val accept=Base64.getEncoder().encodeToString(MessageDigest.getInstance("SHA-1").digest((headers.getValue("sec-websocket-key")+"258EAFA5-E914-47DA-95CA-C5AB0DC85B11").toByteArray()))
                         output.write("HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: $accept\r\n\r\n".toByteArray())
-                        val welcome="""{"type":"welcome","self":"a","roster":["a","b"],"features":["hotspots-v1","biome-reports-v1"]}""".toByteArray()
-                        output.write(129);output.write(welcome.size);output.write(welcome);output.flush()
+                        val welcome="""{"type":"welcome","self":"a","roster":["a","b"],"features":["hotspots-v1","biome-reports-v1","critter-completion-v1"]}""".toByteArray()
+                        output.write(129)
+                        if (welcome.size < 126) output.write(welcome.size)
+                        else { output.write(126); output.write(welcome.size ushr 8); output.write(welcome.size and 255) }
+                        output.write(welcome);output.flush()
                         while(true) {
                             val opcode=input.read();if(opcode<0 || opcode and 15==8) break
                             var size=input.read() and 127
@@ -64,8 +67,10 @@ class PartySyncTransportTest {
             failure.get()?.let { throw AssertionError("Local protocol server failed",it) }
             assertTrue(transport.ready)
             assertTrue(transport.hotspotCapability);assertTrue(transport.biomeCapability)
+            assertTrue(transport.critterCapability)
             assertTrue(transport.send(1,"N","7"));assertTrue(transport.send(2,"S","1,0,0,0"))
             transport.close(true,3)
+            assertFalse(transport.critterCapability)
             worker.join(4000)
             failure.get()?.let { throw AssertionError("Local protocol server failed",it) }
             assertEquals(3,frames.size)
