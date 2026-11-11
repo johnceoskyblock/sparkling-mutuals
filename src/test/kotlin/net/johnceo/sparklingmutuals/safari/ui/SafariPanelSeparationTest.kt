@@ -16,6 +16,25 @@ import org.junit.jupiter.api.io.TempDir
 
 class SafariPanelSeparationTest {
     @TempDir lateinit var dir: Path
+    @Test fun `full clear fixed maxima show checks without entering the biome`() {
+        ConfigManager.init(dir)
+        ConfigManager.fullClearMode = true
+        ConfigManager.sparklingMode = false
+        val maxima = mapOf("Doomspiral" to 1, "Hideyho" to 1, "Wumpa" to 1,
+            "Gemzie" to 3, "Scrappy" to 3, "Troodon" to 3, "Gazer" to 4)
+        for ((name, maximum) in maxima) {
+            val run = SafariRun(0)
+            val critter = SafariRoster.named(name)!!
+            repeat(maximum - 1) { run.record(SafariCatch(critter, personal = false, catcherName = "Friend")) }
+            assertEquals(false, SafariPanels.captures(run, critter.biome).rows.first { it.label == name }.complete, name)
+            run.record(SafariCatch(critter, personal = false, catcherName = "Friend"))
+            val row = SafariPanels.captures(run, critter.biome).rows.first { it.label == name }
+            assertEquals(true, row.complete, name)
+            assertEquals(net.johnceo.sparklingmutuals.hud.UiIcons.Kind.CHECK, row.displayIcon, name)
+            assertEquals(0xFF55FF55.toInt(), row.valueColor, name)
+            assertFalse(run.visitedBiome(critter.biome))
+        }
+    }
     @Test fun `capture icons separate counts from local confirmation`() {
         ConfigManager.init(dir)
         val run = SafariRun(0)
@@ -69,7 +88,6 @@ class SafariPanelSeparationTest {
         ConfigManager.init(dir)
         val run = SafariRun(0)
         run.sharedBiomeReport(SafariBiome.HAUNTED)
-        run.sharedHeldObjectives(false, true)
         for (mode in net.johnceo.sparklingmutuals.safari.SafariMode.entries) {
             ConfigManager.fullClearMode = mode == net.johnceo.sparklingmutuals.safari.SafariMode.FULL_CLEAR
             ConfigManager.sparklingMode = mode == net.johnceo.sparklingmutuals.safari.SafariMode.SPARKLING

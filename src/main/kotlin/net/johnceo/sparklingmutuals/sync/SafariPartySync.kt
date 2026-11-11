@@ -40,6 +40,7 @@ object SafariPartySync {
     private var sampleAt=0L
     private var helloAt=0L
     private var lastHello=""
+    private var hotspotRetryAt=0L
     private val local=IntArray(PartySyncProtocol.AGGREGATE_SIZE).apply {
         this[17] = -1
         this[33] = PartySyncProtocol.AGGREGATE_VERSION
@@ -177,7 +178,9 @@ object SafariPartySync {
             }
         }
         critterSync.tick(context, routing.backupOrigin, routing.generation, routing.nonce,
-            run.takeIf { ticketed }, SafariSparklingMode.state, now, matchingParty)
+            run.takeIf { ticketed }, SafariSparklingMode.state, now, matchingParty,
+            useShared = transport.ready && !transport.backup && transport.critterCapability && lastHello.isNotEmpty(),
+            sendShared = { send("C", it) })
         transport.tick(context,now)
         while(transport.ready && bootstrapQueue.isNotEmpty()) {
             if(!transport.send(current.nextSequence(),"F",bootstrapQueue.first()))break
@@ -196,6 +199,12 @@ object SafariPartySync {
                 if(send("H",hello)) { lastHello=hello;helloAt=now }
             }
             if(lastHello.isNotEmpty()) {
+                if (now >= hotspotRetryAt && !current.conflict) {
+                    discoveryReports.filterKeys { it !in current.locks }.forEach { (id, biome) ->
+                        pendingReports.putIfAbsent(id, biome)
+                    }
+                    hotspotRetryAt = now + 2_000
+                }
                 acknowledgments.firstOrNull()?.let { id -> if(sendH("ack") { addProperty("id",id) }) acknowledgments.remove(id) }
                 val entry=pendingReports.entries.firstOrNull { ticketed || it.key != current.self }
                 if(entry!=null && sendH("report") { addProperty("player",entry.key);addProperty("biome",entry.value.name) }) pendingReports.remove(entry.key)
@@ -227,7 +236,7 @@ object SafariPartySync {
             }
             if (matchingParty && transport.biomeCapability && due == 0L && run != null) reportQueue.firstOrNull { code ->
                 val biome = PartySyncProtocol.codes.getValue(code)
-                !run.sharedSuppliesPending(biome) && !run.hasUnusedStartingForBiome(biome)
+                !run.hasUnusedStartingForBiome(biome)
             }?.let { code ->
                 if (current.biomeReports.none { it.second == code } && send("B", code)) {
                     run.backendBiomeReportSent(PartySyncProtocol.codes.getValue(code))
@@ -248,7 +257,7 @@ object SafariPartySync {
             when {
                 run == null || run.endedAt != null || !ConfigManager.autoBiomeReports ||
                     run.manualReportReceived(biome) || speaker != current.self -> biomeChatDue.remove(code)
-                run.sharedSuppliesPending(biome) || run.hasUnusedStartingForBiome(biome) -> biomeChatDue[code] = now + 1_000
+                run.hasUnusedStartingForBiome(biome) -> biomeChatDue[code] = now + 1_000
                 PartyManager.sendPartyChat(client, code) -> biomeChatDue.remove(code)
                 else -> {
                     if (!PartyManager.hasInfo) PartyManager.requestPartyInfo()
@@ -259,15 +268,16 @@ object SafariPartySync {
         if(ConfigManager.hotspotAnnouncer && current.authority && !current.conflict && matchingParty && transport.ready &&
             (!transport.backup || entryDiscoveries.snapshot(transport.roomStatus().generation)!=null) &&
             PartyManager.isLeader(client.player!!.uuid.toString()) && current.leader==current.self && now-lastInstructionAt>=500) {
-            val manual=current.locks.entries.firstOrNull { (id,b) -> id in manualHotspotReporters && id!=current.self && !current.wasInstructed(id,b) }
-            val notice=manual?.let { PartySyncState.Notification("manual:${it.key}",it.key,it.value) }
-                ?: current.notifications.firstOrNull { it.player in observedHotspotReporters && it.id !in current.sentNotifications && !current.wasInstructed(it.player,it.biome) }
+            val notice=current.notifications.firstOrNull {
+                it.player != current.self && it.id !in current.sentNotifications &&
+                    !current.wasInstructed(it.player,it.biome)
+            }
             notice?.let { notice ->
                 val name=name(client,notice.player) ?: return@let
                 if (!PartyManager.sendPartyChat(client, "$name you are assigned ${notice.biome.label} biome!")) return@let
                 current.sentNotifications.add(notice.id);lastInstructionAt=now
                 current.markInstructed(notice.player,notice.biome)
-                if(!notice.id.startsWith("manual:")) acknowledgments.add(notice.id)
+                acknowledgments.add(notice.id)
             }
         }
     }
@@ -285,11 +295,10 @@ object SafariPartySync {
         val current=state ?: return emptyList()
         val client=Minecraft.getInstance()
         return current.roster.sorted().map { id -> HotspotRow(name(client,id) ?: id.take(8),current.reports[id],
-            current.locks[id].takeUnless { current.conflict },current.hotspotWins[id] ?: 0) }
+            current.locks[id].takeUnless { current.conflict || !hotspotReady() },current.hotspotWins[id] ?: 0) }
     }
-    private val manualHotspotReporters=mutableSetOf<String>()
-    private val observedHotspotReporters=mutableSetOf<String>()
-    fun assignment(): SafariBiome? = state?.takeUnless { it.conflict }?.let { it.locks[it.self] }
+    private fun hotspotReady() = ticketed
+    fun assignment(): SafariBiome? = state?.takeUnless { it.conflict || !hotspotReady() }?.let { it.locks[it.self] }
     fun finalized(plan: Map<String,SafariBiome>) {
         val current=state ?: return
         val client=Minecraft.getInstance()
@@ -318,11 +327,12 @@ object SafariPartySync {
                 finalized(assignment.biomes)
             }
         }
-        val parsed=HotspotAssignments.parseReport(raw) ?: return
+        val at = System.currentTimeMillis()
+        val manualWindow = HotspotAssignments.manualReportWindow(SafariTracking.ledger.current?.startedAt, at)
+        val parsed=HotspotAssignments.parseReport(raw, manualWindow) ?: return
+        if (!parsed.coordinated && !manualWindow) return
         val client=Minecraft.getInstance()
         state?.roster?.firstOrNull { name(client,it).equals(parsed.sender,true) }?.let {
-            observedHotspotReporters.add(it)
-            if(!parsed.coordinated) manualHotspotReporters.add(it)
             report(it,parsed.biome)
         }
     }
@@ -333,7 +343,8 @@ object SafariPartySync {
         val present=com.google.gson.JsonArray()
         // The shared server tab list establishes presence on this Safari island, not party membership alone.
         client.connection?.onlinePlayers?.mapNotNull { PartySyncProtocol.uuid(it.profile.id.toString()) }
-            ?.filter { it in current.roster }?.sorted()?.forEach(present::add)
+            ?.filter { it in current.roster && (it in discoveryReports || it == current.self && ticketed) }
+            ?.sorted()?.forEach(present::add)
         add("present",present)
         add("locked",JsonObject().apply { current.locks.forEach { (id,biome) -> addProperty(id,biome.name) } })
     }.toString()
@@ -504,7 +515,8 @@ object SafariPartySync {
         local[17]=food.indexOf(run.birds.localFeederFood).takeIf { run.birds.localFeederCount>0 } ?: -1
         local[18]=run.birds.localFeederCount.coerceIn(0,64)
         listOf(FloorDropType.LIME,FloorDropType.ORANGE,FloorDropType.PURPLE,FloorDropType.INCENSE).forEachIndexed { i,type -> local[19+i]=run.resources.heldCount(type).coerceIn(0,64) }
-        local[PartySyncProtocol.HELD_COINS] = run.resources.coordinatedHeld(FloorDropType.COIN, includeStarting).coerceIn(0, 64)
+        // Inventory truth is shared even when starting-item announcements are disabled.
+        local[PartySyncProtocol.HELD_COINS] = run.resources.heldCount(FloorDropType.COIN).coerceIn(0, 64)
         local[23] = 0
         listOf(GemzieGem.LIME,GemzieGem.ORANGE,GemzieGem.PURPLE).forEachIndexed { i,gem -> if(gem in run.gems.locallyPlaced) local[23]=local[23] or (1 shl i) }
         SafariStructures.localWallStates.forEachIndexed { i,wall ->
@@ -559,6 +571,11 @@ object SafariPartySync {
                 if(!current.hotspots(payload)) logger.debug("Party sync rejected hotspot snapshot")
             }
             "state" -> {
+                if (PartySyncProtocol.text(root.get("kind"),1) == "C") {
+                    if (matchingParty && !transport.backup && transport.critterCapability)
+                        critterSync.receiveShared(root,mapping,current.self)
+                    return
+                }
                 val sender=mapping[PartySyncProtocol.text(root.get("sender"))] ?: return
                 val sequence=PartySyncProtocol.integer(root.get("sequence"),1) ?: return
                 val kind=PartySyncProtocol.text(root.get("kind"),1) ?: return
@@ -613,10 +630,6 @@ object SafariPartySync {
             PartySyncProtocol.codes[code]?.let(run::sharedBiomeReport)
             appliedReports.add(sender to code)
         }
-        val peers = current.inventories.filterKeys { it in lastRoster }.values
-        run.sharedHeldObjectives(
-            peers.any { it[10] + it[11] + it[12] > 0 },
-            peers.any { (it.getOrNull(PartySyncProtocol.HELD_COINS) ?: 0) > 0 })
         BeeNests.sharedResolved(PartySyncSites.resolved(current.nestMask,PartySyncSites.nests))
         run.gems.shared(current.facts[23],current.facts[25]!=0)
         SafariStructures.shareWalls(current.facts[34])
@@ -758,13 +771,12 @@ object SafariPartySync {
     }
     fun reset() {
         critterSync.reset()
-        manualHotspotReporters.clear()
-        observedHotspotReporters.clear()
         entryDiscoveries.reset()
         val current=state;transport.close(true,current?.nextSequence() ?: 0)
         routing.reset();transport.usePrimary();bootstrapQueue.clear()
         state=null;lobby=null;world=null;began=0;sampleAt=0;helloAt=0;lastHello="";matchingParty=false
         transferRevision=null;ticketed=false;ticketWindowLocked=false
+        hotspotRetryAt=0
         local.fill(0);local[17]=-1;local[33]=PartySyncProtocol.AGGREGATE_VERSION;localSparkling.fill(0);localNests=0;lastNests=-1;lastSparkling=""
         lastAggregate="";produced="";liveFingerprint="";due=0;pendingLive=false;seenWalls=0;lastRoster=emptySet()
         reportQueue.clear();submittedReports.clear();biomeReportRetryAt.clear();biomeChatDue.clear();pendingReports.clear();discoveryReports.clear();notifiedSparks.clear();lastInstructionAt=0

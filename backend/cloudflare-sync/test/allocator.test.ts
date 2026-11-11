@@ -1,19 +1,19 @@
 import {it,expect} from 'vitest';
 import {Allocation,javaHash} from '../src/allocator';
 const a='0'.repeat(31)+'1',b='0'.repeat(31)+'2',c='0'.repeat(31)+'3',d='0'.repeat(31)+'4';
-it('uses signed Java hash and exact report deadlines without restart',()=>{
+it('waits for all roster reports or thirty seconds without restarting the window',()=>{
  expect(javaHash('Aa')).toBe(2112);expect(javaHash('zzzzzz')).toBe(-685785664);
  const x=new Allocation([a,b,c,d]);for(const id of [a,b,c,d])x.hello(id,{display:true,ticketed:true,leader:id===a,present:[a,b,c,d],locked:{}},0);
- x.report(a,'FOREST',0);x.report(b,'FOREST',500);expect(x.due).toBe(5000);
- x.report(c,'CAVERN',1000);expect(x.due).toBe(3000);x.report(c,'ICY',1500);expect(x.due).toBe(3000);
- expect(x.allocate(2999)).toBe(false);expect(x.allocate(3000)).toBe(true);
+ x.report(a,'FOREST',0);x.report(b,'FOREST',500);expect(x.due).toBe(30000);
+ x.report(c,'CAVERN',1000);expect(x.due).toBe(30000);x.report(c,'ICY',1500);expect(x.due).toBe(30000);
+ expect(x.allocate(2999)).toBe(false);x.report(d,'HAUNTED',3000);expect(x.allocate(3000)).toBe(true);
  expect(new Set(Object.values(x.locks)).size).toBe(4);expect(x.locks[a]).toBe('FOREST');expect(x.fairness[a]).toBe(1);
  const before={...x.locks};x.report(d,'FOREST',3500);x.allocate(4000);expect(x.locks).toEqual(before);
 });
 it('imports locks without wins, freezes contradictions and gates allocation on reconciliation',()=>{
  const x=new Allocation([a,b]);x.importLocks({[a]:'ICY'});expect(x.fairness[a]??0).toBe(0);
  x.hello(b,{display:false,ticketed:true,leader:false,present:[a,b],locked:{}},0);x.report(b,'ICY',1);
- expect(x.allocate(10000,false)).toBe(false);x.allocate(10000,true);expect(x.locks[a]).toBe('ICY');expect(x.locks[b]).toBe('FOREST');
+ expect(x.allocate(40000,false)).toBe(false);x.allocate(40000,true);expect(x.locks[a]).toBe('ICY');expect(x.locks[b]).toBe('FOREST');
  x.importLocks({[a]:'FOREST'});expect(x.conflict).toBe(true);expect(x.snapshot(10000,a).notifications).toEqual([]);
 });
 it('only current leader gets non-display notices after 2s grace; acknowledgments survive restore',()=>{
@@ -34,6 +34,15 @@ it('keeps backup-only wins separate when seeding a later primary snapshot once',
 });
 it('unticketed members remain excluded and late attendance uses 250ms batching',()=>{
  const x=new Allocation([a,b,c]);x.hello(a,{display:true,ticketed:true,leader:true,present:[a,b],locked:{}},0);x.hello(b,{display:true,ticketed:false,leader:false,present:[],locked:{}},0);
- x.report(a,'FOREST',0);x.allocate(5000);expect(Object.keys(x.locks)).toEqual([a]);
- x.hello(c,{display:true,ticketed:true,leader:false,present:[],locked:{}},6000);expect(x.due).toBe(6250);expect(x.allocate(6249)).toBe(false);expect(x.allocate(6250)).toBe(true);expect(x.locks[c]).toBe('CAVERN');
+ x.report(a,'FOREST',0);x.allocate(30000);expect(Object.keys(x.locks)).toEqual([a]);
+ x.hello(c,{display:true,ticketed:true,leader:false,present:[],locked:{}},31000);expect(x.due).toBe(31250);expect(x.allocate(31249)).toBe(false);expect(x.allocate(31250)).toBe(true);expect(x.locks[c]).toBe('CAVERN');
+});
+it('tab presence alone never admits or assigns a player',()=>{
+ const x=new Allocation([a,b]);
+ x.hello(a,{display:true,ticketed:false,leader:true,present:[a,b],locked:{}},0);
+ expect(x.allocate(60000)).toBe(false);expect(x.locks).toEqual({});
+ x.hello(a,{display:true,ticketed:true,leader:true,present:[a,b],locked:{}},60001);
+ x.report(a,'FOREST',60001);
+ expect(x.allocate(90000)).toBe(false);expect(x.allocate(90001)).toBe(true);
+ expect(x.locks).toEqual({[a]:'FOREST'});
 });

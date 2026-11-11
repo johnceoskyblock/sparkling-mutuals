@@ -18,7 +18,12 @@ object HotspotHud {
             SafariPartySync.HotspotRow("Pyruuuu",SafariBiome.FOREST,SafariBiome.FOREST,1),
             SafariPartySync.HotspotRow("Dangerdogs1234",SafariBiome.HAUNTED,SafariBiome.ICY,1))
             else if(SafariPartySync.backendCoordination) SafariPartySync.hotspotRows() else HotspotAssignmentAlert.rows()
-        return HotspotGridPanel(entries,net.johnceo.sparklingmutuals.alerts.WarpListRanks.colors(client),width)
+        val players=when {
+            ConfigManager.hotspotShowAllPlayers -> entries
+            preview -> listOf(entries.first().copy(name=client.player?.name?.string ?: "You"))
+            else -> entries.filter { it.name.equals(client.player?.name?.string,true) }
+        }
+        return HotspotGridPanel(players,net.johnceo.sparklingmutuals.alerts.WarpListRanks.colors(client),width)
     }
     fun render(g: GuiGraphicsExtractor) {
         val client=Minecraft.getInstance()

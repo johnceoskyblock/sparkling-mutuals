@@ -7,9 +7,72 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class CritterProgressSyncTest {
+    @Test fun `different reporters can supply a capture and a qualified check without creating local catches`() {
+        val run = SafariRun(0)
+        run.sharedCritters.replace("capturePeer", 1, mapOf("Gazer" to done.copy(unique=false,checked=false,fullClear=false,captures=1)))
+        run.sharedCritters.replace("checkPeer", 1, mapOf("Gazer" to done.copy(unique=false,fullClear=false,captures=0)))
+        assertTrue(run.uniqueComplete("Gazer", party("Gazer")))
+        assertFalse(run.uniqueComplete("Gazer", party("Gazer"), localOnly=true))
+        assertEquals(0, run.count("Gazer"))
+        assertTrue(run.catches.isEmpty())
+    }
+    @Test fun `time waiting in the delivery queue consumes completion lifetime`() {
+        assertEquals(44_999L, queuedCompletionAge(40_000, 4_999_000_000))
+        assertEquals(45_000L, queuedCompletionAge(40_000, 5_000_000_000))
+        assertEquals(45_000L, queuedCompletionAge(Long.MAX_VALUE, Long.MAX_VALUE))
+        assertEquals(10L, queuedCompletionAge(10, -1))
+    }
     private val done = SharedCritterProgress.Evidence(true, true, true, 3, 3)
     private fun party(vararg needed: String) = PartySparklingState().apply {
         select(setOf("me")); accept(setOf("me"), mapOf("me" to (SafariRoster.all.map { it.name }.toSet() - needed.toSet())))
+    }
+    @Test fun `shared completion uses the main sender and accepts mapped C frames`() {
+        val sync = PartyCritterSync()
+        val run = SafariRun(0)
+        val context = PartySyncTransport.Context("m1", "0".repeat(31) + "1",
+            listOf("0".repeat(31) + "1", "0".repeat(31) + "2"))
+        val sent = mutableListOf<String>()
+        sync.tick(context, null, null, "visit", run, party(), 0, true, true) {
+            sent.add(it); true
+        }
+        assertEquals(1, sent.size)
+        val peerRun = SafariRun(0)
+        peerRun.record(SafariCatch(SafariRoster.named("Scrappy")!!))
+        val message = com.google.gson.JsonObject().apply {
+            addProperty("type", "state"); addProperty("kind", "C"); addProperty("sender", "peer")
+            addProperty("sequence", 10); addProperty("ageMillis", 0)
+            addProperty("payload", CritterProgressProtocol.encode(peerRun, party()))
+        }
+        sync.receiveShared(message, mapOf("peer" to context.roster[1]), context.self)
+        assertTrue(run.sharedCritterComplete("Scrappy", SafariMode.UNIQUE))
+        assertEquals(0, run.count("Scrappy"))
+        sync.tick(context, null, null, "visit", run, party(), 500, true, true) {
+            sent.add(it); true
+        }
+        assertEquals(1, sent.size, "received evidence is not echoed")
+        sync.reset()
+        assertFalse(run.sharedCritterComplete("Scrappy", SafariMode.UNIQUE))
+    }
+    @Test fun `local unique catches combine with peer render checks in the current biome`() {
+        val run = SafariRun(0)
+        val party = party("Snoozle")
+        run.visitBiome(SafariBiome.CAVERN)
+        SafariBiome.CAVERN.critters.forEach { run.record(SafariCatch(it)) }
+        run.updateCaptureEvidence(SafariBiome.CAVERN, emptySet(), false)
+        run.sharedCritters.replace("peer", 1, mapOf("Snoozle" to done.copy(unique = false, fullClear = false)))
+        assertTrue(run.uniqueComplete("Snoozle", party))
+        assertTrue(run.biomeComplete(SafariMode.UNIQUE, SafariBiome.CAVERN, party))
+        assertFalse(run.uniqueComplete("Snoozle", party, localOnly = true))
+        assertFalse(run.completion.locallyComplete(run, SafariBiome.CAVERN, SafariMode.UNIQUE, party))
+    }
+    @Test fun `haunted local catch accepts a peer gazer check without local render proof`() {
+        val run = SafariRun(0)
+        val party = party("Gazer")
+        run.visitBiome(SafariBiome.HAUNTED)
+        run.record(SafariCatch(SafariRoster.named("Gazer")!!))
+        run.sharedCritters.replace("peer", 1, mapOf("Gazer" to done.copy(unique = false, fullClear = false)))
+        assertTrue(run.uniqueComplete("Gazer", party))
+        assertFalse(run.uniqueComplete("Gazer", party, localOnly = true))
     }
     @Test fun `shared current run proof drives all three modes without creating catches or local reports`() {
         val run = SafariRun(0); val party = party("Scrappy")

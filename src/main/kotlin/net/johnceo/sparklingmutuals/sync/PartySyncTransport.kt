@@ -9,6 +9,13 @@ import java.time.Duration
 import java.util.concurrent.*
 import org.slf4j.LoggerFactory
 
+/** Delivery-queue time cannot renew a replayed completion snapshot. */
+internal fun queuedCompletionAge(serverAge: Long, queuedNanos: Long): Long {
+    val lifetime = net.johnceo.sparklingmutuals.safari.completion.SharedCritterProgress.TTL
+    return minOf(lifetime, serverAge.coerceIn(0, lifetime) +
+        (queuedNanos.coerceAtLeast(0) / 1_000_000).coerceAtMost(lifetime))
+}
+
 /** One asynchronous socket. Network callbacks enqueue bounded data; only tick mutates game state. */
 internal class PartySyncTransport(
     private var authEndpoint: URI=URI.create("https://api-dev.serkosea.dev/v1/auth/uuid/session"),
@@ -41,7 +48,7 @@ internal class PartySyncTransport(
         authEndpoint=primaryAuth;syncEndpoint=primarySync;routingGeneration=null;visitNonce=null;backup=false
     }
     data class Context(val lobby: String,val self: String,val roster: List<String>)
-    private data class Delivery(val generation: Long,val text: String)
+    private data class Delivery(val generation: Long,val text: String,val receivedAt: Long=System.nanoTime())
     private val logger=LoggerFactory.getLogger("sparkling-mutuals/party-sync")
     private val http=HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build()
     private val incoming=ArrayBlockingQueue<Delivery>(128)
@@ -53,6 +60,7 @@ internal class PartySyncTransport(
     @Volatile var ready=false; private set
     var hotspotCapability=false; private set
     var biomeCapability=false; private set
+    var critterCapability=false; private set
     @Volatile var roomSparklings=false; private set
     private var mapping=emptyMap<String,String>()
     private var failures=0
@@ -79,7 +87,8 @@ internal class PartySyncTransport(
     fun developerSnapshot() = mapOf(
         "status" to developerStatus(), "generation" to generation, "failures" to failures,
         "retryAtMillis" to retryAt, "incomingQueue" to incoming.size, "outgoingQueue" to queued,
-        "hotspotCapability" to hotspotCapability, "biomeCapability" to biomeCapability, "roomSparklings" to roomSparklings,
+        "hotspotCapability" to hotspotCapability, "biomeCapability" to biomeCapability,
+        "critterCapability" to critterCapability, "roomSparklings" to roomSparklings,
         "mappedPlayers" to mapping.toMap(), "lastInboundAtMillis" to lastInboundAt
     )
     fun tick(next: Context,now: Long) {
@@ -114,6 +123,12 @@ internal class PartySyncTransport(
             if(item.generation!=generation) return@repeat
             val root=runCatching { JsonParser.parseString(item.text).asJsonObject }.getOrNull()
             if(root==null) { fail(item.generation);return roomStatus() }
+            if (PartySyncProtocol.text(root.get("type")) == "state" &&
+                PartySyncProtocol.text(root.get("kind")) == "C") {
+                val age = PartySyncProtocol.integer(root.get("ageMillis"), 0)
+                if (age != null) root.addProperty("ageMillis",
+                    queuedCompletionAge(age, System.nanoTime() - item.receivedAt))
+            }
             dispatch(item.generation,root,next)
         }
         return roomStatus()
@@ -135,6 +150,7 @@ internal class PartySyncTransport(
                     if(backup && "failover-bootstrap-v1" !in features) { fail(attempt);return }
                     mapping=map; ready=true; failures=0
                     hotspotCapability="hotspots-v1" in features; biomeCapability="biome-reports-v1" in features
+                    critterCapability="critter-completion-v1" in features
                     roomSparklings="room-sparklings-v1" in features
                     logger.info("Party sync room ready: members={} hotspots={} biomeReports={}",map.size,hotspotCapability,biomeCapability)
                     net.johnceo.sparklingmutuals.debug.SafariDeveloper.event("Connected to party room · ${map.size} players")
@@ -188,7 +204,7 @@ internal class PartySyncTransport(
         if(status==401) { token=""; tokenUntil=0 }
         val delay=maxOf((2000L shl minOf(failures++,4)).coerceAtMost(30_000),
             response?.let { retryDelay(it.headers()) } ?: (cause as? Admission)?.delay ?: 0)
-        generation++; socket?.abort(); socket=null; connecting=false; ready=false; hotspotCapability=false; biomeCapability=false; roomSparklings=false
+        generation++; socket?.abort(); socket=null; connecting=false; ready=false; hotspotCapability=false; biomeCapability=false; critterCapability=false; roomSparklings=false
         incoming.clear(); mapping=emptyMap(); retryAt=System.currentTimeMillis()+delay
         // No exception, URI, headers, response bodies, bearer tokens or payload dumps in logs.
         logger.info("Party sync reconnect scheduled: status={} retryMs={}",status ?: "transport",delay)
@@ -222,7 +238,7 @@ internal class PartySyncTransport(
         val pending=tail
         val leave=if(explicit && ready && hotspotCapability && leaveSequence>0)
             PartySyncProtocol.envelope(leaveSequence,"H","{\"version\":1,\"action\":\"leave\"}") else null
-        generation++; ready=false; connecting=false; hotspotCapability=false; biomeCapability=false; roomSparklings=false; socket=null
+        generation++; ready=false; connecting=false; hotspotCapability=false; biomeCapability=false; critterCapability=false; roomSparklings=false; socket=null
         incoming.clear(); mapping=emptyMap(); sent.clear(); context=null
         if(old!=null) pending.handle { _,_ -> null }.thenCompose {
             if(leave!=null) old.sendText(leave,true) else CompletableFuture.completedFuture(old)

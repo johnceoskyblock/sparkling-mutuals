@@ -2,6 +2,22 @@ package net.johnceo.sparklingmutuals.safari
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.*
 class HotspotTimingRegressionTest {
+ @Test fun `early manual reports accept copied lines abbreviations and typos but reject ambiguous assignments`() {
+  val cases=mapOf("fprest" to SafariBiome.FOREST,"for" to SafariBiome.FOREST,"f" to SafariBiome.FOREST,
+   "c" to SafariBiome.CAVERN,"cav" to SafariBiome.CAVERN,"i" to SafariBiome.ICY,"icy" to SafariBiome.ICY,
+   "ice" to SafariBiome.ICY,"h" to SafariBiome.HAUNTED,"haunt" to SafariBiome.HAUNTED,
+   "haunte" to SafariBiome.HAUNTED,"My hotspot today is forest!" to SafariBiome.FOREST,
+   "HOTSPOT! Your Hunting Hotspot is the Cavern Biome!" to SafariBiome.CAVERN)
+  cases.forEach { (body,biome) ->
+   assertEquals(biome,HotspotAssignments.parseReport("Party > Friend: $body",true)?.biome,body)
+  }
+  assertNull(HotspotAssignments.parseReport("Party > Friend: forest or cavern",true))
+  assertNull(HotspotAssignments.parseReport("Party > Leader: Friend you are assigned Icy biome!",true))
+  assertNull(HotspotAssignments.parseReport("Guild > Friend: forest",true))
+  assertTrue(HotspotAssignments.manualReportWindow(100,30100))
+  assertFalse(HotspotAssignments.manualReportWindow(100,30101))
+  assertFalse(HotspotAssignments.manualReportWindow(null,100))
+ }
  @Test fun `immediate hotspot announcement retries until party submission succeeds`() {
   val a=net.johnceo.sparklingmutuals.safari.resources.StartingResourceAnnouncement(net.johnceo.sparklingmutuals.safari.resources.SafariResources())
   a.observeHotspot("HOTSPOT! Your Hunting Hotspot is the Forest Biome!",0)

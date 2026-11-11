@@ -15,34 +15,52 @@ internal class PartyCritterSync {
     private var sent = ""
     private var due = 0L
     private var sampleAt = 0L
+    private var shared = false
     init {
         transport.onReady = { sent = ""; due = 0 }
         transport.onMessage = { root, mapping ->
-            val sender = PartySyncProtocol.text(root.get("sender"))?.let(mapping::get)
-            val self = transport.roomStatus().context?.self
-            if (sender != null && sender != self && PartySyncProtocol.text(root.get("type")) == "state" &&
-                PartySyncProtocol.text(root.get("kind")) == "C") {
-                val seq = PartySyncProtocol.integer(root.get("sequence"), 1)
-                val age = PartySyncProtocol.integer(root.get("ageMillis"), 0, SharedCritterProgress.TTL - 1)
-                val rows = PartySyncProtocol.text(root.get("payload"), 3072)?.let(CritterProgressProtocol::decode)
-                if (seq != null && age != null && rows != null) run?.sharedCritters?.replace(sender, seq, rows, age)
-            }
+            if (!shared) receive(root, mapping, transport.roomStatus().context?.self)
         }
     }
+    private fun receive(root: JsonObject, mapping: Map<String, String>, self: String?) {
+        val sender = PartySyncProtocol.text(root.get("sender"))?.let(mapping::get)
+        if (sender == null || sender == self || PartySyncProtocol.text(root.get("type")) != "state" ||
+            PartySyncProtocol.text(root.get("kind")) != "C") return
+        val seq = PartySyncProtocol.integer(root.get("sequence"), 1)
+        val age = PartySyncProtocol.integer(root.get("ageMillis"), 0, SharedCritterProgress.TTL - 1)
+        val rows = PartySyncProtocol.text(root.get("payload"), 3072)?.let(CritterProgressProtocol::decode)
+        if (seq != null && age != null && rows != null) run?.sharedCritters?.replace(sender, seq, rows, age)
+    }
+    fun receiveShared(root: JsonObject, mapping: Map<String, String>, self: String) {
+        if (shared) receive(root, mapping, self)
+    }
     fun tick(context: PartySyncTransport.Context, origin: URI?, generation: String?, nonce: String,
-        active: SafariRun?, party: PartySparklingState, now: Long, eligible: Boolean) {
-        if (!eligible || origin == null || generation == null) { reset(); return }
+        active: SafariRun?, party: PartySparklingState, now: Long, eligible: Boolean,
+        useShared: Boolean = false, sendShared: (String) -> Boolean = { false }) {
+        if (!eligible || !useShared && (origin == null || generation == null)) { reset(); return }
+        if (shared != useShared) {
+            transport.close(false)
+            run?.sharedCritters?.clear()
+            shared = useShared
+            sent = ""; due = 0; sampleAt = 0
+        }
         if (run !== active) { run?.sharedCritters?.clear(); transport.close(false); run = active; sent = ""; sampleAt = 0 }
-        transport.useCompletion(origin, generation, nonce)
-        transport.tick(context, now)
-        if (!transport.ready) { run?.sharedCritters?.clear(); return }
+        if (!shared) {
+            transport.useCompletion(checkNotNull(origin), checkNotNull(generation), nonce)
+            transport.tick(context, now)
+            if (!transport.ready) { run?.sharedCritters?.clear(); return }
+        }
         if (active == null || active.endedAt != null || now < sampleAt) return
         sampleAt = now + 500
         val payload = CritterProgressProtocol.encode(active, party)
-        if ((payload != sent || now >= due) && transport.send(++sequence, "C", payload)) { sent = payload; due = now + 10_000 }
+        if (payload != sent || now >= due) {
+            val submitted = if (shared) sendShared(payload) else transport.send(++sequence, "C", payload)
+            if (submitted) { sent = payload; due = now + 10_000 }
+        }
     }
-    fun developerSnapshot() = transport.developerSnapshot()
-    fun reset() { transport.close(false); run?.sharedCritters?.clear(); run = null; sent = ""; due = 0; sampleAt = 0 }
+    fun developerSnapshot() = mapOf("provider" to if (shared) "shared" else "separate",
+        "transport" to transport.developerSnapshot())
+    fun reset() { transport.close(false); run?.sharedCritters?.clear(); run = null; sent = ""; due = 0; sampleAt = 0; shared = false }
 }
 
 /** Stable species order is shared with S, but C evidence never enters S/capture/history ledgers. */

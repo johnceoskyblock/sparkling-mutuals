@@ -8,12 +8,13 @@ import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphicsExtractor
 
 class HotspotGrid(val width: Int,count: Int) {
-    private val rows=(count.coerceIn(1,4)+1)/2
+    private val columns=if(count<=1) 1 else 2
+    private val rows=(count.coerceIn(1,4)+columns-1)/columns
     val height=17+rows*50+(rows-1)*8+6
     fun cell(index: Int): HudBounds {
         require(index in 0..3)
-        val cellWidth=(width-20)/2
-        return HudBounds(6+(index%2)*(cellWidth+8),17+(index/2)*58,cellWidth,50)
+        val cellWidth=(width-12-(columns-1)*8)/columns
+        return HudBounds(6+(index%columns)*(cellWidth+8),17+(index/columns)*58,cellWidth,50)
     }
     companion object {
         fun biomeColor(biome: SafariBiome?): Int=when(biome) {
