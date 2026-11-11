@@ -35,6 +35,7 @@ object SafariPartySync {
     private var transferRevision: Long? = null
     private var ticketed = false
     private var adoptedRunProtocol = false
+    private val hotspotWinHistory = HotspotWinHistory()
     private var ticketWindowLocked = false
     private val transferMessage = Regex("^Sending to server [A-Za-z0-9_-]+\\.\\.\\.$")
     private var matchingParty=false
@@ -307,8 +308,9 @@ object SafariPartySync {
     fun hotspotRows(): List<HotspotRow> {
         val current=state ?: return emptyList()
         val client=Minecraft.getInstance()
+        val wins = if (current.serverRun != null) current.hotspotWins else hotspotWinHistory.counts(current.roster)
         return current.roster.sorted().map { id -> HotspotRow(name(client,id) ?: id.take(8),current.reports[id],
-            current.locks[id].takeUnless { current.conflict || !hotspotReady() },current.hotspotWins[id] ?: 0) }
+            current.locks[id].takeUnless { current.conflict || !hotspotReady() },wins[id] ?: 0) }
     }
     private fun hotspotReady() = ticketed
     fun assignment(): SafariBiome? = state?.takeUnless { it.conflict || !hotspotReady() }?.let { it.locks[it.self] }
@@ -357,7 +359,7 @@ object SafariPartySync {
         val present=com.google.gson.JsonArray()
         // The shared server tab list establishes presence on this Safari island, not party membership alone.
         client.connection?.onlinePlayers?.mapNotNull { PartySyncProtocol.uuid(it.profile.id.toString()) }
-            ?.filter { it in current.roster && (it in discoveryReports || it == current.self && ticketed) }
+            ?.filter { it in current.roster }
             ?.sorted()?.forEach(present::add)
         add("present",present)
         add("locked",JsonObject().apply { current.locks.forEach { (id,biome) -> addProperty(id,biome.name) } })
@@ -582,7 +584,8 @@ object SafariPartySync {
             }
             "hotspots" -> if(transport.hotspotCapability && transport.biomeCapability && matchingParty) {
                 val payload=root.get("payload")?.takeIf { it.isJsonObject }?.asJsonObject ?: return
-                if(!current.hotspots(payload)) logger.debug("Party sync rejected hotspot snapshot")
+                if (current.hotspots(payload)) hotspotWinHistory.remember(current.roster, current.hotspotWins)
+                else logger.debug("Party sync rejected hotspot snapshot")
                 current.notifications.filter { current.wasInstructed(it.player,it.biome) }.forEach {
                     if(instructionAcknowledgments.add(it.id)) acknowledgments.add(it.id)
                 }
@@ -672,7 +675,9 @@ object SafariPartySync {
         " lobby=$lobby serverRun=${state?.serverRun} transport=${transport.developerSnapshot()}" +
         " gemMaskLocal=${local[23]} gemMaskReceived=${state?.facts?.get(23)} pendingBiomes=$reportQueue" +
         " hotspotChat=${ConfigManager.hotspotAnnouncer} localLeader=${Minecraft.getInstance().player?.let { PartyManager.isLeader(it.uuid.toString()) }}" +
-        " backendLeader=${state?.leader} self=${state?.self} assignmentClients=${state?.knownAssignmentClients()} notifications=${state?.notifications} sentNotifications=${state?.sentNotifications} pendingAcks=$acknowledgments"
+        " backendLeader=${state?.leader} self=${state?.self} assignmentClients=${state?.knownAssignmentClients()} notifications=${state?.notifications} sentNotifications=${state?.sentNotifications} pendingAcks=$acknowledgments" +
+        " ticketed=$ticketed hello=$lastHello helloAgeMs=${(now-helloAt).coerceAtLeast(0)}" +
+        " reports=$discoveryReports pendingReports=$pendingReports"
     fun objectiveDone(species: String): Boolean = state?.facts?.let { when(species) {
         "Gemzie" -> it[31]!=0
         "Wumpa" -> it[29]!=0
