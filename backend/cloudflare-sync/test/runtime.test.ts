@@ -5,7 +5,7 @@ const a='1'.repeat(32),b='2'.repeat(32);
 afterEach(()=>reset());
 async function auth(id:string){const r=await SELF.fetch('https://backup.test/v1/auth/uuid/session',{method:'POST',body:JSON.stringify({uuid:id})});expect(r.status).toBe(200);return (await r.json() as any).token;}
 async function routing(id:string,token:string,unusableMs=30000){const r=await SELF.fetch('https://backup.test/v1/route',{method:'POST',headers:{Authorization:`Bearer ${token}`},body:JSON.stringify({version:1,lobby:'m123',self:id,roster:[a,b],nonce:id,action:'check',unusableMs})});expect(r.status).toBe(200);return r.json() as Promise<any>;}
-async function socket(id:string,token:string,gen:string,roster=[a,b]){const r=await SELF.fetch('https://backup.test/v1/sync',{headers:{Upgrade:'websocket',Authorization:`Bearer ${token}`,'X-SafariUtils-Lobby':'m123','X-SafariUtils-Player':id,'X-SafariUtils-Roster':roster.join(','),'X-SM-Generation':gen,'X-SM-Visit':id}});expect(r.status).toBe(101);const ws=r.webSocket!;ws.accept();const frames:any[]=[];ws.addEventListener('message',e=>{frames.push(JSON.parse(e.data as string));});return {ws,frames};}
+async function socket(id:string,token:string,gen:string,roster=[a,b],protocol2=false){const r=await SELF.fetch('https://backup.test/v1/sync',{headers:{Upgrade:'websocket',Authorization:`Bearer ${token}`,'X-SafariUtils-Lobby':'m123','X-SafariUtils-Player':id,'X-SafariUtils-Roster':roster.join(','),'X-SM-Generation':gen,'X-SM-Visit':id,...(protocol2?{'X-SafariUtils-Sync-Protocol':'2'}:{})}});expect(r.status).toBe(101);const ws=r.webSocket!;ws.accept();const frames:any[]=[];ws.addEventListener('message',e=>{frames.push(JSON.parse(e.data as string));});return {ws,frames};}
 async function flush(){await new Promise(resolve=>setTimeout(resolve,30));}
 async function completionSocket(id:string,token:string,gen:string){
  const r=await SELF.fetch('https://backup.test/v1/completion-sync',{headers:{Upgrade:'websocket',Authorization:`Bearer ${token}`,'X-SafariUtils-Lobby':'m123','X-SafariUtils-Player':id,'X-SafariUtils-Roster':[a,b].join(','),'X-SM-Generation':gen,'X-SM-Visit':id}});
@@ -109,4 +109,53 @@ it('real sockets reject roster isolation and release no missing-cohort automatic
   state.storage.sql.exec('UPDATE rooms SET routing=? WHERE id=?',JSON.stringify(routing),r.generation);
  });
  x.ws.send(JSON.stringify({sequence:3,kind:'S',payload:'1,0,0,0'}));await flush();expect(x.frames.some(f=>f.type==='sparklings')).toBe(false);x.ws.close();
+});
+
+it('protocol 2 reconciles the backup cohort, scopes replay and replaces completion after reconnect',async()=>{
+ const ta=await auth(a),tb=await auth(b);
+ await routing(a,ta,0);await routing(b,tb,0);
+ const {generation}=await routing(a,ta);
+ const x=await socket(a,ta,generation,[a,b],true),y=await socket(b,tb,generation,[a,b],true);
+ const va=crypto.randomUUID(),vb=crypto.randomUUID();
+ function sender(peer:typeof x){
+  let sequence=0;
+  return (kind:string,payload:object|string)=>peer.ws.send(JSON.stringify({
+   sequence:++sequence,kind,payload:typeof payload==='string'?payload:JSON.stringify({version:1,...payload})
+  }));
+ }
+ const sx=sender(x),sy=sender(y);
+ const bootstrap=(send:ReturnType<typeof sender>)=>{send('F',{action:'begin'});send('F',{action:'done'});};
+ const hello=(send:ReturnType<typeof sender>,visitId:string,resumeRunId:string|null)=>send('H',{
+  action:'hello',visitId,resumeRunId,capabilities:['run-reconciliation-v1','critter-completion-v1'],
+  ticketed:true,display:true,leader:false,present:[a,b],locked:{}
+ });
+ const until=(fn:()=>unknown)=>expect.poll(fn,{timeout:3000,interval:10}).toBeTruthy();
+ bootstrap(sx);hello(sx,va,null);
+ await until(()=>x.frames.some(f=>f.type==='reconcile'&&f.status==='pending'));
+ expect(x.frames.map(f=>f.type)).toEqual(['welcome','reconcile']);
+ bootstrap(sy);hello(sy,vb,null);
+ await until(()=>y.frames.some(f=>f.type==='replay-complete'));
+ hello(sx,va,null);
+ await until(()=>x.frames.some(f=>f.type==='replay-complete'));
+ const runId=x.frames.find(f=>f.type==='replay-complete').runId;
+ const rows=Array.from({length:37},()=>[0,0,0]);rows[6]=[7,3,3];
+ const usage=[1,1,1,1,2,1];
+ sx('U',usage.join(','));
+ sx('C',{runId,visitId:va,rows});
+ await until(()=>y.frames.some(f=>f.kind==='C'));
+ const z=await socket(b,tb,generation,[a,b],true),sz=sender(z);
+ bootstrap(sz);hello(sz,vb,runId);
+ await until(()=>z.frames.some(f=>f.type==='replay-complete'));
+ const replay=z.frames.findIndex(f=>f.kind==='C');
+ expect(replay).toBeGreaterThan(z.frames.findIndex(f=>f.type==='reconcile'));
+ expect(replay).toBeLessThan(z.frames.findIndex(f=>f.type==='replay-complete'));
+ expect(z.frames[replay]).toMatchObject({runId,sender:a});
+ expect(z.frames.find(f=>f.kind==='U')).toMatchObject({runId,sender:a,inventoryFresh:false});
+ expect(z.frames.find(f=>f.type==='reconcile').status).toBe('resumed');
+ hello(sx,va,runId);
+ await until(()=>x.frames.filter(f=>f.type==='replay-complete').length===2);
+ rows[6]=[0,0,0];sx('C',{runId,visitId:va,rows});
+ await until(()=>z.frames.filter(f=>f.kind==='C').length===2);
+ expect(JSON.parse(z.frames.filter(f=>f.kind==='C').at(-1).payload).rows[6]).toEqual([0,0,0]);
+ x.ws.close();z.ws.close();
 });

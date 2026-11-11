@@ -4,9 +4,10 @@ import {check,object} from './protocol';
 export const COMPLETION_TTL=45000;
 export type CompletionAttachment={channel:'completion';room:string;self:string;nonce:string;roster:string[];expires:number;
  sequence:number;at:number;payload:string;rate:number[]};
-export function completionPayload(raw:string):string {
+export function completionPayload(raw:string,scope?:{runId:string;visitId:string}):string {
  check(raw,raw.length<=3072);const p=object(JSON.parse(raw));
- check(p,p.version===1&&Object.keys(p).sort().join()==='rows,version'&&Array.isArray(p.rows)&&p.rows.length===37);
+ check(p,p.version===1&&Object.keys(p).sort().join()===(scope?'rows,runId,version,visitId':'rows,version')&&Array.isArray(p.rows)&&p.rows.length===37);
+ if(scope)check(p,p.runId===scope.runId&&p.visitId===scope.visitId);
  for(const row of p.rows as unknown[][])check(row,Array.isArray(row)&&row.length===3&&row.every(Number.isSafeInteger)&&
   (row[0] as number)>=0&&(row[0] as number)<=7&&(row[1] as number)>=0&&(row[1] as number)<=256&&(row[2] as number)>=0&&(row[2] as number)<=256);
  return JSON.stringify(p);

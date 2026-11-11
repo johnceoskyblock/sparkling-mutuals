@@ -41,6 +41,7 @@ export class Allocation {
   check(id,this.roster.includes(id));biome(b);this.reports[id]??=b;
   // An actual hotspot report proves ticket admission, but never physical attendance.
   const member=this.members[id];if(member&&!member.left)member.ticketed=true;
+  if(this.initialDone&&this.eligible().some(p=>!this.locks[p]))this.due??=now+250;
   this.schedule(now);this.revision++;
  }
  private eligible(){return this.roster.filter(id=>this.members[id]?.present&&this.members[id].ticketed&&!this.members[id].left);}

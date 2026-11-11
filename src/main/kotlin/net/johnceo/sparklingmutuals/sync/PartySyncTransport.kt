@@ -35,6 +35,7 @@ internal class PartySyncTransport(
         close(false);token="";tokenOwner="";tokenUntil=0;retryAt=0;failures=0
         authEndpoint=origin.resolve("/v1/auth/uuid/session")
         syncEndpoint=URI("wss",null,origin.host,origin.port,"/v1/sync",null,null)
+        if (!backup || routingGeneration != generation) visit.changeAuthority()
         routingGeneration=generation;visitNonce=nonce;backup=true
     }
     /** Independent extension channel; it cannot select main provider or authorize entry. */
@@ -161,7 +162,7 @@ internal class PartySyncTransport(
                     val features=root.get("features")?.takeIf { it.isJsonArray }?.asJsonArray?.mapNotNull { PartySyncProtocol.text(it) }.orEmpty()
                     if(completionOnly && "critter-completion-v1" !in features) { fail(attempt);return }
                     if(backup && "failover-bootstrap-v1" !in features) { fail(attempt);return }
-                    runCapability=!backup && !completionOnly && "run-reconciliation-v1" in features
+                    runCapability=!completionOnly && "run-reconciliation-v1" in features
                     if (runCapability && !visit.welcome(PartySyncProtocol.text(root.get("connectionId")) ?: "")) {
                         fail(attempt); return
                     }
@@ -194,6 +195,11 @@ internal class PartySyncTransport(
                     ready=true
                     onReady()
                 }
+                "reconciling" -> if (backup && runCapability && welcomed && visit.accepts(root)) {
+                    ready=false
+                    replay.clear()
+                    onMessage(root,mapping)
+                } else if (backup && ready && !runCapability) onMessage(root,mapping)
                 "hotspots-unavailable" -> { hotspotCapability=false; onUnavailable();fail(generation) }
                 else -> {
                     if (runCapability) {
@@ -233,7 +239,7 @@ internal class PartySyncTransport(
                 .header("Authorization","Bearer $bearer").header("X-SafariUtils-Lobby",desired.lobby)
                 .header("X-SafariUtils-Player",desired.self).header("X-SafariUtils-Roster",desired.roster.joinToString(","))
             if(backup || completionOnly)builder.header("X-SM-Generation",routingGeneration!!).header("X-SM-Visit",visitNonce!!)
-            else builder.header("X-SafariUtils-Sync-Protocol","2")
+            if(!completionOnly)builder.header("X-SafariUtils-Sync-Protocol","2")
             builder.buildAsync(syncEndpoint,Listener(attempt))
         }.whenComplete { _,error -> if(error!=null) fail(attempt,error) }
     }
@@ -261,7 +267,7 @@ internal class PartySyncTransport(
         net.johnceo.sparklingmutuals.debug.SafariDeveloper.event("Retry in ${delay / 1000}s · ${status ?: "transport"}")
     }
     /** Reconciliation H messages must be able to establish readiness; gameplay waits for replay. */
-    fun canSend(kind: String) = socket != null && (ready || welcomed && runCapability && kind=="H")
+    fun canSend(kind: String) = socket != null && (ready || welcomed && runCapability && (kind=="H" || backup && kind=="F"))
     fun send(sequence: Long,kind: String,payload: String,catchUpOnly: Boolean=false): Boolean {
         if(!canSend(kind)) return false
         val current=socket ?: return false
