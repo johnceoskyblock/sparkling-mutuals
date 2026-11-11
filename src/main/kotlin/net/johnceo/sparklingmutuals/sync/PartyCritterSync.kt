@@ -36,16 +36,17 @@ internal class PartyCritterSync {
         val rows = PartySyncProtocol.text(root.get("payload"), 3072)?.let(CritterProgressProtocol::decode)
         if (seq != null && age != null && rows != null) run?.sharedCritters?.replace(sender, seq, rows, age)
     }
-    fun receiveShared(root: JsonObject, mapping: Map<String, String>, self: String, runId: String) {
-        if (PartySyncProtocol.text(root.get("type")) != "state" || PartySyncProtocol.text(root.get("kind")) != "C") return
-        if (!PartySyncVisit.validId(runId) || PartySyncProtocol.text(root.get("runId")) != runId) return
-        val sender=PartySyncProtocol.text(root.get("sender"))?.let(mapping::get) ?: return
-        if(sender==self || PartySyncProtocol.integer(root.get("sequence"),1)==null) return
-        val age=PartySyncProtocol.integer(root.get("ageMillis"),0,SharedCritterProgress.TTL-1) ?: return
-        val rows=PartySyncProtocol.text(root.get("payload"),3072)?.let { CritterProgressProtocol.decode(it,runId) } ?: return
+    fun receiveShared(root: JsonObject, mapping: Map<String, String>, self: String, runId: String): Boolean {
+        if (PartySyncProtocol.text(root.get("type")) != "state" || PartySyncProtocol.text(root.get("kind")) != "C") return false
+        if (!PartySyncVisit.validId(runId) || PartySyncProtocol.text(root.get("runId")) != runId) return false
+        val sender=PartySyncProtocol.text(root.get("sender"))?.let(mapping::get) ?: return false
+        if(sender==self || PartySyncProtocol.integer(root.get("sequence"),1)==null) return false
+        val age=PartySyncProtocol.integer(root.get("ageMillis"),0,SharedCritterProgress.TTL-1) ?: return false
+        val rows=PartySyncProtocol.text(root.get("payload"),3072)?.let { CritterProgressProtocol.decode(it,runId) } ?: return false
         if(sharedRun!=runId) { run?.sharedCritters?.clear(); sharedSnapshots.clear(); sharedRun=runId }
         // The server orders accepted active-socket messages; sender counters can restart.
         sharedSnapshots[sender]=Snapshot(++receiveOrdinal,rows,age,System.nanoTime())
+        return true
     }
     fun tick(context: PartySyncTransport.Context, origin: URI?, generation: String?, nonce: String,
         active: SafariRun?, party: PartySparklingState, now: Long, eligible: Boolean,
