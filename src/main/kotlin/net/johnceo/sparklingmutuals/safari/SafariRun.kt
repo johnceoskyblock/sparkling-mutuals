@@ -30,7 +30,7 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
     }
     fun sharedCritterComplete(name: String, mode: SafariMode): Boolean {
         if (withoutShared) return false
-        if (sparklingCaptures.pending(name)) return false
+        if (sparklingCaptures.pending(name) && !sparklingCaptures.captured(name)) return false
         val biome = SafariRoster.named(name)?.biome ?: return false
         if (sourcePending(name)) return false
         if (name in uniqueSourceContradictions && !sparklingChecks.locallyChecked(name)) return false
@@ -92,6 +92,9 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
     }
     /** Unresolved detection identities are diagnostic state, never a completion requirement. */
     fun sparklePending(name: String) = sparklingCaptures.pending(name)
+    private fun uncaughtSparkling(biome: SafariBiome) = biome.critters.any {
+        sparklingCaptures.pending(it.name) && !sparklingCaptures.captured(it.name)
+    }
     fun sparklingBroadcast(raw: String, now: Long = System.currentTimeMillis()) {
         val match = RunTally.sparkling.matchEntire(raw) ?: return
         val species = SafariRoster.named(match.groupValues[2].trim())?.name ?: return
@@ -293,7 +296,7 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
         if (biome !in manualReports) return false
         val key = mode to biome
         if (lastBiome == biome && biome in evidenceAfterReport &&
-            (sparklingCaptures.pending(biome) || !manualReportEvidenceComplete(mode, biome, party)))
+            (uncaughtSparkling(biome) || !manualReportEvidenceComplete(mode, biome, party)))
             contradictedManualIcons.add(key)
         return key !in contradictedManualIcons
     }
@@ -306,7 +309,7 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
     fun sharedBiomeReport(biome: SafariBiome) { sharedReports.add(biome) }
 
     fun reportedComplete(mode: SafariMode, biome: SafariBiome, party: PartySparklingState): Boolean {
-        if (sparklingCaptures.pending(biome)) return false
+        if (uncaughtSparkling(biome)) return false
         if (hasUnusedStartingForBiome(biome)) return false
         if (biome in sharedReports) return true
         if (biome !in manualReports) return false
@@ -504,19 +507,19 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
     /** Complete peer species proof or a biome report can finish remote presentation. */
     fun biomeComplete(mode: SafariMode,biome: SafariBiome,party: PartySparklingState, includeShared: Boolean = true): Boolean {
         if (!includeShared) return withoutSharedProgress { biomeComplete(mode, biome, party) }
-        if (sparklingCaptures.pending(biome) || hasUnusedStartingForBiome(biome)) return false
+        if (uncaughtSparkling(biome) || hasUnusedStartingForBiome(biome)) return false
         if (reportedComplete(mode, biome, party)) return true
         val targets=biome.critters.filter { mode!=SafariMode.SPARKLING || party.needs(it.name) }
         if(targets.isEmpty()) return true
         // Per-species completion can finish the display, but not a local report or PB.
-        if (!hasUnusedStartingForBiome(biome) && !sparklingCaptures.pending(biome) &&
+        if (!hasUnusedStartingForBiome(biome) && !uncaughtSparkling(biome) &&
             (targets.any { sharedCritterComplete(it.name, mode) } || lastBiome == biome && hasCaptureEvidence(biome)) &&
             completed(mode, targets, party) == targets.size &&
             (mode != SafariMode.UNIQUE || completion.allNeededChecked(this, biome, party))) return true
         val icy=biome==SafariBiome.ICY && count("Wumpa")>0
         if(lastBiome==biome && !icy) return completion.locallyComplete(this,biome,mode,party)
         if (lastBiome != biome && completion.locallyReported(biome, mode) &&
-            !sparklingCaptures.pending(biome) && !hasUnusedStartingForBiome(biome)) return true
+            !uncaughtSparkling(biome) && !hasUnusedStartingForBiome(biome)) return true
         if(lastBiome!=biome && !icy && biome !in biomeReports) return false
         return completed(mode,targets,party)==targets.size
     }
