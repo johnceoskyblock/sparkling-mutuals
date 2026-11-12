@@ -2,6 +2,8 @@
 
 ## Scope
 
+When all non-bird requirements were locally verified in Forest and the last food batch is already in use (zero held food and zero remaining floor food), leaving Forest does not cancel that pending completion. Actual spawn confirmations must finish the feeder batch; Unique and Full Clear still require their normal bird captures. The retained proof belongs to the same run and mode, and changed sparkling requirements or an uncaught sparkling still block reporting. A completed report can remain queued while crossing the biome boundary.
+
 Authoritative shared spawning, capture and reporting rules for Bluebird, Parakeet and Macaw. Other Forest species use their own pages. General mode/PB distinctions belong to [SAFARI_LOGIC](../SAFARI_LOGIC.md); resource messages and predictions belong to [MESSAGES](critters/MESSAGES.md) and [FLOOR_DROPS](critters/FLOOR_DROPS.md).
 
 ## Definitions

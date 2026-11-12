@@ -2,6 +2,8 @@
 
 ## Scope
 
+Hideyho's terminal dialogue can finish Haunted reporting after departure: the client must already have locally verified every other required Haunted critter and observed Hideyho dialogue while inside Haunted. The actual Hideyho reward/capture must arrive within 30 seconds of that retained proof. Leaving does not discard a qualified queued report. This exception does not infer remote captures or waive other mode requirements.
+
 Authoritative reference for capture/check evidence, source surveys, reconciliation, party trust and run retention. [Mode outcomes](../../SAFARI_LOGIC.md), [UI](../MISSING_PANEL.md), [bird completion](../BIRD_COMPLETION.md), [resources/drop prediction](FLOOR_DROPS.md) and [exact messages](MESSAGES.md) have separate owners. Common terms follow [the glossary](../DOCUMENTATION_GUIDE.md).
 
 ## Definitions
