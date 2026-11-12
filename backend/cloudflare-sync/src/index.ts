@@ -5,9 +5,18 @@ import {Allocation} from './allocator';
 import {RouteRoom,request as routeRequest,route} from './routing';
 import {Attachment,Room,attachment,mergeEvidence} from './room';
 import {check,identity,object,text,uuid} from './protocol';
-export interface Env {COORDINATOR:DurableObjectNamespace<Coordinator>;SIGNING_SECRET:string;BACKUP_ENABLED:string}
+export interface Env {COORDINATOR:DurableObjectNamespace<Coordinator>;SIGNING_SECRET:string;BACKUP_ENABLED:string;SYNC_MIN_PROTOCOL?:string}
 const json=(v:unknown,status=200)=>Response.json(v,{status,headers:{'Cache-Control':'no-store'}});
-export default {fetch(request:Request,env:Env){return env.COORDINATOR.get(env.COORDINATOR.idFromName('coordinator-v1')).fetch(request);}};
+function transportVersion(request:Request){
+ const version=Number(request.headers.get('X-SafariUtils-Sync-Protocol'));
+ return version===2||version===3?version:1;
+}
+export default {fetch(request:Request,env:Env){
+ if(new URL(request.url).pathname==='/v1/sync'&&request.headers.get('Upgrade')?.toLowerCase()==='websocket'&&
+    transportVersion(request)<Number(env.SYNC_MIN_PROTOCOL??1))
+  return Response.json({error:'sync_update_required'},{status:426,headers:{'x-safari-sync-update-required':'true','Cache-Control':'no-store'}});
+ return env.COORDINATOR.get(env.COORDINATOR.idFromName('coordinator-v1')).fetch(request);
+}};
 export class Coordinator extends DurableObject<Env> {
  constructor(ctx:DurableObjectState,env:Env){super(ctx,env);
   ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS rooms (id TEXT PRIMARY KEY, lobby TEXT NOT NULL, renewed INTEGER NOT NULL, routing TEXT NOT NULL, allocation TEXT NOT NULL)');
@@ -34,7 +43,8 @@ export class Coordinator extends DurableObject<Env> {
   return {...frame as object,runId:room.allocation.run};
  }
  private hotspots(room:Room,s:Attachment,now:number){
-  return {type:'hotspots',payload:room.allocation.snapshot(now,s.self,room.ready&&s.bootstrap.stage==='done')};
+  const snapshot=room.allocation.snapshot(now,s.self,room.ready&&s.bootstrap.stage==='done');
+  return {type:'hotspots',payload:s.protocol?.efficient?{...snapshot,reports:room.allocation.reports}:snapshot};
  }
  private deliver(room:Room,frames:unknown[]){
   const now=Date.now();
@@ -61,7 +71,7 @@ export class Coordinator extends DurableObject<Env> {
  }
  private deliverReconciliation(ws:WebSocket,room:Room,s:Attachment,frames:unknown[],now:number){
   for(const frame of frames)ws.send(JSON.stringify(frame));
-  if(!frames.length||!s.protocol?.ready)return;
+  if(!s.protocol?.ready||!frames.some(frame=>(frame as {type:string}).type==='reconcile'))return;
   ws.send(JSON.stringify(this.hotspots(room,s,now)));
   for(const frame of room.replay(s,now))ws.send(JSON.stringify(this.scoped(room,frame)));
   ws.send(JSON.stringify({type:'replay-complete',version:1,connectionId:s.protocol.connectionId,
@@ -78,6 +88,7 @@ export class Coordinator extends DurableObject<Env> {
  async fetch(req:Request):Promise<Response>{
   const now=Date.now(),url=new URL(req.url);
   try{
+   const transport=transportVersion(req);
    if(this.env.BACKUP_ENABLED!=='true')return json({error:'disabled'},503);
    if(!this.env.SIGNING_SECRET||this.env.SIGNING_SECRET.length<32)return json({error:'not configured'},503);
    // Hash network admission keys, never retain raw addresses or log request bodies/headers.
@@ -137,13 +148,14 @@ export class Coordinator extends DurableObject<Env> {
     for(const old of this.sockets(gen)){const prior=old.deserializeAttachment() as Attachment;if(prior.self===self){prior.expires=0;old.serializeAttachment(prior);old.close(1000,'replaced');}}
     const pair=new WebSocketPair(),client=pair[0],server=pair[1];this.ctx.acceptWebSocket(server);
     const s=attachment(gen,self,nonce,i.roster,now);
-    if(req.headers.get('X-SafariUtils-Sync-Protocol')==='2')
-     s.protocol={connectionId:crypto.randomUUID(),ready:false,completion:false};
+    if(transport===2||transport===3)
+     s.protocol={connectionId:crypto.randomUUID(),ready:false,completion:false,efficient:transport===3,origin:url.origin};
     const retained=priorRoom?.sessions.find(peer=>peer.self===self&&peer.nonce===nonce);
     if(s.protocol&&retained)s.snapshots=retained.snapshots;
-s.union=inheritedUnion;s.evidence=structuredClone(inheritedEvidence);server.serializeAttachment(s);
+    s.union=inheritedUnion;s.evidence=structuredClone(inheritedEvidence);server.serializeAttachment(s);
     server.send(JSON.stringify({type:'welcome',self,roster:i.roster,features:['hotspots-v1','biome-reports-v1','room-sparklings-v1','failover-bootstrap-v1',
-     ...(s.protocol?['run-reconciliation-v1','critter-completion-v1']:[])],connectionId:s.protocol?.connectionId}));
+     ...(s.protocol?['run-reconciliation-v1','critter-completion-v1']:[]),
+     ...(s.protocol?.efficient?['efficient-transport-v1']:[])],connectionId:s.protocol?.connectionId}));
     const room=this.room(gen)!;this.persist(room);this.deliver(room,[{type:'reconciling'}]);if(!s.protocol)for(const frame of room.replay(s))server.send(JSON.stringify(frame));
     await this.schedule();return new Response(null,{status:101,webSocket:client});
    }
@@ -162,8 +174,42 @@ s.union=inheritedUnion;s.evidence=structuredClone(inheritedEvidence);server.seri
    check(s,s.expires>now&&this.sockets(s.room).includes(ws));
    const room=this.room(s.room);check(room,!!room);
    const member=room!.route.members[s.self];check(s,!!member&&!member.retired&&member.nonce===s.nonce&&room!.route.roster.join()===s.roster.join());
-   const current=room!.sessions.find(x=>x.self===s.self&&x.nonce===s.nonce)!;const result=room!.receive(current,message as string,now);
-   this.persist(room!);this.deliverReconciliation(ws,room!,current,result.private,now);this.deliver(room!,result.broadcast);if(result.leave)ws.close(1000,'departed');await this.schedule();
+   const current=room!.sessions.find(x=>x.self===s.self&&x.nonce===s.nonce)!;
+   check(message,new TextEncoder().encode(message).length<=4096);
+   const envelope=object(JSON.parse(message));
+   if(envelope.type==='renew'){
+    check(s,s.protocol?.efficient===true&&!!s.protocol.origin);
+    const owner=await verifyToken(text(envelope.token,4096),this.env.SIGNING_SECRET,s.protocol!.origin!,now);
+    const live=ws.deserializeAttachment() as Attachment;
+    if(live.expires<=Date.now()||!this.sockets(s.room).includes(ws))return;
+    check(owner,owner===live.self);
+    if(live.expires-now<=120_000){
+     live.expires=now+600_000;
+     ws.serializeAttachment(live);
+     await this.schedule();
+    }
+    ws.send(JSON.stringify({type:'renewed',expiresInMillis:live.expires-now}));
+    return;
+   }
+   let messages=[message];
+   if(envelope.type==='batch'){
+    check(s,s.protocol?.efficient===true&&current.bootstrap.stage==='done');
+    const frames=envelope.frames;
+    check(frames,Array.isArray(frames)&&frames.length>=1&&frames.length<=8);
+    messages=(frames as unknown[]).map(frame=>{
+     const child=object(frame);
+     check(child,['A','N','U','C','F'].includes(String(child.kind)));
+     return JSON.stringify(child);
+    });
+   }
+   const results=messages.map((raw,index)=>room!.receive(current,raw,now,index===0));
+   this.persist(room!);
+   this.deliverReconciliation(ws,room!,current,results.flatMap(result=>result.private),now);
+   const outgoing=results.flatMap(result=>result.broadcast);
+   // Each child can produce the same room union. It is unchanged throughout a routine batch.
+   this.deliver(room!,outgoing.filter((frame,index)=>index===0||(frame as {type:string}).type!=='sparklings'));
+   if(results.some(result=>result.leave))ws.close(1000,'departed');
+   await this.schedule();
   }catch{ws.close(1008,'invalid protocol');}
  }
  async webSocketClose(ws:WebSocket){const s=ws.deserializeAttachment() as Attachment;if((s as any)?.channel==='completion'){await this.schedule();return;}const r=this.room(s.room);if(r&&!this.sockets(s.room).some(other=>other!==ws&&(other.deserializeAttachment() as Attachment).self===s.self)){r.allocation.disconnect(s.self);this.save(r.route,r.allocation);}await this.schedule();}

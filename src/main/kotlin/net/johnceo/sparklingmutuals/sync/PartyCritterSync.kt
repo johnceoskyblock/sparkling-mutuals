@@ -51,7 +51,7 @@ internal class PartyCritterSync {
     fun tick(context: PartySyncTransport.Context, origin: URI?, generation: String?, nonce: String,
         active: SafariRun?, party: PartySparklingState, now: Long, eligible: Boolean,
         useShared: Boolean = false, sharedRunId: String? = null, sharedVisitId: String? = null,
-        sendShared: (String) -> Boolean = { false }) {
+        sharedRefreshMillis: Long = 10_000, sendShared: (String) -> Boolean = { false }) {
         if (!eligible || !useShared && (origin == null || generation == null)) { reset(); return }
         if (shared != useShared) {
             transport.close(false)
@@ -79,7 +79,7 @@ internal class PartyCritterSync {
             sharedRunId.takeIf { shared },sharedVisitId.takeIf { shared })
         if (payload != sent || now >= due) {
             val submitted = if (shared) sendShared(payload) else transport.send(++sequence, "C", payload)
-            if (submitted) { sent = payload; due = now + 10_000 }
+            if (submitted) { sent = payload; due = now + if(shared) sharedRefreshMillis else 10_000 }
         }
     }
     fun refreshShared() { sent = ""; due = 0; sampleAt = 0 }

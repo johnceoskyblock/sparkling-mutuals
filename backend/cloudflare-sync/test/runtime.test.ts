@@ -5,7 +5,7 @@ const a='1'.repeat(32),b='2'.repeat(32);
 afterEach(()=>reset());
 async function auth(id:string){const r=await SELF.fetch('https://backup.test/v1/auth/uuid/session',{method:'POST',body:JSON.stringify({uuid:id})});expect(r.status).toBe(200);return (await r.json() as any).token;}
 async function routing(id:string,token:string,unusableMs=30000){const r=await SELF.fetch('https://backup.test/v1/route',{method:'POST',headers:{Authorization:`Bearer ${token}`},body:JSON.stringify({version:1,lobby:'m123',self:id,roster:[a,b],nonce:id,action:'check',unusableMs})});expect(r.status).toBe(200);return r.json() as Promise<any>;}
-async function socket(id:string,token:string,gen:string,roster=[a,b],protocol2=false){const r=await SELF.fetch('https://backup.test/v1/sync',{headers:{Upgrade:'websocket',Authorization:`Bearer ${token}`,'X-SafariUtils-Lobby':'m123','X-SafariUtils-Player':id,'X-SafariUtils-Roster':roster.join(','),'X-SM-Generation':gen,'X-SM-Visit':id,...(protocol2?{'X-SafariUtils-Sync-Protocol':'2'}:{})}});expect(r.status).toBe(101);const ws=r.webSocket!;ws.accept();const frames:any[]=[];ws.addEventListener('message',e=>{frames.push(JSON.parse(e.data as string));});return {ws,frames};}
+async function socket(id:string,token:string,gen:string,roster=[a,b],transport=1){const r=await SELF.fetch('https://backup.test/v1/sync',{headers:{Upgrade:'websocket',Authorization:`Bearer ${token}`,'X-SafariUtils-Lobby':'m123','X-SafariUtils-Player':id,'X-SafariUtils-Roster':roster.join(','),'X-SM-Generation':gen,'X-SM-Visit':id,...(transport>1?{'X-SafariUtils-Sync-Protocol':String(transport)}:{})}});expect(r.status).toBe(101);const ws=r.webSocket!;ws.accept();const frames:any[]=[];ws.addEventListener('message',e=>{frames.push(JSON.parse(e.data as string));});return {ws,frames};}
 async function flush(){await new Promise(resolve=>setTimeout(resolve,30));}
 async function completionSocket(id:string,token:string,gen:string){
  const r=await SELF.fetch('https://backup.test/v1/completion-sync',{headers:{Upgrade:'websocket',Authorization:`Bearer ${token}`,'X-SafariUtils-Lobby':'m123','X-SafariUtils-Player':id,'X-SafariUtils-Roster':[a,b].join(','),'X-SM-Generation':gen,'X-SM-Visit':id}});
@@ -115,7 +115,7 @@ it('protocol 2 reconciles the backup cohort, scopes replay and replaces completi
  const ta=await auth(a),tb=await auth(b);
  await routing(a,ta,0);await routing(b,tb,0);
  const {generation}=await routing(a,ta);
- const x=await socket(a,ta,generation,[a,b],true),y=await socket(b,tb,generation,[a,b],true);
+ const x=await socket(a,ta,generation,[a,b],2),y=await socket(b,tb,generation,[a,b],2);
  const va=crypto.randomUUID(),vb=crypto.randomUUID();
  function sender(peer:typeof x){
   let sequence=0;
@@ -143,7 +143,7 @@ it('protocol 2 reconciles the backup cohort, scopes replay and replaces completi
  sx('U',usage.join(','));
  sx('C',{runId,visitId:va,rows});
  await until(()=>y.frames.some(f=>f.kind==='C'));
- const z=await socket(b,tb,generation,[a,b],true),sz=sender(z);
+ const z=await socket(b,tb,generation,[a,b],2),sz=sender(z);
  bootstrap(sz);hello(sz,vb,runId);
  await until(()=>z.frames.some(f=>f.type==='replay-complete'));
  const replay=z.frames.findIndex(f=>f.kind==='C');
@@ -158,4 +158,44 @@ it('protocol 2 reconciles the backup cohort, scopes replay and replaces completi
  await until(()=>z.frames.filter(f=>f.kind==='C').length===2);
  expect(JSON.parse(z.frames.filter(f=>f.kind==='C').at(-1).payload).rows[6]).toEqual([0,0,0]);
  x.ws.close();z.ws.close();
+});
+
+it('transport 3 batches ordinary relays, refreshes the full revision, and renews without replacing the socket',async()=>{
+ const ta=await auth(a),tb=await auth(b);
+ await routing(a,ta,0);await routing(b,tb,0);
+ const {generation}=await routing(a,ta);
+ const x=await socket(a,ta,generation,[a,b],3),y=await socket(b,tb,generation,[a,b],2);
+ const va=crypto.randomUUID(),vb=crypto.randomUUID();
+ const frame=(sequence:number,kind:string,payload:object|string)=>({
+  sequence,kind,payload:typeof payload==='string'?payload:JSON.stringify({version:1,...payload})
+ });
+ const send=(ws:WebSocket,message:object)=>ws.send(JSON.stringify(message));
+ const hello=(visitId:string,sequence=3)=>frame(sequence,'H',{action:'hello',visitId,resumeRunId:null,
+  capabilities:['run-reconciliation-v1','critter-completion-v1'],ticketed:true,display:true,leader:false,present:[a,b],locked:{}});
+ const until=(fn:()=>unknown)=>expect.poll(fn,{timeout:3000,interval:10}).toBeTruthy();
+ for(const ws of [x.ws,y.ws]){
+  send(ws,frame(1,'F',{action:'begin'}));send(ws,frame(2,'F',{action:'done'}));
+ }
+ send(x.ws,hello(va));send(y.ws,hello(vb));
+ await until(()=>x.frames.some(f=>f.type==='reconcile')&&y.frames.some(f=>f.type==='reconcile'));
+ if(!x.frames.some(f=>f.type==='replay-complete'))send(x.ws,hello(va,4));
+ if(!y.frames.some(f=>f.type==='replay-complete'))send(y.ws,hello(vb,4));
+ await until(()=>x.frames.some(f=>f.type==='replay-complete')&&y.frames.some(f=>f.type==='replay-complete'));
+ expect(x.frames[0].features).toContain('efficient-transport-v1');
+ expect(y.frames[0].features).not.toContain('efficient-transport-v1');
+ const runId=x.frames.find(f=>f.type==='replay-complete').runId;
+ const rows=Array.from({length:37},()=>[1,2,3]);
+ send(x.ws,{type:'batch',frames:[frame(5,'N','1'),frame(6,'C',{runId,visitId:va,rows})]});
+ await until(()=>y.frames.some(f=>f.kind==='N')&&y.frames.some(f=>f.kind==='C'));
+ send(x.ws,{type:'batch',frames:[frame(7,'F',{runId,visitId:va,revision:6})]});
+ await until(()=>y.frames.some(f=>f.kind==='C'&&f.sequence===7));
+ expect(JSON.parse(y.frames.find(f=>f.kind==='C'&&f.sequence===7).payload).rows).toEqual(rows);
+ send(x.ws,frame(8,'F',{runId,visitId:va,revision:7}));
+ await until(()=>x.frames.some(f=>f.type==='completion-resync'));
+ expect(x.frames.find(f=>f.type==='completion-resync')).toMatchObject({runId,visitId:va});
+ expect(x.frames.filter(f=>f.type==='replay-complete')).toHaveLength(1);
+ send(x.ws,{type:'renew',token:ta});
+ await until(()=>x.frames.some(f=>f.type==='renewed'));
+ expect(x.frames.find(f=>f.type==='renewed').expiresInMillis).toBeLessThanOrEqual(600000);
+ x.ws.close();y.ws.close();
 });

@@ -33,11 +33,13 @@ Auto entry continues while Minecraft is in the background. While the feature is 
 
 ## Connection and privacy
 
-Both main sockets request protocol 2 with `X-SafariUtils-Sync-Protocol: 2`. A visit UUID and the accepted server run UUID survive reconnects. H hello advertises `run-reconciliation-v1` and `critter-completion-v1`, with `visitId` and `resumeRunId`; later H operations carry `visitId` and `runId`. Pending reconciliation retries every two seconds and preserves local tracking and finalized assignments.
+Both main sockets request transport 3 with `X-SafariUtils-Sync-Protocol: 3`. Servers without `efficient-transport-v1` retain the existing transport behavior. A visit UUID and the accepted server run UUID survive reconnects. H hello advertises `run-reconciliation-v1` and `critter-completion-v1`, with `visitId` and `resumeRunId`; later H operations carry `visitId` and `runId`. Pending reconciliation retries every two seconds and preserves local tracking and finalized assignments.
 
 Shared decisions wait for a matching `replay-complete` boundary after the entire replay has been applied on the game thread. Frames from another run, visit or replaced socket are ignored. Queue overflow reconnects rather than accepting partial replay. Retained aggregates with `inventoryFresh:false` preserve durable source facts without restoring held items or feeder occupancy.
 
 With both capabilities negotiated, completion C uses the selected main socket and includes `version`, `runId`, `visitId` and exactly 37 `rows`. Snapshots replace each reporter's previous evidence, even when counts decrease or flags clear. Expiry includes server age and client queue delay. Samples use existing local trackers at most every 500ms, with a ten-second heartbeat and coalesced pending changes. The independent legacy completion service retains its rows-only payload; only one completion channel is active.
+
+Transport 3 batches routine state at the next client tick, with eight frames and 4096 UTF-8 bytes per message. Discovery, caught, biome and coordination frames flush the batch first and send immediately. Unchanged completion uses a revision refresh every 20 seconds; reconnect or a matching resync request publishes a full snapshot. Acknowledged hotspot reports stop retrying, and unchanged hello messages stop after replay. The client renews negotiated socket leases in place and reconnects if renewal is unacknowledged. An explicit update-required upgrade response stops sync attempts for the session.
 
 Service: `https://api-dev.serkosea.dev`; socket: `wss://api-dev.serkosea.dev/v1/sync`. Authentication sends only the local player's compact UUID to `/v1/auth/uuid/session`. Short-lived tokens are reused across reconnects. Minecraft session credentials, passwords and private keys are never used. The service receives public roster UUIDs, the Safari server ID, and the bounded objective data above—not a complete inventory dump.
 

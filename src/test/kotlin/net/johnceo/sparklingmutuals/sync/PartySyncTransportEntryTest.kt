@@ -34,7 +34,7 @@ class PartySyncTransportEntryTest {
             try {
                 transport.tick(context,System.currentTimeMillis())
                 val socket=server.connections.poll(5,TimeUnit.SECONDS) ?: error("No upgrade")
-                assertEquals("2",server.upgrades.poll(5,TimeUnit.SECONDS)?.get("x-safariutils-sync-protocol"))
+                assertEquals("3",server.upgrades.poll(5,TimeUnit.SECONDS)?.get("x-safariutils-sync-protocol"))
                 server.send(socket,welcome(connection))
                 await { transport.drainIncoming();transport.coordinationAvailable }
                 assertFalse(transport.ready)
@@ -70,6 +70,42 @@ class PartySyncTransportEntryTest {
                 assertTrue(transport.send(2,"H","""{"version":1,"action":"hello"}"""))
                 val resumed=com.google.gson.JsonParser.parseString(server.read(next)).asJsonObject
                 assertEquals(run,com.google.gson.JsonParser.parseString(resumed["payload"].asString).asJsonObject["resumeRunId"].asString)
+            } finally { transport.close(false) }
+        }
+    }
+    @Test fun `efficient transport flushes routine state before discoveries and refreshes the full completion revision`() {
+        Fixture().use { server ->
+            val transport=PartySyncTransport(server.auth,server.ws)
+            val context=PartySyncTransport.Context("m88A",self,listOf(self,peer))
+            val connection="10000000-0000-0000-0000-000000000001"
+            val run="20000000-0000-0000-0000-000000000001"
+            val visit=transport.activeVisitId
+            fun message(socket: Socket)=com.google.gson.JsonParser.parseString(server.read(socket)).asJsonObject
+            try {
+                transport.tick(context,System.currentTimeMillis())
+                val socket=server.connections.poll(5,TimeUnit.SECONDS) ?: error("No upgrade")
+                server.send(socket,"""{"type":"welcome","self":"s","roster":["s","p"],"connectionId":"$connection","features":["run-reconciliation-v1","critter-completion-v1","efficient-transport-v1"]}""")
+                for(type in listOf("reconcile","replay-complete")) server.send(socket,
+                    """{"type":"$type","version":1,"connectionId":"$connection","visitId":"$visit","runId":"$run","status":"joined"}""")
+                await { transport.drainIncoming().ready }
+                assertTrue(transport.send(1,"N","3"))
+                assertTrue(transport.sendCompletion(2,"full"))
+                assertTrue(transport.send(3,"S","1,0,0,0"))
+                val frames=message(socket)["frames"].asJsonArray
+                assertEquals(listOf("N","C"),frames.map { it.asJsonObject["kind"].asString })
+                assertEquals("S",message(socket)["kind"].asString)
+                assertTrue(transport.sendCompletion(4,"full"))
+                transport.tick(context,System.currentTimeMillis())
+                val refresh=message(socket)["frames"].asJsonArray[0].asJsonObject
+                assertEquals("F",refresh["kind"].asString)
+                assertEquals(2,com.google.gson.JsonParser.parseString(refresh["payload"].asString).asJsonObject["revision"].asInt)
+                var resync=false
+                transport.onCompletionResync={resync=true}
+                server.send(socket,"""{"type":"completion-resync","runId":"$run","visitId":"$visit"}""")
+                await { transport.drainIncoming();resync }
+                assertTrue(transport.sendCompletion(5,"full"))
+                assertEquals("C",message(socket)["kind"].asString)
+                assertFalse(transport.retryHello(System.currentTimeMillis(),0))
             } finally { transport.close(false) }
         }
     }
