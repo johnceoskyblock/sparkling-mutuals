@@ -255,7 +255,7 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
     val birdFoodLeftToUse: Int get() { syncBirdContributions(); return knownBirdFoodLeftToUse ?: 0 }
     fun birdSpawnsComplete(localOnly: Boolean = false): Boolean {
         syncBirdContributions()
-        return if (lastBiome == SafariBiome.FOREST) birdFoodCheck.complete && birds.feederCount == 0 else !localOnly &&
+        return if (lastBiome == SafariBiome.FOREST || completion.pendingDeparture(SafariBiome.FOREST)) birdFoodCheck.complete && birds.feederCount == 0 else !localOnly &&
             (birdFoodCheck.complete || birds.hasReport && resources.heldCount(FloorDropType.SEEDS)+resources.heldCount(FloorDropType.WORM)+resources.heldCount(FloorDropType.BERRY) == 0)
     }
     fun hasUnusedStartingForBiome(biome: SafariBiome) =
@@ -503,7 +503,7 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
             SafariMode.FULL_CLEAR -> if (localOnly) captureComplete(it.name) else fullClearComplete(it.name)
             SafariMode.SPARKLING -> sparklingComplete(it.name, party, localOnly)
         } }
-    val completion = SafariCompletionEvents()
+    val completion = SafariCompletionEvents(checkClock)
     /** Complete peer species proof or a biome report can finish remote presentation. */
     fun biomeComplete(mode: SafariMode,biome: SafariBiome,party: PartySparklingState, includeShared: Boolean = true): Boolean {
         if (!includeShared) return withoutSharedProgress { biomeComplete(mode, biome, party) }

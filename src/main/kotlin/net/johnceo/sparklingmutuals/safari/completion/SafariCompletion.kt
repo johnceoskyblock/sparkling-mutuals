@@ -32,7 +32,7 @@ object SafariCompletion {
             run.completion.announcement(run, area, mode, party)?.let { queue.addLast(area to it) }
         }
         // Revalidate queued completions after contradictory local evidence or a mode change.
-        queue.removeAll { (area, _) -> !run.canReportBiome(area, party, mode) || area != biome || !run.completion.locallyComplete(run, area, mode, party) }
+        queue.removeAll { (area, _) -> !run.canReportBiome(area, party, mode) || !run.completion.locallyComplete(run, area, mode, party) }
         run.completion.armSharedClearReminder(run, biome, mode, party, now)
         if (run.completion.locallyComplete(run, biome, mode, party)) run.resourceReminders.afterBiomeClear(now)
         run.resourceReminders.dispatch(now, client.player?.name?.string ?: "Player", biome, party, enabled=ConfigManager.announceStartingItems) { _, reminder ->
