@@ -165,6 +165,17 @@ class PartySyncProtocolTest {
         nonMod.importLocks(mapOf(peer to SafariBiome.FOREST))
         assertTrue(nonMod.assignmentInstructions(3000).isEmpty())
     }
+    @Test fun `a report acknowledgement is accepted before assignment at the same revision`() {
+        val state=PartySyncState(self,setOf(self,peer))
+        val initial=snapshot()
+        assertTrue(state.hotspots(initial))
+        val accepted=initial.deepCopy().apply {
+            add("reports",JsonParser.parseString("""{"$peer":"CAVERN"}"""))
+        }
+        assertTrue(state.hotspots(accepted))
+        assertEquals(SafariBiome.CAVERN,state.acknowledgedReports[peer])
+        assertFalse(state.hotspots(accepted))
+    }
     @Test fun `notification grace refresh at same revision is accepted without changing assignments`() {
         val state=PartySyncState(self,setOf(self,peer))
         val initial=snapshot(assignments="\"$self\":\"FOREST\",\"$peer\":\"CAVERN\"")

@@ -6,7 +6,7 @@ export interface Evidence {reporter:string;source:string;nests:number;facts:numb
 export interface Snapshot {sequence:number;kind:string;payload:string;catchUpOnly?:boolean}
 export interface Attachment {
  room:string;self:string;nonce:string;roster:string[];expires:number;rate:number[];sequence:number;
- protocol?:{connectionId:string;visitId?:string;ready:boolean;completion:boolean};
+ protocol?:{connectionId:string;visitId?:string;ready:boolean;completion:boolean;efficient?:boolean;origin?:string};
  snapshots:Record<string,Snapshot>;union:number[];evidence:Evidence[];
  bootstrap:{stage:'none'|'open'|'done';frames:number;conflict:boolean;facts:Evidence[];locks:Record<string,Biome>;instructed:Record<string,Biome>;fairness:Fairness|null};
 }
@@ -37,13 +37,24 @@ export class Room {
  get ready(){return this.bootstrapped&&!this.allocation.conflict;}
  union(){const result=[0,0,...(this.route.caught??[0,0])];if(this.route.carry)for(let i=0;i<2;i++)result[i+2]|=this.route.carry.caught[i];for(const s of this.sessions)for(let i=0;i<4;i++)result[i]|=s.union[i];return result;}
  private mergeUnion(values:number[]){for(const s of this.sessions)for(let i=0;i<4;i++)s.union[i]|=values[i];}
- receive(s:Attachment,raw:string,now:number):{broadcast:unknown[];private:unknown[];leave:boolean}{
-  check(raw,new TextEncoder().encode(raw).length<=4096&&now<s.expires);s.rate=s.rate.filter(t=>now-t<10000);check(raw,s.rate.length<40);s.rate.push(now);
+ receive(s:Attachment,raw:string,now:number,charge=true):{broadcast:unknown[];private:unknown[];leave:boolean}{
+  check(raw,new TextEncoder().encode(raw).length<=4096&&now<s.expires);if(charge){s.rate=s.rate.filter(t=>now-t<10000);check(raw,s.rate.length<40);s.rate.push(now);}
   const v=object(JSON.parse(raw)),sequence=integer(v.sequence,1);check(v,sequence>s.sequence);s.sequence=sequence;
   const kind=text(v.kind,1),payload=text(v.payload,3072);check(v,v.sender===undefined);
   if(v.catchUpOnly!==undefined)check(v,kind==='A'&&typeof v.catchUpOnly==='boolean');
   const broadcast:unknown[]=[],privateFrames:unknown[]=[];let leave=false;
-  if(kind==='F'){
+  if(kind==='F'&&s.protocol?.efficient&&s.bootstrap.stage==='done'){
+   const refresh=object(JSON.parse(payload));
+   integer(refresh.version,1,1);
+   check(refresh,s.protocol.completion&&
+    refresh.runId===this.allocation.run&&refresh.visitId===s.protocol.visitId);
+   const revision=integer(refresh.revision,1),record=this.route.completion?.[s.self];
+   if(!s.protocol.ready||!this.replayReady)return {broadcast,private:privateFrames,leave};
+   if(record?.sequence===revision&&now-record.at<COMPLETION_TTL){
+    record.at=now;
+    broadcast.push({type:'state',sender:s.self,kind:'C',sequence,ageMillis:0,payload:record.payload});
+   }else privateFrames.push({type:'completion-resync',runId:this.allocation.run,visitId:s.protocol.visitId});
+  } else if(kind==='F'){
    check(s,++s.bootstrap.frames<=12);
    const f=object(JSON.parse(payload));integer(f.version,1,1);const action=text(f.action);
    if(action==='begin'){check(f,s.bootstrap.stage==='none');s.bootstrap.stage='open';}
@@ -83,7 +94,8 @@ export class Room {
         const resumed=h.resumeRunId===this.allocation.run;
         const reconciled=this.replayReady&&(resumed||h.resumeRunId===null);
         privateFrames.push({type:'reconcile',version:1,connectionId:s.protocol.connectionId,visitId:visit,
-         status:reconciled?(resumed?'resumed':'joined'):'pending',runId:reconciled?this.allocation.run:null});
+         status:reconciled?(resumed?'resumed':'joined'):'pending',runId:reconciled?this.allocation.run:null,
+         ...(!reconciled&&s.protocol.efficient?{retryAfterMillis:4000}:{})});
         if(reconciled)s.protocol.ready=true;
         else if(!resumed&&h.resumeRunId!==null)break;
        }

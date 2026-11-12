@@ -219,6 +219,7 @@ internal class PartySyncState(val self: String, roster: Set<String>) {
         }
         locks.putAll(next); return true
     }
+    val acknowledgedReports = mutableMapOf<String,SafariBiome>()
     fun hotspots(payload: JsonObject): Boolean = runCatching {
         if(PartySyncProtocol.integer(payload.get("version"),1,1)==null) return false
         val run=PartySyncProtocol.text(payload.get("run"),128)?.takeIf { it.isNotBlank() } ?: return false
@@ -244,11 +245,20 @@ internal class PartySyncState(val self: String, roster: Set<String>) {
         }
         val hasConflict=PartySyncProtocol.bool(payload.get("conflict")) ?: return false
         PartySyncProtocol.bool(payload.get("initialDone")) ?: return false
+        val acceptedReports=payload.get("reports")?.let { value ->
+            if(!value.isJsonObject) return false
+            value.asJsonObject.entrySet().associate { (id,biome) ->
+                if(id !in roster) return false
+                id to (PartySyncProtocol.biome(PartySyncProtocol.text(biome)) ?: return false)
+            }
+        }
         // Notification eligibility changes after the display grace period without a new allocation.
         // Accept that control-only refresh, but never change durable state at the same revision.
         if(rev==revision) {
             val counts=fair.entrySet().associate { it.key to it.value.asInt }
-            if(next!=locks || counts!=hotspotWins || nextLeader!=leader || hasConflict!=conflict || pending==notifications) return false
+            val reportsChanged=acceptedReports?.any { (id,biome) -> acknowledgedReports[id]!=biome }==true
+            if(next!=locks || counts!=hotspotWins || nextLeader!=leader || hasConflict!=conflict ||
+                pending==notifications && !reportsChanged) return false
         }
         if(!importLocks(next)) return false
         serverRun=run; revision=rev; authority=true; conflict=conflict || hasConflict; leader=nextLeader
@@ -256,6 +266,7 @@ internal class PartySyncState(val self: String, roster: Set<String>) {
             addProperty("run",run);addProperty("revision",rev);add("counts",fair.deepCopy())
         }
         hotspotWins.clear();fair.entrySet().forEach { hotspotWins[it.key]=it.value.asInt }
+        if(acceptedReports!=null) acknowledgedReports.putAll(acceptedReports)
         notifications=if(conflict) emptyList() else pending
         true
     }.getOrDefault(false)

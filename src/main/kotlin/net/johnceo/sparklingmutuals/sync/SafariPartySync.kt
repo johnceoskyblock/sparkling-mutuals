@@ -24,6 +24,7 @@ object SafariPartySync {
     private val transport=PartySyncTransport()
     private val routing=PartySyncRouting()
     private val critterSync=PartyCritterSync()
+    private var updateNoticeShown=false
     private val bootstrapQueue=ArrayDeque<String>()
     private val entryDiscoveries=PartyRoomDiscoveries()
     private val logger=LoggerFactory.getLogger("sparkling-mutuals/party-sync")
@@ -86,6 +87,7 @@ object SafariPartySync {
             entryDiscoveries.welcome(status.generation,status.atomic)
             adoptedRunProtocol=adoptedRunProtocol || transport.runCapability
             if(transport.runCapability) state?.invalidateInventory()
+            state?.acknowledgedReports?.clear()
             lastHello=""; helloAt=0
             bootstrapQueue.clear()
             if(transport.backup)state?.let { current ->
@@ -114,6 +116,7 @@ object SafariPartySync {
                 sharedSparklings(it)
             }
         }
+        transport.onCompletionResync=critterSync::refreshShared
         transport.onMessage=::receive
         ClientReceiveMessageEvents.GAME.register { message,overlay ->
             if(!overlay) Minecraft.getInstance().execute {
@@ -181,7 +184,7 @@ object SafariPartySync {
         val roomStatus=transport.roomStatus()
         val usable=roomStatus.ready && (!roomStatus.atomic || entryDiscoveries.snapshot(roomStatus.generation)!=null) ||
             transport.runCapability && transport.coordinationAvailable
-        if(routing.tick(context,now,usable,matchingParty) && routing.provider=="backup") {
+        if(!transport.updateRequired && routing.tick(context,now,usable,matchingParty) && routing.provider=="backup") {
             val generation=routing.generation
             val origin=routing.backupOrigin
             if(generation!=null && origin!=null && current.transitionAuthority("backup",generation)) {
@@ -191,12 +194,17 @@ object SafariPartySync {
                 client.player?.sendSystemMessage(net.minecraft.network.chat.Component.literal("[SM] Shared Safari sync switched to backup."))
             }
         }
+        transport.tick(context,now)
+        if(transport.updateRequired && !updateNoticeShown) {
+            updateNoticeShown=true
+            client.player?.sendSystemMessage(net.minecraft.network.chat.Component.literal("[SM] Party sync requires a mod update."))
+        }
         critterSync.tick(context, routing.backupOrigin, routing.generation, routing.nonce,
-            run.takeIf { ticketed }, SafariSparklingMode.state, now, matchingParty && (!transport.runCapability || transport.ready),
+            run.takeIf { ticketed }, SafariSparklingMode.state, now, matchingParty && !transport.updateRequired && (!transport.runCapability || transport.ready),
             useShared = transport.coordinationAvailable && transport.runCapability && transport.critterCapability,
             sharedRunId = transport.acceptedRunId, sharedVisitId = transport.activeVisitId,
-            sendShared = { transport.completionIdle && send("C", it) })
-        transport.tick(context,now)
+            sendShared = { transport.completionIdle && transport.sendCompletion(current.nextSequence(),it) },
+            sharedRefreshMillis = if(transport.efficient) 20_000 else 10_000)
         while(transport.canSend("F") && bootstrapQueue.isNotEmpty()) {
             if(!transport.send(current.nextSequence(),"F",bootstrapQueue.first()))break
             bootstrapQueue.removeFirst()
@@ -210,7 +218,7 @@ object SafariPartySync {
             })
         if(transport.coordinationAvailable && transport.hotspotCapability && transport.biomeCapability && matchingParty) {
             val hello=hello(client,current)
-            if(hello!=lastHello || now-helloAt>=if(transport.runCapability && !transport.ready) 2_000 else 15_000) {
+            if(hello!=lastHello || transport.retryHello(now,helloAt)) {
                 if(send("H",hello)) { lastHello=hello;helloAt=now }
             }
             if(lastHello.isNotEmpty()) {
@@ -221,6 +229,7 @@ object SafariPartySync {
                     hotspotRetryAt = now + 2_000
                 }
                 if (transport.ready) acknowledgments.firstOrNull()?.let { id -> if(sendH("ack") { addProperty("id",id) }) acknowledgments.remove(id) }
+                if(transport.efficient) pendingReports.entries.removeIf { current.acknowledgedReports[it.key]==it.value }
                 val entry=pendingReports.entries.firstOrNull { ticketed || it.key != current.self }
                 if(entry!=null && sendH("report") { addProperty("player",entry.key);addProperty("biome",entry.value.name) }) pendingReports.remove(entry.key)
             }
