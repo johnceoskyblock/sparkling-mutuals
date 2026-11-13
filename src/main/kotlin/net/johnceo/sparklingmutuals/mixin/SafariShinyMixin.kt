@@ -22,6 +22,7 @@ class SafariShinyMixin {
                 state.outlineColor = TeammateEsp.COLOR
             if (ConfigManager.showTeammateNames) state.nameTag = null
         }
-        if (SafariAssist.isHighlighted(entity.id)) state.outlineColor = SafariEspConfig.rgb(AppearanceConfig.sparklingColor)
+        net.johnceo.sparklingmutuals.safari.esp.SafariEsp.outlineColor(entity)?.let { state.outlineColor=it }
+        if (SafariAssist.isGlowHighlighted(entity.id)) state.outlineColor = SafariEspConfig.rgb(AppearanceConfig.sparklingColor)
     }
 }

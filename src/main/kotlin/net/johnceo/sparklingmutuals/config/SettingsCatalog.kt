@@ -6,8 +6,8 @@ import java.lang.reflect.Field
 class SettingsCatalog(settings: SafariSettings) {
     data class Page(val name: String, val rows: List<Row>)
     data class Row(val owner: Any, val field: Field, val name: String, val description: String,
-                   val path: String, val children: List<Row> = emptyList()) {
-        val group get()=field.isAnnotationPresent(Accordion::class.java)
+                   val path: String, val children: List<Row> = emptyList(),val navigationName: String=field.name,val groupOverride: Boolean=false) {
+        val group get()=groupOverride || field.isAnnotationPresent(Accordion::class.java)
         val standalone get()=field.isAnnotationPresent(StandaloneDescription::class.java)
         val primaryToggle get()=children.firstOrNull { it.field.name=="enabled" && it.field.isAnnotationPresent(ConfigEditorBoolean::class.java) }
         fun descriptionText(): net.minecraft.network.chat.Component {
@@ -33,7 +33,7 @@ class SettingsCatalog(settings: SafariSettings) {
         val routes=mapOf("General" to "HUDs → Overview","HUDs" to "HUDs → HUDs","Customization" to "HUDs → Appearance",
             "Modes" to "Safari → Modes","Safari helpers" to "Safari → Helpers","Miria contest" to "Safari → Contest",
             "Banner" to "Safari → Banner","Party Interactions" to "Party → Interactions","Sparkle Warping" to "Party → Sparkle Warping",
-            "History" to "History → History","API key" to "Advanced → API","SkyBlock" to "Advanced → SkyBlock","ESP" to "ESP → Highlights")
+            "History" to "History → History","API key" to "Advanced → API","SkyBlock" to "Advanced → SkyBlock","ESP" to "ESP → Customization","ESP General" to "ESP → General")
         fun collect(rows: List<Row>,parent: String) { rows.forEach { row ->
             put(row,parent);collect(row.children,"$parent → ${row.name}")
         } }
@@ -74,7 +74,7 @@ class SettingsCatalog(settings: SafariSettings) {
         var rows=pages[page].rows
         val chain=mutableListOf<Row>()
         for(field in target.fields) {
-            val row=rows.firstOrNull { it.field.name==field } ?: return null
+            val row=rows.firstOrNull { it.navigationName==field } ?: return null
             chain.add(row);rows=row.children
         }
         return if(chain.isEmpty()) null else page to chain
@@ -82,13 +82,41 @@ class SettingsCatalog(settings: SafariSettings) {
     companion object {
         private fun fields(type: Class<*>): List<Field> =
             (type.superclass?.takeUnless { it==Any::class.java }?.let(::fields) ?: emptyList())+type.declaredFields
-        private fun rows(owner: Any,path: String): List<Row> = fields(owner.javaClass).mapNotNull { field ->
-            if(owner is PanelAppearanceSettings && field.name=="expansion" && !owner.supportsExpansion)return@mapNotNull null
-            field.getAnnotation(ConfigOption::class.java)?.let { meta ->
-                field.isAccessible=true
-                Row(owner,field,meta.name,meta.desc,path+" / "+meta.name,
-                    if(field.isAnnotationPresent(Accordion::class.java)) rows(field.get(owner),path+" / "+meta.name) else emptyList())
+        private fun floorRows(owner: FloorDropEspSettings,path: String): List<Row> {
+            val order=listOf("seeds","worm","berry","lime","purple","orange","icebreaker","incense","coin","generic")
+            return order.map {key ->
+                val type=net.johnceo.sparklingmutuals.safari.resources.FloorDropType.valueOf(key.uppercase())
+                val color=owner.floorColors.javaClass.getDeclaredField(key).apply {isAccessible=true}
+                val scale=owner.floorTextSizes.javaClass.getDeclaredField(key).apply {isAccessible=true}
+                val itemPath=path+" / "+type.label
+                Row(owner.floorColors,color,type.label,"",itemPath,listOf(
+                    Row(owner.floorColors,color,"Color","",itemPath+" / Color",navigationName="color"),
+                    Row(owner.floorTextSizes,scale,"Text size","1 = original size.",itemPath+" / Text size",navigationName="textScale")
+                ),navigationName=key,groupOverride=true)
             }
+        }
+        private fun rows(owner: Any,path: String): List<Row> {
+            if(owner is FloorDropEspSettings)return floorRows(owner,path)
+            val result=fields(owner.javaClass).mapNotNull { field ->
+                if(owner is PanelAppearanceSettings && field.name=="expansion" && !owner.supportsExpansion)return@mapNotNull null
+                field.getAnnotation(ConfigOption::class.java)?.let { meta ->
+                    field.isAccessible=true
+                    val grouped=field.isAnnotationPresent(Accordion::class.java)
+                    val value=if(grouped)field.get(owner)else null
+                    if(path.startsWith("ESP /") && (value is ColorChoice || value is EspLabelSettings)) {
+                        val child=rows(value,path+" / "+meta.name).single()
+                        return@mapNotNull child.copy(name=meta.name,description=meta.desc,path=path+" / "+meta.name,navigationName=field.name)
+                    }
+                    Row(owner,field,meta.name,meta.desc,path+" / "+meta.name,
+                        if(grouped) rows(value!!,path+" / "+meta.name) else emptyList())
+                }
+            }
+            if(owner is EspGeneralSettings) {
+                val reward=owner.drops.javaClass.getDeclaredField("rewardDrops").apply {isAccessible=true}
+                val meta=reward.getAnnotation(ConfigOption::class.java)
+                return result.toMutableList().apply {add(2,Row(owner.drops,reward,meta.name,meta.desc,path+" / "+meta.name))}
+            }
+            return result
         }
     }
 }

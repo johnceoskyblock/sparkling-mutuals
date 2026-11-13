@@ -28,6 +28,15 @@ object ContestConfig {
     var showScore = true
     var trackContest = true
     var autoContestDowntime = true
+    var announceTicket = true
+    var basicTicketMessage = "Ticket earned!"
+    var firstClassTicketMessage = "First-Class Ticket earned!"
+    fun validTicketMessage(value: String,firstClass: Boolean)=value.filter { !it.isISOControl() }.trim().take(180)
+        .ifBlank {net.johnceo.sparklingmutuals.contest.ContestTicketState.message(firstClass)}
+    fun ticketMessage(firstClass: Boolean=firstClassTicket)=if(firstClass)firstClassTicketMessage else basicTicketMessage
+    fun setTicketMessage(firstClass: Boolean,value: String) {
+        if(firstClass)firstClassTicketMessage=validTicketMessage(value,true) else basicTicketMessage=validTicketMessage(value,false)
+    }
     var ticketMode = 0 // Basic = 0, First-Class = 1; independent of entry ticket preference.
     val firstClassTicket get() = ticketMode == 1
     internal val ticketAnnouncements = mutableMapOf<String, Long>()
@@ -69,6 +78,9 @@ object ContestConfig {
             stringPropertyNames().filter { it.startsWith("ticketAnnounced.") }.forEach { key ->
                 getProperty(key).toLongOrNull()?.let { ticketAnnouncements[key.removePrefix("ticketAnnounced.")] = it }
             }
+            announceTicket=getProperty("announceTicket")?.toBooleanStrictOrNull() ?: true
+            basicTicketMessage=validTicketMessage(getProperty("basicTicketMessage","Ticket earned!"),false)
+            firstClassTicketMessage=validTicketMessage(getProperty("firstClassTicketMessage","First-Class Ticket earned!"),true)
             ticketMode = getProperty("ticketMode", "0").toIntOrNull()?.takeIf { it in 0..1 } ?: 0
             contestWarnEnabled = getProperty("contestWarnEnabled", "true").toBoolean()
             contestWarnMinutes = getProperty("contestWarnMinutes", "5, 3, 1")
@@ -105,6 +117,9 @@ object ContestConfig {
             setProperty("trackContest", trackContest.toString())
             setProperty("autoContestDowntime", autoContestDowntime.toString())
             setProperty("ticketMode", ticketMode.toString())
+            setProperty("announceTicket",announceTicket.toString())
+            setProperty("basicTicketMessage",validTicketMessage(basicTicketMessage,false))
+            setProperty("firstClassTicketMessage",validTicketMessage(firstClassTicketMessage,true))
             ticketAnnouncements.forEach { (key, window) -> setProperty("ticketAnnounced.$key", window.toString()) }
             setProperty("contestWarnEnabled", contestWarnEnabled.toString())
             setProperty("contestWarnMinutes", contestWarnMinutes)

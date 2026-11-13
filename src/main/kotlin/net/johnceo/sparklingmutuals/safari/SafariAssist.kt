@@ -145,6 +145,13 @@ object SafariAssist {
         }
     }
 
+    @JvmStatic fun isGlowHighlighted(id: Int)=isHighlighted(id) && shinies.none {
+        (it.body.id==id || it.label.id==id) && net.johnceo.sparklingmutuals.config.SafariEspConfig.boxGlowFallback(it.name)
+    }
+    internal fun boxHighlights(): List<Pair<Entity,String>> = shinies.filter {
+        net.johnceo.sparklingmutuals.config.SafariEspConfig.boxGlowFallback(it.name) && isHighlighted(it.body.id)
+    }.distinctBy {it.body.id}.map {it.body to it.name}
+
     fun nearbyPanel(preview: Boolean = false): HudPanel? {
         val client = Minecraft.getInstance()
         if (preview) return HudPanel("Detected sparklings", rows = listOf(HudRow("Doomspiral", "32m", SafariRoster.color("Doomspiral"))))
