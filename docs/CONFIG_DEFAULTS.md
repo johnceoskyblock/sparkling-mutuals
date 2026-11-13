@@ -209,8 +209,8 @@ Successful profile/discovery reads and IGN-to-UUID lookups are reused for 60 min
 
 2026-11-02 — Shortened config descriptions and limited local command help to slash commands. Preserved the Sparkle Warping explanation.
 
-## Experimental shard ranges
+## Shard sale guidance
 
-SkyBlock → Helpers → Shard sale guidance (experimental) uses persisted `shardSaleGuidance`, default **off** for both new and existing settings. It adds Hunting Box range colors, an always-present Safari Essence advice row and passive observed-order advisories. The combined Hunting Box total remains an independent switch; general item/chest valuation stays shelved. See [meaning and limitations](SHARD_SALE_GUIDANCE.md).
+SkyBlock → Helpers → Shard sale guidance uses persisted `shardSaleGuidance`, default **on**. A one-time upgrade enables the redesigned guidance for existing settings, after which saved toggle choices are respected. It compares sell offers, instant selling and salvaging for all 37 Safari shards. The combined Hunting Box total remains an independent switch; general item/chest valuation stays shelved. See [meaning and limitations](SHARD_SALE_GUIDANCE.md).
 
 2026-11-12 — Unified fresh Safari HUD styles and added per-HUD expansion anchors.
