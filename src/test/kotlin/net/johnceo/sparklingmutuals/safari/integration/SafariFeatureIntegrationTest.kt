@@ -49,7 +49,7 @@ class SafariFeatureIntegrationTest {
         }
         inspect(SafariSettings())
         assertTrue(switches.size >= 40, "Inspect nested GUI options, including panel borders")
-        val exceptions = setOf("modes.sparkling.allScannable", "warp.autoPartyOnlineOnly", "safari.alerts.alwaysCelebrate", "tracking.progressHud.hotspot", "esp.floorDrops.visibility.icebreaker", "warp.autoEnter", "skyblock.helpers.shardSaleGuidance", "warp.leech", "skyblock.helpers.skillOverflowNumbers", "tracking.capturesHud.enabled", "history.instaSell", "history.toParty", "warp.enabled", "esp.floorDrops.visibility.generic", "miria.warning.five", "party.startingItems",
+        val exceptions = setOf("customization.biomeBorders", "modes.sparkling.allScannable", "warp.autoPartyOnlineOnly", "safari.alerts.alwaysCelebrate", "tracking.progressHud.hotspot", "esp.floorDrops.visibility.icebreaker", "warp.autoEnter", "warp.leech", "skyblock.helpers.skillOverflowNumbers", "tracking.capturesHud.enabled", "history.instaSell", "history.toParty", "warp.enabled", "esp.floorDrops.visibility.generic", "miria.warning.five", "party.startingItems",
             "modes.unique.hideCritters", "modes.unique.hideDrops", "modes.fullClear.hideCritters",
             "modes.fullClear.hideDrops", "modes.sparkling.hideCritters", "modes.sparkling.hideDrops")
         val modes = setOf("modes.unique.enabled", "modes.fullClear.enabled", "modes.sparkling.enabled")
