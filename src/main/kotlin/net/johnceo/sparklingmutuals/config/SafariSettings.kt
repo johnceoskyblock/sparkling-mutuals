@@ -41,6 +41,7 @@ class SafariSettings {
     val alwaysOnCritters = CritterToggleSettings(SafariEspConfig::alwaysOn)
     @JvmField @Category(name = "Floor Drop Always On Toggle", desc = "")
     val alwaysOnFloorDrops = FloorDropToggleSettings()
+    @JvmField @Category(name="ESP General",desc="") val espGeneral=EspGeneralSettings(esp.biomes,esp.floorDrops)
     init {
         esp.critterColors = customization.critters
         esp.waypointColors = customization.waypoints
@@ -130,6 +131,21 @@ class SafariSettings {
         @JvmField @ConfigOption(name = "Ticket mode", desc = "Basic: Uncommon. First-Class: Legendary.")
         @ConfigEditorDropdown(values = ["Basic", "First-Class"])
         var ticketMode = ContestConfig.ticketMode
+        @JvmField @ConfigOption(name="Announce ticket earned",desc="") @ConfigEditorBoolean
+        var announceTicket=ContestConfig.announceTicket
+        @JvmField @ConfigOption(name="Ticket earned message",desc="Saved separately for Basic and First-Class ticket modes.") @ConfigEditorText
+        var ticketMessage=ContestConfig.ticketMessage()
+        private var messageMode=ContestConfig.ticketMode
+        fun applyTicketMessage(): Boolean {
+            val previous=ContestConfig.ticketMessage(messageMode==1)
+            ContestConfig.setTicketMessage(messageMode==1,ticketMessage)
+            val changed=previous!=ContestConfig.ticketMessage(messageMode==1)
+            if(messageMode!=ticketMode) {
+                messageMode=ticketMode.coerceIn(0,1)
+                ticketMessage=ContestConfig.ticketMessage(messageMode==1)
+            }
+            return changed
+        }
         @JvmField @ConfigOption(name = "Contest tracking", desc = "")
         @ConfigEditorBoolean var enabled = ContestConfig.trackContest
         @JvmField @ConfigOption(name = "Party Contest Guard Entry", desc = "Guard entry into safari until all party members send ticket earned confirmation message. Party leader only.")
@@ -571,7 +587,7 @@ class SafariSettings {
             ConfigManager::allGemsAlert to safari.alerts.gems, ConfigManager::allBirdFoodAlert to safari.alerts.birdFood,
             ConfigManager::allCoinsAlert to safari.alerts.coins, ConfigManager::allIncenseAlert to safari.alerts.incense, ConfigManager::runCompleteAlert to safari.alerts.runComplete,
             ConfigManager::hideGroundCapsules to safari.hideGroundCapsules, ConfigManager::hideFlyingCapsules to safari.hideFlyingCapsules)
-        val espChanged = esp.apply()
+        val espChanged = listOf(espGeneral.apply(),esp.apply()).any {it}
         val modWideCrittersChanged = modWideCritters.apply(SafariEspConfig.modWideToggles)
         val profitableCrittersChanged = profitableCritters.apply(SafariEspConfig.profitableToggles)
         val cooldownAppearanceChanged = listOf(safari.entryCooldown.appearance,tracking.profitableHud.appearance,tracking.lakeClearedHud.appearance).map {it.apply()}.any {it}
@@ -600,8 +616,10 @@ class SafariSettings {
         ConfigManager.sparklingSoundVolume = safari.alerts.volume.coerceIn(0, 100)
         if (generalChanged) ConfigManager.save()
         val warnings = listOfNotNull(5.takeIf { miria.five }, 3.takeIf { miria.three }, 1.takeIf { miria.one })
-        val contestChanged = ContestConfig.showBracket != tracking.contestHud.bracket || ContestConfig.showScore != tracking.contestHud.score || ContestConfig.showContestTimer != tracking.contestTimer || ContestConfig.ticketMode != miria.ticketMode || ContestConfig.autoContestDowntime != miria.autoContestDowntime || ContestConfig.trackContest != miria.enabled || ContestConfig.contestWarnTitle != miria.titles ||
+        val ticketMessageChanged=miria.applyTicketMessage()
+        val contestChanged = ticketMessageChanged || ContestConfig.announceTicket!=miria.announceTicket || ContestConfig.showBracket != tracking.contestHud.bracket || ContestConfig.showScore != tracking.contestHud.score || ContestConfig.showContestTimer != tracking.contestTimer || ContestConfig.ticketMode != miria.ticketMode || ContestConfig.autoContestDowntime != miria.autoContestDowntime || ContestConfig.trackContest != miria.enabled || ContestConfig.contestWarnTitle != miria.titles ||
             ContestConfig.contestSoundVolume != miria.volume || ContestConfig.warningMinutes() != warnings
+        ContestConfig.announceTicket=miria.announceTicket
         ContestConfig.showBracket=tracking.contestHud.bracket;ContestConfig.showScore=tracking.contestHud.score
         ContestConfig.showContestTimer = tracking.contestTimer
         ContestConfig.trackContest = miria.enabled

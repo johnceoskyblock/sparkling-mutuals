@@ -540,6 +540,23 @@ object SafariEsp {
         return "Eligible"
     }
 
+    private var indexedTargets: List<Target>?=null
+    private var targetIndex=emptyMap<Int,Target>()
+    private fun targetColor(target: Target): Int {
+        val mound=target.species=="Rockmite" && target.entity is Display.ItemDisplay
+        val food=if(target.species=="Scrappy" && !SafariEspConfig.usesBiomeColor("Scrappy")) scrappyFoods.food(target.entity.uuid) else null
+        return SafariEspConfig.rgb(food?.let {SafariEspConfig.scrappyFoodColors.getValue(it)} ?: SafariEspConfig.entityColor(target.species,mound))
+    }
+    fun outlineColor(entity: Entity): Int? {
+        val client=Minecraft.getInstance()
+        if(!SafariEspConfig.critterGlow || !SafariAssist.visualsActive(client) || client.player==null || client.options.smHideGui)return null
+        if(indexedTargets!==targets) {indexedTargets=targets;targetIndex=targets.associateBy {it.entity.id}}
+        val target=targetIndex[entity.id]?.takeIf {it.entity===entity} ?: return null
+        if(SafariEspConfig.boxGlowFallback(target.species) || target.species=="Rockmite" && entity is Display.ItemDisplay)return null
+        if(!drawable(target,client) || critterEspDecision(target,client,SafariAssist.biome,System.currentTimeMillis())!="Eligible")return null
+        return targetColor(target)
+    }
+
     private fun render(context: LevelRenderContext) {
         val client = Minecraft.getInstance()
         if (!SafariAssist.visualsActive(client) || client.player == null || client.options.smHideGui) return
@@ -550,6 +567,11 @@ object SafariEsp {
         val now = System.currentTimeMillis()
         val timers = mutableListOf<Triple<String, Int, AABB>>()
         targets = targets.filter { drawable(it, client) }
+        val sparklingBoxes=SafariAssist.boxHighlights().map {(body,name)->
+            targets.filter {it.species==name && it.entity.distanceToSqr(body)<=9.0}
+                .minByOrNull {it.entity.distanceToSqr(body)} ?: Target(body,name,false)
+        }.distinctBy {it.entity.id}
+        val sparklingBoxIds=sparklingBoxes.map {it.entity.id}.toSet()
         if (!ConfigManager.hideCritterEsp()) {
         for (target in targets) {
             val e = target.entity
@@ -563,9 +585,8 @@ object SafariEsp {
                 }
                 val projected = if (height == null) box else box.move(0.0, height - e.getPosition(delta).y, 0.0)
                 val food = if (mob.name == "Scrappy") scrappyFoods.food(e.uuid) else null
-                val color = SafariEspConfig.rgb(food?.let { SafariEspConfig.scrappyFoodColors.getValue(it) }
-                    ?: SafariEspConfig.entityColor(mob.name,e is Display.ItemDisplay))
-                frame(projected, color)
+                val color = targetColor(target)
+                if(e.id !in sparklingBoxIds && (SafariEspConfig.showCritterBox(mob.name) || mob.name=="Rockmite" && e is Display.ItemDisplay)) frame(projected, color)
                 if (mob.name == "Scrappy" && food != null) WorldRenderCompat.label(context, food.label, color,
                     projected.center.x, projected.maxY + .2, projected.center.z, SafariEspConfig.scrappyLabelWorldScale)
                 if (mob.name == "Litterbug" && height != null) litterbugs.hiddenMarker(e.uuid, e.x, e.y, e.z, now)?.let {
@@ -587,7 +608,7 @@ object SafariEsp {
             for(location in litterbugs.missingMarkers(now)) {
                 if(captures.hidden(location.id)) continue
                 val box=AABB(location.x-.4,location.marker.height,location.z-.4,location.x+.4,location.marker.height+.8,location.z+.4)
-                frame(box,SafariEspConfig.rgb(SafariEspConfig.entityColor("Litterbug",false)))
+                if(SafariEspConfig.critterBoxes) frame(box,SafariEspConfig.rgb(SafariEspConfig.entityColor("Litterbug",false)))
                 timers.add(Triple(location.marker.text,location.marker.color,box))
             }
         }
@@ -605,11 +626,12 @@ object SafariEsp {
                 if (captures.hidden(marker.id)) continue
                 val box = AABB(marker.x - .4, marker.y, marker.z - .4,
                     marker.x + .4, marker.y + .8, marker.z + .4)
-                frame(box, SafariEspConfig.rgb(SafariEspConfig.entityColor("Shyworm", false)))
+                if(SafariEspConfig.critterBoxes) frame(box, SafariEspConfig.rgb(SafariEspConfig.entityColor("Shyworm", false)))
                 timers.add(Triple("Shyworm (last seen)", SafariEspConfig.rgb(SafariEspConfig.entityColor("Shyworm", false)), box))
             }
         }
         }
+        sparklingBoxes.forEach {frame(bounds(it,delta),SafariEspConfig.rgb(net.johnceo.sparklingmutuals.config.AppearanceConfig.sparklingColor))}
         val incenseIds = SafariFloorDrops.state.incenseDropIds(dropPredictor.knownDrops)
         val selectedDrops = predictedDrops.filter { floorEspEligible(it, client, playerBiome, incenseIds) }
         val tiles = selectedDrops.map { it.marker() to SafariEspConfig.rgb(SafariEspConfig.dropColor(it.type!!)) }

@@ -214,3 +214,19 @@ Successful profile/discovery reads and IGN-to-UUID lookups are reused for 60 min
 SkyBlock → Helpers → Shard sale guidance uses persisted `shardSaleGuidance`, default **on**. A one-time upgrade enables the redesigned guidance for existing settings, after which saved toggle choices are respected. It compares sell offers, instant selling and salvaging for all 37 Safari shards. The combined Hunting Box total remains an independent switch; general item/chest valuation stays shelved. See [meaning and limitations](SHARD_SALE_GUIDANCE.md).
 
 2026-11-12 — Unified fresh Safari HUD styles and added per-HUD expansion anchors.
+
+## Critter ESP presentation and ticket messages
+
+ESP → General has independent Critter glow ESP (default on) and Critter box ESP (default off) controls. They change presentation only: existing mode requirements, species toggles, captures and biome visibility still select eligible critters. Glow reuses the entity-outline renderer and is Safari-only. Sparkling critters retain their special gold outline. Floor drops, nests, mounds and walls keep their own waypoint rendering. Unloaded creatures cannot render a model glow; retained location/timer labels remain available.
+
+ESP → Highlights → Biome critter colors has an optional master switch (default off) and Forest/Cavern/Icy/Haunted color pickers. When enabled, these colors replace individual creature colors, including Scrappy food colors, for glow/boxes and associated creature labels. Disabling it restores saved individual colors; it does not rewrite them or change structure colors.
+
+Safari → Contest has Announce ticket earned (default on) and Ticket earned message. The message field follows Ticket mode and saves Basic and First-Class wording independently. Defaults are Ticket earned! and First-Class Ticket earned! respectively. Blank text uses the mode default. Disabling announcements does not disable ticket tracking or release/alter entry guards by itself. Existing once-per-contest delivery safeguards remain.
+
+2026-11-13 — Added independent critter glow/box styles, optional biome-wide critter colors and customizable ticket announcements.
+
+2026-11-13 — ESP General now owns glow/box and critter/floor-drop visibility controls. Customization groups each floor drop's color and text size together, opens individual critter color pickers directly, and keeps bulk biome colors above individual colors. Saved keys are unchanged.
+
+2026-11-13 — Duplico and Driftling use box ESP as their glow fallback. Their sparkling variants use the special sparkling-colored box instead of a model outline. Existing mode, capture and visibility gates still apply.
+
+2026-11-13 — Biome critter colors now has a separate enable switch for each biome. The master switch enables the selected overrides; disabled biomes use their saved individual critter colors and Scrappy food colors. Per-biome switches default on to preserve existing master-switch behavior.

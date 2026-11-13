@@ -70,6 +70,16 @@ object SafariEspConfig {
         set(value) { field = validTextScale(value) }
     val teammateLabelWorldScale get() = .025f * teammateTextScale
     var teammateColor = defaultColor(0xFF55FF55.toInt())
+    fun boxGlowFallback(name: String)=name=="Duplico" || name=="Driftling"
+    fun showCritterBox(name: String)=critterBoxes || critterGlow && boxGlowFallback(name)
+    var critterGlow = true
+    var critterBoxes = false
+    var biomeCritterColors = false
+    private val biomePalette=mapOf("forest" to 0x55FF55,"cavern" to 0xFFAA00,"icy" to 0x55FFFF,"haunted" to 0xAA55FF)
+    val biomeColors=biomePalette.mapValues {defaultColor(it.value)}.toMutableMap()
+    val biomeColorEnabled=biomePalette.keys.associateWith {true}.toMutableMap()
+    fun usesBiomeColor(name: String)=biomeCritterColors &&
+        biomeColorEnabled[SafariEspRules.mobs.first {it.name==name}.biome.name.lowercase()]!=false
     var rewardDrops = false
     private fun defaultFloorAlwaysOn(type: FloorDropType) = type in setOf(FloorDropType.LIME, FloorDropType.PURPLE, FloorDropType.ORANGE)
     internal val floorAlwaysOnToggles = FloorDropType.entries.associateWith(::defaultFloorAlwaysOn).toMutableMap()
@@ -93,7 +103,9 @@ object SafariEspConfig {
     fun entityEnabled(name: String, mound: Boolean = false) =
         modWideEnabled(name) && (if (name == "Rockmite" && mound) rockmiteMoundEnabled else mobs.getValue(name).enabled)
     fun entityColor(name: String, mound: Boolean = false) =
-        if (name == "Rockmite" && mound) rockmiteMoundColor else mobs.getValue(name).color
+        if (name == "Rockmite" && mound) rockmiteMoundColor
+        else if(usesBiomeColor(name)) biomeColors.getValue(SafariEspRules.mobs.first {it.name==name}.biome.name.lowercase())
+        else mobs.getValue(name).color
     private fun defaultColor(rgb: Int) = "0:255:${rgb shr 16 and 255}:${rgb shr 8 and 255}:${rgb and 255}"
     fun validColor(value: String?, fallback: String): String = value?.takeIf { color ->
         val parts = color.split(':')
@@ -102,6 +114,13 @@ object SafariEspConfig {
     fun rgb(color: String) = SettingsColor.argb(color)
     private fun key(name: String) = name.lowercase().replace(' ', '_')
     fun load(properties: Properties) {
+        critterGlow=properties.getProperty("esp.critterGlow")?.toBooleanStrictOrNull() ?: true
+        critterBoxes=properties.getProperty("esp.critterBoxes")?.toBooleanStrictOrNull() ?: false
+        biomeCritterColors=properties.getProperty("esp.biomeCritterColors")?.toBooleanStrictOrNull() ?: false
+        biomePalette.forEach {(id,color)->
+            biomeColors[id]=validColor(properties.getProperty("esp.biomeColor.$id"),defaultColor(color))
+            biomeColorEnabled[id]=properties.getProperty("esp.biomeColor.$id.enabled")?.toBooleanStrictOrNull() ?: true
+        }
         floorAlwaysOnToggles.keys.forEach { type ->
             floorAlwaysOnToggles[type] = properties.getProperty("esp.floor.${type.name.lowercase()}.alwaysOn")
                 ?.toBooleanStrictOrNull() ?: defaultFloorAlwaysOn(type)
@@ -141,6 +160,11 @@ object SafariEspConfig {
             properties.getProperty("esp.rockmite.color")?.let { mobs.getValue("Rockmite").color } ?: defaultColor(0xFFFFFFFF.toInt()))
     }
     fun save(properties: Properties) {
+        properties.setProperty("esp.critterGlow",critterGlow.toString())
+        properties.setProperty("esp.critterBoxes",critterBoxes.toString())
+        properties.setProperty("esp.biomeCritterColors",biomeCritterColors.toString())
+        biomeColors.forEach {(id,color)->properties.setProperty("esp.biomeColor.$id",color)}
+        biomeColorEnabled.forEach {(id,on)->properties.setProperty("esp.biomeColor.$id.enabled",on.toString())}
         floorAlwaysOnToggles.forEach { (type, value) ->
             properties.setProperty("esp.floor.${type.name.lowercase()}.alwaysOn", value.toString())
         }

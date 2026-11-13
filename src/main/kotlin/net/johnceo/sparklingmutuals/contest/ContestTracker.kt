@@ -227,14 +227,14 @@ object ContestTracker {
         }
     }
     private fun announceTicket(client: Minecraft) {
-        if (!complete || completedWindow != windowKey || betweenContests()) return
+        if (!ContestConfig.announceTicket || !complete || completedWindow != windowKey || betweenContests()) return
         val player = client.player ?: return
         val firstClass = ContestConfig.firstClassTicket
         val key = "${player.uuid}.${ContestConfig.ticketMode}"
         val saved = ContestConfig.ticketAnnouncements
         if (saved[key] == windowKey) return
         if (ticketNotices.claim(player.uuid.toString(), windowKey, tier, secondsIntoWindow, firstClass, points) {
-                PartyManager.sendPartyChat(client, ContestTicketState.message(firstClass))
+                PartyManager.sendPartyChat(client, ContestConfig.ticketMessage(firstClass))
             }) {
             saved.entries.removeIf { it.value < windowKey - 2 }
             saved[key] = windowKey
