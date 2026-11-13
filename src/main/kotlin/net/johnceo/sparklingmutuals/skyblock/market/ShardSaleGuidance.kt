@@ -144,7 +144,11 @@ object ShardSaleGuidance {
     internal fun sidebar(screen: AbstractContainerScreen<*>,now: Long): List<SavedBoxRow> {
         if(!ConfigManager.shardSaleGuidance || menu!==screen || Minecraft.getInstance().smScreen!==screen ||
             !SkyblockSidebar.inSkyblock(Minecraft.getInstance()) || !HuntingBoxShardParsing.isBox(screen.title.string))return emptyList()
-        return session.sidebar(now)
+        val owned=session.sidebar(now).associateBy {it.shard.productId}
+        return ShardSalePresentation.rank(SaleProducts.names.keys.map {id ->
+            val row=owned[id] ?: SavedBoxRow(SavedBoxShard(id,0,now),false,Recommendation(id,AdviceState.UNKNOWN,null,0,"HISTORY_COVERAGE"))
+            row.copy(advice=ShardSaleDecisions.apply(row.advice,row.shard.amount.coerceAtLeast(1),BazaarPrices.guidanceQuotes,now))
+        })
     }
     internal fun hasVerifiedProfile()=SaleProfileEvidence.scope(account,profile)!=null
     internal fun essence(screen: AbstractContainerScreen<*>,now: Long): Recommendation? {
@@ -167,7 +171,10 @@ object ShardSaleGuidance {
     private fun advice(screen: AbstractContainerScreen<*>,slot: Slot): Recommendation? {
         if(!ConfigManager.shardSaleGuidance || menu!==screen || Minecraft.getInstance().smScreen!==screen ||
             !SkyblockSidebar.inSkyblock(Minecraft.getInstance()) || !HuntingBoxShardParsing.isBox(screen.title.string))return null
-        return view?.advice(screen.menu,screen.menu.stateId,slot.index,slot.item,System.currentTimeMillis())
+        val now=System.currentTimeMillis()
+        val original=view?.advice(screen.menu,screen.menu.stateId,slot.index,slot.item,now) ?: return null
+        val amount=session.sidebar(now).firstOrNull {it.shard.productId==original.productId}?.shard?.amount ?: return original
+        return ShardSaleDecisions.apply(original,amount,BazaarPrices.guidanceQuotes,now)
     }
     fun draw(screen: AbstractContainerScreen<*>,graphics: GuiGraphicsExtractor,slot: Slot) {
         if(SellOfferParsing.isOrders(screen.title.string)) {
@@ -179,7 +186,7 @@ object ShardSaleGuidance {
             return
         }
         val advice=advice(screen,slot) ?: return
-        graphics.outline(slot.x-1,slot.y-1,18,18,ShardSalePresentation.color(advice.state))
+        graphics.outline(slot.x-1,slot.y-1,18,18,ShardSalePresentation.color(advice))
     }
     fun beginTooltip(screen: AbstractContainerScreen<*>,slot: Slot?) {tooltipSlot=slot?.takeIf {menu===screen}}
     fun endTooltip() {tooltipSlot=null}

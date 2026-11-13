@@ -83,6 +83,7 @@ class SettingsCatalog(settings: SafariSettings) {
         private fun fields(type: Class<*>): List<Field> =
             (type.superclass?.takeUnless { it==Any::class.java }?.let(::fields) ?: emptyList())+type.declaredFields
         private fun rows(owner: Any,path: String): List<Row> = fields(owner.javaClass).mapNotNull { field ->
+            if(owner is PanelAppearanceSettings && field.name=="expansion" && !owner.supportsExpansion)return@mapNotNull null
             field.getAnnotation(ConfigOption::class.java)?.let { meta ->
                 field.isAccessible=true
                 Row(owner,field,meta.name,meta.desc,path+" / "+meta.name,

@@ -33,7 +33,14 @@ internal object BazaarQuoteParsing {
             val bids = orders(product,"sell_summary")
             val ask = asks.minOrNull() ?: continue
             val bid = bids.maxOrNull() ?: continue
-            if (bid <= ask) quotes[id] = MarketQuote(id,ask,bid,at)
+            if (bid <= ask) {
+                val status=product.getAsJsonObject("quick_status")
+                fun number(key: String)=runCatching {status?.get(key)?.asDouble}.getOrNull()?.takeIf {it.isFinite() && it>=0}
+                val offers=number("buyVolume")
+                // movingWeek includes live orders; remove them before comparing activity.
+                val week=number("buyMovingWeek")?.let {moving->offers?.let {(moving-it).coerceAtLeast(0.0)}}
+                quotes[id] = MarketQuote(id,ask,bid,at,week,offers)
+            }
         }
         QuoteSnapshot(at,quotes.toMap(),prices.toMap())
     }.getOrNull()

@@ -48,8 +48,11 @@ object SparklingRates {
             }
             val average = spawnAverages.getValue(name)
             require(average.isFinite() && average >= 0) { "Invalid spawn average for $name" }
-            destination[name] = if (mode == SafariMode.UNIQUE && destination === manual &&
-                (if (SafariLookup.isBird(name)) allBirdsShared else !party.needs(name))) minOf(1.0, average) else average
+            destination[name] = if (mode == SafariMode.UNIQUE && destination === manual && !party.needs(name)) when {
+                SafariLookup.isBird(name) || name == "Gemzie" -> average
+                name == "Gazer" || name == "Gimmiegold" -> minOf(2.0, average)
+                else -> minOf(1.0, average)
+            } else average
         }
         return SparklingRateEstimate(biomes, boat, passive, manual, mode)
     }
@@ -77,7 +80,7 @@ object SparklingRates {
         section("Additional biome-load detections", result.passive)
         section("Manual checks / spawns", result.manual)
         append("\n\n${if (result.mode == SafariMode.FULL_CLEAR) "Full" else "Lazy"} Party spawn averages; 1/2048 chance per critter.\nAssumes every planned check is completed.")
-        if (result.mode == SafariMode.UNIQUE) append("\nShared manual species: one check per available type (capped by its average). Needed bird checks include the entire bird spawning group.")
+        if (result.mode == SafariMode.UNIQUE) append("\nGemzie and birds: all average spawns. Shared Gazer/Gimmiegold: two checks each; other shared manual types: one. Needed manual types: all average spawns. Partial counts are capped by spawn averages.")
     }
 
     fun show(source: FabricClientCommandSource): Int {

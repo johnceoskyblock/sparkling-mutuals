@@ -185,7 +185,7 @@ object SafariTracking {
             val missing=SafariPanels.missing(run,biome,unique,BeeNests.unpunchedCount,SafariStructures.nearbyMounds,SafariStructures.walls)
             if(missing.rows.isNotEmpty()) missing.draw(graphics,SafariHud.MISSING)
         }
-        if (ConfigManager.profitableChecklist) net.johnceo.sparklingmutuals.safari.ui.ProfitableChecklist.panel(run, biome)
+        if (ConfigManager.profitableChecklist && SafariFullClear.mode != SafariMode.FULL_CLEAR) net.johnceo.sparklingmutuals.safari.ui.ProfitableChecklist.panel(run, biome)
             .draw(graphics, SafariHud.PROFITABLE)
         if (ConfigManager.biomeObjectives) {
             val objectives = SafariPanels.objectives(run, biome, unique, BeeNests.unpunchedCount,

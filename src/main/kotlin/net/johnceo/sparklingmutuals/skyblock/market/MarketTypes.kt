@@ -1,7 +1,8 @@
 package net.johnceo.sparklingmutuals.skyblock.market
 
 internal data class MarketScope(val accountId: String, val profileId: String)
-internal data class MarketQuote(val productId: String, val ask: Double, val bid: Double, val serverAt: Long) {
+internal data class MarketQuote(val productId: String, val ask: Double, val bid: Double, val serverAt: Long,
+    val weeklyBuys: Double? = null, val offers: Double? = null) {
     fun freshAt(now: Long): Boolean = serverAt > 0 && now >= serverAt - 60_000L && now - serverAt <= 180_000L
 }
 
@@ -39,4 +40,5 @@ internal data class Recommendation(
     val modelKey: String? = null,
     /** Economic pre-decline ask, retained through SELL-to-HOLD confirmation snapshots. */
     val declineFromAsk: Double? = null,
+    val sale: ShardSaleComparison? = null,
 )

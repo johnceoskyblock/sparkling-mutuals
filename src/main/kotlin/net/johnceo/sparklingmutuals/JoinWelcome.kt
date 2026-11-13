@@ -65,6 +65,7 @@ object JoinWelcome {
             text("  ").append(command("/unique", "Select Unique mode")).append("  Unique run mode."),
             text("  ").append(command("/fc", "Select Full Clear mode")).append("  Full clear run mode."),
             text("  ").append(command("/sparkle", "Select Sparkle mode")).append("  Sparkle run mode."),
+            text("  ").append(command("/hotspot", "Toggle hotspot assigning")).append("  Hotspot assigning; pair with a mode for more profit."),
             text("  ").append(command("/sm gui", "Move and resize HUDs")).append(" HUD layout   ")
                 .append(command("/sm history", "Open runs, bests and stats")).append(" History")
             ))

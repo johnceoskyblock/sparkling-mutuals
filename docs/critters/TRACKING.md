@@ -2,6 +2,8 @@
 
 ## Scope
 
+Sparkle mode's optional **All Scannable Critter Checks** adds ESP and Unchecked rows for ordinary scannable critters even when the party already owns their sparkling variants. It defaults off. Scannable means excluded from neither the existing manual/timesave check list nor the bird-food group. Entries and this extra ESP disappear after the normal retained sparkle check completes; profitable and always-on ESP remain independent. The option does not change party discovery data, manual-source tasks, other modes, or the normal biome-report requirements. Biome Objectives keeps its check reminder while these optional entries remain.
+
 Hideyho's terminal dialogue can finish Haunted reporting after departure: the client must already have locally verified every other required Haunted critter and observed Hideyho dialogue while inside Haunted. The actual Hideyho reward/capture must arrive within 30 seconds of that retained proof. Leaving does not discard a qualified queued report. This exception does not infer remote captures or waive other mode requirements.
 
 Authoritative reference for capture/check evidence, source surveys, reconciliation, party trust and run retention. [Mode outcomes](../../SAFARI_LOGIC.md), [UI](../MISSING_PANEL.md), [bird completion](../BIRD_COMPLETION.md), [resources/drop prediction](FLOOR_DROPS.md) and [exact messages](MESSAGES.md) have separate owners. Common terms follow [the glossary](../DOCUMENTATION_GUIDE.md).

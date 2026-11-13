@@ -8,14 +8,19 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class SparklingRatesTest {
-    @Test fun `Unique visits every biome and includes one shared manual species but all needed checks`() {
+    @Test fun `Unique includes full Gemzie and bird checks plus two shared Gazers and Gimmiegolds`() {
         val shared = SparklingRates.estimate(party(), mode = SafariMode.UNIQUE)
         assertEquals(SafariBiome.entries, shared.biomes)
         assertEquals(all, shared.boat.keys + shared.passive.keys + shared.manual.keys)
-        assertTrue(shared.manual.values.all { it == 1.0 })
         assertEquals(1.0, shared.manual["Rockmite"])
         assertEquals(1.0, shared.manual["Snoozle"])
-        assertEquals(1.0, shared.manual["Bluebird"])
+        for(name in listOf("Gemzie","Bluebird","Parakeet","Macaw"))
+            assertEquals(CritterSpawnAverages.lazyParty[name],shared.manual[name],name)
+        assertEquals(2.0,shared.manual["Gazer"])
+        assertEquals(2.0,shared.manual["Gimmiegold"])
+        val hauntedNeeded=SparklingRates.estimate(party("Gazer","Gimmiegold"),mode=SafariMode.UNIQUE)
+        for(name in listOf("Gazer","Gimmiegold"))
+            assertEquals(CritterSpawnAverages.lazyParty[name],hauntedNeeded.manual[name],name)
         val needed = SparklingRates.estimate(party("Rockmite", "Macaw"), mode = SafariMode.UNIQUE)
         assertEquals(CritterSpawnAverages.lazyParty["Rockmite"], needed.manual["Rockmite"])
         for (bird in listOf("Bluebird", "Parakeet", "Macaw"))

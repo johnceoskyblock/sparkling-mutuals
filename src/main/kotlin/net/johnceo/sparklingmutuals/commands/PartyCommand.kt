@@ -105,6 +105,8 @@ data class PartyCommand(val kind: PartyCommandKind, val ign: String = "", val du
         private val bossLookup = Regex("""^!pb\s+(doom|wumpa|forest|haunted|icy|cavern)\s+([A-Za-z0-9_]{1,16})(?:\s+(duo|party))?$""", RegexOption.IGNORE_CASE)
         private val lookup = Regex("""^!(missing|tickets?)(?:\s+([A-Za-z0-9_]{1,16}))?$""", RegexOption.IGNORE_CASE)
         private val since = Regex("""^!since(?:\s+(.+))?$""", RegexOption.IGNORE_CASE)
+        private val sinceAliases = mapOf("doom" to "Doomspiral", "goat" to "Billygoat",
+            "shrimp" to "Mantis Shrimp", "nozzle" to "Nozzlenose", "squid" to "Shuddersquid")
         private val missingRun = Regex("""^!m(?:\s+(\S+))?$""", RegexOption.IGNORE_CASE)
         fun fromChat(text: String): PartyRequest? {
             val chat = PartyChat.parse(text) ?: return null
@@ -125,7 +127,8 @@ data class PartyCommand(val kind: PartyCommandKind, val ign: String = "", val du
                         argument.isEmpty() -> PartyCommand(PartyCommandKind.SINCE_SPARKLING)
                         argument.equals("unique", true) -> PartyCommand(PartyCommandKind.SINCE_UNIQUE)
                         else -> {
-                            val normalized = argument.replace(Regex("""\s+"""), " ")
+                            val words = argument.replace(Regex("""\s+"""), " ")
+                            val normalized = sinceAliases[words.lowercase(java.util.Locale.ROOT)] ?: words
                             val critter = SafariRoster.all.firstOrNull { it.name.equals(normalized, true) } ?: return null
                             PartyCommand(PartyCommandKind.SINCE_SPARKLING, sinceCritter = critter.name)
                         }

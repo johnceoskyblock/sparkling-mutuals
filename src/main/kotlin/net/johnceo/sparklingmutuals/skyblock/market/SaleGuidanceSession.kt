@@ -36,7 +36,7 @@ internal class SaleGuidanceSession(
         val orders=on && SellOfferParsing.isOrders(title)
         val ranked=if(insideBox || orders || on && watches.products(now).isNotEmpty())
             profitProducts().intersect(SaleProducts.names.keys).take(10).toSet()else emptySet()
-        eligible=if(insideBox)ranked else emptySet()
+        eligible=if(insideBox)SaleProducts.names.keys else emptySet()
         markers=emptyMap()
         offerAdvice=emptyMap()
         if(!on) {latest=emptyMap();demand(false,false,emptySet(),generation);return emptyMap()}

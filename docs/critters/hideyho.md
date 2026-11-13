@@ -15,7 +15,7 @@
 
 ## What makes this critter different
 
-- Inside/outside title/chat works only in Haunted, in Unique/Full Clear, with its setting enabled. Sparkling or leaving Haunted cancels the watch; capture tracking stays independent.
+- The inside/outside banner works only in Haunted, in Unique/Full Clear, with its setting enabled. It announces the starting location once and the settled hiding location once. The initial "you found me" greeting does not end the quest watch. Leaving Haunted pauses observation and retains a pending hiding-location check for returning; disabling the feature or switching to Sparkle cancels it. Queued/active banners are invalid outside Haunted. Capture tracking stays independent.
 
 ## Spawn prerequisites
 

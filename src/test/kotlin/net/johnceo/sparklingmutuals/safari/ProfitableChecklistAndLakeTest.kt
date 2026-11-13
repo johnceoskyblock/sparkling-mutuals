@@ -123,7 +123,7 @@ class ProfitableChecklistAndLakeTest {
             assertEquals(listOf("lakeClearedHud", "enabled"), HudConfigLinks.target(SafariHud.LAKE_CLEARED).fields)
             assertEquals(listOf("profitableHud", "enabled"), HudConfigLinks.target(SafariHud.PROFITABLE).fields)
             val settings = SafariSettings()
-            assertFalse(settings.tracking.profitableHud.enabled)
+            assertTrue(settings.tracking.profitableHud.enabled)
             assertTrue(settings.tracking.lakeClearedHud.enabled)
         } finally { SafariHud.LAKE_CLEARED.layout.scale = old }
     }

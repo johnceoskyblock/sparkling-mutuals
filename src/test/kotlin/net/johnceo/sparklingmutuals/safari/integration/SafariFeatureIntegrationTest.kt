@@ -49,7 +49,7 @@ class SafariFeatureIntegrationTest {
         }
         inspect(SafariSettings())
         assertTrue(switches.size >= 40, "Inspect nested GUI options, including panel borders")
-        val exceptions = setOf("tracking.profitableHud.enabled", "warp.autoPartyOnlineOnly", "safari.alerts.alwaysCelebrate", "tracking.progressHud.hotspot", "esp.floorDrops.visibility.icebreaker", "warp.autoEnter", "skyblock.helpers.shardSaleGuidance", "warp.leech", "skyblock.helpers.skillOverflowNumbers", "tracking.capturesHud.enabled", "history.instaSell", "history.toParty", "warp.enabled", "esp.floorDrops.visibility.generic", "miria.warning.five", "party.startingItems",
+        val exceptions = setOf("customization.biomeBorders", "modes.sparkling.allScannable", "warp.autoPartyOnlineOnly", "safari.alerts.alwaysCelebrate", "tracking.progressHud.hotspot", "esp.floorDrops.visibility.icebreaker", "warp.autoEnter", "warp.leech", "skyblock.helpers.skillOverflowNumbers", "tracking.capturesHud.enabled", "history.instaSell", "history.toParty", "warp.enabled", "esp.floorDrops.visibility.generic", "miria.warning.five", "party.startingItems",
             "modes.unique.hideCritters", "modes.unique.hideDrops", "modes.fullClear.hideCritters",
             "modes.fullClear.hideDrops", "modes.sparkling.hideCritters", "modes.sparkling.hideDrops")
         val modes = setOf("modes.unique.enabled", "modes.fullClear.enabled", "modes.sparkling.enabled")
@@ -192,7 +192,7 @@ class SafariFeatureIntegrationTest {
         assertTrue(run.uniqueComplete("Gimmiegold", party("Gimmiegold")))
     }
 
-    @Test fun `Hideyho watch is Haunted-only and leaving cancels pending dialogue`() {
+    @Test fun `Hideyho watch is Haunted-only and travel pauses pending dialogue`() {
         val watch = HideyhoLocationWatch()
         val before = HideyhoHiding.Spot(-4, 68, -64)
         val after = HideyhoHiding.Spot(37, 70, -14)
@@ -207,10 +207,10 @@ class SafariFeatureIntegrationTest {
         assertTrue(watch.armed)
         assertNull(watch.settled(before, 4000))
         assertFalse(watch.context(true, SafariBiome.FOREST))
-        assertFalse(watch.armed)
+        assertTrue(watch.armed)
         assertNull(watch.settled(after, 5000))
         assertTrue(watch.context(true, SafariBiome.HAUNTED))
-        assertEquals(after, watch.settled(after, 6000)) // Current idle sighting in Haunted is allowed.
+        assertEquals(after, watch.settled(after, 6000)) // The hiding location is announced on returning to Haunted.
         assertNull(watch.settled(after, 7000))
         assertFalse(watch.context(false, SafariBiome.HAUNTED))
         assertNull(watch.settled(before, 8000))

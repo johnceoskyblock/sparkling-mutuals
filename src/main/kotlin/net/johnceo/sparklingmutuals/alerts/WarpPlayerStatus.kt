@@ -58,7 +58,7 @@ internal object WarpPlayerStatus {
         pending = CompletableFuture.supplyAsync {
             var pause = false
             val updates = batch.map { (name, previous) ->
-                val uuid = previous?.uuid ?: runCatching { HypixelApi.getPlayerUuid(name) }.getOrNull()
+                val uuid = previous?.uuid ?: WarpList.uuid(name) ?: runCatching { HypixelApi.getPlayerUuid(name) }.getOrNull()
                 var result = previous?.takeIf { it.uuid != null } ?: Player(uuid, System.currentTimeMillis())
                 if (uuid != null && key.isNotEmpty() && name !in overrides && !pause) {
                     val online = try { HypixelApi.onlineStatus(uuid, key) }
@@ -83,5 +83,5 @@ internal object WarpPlayerStatus {
 
     fun ordered(critter: String): List<String> = WarpList.names(critter).sortedWith(
         compareBy<String> { WarpList.priority(it, critter) }
-            .thenBy { cache[it.lowercase()]?.uuid ?: "~" }.thenBy(String::lowercase))
+            .thenBy { cache[it.lowercase()]?.uuid ?: WarpList.uuid(it) ?: "~" }.thenBy(String::lowercase))
 }

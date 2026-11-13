@@ -22,6 +22,6 @@ A Fabric client mod for Hypixel SkyBlock’s Critter Safari.
 | Sparkling auto entry | Opt in to joining a party member’s Safari when shared sync reports an outstanding Sparkling. |
 | Miria contests and Honeyhives | Track contest progress and ticket readiness, and see Honeyhive locations and refill timers. |
 | History and achievements | Review runs, catches, personal bests, achievements, and daily, weekly, or session profit. Use `/newsession` to start a new profit session. Open `/sm history` to view history and import older runs from Minecraft logs. |
-| Hunting Box and Bazaar | Estimate Hunting Box value, view experimental shard and Safari Essence sale guidance, and rank critters by ticket type with `/profit`. |
+| Hunting Box and Bazaar | Estimate Hunting Box value, compare selling and salvaging Safari shards, and rank critters by ticket type with `/profit`. |
 | Other SkyBlock helpers | Garden Phantomleaf Solver and Skills overflow tooltips. |
-| Customization | Move and resize HUDs with `/sm gui`, and customize highlights, banners, alerts, and catch effects in settings. |
+| Customization | Move and resize HUDs with `/sm gui`, choose how HUDs expand, and customize highlights, banners, alerts, and catch effects in settings. |

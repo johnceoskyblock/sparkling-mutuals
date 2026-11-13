@@ -82,10 +82,10 @@ class HideyhoLocationWatch {
     private var hidingAnnounced = false
     val armed get() = armedAt != null
     fun context(enabled: Boolean, biome: SafariBiome?, mode: SafariMode = SafariMode.UNIQUE): Boolean {
-        if (enabled && biome == SafariBiome.HAUNTED && mode != SafariMode.SPARKLING) { active = true; return true }
-        active = false
-        armedAt = null
-        return false
+        active = enabled && biome == SafariBiome.HAUNTED && mode != SafariMode.SPARKLING
+        // Travel pauses observation; disabling the feature or changing mode cancels it.
+        if(!enabled || mode == SafariMode.SPARKLING) armedAt = null
+        return active
     }
     fun chat(text: String, now: Long, spot: HideyhoHiding.Spot?) {
         if (!active) return
@@ -94,7 +94,8 @@ class HideyhoLocationWatch {
                 spotBefore = spot ?: announced
                 armedAt = now
             }
-            HideyhoHiding.found(text) -> { armedAt = null; hidingAnnounced = true }
+            // The initial greeting also says "you found me", before the hiding quest starts.
+            HideyhoHiding.found(text) && armed -> { armedAt = null; hidingAnnounced = true }
         }
     }
     fun settled(spot: HideyhoHiding.Spot?, now: Long): HideyhoHiding.Spot? {
@@ -122,7 +123,7 @@ object HideyhoSpotter {
     private var run: Any? = null
     private val kind = BannerKind.HIDEYHO_LOCATION
     private fun enabled() = BannerConfig.enabled && BannerConfig.options.getValue(kind).enabled
-    private fun context() = watch.context(enabled(), SafariBiome.HAUNTED.takeIf { SafariAssist.inSafari }, SafariFullClear.mode)
+    private fun context() = watch.context(enabled(), SafariAssist.biome.takeIf { SafariAssist.inSafari }, SafariFullClear.mode)
 
     fun register() {
         ClientReceiveMessageEvents.GAME.register { message, overlay ->

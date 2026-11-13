@@ -16,17 +16,17 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 
 class SafariProfitableUniqueTest : net.johnceo.sparklingmutuals.safari.esp.ProfitableEspPriceFixture() {
-    @Test fun `only Rockmite is excluded from profitable ESP while Snoozle remains eligible`() {
+    @Test fun `Rockmite and Snoozle both remain eligible for profitable ESP after unique captures`() {
         val quote = net.johnceo.sparklingmutuals.history.BazaarPrices
         prices(listOf("Rockmite", "Snoozle").associate { quote.shardId(it) to doubleArrayOf(100000.0, 100000.0) })
         val listed = net.johnceo.sparklingmutuals.commands.ProfitableCritters.cachedSpecies()
         assertEquals(setOf("Rockmite", "Snoozle"), listed)
         for (species in listed) {
-            assertEquals(species == "Snoozle", SafariEspRules.profitableEsp(species, true))
+            assertTrue(SafariEspRules.profitableEsp(species, true))
             val run = SafariRun(0)
             assertTrue(SafariEspRules.neededForRun(species, false, run, false, true))
             run.record(SafariCatch(SafariRoster.named(species)!!))
-            assertEquals(species == "Snoozle", SafariEspRules.neededForRun(species, false, run, false, true))
+            assertTrue(SafariEspRules.neededForRun(species, false, run, false, true))
             assertTrue(SafariEspRules.neededForRun(species, false, run, true, true))
         }
     }

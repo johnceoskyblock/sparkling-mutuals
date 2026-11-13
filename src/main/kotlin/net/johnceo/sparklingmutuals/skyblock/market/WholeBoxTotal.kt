@@ -78,11 +78,15 @@ internal object WholeBoxTotalOverlay {
         val client=Minecraft.getInstance()
         val area=WholeBoxHeader.bounds(screen.width,container.sparklingMutualsShardPanelLeft(),
             container.sparklingMutualsShardPanelTop(),container.sparklingMutualsShardPanelWidth(),
-            lines.maxOfOrNull {client.font.width(it)} ?: 0,lines.size) ?: return
-        g.pose().pushMatrix();g.pose().translate(area.x.toFloat(),area.y.toFloat());g.pose().scale(area.scale,area.scale)
-        val width=(area.width/area.scale).toInt()
-        AppearanceConfig.panels.getValue("progress").draw(g,width,8+lines.size*10)
-        lines.forEachIndexed {index,text->g.text(client.font,text,6,4+index*10,HudRow.GOLD,true)}
-        g.pose().popMatrix()
+            lines.maxOfOrNull {client.font.width(it)} ?: 0,lines.size)
+            ?: WholeBoxHeaderBounds(container.sparklingMutualsShardPanelLeft(),4,container.sparklingMutualsShardPanelWidth(),23,1f)
+        val hud=net.johnceo.sparklingmutuals.hud.SafariHud.HUNTING_BOX_VALUE
+        val panel=net.johnceo.sparklingmutuals.hud.HudPanel(lines.first(),rows=emptyList(),titleIcon=null)
+        val layout=hud.layout
+        if(!layout.hasSavedPosition) {
+            layout.x=area.x/screen.width.toFloat();layout.y=area.y/screen.height.toFloat();layout.scale=area.scale
+        }
+        HuntingBoxHuds.shown(hud,panel)
+        panel.draw(g,hud)
     }
 }

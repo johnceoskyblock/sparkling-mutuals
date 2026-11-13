@@ -9,6 +9,21 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 
 class ConfigTest {
+    @Test fun `redesigned shard guidance enables once then respects the saved toggle`() {
+        val file=dir.resolve("sparkling-mutuals.properties")
+        Files.writeString(file,"shardSaleGuidance=false\nwaterOpacity=37\ncustomLegacyValue=keep\n")
+        ConfigManager.init(dir)
+        assertTrue(ConfigManager.shardSaleGuidance)
+        val migrated=java.util.Properties().apply {Files.newInputStream(file).use(::load)}
+        assertEquals("true",migrated.getProperty("migration.shardSaleGuidanceV2"))
+        assertEquals("true",migrated.getProperty("shardSaleGuidance"))
+        assertEquals("keep",migrated.getProperty("customLegacyValue"))
+        assertEquals(37,ConfigManager.waterOpacity)
+        ConfigManager.shardSaleGuidance=false
+        ConfigManager.save()
+        ConfigManager.init(dir)
+        assertFalse(ConfigManager.shardSaleGuidance)
+    }
     @Test fun `config folder migration preserves saves and archives older duplicates`() {
         val settings = "sparkling-mutuals.properties"
         val runs = "sparkling-mutuals-runs.json"
@@ -87,7 +102,13 @@ class ConfigTest {
         assertEquals(1.4f, SafariHud.PROGRESS.layout.effectiveScale(320, 240, 100, 100))
         assertEquals(41, ContestConfig.layoutFor(320, 240).bounds(320, 240, 150, 42).x)
         assertEquals(listOf(5), ContestConfig.warningMinutes())
-        assertEquals(main, Files.readString(dir.resolve("sparkling-mutuals.properties")))
+        val original = java.util.Properties().apply { load(main.reader()) }
+        val upgraded = java.util.Properties().apply {
+            Files.newInputStream(dir.resolve("sparkling-mutuals.properties")).use(::load)
+        }
+        assertEquals("true",upgraded.remove("migration.shardSaleGuidanceV2"))
+        assertEquals("true",upgraded.remove("shardSaleGuidance"))
+        assertEquals(original,upgraded)
         assertEquals(legacyContest, Files.readString(dir.resolve("sparkling-mutuals-contest.properties")))
     }
     @Test fun `single projection switch preserves old master choice and drops the obsolete gate on save`() {

@@ -8,6 +8,23 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class HideyhoSpotterTest {
+    @Test fun `initial found greeting does not suppress the second hiding location`() {
+        val watch=HideyhoLocationWatch()
+        val before=HideyhoHiding.Spot(-4,68,-64)
+        val after=HideyhoHiding.Spot(37,70,-14)
+        watch.context(true,net.johnceo.sparklingmutuals.safari.SafariBiome.HAUNTED)
+        assertEquals(before,watch.settled(before,0))
+        watch.chat("[MOB] Hideyho: Hehe, you found me!",1000,before)
+        watch.chat("[MOB] Hideyho: Close your eyes and then come find me!",2000,before)
+        watch.chat("[MOB] Hideyho: No peeking!",3000,before)
+        assertTrue(watch.armed)
+        assertNull(watch.settled(before,4000))
+        assertNull(watch.settled(null,5000))
+        assertEquals(after,watch.settled(after,6000))
+        assertNull(watch.settled(after,7000))
+        watch.chat("[MOB] Hideyho: Aah! You found me!",8000,after)
+        assertNull(watch.settled(after,9000))
+    }
     @Test fun `spots inside the mansion's outline are inside, the rest outside`() {
         assertTrue(HideyhoHiding.inside(HideyhoHiding.Spot(-4, 68, -64)))
         assertTrue(HideyhoHiding.inside(HideyhoHiding.Spot(0, 79, -78)))

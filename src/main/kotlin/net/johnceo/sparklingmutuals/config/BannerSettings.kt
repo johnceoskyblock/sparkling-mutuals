@@ -68,6 +68,9 @@ class BannerOption(private val kind: BannerKind) {
     }
 }
 class BannerAppearance {
+    @JvmField @ConfigOption(name="Expand direction",desc="Which edges stay fixed as the banner grows.")
+    @ConfigEditorDropdown(values=["Down & right","Down","Down & left","Right","Centered","Left","Up & right","Up","Up & left"])
+    var expansion=SafariHud.BANNER.layout.expansion.ordinal
     @JvmField @ConfigOption(name="Background",desc="") @ConfigEditorBoolean var background=BannerConfig.background
     @JvmField @ConfigOption(name="Background color",desc="") @ConfigEditorColour var color=BannerConfig.color
     @JvmField @ConfigOption(name="Background style",desc="") @ConfigEditorDropdown(values=["Flat","Soft gradient","Deep gradient"]) var gradient=BannerConfig.gradient
@@ -80,10 +83,13 @@ class BannerAppearance {
     @JvmField @ConfigOption(name="Bottom timer bar",desc="") @ConfigEditorDropdown(values=["Off","Left to right","Right to left"]) var bottomBar=BannerConfig.bottomBar
     fun apply(): Boolean {
         val before=BannerConfig.appearanceSnapshot()
+        val direction=HudExpansion.entries.getOrElse(expansion) {HudExpansion.DOWN_RIGHT}
+        val layoutChanged=SafariHud.BANNER.layout.expansion!=direction
+        SafariHud.BANNER.layout.expansion=direction
         BannerConfig.background=background;BannerConfig.color=SafariEspConfig.validColor(color,"0:155:18:25:37");BannerConfig.gradient=gradient.coerceIn(0,2)
         BannerConfig.tint=tint;BannerConfig.border=border;BannerConfig.thickness=thickness.coerceIn(1,4);BannerConfig.font=font.coerceIn(0,3)
         BannerConfig.shadow=shadow;BannerConfig.topBar=topBar.coerceIn(0,2);BannerConfig.bottomBar=bottomBar.coerceIn(0,2)
         BannerConfig.localEncounters=true
-        return before!=BannerConfig.appearanceSnapshot()
+        return layoutChanged || before!=BannerConfig.appearanceSnapshot()
     }
 }

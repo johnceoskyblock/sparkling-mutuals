@@ -108,7 +108,7 @@ object BeeNests {
                     }, if (waypoint.nest) SafariEspConfig.rgb(AppearanceConfig.nestColor) else 0xFFAAAAAA.toInt())
                 }
             SafariAssist.biome == SafariBiome.CAVERN &&
-                SafariHelperRules.needed("Snoozle", SafariFullClear.mode, SafariTracking.ledger.current, SafariSparklingMode.state) ->
+                SafariHelperRules.highlightSource("Snoozle", SafariFullClear.mode, SafariTracking.ledger.current, SafariSparklingMode.state) ->
                 SafariStructures.intactWalls.filter { level.isLoaded(it) && !level.getBlockState(it).isAir &&
                     it.distToCenterSqr(camera) < 40000 }.map { Triple(it, "Snoozle wall", SafariEspConfig.rgb(AppearanceConfig.snooperColor)) }
             else -> emptyList()
@@ -117,7 +117,7 @@ object BeeNests {
         val alwaysShowMounds = SafariEspConfig.alwaysOn("Rockmite")
         val retainedMounds = if (moundGroup.enabled && SafariEspConfig.entityEnabled("Rockmite", mound = true) &&
             (SafariAssist.biome == SafariBiome.CAVERN || !moundGroup.onlyInBiome || alwaysShowMounds) &&
-            (alwaysShowMounds || SafariHelperRules.needed("Rockmite", SafariFullClear.mode, run, SafariSparklingMode.state))) {
+            (alwaysShowMounds || SafariHelperRules.highlightSource("Rockmite", SafariFullClear.mode, run, SafariSparklingMode.state))) {
             val rendered = net.johnceo.sparklingmutuals.safari.esp.SafariEsp.renderedMoundSites(client)
             run?.moundSurvey?.unopenedSites.orEmpty().filter { it !in rendered }.mapNotNull { (x, y, z) ->
                 val pos = BlockPos(x, y, z)

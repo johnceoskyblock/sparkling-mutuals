@@ -10,7 +10,7 @@ object BannerConfig {
     var enabled=true
     var background=true;var color="0:155:18:25:37";var gradient=2;var tint=true;var border=true
     var thickness=1;var font=0;var shadow=false;var topBar=0;var bottomBar=1
-    var biomeBorders=true;var localEncounters=true
+    var biomeBorders=false;var localEncounters=true
     fun appearanceSnapshot()=listOf(background,color,gradient,tint,border,thickness,font,shadow,topBar,bottomBar,biomeBorders,localEncounters)
     fun load(p: Properties) {
         fun bool(key: String,default: Boolean)=p.getProperty("banner.$key")?.toBooleanStrictOrNull() ?: default
@@ -19,7 +19,7 @@ object BannerConfig {
         background=bool("background",true);color=SafariEspConfig.validColor(p.getProperty("banner.color"),"0:155:18:25:37")
         gradient=int("gradient",2,0,2);tint=bool("tint",true);border=bool("border",true);thickness=int("thickness",1,1,4)
         font=int("font",0,0,3);shadow=bool("shadow",false);topBar=int("topBar",0,0,2);bottomBar=int("bottomBar",1,0,2)
-        biomeBorders=bool("biomeBorders",true);localEncounters=bool("localEncounters",true)
+        biomeBorders=bool("biomeBorders",false);localEncounters=bool("localEncounters",true)
         val legacy=mapOf(BannerKind.HIDEYHO_LOCATION to "hideyhoInsideOutside",BannerKind.GEMS to "allGemsAlert",BannerKind.BIRD_FOOD to "allBirdFoodAlert",BannerKind.COINS to "allCoinsAlert",BannerKind.INCENSE to "allIncenseAlert",BannerKind.RUN_COMPLETE to "runCompleteAlert")
         BannerKind.entries.forEach { kind ->
             val base=defaults(kind);val key=kind.name.lowercase()+"."

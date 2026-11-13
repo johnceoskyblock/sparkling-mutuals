@@ -14,6 +14,27 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 
 class SparklingEspChecksTest : net.johnceo.sparklingmutuals.safari.esp.ProfitableEspPriceFixture() {
+    @Test fun `profitable cavern sources stay highlighted after unique catches without adding mode objectives`() {
+        ConfigManager.init(dir)
+        val quote=net.johnceo.sparklingmutuals.history.BazaarPrices
+        prices(listOf("Rockmite","Snoozle").associate { quote.shardId(it) to doubleArrayOf(1000.0,1000.0) })
+        val run=SafariRun(0)
+        val shared=party()
+        val rules=net.johnceo.sparklingmutuals.safari.completion.SafariHelperRules
+        val config=net.johnceo.sparklingmutuals.config.SafariEspConfig
+        for(name in listOf("Rockmite","Snoozle")) run.record(SafariCatch(SafariRoster.named(name)!!))
+        for(mode in listOf(net.johnceo.sparklingmutuals.safari.SafariMode.UNIQUE,net.johnceo.sparklingmutuals.safari.SafariMode.SPARKLING)) {
+            for(name in listOf("Rockmite","Snoozle")) {
+                assertFalse(rules.needed(name,mode,run,shared))
+                assertTrue(rules.highlightSource(name,mode,run,shared))
+                val previous=config.profitableToggles.put(name,false)
+                try { assertFalse(rules.highlightSource(name,mode,run,shared)) }
+                finally { if(previous==null) config.profitableToggles.remove(name) else config.profitableToggles[name]=previous }
+            }
+        }
+        assertTrue(SafariEspRules.neededForRun("Rockmite",true,run,false,true,shared))
+        assertTrue(SafariEspRules.neededForSparkling("Rockmite",false,shared,true,run))
+    }
     @Test fun `profitable Gimmiegold enables Sparkle coin source ESP without needing its shiny`() {
         val quote = net.johnceo.sparklingmutuals.history.BazaarPrices
         prices(mapOf(quote.shardId("Gimmiegold") to doubleArrayOf(1000.0, 1000.0)))

@@ -24,6 +24,13 @@ class ColorChoice(private val read: () -> String, private val write: (String) ->
 }
 
 class PanelAppearanceSettings(private val style: PanelStyle, selection: () -> String) {
+    private val layout=AppearanceConfig.panels.entries.firstOrNull {it.value===style}?.key?.let {id ->
+        if(id=="miria") ContestConfig.layout else net.johnceo.sparklingmutuals.hud.SafariHud.entries.firstOrNull {it.name.lowercase()==id}?.layout
+    }
+    val supportsExpansion get()=layout!=null
+    @JvmField @ConfigOption(name="Expand direction",desc="Which edges stay fixed as the HUD grows.")
+    @ConfigEditorDropdown(values=["Down & right","Down","Down & left","Right","Centered","Left","Up & right","Up","Up & left"])
+    var expansion=layout?.expansion?.ordinal ?: 0
     @JvmField @ConfigOption(name = "Border", desc = "")
     @ConfigEditorBoolean var borderEnabled = style.borderEnabled
     @JvmField @ConfigOption(name = "Border color", desc = "") @Accordion
@@ -34,7 +41,9 @@ class PanelAppearanceSettings(private val style: PanelStyle, selection: () -> St
     @ConfigEditorSlider(minValue = 0f, maxValue = 100f, minStep = 1f)
     var transparency = style.transparency
     fun apply(): Boolean {
-        val changed = style.borderEnabled != borderEnabled || style.transparency != transparency
+        val direction=net.johnceo.sparklingmutuals.hud.HudExpansion.entries.getOrElse(expansion) {net.johnceo.sparklingmutuals.hud.HudExpansion.DOWN_RIGHT}
+        val changed = style.borderEnabled != borderEnabled || style.transparency != transparency || (layout!=null && layout.expansion!=direction)
+        layout?.expansion=direction
         style.borderEnabled = borderEnabled; style.transparency = transparency
         return listOf(border.apply(), background.apply(), changed).any { it }
     }
