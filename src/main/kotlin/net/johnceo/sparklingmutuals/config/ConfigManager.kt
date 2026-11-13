@@ -39,6 +39,7 @@ object ConfigManager {
     var useCloudApi = true
     var fullClearMode = false
     var sparklingMode = false
+    var allScannableCritterChecks = false
     var sparklingProfitableShardEsp = true
     var profitableShardEsp = true
     var hotspotAnnouncer = false
@@ -77,7 +78,7 @@ object ConfigManager {
     var progressProfit = true
     var progressHotspot = true
     var countUniqueOnly = false
-    var profitableChecklist = false
+    var profitableChecklist = true
     var lakeClearAlert = true
     var missingPanel = true
     var biomeObjectives = true
@@ -114,7 +115,7 @@ object ConfigManager {
     var downtimeCommand = true
     var honeyHives = true
     var skillOverflow = true
-    var shardSaleGuidance = false
+    var shardSaleGuidance = true
     var skillOverflowChat = true
     var skillOverflowNumbers = false
     var estimatedItemValue = true
@@ -136,12 +137,12 @@ object ConfigManager {
     var showWhere = 1
     val personalBests = SafariPersonalBests()
     private val flags = mapOf(::safariEntryCooldown to true, ::hudSnapping to true, ::doomspiralThrowTimer to true, ::doomspiralLottery to true, ::autoParty to false, ::autoPartyOnlineOnly to false, ::autoBiomeReports to true, ::uniqueHideCritterEsp to false, ::uniqueHideFloorDropEsp to false,
-        ::fullClearHideCritterEsp to false, ::fullClearHideFloorDropEsp to false,
+        ::fullClearHideCritterEsp to false, ::fullClearHideFloorDropEsp to false, ::allScannableCritterChecks to false,
         ::sparklingHideCritterEsp to false, ::sparklingHideFloorDropEsp to false, ::announceStartingItems to false, ::hotspotAnnouncer to false, ::uniqueHotspotAnnouncer to false, ::fullClearHotspotAnnouncer to false, ::sparklingHotspotAnnouncer to false, ::highlightTeammates to true, ::showTeammateNames to true, ::partyCommandsEnabled to true, ::useCloudApi to true, ::fullClearMode to false, ::sparklingMode to false, ::sparklingProfitableShardEsp to true, ::profitableShardEsp to true, ::timesaveOnly to true, ::warpAlertsEnabled to false,
         ::hideyhoAutoAccept to true, ::autoSelectSafariTicket to true, ::safariEntryAutoEnter to false, ::hideyhoInsideOutside to true, ::hideHauntedPaintings to true, ::shinyDetection to true,
-        ::progressHud to true, ::progressProfit to true, ::progressHotspot to true, ::hotspotShowAllPlayers to true, ::countUniqueOnly to false, ::profitableChecklist to false, ::lakeClearAlert to true, ::missingPanel to true, ::biomeObjectives to true,
+        ::progressHud to true, ::progressProfit to true, ::progressHotspot to true, ::hotspotShowAllPlayers to true, ::countUniqueOnly to false, ::profitableChecklist to true, ::lakeClearAlert to true, ::missingPanel to true, ::biomeObjectives to true,
         ::highlightBeeNests to true, ::removeDarkness to true, ::clearWater to true, ::sparklingAlert to true, ::sparklingCatchCount to true,
-        ::sparklingPartyAnnouncer to true, ::catchCountPanel to false, ::autoClicker to true, ::candleHitbox to true, ::holdManagerOnKick to true, ::downtimeCommand to true, ::honeyHives to true, ::huntingBoxValue to true, ::shardSaleGuidance to false, ::skillOverflow to true, ::skillOverflowChat to true, ::skillOverflowNumbers to false, ::estimatedItemValue to true, ::estimatedChestValue to true, ::phantomleafSolver to true, ::runHistory to true, ::achievements to true, ::achievementSound to true, ::achievementsToParty to false, ::runCoinsInstaSell to false,
+        ::sparklingPartyAnnouncer to true, ::catchCountPanel to false, ::autoClicker to true, ::candleHitbox to true, ::holdManagerOnKick to true, ::downtimeCommand to true, ::honeyHives to true, ::huntingBoxValue to true, ::shardSaleGuidance to true, ::skillOverflow to true, ::skillOverflowChat to true, ::skillOverflowNumbers to false, ::estimatedItemValue to true, ::estimatedChestValue to true, ::phantomleafSolver to true, ::runHistory to true, ::achievements to true, ::achievementSound to true, ::achievementsToParty to false, ::runCoinsInstaSell to false,
         ::hideCaptureChat to true, ::hideGroundCapsules to true, ::hideFlyingCapsules to true,
         ::experimentalCapsulePath to true, ::showCapsuleGuideThroughTerrain to true, ::gemzieGemAutoSelect to true,
         ::highlightSnooperWalls to true, ::showBeeNests to true, ::showMoundCount to true,
@@ -156,6 +157,12 @@ object ConfigManager {
         configPath = configDirectory.resolve("sparkling-mutuals.properties")
         val properties = if (Files.exists(configPath)) Properties() else FreshInstallDefaults.main()
         if (Files.exists(configPath)) Files.newInputStream(configPath).use(properties::load)
+        // Introduce the redesigned guidance once, then respect every subsequent saved choice.
+        val introduceShardGuidance = properties.getProperty("migration.shardSaleGuidanceV2") != "true"
+        if (introduceShardGuidance) {
+            properties.setProperty("shardSaleGuidance", "true")
+            properties.setProperty("migration.shardSaleGuidanceV2", "true")
+        }
         settingsTheme = properties.getProperty("settingsTheme")?.toIntOrNull()?.coerceIn(0,33) ?: 4
         specialCatchAlert = properties.getProperty("specialCatchAlert")?.toBooleanStrictOrNull() ?: true
         alwaysCelebrateSparkling = properties.getProperty("alwaysCelebrateSparkling")?.toBooleanStrictOrNull() ?: false
@@ -196,6 +203,10 @@ object ConfigManager {
         SafariFullClear.applyEspPreset()
         BannerConfig.load(properties)
         AppearanceConfig.load(properties)
+        if (introduceShardGuidance) {
+            Files.createDirectories(configPath.parent)
+            PersonalBestConfig.write(configPath, properties, "Sparkling Mutuals configuration")
+        }
     }
 
     fun save() {
@@ -209,6 +220,7 @@ object ConfigManager {
             setProperty("sparklingSound", validSparklingSound(sparklingSound))
             setProperty("sparklingSoundVolume", sparklingSoundVolume.coerceIn(0, 100).toString())
             flags.forEach { (property, _) -> setProperty(property.name, property.get().toString()) }
+            setProperty("migration.shardSaleGuidanceV2", "true")
             setProperty("warpDelaySeconds", warpDelaySeconds.toString())
             setProperty("sparkleWarpMode", sparkleWarpMode.toString())
             setProperty("warpDuo", warpDuo)

@@ -13,6 +13,7 @@ import net.johnceo.sparklingmutuals.safari.SafariRun
 import net.johnceo.sparklingmutuals.safari.SafariSparklingMode
 import net.johnceo.sparklingmutuals.safari.completion.SafariFullClear
 import net.johnceo.sparklingmutuals.safari.completion.SafariHelperRules
+import net.johnceo.sparklingmutuals.safari.completion.ScannableCritterChecks
 import net.johnceo.sparklingmutuals.safari.structures.WallSummary
 
 /** One collected total, with the v0.9.0 biome and critter rarity colors. */
@@ -22,7 +23,7 @@ object SafariPanels {
     private val fixedChecks = mapOf("Scrappy" to 3, "Gemzie" to 3, "Troodon" to 3, "Gazer" to 4)
     fun fixedCounter(name: String, run: SafariRun?, mode: SafariMode, party: PartySparklingState): String? {
         val total = fixedChecks[name] ?: return null
-        if (mode != SafariMode.FULL_CLEAR && !party.needs(name)) return null
+        if (mode != SafariMode.FULL_CLEAR && !party.needs(name) && !ScannableCritterChecks.enabled(name)) return null
         val count = if (mode == SafariMode.FULL_CLEAR) run?.captureProgress(name) ?: 0 else run?.checkedProgress(name) ?: 0
         return "${count.coerceIn(0, total)}/$total " + if (mode == SafariMode.FULL_CLEAR) "captured" else "checked"
     }
@@ -70,7 +71,7 @@ object SafariPanels {
     fun missingCritters(run: SafariRun?, biome: SafariBiome, party: PartySparklingState = SafariSparklingMode.state): List<SafariCritter> {
         val sparkling = SafariFullClear.mode == SafariMode.SPARKLING
         return biome.critters.filter { if (sparkling) {
-                party.needs(it.name) && run?.sparklingComplete(it.name, party) != true ||
+                (party.needs(it.name) || ScannableCritterChecks.enabled(it.name)) && run?.sparklingComplete(it.name, party) != true ||
                     run?.sparklingChecks?.wumpaPrerequisite(it.name, party) == true && run.captureProgress("Wumpa") == 0 && run.captureProgress(it.name) == 0
             }
             else if (SafariFullClear.mode == SafariMode.UNIQUE) run == null || run.captureProgress(it.name) == 0 && !run.sharedCritterComplete(it.name, SafariMode.UNIQUE) && !run.uniqueUnavailable(it.name)
@@ -79,7 +80,7 @@ object SafariPanels {
     fun missing(run: SafariRun?, biome: SafariBiome, unique: Boolean, nests: Int, mounds: Int = 0,
         walls: WallSummary = WallSummary(emptyList()), party: PartySparklingState = SafariSparklingMode.state): HudPanel {
         val sparkling = SafariFullClear.mode == SafariMode.SPARKLING
-        if(run?.biomeComplete(SafariFullClear.mode,biome,party)==true)
+        if(run?.biomeComplete(SafariFullClear.mode,biome,party)==true && !ScannableCritterChecks.pending(biome,run,party))
             return HudPanel("${biome.label} ${if(sparkling) "Unchecked" else "Biome"} — 0 left",biome.color,listOf(completedRow(missingCompleteText(sparkling))))
         val missing = missingCritters(run, biome, party)
         val listed = missing
@@ -103,7 +104,7 @@ object SafariPanels {
         val supplies = if (biome == SafariBiome.FOREST && playerSupplies.isNotEmpty())
             listOf(HudRow("Unused starting food", color = HudRow.GOLD, icon = null)) + playerSupplies
         else playerSupplies
-        if(run?.biomeComplete(SafariFullClear.mode,biome,party)==true)
+        if(run?.biomeComplete(SafariFullClear.mode,biome,party)==true && !ScannableCritterChecks.pending(biome,run,party))
             return HudPanel("Biome Objectives",biome.color,listOf(completedRow("All objectives complete!")) + supplies,net.johnceo.sparklingmutuals.hud.UiIcons.forLabel(biome.label))
         val helpers = buildList {
             addAll(supplies)

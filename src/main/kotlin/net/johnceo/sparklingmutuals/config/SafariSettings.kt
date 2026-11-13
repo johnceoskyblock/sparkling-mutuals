@@ -47,6 +47,7 @@ class SafariSettings {
         safari.alerts.appearance = customization.alert
         safari.alerts.nearbyAppearance = customization.huds.sparklings
         safari.capture.doomAppearance = customization.huds.doomThrow
+        safari.capture.doomAppearance = customization.huds.doomThrow
         tracking.hotspotHud.appearance=customization.huds.hotspot
         tracking.progressHud.appearance=customization.huds.progress
         tracking.missingHud.appearance=customization.huds.missing
@@ -60,7 +61,7 @@ class SafariSettings {
         @JvmField @ConfigOption(name = "Endgame", desc = "") @Accordion val endgame = MiscEndgame()
     }
     class SkyBlockHelpers {
-        @JvmField @ConfigOption(name = "Shard sale guidance (experimental)", desc = "Hunting Box recent-price ranges and observed sell-offer alerts. Not a forecast.")
+        @JvmField @ConfigOption(name = "Shard sale guidance", desc = "Compare sell offers, instant sales and salvaging for Safari shards.")
         @ConfigEditorBoolean var shardSaleGuidance = ConfigManager.shardSaleGuidance
         @JvmField @ConfigOption(name = "Skills overflow", desc = "Virtual levels in Skills menu tooltips.")
         @ConfigEditorBoolean var skillOverflow = ConfigManager.skillOverflow
@@ -97,11 +98,13 @@ class SafariSettings {
         @ConfigEditorBoolean var hideDrops = ConfigManager.fullClearHideFloorDropEsp
     }
     class Sparkling {
+        @JvmField @ConfigOption(name = "All Scannable Critter Checks", desc = "ESP and Unchecked entries for scannable critters, even when everyone has their shiny.")
+        @ConfigEditorBoolean var allScannable = ConfigManager.allScannableCritterChecks
         @JvmField @ConfigOption(name = "Hide critter ESP", desc = "")
         @ConfigEditorBoolean var hideCritters = ConfigManager.sparklingHideCritterEsp
         @JvmField @ConfigOption(name = "Hide floor-drop ESP", desc = "")
         @ConfigEditorBoolean var hideDrops = ConfigManager.sparklingHideFloorDropEsp
-        @JvmField @ConfigOption(name = "Profitable critter ESP", desc = "/profits top 10, except Rockmite.")
+        @JvmField @ConfigOption(name = "Profitable critter ESP", desc = "/profits top 10, including walls and mounds.")
         @ConfigEditorBoolean var profitable = ConfigManager.sparklingProfitableShardEsp
     }
     class Unique {
@@ -109,7 +112,7 @@ class SafariSettings {
         @ConfigEditorBoolean var hideCritters = ConfigManager.uniqueHideCritterEsp
         @JvmField @ConfigOption(name = "Hide floor-drop ESP", desc = "")
         @ConfigEditorBoolean var hideDrops = ConfigManager.uniqueHideFloorDropEsp
-        @JvmField @ConfigOption(name = "Profitable critter ESP", desc = "/profits top 10, except Rockmite.")
+        @JvmField @ConfigOption(name = "Profitable critter ESP", desc = "/profits top 10, including walls and mounds.")
         @ConfigEditorBoolean var profitable = ConfigManager.profitableShardEsp
     }
     class Party {
@@ -199,7 +202,7 @@ class SafariSettings {
         @ConfigEditorBoolean var autoParty = ConfigManager.autoParty
         @JvmField @ConfigOption(name = "Invite online players only", desc = net.johnceo.sparklingmutuals.alerts.WarpPlayerStatus.DESCRIPTION)
         @ConfigEditorBoolean var autoPartyOnlineOnly = ConfigManager.autoPartyOnlineOnly
-        @JvmField @ConfigOption(name = "Warp List", desc = "Who to invite for each critter.")
+        @JvmField @ConfigOption(name = "Warp List", desc = "Who to invite. Acquired shinies are unchecked automatically every 24h on Hypixel.")
         @ConfigEditorButton(runnableId = 12, buttonText = "Warp List") var list = false
         @JvmField @ConfigOption(name = "Auto warping", desc = "/start begins the cycle. Uses the Safari progress timer.")
         @ConfigEditorBoolean var enabled = ConfigManager.warpAlertsEnabled
@@ -419,7 +422,7 @@ class SafariSettings {
         @JvmField @ConfigOption(name="Hotspot GUI",desc="Follows /hotspot. Party hotspots, assigned biomes and hotspot wins.") @Accordion val hotspotHud=HotspotHudOptions()
         @JvmField @ConfigOption(name="Progress HUD",desc="") @Accordion val progressHud=ProgressHudOptions()
         @JvmField @ConfigOption(name="Missing / Unchecked",desc="") @Accordion val missingHud=HudOptions(ConfigManager.missingPanel,"missing")
-        @JvmField @ConfigOption(name="Profitable shards checklist",desc="Current biome's mobs from /profit's top ten, with known captures remaining.") @Accordion val profitableHud=HudOptions(ConfigManager.profitableChecklist,"profitable")
+        @JvmField @ConfigOption(name="Profitable shards checklist",desc="Unique and Sparkle modes. Current biome's /profit top ten and captures remaining.") @Accordion val profitableHud=HudOptions(ConfigManager.profitableChecklist,"profitable")
         @JvmField @ConfigOption(name="Lake Cleared alert",desc="Once per run after you catch Tepid, Nozzlenose and Mantis Shrimp. Resize in /sm gui.") @Accordion val lakeClearedHud=HudOptions(ConfigManager.lakeClearAlert,"lake_cleared")
         @JvmField @ConfigOption(name="Biome Objectives",desc="") @Accordion val objectivesHud=HudOptions(ConfigManager.biomeObjectives,"objectives")
         @JvmField @ConfigOption(name="Biome captures",desc="") @Accordion val capturesHud=HudOptions(ConfigManager.catchCountPanel,"captures")
@@ -548,6 +551,7 @@ class SafariSettings {
         }
         val changes = listOf(ConfigManager::safariEntryAutoEnter to warp.autoEnter, ConfigManager::sparklingCatchCount to safari.alerts.catchCount, ConfigManager::specialCatchAlert to safari.alerts.caught,
             ConfigManager::alwaysCelebrateSparkling to safari.alerts.alwaysCelebrate,
+            ConfigManager::allScannableCritterChecks to modes.sparkling.allScannable,
             ConfigManager::safariEntryCooldown to safari.entryCooldown.enabled,
             ConfigManager::doomspiralThrowTimer to safari.capture.doomTimer, ConfigManager::doomspiralLottery to safari.gambling.doomspiral,
             ConfigManager::autoParty to warp.autoParty, ConfigManager::autoPartyOnlineOnly to warp.autoPartyOnlineOnly, ConfigManager::autoBiomeReports to party.biomeReports,
@@ -570,7 +574,7 @@ class SafariSettings {
         val espChanged = esp.apply()
         val modWideCrittersChanged = modWideCritters.apply(SafariEspConfig.modWideToggles)
         val profitableCrittersChanged = profitableCritters.apply(SafariEspConfig.profitableToggles)
-        val cooldownAppearanceChanged = safari.entryCooldown.appearance.apply()
+        val cooldownAppearanceChanged = listOf(safari.entryCooldown.appearance,tracking.profitableHud.appearance,tracking.lakeClearedHud.appearance).map {it.apply()}.any {it}
         val customizationChanged = customization.apply() || cooldownAppearanceChanged
         val distance = ConfigManager.validCapsuleDistance(safari.capsuleHideDistance)
         val pathWidth = ConfigManager.validCapsulePathWidth(safari.capsulePathWidth)

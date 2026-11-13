@@ -5,6 +5,28 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class HudLayoutTest {
+    @Test fun `up left expansion keeps right and bottom edges stable through growth and reload`() {
+        val layout=HudLayout(.5f,.5f).apply {expansion=HudExpansion.UP_LEFT}
+        val small=layout.bounds(640,360,100,30)
+        val large=layout.bounds(640,360,160,90)
+        assertEquals(small.x+small.width,large.x+large.width)
+        assertEquals(small.y+small.height,large.y+large.height)
+        layout.move(100.0,80.0,640,360,160,90)
+        val moved=layout.bounds(640,360,160,90)
+        assertEquals(100,moved.x);assertEquals(80,moved.y)
+        val properties=Properties().also {layout.save(it,"test")}
+        val restored=HudLayout(0f,0f).apply {load(properties,"test")}
+        assertEquals(moved,restored.bounds(640,360,160,90))
+    }
+    @Test fun `changing expansion preserves current placement and centered growth preserves center`() {
+        val layout=HudLayout(.5f,.5f)
+        val before=layout.bounds(640,360,100,30)
+        layout.expansion=HudExpansion.CENTER
+        assertEquals(before,layout.bounds(640,360,100,30))
+        val grown=layout.bounds(640,360,160,90)
+        assertEquals(before.x+before.width/2,grown.x+grown.width/2)
+        assertEquals(before.y+before.height/2,grown.y+grown.height/2)
+    }
     @Test fun `curated layouts retain physical placement and size across GUI scales and persistence`() {
         val profile = net.johnceo.sparklingmutuals.config.FreshInstallDefaults.main()
         for ((id, size) in mapOf("progress" to (150 to 98), "captures" to (150 to 166),

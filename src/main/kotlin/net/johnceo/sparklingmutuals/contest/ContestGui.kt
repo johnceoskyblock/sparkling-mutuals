@@ -54,7 +54,7 @@ class ContestGui(private val parent: Screen? = null) : Screen(Component.literal(
             SafariHud.LAKE_CLEARED to net.johnceo.sparklingmutuals.safari.LakeClearAlert.preview(),
             SafariHud.OBJECTIVES to SafariPanels.objectivesPreview(),
             SafariHud.CAPTURES to SafariPanels.captures(run, SafariBiome.FOREST),
-            SafariHud.SPARKLINGS to SafariAssist.nearbyPanel(preview = true)!!) + SmallAlerts.previews()
+            SafariHud.SPARKLINGS to SafariAssist.nearbyPanel(preview = true)!!) + SmallAlerts.previews() + net.johnceo.sparklingmutuals.skyblock.market.HuntingBoxHuds.previews()
         SafariHud.available.filter { it !in SmallAlerts.titles.keys }.forEach { hud ->
             val panel = panels.getValue(hud)
             previews.add(Preview(hud.label, hud.layout, panel.width(font::width), panel.height, HudConfigLinks.target(hud)) { g, x, y ->
@@ -147,6 +147,7 @@ class ContestGui(private val parent: Screen? = null) : Screen(Component.literal(
     override fun mouseScrolled(mouseX: Double, mouseY: Double, horizontalAmount: Double, verticalAmount: Double): Boolean {
         val target = hovered(mouseX, mouseY) ?: return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount)
         if (verticalAmount == 0.0) return false
+        target.layout.markPositioned()
         target.layout.scale += if (verticalAmount > 0) .1f else -.1f
         save(); return true
     }

@@ -23,6 +23,8 @@ object HudConfigLinks {
     fun target(hud: net.johnceo.sparklingmutuals.hud.SafariHud): SettingsTarget {
         val huds="HUDs";val safari="Safari helpers";val banner="Banner"
         return when(hud) {
+            net.johnceo.sparklingmutuals.hud.SafariHud.SHARD_GUIDANCE -> SettingsTarget("SkyBlock",listOf("helpers","shardSaleGuidance"))
+            net.johnceo.sparklingmutuals.hud.SafariHud.HUNTING_BOX_VALUE -> SettingsTarget("SkyBlock",listOf("helpers","huntingBoxValue"))
             net.johnceo.sparklingmutuals.hud.SafariHud.HOTSPOT -> SettingsTarget(huds,listOf("hotspotHud","appearance"))
             net.johnceo.sparklingmutuals.hud.SafariHud.ENTRY_COOLDOWN -> SettingsTarget(safari,listOf("entryCooldown","enabled"))
             net.johnceo.sparklingmutuals.hud.SafariHud.DEVELOPER -> SettingsTarget(huds, emptyList())

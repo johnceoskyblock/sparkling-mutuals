@@ -1,5 +1,7 @@
 # Sparkle Warping
 
+Warp List discoveries refresh automatically while connected to Hypixel when a player's saved check is at least 24 hours old, including the first login after that interval. One player is fetched at a time with at least two seconds between request starts. This runs independently of Auto-party and the online-status filter. Confirmed acquired types are unchecked; remaining priority groups for that critter are compacted in their existing order with ties preserved. Other selections, player cards and always-invite preferences remain. Failed lookups retain all selections and are attempted again the next day; key/rate-limit failures pause the queue for five minutes. Checkpoints and resolved UUIDs persist in the existing configuration. Already-queued auto-party candidates are rechecked against current selections before inviting.
+
 Sparkle Warping brings leechers into a Safari without using their tickets. Enable `/warping` and choose Solo or Duo in the Sparkle Warping tab. Leechers can stay in SkyBlock; the previous Prototype Lobby workflow is no longer required.
 
 ## Starting the first cycle

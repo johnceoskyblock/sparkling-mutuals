@@ -35,6 +35,8 @@ object SafariBanners {
     }
     fun fire(kind: BannerKind,biome: SafariBiome?=null,critter: String?=null,text: String?=null,preview: Boolean=false,location: String?=null) {
         if(!kind.supported) return
+        if(!preview && kind==BannerKind.HIDEYHO_LOCATION &&
+            (!SafariAssist.inSafari || SafariAssist.biome!=SafariBiome.HAUNTED || SafariFullClear.mode==SafariMode.SPARKLING)) return
         if(!preview && kind.encounterBiome?.let { SafariAssist.biome!=it }==true) return
         if(kind==BannerKind.GEMZIE_DONE) { clear(BannerKind.GEMZIE_READY);clear(BannerKind.GEMS) }
         if(kind==BannerKind.WUMPA_DONE) { clear(BannerKind.WUMPA_READY);clear(BannerKind.WUMPA_STARTED) }
@@ -54,7 +56,7 @@ object SafariBanners {
             valid = { Minecraft.getInstance().player != null && (preview ||
                 BannerConfig.enabled && BannerConfig.options.getValue(kind).enabled &&
                 (contest || SafariTracking.ledger.current === requestRun) &&
-                (kind != BannerKind.HIDEYHO_LOCATION || SafariAssist.inSafari && SafariFullClear.mode != SafariMode.SPARKLING)) },
+                (kind != BannerKind.HIDEYHO_LOCATION || SafariAssist.inSafari && SafariAssist.biome==SafariBiome.HAUNTED && SafariFullClear.mode != SafariMode.SPARKLING)) },
             finish = { activeBanner = null }) {
             if (!notice.soundOnly) activeBanner = ActiveBanner(notice, now())
             AlertSounds.play(Minecraft.getInstance(), notice.sound, notice.volume, notice.pitch)
@@ -136,9 +138,9 @@ object SafariBanners {
         val frameWidth=(lines.maxOfOrNull(client.font::width) ?: 0)+16
         val frameHeight=18+(lines.size-1).coerceAtLeast(0)*12
         val scale=minOf(base,(height-10f)/frameHeight)
-        val centre=anchor.x+preview.width(client.font::width)*base/2
-        val x=(centre-frameWidth*scale/2).coerceIn(0f,(width-frameWidth*scale).coerceAtLeast(0f))
-        val y=anchor.y.toFloat().coerceIn(0f,(height-frameHeight*scale).coerceAtLeast(0f))
+        val area=SafariHud.BANNER.layout.bounds(width,height,frameWidth,frameHeight)
+        val x=area.x.toFloat()
+        val y=area.y.toFloat()
         draw(g,active.notice.text,active.notice.color,active.alpha(now()),active.remaining(now()),x,y,scale,maxWidth)
     }
     private fun draw(g: GuiGraphicsExtractor,title: String,color: Int,opacity: Float,remaining: Float,x: Float,y: Float,scale: Float,maxWidth: Int) {

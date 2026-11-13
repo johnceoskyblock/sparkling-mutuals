@@ -24,8 +24,10 @@ object HudThemes {
         !earned -> 0xFFFF5555.toInt()
         else -> tierColor(tier)
     }
-    fun tierColor(tier: String): Int=when(tier.uppercase()) {
+    fun tierColor(tier: String): Int=when(tier.trim().uppercase(java.util.Locale.ROOT)) {
         "COMMON" -> -1;"UNCOMMON" -> 0xFF55FF55.toInt();"RARE" -> 0xFF5555FF.toInt()
-        "EPIC" -> 0xFFAA00AA.toInt();"LEGENDARY" -> 0xFFFFAA00.toInt();else -> 0xFF55FF55.toInt()
+        "EPIC" -> 0xFFAA00AA.toInt();"LEGENDARY" -> 0xFFFFAA00.toInt()
+        "MYTHIC" -> 0xFFFF55FF.toInt();"DIVINE" -> 0xFF55FFFF.toInt();"SPECIAL", "VERY SPECIAL", "VERY_SPECIAL" -> 0xFFFF5555.toInt()
+        else -> 0xFF55FF55.toInt()
     }
 }

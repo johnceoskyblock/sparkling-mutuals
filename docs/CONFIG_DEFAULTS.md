@@ -4,6 +4,14 @@
 
 Describe settings actually loaded and saved by the reviewed implementation. Fresh installations load a curated preferences profile. Existing files retain their saved values and use the original field fallbacks for missing keys; mode presets and migrations can also change derived settings. This page owns configuration behavior, while each feature guide owns its gameplay effect.
 
+## Safari HUD appearance and expansion
+
+Fresh installs give Safari panels a black (#000000) background, 20% transparency and no border. Biome HUD borders are off. Banner backgrounds use the same black/80%-opacity treatment with tint, gradient and border disabled. Existing saved styles are preserved.
+
+Each movable HUD's Appearance dropdown has **Expand direction**: Down & right, Down, Down & left, Right, Centered, Left, Up & right, Up or Up & left. The chosen edges/center stay anchored as content grows or shrinks. Changing direction preserves the current position; drag/resize and saved layouts continue to work. Banner expansion is in Banner → Appearance.
+
+Fresh top-right panels grow down/left; bottom-right Hotspot grows up/left; left-side panels grow down/right; central alerts stay centered. Nearby sparklings and banners stay horizontally centered as they grow downward. The default banner is below the detection/timer area to reduce overlap. Existing layouts without a direction retain their former behavior.
+
 ## Controls and defaults
 
 On first entering SkyBlock on Hypixel (including Alpha), a short local welcome appears after two seconds and the shared release check has finished. A newer compatible stable release adds a clickable GitHub version link. It explains `/sm`, `/sm help`, Unique/Full Clear/Sparkle, HUD editing and history. It is shown once per connection, not on ordinary lobby/world transfers or respawns, and may appear again after disconnecting and reconnecting. Hypixel is recognized by its server hostname or explicit scoreboard address. The welcome uses the same cached GitHub release check as the settings screen. It stays in local chat.
@@ -204,3 +212,5 @@ Successful profile/discovery reads and IGN-to-UUID lookups are reused for 60 min
 ## Experimental shard ranges
 
 SkyBlock → Helpers → Shard sale guidance (experimental) uses persisted `shardSaleGuidance`, default **off** for both new and existing settings. It adds Hunting Box range colors, an always-present Safari Essence advice row and passive observed-order advisories. The combined Hunting Box total remains an independent switch; general item/chest valuation stays shelved. See [meaning and limitations](SHARD_SALE_GUIDANCE.md).
+
+2026-11-12 — Unified fresh Safari HUD styles and added per-HUD expansion anchors.

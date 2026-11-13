@@ -1,5 +1,9 @@
 # API fetch policy and inventory
 
+## Daily Warp List maintenance
+
+While connected to Hypixel, a listed player's sparkling discoveries are fetched when their persisted daily checkpoint is at least 24 hours old (or absent). This includes login after being offline. It runs independently of Auto-party being enabled. Each player is attempted at most once per 24 hours, sequentially, at least two seconds between starts. Name resolution uses the existing Mojang cache and a persisted resolved UUID. Discovery refresh forces one fresh profile request using the selected provider, then reads discoveries from that cached response; with the shared provider this adds up to one profiles request per listed player per day. There is no new endpoint or player-status request. Failed lookups never remove flags; rate-limit/key errors pause remaining work for five minutes. Provider/config reload mismatches discard results. Updates affect only invite flags/priorities, not party history or saved catches.
+
 ## Mode and mutual discovery data
 
 Modes and `!mutuals` share `PartyDiscoveryCache` through `SafariLookup`. This cache has **no time expiry** for unchanged current party members. It is in memory, scoped to the local account, Alpha/main scoreboard realm and selected API provider. It survives ordinary server transfers and new Safari runs in the same game process.

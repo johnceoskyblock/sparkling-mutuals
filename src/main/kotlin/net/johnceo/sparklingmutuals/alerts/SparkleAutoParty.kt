@@ -74,6 +74,7 @@ object SparkleAutoParty {
     }
     fun tick(client: Minecraft) {
         val now = System.currentTimeMillis()
+        WarpListRefresh.tick(client,now)
         WarpPlayerStatus.tick(client, now)
         if (invitations.deadline == 0L) return
         if (!ConfigManager.warpAlertsEnabled || !SafariAssist.inSafari || client.level !== level ||
@@ -103,7 +104,9 @@ object SparkleAutoParty {
             return
         }
         if (maxOf(members.size,present.size) >= SparkleWarpPolicy.PARTY_SIZE) return
-        invitations.next(now, present) { WarpPlayerStatus.eligible(it, now) }?.let {
+        invitations.next(now, present) { candidate ->
+            WarpPlayerStatus.eligible(candidate,now) && earlyDetections.any { critter -> WarpList.selected(candidate,critter) }
+        }?.let {
             client.connection?.let { handler -> net.johnceo.sparklingmutuals.alerts.AutomatedCommands.send(handler,"p $it") }
         }
     }

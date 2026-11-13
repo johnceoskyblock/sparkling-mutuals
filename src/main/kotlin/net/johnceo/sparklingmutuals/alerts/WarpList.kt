@@ -2,8 +2,33 @@ package net.johnceo.sparklingmutuals.alerts
 
 import java.util.Properties
 
-/** Saved names only; editing this list never makes a network request. */
+/** Saved invite preferences and daily discovery refresh checkpoints. */
 object WarpList {
+    const val DISCOVERY_REFRESH_MS=86_400_000L
+    private val discoveryChecks=mutableMapOf<String,Long>()
+    private val resolvedPlayers=mutableMapOf<String,String>()
+    var loadRevision=0L
+        private set
+    fun uuid(name: String)=resolvedPlayers[name.lowercase()]
+    fun refreshDue(name: String,now: Long)=discoveryChecks[name.lowercase()]?.let { now-it>=DISCOVERY_REFRESH_MS } ?: true
+    fun checked(name: String,now: Long,uuid: String?=null) {
+        if(players.none { it.equals(name,true) }) return
+        discoveryChecks[name.lowercase()]=now
+        uuid?.let { net.johnceo.sparklingmutuals.sync.PartySyncProtocol.uuid(it) }?.let { resolvedPlayers[name.lowercase()]=it }
+    }
+    /** Only remove confirmed acquisitions. Dense priority groups preserve ordering and existing ties. */
+    fun removeAcquired(name: String,discoveries: Set<String>): Set<String> {
+        fun key(value: String)=value.uppercase(java.util.Locale.ROOT).replace(' ','_')
+        val acquired=discoveries.map(::key).toSet()
+        val affected=critters.filter { key(it) in acquired && selected(name,it) }.toSet()
+        affected.forEach { critter ->
+            entries[critter]=names(critter).filterNot { it.equals(name,true) }
+            critterPriorities.remove(critter to name.lowercase())
+            val ranks=names(critter).map { priority(it,critter) }.distinct().sorted()
+            names(critter).forEach { player -> setPriority(player,critter,ranks.indexOf(priority(player,critter))+1) }
+        }
+        return affected
+    }
     val critters = listOf("Tepid", "Strongarm", "Polaris", "Shuddersquid", "Troodon", "Mantis Shrimp",
         "Nozzlenose", "Billygoat", "Areita", "Solsnatcher", "Litterbug", "Bloodbat", "Duplico",
         "Hideonwall", "Hideyho", "Foxtrot", "Treefrog", "Woodchucker", "Hideonfloor", "Fluffling",
@@ -44,6 +69,7 @@ object WarpList {
         entries[critter]=if(on) current+canonical else current
     }
     fun removePlayer(name: String) {
+        discoveryChecks.remove(name.lowercase());resolvedPlayers.remove(name.lowercase())
         settings.remove(name.lowercase())
         critterPriorities.keys.removeIf { it.second == name.lowercase() }
         players.removeAll { it.equals(name,true) }
@@ -59,6 +85,8 @@ object WarpList {
     }
     private fun key(critter: String) = "warpList." + critter.replace(' ', '_')
     fun load(properties: Properties) {
+        loadRevision++
+        discoveryChecks.clear();resolvedPlayers.clear()
         entries.clear();players.clear();settings.clear();critterPriorities.clear()
         parse(properties.getProperty("warpList.players", "")).forEach(::addPlayer)
         critters.forEach { set(it, properties.getProperty(key(it), "")) }
@@ -71,11 +99,15 @@ object WarpList {
         }
         players.forEach { name ->
             val prefix = "warpList.player.${name.lowercase()}"
+            properties.getProperty("$prefix.discoveryCheckedAt")?.toLongOrNull()?.takeIf { it>=0 }?.let { discoveryChecks[name.lowercase()]=it }
+            properties.getProperty("$prefix.uuid")?.let(net.johnceo.sparklingmutuals.sync.PartySyncProtocol::uuid)?.let { resolvedPlayers[name.lowercase()]=it }
             configure(name, InviteSettings(properties.getProperty("$prefix.priority")?.toIntOrNull() ?: 10,
                 properties.getProperty("$prefix.alwaysInvite").toBoolean()))
         }
     }
     fun save(properties: Properties) {
+        discoveryChecks.forEach { (name,at) -> properties.setProperty("warpList.player.$name.discoveryCheckedAt",at.toString()) }
+        resolvedPlayers.forEach { (name,uuid) -> properties.setProperty("warpList.player.$name.uuid",uuid) }
         properties.setProperty("warpList.players", players.joinToString(" "))
         critters.forEach { properties.setProperty(key(it), names(it).joinToString(" ")) }
         critterPriorities.forEach { (entry, priority) ->

@@ -9,14 +9,14 @@ import java.nio.file.Path
 class ShardSalePresentationTest {
     @TempDir lateinit var directory: Path
     private val now=MarketFixtures.NOW
-    @Test fun `experimental native setting is default off searchable and persists both ways`() {
+    @Test fun `guidance defaults on and saved preferences persist`() {
         ConfigManager.init(directory);ContestConfig.init(directory)
-        assertFalse(ConfigManager.shardSaleGuidance)
+        assertTrue(ConfigManager.shardSaleGuidance)
         val settings=SafariSettings()
         settings.skyblock.helpers.shardSaleGuidance=true;settings.apply();ConfigManager.init(directory)
         assertTrue(ConfigManager.shardSaleGuidance)
         val children=SettingsCatalog(SafariSettings()).pages.first {it.name=="SkyBlock"}.rows.first {it.name=="Helpers"}.children
-        assertTrue(children.any {it.name=="Shard sale guidance (experimental)"})
+        assertTrue(children.any {it.name=="Shard sale guidance"})
         assertFalse(children.any {it.name.contains("Hunting Box value",true)})
         val disable=SafariSettings();disable.skyblock.helpers.shardSaleGuidance=false;disable.apply();ConfigManager.init(directory)
         assertFalse(ConfigManager.shardSaleGuidance)
@@ -26,7 +26,7 @@ class ShardSalePresentationTest {
         val hold=sell.copy(state=AdviceState.HOLD,ask=90.0)
         assertNotEquals(ShardSalePresentation.color(sell.state),ShardSalePresentation.color(hold.state))
         val lines=ShardSalePresentation.tooltip(hold,now+60000).joinToString(" ")
-        assertTrue(lines.contains("Experimental"));assertTrue(lines.contains("HOLD"));assertTrue(lines.contains("reference"));assertTrue(lines.contains("not a forecast"))
+        assertFalse(lines.contains("Experimental"));assertTrue(lines.contains("HOLD"));assertTrue(lines.contains("reference"));assertTrue(lines.contains("not a forecast"))
         assertFalse(lines.contains("three-hour"));assertTrue(lines.contains("60s"))
         assertTrue(ShardSalePresentation.tooltip(sell.copy(state=AdviceState.UNKNOWN,reason="STALE_HISTORY"),now).any {it.contains("unavailable",true)})
     }

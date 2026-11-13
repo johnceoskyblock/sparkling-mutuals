@@ -19,18 +19,19 @@ object SafariEspRules {
     fun labelSpecies(raw: String) = SafariRules.strip(raw).let { SafariRules.sparklingSpecies(it) ?: SafariRoster.named(it)?.name }
     fun thrownSpecies(text: String) = throwMessage.matchEntire(text)?.groupValues?.get(1)?.let(::labelSpecies)
     fun escapedSpecies(text: String) = escapeMessage.matchEntire(text)?.groupValues?.get(1)?.let(::labelSpecies)
-    fun profitableEsp(species: String, enabled: Boolean) = enabled && species != "Rockmite" &&
+    fun profitableEsp(species: String, enabled: Boolean) = enabled &&
         net.johnceo.sparklingmutuals.config.SafariEspConfig.profitableEnabled(species) &&
         species in net.johnceo.sparklingmutuals.commands.ProfitableCritters.cachedSpecies()
     fun neededForRun(species: String, mound: Boolean, run: SafariRun?, fullClear: Boolean, profitable: Boolean = true,
         party: PartySparklingState? = null) =
         if (fullClear) true
+        else if (profitableEsp(species, profitable)) true
         else if (species == "Rockmite" && mound) (run?.captureProgress(species) ?: 0) == 0 || party?.needs(species) == true
-        else profitableEsp(species, profitable) ||
-            (run?.captureProgress(species) ?: 0) == 0 && run?.uniqueUnavailable(species) != true && run?.sharedCritterComplete(species, net.johnceo.sparklingmutuals.safari.SafariMode.UNIQUE) != true
+        else (run?.captureProgress(species) ?: 0) == 0 && run?.uniqueUnavailable(species) != true && run?.sharedCritterComplete(species, net.johnceo.sparklingmutuals.safari.SafariMode.UNIQUE) != true
     @Suppress("UNUSED_PARAMETER")
     fun neededForSparkling(species: String, mound: Boolean, party: PartySparklingState, profitable: Boolean,
         run: SafariRun? = null, uuid: java.util.UUID? = null, now: Long = System.currentTimeMillis()): Boolean {
+        if (net.johnceo.sparklingmutuals.safari.completion.ScannableCritterChecks.pending(species,run,party)) return true
         if (profitableEsp(species, profitable)) return true
         if (species == "Honeybug" || species == "Rockmite" && !mound) return false
         if (species == "Doomspiral" || species == "Wumpa") return party.needs(species) && (run?.captureProgress(species) ?: 0) == 0

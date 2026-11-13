@@ -5,7 +5,7 @@
 ## Mode behavior
 
 - **Sparkle:** retain the original needed-biome, passive-scan and needed-manual-check rules below. A species needs checking if at least one party member lacks its shiny discovery.
-- **Unique:** visit every biome and count incidental passive/boat detections. For manual species already shared by everyone, count one check to obtain the required unique, capped by the species average rather than inventing a guaranteed spawn. If someone needs its shiny, count its full average instead. If any bird shiny is needed, count all three bird averages; otherwise count one per bird type, subject to the same cap. These are minimum planned encounters; random bird feeding and multi-critter sources may reveal additional critters.
+- **Unique:** visit every biome and count incidental passive/boat detections. Always count all Gemzie and bird spawn averages, even when everyone already has them. For shared Gazer and Gimmiegold, assume two checks each, capped by their spawn averages. Other shared manual species count one check, capped by their average. When someone needs a manual species' shiny, count its full average. These are planned check estimates, not completion requirements.
 - **Full Clear:** count every species using Full Party averages, regardless of discoveries. No cached party discovery data is required for this mode. Boat species are included once, not again in biome totals.
 
 Example when every species needs checking:
