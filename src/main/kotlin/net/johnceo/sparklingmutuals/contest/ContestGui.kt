@@ -1,5 +1,7 @@
 package net.johnceo.sparklingmutuals.contest
 
+import net.johnceo.sparklingmutuals.hud.HudFonts
+
 import com.mojang.blaze3d.platform.InputConstants
 import net.johnceo.sparklingmutuals.compat.*
 import net.johnceo.sparklingmutuals.config.AppearanceConfig
@@ -57,10 +59,10 @@ class ContestGui(private val parent: Screen? = null) : Screen(Component.literal(
             SafariHud.SPARKLINGS to SafariAssist.nearbyPanel(preview = true)!!) + SmallAlerts.previews() + net.johnceo.sparklingmutuals.skyblock.market.HuntingBoxHuds.previews()
         SafariHud.available.filter { it !in SmallAlerts.titles.keys }.forEach { hud ->
             val panel = panels.getValue(hud)
-            previews.add(Preview(hud.label, hud.layout, panel.width(font::width), panel.height, HudConfigLinks.target(hud)) { g, x, y ->
+            previews.add(Preview(hud.label, hud.layout, panel.width(HudFonts.font::width), panel.height, HudConfigLinks.target(hud)) { g, x, y ->
                 if (hud == SafariHud.BANNER) net.johnceo.sparklingmutuals.hud.SafariBanners.renderPreview(g,x,y,
-                    hud.layout.effectiveScale(width,height,panel.width(font::width),panel.height))
-                else panel.draw(g, x, y, hud.layout.effectiveScale(width, height, panel.width(font::width), panel.height),
+                    hud.layout.effectiveScale(width,height,panel.width(HudFonts.font::width),panel.height))
+                else panel.draw(g, x, y, hud.layout.effectiveScale(width, height, panel.width(HudFonts.font::width), panel.height),
                     AppearanceConfig.panels.getValue(hud.name.lowercase())) })
         }
         val gap=6

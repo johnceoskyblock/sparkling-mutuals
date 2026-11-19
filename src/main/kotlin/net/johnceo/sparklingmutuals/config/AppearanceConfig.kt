@@ -10,9 +10,13 @@ class PanelStyle {
     var backgroundColor = AppearanceConfig.color(SafariTheme.BACKGROUND)
     var transparency = 20
         set(value) { field = value.coerceIn(0, 100) }
-    val backgroundArgb get() = (((100 - transparency) * 2.55).roundToInt() shl 24) or (SafariEspConfig.rgb(backgroundColor) and 0xFFFFFF)
+    val backgroundArgb get(): Int {
+        val color = SafariEspConfig.rgb(backgroundColor)
+        val alpha = ((color ushr 24) * (100 - transparency) / 100.0).roundToInt()
+        return (alpha shl 24) or (color and 0xFFFFFF)
+    }
     fun draw(graphics: GuiGraphicsExtractor, width: Int, height: Int, borderOverride: Int? = null) {
-        graphics.fill(0, 0, width, height, backgroundArgb)
+        if (backgroundArgb ushr 24 > 0) graphics.fill(0, 0, width, height, backgroundArgb)
         if (!borderEnabled) return
         val color = borderOverride ?: SafariEspConfig.rgb(borderColor)
         graphics.fill(0, 0, width, 1, color); graphics.fill(0, height - 1, width, height, color)
@@ -21,6 +25,7 @@ class PanelStyle {
 }
 
 object AppearanceConfig {
+    var resourcePackFont = true
     fun color(rgb: Int) = "0:255:${rgb shr 16 and 255}:${rgb shr 8 and 255}:${rgb and 255}"
     val panels = listOf("hotspot", "miria", "progress", "profitable", "lake_cleared", "missing", "objectives", "captures", "sparklings", "alert", "gems", "bird_food", "incense", "coins", "warp", "run_complete", "doom_throw", "entry_cooldown", "developer", "shard_guidance", "hunting_box_value").associateWith { PanelStyle() }
     var runCompleteColor = color(0x55FF55)
@@ -36,6 +41,7 @@ object AppearanceConfig {
         return current.split(':').take(2).joinToString(":") + ":${rgb shr 16}:${rgb shr 8 and 255}:${rgb and 255}"
     }
     fun load(properties: Properties) {
+        resourcePackFont = properties.getProperty("appearance.resourcePackFont")?.toBooleanStrictOrNull() ?: true
         selectedHex = properties.getProperty("appearance.selectedHex")?.takeIf { withHex(color(0), it) != null } ?: "#FFD700"
         panels.forEach { (id, style) ->
             // Seed the new panel from the existing Missing style, then save/edit it independently.
@@ -58,6 +64,7 @@ object AppearanceConfig {
     private fun migratedColor(saved: String?, default: Int, legacy: Set<Int>): String =
         if (legacy.any { saved == color(it) }) color(default) else SafariEspConfig.validColor(saved, color(default))
     fun save(properties: Properties) {
+        properties.setProperty("appearance.resourcePackFont", resourcePackFont.toString())
         properties.setProperty("appearance.selectedHex", selectedHex)
         panels.forEach { (id, style) ->
             properties.setProperty("appearance.$id.borderEnabled", style.borderEnabled.toString())

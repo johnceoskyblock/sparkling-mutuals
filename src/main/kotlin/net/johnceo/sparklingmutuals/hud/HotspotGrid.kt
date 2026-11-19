@@ -31,14 +31,15 @@ class HotspotGridPanel(private val players: List<SafariPartySync.HotspotRow>,pri
     width: Int,private val grid: HotspotGrid=HotspotGrid(width,players.size)):
     HudPanel("Hotspots",rows=emptyList(),titleIcon=null,widthOverride=width,heightOverride=grid.height) {
     override fun draw(graphics: GuiGraphicsExtractor,x: Int,y: Int,scale: Float,style: PanelStyle,borderOverride: Int?) {
-        val font=Minecraft.getInstance().font
+        val font=HudFonts.font
         graphics.pose().pushMatrix();graphics.pose().translate(x.toFloat(),y.toFloat());graphics.pose().scale(scale,scale)
         style.draw(graphics,grid.width,grid.height,borderOverride)
         graphics.text(font,"Hotspots",6,6,HudRow.GOLD,true)
         if(players.isEmpty()) graphics.text(font,"Waiting for party…",6,20,HudRow.GRAY,true)
         players.take(4).forEachIndexed { i,player ->
             val cell=grid.cell(i)
-            graphics.fill(cell.x,cell.y,cell.x+cell.width,cell.y+cell.height,0x22000000)
+            val cellAlpha = (34 * (style.backgroundArgb ushr 24) / 255)
+            if (cellAlpha > 0) graphics.fill(cell.x,cell.y,cell.x+cell.width,cell.y+cell.height,cellAlpha shl 24)
             val nameColor=rankColors[player.name.lowercase()] ?: HudRow.WHITE
             val nameScale=minOf(1f,(cell.width-6).coerceAtLeast(1).toFloat()/font.width(player.name).coerceAtLeast(1))
             graphics.pose().pushMatrix();graphics.pose().translate((cell.x+3).toFloat(),(cell.y+3).toFloat())

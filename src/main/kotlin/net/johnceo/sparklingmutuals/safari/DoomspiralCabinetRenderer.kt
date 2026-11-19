@@ -1,5 +1,7 @@
 package net.johnceo.sparklingmutuals.safari
 
+import net.johnceo.sparklingmutuals.hud.HudFonts
+
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.renderer.RenderPipelines
@@ -31,7 +33,7 @@ internal object DoomspiralCabinetRenderer {
             g.outline(-101, -112, 202, 224, color(border, 120))
             panel(g, -96, -105, 96, -66, if (frame.jackpot) 0x27332B else 0x0B1E26, border)
             frame.label?.let { label ->
-                val font = Minecraft.getInstance().font
+                val font = HudFonts.font
                 g.text(font, label, -font.width(label) / 2, -89, frame.labelColor, true)
             }
             lights(g, frame, accent)
@@ -112,7 +114,7 @@ internal object DoomspiralCabinetRenderer {
                             color(if (particle % 2 == 0) 0xFFC960 else 0xFFE6A4, alpha))
                     }
                 } else {
-                    val font = Minecraft.getInstance().font
+                    val font = HudFonts.font
                     g.pose().pushMatrix()
                     g.pose().translate(x.toFloat(), y.toFloat())
                     g.pose().scale(2.8f, 2.8f)

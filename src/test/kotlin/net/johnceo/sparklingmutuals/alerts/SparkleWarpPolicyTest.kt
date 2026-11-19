@@ -40,12 +40,14 @@ class SparkleWarpPolicyTest {
         assertNull(SparkleWarpPolicy.cleanup(SparkleWarpMode.DUO,"Leader","Missing",members))
         assertNull(SparkleWarpPolicy.cleanup(SparkleWarpMode.DUO,"Leader","Leader",members))
     }
-    @Test fun `only solo or leaders with room start a window and fallback begins exactly at twenty-four seconds`() {
+    @Test fun `only solo or leaders with room start a window and fallback begins exactly at the configured cutoff`() {
         for (n in 0..3) assertTrue(SparkleWarpPolicy.canStart(true,n))
         assertFalse(SparkleWarpPolicy.canStart(true,4))
         assertFalse(SparkleWarpPolicy.canStart(false,2))
-        assertFalse(SparkleWarpPolicy.returningPhase(1000,24999))
-        assertTrue(SparkleWarpPolicy.returningPhase(1000,25000))
+        assertFalse(SparkleWarpPolicy.returningPhase(1000,22999))
+        assertTrue(SparkleWarpPolicy.returningPhase(1000,23000))
+        assertFalse(SparkleWarpPolicy.returningPhase(1000,24999,24))
+        assertTrue(SparkleWarpPolicy.returningPhase(1000,25000,24))
         val invites=WarpInvitations()
         invites.start(25000)
         invites.add("Flitter",listOf("Priority","Other"))

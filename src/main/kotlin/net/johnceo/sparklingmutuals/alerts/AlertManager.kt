@@ -23,6 +23,7 @@ object AlertManager {
     private var pendingAlert: ScheduledFuture<*>? = null
     private val expiry = WarpAlertTimer()
     private var armedRun: SafariRun? = null
+    private var retimingRun: SafariRun? = null
 
     fun toggleAlert(): Boolean {
         val enabled = !ConfigManager.warpAlertsEnabled
@@ -31,10 +32,19 @@ object AlertManager {
         return enabled
     }
 
-    fun setDelay(seconds: Int) {
-        ConfigManager.warpDelaySeconds = seconds.coerceIn(1, 86400)
+    fun setDelay(seconds: Int) = setTimings(ConfigManager.repartyDelaySeconds,seconds)
+    fun setTimings(repartySeconds: Int,warpSeconds: Int) {
+        val warp=warpSeconds.coerceIn(1,86400)
+        val reparty=ConfigManager.validRepartyDelay(repartySeconds,warp)
+        if(warp==ConfigManager.warpDelaySeconds && reparty==ConfigManager.repartyDelaySeconds)return
+        val warpChanged=warp!=ConfigManager.warpDelaySeconds
+        ConfigManager.warpDelaySeconds=warp;ConfigManager.repartyDelaySeconds=reparty
         ConfigManager.save()
+        if(!warpChanged)return // The Auto-party cutoff reads its timer live; keep the armed warp.
+        val previous=armedRun.takeIf {pendingAlert!=null}
         cancelPendingAlert()
+        retimingRun=previous
+        armedRun=null // Re-arm against the same run clock if a slider changes during a run.
     }
     /** Explicit restart works even when the master toggle is already enabled. */
     fun startCycle() {
@@ -53,7 +63,8 @@ object AlertManager {
         val deadline = SparkleWarpPolicy.warpDeadline(run.startedAt, getDelay())
         if (System.currentTimeMillis() >= deadline) return
         if (!PartyManager.hasInfo) { PartyManager.requestPartyInfo(); return }
-        if (!SparkleWarpPolicy.canStart(SparkleWarping.canLead(client), PartyManager.getMembers().size)) return
+        val leader=SparkleWarping.canLead(client)
+        if (!leader || (run !== retimingRun && !SparkleWarpPolicy.canStart(leader, PartyManager.getMembers().size))) return
         cancelPendingAlert()
         armedRun = run
         val scheduledGeneration = expiry.arm(run)
@@ -77,6 +88,7 @@ object AlertManager {
     }
 
     fun cancelPendingAlert() {
+        retimingRun=null
         expiry.cancel()
         SparkleAutoParty.stop()
         pendingAlert?.cancel(false)

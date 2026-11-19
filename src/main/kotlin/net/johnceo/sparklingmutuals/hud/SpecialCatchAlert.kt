@@ -69,25 +69,25 @@ object SpecialCatchAlert {
         g.fill(0,0,w,h,(min(alpha,washAlpha) shl 24) or (java.awt.Color.HSBtoRGB(hue,.72f,1f) and 0xFFFFFF))
         SparklingCatchEffects.render(g,w,h,alpha,age,ConfigManager.specialCatchStyle)
         fun centered(text: String,desired: Float,y: Float,color: Int,rainbow: Boolean=false) {
-            val scale=min(desired,(w-20f)/client.font.width(text).coerceAtLeast(1))
+            val scale=min(desired,(w-20f)/HudFonts.font.width(text).coerceAtLeast(1))
             g.pose().pushMatrix()
             val shake=SparklingCatchEffects.textShakeOffset(age,style.textShake(),text.hashCode())
             g.pose().translate(shake.toFloat(),SparklingCatchEffects.textShakeOffset(age,style.textShake(),text.hashCode() xor 0x27D4).toFloat())
             g.pose().scale(scale,scale)
-            val x=(w/scale-client.font.width(text))/2
+            val x=(w/scale-HudFonts.font.width(text))/2
             if(rainbow) {
                 var cursor=x
                 val phase=if(style.textGradientSpeed()==0) 0f else age.toFloat()/(8000f/style.textGradientSpeed())
                 text.forEach { ch ->
-                    val letter=ch.toString();val rgb=java.awt.Color.HSBtoRGB(phase+(cursor-x)/client.font.width(text).coerceAtLeast(1)*.5f,.5f,1f)
-                    g.text(client.font,letter,cursor.toInt(),(y/scale).toInt(),(alpha shl 24) or (rgb and 0xFFFFFF),true);cursor+=client.font.width(letter)
+                    val letter=ch.toString();val rgb=java.awt.Color.HSBtoRGB(phase+(cursor-x)/HudFonts.font.width(text).coerceAtLeast(1)*.5f,.5f,1f)
+                    g.text(HudFonts.font,letter,cursor.toInt(),(y/scale).toInt(),(alpha shl 24) or (rgb and 0xFFFFFF),true);cursor+=HudFonts.font.width(letter)
                 }
-            } else g.centeredText(client.font,Component.literal(text),(w/(2*scale)).toInt(),(y/scale).toInt(),(alpha shl 24) or (color and 0xFFFFFF))
+            } else g.centeredText(HudFonts.font,Component.literal(text),(w/(2*scale)).toInt(),(y/scale).toInt(),(alpha shl 24) or (color and 0xFFFFFF))
             g.pose().popMatrix()
         }
         val titleY=h*.396f
-        val titleScale=min(4.7f,(w-20f)/client.font.width("SPARKLING!").coerceAtLeast(1))
-        val subjectY=maxOf(h*.517f,titleY+client.font.lineHeight*titleScale+6)
+        val titleScale=min(4.7f,(w-20f)/HudFonts.font.width("SPARKLING!").coerceAtLeast(1))
+        val subjectY=maxOf(h*.517f,titleY+HudFonts.font.lineHeight*titleScale+6)
         centered("SPARKLING!",titleScale,titleY,0xFFD700,true)
         centered(name,3f,subjectY,SafariRoster.color(name))
         if(style.callout()>0) {

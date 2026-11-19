@@ -97,11 +97,11 @@ internal object ShardSaleSidebar {
             val lines=listOf("§f§l"+SaleProducts.names.getValue(row.shard.productId)+"§r §8· §6${row.shard.amount} §7shards")+
                 ShardSalePresentation.tooltip(row.advice,now)+
                 if(row.shard.amount==0L)listOf("§8Per-shard estimate · no observed holdings") else if(row.refreshedThisOpening)emptyList() else listOf("§8Quantity from a previously visited page")
-            g.setComponentTooltipForNextFrame(Minecraft.getInstance().font,lines.map(Component::literal),mx,my)
+            g.setComponentTooltipForNextFrame(HudFonts.font,lines.map(Component::literal),mx,my)
         }
     }
     private fun paint(g: GuiGraphicsExtractor,x: Int,y: Int,scale: Float,rows: List<SavedBoxRow>,count: Int,capacity: Int,height: Int,columns: Int,perColumn: Int) {
-        val client=Minecraft.getInstance();val font=client.font
+        val client=Minecraft.getInstance();val font=HudFonts.font
         g.pose().pushMatrix();g.pose().translate(x.toFloat(),y.toFloat());g.pose().scale(scale,scale)
         AppearanceConfig.panels.getValue("shard_guidance").draw(g,WIDTH*columns,height)
         fun text(s: String,x: Int,y: Int,color: Int=HudRow.WHITE)=g.text(font,s,x,y,color,true)

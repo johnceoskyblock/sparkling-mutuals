@@ -4,11 +4,11 @@ enum class SparkleWarpMode { SOLO, DUO }
 
 /** Pure cycle rules; runtime callers confirm leadership before arming a cycle. */
 object SparkleWarpPolicy {
-    const val RETURN_AT = 24_000L
-    const val DEFAULT_DELAY_SECONDS = 28
+    const val DEFAULT_REPARTY_SECONDS = 22
+    const val DEFAULT_DELAY_SECONDS = 27
     const val PARTY_SIZE = 4
     fun canStart(leader: Boolean, members: Int) = leader && members in 0 until PARTY_SIZE
-    fun returningPhase(startedAt: Long, now: Long) = now-startedAt >= RETURN_AT
+    fun returningPhase(startedAt: Long, now: Long, repartySeconds: Int = DEFAULT_REPARTY_SECONDS) = now-startedAt >= repartySeconds * 1000L
     fun warpDeadline(startedAt: Long, delaySeconds: Int) = startedAt + delaySeconds * 1000L
     fun requirementRoster(actual: Set<String>, returning: Set<String>): Set<String> {
         fun id(value: String)=value.replace("-","").lowercase()

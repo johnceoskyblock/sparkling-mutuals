@@ -133,20 +133,20 @@ internal object MaxWin {
         g.fill(0, 0, 3, height, edgeAlpha or rgb(0))
         g.fill(width - 3, 0, width, height, edgeAlpha or rgb(width - 1))
         val title = "MAX WIN"
-        val scale = minOf(4f, (width - 16f) / client.font.width(title))
+        val scale = minOf(4f, (width - 16f) / HudFonts.font.width(title))
         val y = height / 2f - 30
         g.pose().pushMatrix(); g.pose().translate(width / 2f, y); g.pose().scale(scale, scale)
-        var x = -client.font.width(title) / 2
+        var x = -HudFonts.font.width(title) / 2
         title.forEachIndexed { i, c ->
             val text = c.toString()
-            g.text(client.font, text, x, 0, edgeAlpha or rgb(i * width / title.length), true)
-            x += client.font.width(text)
+            g.text(HudFonts.font, text, x, 0, edgeAlpha or rgb(i * width / title.length), true)
+            x += HudFonts.font.width(text)
         }
         g.pose().popMatrix()
         val subtitle = "$shownCoins Shining Coins in inventory"
-        val subScale = minOf(2f, (width - 16f) / client.font.width(subtitle))
-        g.pose().pushMatrix(); g.pose().translate(width / 2f, y + client.font.lineHeight * scale + 14); g.pose().scale(subScale, subScale)
-        g.text(client.font, subtitle, -client.font.width(subtitle) / 2, 0, edgeAlpha or 0xFFFFFF, true)
+        val subScale = minOf(2f, (width - 16f) / HudFonts.font.width(subtitle))
+        g.pose().pushMatrix(); g.pose().translate(width / 2f, y + HudFonts.font.lineHeight * scale + 14); g.pose().scale(subScale, subScale)
+        g.text(HudFonts.font, subtitle, -HudFonts.font.width(subtitle) / 2, 0, edgeAlpha or 0xFFFFFF, true)
         g.pose().popMatrix()
     }
 }

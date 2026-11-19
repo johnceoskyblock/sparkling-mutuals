@@ -1,7 +1,6 @@
 package net.johnceo.sparklingmutuals.safari
 
 import net.johnceo.sparklingmutuals.config.ConfigManager
-import net.johnceo.sparklingmutuals.compat.*
 import net.minecraft.client.Minecraft
 import net.minecraft.core.BlockPos
 import net.johnceo.sparklingmutuals.safari.esp.SafariEspRules
@@ -31,7 +30,10 @@ object ClearWater {
         // Transparency is stored in chunk meshes. Rebuild once when its effective setting changes.
         if (changed && client.level != null) {
             //? if >=26.2 {
-            /*client.levelRenderer.invalidateCompiledGeometry(client.level!!, client.options, client.gameRenderer.smCamera, client.blockColors)
+            /*// Match Reload Chunks: reset the section-update tracker and let extraction
+            // invalidate geometry in the next render frame. Resetting only LevelRenderer
+            // discards its meshes while the extractor still considers sections up to date.
+            client.levelExtractor.allChanged()
             *///? } else {
             client.levelRenderer.allChanged()
             //? }

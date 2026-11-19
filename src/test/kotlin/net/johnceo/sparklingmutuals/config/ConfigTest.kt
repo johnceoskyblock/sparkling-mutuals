@@ -9,6 +9,27 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 
 class ConfigTest {
+    @Test fun `warping timing upgrade resets once and sliders preserve later customization`() {
+        val file=dir.resolve("sparkling-mutuals.properties")
+        Files.writeString(file,"warpDelaySeconds=23\nrepartyDelaySeconds=24\nshinyDetection=false\n")
+        ConfigManager.init(dir);ContestConfig.init(dir)
+        assertEquals(22,ConfigManager.repartyDelaySeconds)
+        assertEquals(27,ConfigManager.warpDelaySeconds)
+        assertFalse(ConfigManager.shinyDetection)
+        val upgraded=java.util.Properties().apply {Files.newInputStream(file).use(::load)}
+        assertEquals("true",upgraded.getProperty("migration.sparkleWarpTimers22_27"))
+        val settings=SafariSettings()
+        val catalog=SettingsCatalog(settings)
+        fun slider(field: String)=catalog.locate(SettingsTarget("Sparkle Warping",listOf(field)))!!.second.last()
+        assertTrue(slider("reparty").field.isAnnotationPresent(ConfigEditorSlider::class.java))
+        assertTrue(slider("delay").field.isAnnotationPresent(ConfigEditorSlider::class.java))
+        slider("reparty").write(20);slider("delay").write(26)
+        settings.apply()
+        ConfigManager.init(dir)
+        assertEquals(20,ConfigManager.repartyDelaySeconds)
+        assertEquals(26,ConfigManager.warpDelaySeconds)
+        assertEquals(25,ConfigManager.validRepartyDelay(29,26))
+    }
     @Test fun `redesigned shard guidance enables once then respects the saved toggle`() {
         val file=dir.resolve("sparkling-mutuals.properties")
         Files.writeString(file,"shardSaleGuidance=false\nwaterOpacity=37\ncustomLegacyValue=keep\n")
@@ -108,6 +129,9 @@ class ConfigTest {
         }
         assertEquals("true",upgraded.remove("migration.shardSaleGuidanceV2"))
         assertEquals("true",upgraded.remove("shardSaleGuidance"))
+        assertEquals("true",upgraded.remove("migration.sparkleWarpTimers22_27"))
+        assertEquals("27",upgraded.remove("warpDelaySeconds"))
+        assertEquals("22",upgraded.remove("repartyDelaySeconds"))
         assertEquals(original,upgraded)
         assertEquals(legacyContest, Files.readString(dir.resolve("sparkling-mutuals-contest.properties")))
     }
@@ -215,7 +239,7 @@ class ConfigTest {
         Files.writeString(dir.resolve("sparkling-mutuals.properties"), "apiKey=example-key\n")
         ConfigManager.init(dir)
         assertEquals("example-key", ConfigManager.apiKey)
-        assertEquals(28, ConfigManager.warpDelaySeconds)
+        assertEquals(27, ConfigManager.warpDelaySeconds)
         assertFalse(ConfigManager.warpAlertsEnabled)
         assertTrue(ConfigManager.partyCommandsEnabled)
     }
@@ -241,7 +265,7 @@ class ConfigTest {
         assertFalse(ConfigManager.partyCommandsEnabled)
         Files.writeString(dir.resolve("sparkling-mutuals.properties"), "warpDelaySeconds=invalid\n")
         ConfigManager.init(dir)
-        assertEquals(28, ConfigManager.warpDelaySeconds)
+        assertEquals(27, ConfigManager.warpDelaySeconds)
         assertEquals(0, ConfigManager.sparkleWarpMode)
         assertEquals("", ConfigManager.warpDuo)
         assertFalse(ConfigManager.leechMode)

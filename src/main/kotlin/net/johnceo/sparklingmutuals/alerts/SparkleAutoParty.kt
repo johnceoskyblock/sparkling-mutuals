@@ -30,7 +30,7 @@ object SparkleAutoParty {
             dispatcher.register(ClientCommands.literal("autoparty").executes {
                 ConfigManager.autoParty = !ConfigManager.autoParty
                 ConfigManager.save()
-                if (!ConfigManager.autoParty && !SparkleWarpPolicy.returningPhase(windowStartedAt,System.currentTimeMillis())) invitations.discardPending()
+                if (!ConfigManager.autoParty && !returningPhase(System.currentTimeMillis())) invitations.discardPending()
                 it.source.sendFeedback(LocalChat.component("[SM] Auto-party ${if (ConfigManager.autoParty) "on" else "off"}."))
                 1
             })
@@ -41,7 +41,7 @@ object SparkleAutoParty {
             if (!overlay) SafariMessages.lines(message.string).forEach { line ->
                 if (line == "You cannot invite that player since they're not online.") Minecraft.getInstance().execute {
                     val now = System.currentTimeMillis()
-                    if (!SparkleWarpPolicy.returningPhase(windowStartedAt, now)) invitations.rejectedOffline(now)
+                    if (!returningPhase(now)) invitations.rejectedOffline(now)
                 }
                 Regex("^(?:\\[[^]\\r\\n]+]\\s*)*([A-Za-z0-9_]{1,16}) joined the party[.!]$")
                     .matchEntire(line)?.groupValues?.get(1)?.let { name ->
@@ -69,7 +69,7 @@ object SparkleAutoParty {
         if(detectedRun!==current) { detectedRun=current;earlyDetections.clear() }
         if(current!=null && ConfigManager.autoParty && ConfigManager.warpAlertsEnabled) earlyDetections.add(name)
         if (ConfigManager.autoParty && ConfigManager.warpAlertsEnabled && SafariAssist.inSafari &&
-            run === SafariTracking.ledger.current && !SparkleWarpPolicy.returningPhase(windowStartedAt,System.currentTimeMillis()))
+            run === SafariTracking.ledger.current && !returningPhase(System.currentTimeMillis()))
             invitations.add(name, WarpPlayerStatus.ordered(name))
     }
     fun tick(client: Minecraft) {
@@ -88,14 +88,14 @@ object SparkleAutoParty {
         // A confirmed solo player can create a party; existing parties require leadership.
         if (!SparkleWarping.canLead(client)) { stop(); return }
         if (ConfigManager.sparkleWarpMode == 1 && ConfigManager.warpDuo.isBlank()) { stop();return }
-        if (!SparkleWarpPolicy.returningPhase(windowStartedAt,now) && !ConfigManager.autoParty) invitations.discardPending()
+        if (!returningPhase(now) && !ConfigManager.autoParty) invitations.discardPending()
         val names = client.connection?.onlinePlayers.orEmpty()
             .filter { it.profile.id.toString() in members }.map { it.profile.name.lowercase() }.toSet()
         val cached = members.mapNotNull(net.johnceo.sparklingmutuals.safari.automation.SafariPartyInput::nameOf)
             .map(String::lowercase)
         val present=names + cached + joined + player.name.string.lowercase()
         if (ConfigManager.sparkleWarpMode == 1 && ConfigManager.warpDuo.lowercase() !in present) return
-        if (SparkleWarpPolicy.returningPhase(windowStartedAt,now)) {
+        if (returningPhase(now)) {
             invitations.discardPending()
             val handler = client.connection ?: return
             returningInvites.next(now, invitations.deadline, SparkleWarping.returningPlayers(), present, members.size)?.let {
@@ -110,5 +110,6 @@ object SparkleAutoParty {
             client.connection?.let { handler -> net.johnceo.sparklingmutuals.alerts.AutomatedCommands.send(handler,"p $it") }
         }
     }
+    private fun returningPhase(now: Long)=SparkleWarpPolicy.returningPhase(windowStartedAt,now,ConfigManager.repartyDelaySeconds)
     fun stop() { invitations.stop(); joined.clear(); run = null; level = null; connection = null;windowStartedAt=0;returningInvites.reset() }
 }

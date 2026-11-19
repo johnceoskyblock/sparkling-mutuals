@@ -88,7 +88,7 @@ class SafariFeatureIntegrationTest {
     }
 
     @Test fun `missing settings use new defaults without replacing stored values or selections`() {
-        Files.writeString(dir.resolve("sparkling-mutuals.properties"), "shinyDetection=false\nwarpDelaySeconds=42\nshowWhere=2\n")
+        Files.writeString(dir.resolve("sparkling-mutuals.properties"), "migration.sparkleWarpTimers22_27=true\nshinyDetection=false\nwarpDelaySeconds=42\nshowWhere=2\n")
         ConfigManager.init(dir)
         assertFalse(ConfigManager.shinyDetection)
         assertFalse(ConfigManager.warpAlertsEnabled)

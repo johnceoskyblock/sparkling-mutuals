@@ -395,11 +395,12 @@ class SafariConfigScreen(private val settings: SafariSettings = SafariSettings()
         bind(hueBar) { _,py -> hue=((py-hueBar.y)/hueBar.h).toFloat().coerceIn(0f,1f) }
         fun bar(label: String,top: Int,fraction: Float,change: (Float)->Unit) {
             text(g,label,x+12,top+4,SettingsPalette.muted)
-            val track=Rect(x+106,top,w-124,16);shell(g,track,SettingsPalette.card)
+            val track=Rect(x+140,top,w-158,16);shell(g,track,SettingsPalette.card)
             g.fill(track.x+3,top+11,track.x+3+((track.w-6)*fraction).toInt(),top+14,SettingsPalette.accent)
             bind(track) { px,_ -> change(((px-track.x)/track.w).toFloat().coerceIn(0f,1f)) }
         }
-        bar("Opacity $opacity",y+97,opacity/255f) { opacity=(it*255).toInt() }
+        val transparency = kotlin.math.round((255-opacity)*100/255f).toInt()
+        bar("Transparency $transparency%",y+97,1-opacity/255f) { opacity=kotlin.math.round((1-it)*255).toInt() }
         bar("Chroma $chroma",y+118,chroma/255f) { chroma=(it*255).toInt() }
     }
     private fun maxScroll()=(contentHeight-viewport).coerceAtLeast(0)

@@ -230,3 +230,9 @@ Safari → Contest has Announce ticket earned (default on) and Ticket earned mes
 2026-11-13 — Duplico and Driftling use box ESP as their glow fallback. Their sparkling variants use the special sparkling-colored box instead of a model outline. Existing mode, capture and visibility gates still apply.
 
 2026-11-13 — Biome critter colors now has a separate enable switch for each biome. The master switch enables the selected overrides; disabled biomes use their saved individual critter colors and Scrappy food colors. Per-biome switches default on to preserve existing master-switch behavior.
+
+2026-11-18 — Sparkle Warping has Reparty timer (default 22s) and Warp timer (default 27s) sliders. The first startup with the timing migration resets both for every user; later choices persist. Reparty controls both Auto-party cutoff and the saved-party invitation queue.
+
+2026-11-18 — HUDs → Overview has Use resource pack font (default on). HUD drawing, alerts and editor bounds share the selected font; disabling it uses Minecraft's standard font providers. Resource reloads remain managed by Minecraft. Background transparency and color-picker transparency both use 0% solid and 100% invisible. HUD backgrounds respect the color picker's alpha as well as their background transparency slider.
+
+2026-11-18 — Armor stand critters use model glow for their head/equipment with the wooden stand omitted. Duplico uses an outline-only box silhouette on its tracked interaction bounds, never a glowing silverfish. Both paths apply to regular and sparkling glow. The optional Box ESP setting remains independent.

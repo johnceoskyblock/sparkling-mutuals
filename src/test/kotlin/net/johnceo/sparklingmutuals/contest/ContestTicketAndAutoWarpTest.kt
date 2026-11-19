@@ -65,6 +65,6 @@ class ContestTicketAndAutoWarpTest {
         assertNull(run.entry.hotspot)
         assertEquals(24_000L, run.elapsed(25_000))
         assertTrue(policy.returningPhase(run.startedAt, 25_000))
-        assertEquals(29_000L, policy.warpDeadline(run.startedAt, policy.DEFAULT_DELAY_SECONDS))
+        assertEquals(28_000L, policy.warpDeadline(run.startedAt, policy.DEFAULT_DELAY_SECONDS))
     }
 }

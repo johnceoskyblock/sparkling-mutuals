@@ -17,12 +17,26 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo
 class SafariShinyMixin {
     @Inject(method = ["extractRenderState(Lnet/minecraft/world/entity/Entity;Lnet/minecraft/client/renderer/entity/state/EntityRenderState;F)V"], at = [At("TAIL")])
     private fun highlight(entity: Entity, state: EntityRenderState, delta: Float, info: CallbackInfo) {
+        val critterState = state as net.johnceo.sparklingmutuals.safari.esp.CritterGlowState
+        critterState.`sm$setCritterGlow`(false)
         if (TeammateEsp.isTeammate(entity)) {
             if (ConfigManager.highlightTeammates)
                 state.outlineColor = TeammateEsp.COLOR
             if (ConfigManager.showTeammateNames) state.nameTag = null
         }
-        net.johnceo.sparklingmutuals.safari.esp.SafariEsp.outlineColor(entity)?.let { state.outlineColor=it }
-        if (SafariAssist.isGlowHighlighted(entity.id)) state.outlineColor = SafariEspConfig.rgb(AppearanceConfig.sparklingColor)
+        val color = if (SafariAssist.isGlowHighlighted(entity.id)) SafariEspConfig.rgb(AppearanceConfig.sparklingColor)
+            else net.johnceo.sparklingmutuals.safari.esp.SafariEsp.sparklingDuplicoColor(entity)
+                ?: net.johnceo.sparklingmutuals.safari.esp.SafariEsp.outlineColor(entity)
+        if (color != null) {
+            state.outlineColor = color
+            critterState.`sm$setCritterGlow`(true)
+        }
+    }
+
+    @Inject(method=["submit(Lnet/minecraft/client/renderer/entity/state/EntityRenderState;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;Lnet/minecraft/client/renderer/state/level/CameraRenderState;)V"],at=[At("TAIL")])
+    private fun blockGlow(state: EntityRenderState, poses: com.mojang.blaze3d.vertex.PoseStack,
+        collector: net.minecraft.client.renderer.SubmitNodeCollector,
+        camera: net.minecraft.client.renderer.state.level.CameraRenderState, info: CallbackInfo) {
+        net.johnceo.sparklingmutuals.safari.esp.DuplicoGlow.submit(state,poses,collector)
     }
 }

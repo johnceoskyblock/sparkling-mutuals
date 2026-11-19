@@ -11,7 +11,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor
 object HotspotHud {
     fun panel(preview: Boolean=false): HudPanel {
         val client=Minecraft.getInstance()
-        val width=SafariPanels.objectivesPreview().width(client.font::width)
+        val width=SafariPanels.objectivesPreview().width(HudFonts.font::width)
         val entries=if(preview) listOf(
             SafariPartySync.HotspotRow("Bluaza",SafariBiome.ICY,SafariBiome.HAUNTED,2),
             SafariPartySync.HotspotRow("JohnCEO",SafariBiome.CAVERN,SafariBiome.CAVERN,2),

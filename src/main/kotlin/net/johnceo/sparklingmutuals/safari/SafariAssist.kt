@@ -146,11 +146,11 @@ object SafariAssist {
     }
 
     @JvmStatic fun isGlowHighlighted(id: Int)=isHighlighted(id) && shinies.none {
-        (it.body.id==id || it.label.id==id) && net.johnceo.sparklingmutuals.config.SafariEspConfig.boxGlowFallback(it.name)
+        (it.body.id==id || it.label.id==id) && it.name == "Duplico"
     }
-    internal fun boxHighlights(): List<Pair<Entity,String>> = shinies.filter {
-        net.johnceo.sparklingmutuals.config.SafariEspConfig.boxGlowFallback(it.name) && isHighlighted(it.body.id)
-    }.distinctBy {it.body.id}.map {it.body to it.name}
+    internal fun sparklingDuplicoBodies(): List<Entity> = shinies.filter {
+        it.name == "Duplico" && isHighlighted(it.body.id)
+    }.distinctBy {it.body.id}.map {it.body}
 
     fun nearbyPanel(preview: Boolean = false): HudPanel? {
         val client = Minecraft.getInstance()

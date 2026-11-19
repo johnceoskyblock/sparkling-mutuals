@@ -120,7 +120,7 @@ object SafariBanners {
         }
     }
     fun reset() { SafariAlertSequence.queue.clear(this);fired.clear();cooldown.clear();run=null;chamberTarget=null;previousBiome=null;feeder=0;heldFood=0;contestActive=null;contestWindow=-1;contestWarnings.clear();ticket=false;AlertSounds.onConnectionExit() }
-    fun previewPanel(measure: (Component) -> Int = { Minecraft.getInstance().font.width(it) }): HudPanel {
+    fun previewPanel(measure: (Component) -> Int = { HudFonts.font.width(it) }): HudPanel {
         val text=Component.literal("Safari Banner").withStyle { it.withBold(BannerConfig.font in setOf(1,3)).withItalic(BannerConfig.font in setOf(2,3)) }
         return HudPanel("Safari Banner",0xFFFFAA00.toInt(),emptyList(),widthOverride=measure(text)+16,heightOverride=18)
     }
@@ -131,11 +131,11 @@ object SafariBanners {
         val active=activeBanner ?: return
         val preview=previewPanel();val window=client.window;val width=window.guiScaledWidth;val height=window.guiScaledHeight
         val anchor=preview.bounds(SafariHud.BANNER,width,height)
-        val base=SafariHud.BANNER.layout.effectiveScale(width,height,preview.width(client.font::width),preview.height)
+        val base=SafariHud.BANNER.layout.effectiveScale(width,height,preview.width(HudFonts.font::width),preview.height)
         val maxWidth=((width-10)/base).toInt().coerceAtLeast(32)
         val text=Component.literal(active.notice.text).withStyle { it.withBold(BannerConfig.font in setOf(1,3)).withItalic(BannerConfig.font in setOf(2,3)) }
-        val lines=client.font.split(text,(maxWidth-16).coerceAtLeast(16))
-        val frameWidth=(lines.maxOfOrNull(client.font::width) ?: 0)+16
+        val lines=HudFonts.font.split(text,(maxWidth-16).coerceAtLeast(16))
+        val frameWidth=(lines.maxOfOrNull(HudFonts.font::width) ?: 0)+16
         val frameHeight=18+(lines.size-1).coerceAtLeast(0)*12
         val scale=minOf(base,(height-10f)/frameHeight)
         val area=SafariHud.BANNER.layout.bounds(width,height,frameWidth,frameHeight)
@@ -144,7 +144,7 @@ object SafariBanners {
         draw(g,active.notice.text,active.notice.color,active.alpha(now()),active.remaining(now()),x,y,scale,maxWidth)
     }
     private fun draw(g: GuiGraphicsExtractor,title: String,color: Int,opacity: Float,remaining: Float,x: Float,y: Float,scale: Float,maxWidth: Int) {
-        val font=Minecraft.getInstance().font
+        val font=HudFonts.font
         val text=Component.literal(title).withStyle { it.withBold(BannerConfig.font in setOf(1,3)).withItalic(BannerConfig.font in setOf(2,3)) }
         val lines=font.split(text,(maxWidth-16).coerceAtLeast(16));val width=(lines.maxOfOrNull(font::width) ?: 0)+16;val height=18+(lines.size-1).coerceAtLeast(0)*12
         fun blend(a: Int,b: Int,f: Float): Int {

@@ -1,5 +1,7 @@
 package net.johnceo.sparklingmutuals.skyblock.market
 
+import net.johnceo.sparklingmutuals.hud.HudFonts
+
 import net.johnceo.sparklingmutuals.history.BazaarPrices
 import net.johnceo.sparklingmutuals.config.AppearanceConfig
 import net.johnceo.sparklingmutuals.hud.HudRow
@@ -78,7 +80,7 @@ internal object WholeBoxTotalOverlay {
         val client=Minecraft.getInstance()
         val area=WholeBoxHeader.bounds(screen.width,container.sparklingMutualsShardPanelLeft(),
             container.sparklingMutualsShardPanelTop(),container.sparklingMutualsShardPanelWidth(),
-            lines.maxOfOrNull {client.font.width(it)} ?: 0,lines.size)
+            lines.maxOfOrNull {HudFonts.font.width(it)} ?: 0,lines.size)
             ?: WholeBoxHeaderBounds(container.sparklingMutualsShardPanelLeft(),4,container.sparklingMutualsShardPanelWidth(),23,1f)
         val hud=net.johnceo.sparklingmutuals.hud.SafariHud.HUNTING_BOX_VALUE
         val panel=net.johnceo.sparklingmutuals.hud.HudPanel(lines.first(),rows=emptyList(),titleIcon=null)

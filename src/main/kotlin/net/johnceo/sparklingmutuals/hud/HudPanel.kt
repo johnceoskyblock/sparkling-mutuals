@@ -33,7 +33,7 @@ open class HudPanel(val title: String, val titleColor: Int = HudRow.GOLD, val ro
     val height get() = heightOverride ?: (12 + 11 * (1 + rows.size))
     open fun draw(graphics: GuiGraphicsExtractor, x: Int, y: Int, scale: Float = 1f,
         style: PanelStyle = AppearanceConfig.panels.getValue("captures"), borderOverride: Int? = null) {
-        val font = Minecraft.getInstance().font
+        val font = HudFonts.font
         val w = width(font::width)
         val valueWidth = rows.mapNotNull { it.value }.maxOfOrNull(font::width) ?: 0
         graphics.pose().pushMatrix(); graphics.pose().translate(x.toFloat(), y.toFloat()); graphics.pose().scale(scale, scale)
@@ -63,12 +63,12 @@ open class HudPanel(val title: String, val titleColor: Int = HudRow.GOLD, val ro
         graphics.pose().popMatrix()
     }
     fun bounds(hud: SafariHud, screenWidth: Int, screenHeight: Int) =
-        hud.layout.bounds(screenWidth, screenHeight, width(Minecraft.getInstance().font::width), height)
+        hud.layout.bounds(screenWidth, screenHeight, width(HudFonts.font::width), height)
     fun draw(graphics: GuiGraphicsExtractor, hud: SafariHud) {
         val window = Minecraft.getInstance().window
         val bounds = bounds(hud, window.guiScaledWidth, window.guiScaledHeight)
         val scale = hud.layout.effectiveScale(window.guiScaledWidth, window.guiScaledHeight,
-            width(Minecraft.getInstance().font::width), height)
+            width(HudFonts.font::width), height)
         draw(graphics, bounds.x, bounds.y, scale, AppearanceConfig.panels.getValue(hud.name.lowercase()), HudThemes.border(hud))
     }
 }

@@ -81,6 +81,8 @@ class SafariSettings {
         @ConfigEditorBoolean var phantomleafSolver = ConfigManager.phantomleafSolver
     }
     class General {
+        @JvmField @ConfigOption(name = "Use resource pack font", desc = "Use Minecraft's active font for all HUDs and alerts.")
+        @ConfigEditorBoolean var resourcePackFont = AppearanceConfig.resourcePackFont
         @JvmField @ConfigOption(name = "Command help", desc = "")
         @ConfigEditorButton(runnableId = 3, buttonText = "Show help") var help = false
         @JvmField @ConfigOption(name = "Move and resize HUDs", desc = "Drag to move; scroll to resize.")
@@ -208,13 +210,13 @@ class SafariSettings {
         @ConfigEditorBoolean var toParty = ConfigManager.achievementsToParty
     }
     class Warp {
-        @JvmField @ConfigOption(name = "Sparkle Warping", desc = "This method allows players to get warped into runs before the 30s warp window is up, allowing for players to roll for sparkling critters that take more than 30s to find without using a ticket. Run /start with the party you want to bring back. It saves the roster and starts the cycle. Solo disbands the party, and Duo keeps your runner. Run /start again with a different roster to replace the saved party. Previous leechers are invited together at 24s, then warped at the set delay. Returning to Torrhus repeats the cycle. Auto partying enables you to have a warp list of players that need specific sparkling critters that can be detected within 24s of you starting the run. Then, when you find a sparkling critter, it will attempt to party the players in the list in priority order.")
+        @JvmField @ConfigOption(name = "Sparkle Warping", desc = "This method allows players to get warped into runs before the 30s warp window is up, allowing for players to roll for sparkling critters that take more than 30s to find without using a ticket. Run /start with the party you want to bring back. It saves the roster and starts the cycle. Solo disbands the party, and Duo keeps your runner. Run /start again with a different roster to replace the saved party. Previous leechers are invited together at the reparty timer, then warped at the warp timer. Returning to Torrhus repeats the cycle. Auto partying enables you to have a warp list of players that need specific sparkling critters that can be detected before the reparty cutoff. Then, when you find a sparkling critter, it will attempt to party the players in the list in priority order.")
         @StandaloneDescription var description = false
         @JvmField @ConfigOption(name = "Leader mode", desc = "Solo: disband. Duo: keep your runner.")
         @ConfigEditorDropdown(values = ["Solo", "Duo"]) var mode = ConfigManager.sparkleWarpMode
         @JvmField @ConfigOption(name = "Duo runner", desc = "Set with /duo <IGN>.")
         @ConfigEditorText var duo = ConfigManager.warpDuo
-        @JvmField @ConfigOption(name = "Auto-party", desc = "Warp List invites until 24s.")
+        @JvmField @ConfigOption(name = "Auto-party", desc = "Warp List invites until the reparty timer.")
         @ConfigEditorBoolean var autoParty = ConfigManager.autoParty
         @JvmField @ConfigOption(name = "Invite online players only", desc = net.johnceo.sparklingmutuals.alerts.WarpPlayerStatus.DESCRIPTION)
         @ConfigEditorBoolean var autoPartyOnlineOnly = ConfigManager.autoPartyOnlineOnly
@@ -226,11 +228,13 @@ class SafariSettings {
         @ConfigEditorBoolean var leech = ConfigManager.leechMode
         @JvmField @ConfigOption(name = "Leech whitelist", desc = "Inviter IGNs. Empty accepts nobody.")
         @ConfigEditorText var whitelist = ConfigManager.leechWhitelist
-        @JvmField @ConfigOption(name = "Delay in seconds", desc = "")
-        @ConfigEditorText var delay = ConfigManager.warpDelaySeconds.toString()
+        @JvmField @ConfigOption(name="Reparty timer (seconds)",desc="Ends Auto-party invites and queues your saved party.")
+        @ConfigEditorSlider(minValue=1f,maxValue=29f,minStep=1f) var reparty = ConfigManager.repartyDelaySeconds
+        @JvmField @ConfigOption(name="Warp timer (seconds)",desc="Warps players into Safari. Must be after the reparty timer.")
+        @ConfigEditorSlider(minValue=2f,maxValue=30f,minStep=1f) var delay = ConfigManager.warpDelaySeconds
         @JvmField var saveDelay = false
-        @JvmField @ConfigOption(name = "Default delay", desc = "28 seconds.")
-        @ConfigEditorButton(runnableId = 5, buttonText = "Reset to 28s") var reset = false
+        @JvmField @ConfigOption(name = "Default timers", desc = "Reparty 22s; warp 27s.")
+        @ConfigEditorButton(runnableId = 5, buttonText = "Reset timers") var reset = false
         @JvmField @ConfigOption(name = "Sparkling Auto-entry", desc = "Automatically uses a ticket when party detects a sparkling critter.\nUSE AT YOUR OWN RISK!!!!")
         @DescriptionColor(rgb = 0xFF5555)
         @ConfigEditorBoolean var autoEnter = ConfigManager.safariEntryAutoEnter
@@ -492,7 +496,7 @@ class SafariSettings {
                 client.player?.sendSystemMessage(LocalChat.component(CommandHelp.localLines().joinToString("\n")))
             }
             4 -> client.execute { client.smSetScreen(ApiKeyScreen(client.smScreen)) }
-            5 -> { warp.delay = "28"; saveDelay() }
+            5 -> { warp.reparty=22;warp.delay=27;saveDelay() }
             6 -> saveDelay()
             7 -> { apply(); saveSound()
                 Identifier.tryParse(ContestConfig.contestSound)?.let { id ->
@@ -515,9 +519,9 @@ class SafariSettings {
     }
     fun isValidRunnable(id: Int) = id in 1..13
     private fun saveDelay() {
-        val seconds = warp.delay.trim().toIntOrNull()
-        if (seconds == null || seconds !in 1..86400) feedback("Enter a delay from 1 to 86400 seconds.")
-        else if (seconds != ConfigManager.warpDelaySeconds) AlertManager.setDelay(seconds)
+        val seconds=warp.delay.coerceIn(1,86400)
+        warp.reparty=ConfigManager.validRepartyDelay(warp.reparty,seconds)
+        AlertManager.setTimings(warp.reparty,seconds)
     }
     private fun saveSound() {
         val sound = miria.sound.trim()
@@ -540,12 +544,15 @@ class SafariSettings {
     }
     private var lastAppliedMode = net.johnceo.sparklingmutuals.safari.completion.SafariFullClear.mode
     fun apply(notifyMode: Boolean = false) {
+        saveDelay()
         val currentMode = net.johnceo.sparklingmutuals.safari.completion.SafariFullClear.mode
         if (currentMode != lastAppliedMode) {
             tracking.captures = ConfigManager.catchCountPanel
             lastAppliedMode = currentMode
         }
-        val bannerChanged = banner.apply()
+        val fontChanged = AppearanceConfig.resourcePackFont != general.resourcePackFont
+        AppearanceConfig.resourcePackFont = general.resourcePackFont
+        val bannerChanged = banner.apply() || fontChanged
         if (modes.unique.hideCritters || modes.unique.hideDrops) modes.unique.profitable=false
         if (modes.sparkling.hideCritters || modes.sparkling.hideDrops) modes.sparkling.profitable=false
         val duoName=warp.duo.trim().takeIf { Regex("[A-Za-z0-9_]{1,16}").matches(it) }.orEmpty()

@@ -167,15 +167,15 @@ object HotspotAssignmentAlert {
         graphics.fill(0,0,3,height,color);graphics.fill(width-3,0,width,height,color)
         fun centered(text: String,y: Float,scale: Float,tint: Int) {
             graphics.pose().pushMatrix();graphics.pose().translate(width/2f,y);graphics.pose().scale(scale,scale)
-            graphics.text(client.font,text,-client.font.width(text)/2,0,tint,true)
+            graphics.text(HudFonts.font,text,-HudFonts.font.width(text)/2,0,tint,true)
             graphics.pose().popMatrix()
         }
         val title="${biome.label} Biome"
-        val scale=minOf(4f,(width-20f)/client.font.width(title))
-        centered(title,height/2f-client.font.lineHeight*scale,scale,color)
+        val scale=minOf(4f,(width-20f)/HudFonts.font.width(title))
+        centered(title,height/2f-HudFonts.font.lineHeight*scale,scale,color)
         run?.entry?.hotspot?.let { actual ->
             centered("Assigned biome · Hotspot: ${actual.label}",height/2f+12,
-                minOf(1.5f,(width-20f)/client.font.width("Assigned biome · Hotspot: Haunted")),(alpha shl 24) or 0xFFFFFF)
+                minOf(1.5f,(width-20f)/HudFonts.font.width("Assigned biome · Hotspot: Haunted")),(alpha shl 24) or 0xFFFFFF)
         }
     }
     private fun resetRun() {

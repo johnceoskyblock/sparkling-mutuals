@@ -1,5 +1,7 @@
 package net.johnceo.sparklingmutuals.skyblock.market
 
+import net.johnceo.sparklingmutuals.hud.HudFonts
+
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents
 import net.fabricmc.fabric.api.client.screen.v1.ScreenMouseEvents
 import net.johnceo.sparklingmutuals.compat.smScreen
@@ -63,19 +65,19 @@ internal object BazaarOfferSidebar {
         val hover=area.rowAt(mx.toDouble(),my.toDouble())?.let {rows.getOrNull(scroll+it)}
         g.pose().pushMatrix();g.pose().translate(area.x.toFloat(),area.y.toFloat());g.pose().scale(area.scale,area.scale)
         AppearanceConfig.panels.getValue("progress").draw(g,width,height)
-        fun text(value: String,x: Int,y: Int,color: Int=0xFF000000.toInt() or SafariTheme.TEXT)=g.text(client.font,value,x,y,color,true)
+        fun text(value: String,x: Int,y: Int,color: Int=0xFF000000.toInt() or SafariTheme.TEXT)=g.text(HudFonts.font,value,x,y,color,true)
         text("Safari sell offers",6,6,HudRow.GOLD)
         rows.drop(scroll).take(area.rows).forEachIndexed {index,row->
             val y=header+index*rowHeight
             if(row==hover)g.fill(2,y-1,width-2,y+10,0x66000000 or SafariTheme.HOVER)
             val action=BazaarUnlistPresentation.action(row.state)
-            val statusX=width-7-client.font.width(action)
-            text(client.font.plainSubstrByWidth(SaleProducts.names.getValue(row.productId),statusX-18),6,y)
+            val statusX=width-7-HudFonts.font.width(action)
+            text(HudFonts.font.plainSubstrByWidth(SaleProducts.names.getValue(row.productId),statusX-18),6,y)
             text(action,statusX,y,BazaarUnlistPresentation.actionColor(row.state))
         }
         if(rows.isEmpty())text(if(ShardSaleGuidance.hasVerifiedProfile())"No eligible Safari offers"else "Confirming profile…",6,header,0xFFAAAAAA.toInt())
         g.pose().popMatrix()
-        if(hover!=null)g.setComponentTooltipForNextFrame(client.font,
+        if(hover!=null)g.setComponentTooltipForNextFrame(HudFonts.font,
             (listOf(SaleProducts.names.getValue(hover.productId),BazaarUnlistPresentation.action(hover.state),"")+
                 ShardSalePresentation.tooltip(hover,now)).map(Component::literal),mx,my)
     }

@@ -24,7 +24,7 @@ class CjsNewSmConfigTest {
     }
     @Test fun `migrated CJ choices survive settings edits and are not replaced by fresh defaults`() {
         Files.writeString(root.resolve("sparkling-mutuals.properties"),
-            "safariEntryDryRun=false\nsafariEntryApproach=true\nautoSelectSafariTicket=true\nwarpDelaySeconds=26\n")
+            "safariEntryDryRun=false\nsafariEntryApproach=true\nautoSelectSafariTicket=true\nwarpDelaySeconds=26\nmigration.sparkleWarpTimers22_27=true\n")
         val data = "{\"retained\":\"profile-specific shard counts\"}"
         Files.writeString(root.resolve("sparkling-mutuals-box-guidance.json"), data)
         val migrated = ConfigStorage.migrate(root)
@@ -45,12 +45,12 @@ class CjsNewSmConfigTest {
         ConfigManager.init(migrated); ContestConfig.init(migrated)
         assertFalse(ConfigManager.safariEntryAutoEnter)
         assertTrue(ConfigManager.autoSelectSafariTicket)
-        assertEquals(28, ConfigManager.warpDelaySeconds)
+        assertEquals(27, ConfigManager.warpDelaySeconds)
         SafariSettings().apply { warp.autoEnter = true }.apply()
         ConfigManager.init(migrated)
         assertTrue(ConfigManager.safariEntryAutoEnter)
         assertTrue(ConfigManager.autoSelectSafariTicket)
-        assertEquals(28, ConfigManager.warpDelaySeconds)
+        assertEquals(27, ConfigManager.warpDelaySeconds)
     }
 
     @Test fun `older installed CJ settings without new keys preserve explicit timing`() {

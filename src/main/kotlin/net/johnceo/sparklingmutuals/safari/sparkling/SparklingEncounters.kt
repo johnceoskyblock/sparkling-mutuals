@@ -1,5 +1,7 @@
 package net.johnceo.sparklingmutuals.safari.sparkling
 
+import net.johnceo.sparklingmutuals.hud.HudFonts
+
 import net.johnceo.sparklingmutuals.party.PartyManager
 import java.util.UUID
 import net.johnceo.sparklingmutuals.config.AppearanceConfig
@@ -138,7 +140,7 @@ object SparklingEncounters {
         val client = Minecraft.getInstance()
         if (useTicket && !net.johnceo.sparklingmutuals.hud.SafariAlertSequence.queue.busy) {
             val text = "Party sparkling found. Use a Safari ticket to join."
-            graphics.text(client.font, text, (client.window.guiScaledWidth - client.font.width(text)) / 2,
+            graphics.text(HudFonts.font, text, (client.window.guiScaledWidth - HudFonts.font.width(text)) / 2,
                 client.window.guiScaledHeight / 4, HudRow.GOLD, true)
         }
         if (!SafariAssist.inSafari && !net.johnceo.sparklingmutuals.safari.SafariIsland.onIsland) return
@@ -153,23 +155,23 @@ object SparklingEncounters {
         val width = client.window.guiScaledWidth; val height = client.window.guiScaledHeight
         val style = AppearanceConfig.panels.getValue("alert")
         val tint = SafariEspConfig.rgb(style.backgroundColor).takeIf { it and 0xFFFFFF != 0 } ?: color
-        val washAlpha = (alpha * (100 - style.transparency) / 100 * .2).toInt()
-        graphics.fill(0, 0, width, height, (washAlpha shl 24) or (tint and 0xFFFFFF))
+        val washAlpha = (alpha * (style.backgroundArgb ushr 24) / 255.0 * .2).toInt()
+        if (washAlpha > 0) graphics.fill(0, 0, width, height, (washAlpha shl 24) or (tint and 0xFFFFFF))
         val frame = if (style.borderEnabled) (alpha shl 24) or (SafariEspConfig.rgb(style.borderColor) and 0xFFFFFF) else color
         graphics.fill(0, 0, width, 3, frame); graphics.fill(0, height - 3, width, height, frame)
         graphics.fill(0, 0, 3, height, frame); graphics.fill(width - 3, 0, width, height, frame)
         fun centered(text: String, y: Float, scale: Float, textColor: Int) {
             graphics.pose().pushMatrix(); graphics.pose().translate(width / 2f, y); graphics.pose().scale(scale, scale)
-            graphics.text(client.font, text, -client.font.width(text) / 2, 0, textColor, true)
+            graphics.text(HudFonts.font, text, -HudFonts.font.width(text) / 2, 0, textColor, true)
             graphics.pose().popMatrix()
         }
-        val titleScale = minOf(4f, (width - 16f) / client.font.width(panel.title))
-        val subtitleScale = minOf(2f, (width - 16f) / maxOf(client.font.width(name), client.font.width(where)))
-        val top = height / 2f - (client.font.lineHeight * titleScale + 22 + client.font.lineHeight * subtitleScale * 2) / 2
+        val titleScale = minOf(4f, (width - 16f) / HudFonts.font.width(panel.title))
+        val subtitleScale = minOf(2f, (width - 16f) / maxOf(HudFonts.font.width(name), HudFonts.font.width(where)))
+        val top = height / 2f - (HudFonts.font.lineHeight * titleScale + 22 + HudFonts.font.lineHeight * subtitleScale * 2) / 2
         centered(panel.title, top, titleScale, color)
         val white = (alpha shl 24) or 0xFFFFFF
         panel.rows.forEachIndexed { index, row -> centered(row.label,
-            top + client.font.lineHeight * titleScale + 14 + index * (client.font.lineHeight * subtitleScale + 4), subtitleScale, white) }
+            top + HudFonts.font.lineHeight * titleScale + 14 + index * (HudFonts.font.lineHeight * subtitleScale + 4), subtitleScale, white) }
     }
     fun playSound(client: Minecraft): SimpleSoundInstance? {
         if (ConfigManager.sparklingSoundVolume <= 0) return null

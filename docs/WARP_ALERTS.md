@@ -8,20 +8,20 @@ Sparkle Warping brings leechers into a Safari without using their tickets. Enabl
 
 Run `/start` to enable warping and prepare the current party immediately, even if warping is already on. Turning `/warping` on only enables automation; it does not prepare or disband the party. Only `/start` explicitly prepares it, including a full party. Confirm leadership and resolve every member's IGN before changing the party. Save the leecher list, then disband in Solo, or remove only leechers in Duo while keeping the selected runner. Run `/start` again with the desired roster to replace the saved list. If already solo, the saved list is cleared and no disband is sent. Unknown party/name information waits; nonleaders take no action. Invalid/missing Duo runners leave the party untouched and show a local explanation.
 
-Initial preparation happens only when explicitly running `/start`. `/start` respects the selected Solo/Duo mode, requires leadership (or solo status), and refuses while Leech is enabled. Merely logging in with it already enabled, opening settings, or entering a normal full-party run does not disband anyone. Disabling the feature, changing the warping configuration, switching to Leech or disconnecting cancels unfinished preparation. Once prepared, enter Safari normally; re-invites at 24 seconds and the configured warp deadline use the Safari progress clock.
+Initial preparation happens only when explicitly running `/start`. `/start` respects the selected Solo/Duo mode, requires leadership (or solo status), and refuses while Leech is enabled. Merely logging in with it already enabled, opening settings, or entering a normal full-party run does not disband anyone. Disabling the feature, changing the warping configuration, switching to Leech or disconnecting cancels unfinished preparation. Once prepared, enter Safari normally; re-invites at the reparty timer (22 seconds by default) and the configured warp deadline use the Safari progress clock.
 
 ## Leader cycle
 
 The invite and warp deadlines use the Safari progress HUD clock. A cycle is available only for a confirmed solo player or party leader with fewer than four party members. Unknown party information waits for the existing party lookup. A normal run starting with four players does not start an invite/warp timer. Returning from Safari to Torrhus still prepares that party for the next run. Use `/start` to prepare an existing full party immediately.
 
-1. During the first 24 seconds, optional Auto-party invites saved Warp List players for positively identified visible Sparkling critters. Unknown particle detections do not invite.
-2. From 24 seconds, pending Warp List candidates give way to the previous leechers. Invite all missing returning players in one `/p <IGN> <IGN> <IGN>` command, filling only remaining spots up to four members including the leader and Duo runner. This batch does not wait for the Warp List two-second pacing.
-3. At the configured delay (28 seconds for fresh installs), show **Warping Now** and send `/p warp` once. Players invited during this window can bring the party to four without cancelling that warp. Once armed, the timer sends the command at the deadline regardless of roster size, refresh state, or Duo membership. Hypixel determines whether the command succeeds.
+1. Before the reparty timer (22 seconds by default), optional Auto-party invites saved Warp List players for positively identified visible Sparkling critters. Unknown particle detections do not invite.
+2. At the reparty timer, pending Warp List candidates give way to the previous leechers. Invite all missing returning players in one `/p <IGN> <IGN> <IGN>` command, filling only remaining spots up to four members including the leader and Duo runner. This batch does not wait for the Warp List two-second pacing.
+3. At the configured delay (27 seconds), show **Warping Now** and send `/p warp` once. Players invited during this window can bring the party to four without cancelling that warp. Once armed, the timer sends the command at the deadline regardless of roster size, refresh state, or Duo membership. Hypixel determines whether the command succeeds.
 4. Whenever the leader returns from Safari to Torrhus Canyon or Springs with warping enabled, save the current leechers and prepare the next run. **Solo** sends `/p disband`. **Duo** keeps the selected runner and sends `/p kick <IGN>` for each other member. The leader must still hold leadership; incomplete roster/name information waits rather than guessing. This cleanup also happens after a four-player run that never started the invite/warp timer.
 
 Choose the Duo runner with `/duo <IGN>`; this also selects Duo mode. The same IGN can be edited in the tab. Duo cleanup requires that runner to be in the party. Switch the dropdown to Solo to run alone.
 
-Warp List invitations before 24 seconds are sent one at a time, two seconds apart. Returning leechers are invited together in one command. Joined/current members are skipped. The previous leecher list is session memory, replaced when the next disband/kick cycle has players to remove; an empty cleanup does not erase it. A disconnect clears it. Existing invites follow Hypixel's normal expiry.
+Warp List invitations before the reparty timer are sent one at a time, two seconds apart. Returning leechers are invited together in one command. Joined/current members are skipped. The previous leecher list is session memory, replaced when the next disband/kick cycle has players to remove; an empty cleanup does not erase it. A disconnect clears it. Existing invites follow Hypixel's normal expiry.
 
 ## Leech
 
@@ -37,14 +37,14 @@ Leech works in Hypixel lobbies as well as SkyBlock and does not require `/warpin
 | `/warping` / Auto warping | Off | Toggle invitations, delayed warps and return cleanup without immediately changing the party; use `/start` to prepare it. |
 | Leader mode | Solo | Disband on returning from Safari to Torrhus, or keep the Duo runner. |
 | `/duo <IGN>` / Duo runner | Empty | Save the runner; the command also chooses Duo. |
-| `/autoparty` / Auto-party | On | Prioritize detected critters' Warp List players before 24 seconds. Returning leechers are invited even with this off. |
+| `/autoparty` / Auto-party | On | Prioritize detected critters' Warp List players before the reparty timer. Returning leechers are invited even with this off. |
 | `/leech` / Leech | Off | Accept whitelisted party invites, leaving the current party first. |
 | Leech whitelist | `JohnCEO JohnFounder _cj Rqach Serkosea johnkuudra` for fresh installs | Approved inviter IGNs; empty accepts nobody. |
-| `/warpingdelay <seconds>` / Delay | 28 seconds for fresh installs | Range 1–86400. Existing saved custom delays, including 23 seconds, stay unchanged. The missing-key fallback is 28. |
+| `/warpingdelay <seconds>` / Delay | 27 seconds | Warp slider: 2–30 seconds. The command retains its 1–86400 range. The missing-key fallback is 27. |
 
-A delay below 24 seconds ends before returning-leecher invitations can begin. The tab explains the cycle and keeps the normal full-width description text.
+The Reparty timer slider (1–29 seconds) controls both the Auto-party cutoff and returning-party invitations. The Warp timer slider controls the party warp. Reparty is constrained to precede warp. A one-time `migration.sparkleWarpTimers22_27` migration sets existing users to 22s/27s, immediately saves the marker, then respects later customization. The reset button restores both defaults. Both timers use the Safari progress clock.
 
-Timers bind to the Safari run, world and client connection. Each run arms at most one timer. Disabling warping, changing its delay/mode/runner, enabling Leech, disconnecting, or a stale run/world cancels the warp. Invitations stop on a manual/confirmed party warp. Automatic return cleanup follows Safari-to-Torrhus travel, even if the last run did not start a timer; it does not trigger just on login. Explicit enable preparation remains the exception that can prepare a party immediately in another Hypixel area.
+Timers bind to the Safari run, world and client connection. Each run arms at most one timer. Disabling warping, changing its mode/runner, enabling Leech, disconnecting, or a stale run/world cancels the warp. Changing the warp slider reschedules against the same run clock, including an already-filled party; changing only reparty keeps the armed warp. Invitations stop on a manual/confirmed party warp. Automatic return cleanup follows Safari-to-Torrhus travel, even if the last run did not start a timer; it does not trigger just on login. Explicit enable preparation remains the exception that can prepare a party immediately in another Hypixel area.
 
 No new ShinyHunter/profile requests are introduced. Party membership uses the existing Hypixel Mod API roster; verified names use loaded profiles, the existing name cache or the existing asynchronous name resolver. Mode, runner, toggles, delay and Warp List persist in the main configuration. Run timers, cleanup queues, leecher lists and pending invites do not persist.
 
@@ -103,3 +103,5 @@ Contest handling: leader warp entry requires Uncommon, regardless of the ticket-
 ## Entry and command reliability
 
 Once inside an entered run, a new contest or unearned Uncommon reward does not prevent arming invitations and the returning-player phase. The contest guard before entry remains independent. Early sparkling discoveries are retained for the current run until the invitation cycle starts. All automatic game commands share a minimum 500 ms send interval, including party chat, invites, leave/accept, cleanup, warp, profile confirmation and automated quest replies. Leech acceptance waits at least 500 ms after initiating leave and still requires confirmed departure. Queued commands expire after five seconds and are dropped on connection/run changes; warp/cleanup and leech commands recheck their mode before sending.
+
+2026-11-18 — Reparty/Auto-party cutoff defaults to 22s and warp to 27s, with independent sliders and a one-time upgrade reset.

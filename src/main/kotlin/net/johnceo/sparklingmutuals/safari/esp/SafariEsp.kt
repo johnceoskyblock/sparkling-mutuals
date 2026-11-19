@@ -552,9 +552,23 @@ object SafariEsp {
         if(!SafariEspConfig.critterGlow || !SafariAssist.visualsActive(client) || client.player==null || client.options.smHideGui)return null
         if(indexedTargets!==targets) {indexedTargets=targets;targetIndex=targets.associateBy {it.entity.id}}
         val target=targetIndex[entity.id]?.takeIf {it.entity===entity} ?: return null
-        if(SafariEspConfig.boxGlowFallback(target.species) || target.species=="Rockmite" && entity is Display.ItemDisplay)return null
+        if(target.species=="Rockmite" && entity is Display.ItemDisplay)return null
         if(!drawable(target,client) || critterEspDecision(target,client,SafariAssist.biome,System.currentTimeMillis())!="Eligible")return null
         return targetColor(target)
+    }
+
+    fun sparklingDuplicoColor(entity: Entity): Int? {
+        if (entity.type != EntityType.INTERACTION) return null
+        val client = Minecraft.getInstance()
+        if (!SafariAssist.visualsActive(client) || client.options.smHideGui) return null
+        val sparkling = SafariAssist.sparklingDuplicoBodies()
+        if (sparkling.isEmpty()) return null
+        val blocks = targets.filter { it.species == "Duplico" && drawable(it,client) }
+        if (blocks.none { it.entity === entity }) return null
+        val matched = sparkling.any { body ->
+            blocks.filter { it.entity.distanceToSqr(body) <= 9.0 }.minByOrNull { it.entity.distanceToSqr(body) }?.entity === entity
+        }
+        return if (matched) SafariEspConfig.rgb(net.johnceo.sparklingmutuals.config.AppearanceConfig.sparklingColor) else null
     }
 
     private fun render(context: LevelRenderContext) {
@@ -567,11 +581,6 @@ object SafariEsp {
         val now = System.currentTimeMillis()
         val timers = mutableListOf<Triple<String, Int, AABB>>()
         targets = targets.filter { drawable(it, client) }
-        val sparklingBoxes=SafariAssist.boxHighlights().map {(body,name)->
-            targets.filter {it.species==name && it.entity.distanceToSqr(body)<=9.0}
-                .minByOrNull {it.entity.distanceToSqr(body)} ?: Target(body,name,false)
-        }.distinctBy {it.entity.id}
-        val sparklingBoxIds=sparklingBoxes.map {it.entity.id}.toSet()
         if (!ConfigManager.hideCritterEsp()) {
         for (target in targets) {
             val e = target.entity
@@ -586,7 +595,7 @@ object SafariEsp {
                 val projected = if (height == null) box else box.move(0.0, height - e.getPosition(delta).y, 0.0)
                 val food = if (mob.name == "Scrappy") scrappyFoods.food(e.uuid) else null
                 val color = targetColor(target)
-                if(e.id !in sparklingBoxIds && (SafariEspConfig.showCritterBox(mob.name) || mob.name=="Rockmite" && e is Display.ItemDisplay)) frame(projected, color)
+                if(SafariEspConfig.showCritterBox(mob.name) || mob.name=="Rockmite" && e is Display.ItemDisplay) frame(projected, color)
                 if (mob.name == "Scrappy" && food != null) WorldRenderCompat.label(context, food.label, color,
                     projected.center.x, projected.maxY + .2, projected.center.z, SafariEspConfig.scrappyLabelWorldScale)
                 if (mob.name == "Litterbug" && height != null) litterbugs.hiddenMarker(e.uuid, e.x, e.y, e.z, now)?.let {
@@ -631,7 +640,6 @@ object SafariEsp {
             }
         }
         }
-        sparklingBoxes.forEach {frame(bounds(it,delta),SafariEspConfig.rgb(net.johnceo.sparklingmutuals.config.AppearanceConfig.sparklingColor))}
         val incenseIds = SafariFloorDrops.state.incenseDropIds(dropPredictor.knownDrops)
         val selectedDrops = predictedDrops.filter { floorEspEligible(it, client, playerBiome, incenseIds) }
         val tiles = selectedDrops.map { it.marker() to SafariEspConfig.rgb(SafariEspConfig.dropColor(it.type!!)) }

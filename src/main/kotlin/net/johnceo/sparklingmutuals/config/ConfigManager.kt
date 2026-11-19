@@ -49,7 +49,10 @@ object ConfigManager {
     var sparklingHotspotAnnouncer = false
     var timesaveOnly = true
     var warpAlertsEnabled = false
-    var warpDelaySeconds = 28
+    var warpDelaySeconds = 27
+    var repartyDelaySeconds = 22
+    fun validRepartyDelay(value: Int?,warpSeconds: Int=warpDelaySeconds) =
+        (value ?: 22).coerceIn(1,minOf(29,(warpSeconds-1).coerceAtLeast(1)))
     var autoParty = false
     var autoPartyOnlineOnly = false
     var sparkleWarpMode = 0
@@ -163,6 +166,12 @@ object ConfigManager {
             properties.setProperty("shardSaleGuidance", "true")
             properties.setProperty("migration.shardSaleGuidanceV2", "true")
         }
+        val updateWarpTimings = properties.getProperty("migration.sparkleWarpTimers22_27") != "true"
+        if(updateWarpTimings) {
+            properties.setProperty("warpDelaySeconds","27")
+            properties.setProperty("repartyDelaySeconds","22")
+            properties.setProperty("migration.sparkleWarpTimers22_27","true")
+        }
         settingsTheme = properties.getProperty("settingsTheme")?.toIntOrNull()?.coerceIn(0,33) ?: 4
         specialCatchAlert = properties.getProperty("specialCatchAlert")?.toBooleanStrictOrNull() ?: true
         alwaysCelebrateSparkling = properties.getProperty("alwaysCelebrateSparkling")?.toBooleanStrictOrNull() ?: false
@@ -177,7 +186,8 @@ object ConfigManager {
         if (!properties.containsKey("hotspotAnnouncer")) hotspotAnnouncer = uniqueHotspotAnnouncer || fullClearHotspotAnnouncer || sparklingHotspotAnnouncer
         if (uniqueHideCritterEsp || uniqueHideFloorDropEsp) profitableShardEsp=false
         if (sparklingHideCritterEsp || sparklingHideFloorDropEsp) sparklingProfitableShardEsp=false
-        warpDelaySeconds = properties.getProperty("warpDelaySeconds", "28").toIntOrNull()?.coerceIn(1, 86400) ?: 28
+        warpDelaySeconds = properties.getProperty("warpDelaySeconds", "27").toIntOrNull()?.coerceIn(1, 86400) ?: 27
+        repartyDelaySeconds = validRepartyDelay(properties.getProperty("repartyDelaySeconds")?.toIntOrNull())
         sparkleWarpMode = properties.getProperty("sparkleWarpMode", "0").toIntOrNull()?.coerceIn(0,1) ?: 0
         warpDuo = properties.getProperty("warpDuo", "").trim().takeIf { Regex("[A-Za-z0-9_]{1,16}").matches(it) }.orEmpty()
         leechMode = properties.getProperty("leechMode", "false").toBoolean()
@@ -203,7 +213,7 @@ object ConfigManager {
         SafariFullClear.applyEspPreset()
         BannerConfig.load(properties)
         AppearanceConfig.load(properties)
-        if (introduceShardGuidance) {
+        if (introduceShardGuidance || updateWarpTimings) {
             Files.createDirectories(configPath.parent)
             PersonalBestConfig.write(configPath, properties, "Sparkling Mutuals configuration")
         }
@@ -221,7 +231,9 @@ object ConfigManager {
             setProperty("sparklingSoundVolume", sparklingSoundVolume.coerceIn(0, 100).toString())
             flags.forEach { (property, _) -> setProperty(property.name, property.get().toString()) }
             setProperty("migration.shardSaleGuidanceV2", "true")
+            setProperty("migration.sparkleWarpTimers22_27","true")
             setProperty("warpDelaySeconds", warpDelaySeconds.toString())
+            setProperty("repartyDelaySeconds",validRepartyDelay(repartyDelaySeconds).toString())
             setProperty("sparkleWarpMode", sparkleWarpMode.toString())
             setProperty("warpDuo", warpDuo)
             setProperty("settingsTheme", settingsTheme.toString())
