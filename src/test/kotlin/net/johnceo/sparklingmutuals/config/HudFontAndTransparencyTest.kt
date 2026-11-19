@@ -14,14 +14,17 @@ class HudFontAndTransparencyTest {
         ConfigManager.init(dir)
         val settings = SafariSettings()
         assertTrue(settings.general.font.hudTextShadow)
-        assertTrue(settings.general.font.pixelAlignedHuds)
+        assertFalse(settings.general.font.pixelAlignedHuds)
         settings.general.font.hudTextShadow = false
-        settings.general.font.pixelAlignedHuds = false
+        settings.general.font.pixelAlignedHuds = true
         settings.apply()
         ConfigManager.init(dir)
         assertFalse(AppearanceConfig.hudTextShadow)
-        assertFalse(AppearanceConfig.pixelAlignedHuds)
+        assertTrue(AppearanceConfig.pixelAlignedHuds)
         assertTrue(AppearanceConfig.resourcePackFont)
+        SafariSettings().apply { general.font.pixelAlignedHuds = false }.apply()
+        ConfigManager.init(dir)
+        assertFalse(AppearanceConfig.pixelAlignedHuds)
     }
 
     @Test fun `HUD font preference is in Overview and survives autosave`() {
