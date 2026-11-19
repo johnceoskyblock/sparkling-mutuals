@@ -28,7 +28,7 @@ A Fabric client mod for Hypixel SkyBlock’s Critter Safari.
 | Safari modes | Track Sparkling checks, one catch per species, or a Full Clear with `/sparkle`, `/unique`, or `/fc`. |
 | Progress HUDs | See remaining critters, checks, captures, and supplies needed to finish the run. |
 | Critter ESP | Highlight eligible critters with model glow, optional boxes, and configurable species or biome colors. |
-| Floor-drop and structure ESP | Locate biome-specific floor drops, bee nests, Rockmite mounds, Snooper walls, and other spawn sources. |
+| Floor-drop and structure ESP | Locate biome-specific floor drops, bee nests, Rockmite mounds, Snoozle walls, and other spawn sources. |
 | Sparkling alerts | Highlight detected Sparklings and announce sightings with configurable visual and sound alerts. |
 | Sparkling lookups | Compare personal and party discoveries with `/sparkling`. |
 | Sparkling rates | See estimated runs per Sparkling with `/rates`. |
