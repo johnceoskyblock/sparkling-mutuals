@@ -59,10 +59,11 @@ class ContestGui(private val parent: Screen? = null) : Screen(Component.literal(
             SafariHud.SPARKLINGS to SafariAssist.nearbyPanel(preview = true)!!) + SmallAlerts.previews() + net.johnceo.sparklingmutuals.skyblock.market.HuntingBoxHuds.previews()
         SafariHud.available.filter { it !in SmallAlerts.titles.keys }.forEach { hud ->
             val panel = panels.getValue(hud)
-            previews.add(Preview(hud.label, hud.layout, panel.width(HudFonts.font::width), panel.height, HudConfigLinks.target(hud)) { g, x, y ->
+            val panelWidth=panel.width(HudFonts.font::width,AppearanceConfig.panels[hud.name.lowercase()])
+            previews.add(Preview(hud.label, hud.layout, panelWidth, panel.height, HudConfigLinks.target(hud)) { g, x, y ->
                 if (hud == SafariHud.BANNER) net.johnceo.sparklingmutuals.hud.SafariBanners.renderPreview(g,x,y,
-                    hud.layout.renderScale(width,height,panel.width(HudFonts.font::width),panel.height))
-                else panel.draw(g, x, y, hud.layout.renderScale(width, height, panel.width(HudFonts.font::width), panel.height),
+                    hud.layout.renderScale(width,height,panelWidth,panel.height))
+                else panel.draw(g, x, y, hud.layout.renderScale(width, height, panelWidth,panel.height),
                     AppearanceConfig.panels.getValue(hud.name.lowercase())) })
         }
         val gap=6

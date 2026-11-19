@@ -103,15 +103,16 @@ internal object ShardSaleSidebar {
     private fun paint(g: GuiGraphicsExtractor,x: Int,y: Int,scale: Float,rows: List<SavedBoxRow>,count: Int,capacity: Int,height: Int,columns: Int,perColumn: Int) {
         val client=Minecraft.getInstance();val font=HudFonts.font
         g.pose().pushMatrix();g.pose().translate(x.toFloat(),y.toFloat());g.pose().scale(scale,scale)
-        AppearanceConfig.panels.getValue("shard_guidance").draw(g,WIDTH*columns,height)
+        val style=AppearanceConfig.panels.getValue("shard_guidance")
+        style.draw(g,WIDTH*columns,height)
         fun text(s: String,x: Int,y: Int,color: Int=HudRow.WHITE)=g.text(font,s,x,y,color,HudFonts.shadow)
         g.fill(3,3,WIDTH*columns-3,HEADER-5,0x332A2417)
         g.fill(3,3,5,HEADER-5,HudRow.GOLD)
-        text("§lSafari Shard Guidance",9,6,HudRow.GOLD)
-        text("Highest holding value first · Before tax",6,17,HudRow.GRAY)
+        net.johnceo.sparklingmutuals.hud.HudHeader.draw(g,style,"§lSafari Shard Guidance",HudRow.GOLD,WIDTH*columns,9)
+        text("Highest holding value first · Before tax",6,17,style.labels.resolve(HudRow.GRAY))
         val average=rows.firstNotNullOfOrNull {it.advice.sale?.average}
-        text("7d volume avg: "+(average?.let(ShardSalePresentation::compact) ?: "—")+" shards",6,28,HudRow.GRAY)
-        if(count==0)text("Open pages containing Safari shards",6,HEADER,HudRow.GRAY)
+        text("7d volume avg: "+(average?.let(ShardSalePresentation::compact) ?: "—")+" shards",6,28,style.labels.resolve(HudRow.GRAY))
+        if(count==0)text("Open pages containing Safari shards",6,HEADER,style.labels.resolve(HudRow.GRAY))
         rows.forEachIndexed {index,row->
             val top=HEADER+(index%perColumn)*ROW;val sale=row.advice.sale
             g.pose().pushMatrix();g.pose().translate((index/perColumn*WIDTH).toFloat(),0f)
@@ -121,8 +122,8 @@ internal object ShardSaleSidebar {
             text(name,6,top)
             text(action,WIDTH-6-font.width(action),top,color)
             val value=sale?.let {ShardSalePresentation.compact(it.recommended)+" coins"} ?: "—"
-            text((if(row.shard.amount==0L)"Each: " else "Value: ")+value,6,top+12,HudRow.GOLD)
-            text("7d volume: "+(sale?.weekly?.let(ShardSalePresentation::compact) ?: "—"),6,top+24,HudRow.GRAY)
+            text((if(row.shard.amount==0L)"Each: " else "Value: ")+value,6,top+12,style.values.resolve(HudRow.GOLD))
+            text("7d volume: "+(sale?.weekly?.let(ShardSalePresentation::compact) ?: "—"),6,top+24,style.labels.resolve(HudRow.GRAY))
             val label=ShardSalePresentation.volumeLabel(sale?.ratio)
             val tint=ShardSalePresentation.volumeColor(sale?.ratio)
             text(label,WIDTH-6-font.width(label),top+24,tint)
@@ -138,7 +139,7 @@ internal object ShardSaleSidebar {
                 g.fill(6,top+ROW-4,WIDTH-6,top+ROW-3,0x553B3B43)
             g.pose().popMatrix()
         }
-        text(if(count>capacity)"${scroll+1}–${minOf(scroll+capacity,count)} / $count · Scroll" else "$count shard types · Hover for details",6,height-11,HudRow.GRAY)
+        text(if(count>capacity)"${scroll+1}–${minOf(scroll+capacity,count)} / $count · Scroll" else "$count shard types · Hover for details",6,height-11,style.labels.resolve(HudRow.GRAY))
         if(count>capacity) {
             val track=perColumn*ROW
             val thumb=(track*capacity/count).coerceAtLeast(10)

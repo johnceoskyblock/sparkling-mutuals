@@ -44,6 +44,7 @@ class SafariSettings {
     @JvmField @Category(name="ESP General",desc="") val espGeneral=EspGeneralSettings(esp.biomes,esp.floorDrops)
     init {
         esp.critterColors = customization.critters
+        esp.teammates = TeammateAppearanceSettings(safari.teammates)
         esp.waypointColors = customization.waypoints
         safari.alerts.appearance = customization.alert
         safari.alerts.nearbyAppearance = customization.huds.sparklings
@@ -452,7 +453,7 @@ class SafariSettings {
         @JvmField @ConfigOption(name="Missing / Unchecked",desc="") @Accordion val missingHud=HudOptions(ConfigManager.missingPanel,"missing")
         @JvmField @ConfigOption(name="Profitable shards checklist",desc="Unique and Sparkle modes. Current biome's /profit top ten and captures remaining.") @Accordion val profitableHud=HudOptions(ConfigManager.profitableChecklist,"profitable")
         @JvmField @ConfigOption(name="Lake Cleared alert",desc="Once per run after you catch Tepid, Nozzlenose and Mantis Shrimp. Resize in /sm gui.") @Accordion val lakeClearedHud=HudOptions(ConfigManager.lakeClearAlert,"lake_cleared")
-        @JvmField @ConfigOption(name="Biome Objectives",desc="") @Accordion val objectivesHud=HudOptions(ConfigManager.biomeObjectives,"objectives")
+        @JvmField @ConfigOption(name="Biome Objectives",desc="") @Accordion val objectivesHud=ObjectivesHudOptions()
         @JvmField @ConfigOption(name="Biome captures",desc="") @Accordion val capturesHud=HudOptions(ConfigManager.catchCountPanel,"captures")
         @JvmField @ConfigOption(name="Safari contest timer",desc="") @Accordion val contestHud=ContestHudOptions()
         @JvmField @ConfigOption(name="Show Safari HUDs",desc="")
@@ -477,6 +478,10 @@ class SafariSettings {
         var appearance=PanelAppearanceSettings(AppearanceConfig.panels.getValue("hotspot")) { AppearanceConfig.selectedHex }
         @JvmField @ConfigOption(name="Position and size",desc="") @ConfigEditorButton(buttonText="Edit HUDs")
         val placement=Runnable { val client=Minecraft.getInstance();client.smSetScreen(ContestGui(client.smScreen)) }
+    }
+    class ObjectivesHudOptions: HudOptions(ConfigManager.biomeObjectives,"objectives") {
+        @JvmField @ConfigOption(name="Capture reminder",desc="Capture all uniques / critters.") @ConfigEditorBoolean var captureReminder=ConfigManager.objectiveCaptureReminder
+        @JvmField @ConfigOption(name="Shiny-check reminder",desc="Check needed critters / Finish shiny checks.") @ConfigEditorBoolean var shinyReminder=ConfigManager.objectiveShinyReminder
     }
     class ProgressHudOptions: HudOptions(ConfigManager.progressHud,"progress") {
         @JvmField @ConfigOption(name="Profit line",desc="Shards, feathers and essence.") @ConfigEditorBoolean var profit=ConfigManager.progressProfit
@@ -583,7 +588,8 @@ class SafariSettings {
             ConfigManager.warpDuo=duoName
             net.johnceo.sparklingmutuals.alerts.SparkleWarping.configurationChanged()
         }
-        val changes = listOf(ConfigManager::safariEntryAutoEnter to warp.autoEnter, ConfigManager::sparklingCatchCount to safari.alerts.catchCount, ConfigManager::specialCatchAlert to safari.alerts.caught,
+        val changes = listOf(ConfigManager::objectiveCaptureReminder to tracking.objectivesHud.captureReminder,ConfigManager::objectiveShinyReminder to tracking.objectivesHud.shinyReminder,
+            ConfigManager::safariEntryAutoEnter to warp.autoEnter, ConfigManager::sparklingCatchCount to safari.alerts.catchCount, ConfigManager::specialCatchAlert to safari.alerts.caught,
             ConfigManager::alwaysCelebrateSparkling to safari.alerts.alwaysCelebrate,
             ConfigManager::allScannableCritterChecks to modes.sparkling.allScannable,
             ConfigManager::safariEntryCooldown to safari.entryCooldown.enabled,

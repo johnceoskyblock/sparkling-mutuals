@@ -33,7 +33,7 @@ class SettingsCatalog(settings: SafariSettings) {
         val routes=mapOf("General" to "HUDs → Overview","HUDs" to "HUDs → HUDs","Customization" to "HUDs → Appearance",
             "Modes" to "Safari → Modes","Safari helpers" to "Safari → Helpers","Miria contest" to "Safari → Contest",
             "Banner" to "Safari → Banner","Party Interactions" to "Party → Interactions","Sparkle Warping" to "Party → Sparkle Warping",
-            "History" to "History → History","API key" to "Advanced → API","SkyBlock" to "Advanced → SkyBlock","ESP" to "ESP → Customization","ESP General" to "ESP → General")
+            "History" to "History → History","API key" to "Advanced → API","SkyBlock" to "Advanced → SkyBlock","ESP" to "Customization → World ESP","ESP General" to "ESP → General")
         fun collect(rows: List<Row>,parent: String) { rows.forEach { row ->
             put(row,parent);collect(row.children,"$parent → ${row.name}")
         } }
@@ -96,6 +96,11 @@ class SettingsCatalog(settings: SafariSettings) {
             }
         }
         private fun rows(owner: Any,path: String): List<Row> {
+            if(owner is NameplateBiomeSettings) return owner.entries.map {entry ->
+                val field=NameplateEntry::class.java.getField("enabled")
+                Row(entry,field,entry.canonical,"",path+" / "+entry.canonical,rows(entry,path+" / "+entry.canonical),
+                    navigationName=entry.canonical,groupOverride=true)
+            }
             if(owner is CritterNameBiomeSettings) return owner.entries.map { entry ->
                 val field = CritterNameEntry::class.java.getField("name")
                 val itemPath = path+" / "+entry.canonical
@@ -105,6 +110,7 @@ class SettingsCatalog(settings: SafariSettings) {
             }
             if(owner is FloorDropEspSettings)return floorRows(owner,path)
             val result=fields(owner.javaClass).mapNotNull { field ->
+                if(owner is SafariSettings.SafariTeammateSettings && field.name in setOf("color","textScale"))return@mapNotNull null
                 if(owner is PanelAppearanceSettings && field.name=="expansion" && !owner.supportsExpansion)return@mapNotNull null
                 field.getAnnotation(ConfigOption::class.java)?.let { meta ->
                     field.isAccessible=true

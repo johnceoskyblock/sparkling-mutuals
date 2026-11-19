@@ -23,7 +23,30 @@ class ColorChoice(private val read: () -> String, private val write: (String) ->
     }
 }
 
+class HudTextColorSettings(private val source: HudTextColor) {
+    @JvmField @ConfigOption(name="Use custom color",desc="") @ConfigEditorBoolean var enabled=source.enabled
+    @JvmField @ConfigOption(name="Color",desc="") @ConfigEditorColour var color=source.color
+    fun apply(): Boolean {
+        val valid=SafariEspConfig.validColor(color,source.color)
+        val changed=source.enabled!=enabled || source.color!=valid
+        source.enabled=enabled;source.color=valid
+        return changed
+    }
+}
+class HudTextSettings(private val style: PanelStyle) {
+    @JvmField @ConfigOption(name="Header text",desc="Blank keeps the normal header.") @ConfigEditorText var headerText=style.headerText
+    @JvmField @ConfigOption(name="Header color",desc="") @Accordion val header=HudTextColorSettings(style.header)
+    @JvmField @ConfigOption(name="Label color",desc="Critter rarity and biome colors stay unchanged.") @Accordion val labels=HudTextColorSettings(style.labels)
+    @JvmField @ConfigOption(name="Value color",desc="Critter rarity, biome and contest bracket colors stay unchanged.") @Accordion val values=HudTextColorSettings(style.values)
+    fun apply(): Boolean {
+        val clean=headerText.replace(Regex("[\\p{Cc}\\p{Cf}]"),"").trim().take(64)
+        val changed=style.headerText!=clean
+        style.headerText=clean
+        return listOf(header.apply(),labels.apply(),values.apply(),changed).any {it}
+    }
+}
 class PanelAppearanceSettings(private val style: PanelStyle, selection: () -> String) {
+    @JvmField @ConfigOption(name="Text customization",desc="") @Accordion val text=HudTextSettings(style)
     private val layout=AppearanceConfig.panels.entries.firstOrNull {it.value===style}?.key?.let {id ->
         if(id=="miria") ContestConfig.layout else net.johnceo.sparklingmutuals.hud.SafariHud.entries.firstOrNull {it.name.lowercase()==id}?.layout
     }
@@ -45,7 +68,7 @@ class PanelAppearanceSettings(private val style: PanelStyle, selection: () -> St
         val changed = style.borderEnabled != borderEnabled || style.transparency != transparency || (layout!=null && layout.expansion!=direction)
         layout?.expansion=direction
         style.borderEnabled = borderEnabled; style.transparency = transparency
-        return listOf(border.apply(), background.apply(), changed).any { it }
+        return listOf(border.apply(), background.apply(), text.apply(), changed).any { it }
     }
 }
 

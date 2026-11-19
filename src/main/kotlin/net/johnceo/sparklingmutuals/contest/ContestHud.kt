@@ -34,10 +34,10 @@ object ContestHud {
         val style=AppearanceConfig.panels.getValue("miria")
         g.pose().pushMatrix();g.pose().translate(x.toFloat(),y.toFloat());g.pose().scale(scale,scale)
         style.draw(g,WIDTH,panelHeight(inactive),if(BannerConfig.biomeBorders) theme else null)
-        g.text(HudFonts.font,"Miria's Contest",6,6,if(BannerConfig.biomeBorders) theme else HudRow.GOLD,HudFonts.shadow)
+        HudHeader.draw(g,style,"Miria's Contest",if(BannerConfig.biomeBorders) theme else HudRow.GOLD,WIDTH)
         fun row(label: String,value: String,top: Int,color: Int) {
-            g.text(HudFonts.font,label,6,top,0xFFCCCCCC.toInt(),HudFonts.shadow)
-            g.text(HudFonts.font,value,WIDTH-6-HudFonts.font.width(value),top,color,HudFonts.shadow)
+            g.text(HudFonts.font,label,6,top,style.labels.resolve(0xFFCCCCCC.toInt()),HudFonts.shadow)
+            g.text(HudFonts.font,value,WIDTH-6-HudFonts.font.width(value),top,if(label=="Bracket") color else style.values.resolve(color),HudFonts.shadow)
         }
         val seconds=if(preview) 300 else if(inactive) ContestTracker.secondsToNextStart() else ContestTracker.secondsToEnd()
         row(if(inactive) "Contest Starting" else "Contest Time",ContestTracker.formatRemaining(seconds),18,
@@ -47,7 +47,7 @@ object ContestHud {
             if(ContestConfig.showBracket) { row("Bracket",tier.ifBlank { "—" },top,if(tier.isBlank()) HudRow.GRAY else HudThemes.tierColor(tier));top+=11 }
             val score=if(preview) 1234 else ContestTracker.currentPoints()
             if(ContestConfig.showScore) { row("Score",if(score<0) "—" else String.format(Locale.ROOT,"%,d",score),top,0xFFFFCC66.toInt());top+=11 }
-            g.text(HudFonts.font,if(ContestConfig.firstClassTicket) "First-Class Ticket" else "Basic Ticket",6,top,0xFFCCCCCC.toInt(),HudFonts.shadow)
+            g.text(HudFonts.font,if(ContestConfig.firstClassTicket) "First-Class Ticket" else "Basic Ticket",6,top,style.labels.resolve(0xFFCCCCCC.toInt()),HudFonts.shadow)
             UiIcons.draw(g,WIDTH-17,top,if(earned) UiIcons.Kind.CHECK else UiIcons.Kind.CROSS,
                 if(earned) 0xFF55FF55.toInt() else 0xFFFF5555.toInt())
         }

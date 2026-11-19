@@ -113,6 +113,7 @@ object SafariEspConfig {
     fun rgb(color: String) = SettingsColor.argb(color)
     private fun key(name: String) = name.lowercase().replace(' ', '_')
     fun load(properties: Properties) {
+        CritterNameplates.load(properties)
         critterGlow=properties.getProperty("esp.critterGlow")?.toBooleanStrictOrNull() ?: true
         critterBoxes=properties.getProperty("esp.critterBoxes")?.toBooleanStrictOrNull() ?: false
         biomeCritterColors=properties.getProperty("esp.biomeCritterColors")?.toBooleanStrictOrNull() ?: false
@@ -159,6 +160,7 @@ object SafariEspConfig {
             properties.getProperty("esp.rockmite.color")?.let { mobs.getValue("Rockmite").color } ?: defaultColor(0xFFFFFFFF.toInt()))
     }
     fun save(properties: Properties) {
+        CritterNameplates.save(properties)
         properties.setProperty("esp.critterGlow",critterGlow.toString())
         properties.setProperty("esp.critterBoxes",critterBoxes.toString())
         properties.setProperty("esp.biomeCritterColors",biomeCritterColors.toString())

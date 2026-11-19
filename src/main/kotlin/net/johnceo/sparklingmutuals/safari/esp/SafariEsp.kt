@@ -556,6 +556,26 @@ object SafariEsp {
         if(!drawable(target,client) || critterEspDecision(target,client,SafariAssist.biome,System.currentTimeMillis())!="Eligible")return null
         return targetColor(target)
     }
+    private fun nameplateShown(target: Target,client: Minecraft): Boolean {
+        val option=net.johnceo.sparklingmutuals.config.CritterNameplates.options.getValue(target.species)
+        return option.enabled && client.player!=null && !client.options.smHideGui && SafariAssist.visualsActive(client) &&
+            client.player!!.distanceToSqr(target.entity)<=option.range.toDouble()*option.range && drawable(target,client) &&
+            !(target.species=="Rockmite" && target.entity is Display.ItemDisplay) &&
+            critterEspDecision(target,client,SafariAssist.biome,System.currentTimeMillis())=="Eligible"
+    }
+    fun hideVanillaNameTag(entity: Entity): Boolean {
+        if(!net.johnceo.sparklingmutuals.config.CritterNameplates.anyEnabled)return false
+        val client=Minecraft.getInstance()
+        val raw=entity.customName?.string?.let(SafariRules::strip)
+        val species=raw?.let(SafariEspRules::labelSpecies) ?: if(raw?.matches(Regex("(?i)^Wumpa\\s+zZz$"))==true) "Wumpa" else null
+        return targets.any { target ->
+            net.johnceo.sparklingmutuals.config.CritterNameplates.enabled(target.species) &&
+                net.johnceo.sparklingmutuals.config.CritterNameplates.options.getValue(target.species).replaceTag &&
+                (target.entity===entity || modelLabels.label(target.entity.uuid)==entity.uuid ||
+                    (entity is ArmorStand || entity is Display.TextDisplay) && species==target.species && target.entity.distanceToSqr(entity)<=9.0) &&
+                nameplateShown(target,client)
+        }
+    }
 
     fun sparklingDuplicoColor(entity: Entity): Int? {
         if (entity.type != EntityType.INTERACTION) return null
@@ -595,6 +615,16 @@ object SafariEsp {
                 val projected = if (height == null) box else box.move(0.0, height - e.getPosition(delta).y, 0.0)
                 val food = if (mob.name == "Scrappy") scrappyFoods.food(e.uuid) else null
                 val color = targetColor(target)
+                if(nameplateShown(target,client)) {
+                    val option=net.johnceo.sparklingmutuals.config.CritterNameplates.options.getValue(mob.name)
+                    val distance=kotlin.math.sqrt(client.player!!.distanceToSqr(e))
+                    val sparkling=SafariAssist.isHighlighted(e.id) || sparklingDuplicoColor(e)!=null
+                    val label=net.johnceo.sparklingmutuals.config.CritterNameplates.label(mob.name,option.text,distance.toInt(),sparkling)
+                    val nameColor=if(!option.useEspColor) SafariEspConfig.rgb(option.color) else if(sparkling)
+                        SafariEspConfig.rgb(net.johnceo.sparklingmutuals.config.AppearanceConfig.sparklingColor) else color
+                    WorldRenderCompat.label(context,label,nameColor,projected.center.x,projected.maxY+.25,projected.center.z,
+                        .025f*option.textScale*maxOf(1f,(distance/20).toFloat()),if(option.background) 0x60000000 else 0,true)
+                }
                 if(SafariEspConfig.showCritterBox(mob.name) || mob.name=="Rockmite" && e is Display.ItemDisplay) frame(projected, color)
                 if (mob.name == "Scrappy" && food != null) WorldRenderCompat.label(context, food.label, color,
                     projected.center.x, projected.maxY + .2, projected.center.z, SafariEspConfig.scrappyLabelWorldScale)

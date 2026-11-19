@@ -4,6 +4,8 @@ import net.johnceo.sparklingmutuals.safari.resources.FloorDropType
 
 /** Modes own targets; these switches only control where their highlights appear. */
 class SafariEspSettings {
+    @JvmField @ConfigOption(name="Critter nameplates",desc="Readable labels above selected ESP targets.") @Accordion val nameplates=NameplateSettings()
+    @JvmField @ConfigOption(name="Teammate appearance",desc="") @Accordion var teammates=TeammateAppearanceSettings(SafariSettings.SafariTeammateSettings())
     @JvmField @ConfigOption(name="Custom critter names",desc="Visual names throughout the mod and on critter nametags.") @Accordion val names=CritterNameSettings()
     @JvmField @ConfigOption(name="Biome critter colors",desc="") @Accordion val biomeColors=BiomeCritterColorSettings()
     @JvmField @ConfigOption(name = "Individual critter colors", desc = "Used for biomes without a biome color override.") @Accordion
@@ -39,7 +41,7 @@ class SafariEspSettings {
         set(value) { biomes.haunted = value }
     fun apply(): Boolean {
         val scale = SafariEspConfig.validTextScale(textScale)
-        val colorsChanged = listOf(floorColors.apply(),biomeColors.apply(),names.apply()).any {it}
+        val colorsChanged = listOf(floorColors.apply(),biomeColors.apply(),names.apply(),nameplates.apply(),teammates.apply()).any {it}
         val sizesChanged = floorTextSizes.apply()
         val visibilityChanged = floorDrops.visibility.apply()
         var changed = colorsChanged || sizesChanged || visibilityChanged || SafariEspConfig.textScale != scale ||

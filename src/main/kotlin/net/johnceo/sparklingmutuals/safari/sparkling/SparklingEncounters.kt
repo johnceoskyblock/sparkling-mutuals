@@ -165,13 +165,15 @@ object SparklingEncounters {
             graphics.text(HudFonts.font, text, -HudFonts.font.width(text) / 2, 0, textColor,HudFonts.shadow)
             graphics.pose().popMatrix()
         }
-        val titleScale = minOf(4f, (width - 16f) / HudFonts.font.width(panel.title))
+        val heading=style.title(panel.title)
+        val titleScale = minOf(4f, (width - 16f) / HudFonts.font.width(heading).coerceAtLeast(1))
         val subtitleScale = minOf(2f, (width - 16f) / maxOf(HudFonts.font.width(name), HudFonts.font.width(where)))
         val top = height / 2f - (HudFonts.font.lineHeight * titleScale + 22 + HudFonts.font.lineHeight * subtitleScale * 2) / 2
-        centered(panel.title, top, titleScale, color)
+        centered(heading, top, titleScale, style.header.resolve(color))
         val white = (alpha shl 24) or 0xFFFFFF
         panel.rows.forEachIndexed { index, row -> centered(row.label,
-            top + HudFonts.font.lineHeight * titleScale + 14 + index * (HudFonts.font.lineHeight * subtitleScale + 4), subtitleScale, white) }
+            top + HudFonts.font.lineHeight * titleScale + 14 + index * (HudFonts.font.lineHeight * subtitleScale + 4), subtitleScale,
+            if(index==0)white else style.labels.resolve(white)) }
     }
     fun playSound(client: Minecraft): SimpleSoundInstance? {
         if (ConfigManager.sparklingSoundVolume <= 0) return null

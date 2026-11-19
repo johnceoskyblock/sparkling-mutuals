@@ -16,6 +16,11 @@ class CritterTextDisplayMixin {
     private fun names(entity: Display.TextDisplay,state: TextDisplayEntityRenderState,delta: Float,ci: CallbackInfo) {
         val client=Minecraft.getInstance()
         if(!SafariAssist.visualsActive(client))return
+        if(net.johnceo.sparklingmutuals.safari.esp.SafariEsp.hideVanillaNameTag(entity)) {
+            state.cachedInfo=null
+            state.textRenderState=null
+            return
+        }
         val original=state.cachedInfo ?: return
         var changed=false
         val lines=original.lines().map { line ->

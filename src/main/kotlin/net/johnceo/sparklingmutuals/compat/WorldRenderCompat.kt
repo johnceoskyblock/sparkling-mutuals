@@ -123,7 +123,8 @@ object WorldRenderCompat {
         }
     }
 
-    fun label(context: LevelRenderContext, text: String, color: Int, x: Double, y: Double, z: Double, scale: Float) {
+    fun label(context: LevelRenderContext, text: String, color: Int, x: Double, y: Double, z: Double, scale: Float,
+        background: Int = 0x40000000, shadow: Boolean = false) {
         val shown = net.johnceo.sparklingmutuals.safari.ui.CritterNames.display(text)
         val client = Minecraft.getInstance()
         val camera = client.gameRenderer.smCamera
@@ -139,11 +140,11 @@ object WorldRenderCompat {
         poses.scale(scale, -scale, scale)
         //? if >=26.2 {
         /*context.submitNodeCollector().submitText(poses, -client.font.width(shown) / 2f, 0f,
-            Component.literal(shown).visualOrderText, false, Font.DisplayMode.SEE_THROUGH,
-            LightCoordsUtil.FULL_BRIGHT, color, 0x40000000, 0)
+            Component.literal(shown).visualOrderText, shadow, Font.DisplayMode.SEE_THROUGH,
+            LightCoordsUtil.FULL_BRIGHT, color, background, 0)
         *///? } else {
-        client.font.drawInBatch(shown, -client.font.width(shown) / 2f, 0f, color, false,
-            Matrix4f(poses.last().pose()), context.bufferSource(), Font.DisplayMode.SEE_THROUGH, 0x40000000, LightCoordsUtil.FULL_BRIGHT)
+        client.font.drawInBatch(shown, -client.font.width(shown) / 2f, 0f, color, shadow,
+            Matrix4f(poses.last().pose()), context.bufferSource(), Font.DisplayMode.SEE_THROUGH, background, LightCoordsUtil.FULL_BRIGHT)
         //? }
         poses.popPose()
     }

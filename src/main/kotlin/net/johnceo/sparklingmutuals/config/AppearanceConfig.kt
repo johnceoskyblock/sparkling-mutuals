@@ -4,7 +4,18 @@ import java.util.Properties
 import kotlin.math.roundToInt
 import net.minecraft.client.gui.GuiGraphicsExtractor
 
+class HudTextColor(default: Int) {
+    var enabled=false
+    var color=AppearanceConfig.color(default)
+    fun resolve(original: Int)=if(enabled) SafariEspConfig.rgb(color) else original
+}
+
 class PanelStyle {
+    var headerText=""
+    val header=HudTextColor(SafariTheme.ACCENT)
+    val labels=HudTextColor(0xFFFFFF)
+    val values=HudTextColor(0xFFFFFF)
+    fun title(original: String)=headerText.ifBlank {original}
     var borderEnabled = true
     var borderColor = AppearanceConfig.color(SafariTheme.BORDER)
     var backgroundColor = AppearanceConfig.color(SafariTheme.BACKGROUND)
@@ -52,6 +63,11 @@ object AppearanceConfig {
             // Seed the new panel from the existing Missing style, then save/edit it independently.
             fun saved(key: String) = properties.getProperty("appearance.$id.$key")
                 ?: if (id in setOf("objectives", "profitable", "lake_cleared")) properties.getProperty("appearance.missing.$key") else null
+            style.headerText=properties.getProperty("appearance.$id.headerText").orEmpty().replace(Regex("[\\p{Cc}\\p{Cf}]"),"").take(64)
+            listOf("header" to style.header,"labels" to style.labels,"values" to style.values).forEach {(name,text)->
+                text.enabled=properties.getProperty("appearance.$id.text.$name.enabled")?.toBooleanStrictOrNull() ?: false
+                text.color=SafariEspConfig.validColor(properties.getProperty("appearance.$id.text.$name.color"),color(if(name=="header") SafariTheme.ACCENT else 0xFFFFFF))
+            }
             style.borderEnabled = saved("borderEnabled")?.toBooleanStrictOrNull() ?: true
             val background = saved("backgroundColor")
             val legacyCompletion = id == "run_complete" && background == color(0xAAFFAA)
@@ -75,6 +91,11 @@ object AppearanceConfig {
         properties.setProperty("appearance.pixelAlignedHuds", pixelAlignedHuds.toString())
         properties.setProperty("appearance.selectedHex", selectedHex)
         panels.forEach { (id, style) ->
+            properties.setProperty("appearance.$id.headerText",style.headerText)
+            listOf("header" to style.header,"labels" to style.labels,"values" to style.values).forEach {(name,text)->
+                properties.setProperty("appearance.$id.text.$name.enabled",text.enabled.toString())
+                properties.setProperty("appearance.$id.text.$name.color",text.color)
+            }
             properties.setProperty("appearance.$id.borderEnabled", style.borderEnabled.toString())
             properties.setProperty("appearance.$id.borderColor", style.borderColor)
             properties.setProperty("appearance.$id.backgroundColor", style.backgroundColor)

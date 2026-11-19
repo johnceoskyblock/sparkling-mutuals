@@ -109,7 +109,8 @@ object SafariPanels {
         val helpers = buildList {
             addAll(supplies)
             val mode = SafariFullClear.mode
-            if(missingCritters(run,biome,party).isNotEmpty()) add(HudRow(when(mode) {
+            if(missingCritters(run,biome,party).isNotEmpty() &&
+                (if(mode==SafariMode.SPARKLING) ConfigManager.objectiveShinyReminder else ConfigManager.objectiveCaptureReminder)) add(HudRow(when(mode) {
                 SafariMode.UNIQUE -> "Capture all uniques"
                 SafariMode.FULL_CLEAR -> "Capture all critters"
                 SafariMode.SPARKLING -> "Check needed critters"
@@ -117,7 +118,7 @@ object SafariPanels {
             val checksLeft = if (run != null && mode == SafariMode.UNIQUE)
                 biome.critters.filter { party.needs(it.name) && !run.sparklingComplete(it.name, party) }
             else emptyList()
-            if (checksLeft.isNotEmpty()) add(HudRow("Finish shiny checks", icon = null))
+            if (ConfigManager.objectiveShinyReminder && checksLeft.isNotEmpty()) add(HudRow("Finish shiny checks", icon = null))
             if (run?.hasUnusedStartingForBiome(biome) == true) add(HudRow("Use starting items", icon = null))
             val birdNames=listOf("Bluebird","Parakeet","Macaw")
             val requiredBirds=birdNames.filter { !sparkling || party.needs(it) }.map { SafariRoster.named(it)!! }
@@ -175,7 +176,8 @@ object SafariPanels {
         return HudPanel("Biome Objectives", biome.color, helpers.filter { it.value!="0" }.map { row ->
             row.copy(color = net.johnceo.sparklingmutuals.hud.ObjectivePalette.color(row.label),
                 valueColor = if (row.value == "0") 0xFF55FF55.toInt() else HudRow.WHITE)
-        }.ifEmpty { listOf(HudRow("Confirm biome clear", icon = null)) },net.johnceo.sparklingmutuals.hud.UiIcons.forLabel(biome.label))
+        }.ifEmpty { if(!ConfigManager.objectiveCaptureReminder || !ConfigManager.objectiveShinyReminder) emptyList()
+            else listOf(HudRow("Confirm biome clear", icon = null)) },net.johnceo.sparklingmutuals.hud.UiIcons.forLabel(biome.label))
     }
     private fun captureColor(complete: Boolean, verified: Boolean) = if (!ConfigManager.fullClearMode || !verified) HudRow.WHITE
         else if (complete) 0xFF55FF55.toInt() else 0xFFFF5555.toInt()
