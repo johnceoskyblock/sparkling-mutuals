@@ -52,6 +52,7 @@ object SafariLookup {
     }
 
     fun run(command: PartyCommand, members: List<String>, localName: String = "You"): String = when (command.kind) {
+        PartyCommandKind.DYE -> command.dyeResult(net.johnceo.sparklingmutuals.history.Achievements.emeraldDyes)
         PartyCommandKind.PB_DOOM -> if (command.trackedPlayer) ConfigManager.personalBests.trackedResponse(command.ign, "Doomspiral", command.duo, localName) else ConfigManager.personalBests.response(localName, "Doomspiral", command.duo)
         PartyCommandKind.PB_WUMPA -> if (command.trackedPlayer) ConfigManager.personalBests.trackedResponse(command.ign, "Wumpa", command.duo, localName) else ConfigManager.personalBests.response(localName, "Wumpa", command.duo)
         PartyCommandKind.PB_FOREST -> if (command.trackedPlayer) ConfigManager.personalBests.trackedResponse(command.ign, "Forest", command.duo) else ConfigManager.personalBests.response(localName, "Forest")

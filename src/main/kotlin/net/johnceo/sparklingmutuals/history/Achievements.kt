@@ -133,6 +133,7 @@ object Achievements {
         var contestsCompleted: Int = 0, var lastContestWindow: Long = -1, var partyStreakVersion: Int = 0,
         var catalogVersion: Int = 0,var emeraldDyes: Int = 0)
     private var data = Data()
+    val emeraldDyes: Int get() = data.emeraldDyes
     private const val CATALOG_VERSION=2
     private var pendingHistoryCheck=true
     private val dyeProofs=DyeDropProofs()

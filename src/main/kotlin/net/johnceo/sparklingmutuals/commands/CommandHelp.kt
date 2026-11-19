@@ -6,7 +6,7 @@ import net.johnceo.sparklingmutuals.safari.completion.SafariFullClear
 /** Local slash-command help and the separate mode-aware party command reply. */
 object CommandHelp {
     private val party = listOf(
-        PartyCommandKind.MUTUALS, PartyCommandKind.MISSING, PartyCommandKind.TICKETS,
+        PartyCommandKind.MUTUALS, PartyCommandKind.MISSING, PartyCommandKind.TICKETS, PartyCommandKind.DYE,
         PartyCommandKind.SINCE_SPARKLING, PartyCommandKind.SINCE_UNIQUE,
         PartyCommandKind.PB_DOOM, PartyCommandKind.PB_WUMPA, PartyCommandKind.PB_FOREST,
         PartyCommandKind.PB_CAVERN, PartyCommandKind.PB_ICY, PartyCommandKind.PB_HAUNTED,

@@ -17,7 +17,7 @@ data class PartyChat(val sender: String, val body: String) {
     }
 }
 
-enum class PartyCommandKind { MUTUALS, MISSING, TICKETS, HELP, PB_DOOM, PB_WUMPA, PB_FOREST, PB_HAUNTED, PB_ICY, PB_CAVERN, MISSING_RUN, SINCE_SPARKLING, SINCE_UNIQUE }
+enum class PartyCommandKind { MUTUALS, MISSING, TICKETS, DYE, HELP, PB_DOOM, PB_WUMPA, PB_FOREST, PB_HAUNTED, PB_ICY, PB_CAVERN, MISSING_RUN, SINCE_SPARKLING, SINCE_UNIQUE }
 
 data class PartyCommand(val kind: PartyCommandKind, val ign: String = "", val duo: Boolean = false, val trackedPlayer: Boolean = false,
     val biome: SafariBiome? = null, val sinceCritter: String? = null) {
@@ -41,12 +41,13 @@ data class PartyCommand(val kind: PartyCommandKind, val ign: String = "", val du
     fun answerable(inSafari: Boolean = SafariAssist.inSafari, currentBiome: SafariBiome? = SafariAssist.biome, responderBiome: SafariBiome? = net.johnceo.sparklingmutuals.safari.SafariTracking.ledger.current?.biomeAtThirtySeconds) =
         kind != PartyCommandKind.MISSING_RUN || inSafari && responderBiome != null && (biome == null || biome == responderBiome)
     // Streak replies describe each responding client; explicit PB queries retain their requested IGN.
-    fun forResponder(name: String) = if (isSince || pbName != null && !trackedPlayer)
+    fun forResponder(name: String) = if (isSince || kind == PartyCommandKind.DYE || pbName != null && !trackedPlayer)
         copy(ign = name) else this
     private val failurePrefix: String get() = when (kind) {
         PartyCommandKind.MUTUALS -> "Mutual Timesave Shiny Critters: "
         PartyCommandKind.MISSING -> "Missing Timesave Shinies for $ign: "
         PartyCommandKind.TICKETS -> "Safari Tickets for $ign: "
+        PartyCommandKind.DYE -> "$ign: Emerald Dyes: "
         PartyCommandKind.SINCE_SPARKLING, PartyCommandKind.SINCE_UNIQUE -> ""
         PartyCommandKind.HELP -> "Commands: "
         PartyCommandKind.MISSING_RUN -> SafariMissingReply.prefix(biome)
@@ -55,6 +56,7 @@ data class PartyCommand(val kind: PartyCommandKind, val ign: String = "", val du
     }
 
     fun failureResult(message: String): String = failurePrefix + message
+    fun dyeResult(amount: Int): String = "$ign: Emerald Dyes ($amount)"
 
     fun matchesResponse(body: String): Boolean {
         return when (kind) {
@@ -77,6 +79,7 @@ data class PartyCommand(val kind: PartyCommandKind, val ign: String = "", val du
                 "^${Regex.escape(ign)}: Basic \\(\\d+\\), Economy \\(\\d+\\), Premium \\(\\d+\\), First-Class \\(\\d+\\)(?:, Total \\(\\d+\\))?$",
                 RegexOption.IGNORE_CASE
             ).matches(body)
+            PartyCommandKind.DYE -> Regex("^${Regex.escape(ign)}: Emerald Dyes \\(\\d+\\)$", RegexOption.IGNORE_CASE).matches(body)
             PartyCommandKind.SINCE_SPARKLING, PartyCommandKind.SINCE_UNIQUE -> SafariSinceReply.matches(this, body)
             PartyCommandKind.HELP -> body.startsWith("[SM] Commands: ")
             PartyCommandKind.MISSING_RUN -> body.startsWith(SafariMissingReply.prefix(biome), true)
@@ -90,6 +93,7 @@ data class PartyCommand(val kind: PartyCommandKind, val ign: String = "", val du
         PartyCommandKind.MUTUALS -> "!mutuals"
         PartyCommandKind.MISSING -> "!missing $ign"
         PartyCommandKind.TICKETS -> "!tickets $ign"
+        PartyCommandKind.DYE -> "!dye"
         PartyCommandKind.SINCE_SPARKLING -> sinceCritter?.let { "!since $it" } ?: "!since"
         PartyCommandKind.SINCE_UNIQUE -> "!since unique"
         PartyCommandKind.HELP -> "!commands"
@@ -113,6 +117,7 @@ data class PartyCommand(val kind: PartyCommandKind, val ign: String = "", val du
             val command = when (chat.body.lowercase()) {
                 "!mutual", "!mutuals" -> PartyCommand(PartyCommandKind.MUTUALS)
                 "!commands" -> PartyCommand(PartyCommandKind.HELP)
+                "!dye" -> PartyCommand(PartyCommandKind.DYE)
                 "!pb doom" -> PartyCommand(PartyCommandKind.PB_DOOM)
                 "!pb doom duo" -> PartyCommand(PartyCommandKind.PB_DOOM, duo = true)
                 "!pb wumpa" -> PartyCommand(PartyCommandKind.PB_WUMPA)

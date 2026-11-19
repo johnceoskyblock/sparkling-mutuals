@@ -124,6 +124,7 @@ object PartyCommands {
                 val localReply = when {
                     state.request.command.kind == PartyCommandKind.MISSING_RUN -> SafariMissingReply.current(state.request.command.biome, state.run)
                     state.request.command.isSince -> SafariSinceReply.current(state.request.command)
+                    state.request.command.kind == PartyCommandKind.DYE -> state.request.command.dyeResult(net.johnceo.sparklingmutuals.history.Achievements.emeraldDyes)
                     else -> null
                 }
                 state.task = executor.submit {
