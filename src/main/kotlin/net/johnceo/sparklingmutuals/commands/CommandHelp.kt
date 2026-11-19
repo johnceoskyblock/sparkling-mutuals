@@ -45,6 +45,6 @@ object CommandHelp {
     fun localLines(mode: SafariMode = SafariFullClear.mode) = listOf("§6Sparkling Mutuals — Commands") +
         local.map { (command, description) -> "§6$command §7— $description" }
 
-    fun partyReply(mode: SafariMode = SafariFullClear.mode) = "[SM] Commands: Party: " +
+    fun partyReply(mode: SafariMode = SafariFullClear.mode) = "[SM] Commands: " +
         available(mode).joinToString(", ") { if (it.kind == PartyCommandKind.SINCE_UNIQUE) "${it.text}, !since <critter>" else it.text } + if (mode != SafariMode.FULL_CLEAR) ", !pb doom duo, !pb wumpa duo, !pb doom <IGN>, !pb wumpa <IGN>" else ""
 }
