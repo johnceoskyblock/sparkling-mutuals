@@ -78,7 +78,9 @@ A Fabric client mod for Hypixel SkyBlock’s Critter Safari.
 | --- | --- |
 | HUD layout | Move and resize HUDs with `/sm gui` and choose how each panel expands. |
 | HUD appearance | Customize colors, borders, transparency, resource-pack fonts, text shadows, and pixel-aligned scaling. |
+| HUD text customization | Set custom headers and separate header, label, and value colors for supported HUDs. |
 | Custom critter names | Rename any of the 37 critters for local display while keeping tracking and party messages unchanged. |
+| Critter nameplates | Configure optional per-critter nameplates with custom text, distance, size, color, and backgrounds. |
 | Banners and catch effects | Customize Safari banners, alerts, and catch celebrations. |
 
 ### Other SkyBlock features
