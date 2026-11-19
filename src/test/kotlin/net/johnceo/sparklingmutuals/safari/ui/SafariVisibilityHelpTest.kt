@@ -12,7 +12,8 @@ class SafariVisibilityHelpTest {
     @Test fun `party help fits the server command length and excludes local commands`() {
         val reply = CommandHelp.partyReply(SafariMode.UNIQUE)
         assertTrue(reply.length + "/pc ".length <= 256, "Help reply has ${reply.length} characters")
-        assertTrue(reply.contains("Party:"))
+        assertTrue(reply.startsWith("[SM] Commands: "))
+        assertTrue(reply.contains("!dye"))
         assertFalse(reply.contains("Local:"))
         assertFalse(reply.contains("/"))
         assertTrue(reply.contains("!pb doom"))
