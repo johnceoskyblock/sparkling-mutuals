@@ -10,18 +10,32 @@ import org.junit.jupiter.api.io.TempDir
 class HudFontAndTransparencyTest {
     @TempDir lateinit var dir: Path
 
+    @Test fun `HUD shadow and pixel alignment preferences autosave without changing font choice`() {
+        ConfigManager.init(dir)
+        val settings = SafariSettings()
+        assertTrue(settings.general.font.hudTextShadow)
+        assertTrue(settings.general.font.pixelAlignedHuds)
+        settings.general.font.hudTextShadow = false
+        settings.general.font.pixelAlignedHuds = false
+        settings.apply()
+        ConfigManager.init(dir)
+        assertFalse(AppearanceConfig.hudTextShadow)
+        assertFalse(AppearanceConfig.pixelAlignedHuds)
+        assertTrue(AppearanceConfig.resourcePackFont)
+    }
+
     @Test fun `HUD font preference is in Overview and survives autosave`() {
         ConfigManager.init(dir)
         assertTrue(AppearanceConfig.resourcePackFont)
         val settings = SafariSettings()
         val overview = SettingsCatalog(settings).pages.single { it.name == "General" }
-        assertTrue(overview.rows.any { it.field.name == "resourcePackFont" })
-        settings.general.resourcePackFont = false
+        assertTrue(overview.rows.single { it.name == "HUD font customization" }.children.any { it.field.name == "resourcePackFont" })
+        settings.general.font.resourcePackFont = false
         settings.apply()
         ConfigManager.init(dir)
         assertFalse(AppearanceConfig.resourcePackFont)
         val restored = SafariSettings()
-        restored.general.resourcePackFont = true
+        restored.general.font.resourcePackFont = true
         restored.apply()
         ConfigManager.init(dir)
         assertTrue(AppearanceConfig.resourcePackFont)

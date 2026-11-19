@@ -13,7 +13,7 @@ import net.minecraft.client.input.MouseButtonEvent
 import net.minecraft.network.chat.Component
 
 /** Read-only viewer: compressed archives are opened in memory, never extracted or changed on disk. */
-class HistoryLogScreen(private val parent: Screen, private val entry: SparklingEntry) : Screen(Component.literal("Catch log")) {
+class HistoryLogScreen(private val parent: Screen, private val entry: SparklingEntry) : Screen(net.minecraft.client.Minecraft.getInstance(), net.johnceo.sparklingmutuals.hud.HudFonts.font, Component.literal("Catch log")) {
     private var source: LogImporter.CatchLog? = null
     private var lines: List<String> = emptyList()
     private var status = "Finding the original catch in your logs…"

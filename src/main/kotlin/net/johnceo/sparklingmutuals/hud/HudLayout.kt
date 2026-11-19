@@ -25,6 +25,7 @@ class HudLayout(private val defaultX: Float, private val defaultY: Float, privat
     private var basePanelWidth=0
     private var basePanelHeight=0
     private var lastGeometry: IntArray?=null
+    private var lastPixelRatio = 0f
     var expansion=HudExpansion.DOWN_RIGHT
         set(value) {
             if(field==value)return
@@ -35,13 +36,21 @@ class HudLayout(private val defaultX: Float, private val defaultY: Float, privat
         }
     private var referenceWidth = defaultReferenceWidth
     private var referenceHeight = defaultReferenceHeight
-    fun effectiveScale(screenWidth: Int, screenHeight: Int, panelWidth: Int, panelHeight: Int): Float {
-        if (referenceWidth <= 0 || referenceHeight <= 0) return scale
-        val adapted = scale * minOf(screenWidth / referenceWidth, screenHeight / referenceHeight)
-        return minOf(adapted, screenWidth.coerceAtLeast(1).toFloat() / panelWidth.coerceAtLeast(1),
+    fun effectiveScale(screenWidth: Int, screenHeight: Int, panelWidth: Int, panelHeight: Int, pixelRatio: Float = lastPixelRatio): Float {
+        val limit = minOf(screenWidth.coerceAtLeast(1).toFloat() / panelWidth.coerceAtLeast(1),
             screenHeight.coerceAtLeast(1).toFloat() / panelHeight.coerceAtLeast(1))
+        val adapted = if (referenceWidth <= 0 || referenceHeight <= 0) scale
+            else scale * minOf(screenWidth / referenceWidth, screenHeight / referenceHeight)
+        // Preserve legacy geometry when pixel alignment is disabled.
+        val fitted = if (pixelRatio > 0 || referenceWidth > 0 && referenceHeight > 0) minOf(adapted,limit) else adapted
+        return HudRaster.scale(fitted,pixelRatio,limit)
     }
-    fun bounds(screenWidth: Int, screenHeight: Int, panelWidth: Int, panelHeight: Int): HudBounds {
+    fun renderScale(screenWidth: Int, screenHeight: Int, panelWidth: Int, panelHeight: Int) =
+        effectiveScale(screenWidth,screenHeight,panelWidth,panelHeight,HudFonts.pixelRatio)
+    fun renderBounds(screenWidth: Int, screenHeight: Int, panelWidth: Int, panelHeight: Int) =
+        bounds(screenWidth,screenHeight,panelWidth,panelHeight,HudFonts.pixelRatio)
+    fun bounds(screenWidth: Int, screenHeight: Int, panelWidth: Int, panelHeight: Int, pixelRatio: Float = lastPixelRatio): HudBounds {
+        lastPixelRatio = pixelRatio
         if(basePanelWidth<=0)basePanelWidth=panelWidth.coerceAtLeast(1)
         if(basePanelHeight<=0)basePanelHeight=panelHeight.coerceAtLeast(1)
         lastGeometry=intArrayOf(screenWidth,screenHeight,panelWidth,panelHeight)
@@ -84,7 +93,7 @@ class HudLayout(private val defaultX: Float, private val defaultY: Float, privat
             properties.setProperty("hud.$id.referenceHeight", referenceHeight.toString())
         }
     }
-    fun reset() { lastGeometry=null; basePanelWidth=0;basePanelHeight=0;expansion=HudExpansion.DOWN_RIGHT;hasSavedPosition=false; x = defaultX; y = defaultY; scale = defaultScale }
+    fun reset() { lastPixelRatio=0f;lastGeometry=null; basePanelWidth=0;basePanelHeight=0;expansion=HudExpansion.DOWN_RIGHT;hasSavedPosition=false; x = defaultX; y = defaultY; scale = defaultScale }
 }
 
 enum class SafariHud(private val defaultLabel: String, val layout: HudLayout) {

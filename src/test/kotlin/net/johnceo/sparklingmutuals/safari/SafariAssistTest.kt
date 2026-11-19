@@ -29,6 +29,16 @@ class SafariAssistTest {
         assertNull(SafariRules.sparklingSpecies("Capturing Sparkling Rockmite"))
     }
 
+    @Test fun `sleeping Wumpa suffix identifies only a sparkling Wumpa nametag`() {
+        assertEquals("Wumpa", SafariRules.sparklingSpecies("§6SPARKLING §fWumpa §7zZz"))
+        assertEquals("Wumpa", SafariRules.sparklingSpecies("SPARKLING Wumpa zZz\u200B"))
+        assertEquals("Wumpa", SafariRules.sparklingSpecies("Sparkling Wumpa"))
+        assertNull(SafariRules.sparklingSpecies("Wumpa zZz"))
+        assertNull(SafariRules.sparklingSpecies("SPARKLING Macaw zZz"))
+        assertNull(SafariRules.sparklingSpecies("SPARKLING Wumpa zZz Shard"))
+        assertNull(SafariRules.sparklingSpecies("CAPTURING SPARKLING Wumpa zZz"))
+    }
+
     @Test fun `only server Hideyho dialogue arms quest acceptance`() {
         assertTrue(SafariRules.isHideyhoDialogue("[NPC] Hideyho: Want to play again?"))
         assertFalse(SafariRules.isHideyhoDialogue("Party > Farmer: Hideyho: Want to play again?"))

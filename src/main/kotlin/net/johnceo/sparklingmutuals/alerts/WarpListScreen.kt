@@ -18,7 +18,7 @@ import java.nio.file.Path
 
 /** Player cards and per-biome sparkling flags adapted from SafariUtils Ticket Trading (MIT). */
 class WarpListScreen(private val parent: Screen?, private val autoPartyChanged: (Boolean) -> Unit = {},
-                     private val onlineOnlyChanged: (Boolean) -> Unit = {}) : Screen(Component.literal("Sparkle Warping · Warp List")) {
+                     private val onlineOnlyChanged: (Boolean) -> Unit = {}) : Screen(net.minecraft.client.Minecraft.getInstance(), net.johnceo.sparklingmutuals.hud.HudFonts.font, Component.literal("Sparkle Warping · Warp List")) {
     private data class Hit(val x: Int,val y: Int,val w: Int,val h: Int,val critter: String? = null,val action: ()->Unit) {
         fun contains(mx: Double,my: Double)=mx>=x && mx<x+w && my>=y && my<y+h
     }

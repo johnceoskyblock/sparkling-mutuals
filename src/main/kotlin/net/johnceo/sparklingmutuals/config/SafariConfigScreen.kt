@@ -14,7 +14,7 @@ import net.minecraft.network.chat.Component
 import kotlin.math.round
 
 /** SafariUtils workspace layout adapted to our settings/actions (licenses/SafariUtils-MIT.txt). */
-class SafariConfigScreen(private val settings: SafariSettings = SafariSettings(), private val initialTarget: SettingsTarget? = null, private val returnTo: Screen? = null) : Screen(Component.literal("Sparkling Mutuals")) {
+class SafariConfigScreen(private val settings: SafariSettings = SafariSettings(), private val initialTarget: SettingsTarget? = null, private val returnTo: Screen? = null) : Screen(net.minecraft.client.Minecraft.getInstance(),net.johnceo.sparklingmutuals.hud.HudFonts.font,Component.literal("Sparkling Mutuals")) {
     private val catalog=SettingsCatalog(settings)
     private data class Area(val name: String,val pages: List<Int>)
     private val areas=listOf(Area("HUDs",listOf(0,7,10)),Area("Safari",listOf(1,6,3,12)),Area("Party",listOf(2,5)),
@@ -79,7 +79,7 @@ class SafariConfigScreen(private val settings: SafariSettings = SafariSettings()
         }
         val query=if(::search.isInitialized) search.value else initialQuery
         val header=ConfigLayout.header(left,right)
-        search=EditBox(font,left+9,19,(header.searchWidth-18).coerceAtLeast(16),18,Component.literal("Search settings"))
+        search=EditBox(net.minecraft.client.Minecraft.getInstance().font,left+9,19,(header.searchWidth-18).coerceAtLeast(16),18,Component.literal("Search settings"))
         search.setBordered(false);search.setMaxLength(160);search.setHint(Component.empty())
         search.value=query;search.setResponder { scroll=0 };addRenderableWidget(search)
         editor?.let { addRenderableWidget(it) };multilineEditor?.let { previous -> multilineEditor=createTextEditor(modal?.name.orEmpty(),previous.value);addRenderableWidget(multilineEditor!!) };ModUpdates.check()
@@ -342,13 +342,13 @@ class SafariConfigScreen(private val settings: SafariSettings = SafariSettings()
         modal=row;validation=""
         if(!colorEditing) {
             multilineEditor=createTextEditor(row.name,value).also { addRenderableWidget(it);setFocused(it) }
-        } else editor=EditBox(font,0,0,100,20,Component.literal(row.name)).also {
+        } else editor=EditBox(net.minecraft.client.Minecraft.getInstance().font,0,0,100,20,Component.literal(row.name)).also {
             it.setMaxLength(2048);it.value=value;addRenderableWidget(it);setFocused(it)
         }
     }
     private fun createTextEditor(title: String,value: String)=MultiLineEditBox.builder()
         .setTextColor(SettingsPalette.text).setTextShadow(false)
-        .build(font,(width-32).coerceAtMost(520)-24,70,Component.literal(title)).also {
+        .build(net.minecraft.client.Minecraft.getInstance().font,(width-32).coerceAtMost(520)-24,70,Component.literal(title)).also {
             it.setCharacterLimit(2048);it.setValue(value)
         }
     private fun saveEditor() {

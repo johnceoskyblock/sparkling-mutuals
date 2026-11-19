@@ -39,20 +39,20 @@ open class HudPanel(val title: String, val titleColor: Int = HudRow.GOLD, val ro
         graphics.pose().pushMatrix(); graphics.pose().translate(x.toFloat(), y.toFloat()); graphics.pose().scale(scale, scale)
         style.draw(graphics, w, height, borderOverride)
         titleIcon?.let { UiIcons.draw(graphics,6,6,it,titleColor) }
-        graphics.text(font, title, if(titleIcon!=null) 20 else 6, 6, titleColor, true)
+        graphics.text(font, title, if(titleIcon!=null) 20 else 6, 6, titleColor,HudFonts.shadow)
         rows.forEachIndexed { index, row ->
             val top = 17 + index * 11
             val icon=row.displayIcon
             icon?.let { UiIcons.draw(graphics,6,top,it,if(row.complete==true) 0xFF55FF88.toInt() else if(row.complete==false) 0xFFFF6677.toInt() else row.color) }
-            if (row.label.isNotEmpty()) graphics.text(font,row.label,if(icon!=null) 20 else 6,top,row.color,true)
+            if (row.label.isNotEmpty()) graphics.text(font,row.label,if(icon!=null) 20 else 6,top,row.color,HudFonts.shadow)
             row.gems.forEachIndexed { i,tint -> UiIcons.draw(graphics,(if(icon!=null) 20 else 6)+font.width(row.label)+6+i*14,top,UiIcons.Kind.GEM,tint) }
             var counterX=(if(icon!=null) 20 else 6)+font.width(row.label)+(if(row.label.isNotEmpty()) 8 else 0)
             row.counters.forEach { counter ->
                 UiIcons.draw(graphics,counterX,top,counter.icon,counter.color)
-                graphics.text(font,counter.count.toString(),counterX+14,top,counter.color,true)
+                graphics.text(font,counter.count.toString(),counterX+14,top,counter.color,HudFonts.shadow)
                 counterX+=22+font.width(counter.count.toString())
             }
-            row.value?.let { graphics.text(font, it, w - 6 - font.width(it), top, row.valueColor, true) }
+            row.value?.let { graphics.text(font, it, w - 6 - font.width(it), top, row.valueColor,HudFonts.shadow) }
             row.fraction?.let { fraction ->
                 val left = w - 6 - valueWidth - 6 - 34
                 graphics.fill(left, top + 3, left + 34, top + 7, 0xFF555555.toInt())
@@ -63,11 +63,11 @@ open class HudPanel(val title: String, val titleColor: Int = HudRow.GOLD, val ro
         graphics.pose().popMatrix()
     }
     fun bounds(hud: SafariHud, screenWidth: Int, screenHeight: Int) =
-        hud.layout.bounds(screenWidth, screenHeight, width(HudFonts.font::width), height)
+        hud.layout.renderBounds(screenWidth, screenHeight, width(HudFonts.font::width), height)
     fun draw(graphics: GuiGraphicsExtractor, hud: SafariHud) {
         val window = Minecraft.getInstance().window
         val bounds = bounds(hud, window.guiScaledWidth, window.guiScaledHeight)
-        val scale = hud.layout.effectiveScale(window.guiScaledWidth, window.guiScaledHeight,
+        val scale = hud.layout.renderScale(window.guiScaledWidth, window.guiScaledHeight,
             width(HudFonts.font::width), height)
         draw(graphics, bounds.x, bounds.y, scale, AppearanceConfig.panels.getValue(hud.name.lowercase()), HudThemes.border(hud))
     }

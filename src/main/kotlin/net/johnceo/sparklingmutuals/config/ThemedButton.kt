@@ -1,6 +1,6 @@
 package net.johnceo.sparklingmutuals.config
 
-import net.minecraft.client.Minecraft
+import net.johnceo.sparklingmutuals.safari.ui.CritterNames
 import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.gui.components.Button
 import net.minecraft.network.chat.Component
@@ -13,8 +13,9 @@ class ThemedButton private constructor(x: Int,y: Int,w: Int,h: Int,label: Compon
         val border=if(highlighted && active) SettingsPalette.accent else SettingsPalette.border
         g.fill(x,y,x+width,y+1,border);g.fill(x,y+height-1,x+width,y+height,border)
         g.fill(x,y,x+1,y+height,border);g.fill(x+width-1,y,x+width,y+height,border)
-        val font=Minecraft.getInstance().font
-        val text=font.plainSubstrByWidth(message.string,(width-8).coerceAtLeast(1))
+        val font=net.johnceo.sparklingmutuals.hud.HudFonts.font
+        val shown=font.plainSubstrByWidth(CritterNames.display(message.string),(width-8).coerceAtLeast(1))
+        val text=CritterNames.mark(Component.literal(shown).visualOrderText)
         g.text(font,text,x+(width-font.width(text))/2,y+(height-8)/2,if(active) SettingsPalette.text else SettingsPalette.muted,false)
     }
     class Builder(private val message: Component,private val action: OnPress) {

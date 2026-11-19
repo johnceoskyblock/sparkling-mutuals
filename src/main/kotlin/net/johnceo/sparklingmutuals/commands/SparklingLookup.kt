@@ -81,7 +81,7 @@ object SparklingLookup {
         val rule = Component.literal("                    ").withStyle(ChatFormatting.GOLD, ChatFormatting.STRIKETHROUGH)
         player.sendSystemMessage(rule)
         // One message per line, each with the hover, so it's one hover away wherever the cursor is.
-        lines.forEach { line -> player.sendSystemMessage(Component.literal(line).withStyle { it.withHoverEvent(HoverEvent.ShowText(hover)) }) }
+        lines.forEach { line -> player.sendSystemMessage(net.johnceo.sparklingmutuals.safari.ui.CritterNames.component(Component.literal(line).withStyle { it.withHoverEvent(HoverEvent.ShowText(net.johnceo.sparklingmutuals.safari.ui.CritterNames.component(hover))) })) }
         player.sendSystemMessage(rule)
     }
 
@@ -144,7 +144,7 @@ object SparklingLookup {
 
     private const val SEPARATOR = " §8| "
     private fun hover(caught: List<String>, missing: List<String>): MutableComponent {
-        val font = Minecraft.getInstance().font
+        val font = net.johnceo.sparklingmutuals.hud.HudFonts.font
         val tables = listOf(caught, missing).map { table(columns(it)) }
         val width = tables.maxOf { it.second }
         fun rule(c: Char) = Component.literal(c.toString().repeat(maxOf(4, width / maxOf(1, font.width(c.toString())))) + "\n")
@@ -161,7 +161,7 @@ object SparklingLookup {
      * isn't monospaced, so cells are padded with spaces measured in the game's font. Returns the renderer and width.
      */
     private fun table(columns: List<List<String>>): Pair<(Component) -> Component, Int> {
-        val font = Minecraft.getInstance().font
+        val font = net.johnceo.sparklingmutuals.hud.HudFonts.font
         val space = maxOf(1, font.width(" "))
         val separator = font.width(Component.literal(SEPARATOR))
         val starts = IntArray(columns.size)

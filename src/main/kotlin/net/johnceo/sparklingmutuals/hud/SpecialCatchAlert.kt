@@ -80,9 +80,9 @@ object SpecialCatchAlert {
                 val phase=if(style.textGradientSpeed()==0) 0f else age.toFloat()/(8000f/style.textGradientSpeed())
                 text.forEach { ch ->
                     val letter=ch.toString();val rgb=java.awt.Color.HSBtoRGB(phase+(cursor-x)/HudFonts.font.width(text).coerceAtLeast(1)*.5f,.5f,1f)
-                    g.text(HudFonts.font,letter,cursor.toInt(),(y/scale).toInt(),(alpha shl 24) or (rgb and 0xFFFFFF),true);cursor+=HudFonts.font.width(letter)
+                    g.text(HudFonts.font,letter,cursor.toInt(),(y/scale).toInt(),(alpha shl 24) or (rgb and 0xFFFFFF),HudFonts.shadow);cursor+=HudFonts.font.width(letter)
                 }
-            } else g.centeredText(HudFonts.font,Component.literal(text),(w/(2*scale)).toInt(),(y/scale).toInt(),(alpha shl 24) or (color and 0xFFFFFF))
+            } else g.text(HudFonts.font,Component.literal(text),(w/(2*scale)).toInt()-HudFonts.font.width(text)/2,(y/scale).toInt(),(alpha shl 24) or (color and 0xFFFFFF),HudFonts.shadow)
             g.pose().popMatrix()
         }
         val titleY=h*.396f

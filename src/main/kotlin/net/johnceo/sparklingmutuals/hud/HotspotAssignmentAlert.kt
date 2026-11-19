@@ -167,7 +167,7 @@ object HotspotAssignmentAlert {
         graphics.fill(0,0,3,height,color);graphics.fill(width-3,0,width,height,color)
         fun centered(text: String,y: Float,scale: Float,tint: Int) {
             graphics.pose().pushMatrix();graphics.pose().translate(width/2f,y);graphics.pose().scale(scale,scale)
-            graphics.text(HudFonts.font,text,-HudFonts.font.width(text)/2,0,tint,true)
+            graphics.text(HudFonts.font,text,-HudFonts.font.width(text)/2,0,tint,HudFonts.shadow)
             graphics.pose().popMatrix()
         }
         val title="${biome.label} Biome"

@@ -61,8 +61,8 @@ class ContestGui(private val parent: Screen? = null) : Screen(Component.literal(
             val panel = panels.getValue(hud)
             previews.add(Preview(hud.label, hud.layout, panel.width(HudFonts.font::width), panel.height, HudConfigLinks.target(hud)) { g, x, y ->
                 if (hud == SafariHud.BANNER) net.johnceo.sparklingmutuals.hud.SafariBanners.renderPreview(g,x,y,
-                    hud.layout.effectiveScale(width,height,panel.width(HudFonts.font::width),panel.height))
-                else panel.draw(g, x, y, hud.layout.effectiveScale(width, height, panel.width(HudFonts.font::width), panel.height),
+                    hud.layout.renderScale(width,height,panel.width(HudFonts.font::width),panel.height))
+                else panel.draw(g, x, y, hud.layout.renderScale(width, height, panel.width(HudFonts.font::width), panel.height),
                     AppearanceConfig.panels.getValue(hud.name.lowercase())) })
         }
         val gap=6
@@ -83,7 +83,7 @@ class ContestGui(private val parent: Screen? = null) : Screen(Component.literal(
             .bounds(start+(buttonWidth+gap)*2, height - 24, buttonWidth, 20).build())
     }
     private fun snapLabel()="Snap: "+if(ConfigManager.hudSnapping) "On" else "Off"
-    private fun bounds(preview: Preview) = preview.layout.bounds(width, height, preview.width, preview.height)
+    private fun bounds(preview: Preview) = preview.layout.renderBounds(width, height, preview.width, preview.height)
     private fun hovered(x: Double, y: Double) = previews.asReversed().firstOrNull { bounds(it).contains(x, y) }
     override fun extractRenderState(graphics: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, delta: Float) {
         graphics.fill(0, 0, width, height, (0x88000000.toInt() or SafariTheme.BACKGROUND))

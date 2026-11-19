@@ -20,24 +20,24 @@ object ContestHud {
         if(client.player==null || client.level==null || client.options.smHideGui || client.smScreen is ContestGui ||
             !ContestConfig.trackContest || !ContestConfig.showContestTimer || !ContestTracker.isActive() || !SkyblockSidebar.inSkyblock(client)) return
         val w=client.window
-        val bounds=ContestConfig.layoutFor(w.guiScaledWidth,w.guiScaledHeight).bounds(w.guiScaledWidth,w.guiScaledHeight,WIDTH,panelHeight(ContestTracker.betweenContests()))
+        val bounds=ContestConfig.layoutFor(w.guiScaledWidth,w.guiScaledHeight).renderBounds(w.guiScaledWidth,w.guiScaledHeight,WIDTH,panelHeight(ContestTracker.betweenContests()))
         renderAt(g,bounds.x,bounds.y,false)
     }
     fun renderPreview(g: GuiGraphicsExtractor,x: Int,y: Int)=renderAt(g,x,y,true)
     private fun renderAt(g: GuiGraphicsExtractor,x: Int,y: Int,preview: Boolean) {
         val client=Minecraft.getInstance();val w=client.window
         val inactive=!preview && ContestTracker.betweenContests()
-        val scale=ContestConfig.layoutFor(w.guiScaledWidth,w.guiScaledHeight).effectiveScale(w.guiScaledWidth,w.guiScaledHeight,WIDTH,panelHeight(inactive))
+        val scale=ContestConfig.layoutFor(w.guiScaledWidth,w.guiScaledHeight).renderScale(w.guiScaledWidth,w.guiScaledHeight,WIDTH,panelHeight(inactive))
         val earned=preview || ContestTracker.isComplete()
         val tier=if(preview) "Uncommon" else ContestTracker.currentTier()
         val theme=HudThemes.ticketColor(earned,inactive,tier)
         val style=AppearanceConfig.panels.getValue("miria")
         g.pose().pushMatrix();g.pose().translate(x.toFloat(),y.toFloat());g.pose().scale(scale,scale)
         style.draw(g,WIDTH,panelHeight(inactive),if(BannerConfig.biomeBorders) theme else null)
-        g.text(HudFonts.font,"Miria's Contest",6,6,if(BannerConfig.biomeBorders) theme else HudRow.GOLD,true)
+        g.text(HudFonts.font,"Miria's Contest",6,6,if(BannerConfig.biomeBorders) theme else HudRow.GOLD,HudFonts.shadow)
         fun row(label: String,value: String,top: Int,color: Int) {
-            g.text(HudFonts.font,label,6,top,0xFFCCCCCC.toInt(),true)
-            g.text(HudFonts.font,value,WIDTH-6-HudFonts.font.width(value),top,color,true)
+            g.text(HudFonts.font,label,6,top,0xFFCCCCCC.toInt(),HudFonts.shadow)
+            g.text(HudFonts.font,value,WIDTH-6-HudFonts.font.width(value),top,color,HudFonts.shadow)
         }
         val seconds=if(preview) 300 else if(inactive) ContestTracker.secondsToNextStart() else ContestTracker.secondsToEnd()
         row(if(inactive) "Contest Starting" else "Contest Time",ContestTracker.formatRemaining(seconds),18,
@@ -47,7 +47,7 @@ object ContestHud {
             if(ContestConfig.showBracket) { row("Bracket",tier.ifBlank { "—" },top,if(tier.isBlank()) HudRow.GRAY else HudThemes.tierColor(tier));top+=11 }
             val score=if(preview) 1234 else ContestTracker.currentPoints()
             if(ContestConfig.showScore) { row("Score",if(score<0) "—" else String.format(Locale.ROOT,"%,d",score),top,0xFFFFCC66.toInt());top+=11 }
-            g.text(HudFonts.font,if(ContestConfig.firstClassTicket) "First-Class Ticket" else "Basic Ticket",6,top,0xFFCCCCCC.toInt(),true)
+            g.text(HudFonts.font,if(ContestConfig.firstClassTicket) "First-Class Ticket" else "Basic Ticket",6,top,0xFFCCCCCC.toInt(),HudFonts.shadow)
             UiIcons.draw(g,WIDTH-17,top,if(earned) UiIcons.Kind.CHECK else UiIcons.Kind.CROSS,
                 if(earned) 0xFF55FF55.toInt() else 0xFFFF5555.toInt())
         }

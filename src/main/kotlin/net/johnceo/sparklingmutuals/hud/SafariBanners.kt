@@ -131,14 +131,14 @@ object SafariBanners {
         val active=activeBanner ?: return
         val preview=previewPanel();val window=client.window;val width=window.guiScaledWidth;val height=window.guiScaledHeight
         val anchor=preview.bounds(SafariHud.BANNER,width,height)
-        val base=SafariHud.BANNER.layout.effectiveScale(width,height,preview.width(HudFonts.font::width),preview.height)
+        val base=SafariHud.BANNER.layout.renderScale(width,height,preview.width(HudFonts.font::width),preview.height)
         val maxWidth=((width-10)/base).toInt().coerceAtLeast(32)
         val text=Component.literal(active.notice.text).withStyle { it.withBold(BannerConfig.font in setOf(1,3)).withItalic(BannerConfig.font in setOf(2,3)) }
         val lines=HudFonts.font.split(text,(maxWidth-16).coerceAtLeast(16))
         val frameWidth=(lines.maxOfOrNull(HudFonts.font::width) ?: 0)+16
         val frameHeight=18+(lines.size-1).coerceAtLeast(0)*12
         val scale=minOf(base,(height-10f)/frameHeight)
-        val area=SafariHud.BANNER.layout.bounds(width,height,frameWidth,frameHeight)
+        val area=SafariHud.BANNER.layout.renderBounds(width,height,frameWidth,frameHeight)
         val x=area.x.toFloat()
         val y=area.y.toFloat()
         draw(g,active.notice.text,active.notice.color,active.alpha(now()),active.remaining(now()),x,y,scale,maxWidth)
@@ -171,7 +171,7 @@ object SafariBanners {
             g.fill(start.toInt(),top,(start+length).toInt(),top+1,(alpha shl 24) or blend(color,0xFFFFFF,.32f));g.pose().popMatrix()
         }
         bar(BannerConfig.topBar,inset);bar(BannerConfig.bottomBar,height-inset-1)
-        lines.forEachIndexed { i,line -> g.text(font,line,(width-font.width(line))/2,5+i*12,accent,BannerConfig.shadow) }
+        lines.forEachIndexed { i,line -> g.text(font,line,(width-font.width(line))/2,5+i*12,accent,BannerConfig.shadow && HudFonts.shadow) }
         g.pose().popMatrix()
     }
 }

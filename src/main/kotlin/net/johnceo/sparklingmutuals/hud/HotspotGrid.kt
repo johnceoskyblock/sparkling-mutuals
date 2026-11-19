@@ -34,8 +34,8 @@ class HotspotGridPanel(private val players: List<SafariPartySync.HotspotRow>,pri
         val font=HudFonts.font
         graphics.pose().pushMatrix();graphics.pose().translate(x.toFloat(),y.toFloat());graphics.pose().scale(scale,scale)
         style.draw(graphics,grid.width,grid.height,borderOverride)
-        graphics.text(font,"Hotspots",6,6,HudRow.GOLD,true)
-        if(players.isEmpty()) graphics.text(font,"Waiting for party…",6,20,HudRow.GRAY,true)
+        graphics.text(font,"Hotspots",6,6,HudRow.GOLD,HudFonts.shadow)
+        if(players.isEmpty()) graphics.text(font,"Waiting for party…",6,20,HudRow.GRAY,HudFonts.shadow)
         players.take(4).forEachIndexed { i,player ->
             val cell=grid.cell(i)
             val cellAlpha = (34 * (style.backgroundArgb ushr 24) / 255)
@@ -44,15 +44,15 @@ class HotspotGridPanel(private val players: List<SafariPartySync.HotspotRow>,pri
             val nameScale=minOf(1f,(cell.width-6).coerceAtLeast(1).toFloat()/font.width(player.name).coerceAtLeast(1))
             graphics.pose().pushMatrix();graphics.pose().translate((cell.x+3).toFloat(),(cell.y+3).toFloat())
             graphics.pose().scale(nameScale,nameScale)
-            graphics.text(font,player.name,0,0,nameColor,true)
+            graphics.text(font,player.name,0,0,nameColor,HudFonts.shadow)
             graphics.pose().popMatrix()
             fun biome(label: String,biome: SafariBiome?,line: Int) {
-                graphics.text(font,label,cell.x+3,cell.y+line,HudRow.GRAY,true)
-                graphics.text(font,biome?.label ?: "?",cell.x+15,cell.y+line,HotspotGrid.biomeColor(biome),true)
+                graphics.text(font,label,cell.x+3,cell.y+line,HudRow.GRAY,HudFonts.shadow)
+                graphics.text(font,biome?.label ?: "?",cell.x+15,cell.y+line,HotspotGrid.biomeColor(biome),HudFonts.shadow)
             }
             biome("H:",player.actual,15);biome("A:",player.assigned,26)
-            graphics.text(font,"Wins",cell.x+3,cell.y+38,HudRow.GRAY,true)
-            graphics.text(font,player.wins.toString(),cell.x+28,cell.y+38,HudRow.GOLD,true)
+            graphics.text(font,"Wins",cell.x+3,cell.y+38,HudRow.GRAY,HudFonts.shadow)
+            graphics.text(font,player.wins.toString(),cell.x+28,cell.y+38,HudRow.GOLD,HudFonts.shadow)
         }
         graphics.pose().popMatrix()
     }

@@ -31,6 +31,9 @@ class SafariShinyMixin {
             state.outlineColor = color
             critterState.`sm$setCritterGlow`(true)
         }
+        if (SafariAssist.visualsActive(net.minecraft.client.Minecraft.getInstance())) state.nameTag = state.nameTag?.let {
+            net.johnceo.sparklingmutuals.safari.ui.CritterNames.component(it)
+        }
     }
 
     @Inject(method=["submit(Lnet/minecraft/client/renderer/entity/state/EntityRenderState;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;Lnet/minecraft/client/renderer/state/level/CameraRenderState;)V"],at=[At("TAIL")])

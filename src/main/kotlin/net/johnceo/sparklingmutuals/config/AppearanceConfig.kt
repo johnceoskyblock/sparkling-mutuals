@@ -26,6 +26,8 @@ class PanelStyle {
 
 object AppearanceConfig {
     var resourcePackFont = true
+    var hudTextShadow = true
+    var pixelAlignedHuds = true
     fun color(rgb: Int) = "0:255:${rgb shr 16 and 255}:${rgb shr 8 and 255}:${rgb and 255}"
     val panels = listOf("hotspot", "miria", "progress", "profitable", "lake_cleared", "missing", "objectives", "captures", "sparklings", "alert", "gems", "bird_food", "incense", "coins", "warp", "run_complete", "doom_throw", "entry_cooldown", "developer", "shard_guidance", "hunting_box_value").associateWith { PanelStyle() }
     var runCompleteColor = color(0x55FF55)
@@ -41,7 +43,10 @@ object AppearanceConfig {
         return current.split(':').take(2).joinToString(":") + ":${rgb shr 16}:${rgb shr 8 and 255}:${rgb and 255}"
     }
     fun load(properties: Properties) {
+        net.johnceo.sparklingmutuals.safari.ui.CritterNames.load(properties)
         resourcePackFont = properties.getProperty("appearance.resourcePackFont")?.toBooleanStrictOrNull() ?: true
+        hudTextShadow = properties.getProperty("appearance.hudTextShadow")?.toBooleanStrictOrNull() ?: true
+        pixelAlignedHuds = properties.getProperty("appearance.pixelAlignedHuds")?.toBooleanStrictOrNull() ?: true
         selectedHex = properties.getProperty("appearance.selectedHex")?.takeIf { withHex(color(0), it) != null } ?: "#FFD700"
         panels.forEach { (id, style) ->
             // Seed the new panel from the existing Missing style, then save/edit it independently.
@@ -64,7 +69,10 @@ object AppearanceConfig {
     private fun migratedColor(saved: String?, default: Int, legacy: Set<Int>): String =
         if (legacy.any { saved == color(it) }) color(default) else SafariEspConfig.validColor(saved, color(default))
     fun save(properties: Properties) {
+        net.johnceo.sparklingmutuals.safari.ui.CritterNames.save(properties)
         properties.setProperty("appearance.resourcePackFont", resourcePackFont.toString())
+        properties.setProperty("appearance.hudTextShadow", hudTextShadow.toString())
+        properties.setProperty("appearance.pixelAlignedHuds", pixelAlignedHuds.toString())
         properties.setProperty("appearance.selectedHex", selectedHex)
         panels.forEach { (id, style) ->
             properties.setProperty("appearance.$id.borderEnabled", style.borderEnabled.toString())

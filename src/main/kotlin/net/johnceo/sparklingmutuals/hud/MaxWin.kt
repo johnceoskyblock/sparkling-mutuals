@@ -139,14 +139,14 @@ internal object MaxWin {
         var x = -HudFonts.font.width(title) / 2
         title.forEachIndexed { i, c ->
             val text = c.toString()
-            g.text(HudFonts.font, text, x, 0, edgeAlpha or rgb(i * width / title.length), true)
+            g.text(HudFonts.font, text, x, 0, edgeAlpha or rgb(i * width / title.length),HudFonts.shadow)
             x += HudFonts.font.width(text)
         }
         g.pose().popMatrix()
         val subtitle = "$shownCoins Shining Coins in inventory"
         val subScale = minOf(2f, (width - 16f) / HudFonts.font.width(subtitle))
         g.pose().pushMatrix(); g.pose().translate(width / 2f, y + HudFonts.font.lineHeight * scale + 14); g.pose().scale(subScale, subScale)
-        g.text(HudFonts.font, subtitle, -HudFonts.font.width(subtitle) / 2, 0, edgeAlpha or 0xFFFFFF, true)
+        g.text(HudFonts.font, subtitle, -HudFonts.font.width(subtitle) / 2, 0, edgeAlpha or 0xFFFFFF,HudFonts.shadow)
         g.pose().popMatrix()
     }
 }

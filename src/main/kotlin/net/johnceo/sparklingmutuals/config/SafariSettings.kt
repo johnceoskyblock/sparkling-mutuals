@@ -81,12 +81,20 @@ class SafariSettings {
         @ConfigEditorBoolean var phantomleafSolver = ConfigManager.phantomleafSolver
     }
     class General {
-        @JvmField @ConfigOption(name = "Use resource pack font", desc = "Use Minecraft's active font for all HUDs and alerts.")
-        @ConfigEditorBoolean var resourcePackFont = AppearanceConfig.resourcePackFont
+        @JvmField @ConfigOption(name = "HUD font customization", desc = "") @Accordion
+        val font = HudFontSettings()
         @JvmField @ConfigOption(name = "Command help", desc = "")
         @ConfigEditorButton(runnableId = 3, buttonText = "Show help") var help = false
         @JvmField @ConfigOption(name = "Move and resize HUDs", desc = "Drag to move; scroll to resize.")
         @ConfigEditorButton(runnableId = 1, buttonText = "Edit HUDs") var edit = false
+    }
+    class HudFontSettings {
+        @JvmField @ConfigOption(name = "Use resource pack font", desc = "Use Minecraft's active font for all HUDs and alerts.")
+        @ConfigEditorBoolean var resourcePackFont = AppearanceConfig.resourcePackFont
+        @JvmField @ConfigOption(name = "HUD text shadow", desc = "")
+        @ConfigEditorBoolean var hudTextShadow = AppearanceConfig.hudTextShadow
+        @JvmField @ConfigOption(name = "Pixel-aligned HUD scaling", desc = "Even screen pixels for sharper text. May slightly change HUD size.")
+        @ConfigEditorBoolean var pixelAlignedHuds = AppearanceConfig.pixelAlignedHuds
     }
     class Modes {
         @JvmField @ConfigOption(name = "Unique mode", desc = "") @Accordion val unique = Unique()
@@ -550,8 +558,11 @@ class SafariSettings {
             tracking.captures = ConfigManager.catchCountPanel
             lastAppliedMode = currentMode
         }
-        val fontChanged = AppearanceConfig.resourcePackFont != general.resourcePackFont
-        AppearanceConfig.resourcePackFont = general.resourcePackFont
+        val fontChanged = AppearanceConfig.resourcePackFont != general.font.resourcePackFont ||
+            AppearanceConfig.hudTextShadow != general.font.hudTextShadow || AppearanceConfig.pixelAlignedHuds != general.font.pixelAlignedHuds
+        AppearanceConfig.resourcePackFont = general.font.resourcePackFont
+        AppearanceConfig.hudTextShadow = general.font.hudTextShadow
+        AppearanceConfig.pixelAlignedHuds = general.font.pixelAlignedHuds
         val bannerChanged = banner.apply() || fontChanged
         if (modes.unique.hideCritters || modes.unique.hideDrops) modes.unique.profitable=false
         if (modes.sparkling.hideCritters || modes.sparkling.hideDrops) modes.sparkling.profitable=false

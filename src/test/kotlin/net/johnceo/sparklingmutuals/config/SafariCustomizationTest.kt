@@ -156,7 +156,7 @@ class SafariCustomizationTest {
         assertEquals(setOf("Ticket mode", "Announce ticket earned", "Ticket earned message", "Contest tracking", "Party Contest Guard Entry", "Honeyhive beacons"), names(SafariSettings.Miria::class.java).toSet())
         assertTrue(names(SafariSettings.Unique::class.java).contains("Profitable critter ESP"))
         assertEquals(setOf("5 minute warning", "3 minute warning", "1 minute warning", "No contest warnings", "Warning titles", "Sound volume", "Warning sound", "Preview sound"), names(SafariSettings.Warning::class.java).toSet())
-        assertEquals(setOf("Use resource pack font", "Command help", "Move and resize HUDs"), names(SafariSettings.General::class.java).toSet())
+        assertEquals(setOf("HUD font customization", "Command help", "Move and resize HUDs"), names(SafariSettings.General::class.java).toSet())
         assertFalse(names(SafariSettings.Party::class.java).contains("Command help"))
         assertFalse(names(SafariSettings.Tracking::class.java).contains("Move and resize HUDs"))
         assertFalse(names(SafariSettings.Safari::class.java).any { it in setOf("Remaining", "Highlight Snooper Walls", "Highlight bee nests") })

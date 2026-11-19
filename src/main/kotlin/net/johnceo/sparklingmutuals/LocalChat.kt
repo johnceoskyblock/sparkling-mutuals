@@ -15,11 +15,11 @@ object LocalChat {
             result.append(prefix())
             result.append(Component.literal(line.removePrefix("[SM] ")).withStyle { it.withColor(SafariTheme.CHAT_TEXT) })
         }
-        return result
+        return net.johnceo.sparklingmutuals.safari.ui.CritterNames.component(result)
     }
     /** An already-styled line behind the usual prefix. */
-    fun component(body: Component): Component = Component.empty().withStyle { it.withColor(SafariTheme.CHAT_TEXT) }
-        .append(prefix()).append(body)
+    fun component(body: Component): Component = net.johnceo.sparklingmutuals.safari.ui.CritterNames.component(
+        Component.empty().withStyle { it.withColor(SafariTheme.CHAT_TEXT) }.append(prefix()).append(body))
 
     /** Light local feedback, with a gold inside verdict. */
     fun hideyho(inside: Boolean, bold: Boolean = false): Component = Component.literal("Hideyho ")

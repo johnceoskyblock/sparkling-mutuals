@@ -46,5 +46,9 @@ object CommandHelp {
         local.map { (command, description) -> "§6$command §7— $description" }
 
     fun partyReply(mode: SafariMode = SafariFullClear.mode) = "[SM] Commands: " +
-        available(mode).joinToString(", ") { if (it.kind == PartyCommandKind.SINCE_UNIQUE) "${it.text}, !since <critter>" else it.text } + if (mode != SafariMode.FULL_CLEAR) ", !pb doom duo, !pb wumpa duo, !pb doom <IGN>, !pb wumpa <IGN>" else ""
+        available(mode).joinToString(", ") { when(it.kind) {
+            PartyCommandKind.SINCE_UNIQUE -> "${it.text}, !since <critter>"
+            PartyCommandKind.PB_DOOM, PartyCommandKind.PB_WUMPA -> "${it.text} [IGN] [duo]"
+            else -> it.text
+        } } + ", !hotspot on, !hotspot off"
 }

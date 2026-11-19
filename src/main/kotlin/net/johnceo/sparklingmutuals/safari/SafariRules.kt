@@ -7,13 +7,16 @@ object SafariRules {
     private val glyphs = Regex("[\\p{Cf}\\p{Co}]")
     private val dialogue = Regex("^\\[(?:NPC|MOB)] ", RegexOption.IGNORE_CASE)
     private val hideyho = Regex("^\\[(?:NPC|MOB)] Hideyho:.*$", RegexOption.IGNORE_CASE)
+    private val sleepingWumpa = Regex("^Wumpa\\s+zZz$", RegexOption.IGNORE_CASE)
 
     fun strip(text: String) = text.replace(formatting, "").replace(glyphs, "").trim()
     fun withinRange(distanceSquared: Double) = distanceSquared >= 0 && distanceSquared <= RADIUS * RADIUS
     fun sparklingSpecies(text: String): String? {
         val name = strip(text)
         if (!name.startsWith("Sparkling ", ignoreCase = true)) return null
-        return SafariRoster.named(name.substring(10).trim())?.name
+        val species = name.substring(10).trim()
+        if (sleepingWumpa.matches(species)) return "Wumpa"
+        return SafariRoster.named(species)?.name
     }
     fun zone(lines: List<String>): String? {
         val normalized = lines.map(::strip)

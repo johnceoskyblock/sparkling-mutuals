@@ -65,7 +65,7 @@ internal object BazaarOfferSidebar {
         val hover=area.rowAt(mx.toDouble(),my.toDouble())?.let {rows.getOrNull(scroll+it)}
         g.pose().pushMatrix();g.pose().translate(area.x.toFloat(),area.y.toFloat());g.pose().scale(area.scale,area.scale)
         AppearanceConfig.panels.getValue("progress").draw(g,width,height)
-        fun text(value: String,x: Int,y: Int,color: Int=0xFF000000.toInt() or SafariTheme.TEXT)=g.text(HudFonts.font,value,x,y,color,true)
+        fun text(value: String,x: Int,y: Int,color: Int=0xFF000000.toInt() or SafariTheme.TEXT)=g.text(HudFonts.font,value,x,y,color,HudFonts.shadow)
         text("Safari sell offers",6,6,HudRow.GOLD)
         rows.drop(scroll).take(area.rows).forEachIndexed {index,row->
             val y=header+index*rowHeight

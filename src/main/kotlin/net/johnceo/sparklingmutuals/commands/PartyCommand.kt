@@ -22,6 +22,7 @@ enum class PartyCommandKind { MUTUALS, MISSING, TICKETS, DYE, HELP, PB_DOOM, PB_
 data class PartyCommand(val kind: PartyCommandKind, val ign: String = "", val duo: Boolean = false, val trackedPlayer: Boolean = false,
     val biome: SafariBiome? = null, val sinceCritter: String? = null) {
     val isSince get() = kind == PartyCommandKind.SINCE_SPARKLING || kind == PartyCommandKind.SINCE_UNIQUE
+    val personalResult get() = isSince || kind == PartyCommandKind.DYE
     val requiresApiKey get() = kind in listOf(PartyCommandKind.MUTUALS, PartyCommandKind.MISSING, PartyCommandKind.TICKETS)
     val pbName get() = when (kind) {
         PartyCommandKind.PB_DOOM -> "Doomspiral"
@@ -56,7 +57,7 @@ data class PartyCommand(val kind: PartyCommandKind, val ign: String = "", val du
     }
 
     fun failureResult(message: String): String = failurePrefix + message
-    fun dyeResult(amount: Int): String = "$ign: Emerald Dyes ($amount)"
+    fun dyeResult(amount: Int): String = "Emerald Dyes: $amount"
 
     fun matchesResponse(body: String): Boolean {
         return when (kind) {
@@ -79,7 +80,7 @@ data class PartyCommand(val kind: PartyCommandKind, val ign: String = "", val du
                 "^${Regex.escape(ign)}: Basic \\(\\d+\\), Economy \\(\\d+\\), Premium \\(\\d+\\), First-Class \\(\\d+\\)(?:, Total \\(\\d+\\))?$",
                 RegexOption.IGNORE_CASE
             ).matches(body)
-            PartyCommandKind.DYE -> Regex("^${Regex.escape(ign)}: Emerald Dyes \\(\\d+\\)$", RegexOption.IGNORE_CASE).matches(body)
+            PartyCommandKind.DYE -> Regex("^Emerald Dyes: \\d+$", RegexOption.IGNORE_CASE).matches(body)
             PartyCommandKind.SINCE_SPARKLING, PartyCommandKind.SINCE_UNIQUE -> SafariSinceReply.matches(this, body)
             PartyCommandKind.HELP -> body.startsWith("[SM] Commands: ")
             PartyCommandKind.MISSING_RUN -> body.startsWith(SafariMissingReply.prefix(biome), true)

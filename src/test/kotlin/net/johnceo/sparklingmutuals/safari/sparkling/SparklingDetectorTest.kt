@@ -12,6 +12,20 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class SparklingDetectorTest {
+    @Test fun `sleeping Wumpa resolves from name alone and waking does not repeat the alert`() {
+        val body = SparklingEntity(1,UUID.randomUUID(),-112.0,70.0,-54.0,body=true)
+        val sleeping = SparklingEntity(2,UUID.randomUUID(),-112.0,72.0,-54.0,name="§6SPARKLING Wumpa §7zZz")
+        val run = SafariRun(0)
+        val memory = SparklingMemory()
+        for ((index,tag) in listOf(sleeping,sleeping.copy(name="§6SPARKLING Wumpa")).withIndex()) {
+            val found = SparklingDetector.detect(listOf(body,tag)).single()
+            assertEquals("Wumpa",found.species)
+            assertEquals(body.id,found.body)
+            assertEquals(setOf(body.uuid,tag.uuid),found.aliases)
+            val identity = run.observeSparkling(found.aliases.first(),found.species,found.aliases)
+            assertEquals(index==0,memory.alert(identity,true))
+        }
+    }
     @Test fun `capture marker suppresses first sightings from both skin and name`() {
         val body = model()
         val tag = label()

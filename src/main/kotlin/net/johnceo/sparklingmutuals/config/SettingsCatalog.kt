@@ -21,7 +21,7 @@ class SettingsCatalog(settings: SafariSettings) {
         }
         fun read(): Any?=field.get(owner)
         fun write(value: Any) { field.set(owner,value) }
-        fun matches(query: String): Boolean=(name+" "+description+" "+path).contains(query,true)
+        fun matches(query: String): Boolean=(name+" "+description+" "+path+" "+net.johnceo.sparklingmutuals.safari.ui.CritterNames.display(name+" "+path)).contains(query,true)
     }
     val pages=settings.javaClass.declaredFields.mapNotNull { field ->
         field.getAnnotation(Category::class.java)?.let { meta ->
@@ -96,6 +96,13 @@ class SettingsCatalog(settings: SafariSettings) {
             }
         }
         private fun rows(owner: Any,path: String): List<Row> {
+            if(owner is CritterNameBiomeSettings) return owner.entries.map { entry ->
+                val field = CritterNameEntry::class.java.getField("name")
+                val itemPath = path+" / "+entry.canonical
+                Row(entry,field,entry.canonical,"",itemPath,
+                    listOf(Row(entry,field,"Custom name",field.getAnnotation(ConfigOption::class.java).desc,itemPath+" / Custom name")),
+                    navigationName=entry.canonical,groupOverride=true)
+            }
             if(owner is FloorDropEspSettings)return floorRows(owner,path)
             val result=fields(owner.javaClass).mapNotNull { field ->
                 if(owner is PanelAppearanceSettings && field.name=="expansion" && !owner.supportsExpansion)return@mapNotNull null

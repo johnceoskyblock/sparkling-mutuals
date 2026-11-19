@@ -10,7 +10,7 @@ import net.johnceo.sparklingmutuals.config.ThemedButton as Button
 import net.minecraft.client.gui.screens.Screen
 import net.minecraft.network.chat.Component
 
-class CatchCountScreen(private val parent: Screen? = null) : Screen(Component.literal("Safari captures")) {
+class CatchCountScreen(private val parent: Screen? = null) : Screen(net.minecraft.client.Minecraft.getInstance(), net.johnceo.sparklingmutuals.hud.HudFonts.font, Component.literal("Safari captures")) {
     private var selected = SafariTracking.displayBiome ?: SafariBiome.FOREST
     override fun init() {
         val buttonWidth = ((width - 20) / 4).coerceIn(1, 80)

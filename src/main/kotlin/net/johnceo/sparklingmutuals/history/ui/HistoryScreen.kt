@@ -36,7 +36,7 @@ import net.minecraft.network.chat.Component
  * included) so the panel shares one look; clickable areas are collected while drawing and checked on the next click.
  * Parts that would overflow a small window shrink to fit.
  */
-class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS) : Screen(Component.literal("Sparkling Mutuals history")) {
+class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS) : Screen(net.minecraft.client.Minecraft.getInstance(), net.johnceo.sparklingmutuals.hud.HudFonts.font, Component.literal("Sparkling Mutuals history")) {
     enum class Tab(val label: String, val colour: Int) {
         RUNS("Runs", 0xFF55CC66.toInt()), BESTS("Bests", 0xFF55DDDD.toInt()), SPARKLINGS("Sparklings", 0xFFFF77DD.toInt()),
         ACHIEVEMENTS("Achievements", 0xFFFFAA22.toInt()), STATS("Stats", 0xFF7799FF.toInt()), PROFIT("Profit", 0xFFFFD84A.toInt())

@@ -64,12 +64,12 @@ internal object ShardSaleSidebar {
             layout.scale=fitted.coerceIn(.5f,1f)
             layout.x=(if(screen.width-right>=left)right+6 else (left-6-width*layout.scale).toInt()).coerceAtLeast(0)/screen.width.toFloat()
         }
-        val scale=layout.effectiveScale(screen.width,screen.height,width,1).coerceAtMost(screen.width/width.toFloat())
+        val scale=layout.renderScale(screen.width,screen.height,width,1).coerceAtMost(screen.width/width.toFloat())
         val capacity=((screen.height-12)/scale-HEADER-FOOTER).toInt().div(ROW).coerceIn(1,37)
         val rows=((count+cols-1)/cols).coerceIn(1,capacity)
         val height=HEADER+rows*ROW+FOOTER
         if(!layout.hasSavedPosition)layout.y=((screen.height-height*scale)/2).coerceAtLeast(0f)/screen.height
-        val area=layout.bounds(screen.width,screen.height,width,height)
+        val area=layout.renderBounds(screen.width,screen.height,width,height)
         return ShardSidebarBounds(area.x,area.y,ceil(width*scale).toInt(),ceil(height*scale).toInt(),scale,rows,HEADER)
     }
     fun render(screen: AbstractContainerScreen<*>,g: GuiGraphicsExtractor,mx: Int,my: Int) {
@@ -104,7 +104,7 @@ internal object ShardSaleSidebar {
         val client=Minecraft.getInstance();val font=HudFonts.font
         g.pose().pushMatrix();g.pose().translate(x.toFloat(),y.toFloat());g.pose().scale(scale,scale)
         AppearanceConfig.panels.getValue("shard_guidance").draw(g,WIDTH*columns,height)
-        fun text(s: String,x: Int,y: Int,color: Int=HudRow.WHITE)=g.text(font,s,x,y,color,true)
+        fun text(s: String,x: Int,y: Int,color: Int=HudRow.WHITE)=g.text(font,s,x,y,color,HudFonts.shadow)
         g.fill(3,3,WIDTH*columns-3,HEADER-5,0x332A2417)
         g.fill(3,3,5,HEADER-5,HudRow.GOLD)
         text("§lSafari Shard Guidance",9,6,HudRow.GOLD)

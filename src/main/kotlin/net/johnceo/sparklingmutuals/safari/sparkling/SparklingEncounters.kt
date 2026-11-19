@@ -141,7 +141,7 @@ object SparklingEncounters {
         if (useTicket && !net.johnceo.sparklingmutuals.hud.SafariAlertSequence.queue.busy) {
             val text = "Party sparkling found. Use a Safari ticket to join."
             graphics.text(HudFonts.font, text, (client.window.guiScaledWidth - HudFonts.font.width(text)) / 2,
-                client.window.guiScaledHeight / 4, HudRow.GOLD, true)
+                client.window.guiScaledHeight / 4, HudRow.GOLD, HudFonts.shadow)
         }
         if (!SafariAssist.inSafari && !net.johnceo.sparklingmutuals.safari.SafariIsland.onIsland) return
         val notice = banner ?: return
@@ -162,7 +162,7 @@ object SparklingEncounters {
         graphics.fill(0, 0, 3, height, frame); graphics.fill(width - 3, 0, width, height, frame)
         fun centered(text: String, y: Float, scale: Float, textColor: Int) {
             graphics.pose().pushMatrix(); graphics.pose().translate(width / 2f, y); graphics.pose().scale(scale, scale)
-            graphics.text(HudFonts.font, text, -HudFonts.font.width(text) / 2, 0, textColor, true)
+            graphics.text(HudFonts.font, text, -HudFonts.font.width(text) / 2, 0, textColor,HudFonts.shadow)
             graphics.pose().popMatrix()
         }
         val titleScale = minOf(4f, (width - 16f) / HudFonts.font.width(panel.title))
