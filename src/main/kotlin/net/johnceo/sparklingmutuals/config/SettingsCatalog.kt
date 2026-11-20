@@ -9,7 +9,6 @@ class SettingsCatalog(settings: SafariSettings) {
                    val path: String, val children: List<Row> = emptyList(),val navigationName: String=field.name,val groupOverride: Boolean=false) {
         val group get()=groupOverride || field.isAnnotationPresent(Accordion::class.java)
         val standalone get()=field.isAnnotationPresent(StandaloneDescription::class.java)
-        val primaryToggle get()=children.firstOrNull { it.field.name=="enabled" && it.field.isAnnotationPresent(ConfigEditorBoolean::class.java) }
         fun descriptionText(): net.minecraft.network.chat.Component {
             val text = net.minecraft.network.chat.Component.literal(description.substringBeforeLast('\n', ""))
             val lastLine = net.minecraft.network.chat.Component.literal(description.substringAfterLast('\n'))
@@ -26,20 +25,44 @@ class SettingsCatalog(settings: SafariSettings) {
     val pages=settings.javaClass.declaredFields.mapNotNull { field ->
         field.getAnnotation(Category::class.java)?.let { meta ->
             field.isAccessible=true
-            Page(meta.name,rows(field.get(settings),meta.name))
+            val guide=SettingsOrder.guide(field.name)?.let { description ->
+                val owner=SettingsPageGuide()
+                listOf(Row(owner,SettingsPageGuide::class.java.getField("guide"),"",description,meta.name+" / Guide"))
+            }.orEmpty()
+            Page(meta.name,guide+rows(field.get(settings),meta.name))
         }
     }
     private val locations=java.util.IdentityHashMap<Row,String>().apply {
         val routes=mapOf("General" to "HUDs → Overview","HUDs" to "HUDs → HUDs","Customization" to "HUDs → Appearance",
             "Modes" to "Safari → Modes","Safari helpers" to "Safari → Helpers","Miria contest" to "Safari → Contest",
             "Banner" to "Safari → Banner","Party Interactions" to "Party → Interactions","Sparkle Warping" to "Party → Sparkle Warping",
-            "History" to "History → History","API key" to "Advanced → API","SkyBlock" to "Advanced → SkyBlock","ESP" to "Customization → World ESP","ESP General" to "ESP → General")
+            "History" to "History → History","API key" to "Advanced → API","SkyBlock" to "Advanced → SkyBlock","ESP" to "ESP → Customization","ESP General" to "ESP → General",
+            "Mode-wide Critter Toggles" to "ESP → Mode critters", "Profitable Critter Toggles" to "ESP → Profitable critters",
+            "Always On Toggle" to "ESP → Always on critters", "Floor Drop Always On Toggle" to "ESP → Always on drops")
         fun collect(rows: List<Row>,parent: String) { rows.forEach { row ->
             put(row,parent);collect(row.children,"$parent → ${row.name}")
         } }
-        pages.forEach { collect(it.rows,routes[it.name] ?: "ESP → ${it.name}") }
+        pages.forEach { page ->
+            if(page.name=="ESP")page.rows.forEach {row ->
+                val section="ESP → Customization → "+when(row.field.name) {"names"->"Critter Names";"nameplates"->"Nameplates";"biomeColors","critterColors"->"Colors";else->"Other ESP"}
+                if(row.field.name in setOf("names","nameplates")) {put(row,section);collect(row.children,section)}
+                else collect(listOf(row),section)
+            } else collect(page.rows,routes[page.name] ?: "ESP → ${page.name}")
+        }
     }
     fun location(row: Row): String=locations.getValue(row)
+    val customizationTabs=listOf("Critter Names","Nameplates","Colors","Other ESP")
+    fun customizationRows(tab: Int): List<Row> {
+        val roots=pages.single {it.name=="ESP"}.rows
+        val fields=when(tab) {0->setOf("names");1->setOf("nameplates");2->setOf("biomeColors","critterColors");else->setOf("teammates","floorDrops","waypointColors","labels")}
+        val selected=roots.filter {it.field.name in fields}
+        return if(tab in 0..1) {
+            val guide=CustomizationGuide(tab==0)
+            val field=CustomizationGuide::class.java.getField("guide")
+            listOf(Row(guide,field,if(tab==0) "Rename critters" else "ESP nameplates",guide.description,"ESP / Guide"))+
+                selected.flatMap {it.children}
+        } else selected
+    }
 
     /** Keep different bindings distinct, but show shared appearance aliases only once. */
     fun search(query: String): List<Row> {
@@ -48,7 +71,7 @@ class SettingsCatalog(settings: SafariSettings) {
         return buildList {
             fun visit(rows: List<Row>) { rows.forEach { row ->
                 if(!row.group && words.all {
-                    (location(row)+" "+row.name+" "+row.description).contains(it,true)
+                    row.matches(it) || location(row).contains(it,true)
                 } && seen.add(row.owner to row.field)) add(row)
                 visit(row.children)
             } }
@@ -96,17 +119,10 @@ class SettingsCatalog(settings: SafariSettings) {
             }
         }
         private fun rows(owner: Any,path: String): List<Row> {
-            if(owner is NameplateBiomeSettings) return owner.entries.map {entry ->
-                val field=NameplateEntry::class.java.getField("enabled")
-                Row(entry,field,entry.canonical,"",path+" / "+entry.canonical,rows(entry,path+" / "+entry.canonical),
-                    navigationName=entry.canonical,groupOverride=true)
-            }
             if(owner is CritterNameBiomeSettings) return owner.entries.map { entry ->
                 val field = CritterNameEntry::class.java.getField("name")
                 val itemPath = path+" / "+entry.canonical
-                Row(entry,field,entry.canonical,"",itemPath,
-                    listOf(Row(entry,field,"Custom name",field.getAnnotation(ConfigOption::class.java).desc,itemPath+" / Custom name")),
-                    navigationName=entry.canonical,groupOverride=true)
+                Row(entry,field,entry.canonical,"Blank restores the original name.",itemPath,navigationName=entry.canonical)
             }
             if(owner is FloorDropEspSettings)return floorRows(owner,path)
             val result=fields(owner.javaClass).mapNotNull { field ->
@@ -120,16 +136,16 @@ class SettingsCatalog(settings: SafariSettings) {
                         val child=rows(value,path+" / "+meta.name).single()
                         return@mapNotNull child.copy(name=meta.name,description=meta.desc,path=path+" / "+meta.name,navigationName=field.name)
                     }
-                    Row(owner,field,meta.name,meta.desc,path+" / "+meta.name,
+                    Row(owner,field,meta.name,if(owner is BannerOption && field.name=="text") owner.textHint else meta.desc,path+" / "+meta.name,
                         if(grouped) rows(value!!,path+" / "+meta.name) else emptyList())
                 }
             }
             if(owner is EspGeneralSettings) {
                 val reward=owner.drops.javaClass.getDeclaredField("rewardDrops").apply {isAccessible=true}
                 val meta=reward.getAnnotation(ConfigOption::class.java)
-                return result.toMutableList().apply {add(2,Row(owner.drops,reward,meta.name,meta.desc,path+" / "+meta.name))}
+                return SettingsOrder.rows(owner,result+Row(owner.drops,reward,meta.name,meta.desc,path+" / "+meta.name))
             }
-            return result
+            return SettingsOrder.rows(owner,result)
         }
     }
 }

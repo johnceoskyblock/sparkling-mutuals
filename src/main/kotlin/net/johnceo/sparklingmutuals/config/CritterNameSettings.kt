@@ -3,8 +3,14 @@ package net.johnceo.sparklingmutuals.config
 import net.johnceo.sparklingmutuals.safari.SafariBiome
 import net.johnceo.sparklingmutuals.safari.ui.CritterNames
 
+class CustomizationGuide(rename: Boolean) {
+    @JvmField @StandaloneDescription @ConfigOption(name="",desc="") val guide=false
+    val description=if(rename) "Set the name shown in HUDs, nametags, Hypixel messages and Hunting Box tooltips. Names are visual only. Nameplates use these names automatically."
+        else "Choose server nametags, ESP marker titles, both or neither. Marker titles automatically use the names set in Critter Names. Pity tracks identified catch attempts for each critter."
+}
+
 class CritterNameEntry(val canonical: String) {
-    @JvmField @ConfigOption(name="Custom name",desc="Blank uses the original name. Visual only; chat reports keep the original.")
+    @JvmField @ConfigOption(name="Displayed name",desc="Blank uses the original name. Visual only; outgoing messages keep the original.")
     @ConfigEditorText var name = CritterNames.get(canonical)
 }
 class CritterNameBiomeSettings(biome: SafariBiome) {

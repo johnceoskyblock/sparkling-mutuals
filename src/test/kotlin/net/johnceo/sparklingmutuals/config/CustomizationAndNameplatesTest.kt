@@ -11,29 +11,31 @@ import org.junit.jupiter.api.io.TempDir
 
 class CustomizationAndNameplatesTest {
     @TempDir lateinit var dir: Path
-    @Test fun `all 37 nameplates default off and each critter keeps independent settings`() {
+    @Test fun sharedNameplatesSaveWithoutResettingAliases() {
         ConfigManager.init(dir)
-        assertEquals(37,CritterNameplates.options.size)
-        assertFalse(CritterNameplates.anyEnabled)
         val settings=SafariSettings()
-        val wumpa=settings.esp.nameplates.icy.entries.single {it.canonical=="Wumpa"}
-        wumpa.enabled=true;wumpa.replaceTag=false;wumpa.text="{name} · {distance}";wumpa.scale=3f;wumpa.range=100
-        wumpa.useEspColor=false;wumpa.color=AppearanceConfig.color(0x123456);wumpa.background=false
+        val plates=settings.esp.nameplates
+        plates.display=2;plates.distance=true;plates.pity=false;plates.eagle=4
+        plates.colors.uniqueColors=false;plates.colors.rarityColors=false
+        plates.colors.fixedColor=true;plates.critters.litterbug=true;plates.critters.wumpa=false
+        plates.colors.entityColorOverride=true;plates.colors.color=AppearanceConfig.color(0x123456)
+        settings.esp.names.icy.entries.single {it.canonical=="Wumpa"}.name="Snow Beast"
         settings.apply();ConfigManager.init(dir)
-        val saved=CritterNameplates.options.getValue("Wumpa")
-        assertTrue(saved.enabled);assertFalse(saved.replaceTag);assertFalse(saved.background)
-        assertEquals(100,saved.range);assertEquals(3f,saved.textScale)
-        assertEquals("Wumpa · 42m",CritterNameplates.label("Wumpa",saved.text,42))
-        assertEquals("SPARKLING Wumpa · 42m",CritterNameplates.label("Wumpa",saved.text,42,true))
-        assertEquals(1,CritterNameplates.options.values.count {it.enabled})
+        val saved=CritterNameplates.settings
+        assertEquals(2,saved.display);assertTrue(saved.distance);assertFalse(saved.pity);assertEquals(4,saved.eagle)
+        assertFalse(saved.uniqueColors);assertFalse(saved.rarityColors);assertTrue(saved.entityColorOverride)
+        assertEquals(AppearanceConfig.color(0x123456),saved.color)
+        assertTrue(saved.fixedColor)
+        assertTrue(CritterNameplates.enabledFor("Litterbug"));assertFalse(CritterNameplates.enabledFor("Wumpa"))
+        assertEquals("Snow Beast",net.johnceo.sparklingmutuals.safari.ui.CritterNames.get("Wumpa"))
     }
     @Test fun `world customization has its own route and HUD edit links retain their owners`() {
         ConfigManager.init(dir)
         val catalog=SettingsCatalog(SafariSettings())
         val esp=catalog.pages.single {it.name=="ESP"}
         val plate=esp.rows.single {it.name=="Critter nameplates"}
-        assertEquals(37,plate.children.sumOf {it.children.size})
-        assertEquals("Customization → World ESP",catalog.location(plate))
+        assertTrue(plate.children.any {it.field.name=="display"})
+        assertEquals("ESP → Customization → Nameplates",catalog.location(plate))
         val visibility=catalog.pages.single {it.name=="Safari helpers"}.rows.single {it.name=="Party visibility"}
         assertFalse(visibility.children.any {it.field.name in setOf("color","textScale")})
         for(hud in listOf(SafariHud.PROGRESS,SafariHud.MISSING,SafariHud.OBJECTIVES,SafariHud.CAPTURES,SafariHud.HOTSPOT))

@@ -34,10 +34,10 @@ class HudTextColorSettings(private val source: HudTextColor) {
     }
 }
 class HudTextSettings(private val style: PanelStyle) {
-    @JvmField @ConfigOption(name="Header text",desc="Blank keeps the normal header.") @ConfigEditorText var headerText=style.headerText
+    @JvmField @ConfigOption(name = "Custom header", desc = "Leave blank to keep the original header.") @ConfigEditorText var headerText=style.headerText
     @JvmField @ConfigOption(name="Header color",desc="") @Accordion val header=HudTextColorSettings(style.header)
-    @JvmField @ConfigOption(name="Label color",desc="Critter rarity and biome colors stay unchanged.") @Accordion val labels=HudTextColorSettings(style.labels)
-    @JvmField @ConfigOption(name="Value color",desc="Critter rarity, biome and contest bracket colors stay unchanged.") @Accordion val values=HudTextColorSettings(style.values)
+    @JvmField @ConfigOption(name = "Label color", desc = "Keep critter rarity and biome colors unchanged.") @Accordion val labels=HudTextColorSettings(style.labels)
+    @JvmField @ConfigOption(name = "Value color", desc = "Keep critter rarity, biome and contest bracket colors unchanged.") @Accordion val values=HudTextColorSettings(style.values)
     fun apply(): Boolean {
         val clean=headerText.replace(Regex("[\\p{Cc}\\p{Cf}]"),"").trim().take(64)
         val changed=style.headerText!=clean
@@ -46,15 +46,15 @@ class HudTextSettings(private val style: PanelStyle) {
     }
 }
 class PanelAppearanceSettings(private val style: PanelStyle, selection: () -> String) {
-    @JvmField @ConfigOption(name="Text customization",desc="") @Accordion val text=HudTextSettings(style)
+    @JvmField @ConfigOption(name = "Text and colors", desc = "") @Accordion val text=HudTextSettings(style)
     private val layout=AppearanceConfig.panels.entries.firstOrNull {it.value===style}?.key?.let {id ->
         if(id=="miria") ContestConfig.layout else net.johnceo.sparklingmutuals.hud.SafariHud.entries.firstOrNull {it.name.lowercase()==id}?.layout
     }
     val supportsExpansion get()=layout!=null
-    @JvmField @ConfigOption(name="Expand direction",desc="Which edges stay fixed as the HUD grows.")
+    @JvmField @ConfigOption(name = "HUD growth direction", desc = "Choose the direction the HUD grows as rows are added.")
     @ConfigEditorDropdown(values=["Down & right","Down","Down & left","Right","Centered","Left","Up & right","Up","Up & left"])
     var expansion=layout?.expansion?.ordinal ?: 0
-    @JvmField @ConfigOption(name = "Border", desc = "")
+    @JvmField @ConfigOption(name = "Show border", desc = "")
     @ConfigEditorBoolean var borderEnabled = style.borderEnabled
     @JvmField @ConfigOption(name = "Border color", desc = "") @Accordion
     val border = ColorChoice({ style.borderColor }, { style.borderColor = it }, selection)
@@ -74,7 +74,7 @@ class PanelAppearanceSettings(private val style: PanelStyle, selection: () -> St
 
 class CustomizationSettings {
     var selectedHex = AppearanceConfig.selectedHex
-    @JvmField @ConfigOption(name = "Biome HUD borders", desc = "Overrides custom border colors for each HUD.")
+    @JvmField @ConfigOption(name = "Match HUD borders to biome", desc = "Override each HUD's custom border color with the current biome's color.")
     @ConfigEditorBoolean var biomeBorders = BannerConfig.biomeBorders
     @JvmField val huds = TrackingAppearanceSettings({ selectedHex })
     @JvmField val alertHuds = AlertAppearanceSettings({ selectedHex })
@@ -205,10 +205,10 @@ class WaypointAppearanceSettings(private val selection: () -> String) : Appearan
 }
 
 class CritterAppearanceSettings(private val selection: () -> String) : AppearanceSettingsGroup() {
-    @JvmField @ConfigOption(name = "Forest critter colors", desc = "") @Accordion val forest = ForestColorSettings(selection)
-    @JvmField @ConfigOption(name = "Cavern critter colors", desc = "") @Accordion val cavern = CavernColorSettings(selection)
-    @JvmField @ConfigOption(name = "Icy critter colors", desc = "") @Accordion val icy = IcyColorSettings(selection)
-    @JvmField @ConfigOption(name = "Haunted critter colors", desc = "") @Accordion val haunted = HauntedColorSettings(selection)
+    @JvmField @ConfigOption(name = "Forest", desc = "") @Accordion val forest = ForestColorSettings(selection)
+    @JvmField @ConfigOption(name = "Cavern", desc = "") @Accordion val cavern = CavernColorSettings(selection)
+    @JvmField @ConfigOption(name = "Icy", desc = "") @Accordion val icy = IcyColorSettings(selection)
+    @JvmField @ConfigOption(name = "Haunted", desc = "") @Accordion val haunted = HauntedColorSettings(selection)
 }
 
 open class BiomeColorSettings(private val selection: () -> String) {
@@ -232,7 +232,7 @@ class ScrappyAppearanceSettings(private val selection: () -> String) {
     val fish = food(net.johnceo.sparklingmutuals.safari.esp.ScrappyFood.FISH)
     @JvmField @ConfigOption(name="Lily Pad",desc="") @Accordion
     val lilyPad = food(net.johnceo.sparklingmutuals.safari.esp.ScrappyFood.LILY_PAD)
-    @JvmField @ConfigOption(name="Unidentified",desc="Before all three Scrappys are identified.") @Accordion
+    @JvmField @ConfigOption(name = "Unidentified", desc = "Used until this Scrappy's food is known.") @Accordion
     val unknown = ColorChoice({ SafariEspConfig.mobs.getValue("Scrappy").color }, { SafariEspConfig.mobs.getValue("Scrappy").color=it },selection)
     @JvmField @ConfigOption(name="Text size",desc="1 = original size.")
     @ConfigEditorSlider(minValue=.5f,maxValue=4f,minStep=.25f)
@@ -245,52 +245,52 @@ class ScrappyAppearanceSettings(private val selection: () -> String) {
 }
 
 class CavernColorSettings(selection: () -> String) : BiomeColorSettings(selection) {
-    @JvmField @ConfigOption(name = "Cavernfish ESP", desc = "") @Accordion val cavernfish = mob("Cavernfish")
-    @JvmField @ConfigOption(name = "Flitter ESP", desc = "") @Accordion val flitter = mob("Flitter")
-    @JvmField @ConfigOption(name = "Shyworm ESP", desc = "") @Accordion val shyworm = mob("Shyworm")
-    @JvmField @ConfigOption(name = "Driftling ESP", desc = "") @Accordion val driftling = mob("Driftling")
-    @JvmField @ConfigOption(name = "Chuckwalla ESP", desc = "") @Accordion val chuckwalla = mob("Chuckwalla")
-    @JvmField @ConfigOption(name = "Rockmite silverfish ESP", desc = "") @Accordion val rockmite = mob("Rockmite")
-    @JvmField @ConfigOption(name = "Rockmite mound ESP", desc = "") @Accordion val rockmiteMound = ColorChoice(
+    @JvmField @ConfigOption(name = "Cavernfish", desc = "") @Accordion val cavernfish = mob("Cavernfish")
+    @JvmField @ConfigOption(name = "Flitter", desc = "") @Accordion val flitter = mob("Flitter")
+    @JvmField @ConfigOption(name = "Shyworm", desc = "") @Accordion val shyworm = mob("Shyworm")
+    @JvmField @ConfigOption(name = "Driftling", desc = "") @Accordion val driftling = mob("Driftling")
+    @JvmField @ConfigOption(name = "Chuckwalla", desc = "") @Accordion val chuckwalla = mob("Chuckwalla")
+    @JvmField @ConfigOption(name = "Rockmite", desc = "") @Accordion val rockmite = mob("Rockmite")
+    @JvmField @ConfigOption(name = "Rockmite mounds", desc = "") @Accordion val rockmiteMound = ColorChoice(
         { SafariEspConfig.rockmiteMoundColor }, { SafariEspConfig.rockmiteMoundColor = it }, selection)
-    @JvmField @ConfigOption(name = "Scrappy ESP", desc = "") @Accordion val scrappy = ScrappyAppearanceSettings(selection)
-    @JvmField @ConfigOption(name = "Snoozle ESP", desc = "") @Accordion val snoozle = mob("Snoozle")
-    @JvmField @ConfigOption(name = "Gemzie ESP", desc = "") @Accordion val gemzie = mob("Gemzie")
+    @JvmField @ConfigOption(name = "Scrappy", desc = "") @Accordion val scrappy = ScrappyAppearanceSettings(selection)
+    @JvmField @ConfigOption(name = "Snoozle", desc = "") @Accordion val snoozle = mob("Snoozle")
+    @JvmField @ConfigOption(name = "Gemzie", desc = "") @Accordion val gemzie = mob("Gemzie")
 }
 
 class ForestColorSettings(selection: () -> String) : BiomeColorSettings(selection) {
-    @JvmField @ConfigOption(name = "Foxtrot ESP", desc = "") @Accordion val foxtrot = mob("Foxtrot")
-    @JvmField @ConfigOption(name = "Bluebird ESP", desc = "") @Accordion val bluebird = mob("Bluebird")
-    @JvmField @ConfigOption(name = "Honeybug ESP", desc = "") @Accordion val honeybug = mob("Honeybug")
-    @JvmField @ConfigOption(name = "Treefrog ESP", desc = "") @Accordion val treefrog = mob("Treefrog")
-    @JvmField @ConfigOption(name = "Woodchucker ESP", desc = "") @Accordion val woodchucker = mob("Woodchucker")
-    @JvmField @ConfigOption(name = "Fluffling ESP", desc = "") @Accordion val fluffling = mob("Fluffling")
-    @JvmField @ConfigOption(name = "Hideonfloor ESP", desc = "") @Accordion val hideonfloor = mob("Hideonfloor")
-    @JvmField @ConfigOption(name = "Parakeet ESP", desc = "") @Accordion val parakeet = mob("Parakeet")
-    @JvmField @ConfigOption(name = "Macaw ESP", desc = "") @Accordion val macaw = mob("Macaw")
+    @JvmField @ConfigOption(name = "Foxtrot", desc = "") @Accordion val foxtrot = mob("Foxtrot")
+    @JvmField @ConfigOption(name = "Bluebird", desc = "") @Accordion val bluebird = mob("Bluebird")
+    @JvmField @ConfigOption(name = "Honeybug", desc = "") @Accordion val honeybug = mob("Honeybug")
+    @JvmField @ConfigOption(name = "Treefrog", desc = "") @Accordion val treefrog = mob("Treefrog")
+    @JvmField @ConfigOption(name = "Woodchucker", desc = "") @Accordion val woodchucker = mob("Woodchucker")
+    @JvmField @ConfigOption(name = "Fluffling", desc = "") @Accordion val fluffling = mob("Fluffling")
+    @JvmField @ConfigOption(name = "Hideonfloor", desc = "") @Accordion val hideonfloor = mob("Hideonfloor")
+    @JvmField @ConfigOption(name = "Parakeet", desc = "") @Accordion val parakeet = mob("Parakeet")
+    @JvmField @ConfigOption(name = "Macaw", desc = "") @Accordion val macaw = mob("Macaw")
 }
 
 class IcyColorSettings(selection: () -> String) : BiomeColorSettings(selection) {
-    @JvmField @ConfigOption(name = "Strongarm ESP", desc = "") @Accordion val strongarm = mob("Strongarm")
-    @JvmField @ConfigOption(name = "Tepid ESP", desc = "") @Accordion val tepid = mob("Tepid")
-    @JvmField @ConfigOption(name = "Polaris ESP", desc = "") @Accordion val polaris = mob("Polaris")
-    @JvmField @ConfigOption(name = "Shuddersquid ESP", desc = "") @Accordion val shuddersquid = mob("Shuddersquid")
-    @JvmField @ConfigOption(name = "Billygoat ESP", desc = "") @Accordion val billygoat = mob("Billygoat")
-    @JvmField @ConfigOption(name = "Mantis Shrimp ESP", desc = "") @Accordion val mantisshrimp = mob("Mantis Shrimp")
-    @JvmField @ConfigOption(name = "Nozzlenose ESP", desc = "") @Accordion val nozzlenose = mob("Nozzlenose")
-    @JvmField @ConfigOption(name = "Troodon ESP", desc = "") @Accordion val troodon = mob("Troodon")
-    @JvmField @ConfigOption(name = "Wumpa ESP", desc = "") @Accordion val wumpa = mob("Wumpa")
+    @JvmField @ConfigOption(name = "Strongarm", desc = "") @Accordion val strongarm = mob("Strongarm")
+    @JvmField @ConfigOption(name = "Tepid", desc = "") @Accordion val tepid = mob("Tepid")
+    @JvmField @ConfigOption(name = "Polaris", desc = "") @Accordion val polaris = mob("Polaris")
+    @JvmField @ConfigOption(name = "Shuddersquid", desc = "") @Accordion val shuddersquid = mob("Shuddersquid")
+    @JvmField @ConfigOption(name = "Billygoat", desc = "") @Accordion val billygoat = mob("Billygoat")
+    @JvmField @ConfigOption(name = "Mantis Shrimp", desc = "") @Accordion val mantisshrimp = mob("Mantis Shrimp")
+    @JvmField @ConfigOption(name = "Nozzlenose", desc = "") @Accordion val nozzlenose = mob("Nozzlenose")
+    @JvmField @ConfigOption(name = "Troodon", desc = "") @Accordion val troodon = mob("Troodon")
+    @JvmField @ConfigOption(name = "Wumpa", desc = "") @Accordion val wumpa = mob("Wumpa")
 }
 
 class HauntedColorSettings(selection: () -> String) : BiomeColorSettings(selection) {
-    @JvmField @ConfigOption(name = "Areita ESP", desc = "") @Accordion val areita = mob("Areita")
-    @JvmField @ConfigOption(name = "Bloodbat ESP", desc = "") @Accordion val bloodbat = mob("Bloodbat")
-    @JvmField @ConfigOption(name = "Duplico ESP", desc = "") @Accordion val duplico = mob("Duplico")
-    @JvmField @ConfigOption(name = "Gazer ESP", desc = "") @Accordion val gazer = mob("Gazer")
-    @JvmField @ConfigOption(name = "Litterbug ESP", desc = "") @Accordion val litterbug = mob("Litterbug")
-    @JvmField @ConfigOption(name = "Solsnatcher ESP", desc = "") @Accordion val solsnatcher = mob("Solsnatcher")
-    @JvmField @ConfigOption(name = "Gimmiegold ESP", desc = "") @Accordion val gimmiegold = mob("Gimmiegold")
-    @JvmField @ConfigOption(name = "Hideonwall ESP", desc = "") @Accordion val hideonwall = mob("Hideonwall")
-    @JvmField @ConfigOption(name = "Hideyho ESP", desc = "") @Accordion val hideyho = mob("Hideyho")
-    @JvmField @ConfigOption(name = "Doomspiral ESP", desc = "") @Accordion val doomspiral = mob("Doomspiral")
+    @JvmField @ConfigOption(name = "Areita", desc = "") @Accordion val areita = mob("Areita")
+    @JvmField @ConfigOption(name = "Bloodbat", desc = "") @Accordion val bloodbat = mob("Bloodbat")
+    @JvmField @ConfigOption(name = "Duplico", desc = "") @Accordion val duplico = mob("Duplico")
+    @JvmField @ConfigOption(name = "Gazer", desc = "") @Accordion val gazer = mob("Gazer")
+    @JvmField @ConfigOption(name = "Litterbug", desc = "") @Accordion val litterbug = mob("Litterbug")
+    @JvmField @ConfigOption(name = "Solsnatcher", desc = "") @Accordion val solsnatcher = mob("Solsnatcher")
+    @JvmField @ConfigOption(name = "Gimmiegold", desc = "") @Accordion val gimmiegold = mob("Gimmiegold")
+    @JvmField @ConfigOption(name = "Hideonwall", desc = "") @Accordion val hideonwall = mob("Hideonwall")
+    @JvmField @ConfigOption(name = "Hideyho", desc = "") @Accordion val hideyho = mob("Hideyho")
+    @JvmField @ConfigOption(name = "Doomspiral", desc = "") @Accordion val doomspiral = mob("Doomspiral")
 }

@@ -89,8 +89,11 @@ object SafariTracking {
             ensureRun(client)
             net.johnceo.sparklingmutuals.hud.SafariBanners.chat(text)
             ledger.current?.birdFoodCheck?.spawn(text,now)
-            if(SafariRules.isHideyhoDialogue(text) && SafariAssist.biome==SafariBiome.HAUNTED)
-                ledger.current?.completion?.hideyhoDialogue(now)
+            if (SafariRules.isHideyhoDialogue(text)) {
+                val run = ledger.current
+                run?.hideyhoMarker?.chat(text, SafariEsp.hideyhoPosition()?.let(net.minecraft.core.BlockPos::containing))
+                if (SafariAssist.biome == SafariBiome.HAUNTED) run?.completion?.hideyhoDialogue(now)
+            }
             ledger.current?.birds?.spawn(text,now)
             ledger.current?.recordWumpaSpawn(text)
             ledger.current?.sparklingBroadcast(text, now)

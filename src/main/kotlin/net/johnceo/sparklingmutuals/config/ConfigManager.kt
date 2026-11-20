@@ -63,6 +63,8 @@ object ConfigManager {
     var alwaysCelebrateSparkling = false
     var specialCatchStyle = 0
     var leechMode = false
+    var autoReconnectHypixel = false
+    var autoJoinSkyBlock = false
     var leechWhitelist = "JohnCEO _cj Rqach johnkuudra"
     var safariEntryCooldown = true
     var doomspiralThrowTimer = true
@@ -147,6 +149,7 @@ object ConfigManager {
         ::hideyhoAutoAccept to true, ::autoSelectSafariTicket to true, ::safariEntryAutoEnter to false, ::hideyhoInsideOutside to true, ::hideHauntedPaintings to true, ::shinyDetection to true,
         ::progressHud to true, ::progressProfit to true, ::progressHotspot to true, ::hotspotShowAllPlayers to true, ::countUniqueOnly to false, ::profitableChecklist to true, ::lakeClearAlert to true, ::missingPanel to true, ::biomeObjectives to true,
         ::objectiveCaptureReminder to true, ::objectiveShinyReminder to true,
+        ::autoReconnectHypixel to false, ::autoJoinSkyBlock to false,
         ::highlightBeeNests to true, ::removeDarkness to true, ::clearWater to true, ::sparklingAlert to true, ::sparklingCatchCount to true,
         ::sparklingPartyAnnouncer to true, ::catchCountPanel to false, ::autoClicker to true, ::candleHitbox to true, ::holdManagerOnKick to true, ::downtimeCommand to true, ::honeyHives to true, ::huntingBoxValue to true, ::shardSaleGuidance to true, ::skillOverflow to true, ::skillOverflowChat to true, ::skillOverflowNumbers to false, ::estimatedItemValue to true, ::estimatedChestValue to true, ::phantomleafSolver to true, ::runHistory to true, ::achievements to true, ::achievementSound to true, ::achievementsToParty to false, ::runCoinsInstaSell to false,
         ::hideCaptureChat to true, ::hideGroundCapsules to true, ::hideFlyingCapsules to true,

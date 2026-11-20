@@ -73,6 +73,25 @@ class RetainedSparklingChecksTest {
             assertFalse(run.captureComplete(name), name)
         }
     }
+    @Test fun `retained totals account for sightings at different capture counts`() {
+        val checks = SparklingChecks()
+        val name = "Troodon"
+        val first = UUID.randomUUID()
+        val second = UUID.randomUUID()
+        scan(checks, name, listOf(first, second))
+        assertEquals(2, checks.checkCount(name))
+
+        repeat(3) { checks.capture(name) }
+        assertEquals(3, checks.checkCount(name))
+        scan(checks, name, listOf(first, UUID.randomUUID(), UUID.randomUUID()))
+        assertEquals(5, checks.checkCount(name))
+
+        checks.capture(name)
+        scan(checks, name, listOf(first, second, UUID.randomUUID()))
+        assertEquals(6, checks.checkCount(name))
+        checks.reenter(SafariBiome.ICY)
+        assertEquals(6, checks.checkCount(name))
+    }
     @Test fun `retained checking still requires valid scan areas and independent source conditions`() {
         val checks = SparklingChecks(); val id = UUID.randomUUID()
         checks.scan(SafariBiome.CAVERN, 1000.0,1000.0, listOf("Gemzie" to id))

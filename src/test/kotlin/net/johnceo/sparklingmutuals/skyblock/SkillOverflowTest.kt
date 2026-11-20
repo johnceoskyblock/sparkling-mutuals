@@ -50,6 +50,6 @@ class SkillOverflowTest {
         assertFalse(ConfigManager.skillOverflowChat)
         assertTrue(ConfigManager.skillOverflowNumbers)
         assertTrue(SettingsCatalog(SafariSettings()).pages.first { it.name=="SkyBlock" }.rows.first { it.name=="Helpers" }
-            .children.any { it.name=="Skills overflow" })
+            .children.any { it.name=="Skill overflow levels" })
     }
 }

@@ -44,7 +44,7 @@ object SafariEspRules {
     /** Structures are sources, not uncaught critters. Every actual critter needs a live species label. */
     fun requiresCaptureLabel(species: String, type: String) = !(species == "Rockmite" && type == "item_display")
     fun requiresModelLabel(species: String, type: String) = captureModel(type) && !(species == "Rockmite" && type == "item_display")
-    fun modelVisible(x: Float, y: Float, z: Float) = listOf(x, y, z).all { it.isFinite() } &&
+    fun modelVisible(x: Float, y: Float, z: Float) = x.isFinite() && y.isFinite() && z.isFinite() &&
         maxOf(kotlin.math.abs(x), kotlin.math.abs(y), kotlin.math.abs(z)) > .001f
     fun capturedDisplay(species: String, candidates: List<EspCaptureCandidate>) = candidates.filter {
         it.species == species && it.display && !it.mound && it.rangeSquared <= 80.0 * 80
@@ -89,6 +89,7 @@ object SafariEspRules {
         EspMob("Wumpa", SafariBiome.ICY, 0xFF645A5A.toInt(), listOf(EspEntity("ravager")))
     )
     private val byType = mobs.flatMap { mob -> mob.identifiers.map { it.type to (mob to it) } }.groupBy({ it.first }, { it.second })
+    internal fun canIdentify(type: String) = type in byType
     fun identify(entity: EspEntity): EspMob? {
         if (entity.type.endsWith("display") && entity.invisible) return null
         if (entity.type == "silverfish" && (entity.invisible || entity.passengers)) return null

@@ -8,6 +8,17 @@ import net.johnceo.sparklingmutuals.safari.SafariRules
 data class MoundShape(val x: Double, val y: Double, val z: Double, val width: Double, val height: Double,
     val distanceSquared: Double, val occupied: Boolean = false)
 object SafariMounds {
+    const val HITS_TO_BREAK = 5
+
+    /** SafariUtils (MIT): take the server's stage rather than counting click packets. */
+    fun hitStage(text: String): Int? = when (text) {
+        "Small cracks begin to form in the mound..." -> 1
+        "The cracks seem to be getting larger, keep hitting it!" -> 2
+        "Chunks of the mound begin falling away..." -> 3
+        "The mound is about to fall to pieces! Keep going!" -> 4
+        else -> outcome(text)?.let { HITS_TO_BREAK }
+    }
+
     fun detected(shape: MoundShape, limitRange: Boolean = true) = (!limitRange || shape.distanceSquared <= 64.0 * 64) && shape.y <= 65 &&
         shape.width in .35..1.10 && shape.height in .25.. .95 && shape.height <= shape.width + .1 &&
         abs(shape.x - (floor(shape.x) + .5)) < .05 && abs(shape.z - (floor(shape.z) + .5)) < .05 && !shape.occupied
@@ -34,6 +45,32 @@ class MoundSurvey {
     private val shared = mutableSetOf<Triple<Int,Int,Int>>()
     private val confirmedLocal = mutableSetOf<Triple<Int, Int, Int>>()
     private val inspectedEmpty = mutableSetOf<Triple<Int, Int, Int>>()
+    private val confirmedHits = mutableMapOf<Triple<Int, Int, Int>, Int>()
+    private val pendingHits = mutableMapOf<Triple<Int, Int, Int>, Long>()
+    var recentHitCandidates = 0
+        private set
+
+    fun attack(position: Triple<Int, Int, Int>, now: Long): Boolean {
+        if (confirmedBroken(position)) return false
+        expireHits(now)
+        return pendingHits.put(position, now) == null
+    }
+
+    fun confirmHit(stage: Int, now: Long): Triple<Int, Int, Int>? {
+        expireHits(now)
+        recentHitCandidates = pendingHits.size
+        val position = pendingHits.keys.singleOrNull()
+        if (stage == SafariMounds.HITS_TO_BREAK) {
+            pendingHits.clear()
+            position?.let(::confirmBreak)
+        } else if (position != null && !confirmedBroken(position)) {
+            confirmedHits[position] = maxOf(confirmedHits[position] ?: 0, stage)
+        }
+        return position
+    }
+    private fun expireHits(now: Long) { pendingHits.entries.removeIf { now - it.value !in 0..2_000 } }
+    fun hitLabel(position: Triple<Int, Int, Int>): String? = if (confirmedBroken(position)) null
+        else "(${confirmedHits[position] ?: 0}/${SafariMounds.HITS_TO_BREAK})"
     val locallyResolved get() = confirmedLocal + inspectedEmpty
     fun confirmedBroken(position: Triple<Int, Int, Int>) = position in shared || position in confirmedLocal
     fun confirmBreak(position: Triple<Int, Int, Int>) {

@@ -12,7 +12,9 @@ import java.util.UUID
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents
 import net.fabricmc.fabric.api.event.player.UseItemCallback
+import net.johnceo.sparklingmutuals.config.AppearanceConfig
 import net.johnceo.sparklingmutuals.config.ConfigManager
+import net.johnceo.sparklingmutuals.config.CritterNameplates
 import net.johnceo.sparklingmutuals.config.SafariEspConfig
 import net.johnceo.sparklingmutuals.safari.SafariAssist
 import net.johnceo.sparklingmutuals.safari.SafariBiome
@@ -58,13 +60,20 @@ object SafariEsp {
         private set
     private data class Target(val entity: Entity, val species: String, val shulker: Boolean)
     private var targets = emptyList<Target>()
-    private var drops = emptyList<EspDrop>()
     private val dropPredictor = FloorDropPredictor()
     private var predictedDrops = emptyList<PredictedFloorDrop>()
+    private var predictedIncenseIds = emptySet<Int>()
     private val bannerCollected = mutableSetOf<Int>()
     private val bannerMissing = mutableMapOf<Int,Int>()
     private val coinFloorIds = mutableSetOf<Int>()
-    fun resetDrops() { dropPredictor.reset(); predictedDrops = emptyList(); coinFloorIds.clear();bannerCollected.clear();bannerMissing.clear() }
+    fun resetDrops() {
+        dropPredictor.reset()
+        predictedDrops = emptyList()
+        predictedIncenseIds = emptySet()
+        coinFloorIds.clear()
+        bannerCollected.clear()
+        bannerMissing.clear()
+    }
     /** Presentation-only proof. Remote unloads never count as completed floor drops. */
     fun floorBannerReady(biome: SafariBiome): Boolean {
         val client=Minecraft.getInstance();val player=client.player ?: return false
@@ -96,6 +105,7 @@ object SafariEsp {
     private var stringDisplays = emptyList<EspDrop>()
     private val captures = EspCaptureMemory()
     private val modelLabels = EspModelLabels()
+    private val sleepingWumpa = Regex("(?i)^Wumpa\\s+zZz$")
     private val cavernDiagnostics = mutableSetOf<String>()
     private val motion = EspMotion()
     private val litterbugs = LitterbugProjection()
@@ -120,7 +130,9 @@ object SafariEsp {
     }
     internal fun texture(profile: GameProfile?) = SafariEspRules.textureHash(profile?.properties()?.get("textures")?.firstOrNull()?.value())
     private fun texture(stack: ItemStack) = texture(stack.get(DataComponents.PROFILE)?.partialProfile())
-    internal fun describe(entity: Entity): EspEntity {
+    internal fun describe(entity: Entity): EspEntity = describe(entity, entity.type.toShortString())
+
+    private fun describe(entity: Entity, type: String): EspEntity {
         val item = (entity as? Display.ItemDisplay)?.itemStack
         val shulker = when (entity) {
             is Shulker -> entity.color
@@ -134,9 +146,13 @@ object SafariEsp {
             is Player -> texture(entity.gameProfile)
             else -> null
         }
-        return EspEntity(entity.type.toShortString(), texture, shulker?.name,
+        return EspEntity(type, texture, shulker?.name,
             (entity as? TropicalFish)?.let { "${it.pattern.name}/${it.baseColor.name}/${it.patternColor.name}" },
             (entity as? Parrot)?.variant?.name, entity.isInvisible || !modelVisible(entity), entity.passengers.isNotEmpty())
+    }
+    private fun identify(entity: Entity, type: String = entity.type.toShortString()): EspMob? {
+        if (!SafariEspRules.canIdentify(type)) return null
+        return SafariEspRules.identify(describe(entity, type))
     }
     fun isRockmiteMound(entity: Entity, client: Minecraft): Boolean {
         if (entity.isRemoved || client.level?.getEntity(entity.id) !== entity || !SafariAssist.inSafari) return false
@@ -196,52 +212,80 @@ object SafariEsp {
         if (level !== client.level) { reset(); level = client.level }
         SafariFloorDrops.state.visit(SafariAssist.biome)
         if (!SafariAssist.inSafari || client.player == null || client.level == null) {
-            targets = emptyList(); drops = emptyList(); stringDisplays = emptyList(); ticks = 0; scanned = false; return
+            targets = emptyList(); stringDisplays = emptyList(); ticks = 0; scanned = false; return
         }
         rememberAim(client)
         if (++ticks < 5) return
         ticks = 0
         contactRevision++
         val strings = mutableListOf<EspDrop>()
-        val entities = client.level!!.entitiesForRendering().filter { !it.isRemoved && client.level!!.getEntity(it.id) === it }.toList()
-        predictedDrops = dropPredictor.scan(entities.filterIsInstance<Display.ItemDisplay>().filter(::activeFloorDisplay).map {
-            FloorDisplay(it.id, it.x, it.y, it.z,
-                net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(it.itemStack.item).toString() + ":" + SafariRules.strip(it.itemStack.hoverName.string))
-        })
-        val labels = entities.mapNotNull { entity ->
-            entity.customName?.string?.let(SafariEspRules::labelSpecies)?.let { name -> entity to name }
-        }.groupBy({ it.second }, { it.first })
-        targets = entities.filterNot { captures.hidden(it.uuid) }.mapNotNull { entity ->
-            if (entity is Display.ItemDisplay && !entity.isInvisible && entity.itemStack.`is`(Items.STRING)) {
+        val world = client.level!!
+        val floorDisplays = mutableListOf<FloorDisplay>()
+        val labels = mutableMapOf<String, MutableList<Entity>>()
+        val entitiesByUuid = mutableMapOf<UUID, Entity>()
+        val entityIds = mutableListOf<Int>()
+        val armadillos = mutableListOf<Pair<UUID, Int>>()
+        val scannedTargets = mutableListOf<Target>()
+        for (entity in world.entitiesForRendering()) {
+            if (entity.isRemoved || world.getEntity(entity.id) !== entity) continue
+            entitiesByUuid.putIfAbsent(entity.uuid, entity)
+            entityIds.add(entity.id)
+            val type = entity.type.toShortString()
+            if (type == "armadillo") armadillos.add(entity.uuid to entity.id)
+            val floorDisplay = activeFloorDisplay(entity)
+            if (floorDisplay && entity is Display.ItemDisplay) {
+                floorDisplays.add(FloorDisplay(entity.id, entity.x, entity.y, entity.z,
+                    net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(entity.itemStack.item).toString() +
+                        ":" + SafariRules.strip(entity.itemStack.hoverName.string)))
+            }
+            val label = entity.customName?.string?.let(SafariEspRules::labelSpecies)
+            if (label != null) labels.getOrPut(label) { mutableListOf() }.add(entity)
+            if (captures.hidden(entity.uuid)) continue
+            if (floorDisplay) {
                 val pos = entity.blockPosition()
                 strings.add(EspDrop(entity.id, pos.x, pos.y, pos.z))
-                return@mapNotNull null
+                continue
             }
-            val mob = SafariEspRules.identify(describe(entity)) ?: return@mapNotNull null
-            val descriptor = mob.identifiers.any { it.shulker != null }
-            Target(entity, mob.name, descriptor)
+            val mob = identify(entity, type) ?: continue
+            scannedTargets.add(Target(entity, mob.name, mob.identifiers.any { it.shulker != null }))
         }
-        scrappyFoods.observe(entities.filter { it.type.toShortString() == "armadillo" }
-            .map { it.uuid to it.id }, entities.map { it.id })
+        predictedDrops = dropPredictor.scan(floorDisplays)
+        // Incense membership follows the scan's predicted types, independently of pickup evidence.
+        val knownDrops = dropPredictor.knownDrops
+        predictedIncenseIds = SafariFloorDrops.state.incenseDropIds(knownDrops)
+        targets = scannedTargets
+        scrappyFoods.observe(armadillos, entityIds)
         val now = System.currentTimeMillis()
-        motion.retain(targets.map { it.entity.uuid }.toSet())
+        val liveBodyIds = targets.mapTo(hashSetOf()) { it.entity.uuid }
+        motion.retain(liveBodyIds)
         targets.forEach { target ->
             val e = target.entity
             motion.observe(e.uuid, target.species, e.x, e.y, e.z, client.player!!.distanceToSqr(e), now)
             if (target.species == "Litterbug") litterbugs.observe(e.uuid, e.x, e.y, e.z, now)
         }
-        targets.filter { SafariEspRules.requiresCaptureLabel(it.species, it.entity.type.toShortString()) }.forEach { target ->
-            val nearby = labels[target.species].orEmpty().filter { it.distanceToSqr(target.entity) <= 9 }
-            val separate = nearby.filter { it !== target.entity }
-            val candidates = separate.ifEmpty { nearby }.filter {
-                target.species !in setOf("Driftling", "Chuckwalla") || it.isCustomNameVisible
+        for (target in targets) {
+            if (!SafariEspRules.requiresCaptureLabel(target.species, target.entity.type.toShortString())) continue
+            val candidates = mutableListOf<EspModelLabel>()
+            val visibleRequired = target.species == "Driftling" || target.species == "Chuckwalla"
+            var hasSeparateLabel = false
+            var ownLabel: EspModelLabel? = null
+            for (label in labels[target.species].orEmpty()) {
+                val distance = label.distanceToSqr(target.entity)
+                if (!(distance <= 9)) continue
+                val separate = label !== target.entity
+                if (separate) hasSeparateLabel = true
+                val visible = label.isCustomNameVisible
+                if (visibleRequired && !visible) continue
+                val candidate = EspModelLabel(label.uuid, target.species, distance, visible)
+                if (separate) candidates.add(candidate) else ownLabel = candidate
             }
-            modelLabels.observe(target.entity.uuid, target.species, candidates.map {
-                EspModelLabel(it.uuid, target.species, it.distanceToSqr(target.entity), it.isCustomNameVisible)
-            }, now)
-            modelLabels.captureState(target.entity.uuid, entities.firstOrNull {
-                it.uuid == modelLabels.label(target.entity.uuid)
-            }?.customName?.string, now)
+            // A separate label takes precedence even when it fails the visibility requirement.
+            if (!hasSeparateLabel && ownLabel != null) candidates.add(ownLabel)
+            modelLabels.observe(target.entity.uuid, target.species, candidates, now)
+            val labelId = modelLabels.label(target.entity.uuid)
+            if (labelId != null) captures.bindLabel(target.entity.uuid, target.species, labelId, liveBodyIds)
+            val labelText = labelId?.let { entitiesByUuid[it]?.customName?.string }
+            modelLabels.captureState(target.entity.uuid, labelText, now)
             modelLabels.observeRange(target.entity.uuid, target.species, client.player!!.distanceToSqr(target.entity), now)
         }
         SafariTracking.ledger.current?.takeIf { it.fullClearReportReceived(SafariBiome.CAVERN) }?.let { run ->
@@ -269,18 +313,17 @@ object SafariEsp {
         }
         shyworms.reconcile(now)
         shyworms.reconcileCapture(now, worms.filter { live(it, client) }.map { it.entity.uuid }.toSet())
-        targets = targets.filter { drawable(it, client) }
+        pruneDrawableTargets(client)
         SafariTracking.ledger.current?.let { run ->
             run.localPlayer(client.player!!.name.string)
-            val coinDrops = dropPredictor.knownDrops.filter { it.biome == SafariBiome.HAUNTED &&
+            val coinDrops = knownDrops.filter { it.biome == SafariBiome.HAUNTED &&
                 (it.actual?.type ?: it.type) == net.johnceo.sparklingmutuals.safari.resources.FloorDropType.COIN }
             // A later anchor or a confirmed pickup can change an earlier prediction.
             val reclassified = coinFloorIds - coinDrops.mapTo(hashSetOf()) { it.id }
             coinFloorIds.removeAll(reclassified)
             run.gimmiegoldCheck.discardFloors(reclassified)
             coinDrops.forEach { drop ->
-                val members = (0..2).map { client.level!!.getEntity(drop.id + it) }
-                val active = members.count(::activeFloorDisplay)
+                val active = (0..2).count { activeFloorDisplay(world.getEntity(drop.id + it)) }
                 // Only real STRING reward triples establish slots, not decorative/model triples.
                 if (active == 3 || drop.actual?.type == net.johnceo.sparklingmutuals.safari.resources.FloorDropType.COIN)
                     coinFloorIds.add(drop.id)
@@ -293,14 +336,24 @@ object SafariEsp {
                 }
             }
         }
-        stringDisplays = strings.toList()
-        drops = SafariEspRules.floorDrops(strings)
+        stringDisplays = strings
         scanned = true
         rememberAim(client)
     }
     private fun trackedModel(target: Target) = SafariEspRules.requiresModelLabel(target.species, target.entity.type.toShortString())
     /** Rendering may retain visual proof; remaining-capture observations always use strict live(). */
     private fun drawable(target: Target, client: Minecraft) = live(target, client, forEsp = true)
+    private fun pruneDrawableTargets(client: Minecraft) {
+        // Keep list identity when every target survives so outline lookup can reuse its index.
+        var remaining: MutableList<Target>? = null
+        for ((index, target) in targets.withIndex()) {
+            if (drawable(target, client)) remaining?.add(target)
+            else if (remaining == null) remaining = ArrayList<Target>(targets.size - 1).apply {
+                addAll(targets.subList(0, index))
+            }
+        }
+        if (remaining != null) targets = remaining
+    }
     /** Read-only model/capture validity, independent of ESP mode and visibility switches. */
     internal fun contactCurrent(entity: Entity, species: String, client: Minecraft): Boolean =
         entity !is Player && live(Target(entity,species,false),client)
@@ -315,8 +368,8 @@ object SafariEsp {
         // The quest NPC can stay loaded or change UUID after its successful reward.
         if (target.species == "Hideyho" && (SafariTracking.ledger.current?.count("Hideyho") ?: 0) > 0) return false
         if (SafariTracking.ledger.current?.sparklingCaptures?.resolved(entity.uuid) == true) return false
-        val current = SafariEspRules.targetCurrent(target.species, describe(entity), entity.isRemoved,
-            !captures.hidden(entity.uuid) && client.level?.getEntity(entity.id) === entity, entity.level() === client.level)
+        if (entity.isRemoved || captures.hidden(entity.uuid) || client.level?.getEntity(entity.id) !== entity ||
+            entity.level() !== client.level || identify(entity)?.name != target.species) return false
         val now = System.currentTimeMillis()
         if (!forEsp && SafariEspRules.requiresCaptureLabel(target.species, entity.type.toShortString()) &&
             !modelLabels.confirmed(entity.uuid, now)) return false
@@ -328,7 +381,7 @@ object SafariEsp {
                 else -> null
             }) else false
         val labeled = !trackedModel(target) || if (forEsp) visualLabel else modelLabels.current(entity.uuid, now)
-        if (forEsp && target.species in setOf("Shyworm", "Litterbug") && !labeled) return false
+        if (forEsp && (target.species == "Shyworm" || target.species == "Litterbug") && !labeled) return false
         if (!forEsp && target.species == "Shyworm" && !SafariEspRules.shywormCurrent(
                 modelLabels.label(entity.uuid) != null, labeled, entity.y)) return false
         if (!forEsp && target.species == "Flitter" && !SafariEspRules.flitterCurrent(
@@ -337,19 +390,19 @@ object SafariEsp {
         if (!forEsp && target.species == "Driftling" && !SafariEspRules.driftlingCurrent(
                 modelLabels.label(entity.uuid) != null, labeled, modelLabels.visible(entity.uuid),
                 motion.recentMovement(entity.uuid, now), motion.movementObserved(entity.uuid))) return false
-        if (forEsp && target.species in setOf("Flitter", "Driftling") &&
+        if (forEsp && (target.species == "Flitter" || target.species == "Driftling") &&
             !modelLabels.confirmed(entity.uuid,now) && !motion.recentMovement(entity.uuid,now) &&
             !(client.player!!.distanceToSqr(entity) > 32.0*32 && modelLabels.label(entity.uuid) != null && visualLabel)) return false
         if (target.species == "Chuckwalla" && !(if (forEsp) visualLabel else SafariEspRules.chuckwallaCurrent(
                 modelLabels.label(entity.uuid) != null, labeled, modelLabels.visible(entity.uuid)))) return false
-        return if (forEsp) SafariEspRules.renderCurrent(target.species, ConfigManager.sparklingMode, current, moving, labeled,
+        return if (forEsp) SafariEspRules.renderCurrent(target.species, ConfigManager.sparklingMode, true, moving, labeled,
             if (ConfigManager.sparklingMode) ConfigManager.sparklingProfitableShardEsp
             else !ConfigManager.fullClearMode && ConfigManager.profitableShardEsp)
-            else current && labeled
+            else labeled
     }
     internal fun developerSnapshot(client: Minecraft): Map<String, Any?> {
         val entities = client.level?.entitiesForRendering()?.filterNot { it.isRemoved }?.toList().orEmpty()
-        val incenseIds = SafariFloorDrops.state.incenseDropIds(dropPredictor.knownDrops)
+        val incenseIds = predictedIncenseIds
         val playerBiome = SafariAssist.biome
         val targetsById = targets.associateBy { it.entity.id }
         return mapOf(
@@ -427,7 +480,7 @@ object SafariEsp {
         SafariTracking.run?.let { logger.info("Forest birds: {} canReportFd={}", it.birds.debug(), it.canReportBiome(SafariBiome.FOREST)) }
         SafariTracking.run?.let { logger.info("Forest report: {}", it.forestReportDebug(
             net.johnceo.sparklingmutuals.safari.completion.SafariFullClear.mode, SafariSparklingMode.state)) }
-        val incenseIds = SafariFloorDrops.state.incenseDropIds(dropPredictor.knownDrops)
+        val incenseIds = predictedIncenseIds
         val run = SafariTracking.ledger.current
         logger.info("Gem placement evidence: {}", run?.gems?.debug())
         logger.info("Gem podium blocks: {}", run?.gems?.podiumDebug(client))
@@ -542,6 +595,13 @@ object SafariEsp {
 
     private var indexedTargets: List<Target>?=null
     private var targetIndex=emptyMap<Int,Target>()
+    private fun indexedTarget(entity: Entity): Target? {
+        if (indexedTargets !== targets) {
+            indexedTargets = targets
+            targetIndex = targets.associateBy { it.entity.id }
+        }
+        return targetIndex[entity.id]?.takeIf { it.entity === entity }
+    }
     private fun targetColor(target: Target): Int {
         val mound=target.species=="Rockmite" && target.entity is Display.ItemDisplay
         val food=if(target.species=="Scrappy" && !SafariEspConfig.usesBiomeColor("Scrappy")) scrappyFoods.food(target.entity.uuid) else null
@@ -550,29 +610,30 @@ object SafariEsp {
     fun outlineColor(entity: Entity): Int? {
         val client=Minecraft.getInstance()
         if(!SafariEspConfig.critterGlow || !SafariAssist.visualsActive(client) || client.player==null || client.options.smHideGui)return null
-        if(indexedTargets!==targets) {indexedTargets=targets;targetIndex=targets.associateBy {it.entity.id}}
-        val target=targetIndex[entity.id]?.takeIf {it.entity===entity} ?: return null
+        val target = indexedTarget(entity) ?: return null
         if(target.species=="Rockmite" && entity is Display.ItemDisplay)return null
         if(!drawable(target,client) || critterEspDecision(target,client,SafariAssist.biome,System.currentTimeMillis())!="Eligible")return null
         return targetColor(target)
     }
     private fun nameplateShown(target: Target,client: Minecraft): Boolean {
-        val option=net.johnceo.sparklingmutuals.config.CritterNameplates.options.getValue(target.species)
-        return option.enabled && client.player!=null && !client.options.smHideGui && SafariAssist.visualsActive(client) &&
-            client.player!!.distanceToSqr(target.entity)<=option.range.toDouble()*option.range && drawable(target,client) &&
+        return CritterNameplates.settings.enabled && CritterNameplates.enabledFor(target.species) &&
+            client.player!=null && !client.options.smHideGui && SafariAssist.visualsActive(client) &&
+            !ConfigManager.hideCritterEsp() && drawable(target,client) &&
             !(target.species=="Rockmite" && target.entity is Display.ItemDisplay) &&
             critterEspDecision(target,client,SafariAssist.biome,System.currentTimeMillis())=="Eligible"
     }
     fun hideVanillaNameTag(entity: Entity): Boolean {
-        if(!net.johnceo.sparklingmutuals.config.CritterNameplates.anyEnabled)return false
-        val client=Minecraft.getInstance()
-        val raw=entity.customName?.string?.let(SafariRules::strip)
-        val species=raw?.let(SafariEspRules::labelSpecies) ?: if(raw?.matches(Regex("(?i)^Wumpa\\s+zZz$"))==true) "Wumpa" else null
+        if(CritterNameplates.showsVanilla())return false
+        if (targets.isEmpty()) return false
+        val client = Minecraft.getInstance()
+        if (client.player == null || client.options.smHideGui || !SafariAssist.visualsActive(client) ||
+            ConfigManager.hideCritterEsp()) return false
+        val labelCarrier = entity is ArmorStand || entity is Display.TextDisplay
+        val raw = if (labelCarrier) entity.customName?.string?.let(SafariRules::strip) else null
+        val species=raw?.let(SafariEspRules::labelSpecies) ?: if(raw?.matches(sleepingWumpa)==true) "Wumpa" else null
         return targets.any { target ->
-            net.johnceo.sparklingmutuals.config.CritterNameplates.enabled(target.species) &&
-                net.johnceo.sparklingmutuals.config.CritterNameplates.options.getValue(target.species).replaceTag &&
                 (target.entity===entity || modelLabels.label(target.entity.uuid)==entity.uuid ||
-                    (entity is ArmorStand || entity is Display.TextDisplay) && species==target.species && target.entity.distanceToSqr(entity)<=9.0) &&
+                    labelCarrier && species==target.species && target.entity.distanceToSqr(entity)<=9.0) &&
                 nameplateShown(target,client)
         }
     }
@@ -581,12 +642,22 @@ object SafariEsp {
         if (entity.type != EntityType.INTERACTION) return null
         val client = Minecraft.getInstance()
         if (!SafariAssist.visualsActive(client) || client.options.smHideGui) return null
+        if (indexedTarget(entity)?.species != "Duplico") return null
         val sparkling = SafariAssist.sparklingDuplicoBodies()
         if (sparkling.isEmpty()) return null
         val blocks = targets.filter { it.species == "Duplico" && drawable(it,client) }
         if (blocks.none { it.entity === entity }) return null
         val matched = sparkling.any { body ->
-            blocks.filter { it.entity.distanceToSqr(body) <= 9.0 }.minByOrNull { it.entity.distanceToSqr(body) }?.entity === entity
+            var nearest: Entity? = null
+            var nearestDistance = 9.0
+            for (block in blocks) {
+                val distance = block.entity.distanceToSqr(body)
+                if (distance <= 9.0 && (nearest == null || distance < nearestDistance)) {
+                    nearest = block.entity
+                    nearestDistance = distance
+                }
+            }
+            nearest === entity
         }
         return if (matched) SafariEspConfig.rgb(net.johnceo.sparklingmutuals.config.AppearanceConfig.sparklingColor) else null
     }
@@ -599,8 +670,9 @@ object SafariEsp {
         fun frame(box: AABB, color: Int) = WorldRenderCompat.box(context, lines, box, color)
         val delta = client.deltaTracker.getGameTimeDeltaPartialTick(false)
         val now = System.currentTimeMillis()
+        val run = SafariTracking.ledger.current
         val timers = mutableListOf<Triple<String, Int, AABB>>()
-        targets = targets.filter { drawable(it, client) }
+        pruneDrawableTargets(client)
         if (!ConfigManager.hideCritterEsp()) {
         for (target in targets) {
             val e = target.entity
@@ -615,18 +687,34 @@ object SafariEsp {
                 val projected = if (height == null) box else box.move(0.0, height - e.getPosition(delta).y, 0.0)
                 val food = if (mob.name == "Scrappy") scrappyFoods.food(e.uuid) else null
                 val color = targetColor(target)
-                if(nameplateShown(target,client)) {
-                    val option=net.johnceo.sparklingmutuals.config.CritterNameplates.options.getValue(mob.name)
-                    val distance=kotlin.math.sqrt(client.player!!.distanceToSqr(e))
-                    val sparkling=SafariAssist.isHighlighted(e.id) || sparklingDuplicoColor(e)!=null
-                    val label=net.johnceo.sparklingmutuals.config.CritterNameplates.label(mob.name,option.text,distance.toInt(),sparkling)
-                    val nameColor=if(!option.useEspColor) SafariEspConfig.rgb(option.color) else if(sparkling)
-                        SafariEspConfig.rgb(net.johnceo.sparklingmutuals.config.AppearanceConfig.sparklingColor) else color
-                    WorldRenderCompat.label(context,label,nameColor,projected.center.x,projected.maxY+.25,projected.center.z,
-                        .025f*option.textScale*maxOf(1f,(distance/20).toFloat()),if(option.background) 0x60000000 else 0,true)
+                val mound = mob.name == "Rockmite" && e is Display.ItemDisplay
+                if (mound && CritterNameplates.settings.pity) {
+                    val pos = e.blockPosition()
+                    val site = Triple(pos.x, pos.y, pos.z)
+                    val key = net.johnceo.sparklingmutuals.sync.PartySyncSites.moundAt(site) ?: site
+                    run?.moundSurvey?.hitLabel(key)?.let { label ->
+                        WorldRenderCompat.markerLabel(context, label, color, projected.center.x,
+                            projected.maxY + .4, projected.center.z, false)
+                    }
+                } else if (!mound && CritterNameplates.showsMarker() && CritterNameplates.enabledFor(mob.name)) {
+                    val title = if (mob.name == "Hideyho") {
+                        if (run == null) "Hideyho (START)" else run.hideyhoMarker.title(e.blockPosition())
+                    } else food?.label ?: mob.name
+                    if (title != null) {
+                        val distance = kotlin.math.sqrt(client.player!!.distanceToSqr(e))
+                        val sparkling = SafariAssist.isHighlighted(e.id) || sparklingDuplicoColor(e) != null
+                        val label = CritterNameplates.label(mob.name, captures.pityFor(e.uuid), distance, sparkling,
+                            title = title, showPity = food == null)
+                        val matchEsp = CritterNameplates.matchesEspColor(mob.name)
+                        val espColor = if (sparkling) SafariEspConfig.rgb(AppearanceConfig.sparklingColor) else color
+                        val nameColor = CritterNameplates.color(mob.name, (run?.captureProgress(mob.name) ?: 0) > 0, espColor)
+                        WorldRenderCompat.markerLabel(context, label, nameColor, projected.center.x,
+                            projected.maxY + .4, projected.center.z, sparkling && !matchEsp)
+                    }
                 }
-                if(SafariEspConfig.showCritterBox(mob.name) || mob.name=="Rockmite" && e is Display.ItemDisplay) frame(projected, color)
-                if (mob.name == "Scrappy" && food != null) WorldRenderCompat.label(context, food.label, color,
+                if (SafariEspConfig.showCritterBox(mob.name) || mound) frame(projected, color)
+                if (mob.name == "Scrappy" && food != null &&
+                    (!CritterNameplates.settings.enabled || !CritterNameplates.enabledFor(mob.name))) WorldRenderCompat.label(context, food.label, color,
                     projected.center.x, projected.maxY + .2, projected.center.z, SafariEspConfig.scrappyLabelWorldScale)
                 if (mob.name == "Litterbug" && height != null) litterbugs.hiddenMarker(e.uuid, e.x, e.y, e.z, now)?.let {
                     timers.add(Triple(it.text, it.color, projected))
@@ -670,8 +758,7 @@ object SafariEsp {
             }
         }
         }
-        val incenseIds = SafariFloorDrops.state.incenseDropIds(dropPredictor.knownDrops)
-        val selectedDrops = predictedDrops.filter { floorEspEligible(it, client, playerBiome, incenseIds) }
+        val selectedDrops = predictedDrops.filter { floorEspEligible(it, client, playerBiome, predictedIncenseIds) }
         val tiles = selectedDrops.map { it.marker() to SafariEspConfig.rgb(SafariEspConfig.dropColor(it.type!!)) }
         tiles.forEach { (tile, color) -> frame(AABB(tile.x.toDouble(), tile.y + 1.0, tile.z.toDouble(), tile.x + 1.0, tile.y + 1.0, tile.z + 1.0), color) }
         WorldRenderCompat.flush(context, lines)
@@ -689,5 +776,5 @@ object SafariEsp {
                 drop.x, drop.y + 1.2, drop.z, SafariEspConfig.dropLabelWorldScale(type))
         }
     }
-    fun reset() { resetDrops(); targets = emptyList(); drops = emptyList(); level = null; ticks = 0; stringDisplays = emptyList(); scanned = false; clearCaptured() }
+    fun reset() { resetDrops(); targets = emptyList(); level = null; ticks = 0; stringDisplays = emptyList(); scanned = false; clearCaptured() }
 }

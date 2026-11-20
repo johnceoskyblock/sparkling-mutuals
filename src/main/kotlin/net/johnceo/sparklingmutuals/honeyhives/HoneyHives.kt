@@ -159,9 +159,10 @@ object HoneyHives {
             val text = if (entity is Display.TextDisplay) entity.text.string else entity.customName?.string
             text?.let { HoneyHiveLabels.statusLines(it).map { line -> HiveLabel(entity.x, entity.y, entity.z, line) } }.orEmpty()
         }
+        val labelsByHive = HoneyHiveLabels.byHive(hives.values, labels)
         var changed = false
         for (hive in hives.values) {
-            if (current.observe(hive.key, HoneyHiveLabels.forHive(hive, hives.values, labels), now = now)) changed = true
+            if (current.observe(hive.key, labelsByHive[hive.key], now = now)) changed = true
         }
         if (changed) save()
     }

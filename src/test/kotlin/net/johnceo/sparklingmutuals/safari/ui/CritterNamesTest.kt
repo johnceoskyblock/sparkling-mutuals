@@ -26,6 +26,23 @@ class CritterNamesTest {
     @BeforeEach fun reset() {CritterNames.load(Properties())}
     @AfterEach fun clear() {CritterNames.load(Properties())}
 
+    @Test fun `server chat and hunting box display copies support legacy colors and plural critters`() {
+        CritterNames.set("Wumpa","Snow Beast")
+        CritterNames.set("Macaw","Toucan")
+        assertEquals("§aSnow Beast Shard",CritterNames.display("§aWumpa Shard"))
+        assertEquals("The Toucans escaped.",CritterNames.display("The Macaws escaped."))
+        val original=Component.literal("§6CAPTURE! You caught a §fWumpa!")
+        val shown=CritterNames.formatted(original)
+        assertEquals("§6CAPTURE! You caught a §fSnow Beast!",shown.string)
+        assertEquals("§6CAPTURE! You caught a §fWumpa!",original.string)
+        val itemName=Component.literal("§aWumpa Shard")
+        val lore=Component.literal("RARE HUNTING SHARD (ID I1)")
+        val tooltip=CritterNames.tooltip(listOf(itemName,lore))
+        assertEquals("§aSnow Beast Shard",tooltip.first().string)
+        assertEquals("§aWumpa Shard",itemName.string)
+        assertSame(lore,tooltip.last())
+    }
+
     @Test fun `font measures and wraps display names once even when an alias is another critter name`() {
         val glyph=java.lang.reflect.Proxy.newProxyInstance(BakedGlyph::class.java.classLoader,arrayOf(BakedGlyph::class.java)) {_,method,_ ->
             if(method.name=="info") com.mojang.blaze3d.font.GlyphInfo.simple(1f) else error("This test only measures glyphs")
@@ -82,7 +99,7 @@ class CritterNamesTest {
         val settings=SafariSettings()
         val rows=SettingsCatalog(settings).pages.single {it.name=="ESP"}.rows.single {it.name=="Custom critter names"}
         assertEquals(37,rows.children.sumOf {it.children.size})
-        assertTrue(rows.children.flatMap {it.children}.all {it.group && it.children.single().name=="Custom name"})
+        assertTrue(rows.children.flatMap {it.children}.all {!it.group && it.field.name=="name"})
         settings.esp.names.icy.entries.single {it.canonical=="Wumpa"}.name="Snow Beast"
         settings.apply()
         ConfigManager.init(dir)

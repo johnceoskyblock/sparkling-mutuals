@@ -19,7 +19,7 @@ class SafariShinyMixin {
     private fun highlight(entity: Entity, state: EntityRenderState, delta: Float, info: CallbackInfo) {
         val critterState = state as net.johnceo.sparklingmutuals.safari.esp.CritterGlowState
         critterState.`sm$setCritterGlow`(false)
-        if (TeammateEsp.isTeammate(entity)) {
+        if ((ConfigManager.highlightTeammates || ConfigManager.showTeammateNames) && TeammateEsp.isTeammate(entity)) {
             if (ConfigManager.highlightTeammates)
                 state.outlineColor = TeammateEsp.COLOR
             if (ConfigManager.showTeammateNames) state.nameTag = null
@@ -34,7 +34,7 @@ class SafariShinyMixin {
         if (SafariAssist.visualsActive(net.minecraft.client.Minecraft.getInstance())) state.nameTag = state.nameTag?.let {
             net.johnceo.sparklingmutuals.safari.ui.CritterNames.component(it)
         }
-        if(net.johnceo.sparklingmutuals.safari.esp.SafariEsp.hideVanillaNameTag(entity))state.nameTag=null
+        if (state.nameTag != null && net.johnceo.sparklingmutuals.safari.esp.SafariEsp.hideVanillaNameTag(entity)) state.nameTag = null
     }
 
     @Inject(method=["submit(Lnet/minecraft/client/renderer/entity/state/EntityRenderState;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;Lnet/minecraft/client/renderer/state/level/CameraRenderState;)V"],at=[At("TAIL")])

@@ -60,7 +60,7 @@ object CapsulePreviewRenderer {
         } else if(through) throughType else occludedType
         WorldRenderCompat.contactLines(context,type,mesh.outline)
         WorldRenderCompat.flush(context,type)
-        WorldRenderCompat.contactLines(context,type,mesh.core+mesh.marker)
+        WorldRenderCompat.contactLines(context,type,mesh.foreground)
         WorldRenderCompat.flush(context,type)
     }
 }

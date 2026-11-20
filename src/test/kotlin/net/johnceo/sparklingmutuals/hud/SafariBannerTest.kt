@@ -76,7 +76,7 @@ class SafariBannerTest {
         val settings=SafariSettings();val pages=SettingsCatalog(settings).pages
         fun all(rows: List<SettingsCatalog.Row>): List<SettingsCatalog.Row> = rows.flatMap { listOf(it)+all(it.children) }
         val banner=all(pages.single { it.name=="Banner" }.rows)
-        assertTrue(banner.any { it.name=="Bottom timer bar" })
+        assertTrue(banner.any { it.name=="Bottom countdown bar" })
         assertEquals(BannerKind.entries.count { it.supported },banner.count { it.owner is BannerOption && it.name=="Enabled" })
         assertTrue(all(pages.single { it.name=="ESP" }.rows).none { it.name.contains("banner",true) || it.name.endsWith("HUD",true) })
         val appearance=all(pages.single { it.name=="Customization" }.rows)

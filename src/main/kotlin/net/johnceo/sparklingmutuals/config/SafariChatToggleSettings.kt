@@ -1,13 +1,13 @@
 package net.johnceo.sparklingmutuals.config
 
 class SafariChatToggleSettings {
-    @JvmField @ConfigOption(name = "Run Start Information", desc = "")
+    @JvmField @ConfigOption(name = "Run Start Information", desc = "Starting item and hotspot messages.")
     @ConfigEditorBoolean var run_start = SafariChatConfig.hidden(SafariChatCategory.RUN_START)
-    @JvmField @ConfigOption(name = "Catch Attempts", desc = "")
+    @JvmField @ConfigOption(name = "Catch Attempts", desc = "Capsule throws, escapes and dodges.")
     @ConfigEditorBoolean var catch_attempts = SafariChatConfig.hidden(SafariChatCategory.CATCH_ATTEMPTS)
     @JvmField @ConfigOption(name = "Critter Catches", desc = "")
     @ConfigEditorBoolean var critter_catches = SafariChatConfig.hidden(SafariChatCategory.CRITTER_CATCHES)
-    @JvmField @ConfigOption(name = "Loot Shares", desc = "")
+    @JvmField @ConfigOption(name = "Loot Shares", desc = "Messages about shared capture loot.")
     @ConfigEditorBoolean var loot_shares = SafariChatConfig.hidden(SafariChatCategory.LOOT_SHARES)
     @JvmField @ConfigOption(name = "Floor Drops", desc = "")
     @ConfigEditorBoolean var floor_drops = SafariChatConfig.hidden(SafariChatCategory.FLOOR_DROPS)
@@ -15,7 +15,7 @@ class SafariChatToggleSettings {
     @ConfigEditorBoolean var manager = SafariChatConfig.hidden(SafariChatCategory.MANAGER)
     @JvmField @ConfigOption(name = "NPCs", desc = "")
     @ConfigEditorBoolean var npcs = SafariChatConfig.hidden(SafariChatCategory.NPCS)
-    @JvmField @ConfigOption(name = "Drop Items", desc = "")
+    @JvmField @ConfigOption(name = "Drop Items", desc = "Warnings about dropping items and double-tapping the drop key.")
     @ConfigEditorBoolean var drop_items = SafariChatConfig.hidden(SafariChatCategory.DROP_ITEMS)
     @JvmField @ConfigOption(name = "Gemzie", desc = "")
     @ConfigEditorBoolean var gemzie = SafariChatConfig.hidden(SafariChatCategory.GEMZIE)
@@ -33,7 +33,7 @@ class SafariChatToggleSettings {
     @ConfigEditorBoolean var wumpa = SafariChatConfig.hidden(SafariChatCategory.WUMPA)
     @JvmField @ConfigOption(name = "Troodon", desc = "")
     @ConfigEditorBoolean var troodon = SafariChatConfig.hidden(SafariChatCategory.TROODON)
-    @JvmField @ConfigOption(name = "Cold", desc = "")
+    @JvmField @ConfigOption(name = "Cold", desc = "Freezing warnings in Icy.")
     @ConfigEditorBoolean var cold = SafariChatConfig.hidden(SafariChatCategory.COLD)
     @JvmField @ConfigOption(name = "Doomspiral", desc = "")
     @ConfigEditorBoolean var doomspiral = SafariChatConfig.hidden(SafariChatCategory.DOOMSPIRAL)
@@ -49,7 +49,7 @@ class SafariChatToggleSettings {
     @ConfigEditorBoolean var hideyho = SafariChatConfig.hidden(SafariChatCategory.HIDEYHO)
     @JvmField @ConfigOption(name = "Bird Spawns", desc = "")
     @ConfigEditorBoolean var bird_spawns = SafariChatConfig.hidden(SafariChatCategory.BIRD_SPAWNS)
-    @JvmField @ConfigOption(name = "Empty Nest", desc = "")
+    @JvmField @ConfigOption(name = "Empty Nest", desc = "Messages confirming a bee nest is empty.")
     @ConfigEditorBoolean var empty_nests = SafariChatConfig.hidden(SafariChatCategory.EMPTY_NESTS)
     fun apply(): Boolean {
         var changed = false

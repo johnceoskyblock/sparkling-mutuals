@@ -4,6 +4,16 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class SafariAssistTest {
+    @Test fun `plain and formatted scoreboard rows retain area priority and fallback`() {
+        assertEquals("Haunted Mansion", SafariRules.zone(listOf("§7⏣ Hub", " Area: Haunted Mansion ")))
+        assertEquals("Forest Biome", SafariRules.zone(listOf("§a⏣ Forest Biome", "⏣ Icy Biome")))
+        assertEquals(SafariLocation.OUTSIDE, SafariLocation.resolve(listOf("Area: Critter Safari"), null, false))
+        assertEquals(SafariLocation.INSIDE, SafariLocation.resolve(listOf("Area: Critter Safari"), null, true))
+        assertEquals(SafariLocation.INSIDE, SafariLocation.resolve(listOf(" §6Critter Safari\u200B "), null, false))
+        assertEquals(SafariLocation.ENTRANCE, SafariLocation.resolve(listOf("⏣ Safari Entry"), 0, true))
+        assertEquals("Crème", SafariRules.strip("\t§cCrème\uE000\u200B "))
+    }
+
     @Test fun `scan uses an inclusive spherical 80 block radius`() {
         assertTrue(SafariRules.withinRange(6400.0))
         assertFalse(SafariRules.withinRange(6400.01))

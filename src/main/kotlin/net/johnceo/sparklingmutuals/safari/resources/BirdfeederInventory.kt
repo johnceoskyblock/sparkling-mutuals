@@ -37,14 +37,25 @@ object BirdfeederInventory {
     }
     fun snapshot(client: Minecraft): List<Pair<String,Int>> {
         tick(client)
-        val player=client.player ?: return emptyList()
-        val screen=client.smScreen as? AbstractContainerScreen<*>
-        val stack=player.containerMenu.carried
-        val real=if(stack.isEmpty) emptyList() else listOf(SafariRules.strip(stack.hoverName.string).trim() to stack.count)
-        val held = (0 until player.inventory.containerSize).map { player.inventory.getItem(it) }.filterNot { it.isEmpty }
-            .groupingBy { SafariRules.strip(it.hoverName.string).trim() }.fold(0) { count, item -> count + item.count }
-        val extra=cursor.extra(held.filterKeys { it in foods },real.filter { it.first in foods }.toMap(),screen?.title?.string=="Birdfeeder",
-            SafariTracking.ledger.current?.birds?.localFeederFood,System.currentTimeMillis())
-        return held.toList() + real.filter { it.first !in foods } + extra.toList()
+        val player = client.player ?: return emptyList()
+        val screen = client.smScreen as? AbstractContainerScreen<*>
+        val carried = player.containerMenu.carried
+        val carriedName = if (carried.isEmpty) null else SafariRules.strip(carried.hoverName.string)
+        val inventory = player.inventory
+        val held = LinkedHashMap<String, Int>()
+        for (slot in 0 until inventory.containerSize) {
+            val stack = inventory.getItem(slot)
+            if (stack.isEmpty) continue
+            val name = SafariRules.strip(stack.hoverName.string)
+            held[name] = (held[name] ?: 0) + stack.count
+        }
+        val carriedFood = if (carriedName != null && carriedName in foods) mapOf(carriedName to carried.count) else emptyMap()
+        val extra = cursor.extra(held.filterKeys { it in foods }, carriedFood, screen?.title?.string == "Birdfeeder",
+            SafariTracking.ledger.current?.birds?.localFeederFood, System.currentTimeMillis())
+        return buildList(held.size + extra.size + 1) {
+            held.forEach { (name, count) -> add(name to count) }
+            if (carriedName != null && carriedFood.isEmpty()) add(carriedName to carried.count)
+            extra.forEach { (name, count) -> add(name to count) }
+        }
     }
 }

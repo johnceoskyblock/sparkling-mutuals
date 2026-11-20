@@ -18,6 +18,7 @@ import net.johnceo.sparklingmutuals.safari.structures.SafariMounds
 
 /** Capture, source and completion evidence owned by a single Safari run. */
 class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTimeMillis) {
+    internal val hideyhoMarker = net.johnceo.sparklingmutuals.safari.hideyho.HideyhoMarker()
     var historyExcluded = false
         private set
     fun excludeFromHistory() { historyExcluded = true }

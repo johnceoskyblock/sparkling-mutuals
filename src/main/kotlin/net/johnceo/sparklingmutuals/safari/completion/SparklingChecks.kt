@@ -64,13 +64,25 @@ class SparklingChecks(private val clock: () -> Long = System::currentTimeMillis)
     // Remember qualified UUID sightings for the run. Capture baselines prevent counting
     // a previously seen critter again when its later catch arrives without a UUID.
     private val seenAtCaptureCount = mutableMapOf<String, MutableMap<UUID, Int>>()
+    private val retainedSightings = mutableMapOf<String, Int>()
     private var gazerPopulationChecked = 0
     private fun retainedCheckCount(name: String): Int {
         val catches = captured[name] ?: 0
-        val firstSeen = seenAtCaptureCount[name].orEmpty().values
-        return maxOf(catches, firstSeen.distinct().maxOfOrNull { baseline ->
-            baseline + firstSeen.count { it >= baseline }
-        } ?: 0)
+        val firstSeen = seenAtCaptureCount[name] ?: return maxOf(catches, 0)
+        val sightings = retainedSightings.getOrPut(name) {
+            val baselines = firstSeen.values.toIntArray()
+            baselines.sort()
+            var best = 0
+            // At the first occurrence of each baseline all following sightings qualify.
+            for (index in baselines.indices) {
+                val baseline = baselines[index]
+                if (index == 0 || baselines[index - 1] != baseline) {
+                    best = maxOf(best, baseline + (baselines.size - index))
+                }
+            }
+            best
+        }
+        return maxOf(catches, sightings)
     }
     fun checkCount(name: String) = when {
         name == "Gazer" -> maxOf(gazerPopulationChecked, retainedCheckCount(name)).coerceAtMost(4)
@@ -109,15 +121,22 @@ class SparklingChecks(private val clock: () -> Long = System::currentTimeMillis)
         birdsSpawned: Boolean = false, hauntedDropsRemaining: Int = -1,
         hauntedCoinDropsRemaining: Int = hauntedDropsRemaining) {
         observed.clear()
-        seen.filter { SafariRoster.named(it.first)?.biome == biome }.forEach { (name, uuid) -> observed.getOrPut(name) { mutableSetOf() }.add(uuid) }
+        for ((name, uuid) in seen) {
+            if (SafariRoster.named(name)?.biome == biome) observed.getOrPut(name) { mutableSetOf() }.add(uuid)
+        }
+        val zones = SafariCompletionZones.forBiome(biome)
         val (cx, cz) = centers.getValue(biome)
         val atCenter = (x - cx) * (x - cx) + (z - cz) * (z - cz) <= 225
         observed.forEach { (name, ids) ->
-            val zone = SafariCompletionZones.forBiome(biome)[name]
+            val zone = zones[name]
             val qualifies = if (zone != null) zone.contains(x, z, sparkling = true)
                 else name != "Gimmiegold" || atCenter
-            if (qualifies && name !in birds) ids.forEach { uuid ->
-                seenAtCaptureCount.getOrPut(name) { mutableMapOf() }.putIfAbsent(uuid, captured[name] ?: 0)
+            if (qualifies && name !in birds) {
+                val sightings = seenAtCaptureCount.getOrPut(name) { mutableMapOf() }
+                val baseline = captured[name] ?: 0
+                for (uuid in ids) {
+                    if (sightings.putIfAbsent(uuid, baseline) == null) retainedSightings.remove(name)
+                }
             }
         }
         if (biome == SafariBiome.HAUNTED) {
@@ -129,10 +148,11 @@ class SparklingChecks(private val clock: () -> Long = System::currentTimeMillis)
         fun total(name: String) = if (name == "Gazer") checkCount(name) else retainedCheckCount(name)
         fun enough(name: String, amount: Int = 1) = total(name) >= amount
         fun check(name: String, ready: Boolean) { if (ready) completed.add(name) else completed.remove(name) }
-        SafariCompletionZones.forBiome(biome).forEach { (name, zone) ->
+        zones.forEach { (name, zone) ->
             if (zone.contains(x, z, sparkling = true)) {
-                currentCounts[name] = total(name)
-                check(name, enough(name, SafariFullClear.minimum(name)))
+                val count = total(name)
+                currentCounts[name] = count
+                check(name, count >= SafariFullClear.minimum(name))
             }
         }
         SafariCompletionZones.uuidMinimums.filterKeys { SafariRoster.named(it)?.biome == biome }.forEach { (name, minimum) ->

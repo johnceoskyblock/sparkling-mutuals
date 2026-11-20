@@ -8,6 +8,15 @@ permissions:
   contents: read
 
 jobs:
+  ship-script:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Test local shipping automation without GitHub writes
+        shell: pwsh
+        run: ./scripts/tests/Ship.Tests.ps1
   sync-backend:
     runs-on: ubuntu-24.04
     defaults:
@@ -90,7 +99,7 @@ jobs:
       - run: ./gradlew verifyDistributions -PdistributionDir=incoming
   build:
     if: always()
-    needs: [sync-backend, build-logic, target, verify-all-targets]
+    needs: [ship-script, sync-backend, build-logic, target, verify-all-targets]
     runs-on: ubuntu-24.04
     steps:
       - name: Require every applicable build and verification job to pass
@@ -99,8 +108,10 @@ jobs:
           TARGET_RESULT: ${{ needs.target.result }}
           DISTRIBUTION_RESULT: ${{ needs.verify-all-targets.result }}
           SYNC_BACKEND_RESULT: ${{ needs.sync-backend.result }}
+          SHIP_SCRIPT_RESULT: ${{ needs.ship-script.result }}
         run: |
           test "$BUILD_LOGIC_RESULT" = success
           test "$TARGET_RESULT" = success
           test "$DISTRIBUTION_RESULT" = success
           test "$SYNC_BACKEND_RESULT" = success
+          test "$SHIP_SCRIPT_RESULT" = success

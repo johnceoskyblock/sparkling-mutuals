@@ -45,7 +45,10 @@ object CapsulePreview {
     internal fun frame(client:Minecraft):CapsulePreviewFrame? {
         val state=currentState(client);val available=availability(state)
         val p=client.player ?: return null
-        if(available!=CapsulePreviewAvailability.AVAILABLE) { frames.reset();return CapsulePreviewFrameBuilder.build(available,CapsuleGeometryCompat.vector(p.eyePosition),CapsuleGeometryCompat.vector(p.lookAngle)) }
+        if (available != CapsulePreviewAvailability.AVAILABLE) {
+            frames.reset()
+            return null
+        }
         val partial=client.deltaTracker.getGameTimeDeltaPartialTick(false)
         val eye=CapsuleGeometryCompat.vector(p.getEyePosition(partial))
         // Local-player aim uses current rotations; view APIs may substitute a detached camera's angles.

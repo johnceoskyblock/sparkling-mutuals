@@ -16,7 +16,7 @@ class CjsSingleToggleTest {
         val switch=warping.rows.last()
         assertEquals("Sparkling Auto-entry",switch.name)
         assertFalse(switch.read() as Boolean)
-        assertTrue(switch.description.lines().contains("USE AT YOUR OWN RISK!!!!"))
+        assertTrue(switch.description.lines().contains("Use at your own risk."))
         assertEquals(0xFF5555, switch.field.getAnnotation(DescriptionColor::class.java).rgb)
         assertNull(warping.rows.first().field.getAnnotation(DescriptionColor::class.java))
         val all=catalog.pages.flatMap { rows(it.rows) }

@@ -18,6 +18,7 @@ import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.world.effect.MobEffects
 import net.minecraft.world.entity.Entity
+import net.minecraft.world.entity.Display
 import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.entity.decoration.ArmorStand
 import net.minecraft.world.entity.player.Player
@@ -81,15 +82,22 @@ object SafariAssist {
             if (!SafariIsland.onIsland) SparklingEncounters.leave()
             return
         }
-        val entities = client.level!!.entitiesForRendering().filterNot { it.isRemoved }.toList()
-        val realPlayers = client.connection?.listedOnlinePlayers?.map { it.profile.id }?.toSet().orEmpty() + player.uuid
+        val entities = client.level!!.entitiesForRendering().filterNot { it.isRemoved }
+        val realPlayers = HashSet<java.util.UUID>()
+        client.connection?.listedOnlinePlayers?.forEach { realPlayers.add(it.profile.id) }
+        realPlayers.add(player.uuid)
         val partyMembers = PartyManager.getMembers().toSet()
-        val capsules = entities.filter {
-            CritterCapsuleHider.itemId(it) in setOf("CRITTER_CAPSULE", "MASTERFUL_CRITTER_CAPSULE")
-        }.mapTo(mutableSetOf()) { it.id }
+        val capsules = HashSet<Int>()
+        for (entity in entities) {
+            when (CritterCapsuleHider.itemId(entity)) {
+                "CRITTER_CAPSULE", "MASTERFUL_CRITTER_CAPSULE" -> capsules.add(entity.id)
+            }
+        }
+        val byId = HashMap<Int, Entity>()
         val snapshots = entities.map { entity ->
+            byId[entity.id] = entity
             val realPlayer = entity is Player && (entity.uuid in realPlayers || entity.uuid.toString() in partyMembers)
-            val carrier = entity is Player || entity is ArmorStand || entity is net.minecraft.world.entity.Display.ItemDisplay
+            val carrier = entity is Player || entity is ArmorStand || entity is Display.ItemDisplay
             SparklingEntity(entity.id, entity.uuid, entity.x, entity.y, entity.z, entity.customName?.string,
                 if (entity is Player && !realPlayer)
                     SafariEsp.texture(client.connection?.getPlayerInfo(entity.uuid)?.profile ?: entity.gameProfile)
@@ -97,7 +105,6 @@ object SafariAssist {
                 entity is LivingEntity && entity !is ArmorStand && !realPlayer,
                 entity.id in capsules || entity.vehicle?.id in capsules)
         }
-        val byId = entities.associateBy { it.id }
         val captureMarkers = SparklingDetector.captureMarkers(snapshots)
         shinies = SparklingDetector.detect(snapshots).mapNotNull { match ->
             val body = byId[match.body] ?: return@mapNotNull null

@@ -85,7 +85,7 @@ internal object ShardSaleSidebar {
         val visible=rows.drop(scroll).take(capacity)
         val height=HEADER+area.rows*ROW+FOOTER
         val panel=object: HudPanel("Safari shard guidance",rows=emptyList(),titleIcon=null,widthOverride=WIDTH*cols,heightOverride=height) {
-            override fun draw(graphics: GuiGraphicsExtractor,x: Int,y: Int,scale: Float,style: PanelStyle,borderOverride: Int?) {
+            override fun drawMeasured(graphics: GuiGraphicsExtractor,x: Int,y: Int,scale: Float,style: PanelStyle,borderOverride: Int?,metrics: DrawMetrics) {
                 paint(graphics,x,y,scale,visible,rows.size,capacity,height,cols,area.rows)
             }
         }

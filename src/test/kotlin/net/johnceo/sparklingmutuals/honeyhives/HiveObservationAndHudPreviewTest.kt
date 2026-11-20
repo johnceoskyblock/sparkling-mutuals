@@ -31,13 +31,17 @@ class HiveObservationAndHudPreviewTest {
     }
     @Test fun `nearby waypoints receive independent status and equidistant or distant labels are rejected`() {
         val a = Hive(0, 10, 0); val b = Hive(3, 10, 0)
-        val labels = listOf(HiveLabel(.5, 12.0, .5, "Refill in: 23m 33s"), HiveLabel(3.5, 12.0, .5, "Click to loot!"))
-        assertEquals("Refill in: 23m 33s", HoneyHiveLabels.forHive(a, listOf(a,b), labels))
-        assertEquals("Click to loot!", HoneyHiveLabels.forHive(b, listOf(a,b), labels))
+        val labels = listOf(
+            HiveLabel(.5, 12.0, .5, "Click to loot!"),
+            HiveLabel(.5, 12.0, .5, "Refill in: 23m 33s"),
+            HiveLabel(.5, 12.0, .5, "Refill in: 27m 14s"),
+            HiveLabel(3.5, 12.0, .5, "Click to loot!"))
+        val matches = HoneyHiveLabels.byHive(listOf(a, b), labels)
+        assertEquals("Refill in: 23m 33s", matches[a.key])
+        assertEquals("Click to loot!", matches[b.key])
         val tie = listOf(HiveLabel(2.0, 12.0, .5, "Click to loot!"))
-        assertNull(HoneyHiveLabels.forHive(a, listOf(a,b), tie))
-        assertNull(HoneyHiveLabels.forHive(b, listOf(a,b), tie))
-        assertNull(HoneyHiveLabels.forHive(a, listOf(a,b), listOf(HiveLabel(.5, 18.0, .5, "Click to loot!"))))
+        assertTrue(HoneyHiveLabels.byHive(listOf(a, b), tie).isEmpty())
+        assertTrue(HoneyHiveLabels.byHive(listOf(a, b), listOf(HiveLabel(.5, 18.0, .5, "Click to loot!"))).isEmpty())
     }
     @Test fun `full block and loot label cannot clear a saved personal cooldown`() {
         val times = mutableMapOf("a" to 9000000L)
@@ -46,8 +50,8 @@ class HiveObservationAndHudPreviewTest {
         assertEquals(HiveState.EMPTY, tracker.state("a", 1000))
         assertEquals(9000000L, times["a"])
         val hive = Hive(-693, 94, 147)
-        assertEquals("Click to loot!", HoneyHiveLabels.forHive(hive, listOf(hive),
-            listOf(HiveLabel(-692.5, 93.28, 147.5, "Click to loot!"))))
+        assertEquals("Click to loot!", HoneyHiveLabels.byHive(listOf(hive),
+            listOf(HiveLabel(-692.5, 93.28, 147.5, "Click to loot!")))[hive.key])
     }
     @Test fun `provisional block observations do not overwrite saved profile timers`() {
         val temporary = mutableMapOf<String, Long>()

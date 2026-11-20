@@ -27,7 +27,7 @@ class WholeBoxHeaderTest {
         assertTrue(ConfigManager.huntingBoxValue)
         val settings=SafariSettings()
         val helpers=SettingsCatalog(settings).pages.first {it.name=="SkyBlock"}.rows.first {it.name=="Helpers"}.children
-        assertTrue(helpers.any {it.name=="Hunting Box total value"})
+        assertTrue(helpers.any {it.name=="Hunting Box value"})
         settings.skyblock.helpers.huntingBoxValue=false;settings.skyblock.helpers.shardSaleGuidance=true
         settings.apply();ConfigManager.init(directory)
         assertFalse(ConfigManager.huntingBoxValue);assertTrue(ConfigManager.shardSaleGuidance)

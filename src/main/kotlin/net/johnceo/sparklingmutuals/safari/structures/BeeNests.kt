@@ -123,7 +123,11 @@ object BeeNests {
                 val pos = BlockPos(x, y, z)
                 // A vanished nearby mound model must not turn into a waypoint on break.
                 if (pos.distToCenterSqr(camera) !in (16.0 * 16)..40000.0) null
-                else Triple(pos, "Rockmite mound", SafariEspConfig.rgb(SafariEspConfig.entityColor("Rockmite", mound = true)))
+                else {
+                    val label = if (net.johnceo.sparklingmutuals.config.CritterNameplates.settings.pity)
+                        run?.moundSurvey?.hitLabel(Triple(x, y, z)).orEmpty() else ""
+                    Triple(pos, label, SafariEspConfig.rgb(SafariEspConfig.entityColor("Rockmite", mound = true)))
+                }
             }
         } else emptyList()
         val allMarkers = markers + retainedMounds
@@ -133,9 +137,13 @@ object BeeNests {
                 pos.x - .005, pos.y - .005, pos.z - .005, pos.x + 1.005, pos.y + 1.005, pos.z + 1.005), color, 3f)
         }
         WorldRenderCompat.flush(context, lines)
-        for ((pos, label, color) in allMarkers) {
+        for ((pos, label, color) in markers) {
             val text = "$label · ${kotlin.math.sqrt(pos.distToCenterSqr(camera)).toInt()}m"
             WorldRenderCompat.label(context, text, color, pos.x + .5, pos.y + 1.4, pos.z + .5, SafariEspConfig.labelWorldScale)
+        }
+        for ((pos, label, color) in retainedMounds) {
+            if (label.isNotEmpty()) WorldRenderCompat.markerLabel(context, label, color,
+                pos.x + .5, pos.y + 1.4, pos.z + .5, false)
         }
     }
     /** Explain the block-data -> survey -> helper -> render boundaries without assuming a GPU failure. */

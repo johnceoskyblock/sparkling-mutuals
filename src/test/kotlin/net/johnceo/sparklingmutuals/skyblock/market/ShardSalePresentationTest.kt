@@ -17,7 +17,7 @@ class ShardSalePresentationTest {
         assertTrue(ConfigManager.shardSaleGuidance)
         val children=SettingsCatalog(SafariSettings()).pages.first {it.name=="SkyBlock"}.rows.first {it.name=="Helpers"}.children
         assertTrue(children.any {it.name=="Shard sale guidance"})
-        assertFalse(children.any {it.name.contains("Hunting Box value",true)})
+        assertFalse(children.any {it.field.name in setOf("estimatedItemValue","estimatedChestValue")})
         val disable=SafariSettings();disable.skyblock.helpers.shardSaleGuidance=false;disable.apply();ConfigManager.init(directory)
         assertFalse(ConfigManager.shardSaleGuidance)
     }

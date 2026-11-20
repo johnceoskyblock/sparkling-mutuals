@@ -65,36 +65,36 @@ class SafariSettings {
     class SkyBlockHelpers {
         @JvmField @ConfigOption(name = "Shard sale guidance", desc = "Compare sell offers, instant sales and salvaging for Safari shards.")
         @ConfigEditorBoolean var shardSaleGuidance = ConfigManager.shardSaleGuidance
-        @JvmField @ConfigOption(name = "Skills overflow", desc = "Virtual levels in Skills menu tooltips.")
+        @JvmField @ConfigOption(name = "Skill overflow levels", desc = "Show levels beyond the normal skill cap in Skills menu tooltips.")
         @ConfigEditorBoolean var skillOverflow = ConfigManager.skillOverflow
-        @JvmField @ConfigOption(name = "Overflow level-up messages", desc = "")
+        @JvmField @ConfigOption(name = "Overflow level-up messages", desc = "Show a chat message when you gain an overflow skill level.")
         @ConfigEditorBoolean var skillOverflowChat = ConfigManager.skillOverflowChat
         @JvmField @ConfigOption(name = "Use numbers for skill levels", desc = "Show 61 instead of LXI.")
         @ConfigEditorBoolean var skillOverflowNumbers = ConfigManager.skillOverflowNumbers
         @JvmField var estimatedItemValue = ConfigManager.estimatedItemValue
         @JvmField var estimatedChestValue = ConfigManager.estimatedChestValue
-        @JvmField @ConfigOption(name = "Hunting Box total value", desc = "One estimated sell-offer total across visited pages.")
+        @JvmField @ConfigOption(name = "Hunting Box value", desc = "Estimate the total value of shards on the pages you have opened.")
         @ConfigEditorBoolean var huntingBoxValue = ConfigManager.huntingBoxValue
     }
 
     class MiscEndgame {
-        @JvmField @ConfigOption(name = "Phantomleaf Solver", desc = "Stand still for two notes; move if yellow.")
+        @JvmField @ConfigOption(name = "Phantomleaf solver", desc = "Stand still to hear two notes. Move when the indicator turns yellow.")
         @ConfigEditorBoolean var phantomleafSolver = ConfigManager.phantomleafSolver
     }
     class General {
-        @JvmField @ConfigOption(name = "HUD font customization", desc = "") @Accordion
+        @JvmField @ConfigOption(name = "HUD font", desc = "") @Accordion
         val font = HudFontSettings()
         @JvmField @ConfigOption(name = "Command help", desc = "")
         @ConfigEditorButton(runnableId = 3, buttonText = "Show help") var help = false
-        @JvmField @ConfigOption(name = "Move and resize HUDs", desc = "Drag to move; scroll to resize.")
+        @JvmField @ConfigOption(name = "Move and resize HUDs", desc = "Drag HUDs to move them; scroll to resize them.")
         @ConfigEditorButton(runnableId = 1, buttonText = "Edit HUDs") var edit = false
     }
     class HudFontSettings {
-        @JvmField @ConfigOption(name = "Use resource pack font", desc = "Use Minecraft's active font for all HUDs and alerts.")
+        @JvmField @ConfigOption(name = "Use resource pack font", desc = "Use your active resource pack's font in HUDs and alerts.")
         @ConfigEditorBoolean var resourcePackFont = AppearanceConfig.resourcePackFont
         @JvmField @ConfigOption(name = "HUD text shadow", desc = "")
         @ConfigEditorBoolean var hudTextShadow = AppearanceConfig.hudTextShadow
-        @JvmField @ConfigOption(name = "Pixel-aligned HUD scaling", desc = "Even screen pixels for sharper text. May slightly change HUD size.")
+        @JvmField @ConfigOption(name = "Sharper HUD scaling", desc = "Align text to screen pixels. HUD sizes may adjust slightly.")
         @ConfigEditorBoolean var pixelAlignedHuds = AppearanceConfig.pixelAlignedHuds
     }
     class Modes {
@@ -110,13 +110,13 @@ class SafariSettings {
         @ConfigEditorBoolean var hideDrops = ConfigManager.fullClearHideFloorDropEsp
     }
     class Sparkling {
-        @JvmField @ConfigOption(name = "All Scannable Critter Checks", desc = "ESP and Unchecked entries for scannable critters, even when everyone has their shiny.")
+        @JvmField @ConfigOption(name = "Check all scannable critters", desc = "Show easy-to-scan critters in ESP and the missing panel, even if the party already has their sparkling variant.")
         @ConfigEditorBoolean var allScannable = ConfigManager.allScannableCritterChecks
         @JvmField @ConfigOption(name = "Hide critter ESP", desc = "")
         @ConfigEditorBoolean var hideCritters = ConfigManager.sparklingHideCritterEsp
         @JvmField @ConfigOption(name = "Hide floor-drop ESP", desc = "")
         @ConfigEditorBoolean var hideDrops = ConfigManager.sparklingHideFloorDropEsp
-        @JvmField @ConfigOption(name = "Profitable critter ESP", desc = "/profits top 10, including walls and mounds.")
+        @JvmField @ConfigOption(name = "Profitable critter ESP", desc = "Also highlight the ten most profitable critters, including their walls and mounds.")
         @ConfigEditorBoolean var profitable = ConfigManager.sparklingProfitableShardEsp
     }
     class Unique {
@@ -124,27 +124,27 @@ class SafariSettings {
         @ConfigEditorBoolean var hideCritters = ConfigManager.uniqueHideCritterEsp
         @JvmField @ConfigOption(name = "Hide floor-drop ESP", desc = "")
         @ConfigEditorBoolean var hideDrops = ConfigManager.uniqueHideFloorDropEsp
-        @JvmField @ConfigOption(name = "Profitable critter ESP", desc = "/profits top 10, including walls and mounds.")
+        @JvmField @ConfigOption(name = "Profitable critter ESP", desc = "Also highlight the ten most profitable critters, including their walls and mounds.")
         @ConfigEditorBoolean var profitable = ConfigManager.profitableShardEsp
     }
     class Party {
-        @JvmField @ConfigOption(name = "Auto biome reports", desc = "Announce completed biomes in party chat. Backend sync stays on.")
+        @JvmField @ConfigOption(name = "Announce biome completion", desc = "Send fd, cd, id or hd in party chat when a biome is complete. Completion still syncs when this is off.")
         @ConfigEditorBoolean var biomeReports = ConfigManager.autoBiomeReports
-        @JvmField @ConfigOption(name = "Announce starting quest items", desc = "Includes unused-item reminders.")
+        @JvmField @ConfigOption(name = "Announce starting quest items", desc = "Tell the party which quest items you started with and remind you to use them.")
         @ConfigEditorBoolean var startingItems = ConfigManager.announceStartingItems
-        @JvmField @ConfigOption(name = "Respond to party commands", desc = "")
+        @JvmField @ConfigOption(name = "Respond to party commands", desc = "Answer party commands such as !since and !dye.")
         @ConfigEditorBoolean var enabled = ConfigManager.partyCommandsEnabled
-        @JvmField @ConfigOption(name = "Respect !dt requests", desc = "Hold Shift to bypass entry blocks.")
+        @JvmField @ConfigOption(name = "Respect !dt requests", desc = "Pause Safari entry when a party member requests downtime. Hold Shift to bypass.")
         @ConfigEditorBoolean var downtime = ConfigManager.downtimeCommand
 
     }
     class Miria {
-        @JvmField @ConfigOption(name = "Ticket mode", desc = "Basic: Uncommon. First-Class: Legendary.")
+        @JvmField @ConfigOption(name = "Ticket target", desc = "Basic requires Uncommon; First-Class requires Legendary.")
         @ConfigEditorDropdown(values = ["Basic", "First-Class"])
         var ticketMode = ContestConfig.ticketMode
-        @JvmField @ConfigOption(name="Announce ticket earned",desc="") @ConfigEditorBoolean
+        @JvmField @ConfigOption(name = "Announce ticket earned", desc = "Send your ticket message in party chat when you reach the target bracket.") @ConfigEditorBoolean
         var announceTicket=ContestConfig.announceTicket
-        @JvmField @ConfigOption(name="Ticket earned message",desc="Saved separately for Basic and First-Class ticket modes.") @ConfigEditorText
+        @JvmField @ConfigOption(name = "Ticket earned message", desc = "Each ticket target keeps its own message.") @ConfigEditorText
         var ticketMessage=ContestConfig.ticketMessage()
         private var messageMode=ContestConfig.ticketMode
         fun applyTicketMessage(): Boolean {
@@ -157,11 +157,11 @@ class SafariSettings {
             }
             return changed
         }
-        @JvmField @ConfigOption(name = "Contest tracking", desc = "")
+        @JvmField @ConfigOption(name = "Track Miria's contest", desc = "Track your score, bracket and ticket progress.")
         @ConfigEditorBoolean var enabled = ContestConfig.trackContest
-        @JvmField @ConfigOption(name = "Party Contest Guard Entry", desc = "Guard entry into safari until all party members send ticket earned confirmation message. Party leader only.")
+        @JvmField @ConfigOption(name = "Party contest entry guard", desc = "As party leader, wait for everyone to confirm their ticket in chat before entering Safari. Hold Shift to bypass for this contest.")
         @ConfigEditorBoolean var autoContestDowntime = ContestConfig.autoContestDowntime
-        @JvmField @ConfigOption(name = "Honeyhive beacons", desc = "Ready hives until your contest target.")
+        @JvmField @ConfigOption(name = "Honeyhive beacons", desc = "Mark ready hives until you reach your ticket target.")
         @ConfigEditorBoolean var honeyHives = ConfigManager.honeyHives
         @JvmField val warning = Warning()
         var five
@@ -185,71 +185,75 @@ class SafariSettings {
 
     }
     class Warning {
-        @JvmField @ConfigOption(name = "5 minute warning", desc = "Below your ticket target.")
+        @JvmField @ConfigOption(name = "5-minute warning", desc = "Warn if you are still below your ticket target.")
         @ConfigEditorBoolean var five = 5 in ContestConfig.warningMinutes()
-        @JvmField @ConfigOption(name = "3 minute warning", desc = "Below your ticket target.")
+        @JvmField @ConfigOption(name = "3-minute warning", desc = "Warn if you are still below your ticket target.")
         @ConfigEditorBoolean var three = 3 in ContestConfig.warningMinutes()
-        @JvmField @ConfigOption(name = "1 minute warning", desc = "Below your ticket target.")
+        @JvmField @ConfigOption(name = "1-minute warning", desc = "Warn if you are still below your ticket target.")
         @ConfigEditorBoolean var one = 1 in ContestConfig.warningMinutes()
-        @JvmField @ConfigOption(name = "No contest warnings", desc = "")
+        @JvmField @ConfigOption(name = "Disable all contest warnings", desc = "")
         @ConfigEditorButton(runnableId = 2, buttonText = "None") var none = false
-        @JvmField @ConfigOption(name = "Warning titles", desc = "")
+        @JvmField @ConfigOption(name = "Show warning titles", desc = "")
         @ConfigEditorBoolean var titles = ContestConfig.contestWarnTitle
         @JvmField @ConfigOption(name = "Sound volume", desc = "")
         @ConfigEditorSlider(minValue = 0f, maxValue = 100f, minStep = 1f) var volume = ContestConfig.contestSoundVolume.coerceIn(0, 100)
-        @JvmField @ConfigOption(name = "Warning sound", desc = "Minecraft sound ID.")
+        @JvmField @ConfigOption(name = "Warning sound", desc = "Minecraft sound ID, such as minecraft:block.note_block.pling.")
         @ConfigEditorText var sound = ContestConfig.contestSound
         @JvmField @ConfigOption(name = "Preview sound", desc = "")
         @ConfigEditorButton(runnableId = 7, buttonText = "Preview") var saveSound = false
     }
     class History {
-        @JvmField @ConfigOption(name = "History", desc = "")
+        @JvmField @ConfigOption(name = "Open history", desc = "")
         @ConfigEditorButton(runnableId = 10, buttonText = "History") var open = false
-        @JvmField @ConfigOption(name = "Import History from Logs", desc = "Import and repair history. Keeps backups.")
+        @JvmField @ConfigOption(name = "Import history from logs", desc = "Recover past runs and sparkling catches from Minecraft logs. Existing data is backed up.")
         @ConfigEditorButton(runnableId = 11, buttonText = "Import logs") var importLogs = false
-        @JvmField @ConfigOption(name = "Save runs", desc = "")
+        @JvmField @ConfigOption(name = "Save run history", desc = "Keep completed runs for history, statistics and personal bests.")
         @ConfigEditorBoolean var runs = ConfigManager.runHistory
-        @JvmField @ConfigOption(name = "Coins at insta-sell", desc = "Instead of sell-offer prices.")
+        @JvmField @ConfigOption(name = "Use instant-sell prices", desc = "Value run profits at instant-sell prices instead of sell-offer prices.")
         @ConfigEditorBoolean var instaSell = ConfigManager.runCoinsInstaSell
-        @JvmField @ConfigOption(name = "Achievements", desc = "")
+        @JvmField @ConfigOption(name = "Achievements", desc = "Track and unlock Safari achievements.")
         @ConfigEditorBoolean var achievements = ConfigManager.achievements
-        @JvmField @ConfigOption(name = "Achievement sound", desc = "")
+        @JvmField @ConfigOption(name = "Achievement sounds", desc = "")
         @ConfigEditorBoolean var sound = ConfigManager.achievementSound
-        @JvmField @ConfigOption(name = "Achievements to party", desc = "")
+        @JvmField @ConfigOption(name = "Announce achievements to party", desc = "Share unlocked achievements in party chat.")
         @ConfigEditorBoolean var toParty = ConfigManager.achievementsToParty
     }
     class Warp {
-        @JvmField @ConfigOption(name = "Sparkle Warping", desc = "This method allows players to get warped into runs before the 30s warp window is up, allowing for players to roll for sparkling critters that take more than 30s to find without using a ticket. Run /start with the party you want to bring back. It saves the roster and starts the cycle. Solo disbands the party, and Duo keeps your runner. Run /start again with a different roster to replace the saved party. Previous leechers are invited together at the reparty timer, then warped at the warp timer. Returning to Torrhus repeats the cycle. Auto partying enables you to have a warp list of players that need specific sparkling critters that can be detected before the reparty cutoff. Then, when you find a sparkling critter, it will attempt to party the players in the list in priority order.")
+        @JvmField @ConfigOption(name = "Sparkle Warping", desc = "Warp players into a run before the 30-second window closes so they can check late-spawning sparklings without spending a ticket. Run /start with the party you want to bring back: it saves the roster and starts the cycle. Run it again to replace the saved party. Solo disbands everyone; Duo keeps your runner. Each run, saved players are invited at the reparty cutoff and warped at the warp time. Auto-party uses your warp list to invite players who need a detected sparkling, in priority order, before the cutoff.")
         @StandaloneDescription var description = false
-        @JvmField @ConfigOption(name = "Leader mode", desc = "Solo: disband. Duo: keep your runner.")
+        @JvmField @ConfigOption(name = "Warping setup", desc = "Solo disbands everyone. Duo keeps your runner in the party.")
         @ConfigEditorDropdown(values = ["Solo", "Duo"]) var mode = ConfigManager.sparkleWarpMode
-        @JvmField @ConfigOption(name = "Duo runner", desc = "Set with /duo <IGN>.")
+        @JvmField @ConfigOption(name = "Duo runner", desc = "The player who stays with you in Duo mode. Also set with /duo <IGN>.")
         @ConfigEditorText var duo = ConfigManager.warpDuo
-        @JvmField @ConfigOption(name = "Auto-party", desc = "Warp List invites until the reparty timer.")
+        @JvmField @ConfigOption(name = "Auto-party from warp list", desc = "While warping is on, invite players who need a detected sparkling, in priority order, until the reparty cutoff.")
         @ConfigEditorBoolean var autoParty = ConfigManager.autoParty
         @JvmField @ConfigOption(name = "Invite online players only", desc = net.johnceo.sparklingmutuals.alerts.WarpPlayerStatus.DESCRIPTION)
         @ConfigEditorBoolean var autoPartyOnlineOnly = ConfigManager.autoPartyOnlineOnly
-        @JvmField @ConfigOption(name = "Warp List", desc = "Who to invite. Acquired shinies are unchecked automatically every 24h on Hypixel.")
+        @JvmField @ConfigOption(name = "Warp list", desc = "Choose players and sparklings to invite for. Refresh their sparkling needs every 24 hours when you join Hypixel.")
         @ConfigEditorButton(runnableId = 12, buttonText = "Warp List") var list = false
-        @JvmField @ConfigOption(name = "Auto warping", desc = "/start begins the cycle. Uses the Safari progress timer.")
+        @JvmField @ConfigOption(name = "Sparkle warping", desc = "Run /start to save and disband the current party, then reparty and warp them each run.")
         @ConfigEditorBoolean var enabled = ConfigManager.warpAlertsEnabled
-        @JvmField @ConfigOption(name = "Leech", desc = "Accept whitelisted invites; leave your current party.")
+        @JvmField @ConfigOption(name = "Leech mode", desc = "Accept invites from whitelisted players. Stay put if your current party leader is already whitelisted.")
         @ConfigEditorBoolean var leech = ConfigManager.leechMode
-        @JvmField @ConfigOption(name = "Leech whitelist", desc = "Inviter IGNs. Empty accepts nobody.")
+        @JvmField @ConfigOption(name = "Leech whitelist", desc = "Player names allowed to invite you. An empty list accepts nobody.")
         @ConfigEditorText var whitelist = ConfigManager.leechWhitelist
-        @JvmField @ConfigOption(name="Reparty timer (seconds)",desc="Ends Auto-party invites and queues your saved party.")
+        @JvmField @ConfigOption(name = "Auto-reconnect to Hypixel", desc = "Retry after an unexpected disconnect. Leave the disconnect screen to cancel.")
+        @ConfigEditorBoolean var autoReconnectHypixel = ConfigManager.autoReconnectHypixel
+        @JvmField @ConfigOption(name = "Auto-join SkyBlock", desc = "Return from the Prototype Lobby or Limbo. Also join SkyBlock after an automatic reconnect.")
+        @ConfigEditorBoolean var autoJoinSkyBlock = ConfigManager.autoJoinSkyBlock
+        @JvmField @ConfigOption(name = "Reparty cutoff (seconds)", desc = "Stop auto-party invites and invite your saved party at this run time.")
         @ConfigEditorSlider(minValue=1f,maxValue=29f,minStep=1f) var reparty = ConfigManager.repartyDelaySeconds
-        @JvmField @ConfigOption(name="Warp timer (seconds)",desc="Warps players into Safari. Must be after the reparty timer.")
+        @JvmField @ConfigOption(name = "Auto-warp time (seconds)", desc = "Warp the party at this run time. Must be later than the reparty cutoff.")
         @ConfigEditorSlider(minValue=2f,maxValue=30f,minStep=1f) var delay = ConfigManager.warpDelaySeconds
         @JvmField var saveDelay = false
-        @JvmField @ConfigOption(name = "Default timers", desc = "Reparty 22s; warp 27s.")
+        @JvmField @ConfigOption(name = "Reset warping timers", desc = "Restore the 22-second reparty cutoff and 27-second warp time.")
         @ConfigEditorButton(runnableId = 5, buttonText = "Reset timers") var reset = false
-        @JvmField @ConfigOption(name = "Sparkling Auto-entry", desc = "Automatically uses a ticket when party detects a sparkling critter.\nUSE AT YOUR OWN RISK!!!!")
+        @JvmField @ConfigOption(name = "Sparkling Auto-entry", desc = "Automatically use your lowest-tier ticket when the party detects a sparkling.\nUse at your own risk.")
         @DescriptionColor(rgb = 0xFF5555)
         @ConfigEditorBoolean var autoEnter = ConfigManager.safariEntryAutoEnter
     }
     class Safari {
-        @JvmField @ConfigOption(name = "Safari entry cooldown", desc = "Show a 30-second timer after the server says You cannot join this instance!.")
+        @JvmField @ConfigOption(name = "Safari re-entry cooldown", desc = "Show the 30-second wait after a failed attempt to rejoin the instance.")
         @Accordion val entryCooldown = HudOptions(ConfigManager.safariEntryCooldown,"entry_cooldown")
         @JvmField @ConfigOption(name = "Safari entry", desc = "") @Accordion val entry = SafariEntrySettings()
         @JvmField @ConfigOption(name = "Sparkling detection and alerts", desc = "") @Accordion val alerts = Alerts()
@@ -323,44 +327,44 @@ class SafariSettings {
             set(value) { alerts.announce = value }
     }
     class SafariEntrySettings {
-        @JvmField @ConfigOption(name = "Guard Safari entry", desc = "Wait for party members. Shift bypasses.")
+        @JvmField @ConfigOption(name = "Wait for party before entry", desc = "Block entry while party members are missing or a kick is being handled. Hold Shift to bypass.")
         @ConfigEditorBoolean var holdManagerOnKick = ConfigManager.holdManagerOnKick
-        @JvmField @ConfigOption(name = "Auto-select Safari ticket", desc = "Non-leaders, inside Safari only.")
+        @JvmField @ConfigOption(name = "Auto-select Safari ticket", desc = "Choose a ticket for non-leaders after they enter the Safari instance.")
         @ConfigEditorBoolean var autoSelectTicket = ConfigManager.autoSelectSafariTicket
-        @JvmField @ConfigOption(name = "Preferred ticket", desc = "Uses the nearest tier if unavailable.")
+        @JvmField @ConfigOption(name = "Preferred ticket", desc = "Use the closest available tier if your preferred ticket is missing.")
         @ConfigEditorDropdown(values = ["First Class", "Basic"])
         var ticketPreference = ConfigManager.safariTicketPreference
     }
     class SafariCaptureSettings {
-        @JvmField @ConfigOption(name = "Doomspiral capsule throw tick timer", desc = "Within 10 blocks of Doomspiral.")
+        @JvmField @ConfigOption(name = "Doomspiral throw timer", desc = "Show when to throw a capsule while within 10 blocks of Doomspiral.")
         @ConfigEditorBoolean var doomTimer = ConfigManager.doomspiralThrowTimer
-        @JvmField @ConfigOption(name = "Doomspiral emergence ticks", desc = "")
+        @JvmField @ConfigOption(name = "Doomspiral emergence delay (ticks)", desc = "Time from the spawn cue until Doomspiral can be caught.")
         @ConfigEditorSlider(minValue = 1f, maxValue = 600f, minStep = 1f) var doomTicks = ConfigManager.doomspiralEmergenceTicks
-        @JvmField @ConfigOption(name = "Doomspiral throw lead ticks", desc = "Ticks before emergence to throw.")
+        @JvmField @ConfigOption(name = "Throw early by (ticks)", desc = "How many ticks before emergence to throw the capsule.")
         @ConfigEditorSlider(minValue = 0f, maxValue = 40f, minStep = 1f) var doomLead = ConfigManager.doomspiralThrowLeadTicks
         @JvmField @ConfigOption(name="Throw timer appearance",desc="") @Accordion
         var doomAppearance=PanelAppearanceSettings(AppearanceConfig.panels.getValue("doom_throw")) { AppearanceConfig.selectedHex }
-        @JvmField @ConfigOption(name = "Capsule projections", desc = "Turn view bobbing off.")
+        @JvmField @ConfigOption(name = "Capsule trajectory guide", desc = "Preview your capsule's flight path. Works best with view bobbing off.")
         @ConfigEditorBoolean var experimentalCapsulePath = ConfigManager.experimentalCapsulePath
-        @JvmField @ConfigOption(name = "Capsule path width", desc = "")
+        @JvmField @ConfigOption(name = "Guide line width", desc = "")
         @ConfigEditorSlider(minValue = 1f, maxValue = 5f, minStep = 1f) var capsulePathWidth = ConfigManager.capsulePathWidth
-        @JvmField @ConfigOption(name = "Show guide through terrain", desc = "")
+        @JvmField @ConfigOption(name = "Show guide through blocks", desc = "")
         @ConfigEditorBoolean var showCapsuleGuideThroughTerrain = ConfigManager.showCapsuleGuideThroughTerrain
-        @JvmField @ConfigOption(name = "Auto Clicker", desc = "Left-click Rockmite mounds.")
+        @JvmField @ConfigOption(name = "Auto-click Rockmite mounds", desc = "Automatically left-click Rockmite mounds.")
         @ConfigEditorBoolean var autoClicker = ConfigManager.autoClicker
     }
     class SafariInteractionSettings {
-        @JvmField @ConfigOption(name = "Gemzie gem auto-select", desc = "Hold right-click over podiums.")
+        @JvmField @ConfigOption(name = "Auto-select podium gems", desc = "Select the matching gem while you hold right-click over a podium.")
         @ConfigEditorBoolean var gemzieGemAutoSelect = ConfigManager.gemzieGemAutoSelect
-        @JvmField @ConfigOption(name = "Full candle hitbox", desc = "While holding incense.")
+        @JvmField @ConfigOption(name = "Larger candle hitboxes", desc = "Use a full-block hitbox while holding Soothing Incense.")
         @ConfigEditorBoolean var candleHitbox = ConfigManager.candleHitbox
-        @JvmField @ConfigOption(name = "Auto-accept Hideyho", desc = "")
+        @JvmField @ConfigOption(name = "Auto-accept Hideyho quest", desc = "Choose the accept option in Hideyho's dialogue.")
         @ConfigEditorBoolean var hideyhoAutoAccept = ConfigManager.hideyhoAutoAccept
     }
     class SafariTeammateSettings {
-        @JvmField @ConfigOption(name = "Highlight teammates", desc = "")
+        @JvmField @ConfigOption(name = "Highlight teammates", desc = "Show party members through walls in Safari and Torrhus Canyon.")
         @ConfigEditorBoolean var highlightTeammates = ConfigManager.highlightTeammates
-        @JvmField @ConfigOption(name = "Show teammate names", desc = "Through walls.")
+        @JvmField @ConfigOption(name = "Show teammate names", desc = "Make party members' names visible through walls.")
         @ConfigEditorBoolean var showTeammateNames = ConfigManager.showTeammateNames
         @JvmField @ConfigOption(name = "Highlight color", desc = "")
         @ConfigEditorColour var color = SafariEspConfig.teammateColor
@@ -386,55 +390,55 @@ class SafariSettings {
             SafariBiome.ICY to icy, SafariBiome.HAUNTED to haunted).mapValues { it.value.coerceIn(0, 100) }
     }
     class SafariGamblingSettings {
-        @JvmField @ConfigOption(name = "Doomspiral Gambling", desc = "Must be within 15 blocks of Doomspiral spawning area")
+        @JvmField @ConfigOption(name = "Doomspiral gambling", desc = "Play a slot animation when summoning Doomspiral within 15 blocks of its spawning area.")
         @ConfigEditorBoolean var doomspiral = ConfigManager.doomspiralLottery
     }
     class SafariVisibilitySettings {
-        @JvmField @ConfigOption(name = "Clear water", desc = "Safari only.")
+        @JvmField @ConfigOption(name = "Clear water", desc = "Apply the water opacity settings below in Safari.")
         @ConfigEditorBoolean var clearWater = ConfigManager.clearWater
-        @JvmField @ConfigOption(name = "Water opacity", desc = "0% transparent, 100% opaque.") @Accordion
+        @JvmField @ConfigOption(name = "Water opacity by biome", desc = "0% is invisible; 100% is solid.") @Accordion
         val waterOpacity = WaterOpacitySettings()
-        @JvmField @ConfigOption(name = "Hide useless chats in safari", desc = "")
+        @JvmField @ConfigOption(name = "Hide Safari chat", desc = "")
         @ConfigEditorBoolean var hideCaptureChat = ConfigManager.hideCaptureChat
-        @JvmField @ConfigOption(name = "Hide Chat Toggles", desc = "") @Accordion
+        @JvmField @ConfigOption(name = "Hide chat toggles", desc = "Choose which server messages to hide when Hide Safari chat is on.") @Accordion
         val chatToggles = SafariChatToggleSettings()
-        @JvmField @ConfigOption(name = "Hide capsules on ground", desc = "")
+        @JvmField @ConfigOption(name = "Hide grounded capsules", desc = "")
         @ConfigEditorBoolean var hideGroundCapsules = ConfigManager.hideGroundCapsules
-        @JvmField @ConfigOption(name = "Hide flying capsules", desc = "Near your camera.")
+        @JvmField @ConfigOption(name = "Hide nearby flying capsules", desc = "Hide capsules within the camera distance below.")
         @ConfigEditorBoolean var hideFlyingCapsules = ConfigManager.hideFlyingCapsules
-        @JvmField @ConfigOption(name = "Flying capsule distance", desc = "Blocks.")
+        @JvmField @ConfigOption(name = "Capsule hiding distance (blocks)", desc = "")
         @ConfigEditorSlider(minValue = .5f, maxValue = 6f, minStep = .5f)
         var capsuleHideDistance = ConfigManager.capsuleHideDistance
         @JvmField @ConfigOption(name = "Hide Haunted paintings", desc = "")
         @ConfigEditorBoolean var paintings = ConfigManager.hideHauntedPaintings
-        @JvmField @ConfigOption(name = "Remove darkness", desc = "Safari only.")
+        @JvmField @ConfigOption(name = "Remove Safari darkness", desc = "Remove darkness from Haunted encounters.")
         @ConfigEditorBoolean var darkness = ConfigManager.removeDarkness
     }
     class Alerts {
-        @JvmField @ConfigOption(name = "Sparkling catch count", desc = "Catch number in party chat.")
+        @JvmField @ConfigOption(name = "Include sparkling catch count", desc = "Add the catch count to your sparkling party message.")
         @ConfigEditorBoolean var catchCount = ConfigManager.sparklingCatchCount
-        @JvmField @ConfigOption(name = "Unique Sparkling catch alert", desc = "New discoveries only.")
+        @JvmField @ConfigOption(name = "Unique sparkling catch alert", desc = "Celebrate when you catch a sparkling type you did not already have.")
         @ConfigEditorBoolean var caught = ConfigManager.specialCatchAlert
-        @JvmField @ConfigOption(name = "Always play Sparkling catch celebration", desc = "Celebrate every Sparkling catch, including duplicates.")
+        @JvmField @ConfigOption(name = "Celebrate duplicate sparklings", desc = "Also play the catch celebration for sparkling types you already have.")
         @ConfigEditorBoolean var alwaysCelebrate = ConfigManager.alwaysCelebrateSparkling
-        @JvmField @ConfigOption(name = "Catch celebration", desc = "")
+        @JvmField @ConfigOption(name = "Celebration style", desc = "")
         @ConfigEditorDropdown(values = ["Prismatic Whisper", "Prismatic Gleam", "Starlight Drift", "Starlight Waltz", "Aurora Rise", "Aurora Cascade", "Comet Shower", "Comet Tempest", "Firework Bloom", "Firework Symphony", "Celestial Chorus", "Celestial Carnival", "Nebula Surge", "Nebula Rhapsody", "Galactic Pulse", "Galactic Tempest", "Astral Reverie", "Astral Ascension", "Supernova", "Hypernova", "Cosmic Jubilee", "Cosmic Overdrive", "Radiant Singularity", "Celestial Transcendence", "Event Horizon", "Infinite Radiance", "Endless Cosmos", "Chromatic Zenith", "Ethereal Genesis", "Ethereal Ascendance", "Mythic Dominion", "Mythic Eternity", "Celestial Genesis", "Celestial Ascendance", "Infinite Transcendence", "Infinite Apotheosis", "Eternal Dawn", "Eternal Resonance", "Eternal Dominion", "Eternal Transcendence", "Eternal Apotheosis"]) var caughtStyle = ConfigManager.specialCatchStyle
         @JvmField @ConfigOption(name = "Preview catch celebration", desc = "")
         @ConfigEditorButton(runnableId = 13, buttonText = "Preview") var previewCatch = false
 
-        @JvmField @ConfigOption(name = "Nearby shiny detection", desc = "Within 80 blocks in your biome.")
+        @JvmField @ConfigOption(name = "Detect nearby sparklings", desc = "Look for sparkling critters within 80 blocks in your biome.")
         @ConfigEditorBoolean var shiny = ConfigManager.shinyDetection
-        @JvmField @ConfigOption(name="Nearby sparklings HUD appearance",desc="") @Accordion
+        @JvmField @ConfigOption(name = "Nearby sparklings HUD appearance", desc = "") @Accordion
         var nearbyAppearance=PanelAppearanceSettings(AppearanceConfig.panels.getValue("sparklings")) { AppearanceConfig.selectedHex }
-        @JvmField @ConfigOption(name = "Sparkling detection alert", desc = "")
+        @JvmField @ConfigOption(name = "Show sparkling detection alert", desc = "Show an alert when you or a connected party member finds a sparkling.")
         @ConfigEditorBoolean var alert = ConfigManager.sparklingAlert
         @JvmField @ConfigOption(name="Detection alert appearance",desc="") @Accordion
         var appearance=PanelAppearanceSettings(AppearanceConfig.panels.getValue("alert")) { AppearanceConfig.selectedHex }
-        @JvmField @ConfigOption(name = "Announce sparklings to party", desc = "")
+        @JvmField @ConfigOption(name = "Announce sparklings to party", desc = "Share detected sparklings in party chat.")
         @ConfigEditorBoolean var announce = ConfigManager.sparklingPartyAnnouncer
-        @JvmField @ConfigOption(name = "Sparkling sound", desc = "Minecraft sound ID.")
+        @JvmField @ConfigOption(name = "Detection sound", desc = "Minecraft sound ID, such as minecraft:block.note_block.pling.")
         @ConfigEditorText var sound = ConfigManager.sparklingSound
-        @JvmField @ConfigOption(name = "Sparkling sound volume", desc = "0 mutes.")
+        @JvmField @ConfigOption(name = "Detection sound volume", desc = "0% mutes the sound.")
         @ConfigEditorSlider(minValue = 0f, maxValue = 100f, minStep = 1f) var volume = ConfigManager.sparklingSoundVolume
         @JvmField @ConfigOption(name = "Preview sparkling sound", desc = "")
         @ConfigEditorButton(runnableId = 9, buttonText = "Preview") var saveSound = false
@@ -448,15 +452,15 @@ class SafariSettings {
         @JvmField var runVolume = ConfigManager.runCompleteVolume
     }
     class Tracking {
-        @JvmField @ConfigOption(name="Hotspot GUI",desc="Follows /hotspot. Party hotspots, assigned biomes and hotspot wins.") @Accordion val hotspotHud=HotspotHudOptions()
-        @JvmField @ConfigOption(name="Progress HUD",desc="") @Accordion val progressHud=ProgressHudOptions()
-        @JvmField @ConfigOption(name="Missing / Unchecked",desc="") @Accordion val missingHud=HudOptions(ConfigManager.missingPanel,"missing")
-        @JvmField @ConfigOption(name="Profitable shards checklist",desc="Unique and Sparkle modes. Current biome's /profit top ten and captures remaining.") @Accordion val profitableHud=HudOptions(ConfigManager.profitableChecklist,"profitable")
-        @JvmField @ConfigOption(name="Lake Cleared alert",desc="Once per run after you catch Tepid, Nozzlenose and Mantis Shrimp. Resize in /sm gui.") @Accordion val lakeClearedHud=HudOptions(ConfigManager.lakeClearAlert,"lake_cleared")
-        @JvmField @ConfigOption(name="Biome Objectives",desc="") @Accordion val objectivesHud=ObjectivesHudOptions()
-        @JvmField @ConfigOption(name="Biome captures",desc="") @Accordion val capturesHud=HudOptions(ConfigManager.catchCountPanel,"captures")
-        @JvmField @ConfigOption(name="Safari contest timer",desc="") @Accordion val contestHud=ContestHudOptions()
-        @JvmField @ConfigOption(name="Show Safari HUDs",desc="")
+        @JvmField @ConfigOption(name = "Hotspot assignments", desc = "Show party hotspots, assigned biomes and wins while /hotspot is on.") @Accordion val hotspotHud=HotspotHudOptions()
+        @JvmField @ConfigOption(name = "Run progress", desc = "Track overall and per-biome completion, time and profit.") @Accordion val progressHud=ProgressHudOptions()
+        @JvmField @ConfigOption(name = "Missing critters", desc = "Show critters still needed for the current mode.") @Accordion val missingHud=HudOptions(ConfigManager.missingPanel,"missing")
+        @JvmField @ConfigOption(name = "Profitable critters", desc = "Show the current biome's ten most profitable critters and captures remaining. Unique and Sparkling modes only.") @Accordion val profitableHud=HudOptions(ConfigManager.profitableChecklist,"profitable")
+        @JvmField @ConfigOption(name = "Lake cleared alert", desc = "Alert once you have caught Tepid, Nozzlenose and Mantis Shrimp in a run.") @Accordion val lakeClearedHud=HudOptions(ConfigManager.lakeClearAlert,"lake_cleared")
+        @JvmField @ConfigOption(name = "Biome objectives", desc = "Track food, nests, mounds and other remaining biome tasks.") @Accordion val objectivesHud=ObjectivesHudOptions()
+        @JvmField @ConfigOption(name = "Biome captures", desc = "Show capture counts and completion checks for each critter.") @Accordion val capturesHud=HudOptions(ConfigManager.catchCountPanel,"captures")
+        @JvmField @ConfigOption(name = "Miria's contest", desc = "Show contest time, ticket progress and optional bracket and score rows.") @Accordion val contestHud=ContestHudOptions()
+        @JvmField @ConfigOption(name = "Show Safari HUDs", desc = "Choose where to display the Safari tracking panels.")
         @ConfigEditorDropdown(values=["Only in Safari","Safari and entrance","Everywhere"]) var where=ConfigManager.showWhere
         var progress get()=progressHud.enabled;set(value) { progressHud.enabled=value }
         var missing get()=missingHud.enabled;set(value) { missingHud.enabled=value }
@@ -472,7 +476,7 @@ class SafariSettings {
         val placement=Runnable { val client=Minecraft.getInstance();client.smSetScreen(ContestGui(client.smScreen)) }
     }
     class HotspotHudOptions {
-        @JvmField @ConfigOption(name="Show all players",desc="Turn off to show only yourself.") @ConfigEditorBoolean
+        @JvmField @ConfigOption(name = "Show all party members", desc = "Turn off to show only your own assignment.") @ConfigEditorBoolean
         var showAllPlayers=ConfigManager.hotspotShowAllPlayers
         @JvmField @ConfigOption(name="Appearance",desc="") @Accordion
         var appearance=PanelAppearanceSettings(AppearanceConfig.panels.getValue("hotspot")) { AppearanceConfig.selectedHex }
@@ -480,21 +484,21 @@ class SafariSettings {
         val placement=Runnable { val client=Minecraft.getInstance();client.smSetScreen(ContestGui(client.smScreen)) }
     }
     class ObjectivesHudOptions: HudOptions(ConfigManager.biomeObjectives,"objectives") {
-        @JvmField @ConfigOption(name="Capture reminder",desc="Capture all uniques / critters.") @ConfigEditorBoolean var captureReminder=ConfigManager.objectiveCaptureReminder
-        @JvmField @ConfigOption(name="Shiny-check reminder",desc="Check needed critters / Finish shiny checks.") @ConfigEditorBoolean var shinyReminder=ConfigManager.objectiveShinyReminder
+        @JvmField @ConfigOption(name = "Show capture reminder", desc = "Show the Capture all uniques or Capture all critters line while captures are missing.") @ConfigEditorBoolean var captureReminder=ConfigManager.objectiveCaptureReminder
+        @JvmField @ConfigOption(name = "Show sparkling-check reminder", desc = "Show a reminder while sparkling checks are still needed.") @ConfigEditorBoolean var shinyReminder=ConfigManager.objectiveShinyReminder
     }
     class ProgressHudOptions: HudOptions(ConfigManager.progressHud,"progress") {
-        @JvmField @ConfigOption(name="Profit line",desc="Shards, feathers and essence.") @ConfigEditorBoolean var profit=ConfigManager.progressProfit
-        @JvmField @ConfigOption(name="Hotspot line",desc="") @ConfigEditorBoolean var hotspot=ConfigManager.progressHotspot
+        @JvmField @ConfigOption(name = "Show profit", desc = "Show estimated profit from shards, feathers and essence.") @ConfigEditorBoolean var profit=ConfigManager.progressProfit
+        @JvmField @ConfigOption(name = "Show hotspot", desc = "Show the hotspot Hypixel gave you for this run.") @ConfigEditorBoolean var hotspot=ConfigManager.progressHotspot
     }
     class ContestHudOptions: HudOptions(ContestConfig.showContestTimer,"miria") {
-        @JvmField @ConfigOption(name="Bracket row",desc="") @ConfigEditorBoolean var bracket=ContestConfig.showBracket
-        @JvmField @ConfigOption(name="Score row",desc="") @ConfigEditorBoolean var score=ContestConfig.showScore
+        @JvmField @ConfigOption(name = "Show bracket", desc = "") @ConfigEditorBoolean var bracket=ContestConfig.showBracket
+        @JvmField @ConfigOption(name = "Show score", desc = "") @ConfigEditorBoolean var score=ContestConfig.showScore
     }
     class Api {
-        @JvmField @ConfigOption(name = "Use Shiny Hunter cloud API", desc = "No key needed. Personal key takes priority.")
+        @JvmField @ConfigOption(name = "Use Shiny Hunter API", desc = "Fetch player data without your own API key. A personal key takes priority.")
         @ConfigEditorBoolean var cloud = ConfigManager.useCloudApi
-        @JvmField @ConfigOption(name = "Hypixel API key", desc = "Optional with cloud API.")
+        @JvmField @ConfigOption(name = "Hypixel API key", desc = "Add your own key for online-status checks or as an alternative to Shiny Hunter.")
         @ConfigEditorButton(runnableId = 4, buttonText = "Edit API key") var edit = false
     }
 
@@ -589,6 +593,8 @@ class SafariSettings {
             net.johnceo.sparklingmutuals.alerts.SparkleWarping.configurationChanged()
         }
         val changes = listOf(ConfigManager::objectiveCaptureReminder to tracking.objectivesHud.captureReminder,ConfigManager::objectiveShinyReminder to tracking.objectivesHud.shinyReminder,
+            ConfigManager::autoReconnectHypixel to warp.autoReconnectHypixel,
+            ConfigManager::autoJoinSkyBlock to warp.autoJoinSkyBlock,
             ConfigManager::safariEntryAutoEnter to warp.autoEnter, ConfigManager::sparklingCatchCount to safari.alerts.catchCount, ConfigManager::specialCatchAlert to safari.alerts.caught,
             ConfigManager::alwaysCelebrateSparkling to safari.alerts.alwaysCelebrate,
             ConfigManager::allScannableCritterChecks to modes.sparkling.allScannable,

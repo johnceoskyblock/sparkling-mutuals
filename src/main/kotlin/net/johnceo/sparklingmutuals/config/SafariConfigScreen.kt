@@ -18,8 +18,8 @@ class SafariConfigScreen(private val settings: SafariSettings = SafariSettings()
     private val catalog=SettingsCatalog(settings)
     private data class Area(val name: String,val pages: List<Int>)
     private val areas=listOf(Area("HUDs",listOf(0,7,10)),Area("Safari",listOf(1,6,3,12)),Area("Party",listOf(2,5)),
-        Area("ESP",listOf(17,13,14,15,16)),Area("Customization",listOf(9)),Area("History",listOf(4)),Area("Advanced",listOf(8,11)))
-    private val tabNames=mapOf(17 to "General",0 to "Overview",7 to "HUDs",1 to "Modes",6 to "Helpers",3 to "Contest",2 to "Interactions",5 to "Sparkle Warping",9 to "World ESP",10 to "Appearance",4 to "History",8 to "API",11 to "SkyBlock",12 to "Banner")
+        Area("ESP",listOf(17,9,13,14,15,16)),Area("History",listOf(4)),Area("Advanced",listOf(8,11)))
+    private val tabNames=mapOf(13 to "Mode critters",14 to "Profitable critters",15 to "Always on critters",16 to "Always on drops",17 to "General",0 to "Overview",7 to "HUDs",1 to "Modes",6 to "Helpers",3 to "Contest",2 to "Interactions",5 to "Sparkle Warping",9 to "Customization",10 to "Appearance",4 to "History",8 to "API",11 to "SkyBlock",12 to "Banner")
     private val areaTabs=rememberedNavigation.areaTabs.toMutableMap().apply {
         areas.forEach {area -> get(area.name)?.let { if(it !in area.pages)remove(area.name) } }
     }
@@ -29,6 +29,7 @@ class SafariConfigScreen(private val settings: SafariSettings = SafariSettings()
     private val scrolls=rememberedNavigation.scrolls.toMutableMap()
     private var scroll=rememberedNavigation.scroll
     private var skyblockTab=rememberedNavigation.skyblockTab
+    private var customizationTab=rememberedNavigation.customizationTab
     private var navScroll=rememberedNavigation.navScroll
     private var initialQuery=rememberedNavigation.query
     private var contentHeight=0
@@ -76,6 +77,7 @@ class SafariConfigScreen(private val settings: SafariSettings = SafariSettings()
                 initialQuery=""
                 selected=page;expanded.addAll(catalog.expansionFor(initialTarget!!))
                 if(page==11) skyblockTab=if(chain.first().field.name=="endgame") 1 else 0
+                if(page==9) customizationTab=when(chain.first().field.name) {"names"->0;"nameplates"->1;"biomeColors","critterColors"->2;else->3}
                 focusPath=chain.last().path;scrollToFocus=true;highlightUntil=System.currentTimeMillis()+8000
             }
         }
@@ -181,6 +183,18 @@ class SafariConfigScreen(private val settings: SafariSettings = SafariSettings()
                 hit(Rect(tabX,tabY,w,22)) { scrolls[selected]=scroll;selected=page;scroll=scrolls[page]?:0 }
                 tabX+=w+6
             }
+            if(selected==9) {
+                tabX=left;tabY+=27
+                catalog.customizationTabs.forEachIndexed {index,label ->
+                    val w=(font.width(label)+24).coerceAtMost((right-left).coerceAtLeast(1))
+                    if(tabX>left && tabX+w>right) {tabX=left;tabY+=27}
+                    val r=Rect(tabX,tabY,w,22)
+                    shell(g,r,if(customizationTab==index) SettingsPalette.selected else SettingsPalette.card)
+                    text(g,label,r.x+12,r.y+7)
+                    hit(r) {customizationTab=index;scroll=0}
+                    tabX+=w+6
+                }
+            }
             if (selected==11) {
                 tabY+=29
                 var subX=left
@@ -214,8 +228,10 @@ class SafariConfigScreen(private val settings: SafariSettings = SafariSettings()
                 if(row.group) {
                     text(g,if(row.path in expanded) "−" else "+",x+10,y+(h-8)/2,SettingsPalette.accent)
                     card.title.forEachIndexed { i,line -> g.text(font,line,x+26,y+9+i*11,SettingsPalette.text,false) }
+                    if(row.description.isNotBlank())card.description.forEachIndexed {i,line ->
+                        g.text(font,line,x+26,y+13+card.title.size*11+i*11,SettingsPalette.muted,false)
+                    }
                     hit(r) { if(!expanded.add(row.path)) expanded.remove(row.path) }
-                    if(row.path !in expanded) row.primaryToggle?.let { toggle -> card.control?.let { c -> control(g,toggle,Rect(c.x,y+c.y,c.w,c.h),px,py) } }
                 } else {
                     card.title.forEachIndexed { i,line -> g.text(font,line,x+12,y+card.textTop+i*11,if(row.standalone) SettingsPalette.accent else SettingsPalette.text,false) }
                     val descY=y+card.textTop+card.title.size*11+if(row.description.isBlank()) 0 else 4
@@ -248,14 +264,15 @@ class SafariConfigScreen(private val settings: SafariSettings = SafariSettings()
         val label=when { action!=null -> action.buttonText;dropdown!=null -> dropdown.values.getOrNull((value as Number).toInt()).orEmpty();else -> value?.toString().orEmpty().ifBlank { "Edit…" } }
         val preferred=when { action!=null -> maxOf(88,font.width(label)+20);value is Boolean -> 48;field.isAnnotationPresent(ConfigEditorSlider::class.java) || color -> 120;else -> maxOf(120,font.width(label)+20) }
         val columns=ConfigLayout.columns(w,preferred,value is String && !color || dropdown!=null && preferred>w/2)
-        val textWidth=if(row.group) w-42-(if(row.primaryToggle!=null) 64 else 0) else if(row.standalone) w-24 else columns.textWidth
+        val textWidth=if(row.group) w-42 else if(row.standalone) w-24 else columns.textWidth
         val heading=if(search.value.isNotBlank()) Component.literal(catalog.location(row)+"\n").withStyle { it.withColor(SettingsPalette.muted) }.append(Component.literal(row.name).withStyle { it.withColor(SettingsPalette.text) }) else Component.literal(row.name)
-        val title=font.split(heading,textWidth.coerceAtLeast(1))
+        val title=font.split(if(row.owner is CritterNameEntry)
+            net.johnceo.sparklingmutuals.safari.ui.CritterNames.literal(heading) else heading,textWidth.coerceAtLeast(1))
         val desc=font.split(row.descriptionText(),textWidth.coerceAtLeast(1))
         val textHeight=title.size*11+if(row.description.isBlank()) 0 else 4+desc.size*11
         if(row.group) {
-            val h=maxOf(if(row.primaryToggle!=null) 40 else 28,18+title.size*11)
-            Card(row,x,w,h,title,desc,if(row.primaryToggle!=null) Rect(x+w-60,(h-24)/2,48,24) else null)
+            val h=maxOf(28,18+textHeight)
+            Card(row,x,w,h,title,desc,null)
         }
         else if(row.standalone) Card(row,x,w,24+textHeight,title,desc,null)
         else if(columns.stacked) {
@@ -269,7 +286,7 @@ class SafariConfigScreen(private val settings: SafariSettings = SafariSettings()
         }
     }
     private fun navigation() = Navigation(selected, expanded.toSet(), scrolls.toMap(), scroll, skyblockTab,
-        navScroll, areaTabs.toMap(), if (::search.isInitialized) search.value else initialQuery)
+        navScroll, areaTabs.toMap(), if (::search.isInitialized) search.value else initialQuery,customizationTab)
 
     fun freshForReturn()=SafariConfigScreen(returnTo=returnTo).also {
         val state = navigation()
@@ -280,6 +297,7 @@ class SafariConfigScreen(private val settings: SafariSettings = SafariSettings()
         it.scrolls.putAll(state.scrolls)
         it.scroll=state.scroll
         it.skyblockTab=state.skyblockTab
+        it.customizationTab=state.customizationTab
         it.navScroll=state.navScroll
         it.areaTabs.clear()
         it.areaTabs.putAll(state.areaTabs)
@@ -296,6 +314,7 @@ class SafariConfigScreen(private val settings: SafariSettings = SafariSettings()
         }
         if(query.isBlank()) {
             if (selected==11) visit(catalog.pages[selected].rows[skyblockTab].children,0)
+            else if(selected==9)visit(catalog.customizationRows(customizationTab),0)
             else visit(catalog.pages[selected].rows,0)
         } else catalog.pages.forEach { visit(it.rows,0) }
     }
@@ -363,7 +382,8 @@ class SafariConfigScreen(private val settings: SafariSettings = SafariSettings()
         g.fill(0,0,width,height,0xB8000000.toInt())
         val options=choices;val w=(width-32).coerceAtMost(if(colorEditing || options!=null) 350 else 520);val h=if(options!=null) (height-42).coerceAtMost(290) else if(colorEditing) 222.coerceAtMost(height-20) else (height-40).coerceAtMost(240)
         val x=(width-w)/2;val y=(height-h)/2;modalRect=Rect(x,y,w,h);shell(g,modalRect,SettingsPalette.surface)
-        val heading=font.split(Component.literal(modal?.name?:"Theme"),w-24)
+        val headingText=Component.literal(modal?.name?:"Theme")
+        val heading=font.split(if(modal?.owner is CritterNameEntry) net.johnceo.sparklingmutuals.safari.ui.CritterNames.literal(headingText) else headingText,w-24)
         heading.forEachIndexed { i,line -> g.text(font,line,x+12,y+12+i*11,SettingsPalette.accent,false) }
         val headingHeight=heading.size*11
         if(options!=null) {
@@ -447,7 +467,7 @@ class SafariConfigScreen(private val settings: SafariSettings = SafariSettings()
     private data class Navigation(
         val page: Int = 0, val expanded: Set<String> = emptySet(), val scrolls: Map<Int,Int> = emptyMap(),
         val scroll: Int = 0, val skyblockTab: Int = 0, val navScroll: Int = 0,
-        val areaTabs: Map<String,Int> = emptyMap(), val query: String = ""
+        val areaTabs: Map<String,Int> = emptyMap(), val query: String = "",val customizationTab: Int=0
     )
     companion object { private var rememberedNavigation=Navigation();private var navigationInitialized=false }
 }

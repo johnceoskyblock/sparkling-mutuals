@@ -125,7 +125,28 @@ object WorldRenderCompat {
 
     fun label(context: LevelRenderContext, text: String, color: Int, x: Double, y: Double, z: Double, scale: Float,
         background: Int = 0x40000000, shadow: Boolean = false) {
-        val shown = net.johnceo.sparklingmutuals.safari.ui.CritterNames.display(text)
+        labelComponent(context,Component.literal(net.johnceo.sparklingmutuals.safari.ui.CritterNames.display(text)),color,x,y,z,scale,background,shadow)
+    }
+
+    /** SafariUtils' fixed vanilla-size, full-bright marker titles; sparkling titles animate per character. */
+    fun markerLabel(context: LevelRenderContext, text: String, color: Int, x: Double, y: Double, z: Double, sparkling: Boolean) {
+        val shown=net.johnceo.sparklingmutuals.safari.ui.CritterNames.display(text)
+        val component=Component.empty()
+        val suffix=Regex(" [0-9]+m$").find(shown)?.value.orEmpty()
+        val title=if(suffix.isEmpty())shown else shown.dropLast(suffix.length)
+        if(sparkling) {
+            val phase=(System.currentTimeMillis()%4000L)/4000f
+            title.forEachIndexed { index, ch ->
+                val rgb=java.awt.Color.HSBtoRGB((phase+index*.035f)%1f,.55f,1f) and 0xFFFFFF
+                component.append(Component.literal(ch.toString()).withStyle {it.withColor(rgb)})
+            }
+        } else component.append(title)
+        if(suffix.isNotEmpty())component.append(Component.literal(suffix).withStyle {it.withColor(0xAAAAAA)})
+        labelComponent(context,component,if(sparkling) -1 else color,x,y,z,.025f,0x40000000,false)
+    }
+
+    private fun labelComponent(context: LevelRenderContext, shown: Component, color: Int, x: Double, y: Double, z: Double,
+        scale: Float, background: Int, shadow: Boolean) {
         val client = Minecraft.getInstance()
         val camera = client.gameRenderer.smCamera
         val pos = camera.position()
@@ -140,10 +161,10 @@ object WorldRenderCompat {
         poses.scale(scale, -scale, scale)
         //? if >=26.2 {
         /*context.submitNodeCollector().submitText(poses, -client.font.width(shown) / 2f, 0f,
-            Component.literal(shown).visualOrderText, shadow, Font.DisplayMode.SEE_THROUGH,
+            shown.visualOrderText, shadow, Font.DisplayMode.SEE_THROUGH,
             LightCoordsUtil.FULL_BRIGHT, color, background, 0)
         *///? } else {
-        client.font.drawInBatch(shown, -client.font.width(shown) / 2f, 0f, color, shadow,
+        client.font.drawInBatch(shown.visualOrderText, -client.font.width(shown) / 2f, 0f, color, shadow,
             Matrix4f(poses.last().pose()), context.bufferSource(), Font.DisplayMode.SEE_THROUGH, background, LightCoordsUtil.FULL_BRIGHT)
         //? }
         poses.popPose()

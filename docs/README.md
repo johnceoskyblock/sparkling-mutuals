@@ -25,6 +25,7 @@ Start with [installation and features](../README.md), then use this index for ga
 | History | [History and imports](HISTORY_IMPORT.md), [achievement requirements and dex tiers](ACHIEVEMENTS.md), [credited party streaks](SINCE_COMMAND.md) |
 | Capsule aiming guide | [Capture projections](CAPTURE_PROJECTIONS.md) |
 | Development | [multi-version builds](MULTI_VERSION_BUILDS.md), [source synchronization](SOURCE_SYNC.md) |
+| Push and release automation | [PowerShell shipping command and setup](SHIPPING.md) |
 | Validation | [Manual scenarios](IMPLEMENTATION_TEST_CHECKLIST.md), [audit discrepancies](IMPLEMENTATION_AUDIT.md) |
 | Requests and release notes | [GitHub Issues](https://github.com/johnceoskyblock/sparkling-mutuals/issues), [GitHub Releases](https://github.com/johnceoskyblock/sparkling-mutuals/releases) |
 

@@ -59,7 +59,6 @@ object SafariPartySync {
     private var pendingLive=false
     private var seenWalls=0
     private var seenTroodon=0
-    private val pendingMoundHits = mutableMapOf<Triple<Int, Int, Int>, Long>()
     private var lastRenderSummary = ""
     private val openedWalls=mutableMapOf<Int,Long>()
     private var appliedRun: SafariRun?=null
@@ -139,9 +138,7 @@ object SafariPartySync {
             SafariDeveloper.event("Unmatched cavern attack · ${entity.type} · $observed", showOnHud = false)
             return
         }
-        val hitAt = System.currentTimeMillis()
-        val previous = pendingMoundHits.put(site, hitAt)
-        if (previous == null || hitAt - previous > 2_000)
+        if (SafariTracking.ledger.current?.moundSurvey?.attack(site, System.currentTimeMillis()) == true)
             SafariDeveloper.event("Local mound hit · slot ${PartySyncSites.mounds.indexOf(site)} · $observed → $site")
     }
     private fun roster(client: Minecraft): List<String>? {
@@ -498,17 +495,14 @@ object SafariPartySync {
             val index=birds.indexOf(species)
             if(index>=0) { local[14+index]=(local[14+index]+if(spawn.groupValues[1]=="Two") 2 else 1).coerceAtMost(256);changed=true }
         }
-        if(SafariMounds.outcome(text)!=null) {
-            val outcomeAt = System.currentTimeMillis()
-            pendingMoundHits.entries.removeIf { outcomeAt - it.value !in 0..2_000 }
-            val site = pendingMoundHits.keys.singleOrNull()
-            if (site != null) {
-                SafariTracking.ledger.current?.moundSurvey?.confirmBreak(site)
-                SafariDeveloper.event("Confirmed mound slot ${PartySyncSites.mounds.indexOf(site)} from break chat")
-            } else {
-                net.johnceo.sparklingmutuals.debug.SafariDeveloper.event("Mound break unassigned · ${pendingMoundHits.size} recent sites")
+        SafariMounds.hitStage(text)?.let { stage ->
+            val survey = SafariTracking.ledger.current?.moundSurvey
+            val site = survey?.confirmHit(stage, System.currentTimeMillis())
+            if (stage == SafariMounds.HITS_TO_BREAK && survey != null) {
+                if (site != null)
+                    SafariDeveloper.event("Confirmed mound slot ${PartySyncSites.mounds.indexOf(site)} from break chat")
+                else SafariDeveloper.event("Mound break unassigned · ${survey.recentHitCandidates} recent sites")
             }
-            pendingMoundHits.clear()
         }
         if(local[26]!=0) local[24]=4
         if(changed) mark(public)
@@ -830,7 +824,7 @@ object SafariPartySync {
         reportQueue.clear();submittedReports.clear();biomeReportRetryAt.clear();biomeChatDue.clear();pendingReports.clear();discoveryReports.clear();notifiedSparks.clear();lastInstructionAt=0
         seenTroodon=0;appliedRun=null;appliedReports.clear()
         startingFoodBalances.clear()
-        pendingMoundHits.clear();openedWalls.clear()
+        openedWalls.clear()
         lastRenderSummary = ""
         acknowledgments.clear()
         instructionAcknowledgments.clear()

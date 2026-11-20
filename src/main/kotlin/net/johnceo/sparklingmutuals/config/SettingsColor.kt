@@ -4,15 +4,37 @@ import java.awt.Color
 
 /** Preserves existing speed:alpha:red:green:blue strings, including animated colors. */
 object SettingsColor {
-    fun argb(value: String, now: Long = System.currentTimeMillis()): Int {
-        val p=value.split(':').map { it.toIntOrNull() ?: 0 }
-        if (p.size != 5) return -1
-        val rgb=if(p[0] == 0) (p[2] shl 16) or (p[3] shl 8) or p[4] else {
-            val hsv=Color.RGBtoHSB(p[2],p[3],p[4],null)
-            Color.HSBtoRGB((hsv[0]+((now.toDouble()/1000.0/((255-p[0])/254f*59+1))%1).toFloat())%1f,hsv[1],hsv[2]) and 0xFFFFFF
+    private const val CACHE_LIMIT = 128
+    private val parsed = ThreadLocal.withInitial {
+        object : LinkedHashMap<String, ParsedColor>(16, .75f, true) {
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, ParsedColor>?) = size > CACHE_LIMIT
         }
-        return (p[1] shl 24) or rgb
     }
+
+    private class ParsedColor(private val base: Int, private val hsv: FloatArray? = null, private val period: Float = 1f) {
+        fun argb(now: Long): Int {
+            val components = hsv ?: return base
+            val rotation = (now.toDouble() / 1000.0 / period % 1).toFloat()
+            return base or (Color.HSBtoRGB((components[0] + rotation) % 1f, components[1], components[2]) and 0xFFFFFF)
+        }
+    }
+
+    // Only the input is cached. Animated colors still resolve against the caller's timestamp.
+    fun argb(value: String, now: Long = System.currentTimeMillis()): Int =
+        parsed.get().getOrPut(value) { parse(value) }.argb(now)
+
+    private fun parse(value: String): ParsedColor {
+        val parts = value.split(':')
+        if (parts.size != 5) return ParsedColor(-1)
+        val speed = parts[0].toIntOrNull() ?: 0
+        val alpha = (parts[1].toIntOrNull() ?: 0) shl 24
+        val red = parts[2].toIntOrNull() ?: 0
+        val green = parts[3].toIntOrNull() ?: 0
+        val blue = parts[4].toIntOrNull() ?: 0
+        return if (speed == 0) ParsedColor(alpha or (red shl 16) or (green shl 8) or blue)
+        else ParsedColor(alpha, Color.RGBtoHSB(red, green, blue, null), (255 - speed) / 254f * 59 + 1)
+    }
+
     fun hex(value: String): String {
         val p=value.split(':').drop(2).map { it.toIntOrNull() ?: 0 }
         return if(p.size==3) "#%02X%02X%02X".format(p[0],p[1],p[2]) else "#FFFFFF"

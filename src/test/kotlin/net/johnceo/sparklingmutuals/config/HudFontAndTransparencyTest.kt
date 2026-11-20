@@ -32,7 +32,7 @@ class HudFontAndTransparencyTest {
         assertTrue(AppearanceConfig.resourcePackFont)
         val settings = SafariSettings()
         val overview = SettingsCatalog(settings).pages.single { it.name == "General" }
-        assertTrue(overview.rows.single { it.name == "HUD font customization" }.children.any { it.field.name == "resourcePackFont" })
+        assertTrue(overview.rows.single { it.name == "HUD font" }.children.any { it.field.name == "resourcePackFont" })
         settings.general.font.resourcePackFont = false
         settings.apply()
         ConfigManager.init(dir)

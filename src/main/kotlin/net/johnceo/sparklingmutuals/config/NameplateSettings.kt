@@ -1,64 +1,94 @@
 package net.johnceo.sparklingmutuals.config
 
 import java.util.Properties
-import net.johnceo.sparklingmutuals.safari.SafariBiome
 import net.johnceo.sparklingmutuals.safari.SafariRoster
 
+/** Adapted from SafariUtils Markers / WaypointRenderer / CritterCatchRules, MIT, Serkosea & MrCloudy2.
+ * Reference revision 12525e676f44299ebbe117c665351b8dc4650a9b. See licenses/SafariUtils-MIT.txt.
+ * Only presentation policy lives here; SM's existing target eligibility remains authoritative.
+ */
 object CritterNameplates {
-    data class Options(val enabled: Boolean=false,val replaceTag: Boolean=true,val text: String="{name}",
-        val textScale: Float=2f,val range: Int=80,val useEspColor: Boolean=true,
-        val color: String=AppearanceConfig.color(0xFFFFFF),val background: Boolean=true)
-    val options=SafariRoster.all.associate {it.name to Options()}.toMutableMap()
-    private var enabledNames=emptySet<String>()
-    fun refresh() {enabledNames=options.filterValues {it.enabled}.keys.toSet()}
-    fun enabled(name: String)=name in enabledNames
-    val anyEnabled get()=enabledNames.isNotEmpty()
-    fun clean(text: String)=text.replace(Regex("[\\p{Cc}\\p{Cf}]"),"").trim().take(96).ifBlank {"{name}"}
-    fun label(name: String,text: String,distance: Int,sparkling: Boolean=false)=clean(text)
-        .replace("{name}",if(sparkling) "SPARKLING $name" else name).replace("{distance}","${distance}m")
-    private fun key(name: String)="esp.nameplate."+name.lowercase(java.util.Locale.ROOT).replace(' ','_')+"."
-    fun load(p: Properties) { options.keys.toList().forEach {name ->
-        val k=key(name);fun bool(s: String,default: Boolean)=p.getProperty(k+s)?.toBooleanStrictOrNull() ?: default
-        options[name]=Options(bool("enabled",false),bool("replaceTag",true),clean(p.getProperty(k+"text") ?: "{name}"),
-            SafariEspConfig.validTextScale(p.getProperty(k+"scale")?.toFloatOrNull() ?: 2f),
-            (p.getProperty(k+"range")?.toIntOrNull() ?: 80).coerceIn(8,160),bool("useEspColor",true),
-            SafariEspConfig.validColor(p.getProperty(k+"color"),AppearanceConfig.color(0xFFFFFF)),bool("background",true))
-    };refresh() }
-    fun save(p: Properties) {options.forEach {(name,v)->
-        val k=key(name)
-        mapOf("enabled" to v.enabled,"replaceTag" to v.replaceTag,"text" to v.text,"scale" to v.textScale,
-            "range" to v.range,"useEspColor" to v.useEspColor,"color" to v.color,"background" to v.background)
-            .forEach {(field,value)->p.setProperty(k+field,value.toString())}
-    }}
-}
-class NameplateEntry(val canonical: String) {
-    private val saved=CritterNameplates.options.getValue(canonical)
-    @JvmField @ConfigOption(name="Enabled",desc="") @ConfigEditorBoolean var enabled=saved.enabled
-    @JvmField @ConfigOption(name="Replace Hypixel nametag",desc="Only while this ESP nameplate is shown.") @ConfigEditorBoolean var replaceTag=saved.replaceTag
-    @JvmField @ConfigOption(name="Text",desc="{name} and {distance}. Uses your custom critter name.") @ConfigEditorText var text=saved.text
-    @JvmField @ConfigOption(name="Text size",desc="") @ConfigEditorSlider(minValue=.5f,maxValue=4f,minStep=.25f) var scale=saved.textScale
-    @JvmField @ConfigOption(name="Maximum distance",desc="Blocks.") @ConfigEditorSlider(minValue=8f,maxValue=160f,minStep=1f) var range=saved.range
-    @JvmField @ConfigOption(name="Use critter ESP color",desc="") @ConfigEditorBoolean var useEspColor=saved.useEspColor
-    @JvmField @ConfigOption(name="Text color",desc="") @ConfigEditorColour var color=saved.color
-    @JvmField @ConfigOption(name="Background",desc="") @ConfigEditorBoolean var background=saved.background
-    fun apply(): Boolean {
-        val next=CritterNameplates.Options(enabled,replaceTag,CritterNameplates.clean(text),SafariEspConfig.validTextScale(scale),range.coerceIn(8,160),useEspColor,
-            SafariEspConfig.validColor(color,saved.color),background)
-        val changed=CritterNameplates.options.put(canonical,next)!=next
-        CritterNameplates.refresh()
-        return changed
+    data class Options(val enabled: Boolean=true, val display: Int=2, val distance: Boolean=false,
+        val pity: Boolean=true, val eagle: Int=0, val color: String=AppearanceConfig.color(0xFFFFFF),
+        val uniqueColors: Boolean=false, val rarityColors: Boolean=false, val entityColorOverride: Boolean=false,
+        val fixedColor: Boolean=false)
+    var settings=Options()
+    private val critters = SafariRoster.all.associate { it.name to (it.name != "Litterbug") }.toMutableMap()
+    fun enabledFor(name: String) = critters[name] == true
+    fun applyCritters(options: CritterToggleSettings) = options.apply(critters)
+    fun showsVanilla(option: Options=settings)=!option.enabled || option.display==1 || option.display==3
+    fun showsMarker(option: Options=settings)=option.enabled && option.display in 2..3
+    private val dedicated=setOf("Hideyho","Hideonwall","Duplico","Bloodbat","Hideonfloor")
+    fun threshold(name: String): Int=when(SafariRoster.color(name) and 0xFFFFFF) {
+        0x55FF55 -> 2; 0x5555FF -> 3; 0xAA00AA -> 5; 0xFFAA00 -> 20; else -> 1
+    }
+    fun pityLabel(name: String, attempts: Int, option: Options=settings): String {
+        val threshold=threshold(name)
+        if(!option.pity || name=="Hideyho" || threshold==1 || threshold==2 && option.eagle>=2)return ""
+        return " ("+attempts.coerceAtLeast(0)+"/"+threshold+")"
+    }
+    fun label(name: String, attempts: Int, distance: Double, sparkling: Boolean=false, option: Options=settings,
+        title: String = name, showPity: Boolean = true) =
+        (if(sparkling) "SPARKLING " else "")+title+(if (showPity) pityLabel(name,attempts,option) else "")+
+            (if(option.distance) " "+Math.round(distance)+"m" else "")
+    fun matchesEspColor(name: String, option: Options=settings) =
+        name in dedicated && !option.entityColorOverride ||
+            !option.uniqueColors && !option.rarityColors && !option.fixedColor
+    fun color(name: String, caught: Boolean, fallback: Int, option: Options=settings): Int {
+        if(matchesEspColor(name,option))return fallback
+        return if(option.uniqueColors) if(caught) 0xFF55FF55.toInt() else 0xFFFF7777.toInt()
+            else if(option.rarityColors) SafariRoster.color(name) else SafariEspConfig.rgb(option.color)
+    }
+    private const val PREFIX="esp.nameplates."
+    fun load(p: Properties) {
+        fun bool(key: String, default: Boolean)=p.getProperty(PREFIX+key)?.toBooleanStrictOrNull() ?: default
+        // The old per-critter template implementation is deliberately replaced; aliases use separate keys.
+        settings=Options(bool("enabled",true),(p.getProperty(PREFIX+"display")?.toIntOrNull() ?: 2).coerceIn(0,3),
+            bool("distance",false),bool("pity",true),(p.getProperty(PREFIX+"eagle")?.toIntOrNull() ?: 0).coerceIn(0,5),
+            SafariEspConfig.validColor(p.getProperty(PREFIX+"color"),AppearanceConfig.color(0xFFFFFF)),
+            bool("uniqueColors",false),bool("rarityColors",false),bool("entityColorOverride",false),bool("fixedColor",false))
+        for (critter in SafariRoster.all) {
+            critters[critter.name] = bool(critterKey(critter.name), critter.name != "Litterbug")
+        }
+    }
+    private fun critterKey(name: String) = "critter." + name.lowercase(java.util.Locale.ROOT).replace(' ', '_')
+    fun save(p: Properties) {
+        p.stringPropertyNames().filter {it.startsWith("esp.nameplate.")}.forEach {p.remove(it)}
+        val v=settings
+        mapOf("enabled" to v.enabled,"display" to v.display,"distance" to v.distance,"pity" to v.pity,
+            "eagle" to v.eagle,"color" to v.color,"uniqueColors" to v.uniqueColors,
+            "rarityColors" to v.rarityColors,"entityColorOverride" to v.entityColorOverride,"fixedColor" to v.fixedColor)
+            .forEach {(key,value)->p.setProperty(PREFIX+key,value.toString())}
+        critters.forEach { (name, enabled) -> p.setProperty(PREFIX + critterKey(name), enabled.toString()) }
     }
 }
-class NameplateBiomeSettings(biome: SafariBiome) {
-    val entries=biome.critters.map {NameplateEntry(it.name)}
-    fun apply()=entries.map {it.apply()}.any {it}
-}
 class NameplateSettings {
-    @JvmField @ConfigOption(name="Forest",desc="") @Accordion val forest=NameplateBiomeSettings(SafariBiome.FOREST)
-    @JvmField @ConfigOption(name="Cavern",desc="") @Accordion val cavern=NameplateBiomeSettings(SafariBiome.CAVERN)
-    @JvmField @ConfigOption(name="Icy",desc="") @Accordion val icy=NameplateBiomeSettings(SafariBiome.ICY)
-    @JvmField @ConfigOption(name="Haunted",desc="") @Accordion val haunted=NameplateBiomeSettings(SafariBiome.HAUNTED)
-    fun apply()=listOf(forest.apply(),cavern.apply(),icy.apply(),haunted.apply()).any {it}
+    private val saved=CritterNameplates.settings
+    @JvmField @ConfigOption(name = "Enable nameplates", desc = "Apply these name settings to critters shown by your ESP.") @ConfigEditorBoolean var enabled=saved.enabled
+    @JvmField @ConfigOption(name = "Name display", desc = "Vanilla shows Hypixel's nametag. Marker shows our ESP label.")
+    @ConfigEditorDropdown(values=["None","Vanilla","Marker","Both"]) var display=saved.display
+    @JvmField @ConfigOption(name = "Show distance", desc = "Add the distance in blocks to ESP labels.") @ConfigEditorBoolean var distance=saved.distance
+    @JvmField @ConfigOption(name = "Show catch pity", desc = "Show catch attempts and confirmed hits on Rockmite mounds.") @ConfigEditorBoolean var pity=saved.pity
+    @JvmField @ConfigOption(name = "Eagle pet rarity", desc = "Uncommon or better Eagle makes Uncommon catches guaranteed, so their pity is hidden.")
+    @ConfigEditorDropdown(values=["None","Common","Uncommon","Rare","Epic","Legendary"]) var eagle=saved.eagle
+    @JvmField @ConfigOption(name = "Nameplate colors", desc = "") @Accordion val colors=NameplateColors(saved)
+    @JvmField @ConfigOption(name = "Per-critter nameplates", desc = "Choose which critters get custom nameplates.") @Accordion
+    val critters = CritterToggleSettings(CritterNameplates::enabledFor)
+    fun apply(): Boolean {
+        val next=CritterNameplates.Options(enabled,display.coerceIn(0,3),distance,pity,eagle.coerceIn(0,5),
+            SafariEspConfig.validColor(colors.color,saved.color),colors.uniqueColors,colors.rarityColors,
+            colors.entityColorOverride,colors.fixedColor)
+        val changed=next!=CritterNameplates.settings
+        CritterNameplates.settings=next
+        return CritterNameplates.applyCritters(critters) || changed
+    }
+}
+class NameplateColors(saved: CritterNameplates.Options) {
+    @JvmField @ConfigOption(name = "Use fixed color", desc = "Set one nameplate color when first-capture and rarity colors are off. By default, nameplates match critter ESP.") @ConfigEditorBoolean var fixedColor=saved.fixedColor
+    @JvmField @ConfigOption(name = "Fixed color", desc = "") @ConfigEditorColour var color=saved.color
+    @JvmField @ConfigOption(name = "Color by first capture", desc = "Red until the party catches this critter type, then green. Overrides rarity and fixed colors.") @ConfigEditorBoolean var uniqueColors=saved.uniqueColors
+    @JvmField @ConfigOption(name = "Color by rarity", desc = "Use rarity colors when first-capture colors are off.") @ConfigEditorBoolean var rarityColors=saved.rarityColors
+    @JvmField @ConfigOption(name = "Apply to special critters", desc = "Also apply these colors to Hideyho, Hideonwall, Duplico, Bloodbat and Hideonfloor.") @ConfigEditorBoolean var entityColorOverride=saved.entityColorOverride
 }
 class TeammateAppearanceSettings(private val original: SafariSettings.SafariTeammateSettings) {
     private var appliedColor=original.color

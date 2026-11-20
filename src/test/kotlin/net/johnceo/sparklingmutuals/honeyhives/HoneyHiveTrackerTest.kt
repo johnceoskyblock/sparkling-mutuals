@@ -6,10 +6,10 @@ import org.junit.jupiter.api.Test
 class HoneyHiveTrackerTest {
     @Test fun `reported entrance hive countdown overrides expired loot and survives relog`() {
         val hive = HoneyHiveRules.catalog.single { it.key == "-724,93,211" }
-        val status = HoneyHiveLabels.forHive(hive, HoneyHiveRules.catalog, listOf(
+        val status = HoneyHiveLabels.byHive(HoneyHiveRules.catalog, listOf(
             HiveLabel(-723.5, 92.28, 211.5, "Refill in: 27m 19s"),
             HiveLabel(-723.5, 91.28, 204.5, "Refill in: 27m 14s"),
-            HiveLabel(-720.5, 91.28, 207.5, "Refill in: 27m 14s")))
+            HiveLabel(-720.5, 91.28, 207.5, "Refill in: 27m 14s")))[hive.key]
         assertEquals("Refill in: 27m 19s", status)
         val times = mutableMapOf<String, Long>()
         val observed = mutableMapOf<String, Long>()

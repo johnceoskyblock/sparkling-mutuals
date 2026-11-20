@@ -4,9 +4,9 @@ import net.johnceo.sparklingmutuals.safari.resources.FloorDropType
 
 /** Modes own targets; these switches only control where their highlights appear. */
 class SafariEspSettings {
-    @JvmField @ConfigOption(name="Critter nameplates",desc="Readable labels above selected ESP targets.") @Accordion val nameplates=NameplateSettings()
+    @JvmField @ConfigOption(name = "Critter nameplates", desc = "Choose names, distance and catch pity for highlighted critters.") @Accordion val nameplates=NameplateSettings()
     @JvmField @ConfigOption(name="Teammate appearance",desc="") @Accordion var teammates=TeammateAppearanceSettings(SafariSettings.SafariTeammateSettings())
-    @JvmField @ConfigOption(name="Custom critter names",desc="Visual names throughout the mod and on critter nametags.") @Accordion val names=CritterNameSettings()
+    @JvmField @ConfigOption(name = "Custom critter names", desc = "Change displayed names without changing outgoing messages.") @Accordion val names=CritterNameSettings()
     @JvmField @ConfigOption(name="Biome critter colors",desc="") @Accordion val biomeColors=BiomeCritterColorSettings()
     @JvmField @ConfigOption(name = "Individual critter colors", desc = "Used for biomes without a biome color override.") @Accordion
     var critterColors = CritterAppearanceSettings { AppearanceConfig.selectedHex }
@@ -14,7 +14,7 @@ class SafariEspSettings {
     @JvmField @ConfigOption(name = "Floor drops", desc = "") @Accordion val floorDrops = FloorDropEspSettings()
     @JvmField @ConfigOption(name = "Structure and sparkling colors", desc = "") @Accordion
     var waypointColors = WaypointAppearanceSettings { AppearanceConfig.selectedHex }
-    @JvmField @ConfigOption(name = "Other ESP text size", desc = "Timers, nests and unknown sparklings.") @Accordion val labels = EspLabelSettings()
+    @JvmField @ConfigOption(name = "Other waypoint text size", desc = "Adjust timers, bee nests and unknown sparkling labels.") @Accordion val labels = EspLabelSettings()
     val biomes = EspBiomeSettings()
     var rewardDrops
         get() = floorDrops.rewardDrops
@@ -58,7 +58,7 @@ class SafariEspSettings {
 }
 
 class FloorDropEspSettings {
-    @JvmField @ConfigOption(name = "XP / Essence / Shard floor drops", desc = "")
+    @JvmField @ConfigOption(name = "XP, essence and shard drops", desc = "Highlight reward drops on the ground.")
     @ConfigEditorBoolean var rewardDrops = SafariEspConfig.rewardDrops
     @JvmField @ConfigOption(name = "Show outside current biome", desc = "")
     @Accordion val visibility = FloorDropVisibilitySettings()
@@ -105,20 +105,20 @@ class FloorDropVisibilitySettings {
 }
 
 class EspLabelSettings {
-    @JvmField @ConfigOption(name = "Other ESP text scale", desc = "Timers, nests and unknown sparklings.")
+    @JvmField @ConfigOption(name = "Other waypoint text size", desc = "Timers, bee nests and unknown sparkling labels.")
     @ConfigEditorSlider(minValue = .5f, maxValue = 4f, minStep = .25f)
     var textScale = SafariEspConfig.textScale
     var teammateTextScale = SafariEspConfig.teammateTextScale
 }
 
 class EspBiomeSettings {
-    @JvmField @ConfigOption(name = "Forest: only in current biome", desc = "")
+    @JvmField @ConfigOption(name = "Forest critters only in Forest", desc = "")
     @ConfigEditorBoolean var forest = SafariEspConfig.groups.getValue("forest").onlyInBiome
-    @JvmField @ConfigOption(name = "Cavern: only in current biome", desc = "")
+    @JvmField @ConfigOption(name = "Cavern critters only in Cavern", desc = "")
     @ConfigEditorBoolean var cavern = SafariEspConfig.groups.getValue("cavern").onlyInBiome
-    @JvmField @ConfigOption(name = "Icy: only in current biome", desc = "")
+    @JvmField @ConfigOption(name = "Icy critters only in Icy", desc = "")
     @ConfigEditorBoolean var icy = SafariEspConfig.groups.getValue("icy").onlyInBiome
-    @JvmField @ConfigOption(name = "Haunted: only in current biome", desc = "")
+    @JvmField @ConfigOption(name = "Haunted critters only in Haunted", desc = "")
     @ConfigEditorBoolean var haunted = SafariEspConfig.groups.getValue("haunted").onlyInBiome
 }
 
@@ -227,12 +227,12 @@ class FloorDropScaleSettings {
 }
 
 class EspGeneralSettings(limits: EspBiomeSettings,val drops: FloorDropEspSettings) {
-    @JvmField @ConfigOption(name="Critter glow ESP",desc="Outline eligible critters.") @ConfigEditorBoolean
+    @JvmField @ConfigOption(name = "Critter glow outlines", desc = "Outline the critter's model. Can be used with boxes.") @ConfigEditorBoolean
     var glow=SafariEspConfig.critterGlow
-    @JvmField @ConfigOption(name="Critter box ESP",desc="") @ConfigEditorBoolean
+    @JvmField @ConfigOption(name = "Critter boxes", desc = "Draw a box around each highlighted critter. Can be used with glow outlines.") @ConfigEditorBoolean
     var boxes=SafariEspConfig.critterBoxes
-    @JvmField @ConfigOption(name="Critter biome limits",desc="") @Accordion val biomes=limits
-    @JvmField @ConfigOption(name="Floor drops outside current biome",desc="") @Accordion val floorVisibility=drops.visibility
+    @JvmField @ConfigOption(name = "Critter visibility by biome", desc = "Choose whether each biome's critters are shown only while you are in that biome.") @Accordion val biomes=limits
+    @JvmField @ConfigOption(name = "Floor drops outside your biome", desc = "Enable an item to show its ESP from other biomes.") @Accordion val floorVisibility=drops.visibility
     fun apply(): Boolean {
         val changed=glow!=SafariEspConfig.critterGlow || boxes!=SafariEspConfig.critterBoxes
         SafariEspConfig.critterGlow=glow;SafariEspConfig.critterBoxes=boxes
@@ -241,15 +241,15 @@ class EspGeneralSettings(limits: EspBiomeSettings,val drops: FloorDropEspSetting
 }
 
 class BiomeCritterColorSettings {
-    @JvmField @ConfigOption(name="Use biome colors",desc="Apply the enabled biome overrides below.") @ConfigEditorBoolean
+    @JvmField @ConfigOption(name = "Use biome color overrides", desc = "Use one color for each biome enabled below.") @ConfigEditorBoolean
     var enabled=SafariEspConfig.biomeCritterColors
-    @JvmField @ConfigOption(name="Use Forest color",desc="Off: individual critter colors.") @ConfigEditorBoolean var forestEnabled=SafariEspConfig.biomeColorEnabled.getValue("forest")
+    @JvmField @ConfigOption(name = "Override Forest colors", desc = "Turn off to use individual critter colors.") @ConfigEditorBoolean var forestEnabled=SafariEspConfig.biomeColorEnabled.getValue("forest")
     @JvmField @ConfigOption(name="Forest color",desc="") @ConfigEditorColour var forest=SafariEspConfig.biomeColors.getValue("forest")
-    @JvmField @ConfigOption(name="Use Cavern color",desc="Off: individual critter colors.") @ConfigEditorBoolean var cavernEnabled=SafariEspConfig.biomeColorEnabled.getValue("cavern")
+    @JvmField @ConfigOption(name = "Override Cavern colors", desc = "Turn off to use individual critter colors.") @ConfigEditorBoolean var cavernEnabled=SafariEspConfig.biomeColorEnabled.getValue("cavern")
     @JvmField @ConfigOption(name="Cavern color",desc="") @ConfigEditorColour var cavern=SafariEspConfig.biomeColors.getValue("cavern")
-    @JvmField @ConfigOption(name="Use Icy color",desc="Off: individual critter colors.") @ConfigEditorBoolean var icyEnabled=SafariEspConfig.biomeColorEnabled.getValue("icy")
+    @JvmField @ConfigOption(name = "Override Icy colors", desc = "Turn off to use individual critter colors.") @ConfigEditorBoolean var icyEnabled=SafariEspConfig.biomeColorEnabled.getValue("icy")
     @JvmField @ConfigOption(name="Icy color",desc="") @ConfigEditorColour var icy=SafariEspConfig.biomeColors.getValue("icy")
-    @JvmField @ConfigOption(name="Use Haunted color",desc="Off: individual critter colors.") @ConfigEditorBoolean var hauntedEnabled=SafariEspConfig.biomeColorEnabled.getValue("haunted")
+    @JvmField @ConfigOption(name = "Override Haunted colors", desc = "Turn off to use individual critter colors.") @ConfigEditorBoolean var hauntedEnabled=SafariEspConfig.biomeColorEnabled.getValue("haunted")
     @JvmField @ConfigOption(name="Haunted color",desc="") @ConfigEditorColour var haunted=SafariEspConfig.biomeColors.getValue("haunted")
     fun apply(): Boolean {
         var changed=enabled!=SafariEspConfig.biomeCritterColors

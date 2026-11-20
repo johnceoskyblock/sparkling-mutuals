@@ -9,6 +9,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements
 import net.fabricmc.loader.api.FabricLoader
 import net.johnceo.sparklingmutuals.config.ConfigStorage
 import net.johnceo.sparklingmutuals.alerts.AlertManager
+import net.johnceo.sparklingmutuals.alerts.HypixelRecovery
 import net.johnceo.sparklingmutuals.commands.AlertCommand
 import net.johnceo.sparklingmutuals.commands.ApiKeyCommand
 import net.johnceo.sparklingmutuals.commands.PartyCommands
@@ -100,6 +101,7 @@ object SparklingMutuals : ModInitializer {
         SafariEsp.register()
         TeammateEsp.register()
         SafariIsland.register()
+        HypixelRecovery.register()
         SafariManagerGuard.register()
         net.johnceo.sparklingmutuals.safari.automation.entry.CjsSafariEntry.register()
         CapsulePreview.register()
@@ -132,6 +134,7 @@ object SparklingMutuals : ModInitializer {
     }
 
     private fun onClientTick(client: Minecraft) {
+        HypixelRecovery.tick(client)
         net.johnceo.sparklingmutuals.alerts.AutomatedCommands.tick(client)
         net.johnceo.sparklingmutuals.safari.SafariEntryCooldown.tick(client)
         net.johnceo.sparklingmutuals.skyblock.market.ShardSaleGuidance.tick(client)
