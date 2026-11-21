@@ -58,4 +58,25 @@ class DepartureCompletionTest {
         run.visitBiome(SafariBiome.CAVERN);catch(run,"Hideyho")
         assertNull(run.completion.announcement(run,SafariBiome.HAUNTED,SafariMode.UNIQUE,party))
     }
+
+    @Test fun `fixed quota lets Full Clear report after leaving Icy or Haunted`() {
+        for ((biome, last, word) in listOf(Triple(SafariBiome.ICY, "Wumpa", "id"),
+            Triple(SafariBiome.HAUNTED, "Doomspiral", "hd"))) {
+            val run = SafariRun(0) { 1000 }
+            val state = party()
+            run.visitBiome(biome)
+            for (critter in biome.critters.filter { it.name != last }) {
+                repeat(SafariFullClear.minimum(critter.name)) { catch(run, critter.name) }
+            }
+            // The last scan still contains the boss while we leave.
+            run.updateCaptureEvidence(biome, setOf(last), false)
+            assertNull(run.completion.announcement(run, biome, SafariMode.FULL_CLEAR, state))
+            run.visitBiome(SafariBiome.CAVERN)
+            assertFalse(run.captureComplete(last))
+            catch(run, last)
+            assertTrue(run.fullClearMissingComplete(last))
+            assertTrue(run.biomeComplete(SafariMode.FULL_CLEAR, biome, state))
+            assertEquals(word, run.completion.announcement(run, biome, SafariMode.FULL_CLEAR, state))
+        }
+    }
 }

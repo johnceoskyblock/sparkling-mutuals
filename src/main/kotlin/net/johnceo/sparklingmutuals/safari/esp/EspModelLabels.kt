@@ -22,7 +22,7 @@ class EspModelLabels {
     /** Follow the already-bound label into its capsule state; do not guess by nearest model. */
     fun captureState(id: java.util.UUID, text: String?, now: Long) {
         val binding=bindings[id] ?: return
-        if (text?.let { net.johnceo.sparklingmutuals.safari.SafariRules.strip(it).startsWith("CAPTURING",true) } == true)
+        if (SafariEspRules.isCapturingLabel(text))
             binding.capturingAt=now
     }
     fun captureCandidate(species: String, now: Long) = bindings.entries.filter {

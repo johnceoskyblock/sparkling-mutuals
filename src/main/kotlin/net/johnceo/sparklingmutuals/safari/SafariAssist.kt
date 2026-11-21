@@ -153,7 +153,8 @@ object SafariAssist {
     }
 
     @JvmStatic fun isGlowHighlighted(id: Int)=isHighlighted(id) && shinies.none {
-        (it.body.id==id || it.label.id==id) && it.name == "Duplico"
+        (it.body.id == id || it.label.id == id) &&
+            (it.name == "Duplico" || it.name == "Shyworm" && it.body.y <= 2.0)
     }
     internal fun sparklingDuplicoBodies(): List<Entity> = shinies.filter {
         it.name == "Duplico" && isHighlighted(it.body.id)

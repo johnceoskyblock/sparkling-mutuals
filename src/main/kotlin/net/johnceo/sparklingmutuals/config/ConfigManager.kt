@@ -6,6 +6,7 @@ import java.util.Properties
 import net.johnceo.sparklingmutuals.hud.SafariHud
 import net.johnceo.sparklingmutuals.safari.SafariBiome
 import net.johnceo.sparklingmutuals.safari.SafariMode
+import net.johnceo.sparklingmutuals.safari.completion.BossPbCategory
 import net.johnceo.sparklingmutuals.safari.completion.SafariFullClear
 import net.johnceo.sparklingmutuals.safari.completion.SafariPersonalBests
 import net.minecraft.resources.Identifier
@@ -17,6 +18,26 @@ object ConfigManager {
     var highlightTeammates = true
     var showTeammateNames = true
     var partyCommandsEnabled = true
+    var doomSoloPbChat = true
+    var doomDuoPbChat = true
+    var doomObservedSoloPbChat = true
+    var doomObservedDuoPbChat = true
+    var wumpaSoloPbChat = true
+    var wumpaDuoPbChat = true
+    var wumpaObservedSoloPbChat = true
+    var wumpaObservedDuoPbChat = true
+    var fullClearPbChat = true
+    var uniquePbChat = true
+    var partyUniquePbChat = true
+    fun showBossPbChat(species: String, category: BossPbCategory): Boolean {
+        val wumpa = species == "Wumpa"
+        return when (category) {
+            BossPbCategory.SOLO -> if (wumpa) wumpaSoloPbChat else doomSoloPbChat
+            BossPbCategory.DUO -> if (wumpa) wumpaDuoPbChat else doomDuoPbChat
+            BossPbCategory.OBSERVED_SOLO -> if (wumpa) wumpaObservedSoloPbChat else doomObservedSoloPbChat
+            BossPbCategory.OBSERVED_DUO -> if (wumpa) wumpaObservedDuoPbChat else doomObservedDuoPbChat
+        }
+    }
     var announceStartingItems = false
     var autoBiomeReports = true
     var hudSnapping = true
@@ -149,6 +170,9 @@ object ConfigManager {
         ::hideyhoAutoAccept to true, ::autoSelectSafariTicket to true, ::safariEntryAutoEnter to false, ::hideyhoInsideOutside to true, ::hideHauntedPaintings to true, ::shinyDetection to true,
         ::progressHud to true, ::progressProfit to true, ::progressHotspot to true, ::hotspotShowAllPlayers to true, ::countUniqueOnly to false, ::profitableChecklist to true, ::lakeClearAlert to true, ::missingPanel to true, ::biomeObjectives to true,
         ::objectiveCaptureReminder to true, ::objectiveShinyReminder to true,
+        ::doomSoloPbChat to true, ::doomDuoPbChat to true, ::doomObservedSoloPbChat to true, ::doomObservedDuoPbChat to true,
+        ::wumpaSoloPbChat to true, ::wumpaDuoPbChat to true, ::wumpaObservedSoloPbChat to true, ::wumpaObservedDuoPbChat to true,
+        ::fullClearPbChat to true, ::uniquePbChat to true, ::partyUniquePbChat to true,
         ::autoReconnectHypixel to false, ::autoJoinSkyBlock to false,
         ::highlightBeeNests to true, ::removeDarkness to true, ::clearWater to true, ::sparklingAlert to true, ::sparklingCatchCount to true,
         ::sparklingPartyAnnouncer to true, ::catchCountPanel to false, ::autoClicker to true, ::candleHitbox to true, ::holdManagerOnKick to true, ::downtimeCommand to true, ::honeyHives to true, ::huntingBoxValue to true, ::shardSaleGuidance to true, ::skillOverflow to true, ::skillOverflowChat to true, ::skillOverflowNumbers to false, ::estimatedItemValue to true, ::estimatedChestValue to true, ::phantomleafSolver to true, ::runHistory to true, ::achievements to true, ::achievementSound to true, ::achievementsToParty to false, ::runCoinsInstaSell to false,

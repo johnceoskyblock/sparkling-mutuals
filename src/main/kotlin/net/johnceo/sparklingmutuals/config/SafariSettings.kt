@@ -136,8 +136,29 @@ class SafariSettings {
         @ConfigEditorBoolean var enabled = ConfigManager.partyCommandsEnabled
         @JvmField @ConfigOption(name = "Respect !dt requests", desc = "Pause Safari entry when a party member requests downtime. Hold Shift to bypass.")
         @ConfigEditorBoolean var downtime = ConfigManager.downtimeCommand
-
+        @JvmField @ConfigOption(name = "Local PB messages", desc = "Choose which personal best messages appear in your chat. Times are always recorded.")
+        @Accordion val pbChat = PbChatSettings()
     }
+    class PbChatSettings {
+        @JvmField @ConfigOption(name = "Doomspiral", desc = "") @Accordion
+        val doom = BossPbChatSettings(ConfigManager.doomSoloPbChat, ConfigManager.doomDuoPbChat,
+            ConfigManager.doomObservedSoloPbChat, ConfigManager.doomObservedDuoPbChat)
+        @JvmField @ConfigOption(name = "Wumpa", desc = "") @Accordion
+        val wumpa = BossPbChatSettings(ConfigManager.wumpaSoloPbChat, ConfigManager.wumpaDuoPbChat,
+            ConfigManager.wumpaObservedSoloPbChat, ConfigManager.wumpaObservedDuoPbChat)
+        @JvmField @ConfigOption(name = "Full Clear biome PBs", desc = "") @ConfigEditorBoolean
+        var fullClear = ConfigManager.fullClearPbChat
+        @JvmField @ConfigOption(name = "Unique Run biome PBs", desc = "") @ConfigEditorBoolean
+        var unique = ConfigManager.uniquePbChat
+        @JvmField @ConfigOption(name = "Party Unique Run biome PBs", desc = "") @ConfigEditorBoolean
+        var partyUnique = ConfigManager.partyUniquePbChat
+    }
+    class BossPbChatSettings(
+        @JvmField @ConfigOption(name = "Your solo catches", desc = "") @ConfigEditorBoolean var solo: Boolean,
+        @JvmField @ConfigOption(name = "Your duo catches", desc = "") @ConfigEditorBoolean var duo: Boolean,
+        @JvmField @ConfigOption(name = "Observed solo catches", desc = "Solo catches by another player that you loot share.") @ConfigEditorBoolean var observedSolo: Boolean,
+        @JvmField @ConfigOption(name = "Observed duo catches", desc = "Duo catches by another player that you loot share.") @ConfigEditorBoolean var observedDuo: Boolean
+    )
     class Miria {
         @JvmField @ConfigOption(name = "Ticket target", desc = "Basic requires Uncommon; First-Class requires Legendary.")
         @ConfigEditorDropdown(values = ["Basic", "First-Class"])
@@ -456,7 +477,7 @@ class SafariSettings {
         @JvmField @ConfigOption(name = "Run progress", desc = "Track overall and per-biome completion, time and profit.") @Accordion val progressHud=ProgressHudOptions()
         @JvmField @ConfigOption(name = "Missing critters", desc = "Show critters still needed for the current mode.") @Accordion val missingHud=HudOptions(ConfigManager.missingPanel,"missing")
         @JvmField @ConfigOption(name = "Profitable critters", desc = "Show the current biome's ten most profitable critters and captures remaining. Unique and Sparkling modes only.") @Accordion val profitableHud=HudOptions(ConfigManager.profitableChecklist,"profitable")
-        @JvmField @ConfigOption(name = "Lake cleared alert", desc = "Alert once you have caught Tepid, Nozzlenose and Mantis Shrimp in a run.") @Accordion val lakeClearedHud=HudOptions(ConfigManager.lakeClearAlert,"lake_cleared")
+        @JvmField @ConfigOption(name = "Lake cleared alert", desc = "Catch one Tepid, Nozzlenose and Mantis Shrimp in Unique or Sparkling mode. In Full Clear, catch them all.") @Accordion val lakeClearedHud=HudOptions(ConfigManager.lakeClearAlert,"lake_cleared")
         @JvmField @ConfigOption(name = "Biome objectives", desc = "Track food, nests, mounds and other remaining biome tasks.") @Accordion val objectivesHud=ObjectivesHudOptions()
         @JvmField @ConfigOption(name = "Biome captures", desc = "Show capture counts and completion checks for each critter.") @Accordion val capturesHud=HudOptions(ConfigManager.catchCountPanel,"captures")
         @JvmField @ConfigOption(name = "Miria's contest", desc = "Show contest time, ticket progress and optional bracket and score rows.") @Accordion val contestHud=ContestHudOptions()
@@ -593,6 +614,12 @@ class SafariSettings {
             net.johnceo.sparklingmutuals.alerts.SparkleWarping.configurationChanged()
         }
         val changes = listOf(ConfigManager::objectiveCaptureReminder to tracking.objectivesHud.captureReminder,ConfigManager::objectiveShinyReminder to tracking.objectivesHud.shinyReminder,
+            ConfigManager::doomSoloPbChat to party.pbChat.doom.solo, ConfigManager::doomDuoPbChat to party.pbChat.doom.duo,
+            ConfigManager::doomObservedSoloPbChat to party.pbChat.doom.observedSolo, ConfigManager::doomObservedDuoPbChat to party.pbChat.doom.observedDuo,
+            ConfigManager::wumpaSoloPbChat to party.pbChat.wumpa.solo, ConfigManager::wumpaDuoPbChat to party.pbChat.wumpa.duo,
+            ConfigManager::wumpaObservedSoloPbChat to party.pbChat.wumpa.observedSolo, ConfigManager::wumpaObservedDuoPbChat to party.pbChat.wumpa.observedDuo,
+            ConfigManager::fullClearPbChat to party.pbChat.fullClear, ConfigManager::uniquePbChat to party.pbChat.unique,
+            ConfigManager::partyUniquePbChat to party.pbChat.partyUnique,
             ConfigManager::autoReconnectHypixel to warp.autoReconnectHypixel,
             ConfigManager::autoJoinSkyBlock to warp.autoJoinSkyBlock,
             ConfigManager::safariEntryAutoEnter to warp.autoEnter, ConfigManager::sparklingCatchCount to safari.alerts.catchCount, ConfigManager::specialCatchAlert to safari.alerts.caught,

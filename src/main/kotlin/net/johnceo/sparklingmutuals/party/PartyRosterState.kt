@@ -25,10 +25,12 @@ class PartyRosterState {
 
 /** Membership messages only: ordinary chat and invitations do not change the roster. */
 object PartyRosterSignals {
+    internal enum class Change { LEADER, MEMBERS }
     private val name = "(?:\\[[^]\\r\\n]+]\\s*)*[A-Za-z0-9_]{1,16}"
-    private val messages = listOf(
+    private val leaderMessages = listOf(
         Regex("^$name has promoted $name to Party Leader[.!]?$"),
-        Regex("^The party was transferred to $name(?: by $name)?[.!]?$"),
+        Regex("^The party was transferred to $name(?: by $name)?[.!]?$"))
+    private val memberMessages = listOf(
         Regex("^$name was removed from your party because they disconnected[.!]?$"),
         Regex("^Kicked $name because they were offline[.!]?$"),
         Regex("^$name (?:joined the party[.!]|has left the party[.!]|has been removed from the party[.!]|has disbanded the party[.!])$"),
@@ -36,5 +38,13 @@ object PartyRosterSignals {
         Regex("^You (?:left the party[.!]|have been kicked from the party(?: by $name[.!]?)?)$"),
         Regex("^The party was disbanded(?:[.!]| because .+)$"),
         Regex("^You are not (?:currently )?in a party[.!]?$"))
-    fun changed(text: String) = messages.any { it.matches(text.replace(Regex("§."), "").trim()) }
+    internal fun change(text: String): Change? {
+        val clean = text.replace(Regex("§."), "").trim()
+        return when {
+            memberMessages.any { it.matches(clean) } -> Change.MEMBERS
+            leaderMessages.any { it.matches(clean) } -> Change.LEADER
+            else -> null
+        }
+    }
+    fun changed(text: String) = change(text) != null
 }

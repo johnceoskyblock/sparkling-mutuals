@@ -31,14 +31,15 @@ class UniqueHauntedChecksTest {
         SafariBiome.HAUNTED.critters.forEach { caught(run, it.name) }
         run.updateCaptureEvidence(SafariBiome.HAUNTED, emptySet(), false)
         assertTrue(SafariPanels.missingCritters(run, SafariBiome.HAUNTED, state).isEmpty())
-        assertFalse(complete(run, "Gazer", state))
+        assertTrue(complete(run, "Gazer", state))
+        assertFalse(run.sparklingComplete("Gazer", state, localOnly = true))
         assertFalse(complete(run, "Gimmiegold", state))
-        assertEquals(SafariBiome.HAUNTED.critters.size - 2, run.completed(SafariMode.UNIQUE, SafariBiome.HAUNTED.critters, state))
+        assertEquals(SafariBiome.HAUNTED.critters.size - 1, run.completed(SafariMode.UNIQUE, SafariBiome.HAUNTED.critters, state))
         assertNull(run.completion.announcement(run, SafariBiome.HAUNTED, SafariMode.UNIQUE, state))
         assertEquals("3", footer(run, state, "Gazers left")?.value)
         assertEquals("?", footer(run, state, "Coins left to use")?.value)
         run.partyFullClear("Party > Friend: hd")
-        assertFalse(complete(run, "Gazer", state), "local Haunted checking cannot be replaced by an hd")
+        assertFalse(run.sparklingComplete("Gazer", state, localOnly = true), "local Haunted checking cannot be replaced by an hd")
         assertFalse(complete(run, "Gimmiegold", state))
     }
 
@@ -49,7 +50,8 @@ class UniqueHauntedChecksTest {
         val seen = List(3) { "Gazer" to UUID.randomUUID() }
         repeat(2) { run.sparklingChecks.scan(SafariBiome.HAUNTED, -4.0, -64.0, seen.take(2)) }
         assertEquals("1", footer(run, state, "Gazers left")?.value)
-        assertFalse(complete(run, "Gazer", state))
+        assertTrue(complete(run, "Gazer", state))
+        assertFalse(run.sparklingComplete("Gazer", state, localOnly = true))
         run.sparklingChecks.scan(SafariBiome.HAUNTED, -4.0, -64.0, seen)
         assertTrue(complete(run, "Gazer", state))
         assertNull(footer(run, state, "Gazers left"))

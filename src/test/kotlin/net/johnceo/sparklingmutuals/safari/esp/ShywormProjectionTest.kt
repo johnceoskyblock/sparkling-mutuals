@@ -4,6 +4,8 @@ import java.util.UUID
 import net.johnceo.sparklingmutuals.safari.PartySparklingState
 import net.johnceo.sparklingmutuals.safari.SafariRoster
 import net.johnceo.sparklingmutuals.safari.SafariRun
+import net.minecraft.world.phys.AABB
+import net.minecraft.world.phys.Vec3
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -247,6 +249,23 @@ class ShywormProjectionTest {
         assertNull(p.hiddenHeight(id))
         p.observe(id, -98.5, 1.0, 20.0, false, 750)
         assertEquals(49.0, p.hiddenHeight(id))
+    }
+    @Test fun `glow-only head marker follows received horizontal movement underground`() {
+        val projection = ShywormProjection()
+        projection.observe(id, -100.0, 50.0, 20.0, true, 0)
+        assertTrue(ShywormProjection.showRetainedHead(boxEsp = false, glowEsp = true))
+        assertFalse(ShywormProjection.showRetainedHead(boxEsp = false, glowEsp = false))
+
+        for ((x, z, y) in listOf(Triple(-98.0, 20.0, 1.0), Triple(-98.0, 22.0, 1.25))) {
+            projection.observe(id, x, y, z, false, 250)
+            val box = AABB(x - .3, y + 1.35, z - .3, x + .3, y + 1.95, z + .3)
+            val marker = ShywormProjection.projectHead(box, Vec3(x, y, z), projection.hiddenHeight(id)!!)
+            assertEquals(x, marker.center.x, .001)
+            assertEquals(z, marker.center.z, .001)
+            assertEquals(51.35, marker.minY, .001)
+        }
+        projection.observe(id, -98.0, 50.0, 23.0, true, 750)
+        assertNull(projection.hiddenHeight(id))
     }
     @Test fun `queued rest selects nearest stationary underground worm without fresh label requirement`() {
         val p = ShywormProjection(); val farther = UUID.randomUUID(); val moving = UUID.randomUUID()

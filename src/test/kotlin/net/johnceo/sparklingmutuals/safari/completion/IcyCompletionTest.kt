@@ -25,7 +25,7 @@ class IcyCompletionTest : net.johnceo.sparklingmutuals.safari.esp.ProfitableEspP
                 live=List(3-it) { species to UUID.randomUUID() } // Capsule transformations replace IDs.
                 run.observePopulation(live)
                 run.updateCaptureEvidence(SafariBiome.ICY,setOf(species),false,playerX=-73.0,playerZ=-46.0)
-                assertFalse(run.fullClearComplete(species))
+                assertEquals(species == "Troodon" && it == 2, run.fullClearComplete(species))
                 run.observePopulation(live.drop(1))
             }
             run.updateCaptureEvidence(SafariBiome.ICY,emptySet(),false,playerX=-73.0,playerZ=-46.0)
@@ -33,10 +33,10 @@ class IcyCompletionTest : net.johnceo.sparklingmutuals.safari.esp.ProfitableEspP
             assertTrue(run.fullClearComplete(species))
             run.observePopulation(listOf(species to UUID.randomUUID()))
             run.updateCaptureEvidence(SafariBiome.ICY,setOf(species),false,playerX=-73.0,playerZ=-46.0)
-            assertFalse(run.fullClearComplete(species),"A newly seen remainder still requires a catch")
+            assertEquals(species == "Troodon", run.fullClearComplete(species), "Only variable spawns can have an extra remainder")
             run.observePopulation(emptyList())
             run.updateCaptureEvidence(SafariBiome.ICY,emptySet(),false,playerX=-73.0,playerZ=-46.0)
-            assertFalse(run.fullClearComplete(species),"Unloading the new remainder is not a capture")
+            assertEquals(species == "Troodon", run.fullClearComplete(species), "Unloading the new remainder is not a capture")
         }
     }
     @Test fun `four shrimp captures cannot be added to the same four lingering models`() {
@@ -71,7 +71,7 @@ class IcyCompletionTest : net.johnceo.sparklingmutuals.safari.esp.ProfitableEspP
         repeat(3) { run.record(SafariCatch(SafariRoster.named("Troodon")!!),now) }
         run.observePopulation(live)
         run.updateCaptureEvidence(SafariBiome.ICY,setOf("Troodon"),false,playerX=-73.0,playerZ=-46.0)
-        assertFalse(run.fullClearComplete("Troodon"))
+        assertTrue(run.fullClearComplete("Troodon"))
         now=4000
         run.observePopulation(emptyList())
         run.updateCaptureEvidence(SafariBiome.ICY,emptySet(),false,playerX=-73.0,playerZ=-46.0)
@@ -87,9 +87,9 @@ class IcyCompletionTest : net.johnceo.sparklingmutuals.safari.esp.ProfitableEspP
             val (x,z)=point;val run=SafariRun(0);val c=run.sparklingChecks
             repeat(SafariFullClear.minimum(name)) { run.record(SafariCatch(SafariRoster.named(name)!!)) }
             run.updateCaptureEvidence(SafariBiome.ICY,emptySet(),false,playerX=x+30.01,playerZ=z)
-            assertFalse(run.captureComplete(name))
+            assertEquals(name == "Wumpa", run.captureComplete(name))
             run.updateCaptureEvidence(SafariBiome.ICY,setOf(name),false,playerX=x+30,playerZ=z)
-            assertFalse(run.captureComplete(name))
+            assertEquals(name == "Wumpa", run.captureComplete(name))
             run.updateCaptureEvidence(SafariBiome.ICY,emptySet(),false,playerX=x+30,playerZ=z)
             assertTrue(run.captureComplete(name))
             val seen=List(SafariFullClear.minimum(name)) { name to UUID.randomUUID() }

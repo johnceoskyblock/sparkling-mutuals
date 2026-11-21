@@ -16,8 +16,9 @@ class PartyLeaderTest {
         state.update(listOf("a", "b")); assertFalse(state.isLeader("a"))
     }
     @Test fun `leadership changes refresh roles without interpreting player chat`() {
-        assertTrue(PartyRosterSignals.changed("[MVP+] Alex has promoted Steve to Party Leader"))
-        assertTrue(PartyRosterSignals.changed("The party was transferred to Steve by Alex"))
+        assertEquals(PartyRosterSignals.Change.LEADER, PartyRosterSignals.change("[MVP+] Alex has promoted Steve to Party Leader"))
+        assertEquals(PartyRosterSignals.Change.LEADER, PartyRosterSignals.change("The party was transferred to Steve by Alex"))
+        assertEquals(PartyRosterSignals.Change.MEMBERS, PartyRosterSignals.change("[MVP+] Alex has left the party."))
         assertFalse(PartyRosterSignals.changed("Party > Alex: Steve has promoted Alex to Party Leader"))
     }
 }

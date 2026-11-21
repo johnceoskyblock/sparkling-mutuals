@@ -126,10 +126,10 @@ class UniquePartyReportTest {
                 run.updateCaptureEvidence(biome, biome.critters.map { it.name }.toSet(), false)
                 run.inventoryEvidence(listOf("Shining Coin" to 2, "Yogi Berry" to 2), 10000)
                 run.sparklingChecks.scan(biome, 0.0, 0.0, emptyList())
-                assertEquals(biome.critters.size - when (biome) { SafariBiome.FOREST -> 3; SafariBiome.HAUNTED -> 2; else -> 0 },
+                assertEquals(biome.critters.size - when (biome) { SafariBiome.FOREST -> 3; SafariBiome.HAUNTED -> 1; else -> 0 },
                     run.completed(SafariMode.UNIQUE, biome.critters, state), biome.label)
             }
-            assertEquals(biome.critters.size - when (biome) { SafariBiome.FOREST -> 3; SafariBiome.HAUNTED -> 2; else -> 0 },
+            assertEquals(biome.critters.size - when (biome) { SafariBiome.FOREST -> 3; SafariBiome.HAUNTED -> 1; else -> 0 },
                 run.completed(SafariMode.UNIQUE, biome.critters, state, localOnly = true))
             if (biome == SafariBiome.ICY) {
                 assertEquals("id", run.completion.announcement(run, biome, SafariMode.UNIQUE, state))

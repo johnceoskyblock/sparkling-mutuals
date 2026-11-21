@@ -47,6 +47,7 @@ class MoundSurvey {
     private val inspectedEmpty = mutableSetOf<Triple<Int, Int, Int>>()
     private val confirmedHits = mutableMapOf<Triple<Int, Int, Int>, Int>()
     private val pendingHits = mutableMapOf<Triple<Int, Int, Int>, Long>()
+    private var lastConfirmedAttack: Pair<Triple<Int, Int, Int>, Long>? = null
     var recentHitCandidates = 0
         private set
 
@@ -59,9 +60,13 @@ class MoundSurvey {
     fun confirmHit(stage: Int, now: Long): Triple<Int, Int, Int>? {
         expireHits(now)
         recentHitCandidates = pendingHits.size
-        val position = pendingHits.keys.singleOrNull()
+        val position = if (pendingHits.isNotEmpty()) pendingHits.keys.singleOrNull()
+        else lastConfirmedAttack?.takeIf { (site, at) -> now - at in 0..2_000 && !confirmedBroken(site) }?.first
+        // A site whose server response already arrived must not make the next mound's hit ambiguous.
+        if (position != null) pendingHits.remove(position)?.let { lastConfirmedAttack = position to it }
         if (stage == SafariMounds.HITS_TO_BREAK) {
             pendingHits.clear()
+            lastConfirmedAttack = null
             position?.let(::confirmBreak)
         } else if (position != null && !confirmedBroken(position)) {
             confirmedHits[position] = maxOf(confirmedHits[position] ?: 0, stage)
@@ -69,6 +74,10 @@ class MoundSurvey {
         return position
     }
     private fun expireHits(now: Long) { pendingHits.entries.removeIf { now - it.value !in 0..2_000 } }
+    internal fun hitDiagnostics(now: Long): String {
+        expireHits(now)
+        return "confirmed=$confirmedHits pending=${pendingHits.keys} recentCandidates=$recentHitCandidates"
+    }
     fun hitLabel(position: Triple<Int, Int, Int>): String? = if (confirmedBroken(position)) null
         else "(${confirmedHits[position] ?: 0}/${SafariMounds.HITS_TO_BREAK})"
     val locallyResolved get() = confirmedLocal + inspectedEmpty

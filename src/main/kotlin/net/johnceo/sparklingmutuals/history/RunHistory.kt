@@ -17,8 +17,28 @@ import net.minecraft.client.Minecraft
  */
 object RunHistory {
     class Data(var nextNumber: Int = 1, var runs: MutableList<RunRecord> = mutableListOf(),
-               var sessionStarts: List<Long> = emptyList())
+               var sessionStarts: List<Long> = emptyList(),
+               private var hotspotPartyRoster: Set<String>? = null, private var hotspotPartySince: Long = 0) {
+        internal fun observeHotspotRoster(roster: Set<String>, now: Long): Boolean {
+            if (hotspotPartyRoster == roster) return false
+            if (hotspotPartyRoster != null) breakHotspotStreak(now)
+            hotspotPartyRoster = roster
+            return true
+        }
+
+        internal fun breakHotspotStreak(now: Long): Boolean {
+            val changed = hotspotPartyRoster != null || now > hotspotPartySince
+            hotspotPartyRoster = null
+            hotspotPartySince = maxOf(hotspotPartySince, now)
+            return changed
+        }
+
+        internal fun hotspotRunsFor(roster: Set<String>): Int =
+            if (roster == hotspotPartyRoster) HistoryQueries.consecutiveHotspotRuns(runs, roster, hotspotPartySince) else 0
+    }
     private var data = Data()
+    private var hotspotRunCount: Pair<Set<String>, Int>? = null
+    private var hotspotRosterRevision = Long.MIN_VALUE
     private val session = LiveHistorySession()
     private val tally get() = session.tally
     private val splits get() = session.splits
@@ -31,6 +51,14 @@ object RunHistory {
 
     val runs: List<RunRecord> get() = data.runs
     val sessionStarts: List<Long> get() = data.sessionStarts
+    internal fun hotspotRunsFor(roster: Set<String>): Int {
+        hotspotRunCount?.takeIf { it.first == roster }?.let { return it.second }
+        return data.hotspotRunsFor(roster).also { hotspotRunCount = roster to it }
+    }
+
+    internal fun hotspotPartyMembershipChanged() {
+        if (data.breakHotspotStreak(System.currentTimeMillis())) save()
+    }
 
     fun newSession(now: Long = System.currentTimeMillis()): Result<Unit> {
         val previous = data.sessionStarts
@@ -88,6 +116,12 @@ object RunHistory {
     fun onTicket() { if (HistoryServerPolicy.allows()) session.onTicket(SafariTracking.ledger.current) }
 
     fun tick(client: Minecraft) {
+        if (PartyManager.revision != hotspotRosterRevision) {
+            client.player?.uuid?.toString()?.let(PartyManager::withLocal)?.let { roster ->
+                hotspotRosterRevision = PartyManager.revision
+                if (data.observeHotspotRoster(roster, System.currentTimeMillis())) save()
+            }
+        }
         HistoryServerPolicy.allows(client)
         session.sync(SafariTracking.ledger.current) { finish(it, client) }
         val current = session.active ?: return
@@ -104,7 +138,7 @@ object RunHistory {
 
     private fun finish(run: SafariRun, client: Minecraft) {
         if (run.historyExcluded || !ConfigManager.runHistory ||
-            tally.party.isEmpty() && tally.summaryShards < 0 && tally.safariEssence < 0) return
+            tally.party.isEmpty() && tally.summaryShards < 0 && tally.safariEssence < 0 && !tally.rewardSummarySeen) return
         // The run start is stable across callbacks; never insert or award the same live run twice.
         if (data.runs.any { !it.imported && it.start == run.startedAt }) return
         val length = run.elapsed(System.currentTimeMillis())
@@ -112,7 +146,7 @@ object RunHistory {
         val record = RunRecord(start = run.startedAt, length = length,
             mode = SafariFullClear.mode.name, party = tally.party.size, you = tally.catches.size,
             caught = tally.caught, lootShares = tally.lootShares,
-            partySize = client.player?.uuid?.toString()?.let(PartyManager::withLocal)?.size ?: 1,
+            partySize = run.runParty.members?.size ?: client.player?.uuid?.toString()?.let(PartyManager::withLocal)?.size ?: 1,
             tickets = tickets, shards = LinkedHashMap(tally.shards), catches = LinkedHashMap(tally.catches),
             feathers = tally.feathers, sparklings = tally.sparklings.toMutableList(), ownSparklings = tally.ownSparklings,
             macaws = tally.macaws, splits = LinkedHashMap(splits), safariEssence = tally.safariEssence,
@@ -120,7 +154,9 @@ object RunHistory {
             macawChecked = run.count("Macaw") > 0 || run.birds.feedingResolved,
             allBirdFoodUsed = run.birds.allNineFloorFoodUsed,
             macawsSeen = maxOf(run.count("Macaw"),run.birds.spawnedCount("Macaw")),
-            allTypesMillis = tally.allTypesAt?.let { (it - run.startedAt).coerceAtLeast(0) } ?: -1)
+            allTypesMillis = tally.allTypesAt?.let { (it - run.startedAt).coerceAtLeast(0) } ?: -1,
+            partyMembers = run.runParty.members, hotspotRun = run.runParty.hotspotUsed,
+            fullPartyPresent = run.runParty.presentTogether, rewardSummarySeen = tally.rewardSummarySeen)
         // A manual import during this run may have read it from latest.log already; the live record replaces that.
         val imported = HistoryMerge.removeLiveDuplicate(data.runs, record)
         record.number = imported?.number ?: data.nextNumber++
@@ -138,6 +174,7 @@ object RunHistory {
      */
     fun reconcileImport(found: List<RunRecord>, alpha: List<RunRecord>): Int =
         net.johnceo.sparklingmutuals.history.importing.HistoryImportRepair.runs(data.runs, found, alpha)
+            .also { if (it > 0) hotspotRunCount = null }
 
     fun importRuns(found: List<RunRecord>): Int {
         val existing = data.runs.toSet()
@@ -169,6 +206,7 @@ object RunHistory {
     }
     internal fun applySummary(run: RunRecord, tally: RunTally): Boolean {
         var changed = false
+        if (tally.rewardSummarySeen && !run.rewardSummarySeen) { run.rewardSummarySeen = true; changed = true }
         if (tally.safariEssence >= 0 && run.safariEssence != tally.safariEssence) {
             if (run.coins >= 0) run.coins -= maxOf(0L, run.essenceCoins)
             run.essenceCoins = -1; run.safariEssence = tally.safariEssence; changed = true
@@ -191,7 +229,10 @@ object RunHistory {
         save()
     }
 
-    fun save() = HistoryStore.save("runs", data)
+    fun save(): Result<Unit> {
+        hotspotRunCount = null
+        return HistoryStore.save("runs", data)
+    }
 }
 
 /** Client-thread tally state shared by chat callbacks and ticks. Finish observes the old state before it resets. */
@@ -249,13 +290,14 @@ object HistoryMerge {
         return before - runs.size
     }
     /** Only the display number is excluded. Close timestamps or equal capture totals alone are not duplicates. */
-    private fun signature(run: RunRecord): List<Any> = with(run) {
+    private fun signature(run: RunRecord): List<Any?> = with(run) {
         listOf(start, length, mode, party, you, caught, lootShares, partySize, tickets, shards.toMap(), catches.toMap(),
             feathers, sparklings.toList(), ownSparklings, macaws, splits.toMap(), imported, coins, ticketAt, coinsEstimated, modeEstimated,
-            safariEssence, summaryShards, huntingXp, hotspot, essenceCoins, macawChecked ?: "unknown", allTypesMillis)
+            safariEssence, summaryShards, huntingXp, hotspot, essenceCoins, macawChecked ?: "unknown", allTypesMillis,
+            partyMembers, hotspotRun, fullPartyPresent, rewardSummarySeen)
     }
     fun removeExactDuplicates(runs: MutableList<RunRecord>): Int {
-        val seen = mutableSetOf<List<Any>>()
+        val seen = mutableSetOf<List<Any?>>()
         val before = runs.size
         runs.removeAll { it.start > 0 && !seen.add(signature(it)) }
         val removed = before - runs.size

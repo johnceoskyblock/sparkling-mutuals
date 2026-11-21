@@ -2,6 +2,8 @@ package net.johnceo.sparklingmutuals.safari.esp
 
 import java.util.UUID
 import kotlin.math.abs
+import net.minecraft.world.phys.AABB
+import net.minecraft.world.phys.Vec3
 
 data class ShywormPath(val minX: Double, val minZ: Double, val maxX: Double, val maxZ: Double, val height: Double)
 data class ShywormTimer(val text: String, val color: Int)
@@ -9,6 +11,11 @@ data class ShywormMarker(val id: UUID, val x: Double, val y: Double, val z: Doub
 data class ShywormPart(val id: UUID, val x: Double, val y: Double, val z: Double, val head: Boolean)
 class ShywormProjection {
     companion object {
+        internal fun projectHead(box: AABB, interpolatedBody: Vec3, surfaceY: Double) =
+            box.move(0.0, surfaceY - interpolatedBody.y, 0.0)
+
+        internal fun showRetainedHead(boxEsp: Boolean, glowEsp: Boolean) = boxEsp || glowEsp
+
         /** A body hit identifies a head only when its bounded connected component has exactly one head. */
         fun headForPart(hit: UUID, parts: List<ShywormPart>): UUID? {
             if (parts.size > 64 || parts.none { it.id == hit }) return null
@@ -127,7 +134,8 @@ class ShywormProjection {
             closest.restAt = rest.at; rests.remove(rest)
         }
     }
-    fun hiddenHeight(id: UUID): Double? = worms[id]?.takeIf { it.restAt != null || abs(it.y - 1.0) <= .01 }?.height
+    fun hiddenHeight(id: UUID, modelY: Double? = null): Double? =
+        worms[id]?.takeIf { it.restAt != null || (modelY ?: it.y) <= 2.0 }?.height
     fun timer(id: UUID, now: Long): ShywormTimer? {
         val at = worms[id]?.restAt ?: return null
         val remaining = (8000 - (now - at).coerceAtLeast(0)).coerceAtLeast(0)

@@ -5,29 +5,30 @@ import kotlin.math.exp
 
 /** Pure presentation state. The lottery owns evidence, cancellation and the server clock. */
 internal object DoomspiralCabinet {
+    private const val REVEAL_TICKS = 25
+    private const val REEL_STOP_TICK = DOOMSPIRAL_CAPTURE_TICKS - REVEAL_TICKS
+
     fun scale(width: Int, height: Int): Float =
         if (width <= 0 || height <= 0) 0f else minOf(1.6f, width / 352f, height / 300f)
 
     fun frame(elapsed: Float, settleElapsed: Float?, remaining: Int?, ticks: Float, result: Int): Frame =
-        Frame(elapsed, settleElapsed, ticks, result, remaining != null && remaining <= 5)
+        Frame(elapsed, settleElapsed, ticks, result, remaining != null && remaining <= REVEAL_TICKS)
 
     class Frame(
         val elapsed: Float,
         private val settleElapsed: Float?,
-        val ticks: Float,
+        private val ticks: Float,
         private val result: Int,
-        private val revealed: Boolean
+        val revealed: Boolean
     ) {
-        val jackpot get() = revealed && result == 7
-        val label get() = if (!revealed) null else if (jackpot) "Sparkling Doomspiral" else "Regular Doomspiral"
-        val labelColor get() = if (jackpot) 0xFFFFD87A.toInt() else 0xFFFFFFFF.toInt()
-        val revealAge get() = (ticks - 93f).coerceAtLeast(0f)
+        val jackpot get() = revealed && result == DOOMSPIRAL_JACKPOT_MASK
+        val revealProgress get() = ((ticks - REEL_STOP_TICK) / REVEAL_TICKS).coerceIn(0f, 1f)
 
         fun offset(index: Int): Float {
             val settle = settleElapsed ?: return spinOffset(elapsed, index)
             val from = spinOffset(settle, index)
             val to = ceil((from + 4) / 6) * 6 + if (result and (1 shl index) != 0) 0 else 1
-            val spin = (ticks / 93f).coerceIn(0f, 1f)
+            val spin = (ticks / REEL_STOP_TICK).coerceIn(0f, 1f)
             return if (spin == 1f) to else from + (to - from) * (1f - (1f - spin) * (1f - spin))
         }
 

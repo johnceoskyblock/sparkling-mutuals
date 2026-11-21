@@ -2,9 +2,11 @@ package net.johnceo.sparklingmutuals.safari.completion
 
 import net.johnceo.sparklingmutuals.LocalChat
 import net.johnceo.sparklingmutuals.config.ConfigManager
+import net.johnceo.sparklingmutuals.safari.LakeClearAlert
 import net.johnceo.sparklingmutuals.safari.SafariAssist
 import net.johnceo.sparklingmutuals.safari.SafariBiome
 import net.johnceo.sparklingmutuals.safari.SafariLocation
+import net.johnceo.sparklingmutuals.safari.SafariMode
 import net.johnceo.sparklingmutuals.safari.SafariTracking
 import net.johnceo.sparklingmutuals.safari.esp.SafariEsp
 import net.johnceo.sparklingmutuals.safari.esp.SafariEspRules
@@ -43,6 +45,8 @@ object SafariBiomeClearTracking {
             SafariStructures.walls.states.size == 5 && SafariStructures.walls.allBroken, BeeNests.allChecked,
             macawsInRange = snapshot.critters.count { it.biome == biome && it.species == "Macaw" },
             playerX = player.x, playerZ = player.z, nestsPunched = BeeNests.punchedCount, nestsFound = BeeNests.nestCount)
+        if (biome == SafariBiome.ICY && SafariFullClear.mode == SafariMode.FULL_CLEAR)
+            LakeClearAlert.check(run, SafariMode.FULL_CLEAR)
         run.liveHoneybugs(snapshot.critters.filter { it.species == "Honeybug" && !it.mound }.map { it.uuid }.distinct().size)
         if (biome == SafariBiome.HAUNTED) {
             run.scanGimmiegolds(snapshot.critters.filter { it.species == "Gimmiegold" && !it.mound }.map { it.uuid },
@@ -72,8 +76,9 @@ object SafariBiomeClearTracking {
             SafariStructures.walls.states.size == 5 && SafariStructures.walls.allBroken, BeeNests.allChecked,
             nearbyMacaws = snapshot.critters.count { it.biome == biome && !it.mound && it.species == "Macaw" },
             nestsFound = BeeNests.nestCount)
-        SafariFullClear.recordClear(run, biome, evidence, ConfigManager.personalBests, System.currentTimeMillis())?.let {
-            ConfigManager.save(); player.sendSystemMessage(LocalChat.component(it))
+        SafariFullClear.recordClear(run, biome, evidence, ConfigManager.personalBests, System.currentTimeMillis())?.let { notice ->
+            ConfigManager.save()
+            if (ConfigManager.fullClearPbChat) player.sendSystemMessage(LocalChat.component(notice))
         }
     }
 }

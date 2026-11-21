@@ -2,6 +2,8 @@ package net.johnceo.sparklingmutuals.hud
 import net.johnceo.sparklingmutuals.compat.*
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.contest.ContestGui
+import net.johnceo.sparklingmutuals.history.RunHistory
+import net.johnceo.sparklingmutuals.party.PartyManager
 import net.johnceo.sparklingmutuals.safari.*
 import net.johnceo.sparklingmutuals.safari.ui.SafariPanels
 import net.johnceo.sparklingmutuals.sync.SafariPartySync
@@ -23,7 +25,9 @@ object HotspotHud {
             preview -> listOf(entries.first().copy(name=client.player?.name?.string ?: "You"))
             else -> entries.filter { it.name.equals(client.player?.name?.string,true) }
         }
-        return HotspotGridPanel(players,net.johnceo.sparklingmutuals.alerts.WarpListRanks.colors(client),width)
+        val completedRuns = if (preview) 3 else client.player?.uuid?.toString()
+            ?.let(PartyManager::withLocal)?.let(RunHistory::hotspotRunsFor) ?: 0
+        return HotspotGridPanel(players,net.johnceo.sparklingmutuals.alerts.WarpListRanks.colors(client),width,completedRuns)
     }
     fun render(g: GuiGraphicsExtractor) {
         val client=Minecraft.getInstance()

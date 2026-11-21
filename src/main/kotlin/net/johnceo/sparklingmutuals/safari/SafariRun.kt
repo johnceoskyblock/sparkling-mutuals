@@ -42,8 +42,11 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
     }
     fun checkedProgress(name: String) = maxOf(sparklingChecks.checkCount(name), if (withoutShared) 0 else sharedCritters.checks(name))
     fun captureProgress(name: String) = maxOf(count(name), if (withoutShared) 0 else sharedCritters.captures(name))
+    fun knownCaptureQuotaMet(name: String, captured: Int = captureProgress(name)) =
+        SafariFullClear.maximumCaptures[name]?.let { captured >= it } == true
     val lakeCatchMilestone = LakeCatchMilestone()
     val entry = SafariEntryEvidence()
+    internal val runParty = SafariRunParty()
     val resources = SafariResources()
     val gems = net.johnceo.sparklingmutuals.safari.resources.GemzieObjective()
     val birdFoodCheck = net.johnceo.sparklingmutuals.safari.resources.BirdFoodSparklingCheck()
@@ -329,7 +332,8 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
         if (biome == SafariBiome.HAUNTED && gimmiegoldCheck.remaining > 0 && needs("Gimmiegold")) return false
         return nearby[biome].orEmpty().none { name ->
             SafariRoster.named(name)?.biome == biome && when (mode) {
-                SafariMode.FULL_CLEAR -> !populationSettling(name) && (name != "Macaw" || count(name) == 0)
+                SafariMode.FULL_CLEAR -> !knownCaptureQuotaMet(name) && !populationSettling(name) &&
+                    (name != "Macaw" || count(name) == 0)
                 SafariMode.UNIQUE -> count(name) == 0 || party.needs(name) && !sparklingComplete(name, party, localOnly = true)
                 SafariMode.SPARKLING -> party.needs(name) && !sparklingComplete(name, party, localOnly = true)
             }
@@ -375,6 +379,7 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
         else -> SafariFullClear.minimum(name)
     }
     fun fullClearComplete(name: String): Boolean {
+        if (knownCaptureQuotaMet(name)) return true
         if (sharedCritterComplete(name, SafariMode.FULL_CLEAR)) return true
         val critter = SafariRoster.named(name) ?: return false
         if (remoteReport(critter.biome)) {
@@ -461,6 +466,7 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
         }
     }
     fun sparklingComplete(name: String, party: PartySparklingState, localOnly: Boolean = false): Boolean {
+        if (knownCaptureQuotaMet(name, if (localOnly) count(name) else captureProgress(name))) return true
         if (!localOnly && sharedCritterComplete(name, SafariMode.SPARKLING)) return true
         val critter = SafariRoster.named(name) ?: return false
         if (name !in birdSpecies && sparklingCaptures.captured(name)) return true
@@ -519,6 +525,7 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
             (mode != SafariMode.UNIQUE || completion.allNeededChecked(this, biome, party))) return true
         val icy=biome==SafariBiome.ICY && count("Wumpa")>0
         if(lastBiome==biome && !icy) return completion.locallyComplete(this,biome,mode,party)
+        if (mode == SafariMode.FULL_CLEAR && completion.locallyComplete(this, biome, mode, party)) return true
         if (lastBiome != biome && completion.locallyReported(biome, mode) &&
             !uncaughtSparkling(biome) && !hasUnusedStartingForBiome(biome)) return true
         if(lastBiome!=biome && !icy && biome !in biomeReports) return false
@@ -534,6 +541,7 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
             (name !in setOf("Gazer", "Gimmiegold", "Rockmite", "Snoozle") || !party.needs(name) || sparklingComplete(name, party))) return true
         val critter = SafariRoster.named(name) ?: return false
         val captures = if (localOnly) count(name) else captureProgress(name)
+        if (name in SafariFullClear.maximumCaptures && captures > 0) return true
         if (name !in birdSpecies && sparklingCaptures.captured(name)) return true
         if (!localOnly && remoteReport(critter.biome)) {
             if ((name in birdSpecies || name == "Gimmiegold") && hasUnusedStartingForBiome(critter.biome)) return false
@@ -692,7 +700,7 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
     }
     /** Local checklist proof can advance progress without a party report. */
     fun fullClearMissingComplete(name: String): Boolean {
-        if (name == "Hideyho") return count(name) >= SafariFullClear.minimum(name)
+        if (name in SafariFullClear.maximumCaptures) return knownCaptureQuotaMet(name)
         val critter = SafariRoster.named(name) ?: return false
         if (name in birdSpecies) return birdComplete(name, nearby[SafariBiome.FOREST])
         if ((name in SafariCompletionZones.forBiome(critter.biome) || name in SafariCompletionZones.uuidMinimums) &&
@@ -719,11 +727,10 @@ class SafariRun(val startedAt: Long, checkClock: () -> Long = System::currentTim
 
     private fun captureCompleteWithZones(species: String, personalOnly: Boolean,
         speciesInRange: Set<String>?, structures: BiomeClearEvidence?, confirmedZones: Set<String>): Boolean {
+        val captured = if (personalOnly) personalCount(species) else count(species)
+        if (species in SafariFullClear.maximumCaptures) return knownCaptureQuotaMet(species, captured)
         if (species in birdSpecies) return birdComplete(species, speciesInRange, personalOnly)
         if (sourcePending(species)) return false
-        val captured = if (personalOnly) personalCount(species) else count(species)
-        // Finding Hideyho and receiving the reward is the quest's terminal success, not a live mob catch.
-        if (species == "Hideyho") return captured >= SafariFullClear.minimum(species)
         // The initial known nest total and actual catch messages suffice from any biome.
         if (species == "Honeybug" && beeNestCountKnown)
             return captured >= maxOf(honeybugCaptureTarget, knownPopulation[species] ?: 0)

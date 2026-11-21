@@ -60,7 +60,7 @@ class SafariUniquePbTest {
             biome.critters.dropLast(1).forEach { run.record(SafariCatch(it)) }
             assertNull(bests.recordUnique(biome, run, 40000))
             run.record(SafariCatch(biome.critters.last()))
-            assertEquals("[SM] New ${biome.label} Unique Run PB: 0:44.000!", bests.recordUnique(biome, run, 45000))
+            assertEquals("[SM] New ${biome.label} Unique Run record (PB: 0:44.000)", bests.recordUnique(biome, run, 45000))
             assertEquals(44000L, bests.time(biome.label, BiomePbType.UNIQUE))
             assertNull(bests.time(biome.label))
             assertNull(bests.recordUnique(biome, run, 46000))

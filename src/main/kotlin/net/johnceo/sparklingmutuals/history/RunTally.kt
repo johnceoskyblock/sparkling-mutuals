@@ -1,6 +1,7 @@
 package net.johnceo.sparklingmutuals.history
 
 import net.johnceo.sparklingmutuals.safari.SafariCatch
+import net.johnceo.sparklingmutuals.safari.SAFARI_REWARD_SUMMARY
 
 /**
  * What a run's chat says beyond the captures the run itself counts: shards, Rainbow Feathers, Macaws and sparklings.
@@ -29,11 +30,12 @@ class RunTally {
     var summaryShards = -1
     var huntingXp = -1L
     private var inSummary = false
+    val rewardSummarySeen get() = inSummary
     var allTypesAt: Long? = null
         private set
 
     fun summaryLine(text: String): Boolean {
-        if (text == "SAFARI REWARD SUMMARY") { inSummary = true; return true }
+        if (text == SAFARI_REWARD_SUMMARY) { inSummary = true; return true }
         if (!inSummary) return false
         val match = summaryReward.matchEntire(text) ?: return false
         val amount = match.groupValues[1].replace(",", "").toLongOrNull() ?: return false

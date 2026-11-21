@@ -7,9 +7,13 @@ import net.johnceo.sparklingmutuals.safari.SafariRun
 
 enum class BiomePbType(val label: String) { FULL_CLEAR("Full Clear"), UNIQUE("Unique Run") }
 
+enum class BossPbCategory(val label: String) {
+    SOLO("Solo"), DUO("Duo"), OBSERVED_SOLO("Observed Solo"), OBSERVED_DUO("Observed Duo")
+}
+
 /** Only the player's successful CAPTURE messages can improve a personal best. */
 class SafariPersonalBests {
-    data class CaptureFeedback(val notice: String, val changed: Boolean)
+    data class CaptureFeedback(val notice: String, val changed: Boolean, val species: String, val category: BossPbCategory)
     private data class PartyBest(val name: String, val times: MutableMap<String, Long> = linkedMapOf())
     private val partyBests = linkedMapOf<String, PartyBest>()
     private val ign = Regex("^[A-Za-z0-9_]{1,16}$")
@@ -50,7 +54,7 @@ class SafariPersonalBests {
     }
     private fun soloEligible(species: String, run: SafariRun) = if (species == "Doomspiral") run.hadFourIncense
         else SafariBiome.ICY.critters.filter { it.name != "Wumpa" }.all { run.personalCount(it.name) > 0 }
-    /** Every boss capture reports elapsed time; comparisons use the record BEFORE this catch. */
+    /** Every boss capture reports elapsed time alongside the best time for its category. */
     @Synchronized fun captureFeedback(raw: String, run: SafariRun, now: Long, localName: String): CaptureFeedback? {
         if (run.endedAt != null || now < run.startedAt) return null
         val text = SafariRules.strip(raw)
@@ -72,16 +76,17 @@ class SafariPersonalBests {
             changed = true
         }
         if (own != null && record(text, run, now)) changed = true
-        val category = "${if (own == null) "Observed " else ""}${if (solo) "Solo" else "Duo"}"
-        val gap = when {
-            previous == null -> "first recorded PB"
-            elapsed < previous -> "new PB, ${seconds(previous - elapsed)}s faster"
-            elapsed == previous -> "matches PB"
-            else -> "${seconds(elapsed - previous)}s slower than PB"
+        val category = if (own != null) {
+            if (solo) BossPbCategory.SOLO else BossPbCategory.DUO
+        } else {
+            if (solo) BossPbCategory.OBSERVED_SOLO else BossPbCategory.OBSERVED_DUO
         }
-        return CaptureFeedback("[SM] ${record.name} caught $species in ${formatTime(elapsed)} — $category: $gap.", changed)
+        val newBest = previous == null || elapsed < previous
+        val best = minOf(elapsed, previous ?: elapsed)
+        val notice = "[SM] ${record.name} caught $species in ${formatTime(elapsed)} — ${category.label}" +
+            (if (newBest) ", new record" else "") + " ${pbSuffix(best)}"
+        return CaptureFeedback(notice, changed, species, category)
     }
-    private fun seconds(millis: Long) = java.lang.String.format(java.util.Locale.ROOT, "%.3f", millis / 1000.0)
     @Volatile private var doom: Long? = null
     @Volatile private var wumpa: Long? = null
     @Volatile private var doomDuo: Long? = null
@@ -126,7 +131,7 @@ class SafariPersonalBests {
         if (!record(raw, run, now)) return null
         val soloImproved = time(species) != previousSolo
         val label = if (soloImproved) "" else " Duo"
-        return "[SM] New $species$label PB: ${formatTime(time(species, duo = !soloImproved)!!)}!"
+        return newRecord("$species$label", time(species, duo = !soloImproved)!!)
     }
     fun recordUnique(biome: SafariBiome, run: SafariRun, now: Long): String? {
         if (run.endedAt != null || now < run.startedAt || biome in run.uniqueBiomeClears ||
@@ -149,7 +154,7 @@ class SafariPersonalBests {
         val best = partyUniqueBiomes[biome.label]
         if (best != null && elapsed >= best) return null
         partyUniqueBiomes[biome.label] = elapsed
-        return "[SM] New ${biome.label} ${BiomePbType.UNIQUE.label} Party PB: ${formatTime(elapsed)}!"
+        return newRecord("${biome.label} Party ${BiomePbType.UNIQUE.label}", elapsed)
     }
     fun recordBiome(biome: SafariBiome, run: SafariRun, now: Long, type: BiomePbType = BiomePbType.FULL_CLEAR): String? {
         if (run.endedAt != null || now < run.startedAt) return null
@@ -157,8 +162,10 @@ class SafariPersonalBests {
         val best = time(biome.label, type)
         if (best != null && elapsed >= best) return null
         (if (type == BiomePbType.UNIQUE) uniqueBiomes else biomes)[biome.label] = elapsed
-        return "[SM] New ${biome.label} ${type.label} PB: ${formatTime(elapsed)}!"
+        return newRecord("${biome.label} ${type.label}", elapsed)
     }
+    private fun newRecord(category: String, millis: Long) = "[SM] New $category record ${pbSuffix(millis)}"
+    private fun pbSuffix(millis: Long) = "(PB: ${formatTime(millis)})"
     private fun formatTime(millis: Long) = java.lang.String.format(java.util.Locale.ROOT, "%d:%02d.%03d", millis / 60000, millis / 1000 % 60, millis % 1000)
     @Synchronized fun load(properties: Properties) {
         partyBests.clear()

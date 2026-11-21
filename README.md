@@ -91,3 +91,15 @@ A Fabric client mod for Hypixel SkyBlock’s Critter Safari.
 | Skills overflow | Show skill XP beyond the level cap in tooltips. |
 
 See the [documentation index](docs/README.md) for feature guides and details.
+
+## Credits
+
+- **SafariUtils** by Serkosea, built on MrCloudy2’s CritterMod. Adapted the settings and Warp List layouts, HUD snapping and icons, Biome Objectives and contest HUDs, encounter banners, catch effects, nameplates and pity tracking, chat filtering, and parts of waypoint, floor-drop, birdfeeder, Scrappy, and Hideyho tracking. Its shared party-sync protocol enables cross-mod coordination. [Repository](https://github.com/Serkosea/safariutils) · [Party-sync notice](licenses/SafariUtils-PartySync-NOTICE.txt)
+- **CritterMod** by MrCloudy2. Adapted the critter roster and catch quotas, the Safari area lookup, progress HUD layout, Sparkling announcement behavior, and parts of Rockmite mound and Snoozle wall tracking. [Repository](https://github.com/MrCloudy2/critterMod)
+- **ShinyHunter** provided the basis for Hideyho quest button matching and hiding Safari paintings. [Repository](https://github.com/javabetter/ShinyHunter)
+- **Nebulune** provided critter model identification, palette and box offsets for Safari ESP, and click timing for the Rockmite mound helper. [Repository](https://github.com/Gaeritag/Nebulune)
+- **SkyHanni** provided the basis for skill overflow tooltips and level-up messages, capsule hiding, and the Phantomleaf Solver. The Safari area data also traces back to SkyHanni. [Repository](https://github.com/SkyHanniStudios/SkyHanni)
+- **SkyOcean** and its Vanguard Gambling feature inspired the Doomspiral Lottery and informed the original reel animation. [Repository](https://github.com/meowdding/SkyOcean)
+- **NoammAddons** informed the Doomspiral throw timer’s server tick clock, the Safari entry cooldown HUD, and teammate ESP. [Repository](https://github.com/Noamm9/NoammAddons)
+
+See [third-party licenses and notices](licenses/) for attribution and license terms.

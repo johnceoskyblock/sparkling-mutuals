@@ -6,7 +6,7 @@ internal object SettingsOrder {
         "General" to listOf("edit", "font", "help"),
         "Unique" to listOf("profitable", "hideCritters", "hideDrops"),
         "Sparkling" to listOf("allScannable", "profitable", "hideCritters", "hideDrops"),
-        "Party" to listOf("biomeReports", "startingItems", "downtime", "enabled"),
+        "Party" to listOf("biomeReports", "startingItems", "downtime", "enabled", "pbChat"),
         "Miria" to listOf("enabled", "ticketMode", "announceTicket", "ticketMessage", "autoContestDowntime", "honeyHives"),
         "History" to listOf("open", "runs", "instaSell", "importLogs", "achievements", "sound", "toParty"),
         "Warp" to listOf("description", "enabled", "mode", "duo", "reparty", "delay", "reset",

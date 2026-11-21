@@ -9,6 +9,7 @@ import net.azureaaron.hmapi.network.packet.v2.s2c.PartyInfoS2CPacket
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents
 import net.johnceo.sparklingmutuals.LocalChat
 import net.johnceo.sparklingmutuals.config.ConfigManager
+import net.johnceo.sparklingmutuals.history.RunHistory
 import net.minecraft.client.Minecraft
 
 object PartyManager {
@@ -25,7 +26,9 @@ object PartyManager {
         HypixelPacketEvents.HELLO.register(::handlePacket)
         HypixelPacketEvents.PARTY_INFO.register(::handlePacket)
         ClientReceiveMessageEvents.GAME.register { message, _ ->
-            if (PartyRosterSignals.changed(message.string)) Minecraft.getInstance().execute {
+            val change = PartyRosterSignals.change(message.string)
+            if (change != null) Minecraft.getInstance().execute {
+                if (change == PartyRosterSignals.Change.MEMBERS) RunHistory.hotspotPartyMembershipChanged()
                 roster.invalidate(); revision++
                 // A notification can arrive while a packet for the old party is in flight.
                 if (requestedAt != 0L) refreshAgain = true else requestPartyInfo()

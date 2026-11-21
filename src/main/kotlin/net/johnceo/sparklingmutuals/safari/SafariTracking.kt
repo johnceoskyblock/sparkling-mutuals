@@ -31,6 +31,7 @@ object SafariTracking {
     }
     private fun entryEvidence(run: SafariRun, now: Long) {
         net.johnceo.sparklingmutuals.safari.sparkling.SparklingEncounters.reset()
+        run.runParty.observeHotspot(ConfigManager.hotspotAnnouncer)
         pendingTicket?.takeIf { now - it.second in 0..120000 }?.let { run.entry.ticket = it.first }
         pendingAdmission?.takeIf { now - it.second in 0..120000 }?.let { run.entry.admission = it.first }
         pendingTicket = null; pendingAdmission = null
@@ -47,6 +48,19 @@ object SafariTracking {
                 SafariMessages.forRun(message.string, ledger.current, SafariAssist.inSafari).forEach(::receive)
             }
         }
+        // Another mod can cancel display through Fabric before the normal GAME callback runs.
+        ClientReceiveMessageEvents.GAME_CANCELED.register { message, overlay ->
+            if (!overlay) Minecraft.getInstance().execute {
+                val client = Minecraft.getInstance()
+                if (SafariAssist.inSafari && client.level != null && client.player != null) {
+                    syncWorld(client)
+                    val now = System.currentTimeMillis()
+                    SafariMessages.lines(message.string).forEach {
+                        if (!moundChat(it, client, now)) captureAttemptChat(it)
+                    }
+                }
+            }
+        }
     }
     private fun syncWorld(client: Minecraft) {
         if (client.level !== level) { ledger.worldChanged(System.currentTimeMillis()); resetEncounters(); level = client.level }
@@ -58,6 +72,21 @@ object SafariTracking {
         SafariEsp.resetDrops()
         SafariInventoryAlerts.reset()
         SafariFloorDrops.state.reset()
+    }
+    private fun captureAttemptChat(text: String) {
+        SafariEspRules.thrownSpecies(text)?.let(SafariEsp::threw)
+        SafariEspRules.capsuleEscape(text)?.let { SafariEsp.escaped(it.species, it.brokeOut) }
+    }
+    private fun moundChat(text: String, client: Minecraft, now: Long): Boolean {
+        val stage = SafariMounds.hitStage(text) ?: return false
+        if (SafariAssist.inSafari && !SafariAssist.departing) {
+            ensureRun(client)
+            ledger.current?.let { run ->
+                SafariStructures.confirmMoundHit(run.moundSurvey, stage, now)
+                if (stage == SafariMounds.HITS_TO_BREAK) run.recordMound(text)
+            }
+        }
+        return true
     }
     private fun receive(raw: String) {
         val client = Minecraft.getInstance()
@@ -72,8 +101,7 @@ object SafariTracking {
             else pendingAdmission = text to now
         }
         if (SafariAssist.inSafari) {
-            SafariEspRules.thrownSpecies(text)?.let(SafariEsp::threw)
-            SafariEspRules.escapedSpecies(text)?.let(SafariEsp::escaped)
+            captureAttemptChat(text)
             SafariEsp.shywormMessage(text, now)
         }
         if (SafariMessages.enteredBy(text, client.player!!.name.string)) {
@@ -81,10 +109,7 @@ object SafariTracking {
             ledger.confirmEntry(now); SafariAssist.markEntered()
             if (previous !== ledger.current) { resetEncounters(); ledger.current?.let { entryEvidence(it, now) } }
         }
-        if (SafariMounds.outcome(text) != null) {
-            if (SafariAssist.inSafari) { ensureRun(client); ledger.current?.recordMound(text) }
-            return
-        }
+        if (moundChat(text, client, now)) return
         if (SafariAssist.inSafari) {
             ensureRun(client)
             net.johnceo.sparklingmutuals.hud.SafariBanners.chat(text)
@@ -125,14 +150,15 @@ object SafariTracking {
         SafariAssist.markEntered()
         ensureRun(client)
         ledger.current!!.record(catch, now, client.player!!.name.string)
-        if (ConfigManager.lakeClearAlert && ledger.current!!.lakeCatchMilestone.consume(ledger.current!!::personalCount))
-            LakeClearAlert.show(ledger.current!!)
+        val mode = SafariFullClear.mode
+        if (mode != SafariMode.FULL_CLEAR) LakeClearAlert.check(ledger.current!!, mode)
         net.johnceo.sparklingmutuals.hud.SafariBanners.caught(catch.critter.name)
         checkPartyUnique(client, catch.critter.biome, now)
         SafariEsp.caught(catch.critter.name, catch.personal)
         ConfigManager.personalBests.captureFeedback(text, ledger.current!!, now, client.player!!.name.string)?.let { feedback ->
             if (feedback.changed) ConfigManager.save()
-            client.player?.sendSystemMessage(LocalChat.component(feedback.notice))
+            if (ConfigManager.showBossPbChat(feedback.species, feedback.category))
+                client.player?.sendSystemMessage(LocalChat.component(feedback.notice))
         }
     }
     fun onClientTick(client: Minecraft) {
@@ -140,6 +166,16 @@ object SafariTracking {
         val run = ledger.current ?: return
         val player = client.player ?: return
         val connection = client.connection ?: return
+        if (SafariIsland.onIsland && !SafariAssist.departing) {
+            val self = player.uuid.toString()
+            run.runParty.observeHotspot(ConfigManager.hotspotAnnouncer)
+            val admitted = run.entry.hotspot != null || run.entry.admission != null
+            run.runParty.observeRoster(PartyManager.withLocal(self), admitted) {
+                connection.onlinePlayers.associateTo(mutableMapOf(self to player.name.string)) {
+                    it.profile.id.toString() to it.profile.name
+                }
+            }
+        }
         if (SafariAssist.location != SafariLocation.INSIDE) return
         val now = System.currentTimeMillis()
         run.localPlayer(player.name.string)
@@ -174,7 +210,10 @@ object SafariTracking {
             ledger.current?.let { entryEvidence(it, now) }
         }
     }
-    fun finish() { ledger.leave(System.currentTimeMillis()); resetEncounters() }
+    fun finish() {
+        ledger.leave(System.currentTimeMillis())
+        resetEncounters()
+    }
     fun render(graphics: GuiGraphicsExtractor) {
         val client = Minecraft.getInstance()
         if (client.player == null || client.smScreen is ContestGui || !visible) return
@@ -201,12 +240,14 @@ object SafariTracking {
     fun checkPartyUnique(client: Minecraft, biome: SafariBiome, now: Long = System.currentTimeMillis()) {
         val run = ledger.current ?: return
         ConfigManager.personalBests.recordUnique(biome, run, now)?.let { notice ->
-            ConfigManager.save(); client.player?.sendSystemMessage(LocalChat.component(notice))
+            ConfigManager.save()
+            if (ConfigManager.uniquePbChat) client.player?.sendSystemMessage(LocalChat.component(notice))
         }
         if (ConfigManager.personalBests.recordObservedUnique(biome, run, now)) ConfigManager.save()
         if (SafariFullClear.mode != SafariMode.UNIQUE) return
         ConfigManager.personalBests.recordPartyUnique(biome, run, now)?.let { notice ->
-            ConfigManager.save(); client.player?.sendSystemMessage(LocalChat.component(notice))
+            ConfigManager.save()
+            if (ConfigManager.partyUniquePbChat) client.player?.sendSystemMessage(LocalChat.component(notice))
         }
     }
 }

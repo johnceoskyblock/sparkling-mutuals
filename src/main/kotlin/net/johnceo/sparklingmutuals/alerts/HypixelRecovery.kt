@@ -12,19 +12,18 @@ import net.johnceo.sparklingmutuals.safari.SafariRules
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.screens.ConnectScreen
 import net.minecraft.client.gui.screens.DisconnectedScreen
+import net.minecraft.client.gui.screens.multiplayer.ServerReconfigScreen
 import net.minecraft.client.multiplayer.ClientPacketListener
 import net.minecraft.client.multiplayer.ServerData
 import net.minecraft.client.multiplayer.resolver.ServerAddress
+import net.minecraft.network.chat.Component
+import net.minecraft.network.chat.contents.TranslatableContents
 import org.slf4j.LoggerFactory
 
 /** Recovers the connection separately from transfers within Hypixel. All state belongs to the client thread. */
 internal object HypixelRecovery {
     private val logger = LoggerFactory.getLogger("sparkling-mutuals/recovery")
-    private var lastServer: ServerData? = null
-    private var disconnectScreen: DisconnectedScreen? = null
-    private var connectingScreen: ConnectScreen? = null
-    private var nextReconnectAt = 0L
-    private var reconnectAttempts = 0
+    private val reconnect = HypixelReconnect<ServerData>()
 
     private var connection: ClientPacketListener? = null
     private var reportedLobby: HypixelLobby? = null
@@ -64,52 +63,52 @@ internal object HypixelRecovery {
         }
     }
 
+    /** The play and configuration listeners both retain server data after the world is cleared. */
+    fun disconnected(server: ServerData?, screen: DisconnectedScreen, reason: Component) {
+        if (server == null || !JoinWelcomeState.hypixel(server.ip)) return
+        if (!ConfigManager.autoReconnectHypixel || !retryableDisconnect(reason)) {
+            reconnect.reset()
+            return
+        }
+        reconnect.disconnected(server, screen, now())
+        logger.info("Scheduled a Hypixel reconnect after a network disconnect")
+    }
+
     fun tick(client: Minecraft) {
         val now = now()
         val source = client.connection
         val server = client.currentServer
-        if (source != null && server != null && JoinWelcomeState.hypixel(server.ip)) {
+        if (source != null && source.connection.isConnected && server != null && JoinWelcomeState.hypixel(server.ip)) {
             // A connection may exist before the first world/player is ready.
             trackConnection(source, now)
             if (client.player == null || client.level == null) return
-            lastServer = server.takeIf { ConfigManager.autoReconnectHypixel }
-            clearRetry()
+            reconnect.reset()
             tickSkyBlock(client, source, now)
             return
         }
+        val screen = client.smScreen
         connection = null
         reportedLobby = null
         lobby = null
-        routeAfterReconnect = false
-        routeUntil = 0
-        val screen = client.smScreen
-        if (!ConfigManager.autoReconnectHypixel || source != null || client.level != null) {
-            cancelReconnect()
+        if (screen !is ServerReconfigScreen) {
+            routeAfterReconnect = false
+            routeUntil = 0
+        }
+        if (!ConfigManager.autoReconnectHypixel || source?.connection?.isConnected == true || client.level != null) {
+            reconnect.reset()
         } else if (screen is DisconnectedScreen) {
             tickReconnect(client, screen, now)
-        } else if (screen == null || screen !== connectingScreen) {
-            cancelReconnect()
+        } else if (!reconnect.waiting(screen, screen is ServerReconfigScreen)) {
+            reconnect.reset()
         }
     }
 
     private fun tickReconnect(client: Minecraft, screen: DisconnectedScreen, now: Long) {
-        val server = lastServer ?: return
         val details = screen as DisconnectedScreenAccessor
-        if (screen !== disconnectScreen) {
-            if (!retryableDisconnect(details.recoveryDetails().reason().string)) {
-                cancelReconnect()
-                return
-            }
-            disconnectScreen = screen
-            connectingScreen = null
-            nextReconnectAt = now + reconnectDelay(reconnectAttempts)
-        }
-        if (now < nextReconnectAt) return
-        reconnectAttempts++
-        logger.info("Reconnecting to Hypixel (attempt {})", reconnectAttempts)
+        val server = reconnect.poll(screen, now) { retryableDisconnect(details.recoveryDetails().reason()) } ?: return
+        logger.info("Reconnecting to Hypixel (attempt {})", reconnect.attempts)
         ConnectScreen.startConnecting(details.recoveryParent(), client, ServerAddress.parseString(server.ip), server, false, null)
-        connectingScreen = client.smScreen as? ConnectScreen
-        if (connectingScreen == null) cancelReconnect()
+        reconnect.connecting(client.smScreen as? ConnectScreen)
     }
 
     private fun tickSkyBlock(client: Minecraft, source: ClientPacketListener, now: Long) {
@@ -148,30 +147,77 @@ internal object HypixelRecovery {
         connection = source
         reportedLobby = null
         lobby = null
-        routeAfterReconnect = ConfigManager.autoJoinSkyBlock && reconnectAttempts > 0
-        routeUntil = now + 120_000
-    }
-
-    private fun cancelReconnect() {
-        lastServer = null
-        clearRetry()
-    }
-
-    private fun clearRetry() {
-        disconnectScreen = null
-        connectingScreen = null
-        reconnectAttempts = 0
+        if (ConfigManager.autoJoinSkyBlock && reconnect.attempts > 0) {
+            routeAfterReconnect = true
+            routeUntil = now + 120_000
+        }
     }
 
     private fun now() = System.nanoTime() / 1_000_000
 
     internal fun reconnectDelay(attempts: Int): Long = (5_000L shl attempts.coerceIn(0, 4)).coerceAtMost(60_000)
 
+    private val nonRetryableKeys = setOf("disconnect.quitting", "disconnect.transfer", "disconnect.loginFailedInfo.invalidSession",
+        "disconnect.loginFailedInfo.insufficientPrivileges", "multiplayer.disconnect.banned", "multiplayer.disconnect.banned.reason",
+        "multiplayer.disconnect.outdated_client", "multiplayer.disconnect.incompatible")
+
+    internal fun retryableDisconnect(reason: Component): Boolean {
+        val key = (reason.contents as? TranslatableContents)?.key
+        return key !in nonRetryableKeys && retryableDisconnect(reason.string)
+    }
+
     internal fun retryableDisconnect(reason: String): Boolean {
         val text = reason.lowercase()
         return listOf("you are banned", "you are permanently banned", "you are temporarily banned",
             "ban id:", "security alert", "invalid session", "outdated client", "incompatible client",
             "resource pack was declined", "failed to verify username").none { it in text }
+    }
+}
+
+/** Owns retries for a specific disconnect and the screens created by those retries. */
+internal class HypixelReconnect<T : Any> {
+    private var server: T? = null
+    private var disconnectScreen: Any? = null
+    private var connectingScreen: Any? = null
+    private var nextReconnectAt = 0L
+    var attempts = 0
+        private set
+
+    fun disconnected(target: T, screen: Any, now: Long) {
+        if (server != target) reset()
+        server = target
+        disconnectScreen = screen
+        connectingScreen = null
+        nextReconnectAt = now + HypixelRecovery.reconnectDelay(attempts)
+    }
+
+    fun poll(screen: Any, now: Long, retryable: () -> Boolean): T? {
+        val target = server ?: return null
+        if (screen !== disconnectScreen) {
+            // Failures in the login handshake do not use the play/configuration listeners.
+            if (connectingScreen == null || !retryable()) {
+                reset()
+                return null
+            }
+            disconnected(target, screen, now)
+        }
+        if (now < nextReconnectAt) return null
+        attempts++
+        return target
+    }
+
+    fun connecting(screen: Any?) {
+        if (screen == null) reset() else connectingScreen = screen
+    }
+
+    fun waiting(screen: Any?, reconfiguring: Boolean): Boolean =
+        connectingScreen != null && (screen === connectingScreen || reconfiguring)
+
+    fun reset() {
+        server = null
+        disconnectScreen = null
+        connectingScreen = null
+        attempts = 0
     }
 }
 

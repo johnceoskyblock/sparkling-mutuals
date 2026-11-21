@@ -139,7 +139,7 @@ class DocumentedSafariRulesTest {
         caught(run, "Gemzie", 3)
         run.visitBiome(SafariBiome.CAVERN)
         run.updateCaptureEvidence(SafariBiome.CAVERN, emptySet(), false, playerX = 0.0, playerZ = 0.0)
-        assertFalse(run.captureComplete("Gemzie"))
+        assertTrue(run.captureComplete("Gemzie"))
         run.updateCaptureEvidence(SafariBiome.CAVERN, emptySet(), false, playerX = -141.0, playerZ = 51.0)
         assertTrue(run.captureComplete("Gemzie"))
         run.sparklingChecks.scan(SafariBiome.CAVERN, -141.0, 51.0, emptyList())

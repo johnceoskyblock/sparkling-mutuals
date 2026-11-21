@@ -10,8 +10,13 @@ import net.minecraft.client.gui.GuiGraphicsExtractor
 /** Owned by one run; only confirmed personal catches qualify. */
 class LakeCatchMilestone {
     private var announced = false
-    fun consume(personalCount: (String) -> Int): Boolean {
-        if (announced || species.any { personalCount(it) < 1 }) return false
+    fun consume(run: SafariRun, mode: SafariMode): Boolean {
+        if (announced) return false
+        val cleared = when (mode) {
+            SafariMode.FULL_CLEAR -> species.all { run.captureComplete(it, personalOnly = true) }
+            SafariMode.UNIQUE, SafariMode.SPARKLING -> species.all { run.personalCount(it) > 0 }
+        }
+        if (!cleared) return false
         announced = true
         return true
     }
@@ -22,7 +27,11 @@ object LakeClearAlert {
     private var owner: SafariRun? = null
     private var expires = 0L
     private fun now() = System.nanoTime() / 1_000_000
-    fun show(run: SafariRun) { owner = run; expires = now() + 4000 }
+    fun check(run: SafariRun, mode: SafariMode) {
+        if (!ConfigManager.lakeClearAlert || !run.lakeCatchMilestone.consume(run, mode)) return
+        owner = run
+        expires = now() + 4000
+    }
     fun preview() = HudPanel("Lake Cleared", 0xFF55FF55.toInt(), emptyList(), titleIcon = null)
     fun render(graphics: GuiGraphicsExtractor) {
         val client = Minecraft.getInstance()

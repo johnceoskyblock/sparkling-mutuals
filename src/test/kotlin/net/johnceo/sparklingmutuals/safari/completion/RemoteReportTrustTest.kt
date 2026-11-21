@@ -31,13 +31,15 @@ class RemoteReportTrustTest {
         run.updateCaptureEvidence(SafariBiome.HAUNTED, setOf("Gazer", "Gimmiegold"), false)
         SafariBiome.HAUNTED.critters.forEach { caught(run, it.name) }
         run.visitBiome(SafariBiome.ICY)
-        assertFalse(run.uniqueComplete("Gazer", party))
+        assertTrue(run.uniqueComplete("Gazer", party))
+        assertFalse(run.sparklingComplete("Gazer", party, localOnly = true))
         run.partyFullClear("Party > Clearer: hd")
         assertEquals(10, run.completed(SafariMode.UNIQUE, SafariBiome.HAUNTED.critters, party))
         assertEquals(0, run.personalCount("Gazer"), "a report never invents personal capture credit")
         run.visitBiome(SafariBiome.HAUNTED)
         run.updateCaptureEvidence(SafariBiome.HAUNTED, setOf("Gazer", "Gimmiegold"), false)
-        assertFalse(run.uniqueComplete("Gazer", party))
+        assertTrue(run.uniqueComplete("Gazer", party))
+        assertFalse(run.sparklingComplete("Gazer", party, localOnly = true))
         assertFalse(run.uniqueComplete("Gimmiegold", party))
     }
 

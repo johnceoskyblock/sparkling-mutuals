@@ -90,7 +90,8 @@ class CritterProgressSyncTest {
         run.record(SafariCatch(SafariRoster.named("Gazer")!!))
         run.sharedCritters.replace("peer", 1, mapOf("Gazer" to done.copy(unique = false, fullClear = false)))
         assertTrue(run.uniqueComplete("Gazer", party))
-        assertFalse(run.uniqueComplete("Gazer", party, localOnly = true))
+        assertTrue(run.uniqueComplete("Gazer", party, localOnly = true))
+        assertFalse(run.sparklingComplete("Gazer", party, localOnly = true))
     }
     @Test fun `shared current run proof drives all three modes without creating catches or local reports`() {
         val run = SafariRun(0); val party = party("Scrappy")
@@ -124,7 +125,7 @@ class CritterProgressSyncTest {
         assertFalse(run.sparklingComplete("Rockmite", party)); assertFalse(run.uniqueComplete("Snoozle", party))
         assertFalse(run.fullClearComplete("Rockmite"))
         run.updateCaptureEvidence(SafariBiome.CAVERN, setOf("Scrappy"), true)
-        assertFalse(run.fullClearComplete("Scrappy")); assertTrue(run.sparklingComplete("Scrappy", party))
+        assertTrue(run.fullClearComplete("Scrappy")); assertTrue(run.sparklingComplete("Scrappy", party))
     }
     @Test fun `wire rejects malformed versions booleans row lengths and out of range counts`() {
         val good = CritterProgressProtocol.encode(SafariRun(0), party())

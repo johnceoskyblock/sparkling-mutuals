@@ -18,7 +18,7 @@ class SafariUniquePartyPbTest {
         val run = SafariRun(0)
         catchAll(run, SafariBiome.ICY) { it.name == "Tepid" }
         assertNull(bests.recordUnique(SafariBiome.ICY, run, 90_000))
-        assertEquals("[SM] New Icy Unique Run Party PB: 1:30.000!", bests.recordPartyUnique(SafariBiome.ICY, run, 90_000))
+        assertEquals("[SM] New Icy Party Unique Run record (PB: 1:30.000)", bests.recordPartyUnique(SafariBiome.ICY, run, 90_000))
         assertNull(bests.recordPartyUnique(SafariBiome.ICY, run, 80_000), "once per run")
         assertEquals("Player's Icy Unique Run PB: Not recorded yet | Party PB: 1:30.000", bests.response("Player", "Icy"))
     }
@@ -41,7 +41,7 @@ class SafariUniquePartyPbTest {
         assertNull(bests.recordPartyUnique(SafariBiome.CAVERN, run, 60_000))
         // A later scan finds every wall checked and no Snoozle, with no further catch.
         run.updateCaptureEvidence(SafariBiome.CAVERN, emptySet(), allWallsChecked = true)
-        assertEquals("[SM] New Cavern Unique Run Party PB: 1:10.000!", bests.recordPartyUnique(SafariBiome.CAVERN, run, 70_000))
+        assertEquals("[SM] New Cavern Party Unique Run record (PB: 1:10.000)", bests.recordPartyUnique(SafariBiome.CAVERN, run, 70_000))
     }
     @Test fun `a teammate's catch before you reach a biome does not void its party PB`() {
         val bests = SafariPersonalBests().apply { selectBiomeType(BiomePbType.UNIQUE) }

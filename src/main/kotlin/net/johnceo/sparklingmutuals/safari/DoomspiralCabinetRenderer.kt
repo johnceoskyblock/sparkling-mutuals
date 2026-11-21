@@ -1,12 +1,14 @@
 package net.johnceo.sparklingmutuals.safari
 
 import net.johnceo.sparklingmutuals.hud.HudFonts
-
-import net.minecraft.client.Minecraft
+import net.johnceo.sparklingmutuals.safari.ui.CritterNames
 import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.renderer.RenderPipelines
+import net.minecraft.network.chat.Component
 import net.minecraft.resources.Identifier
+import net.minecraft.util.ARGB
 import kotlin.math.PI
+import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.floor
 import kotlin.math.sin
@@ -31,11 +33,6 @@ internal object DoomspiralCabinetRenderer {
             panel(g, -108, -119, 108, 119, 0x07151B, border)
             panel(g, -104, -115, 104, 115, 0x11272E, 0x25434D)
             g.outline(-101, -112, 202, 224, color(border, 120))
-            panel(g, -96, -105, 96, -66, if (frame.jackpot) 0x27332B else 0x0B1E26, border)
-            frame.label?.let { label ->
-                val font = HudFonts.font
-                g.text(font, label, -font.width(label) / 2, -89, frame.labelColor,HudFonts.shadow)
-            }
             lights(g, frame, accent)
             panel(g, -96, -50, 96, 45, if (frame.jackpot) 0x84713E else 0x25434D, border)
             panel(g, -91, -45, 91, 40, 0x07151B, 0x07151B)
@@ -54,6 +51,55 @@ internal object DoomspiralCabinetRenderer {
             g.fill(-107, 115, 107, 119, color(border))
             lever(g, frame.elapsed)
             if (frame.jackpot) celebration(g, frame)
+            marquee(g, frame, border)
+        } finally {
+            g.pose().popMatrix()
+        }
+    }
+
+    private fun marquee(g: GuiGraphicsExtractor, frame: DoomspiralCabinet.Frame, border: Int) {
+        panel(g, -96, -105, 96, -66, if (frame.jackpot) 0x292012 else 0x0B1E26, border)
+        if (!frame.revealed) return
+
+        val accent = if (frame.jackpot) GOLD else CYAN
+        g.fill(-83, -95, -46, -94, color(accent, 130))
+        g.fill(46, -95, 83, -94, color(accent, 130))
+        g.fill(-83, -72, 83, -71, color(accent, 55))
+        if (frame.jackpot) {
+            val twinkle = (170 + 85 * sin(frame.revealProgress * 2 * PI)).toInt()
+            spark(g, -46, -95, color(0xFFF1BC, twinkle))
+            spark(g, 46, -95, color(0xFFF1BC, twinkle))
+        }
+        val status = Component.literal(if (frame.jackpot) "SPARKLING" else "REGULAR")
+            .withStyle { it.withBold(true).withColor(accent) }
+        marqueeText(g, status, -99, 1f, 84f)
+
+        val name = Component.empty()
+        val letters = CritterNames.display("Doomspiral").codePoints().toArray()
+        val from = if (frame.jackpot) 0xFFDA76 else 0x74DDF4
+        val to = if (frame.jackpot) 0xFFAA52 else 0x9BFFD6
+        val sheen = frame.revealProgress * 1.5f - .25f
+        letters.forEachIndexed { index, letter ->
+            val position = index.toFloat() / letters.lastIndex.coerceAtLeast(1)
+            val base = ARGB.srgbLerp(position, from, to)
+            val tint = if (frame.jackpot) {
+                val shine = (1f - abs(position - sheen) * 4f).coerceAtLeast(0f)
+                ARGB.srgbLerp(shine, base, 0xFFF8DB)
+            } else base
+            name.append(Component.literal(Character.toString(letter)).withStyle { it.withBold(true).withColor(tint) })
+        }
+        marqueeText(g, CritterNames.literal(name), -87, if (frame.jackpot) 1.7f else 1.5f, 166f)
+    }
+
+    private fun marqueeText(g: GuiGraphicsExtractor, text: Component, y: Int, maxScale: Float, maxWidth: Float) {
+        val font = HudFonts.font
+        val width = font.width(text)
+        val scale = minOf(maxScale, maxWidth / width.coerceAtLeast(1))
+        g.pose().pushMatrix()
+        try {
+            g.pose().translate(-width * scale / 2f, y.toFloat())
+            g.pose().scale(scale, scale)
+            g.text(font, text, 0, 0, -1, HudFonts.shadow)
         } finally {
             g.pose().popMatrix()
         }
@@ -135,7 +181,7 @@ internal object DoomspiralCabinetRenderer {
 
     private fun celebration(g: GuiGraphicsExtractor, frame: DoomspiralCabinet.Frame) {
         // Bounded, deterministic particles: no retained emitters or random work each frame.
-        val progress = (frame.revealAge / 5f).coerceIn(0f, 1f)
+        val progress = frame.revealProgress
         repeat(3) { wave ->
             val radius = 121 + ((progress + wave / 3f) % 1f * 12).toInt()
             g.outline(-radius, -radius, radius * 2, radius * 2, color(GOLD, 35 + wave * 15))

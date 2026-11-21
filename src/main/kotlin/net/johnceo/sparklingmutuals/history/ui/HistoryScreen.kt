@@ -205,15 +205,27 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
             }
             if (help.isNotEmpty()) tip(g, mx, my, x - font.width(h) / 2 - 3, headerY - 1, font.width(h) + 6, ROW, h, help)
         }
-        listTop = headerY + 12; listBottom = py + ph - 48; listRows = maxOf(1, (listBottom - listTop) / ROW); listSize = runs.size
+        listTop = headerY + 12
+        val detailBottom = py + ph - 25
+        val detailRoom = detailBottom - listTop - ROW - 4
+        val detailHeight = when {
+            detailRoom >= 76 + 2 * ROW -> 76
+            detailRoom >= 36 -> 36
+            detailRoom >= 17 -> 17
+            else -> 0
+        }
+        var jump = -1
         if (pendingRunJump) {
-            val index = HistoryQueries.runIndex(runs, runQuery)
-            if (index >= 0) {
-                selectedRun = index
-                scroll[Tab.RUNS] = (index - listRows / 2).coerceIn(0, maxOf(0, runs.size - listRows))
-            }
+            jump = HistoryQueries.runIndex(runs, runQuery)
+            if (jump >= 0) selectedRun = jump
             pendingRunJump = false
         }
+        val detail = runs.getOrNull(selectedRun)
+        val detailTop = detailBottom - if (detail != null) detailHeight else 18
+        listBottom = detailTop - 4
+        listRows = maxOf(1, (listBottom - listTop) / ROW)
+        listSize = runs.size
+        if (jump >= 0) scroll[Tab.RUNS] = jump - listRows / 2
         val offset = clampScroll(Tab.RUNS)
         if (runs.isEmpty()) centred(g, if (all.isEmpty()) "No runs saved yet: finish a Safari run, or /sm history import." else "No runs match the current filters.",
             px + pw / 2, listTop + 20, MUTED)
@@ -222,7 +234,10 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
             val run = runs.getOrNull(index) ?: break
             val y = listTop + i * ROW
             val hover = mx in px + 4 until px + pw - 4 && my in y - 1 until y + ROW - 1
-            if (index == selectedRun || hover) g.fill(px + 4, y - 1, px + pw - 4, y + ROW - 1, if (index == selectedRun) 0x40FFFFFF else 0x18FFFFFF)
+            if (index == selectedRun) {
+                g.fill(px + 4, y - 1, px + pw - 4, y + ROW - 1, 0x34E8A33A)
+                g.fill(px + 4, y - 1, px + 6, y + ROW - 1, GOLD)
+            } else if (hover) g.fill(px + 4, y - 1, px + pw - 4, y + ROW - 1, 0x18FFFFFF)
             val cells = listOf("#${run.number}", WHEN.format(Instant.ofEpochMilli(run.start).atZone(ZoneId.systemDefault())), if (run.imported && run.length == 0L) "-" else clock(run.length),
                 "${run.party}/$total", "${run.you}/$total", run.caught.toString(), (if (run.coinsEstimated) "~" else "") + BazaarPrices.format(run.coins))
             if (run.hasSparkling()) {
@@ -233,29 +248,101 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
                 val colours = intArrayOf(TEXT, TEXT, MUTED, if (run.party >= total) 0xFF55FF55.toInt() else 0xFFDDDDDD.toInt(), 0xFF77BBFF.toInt(), 0xFF88DD88.toInt(), GOLD)
                 cells.forEachIndexed { c, text -> centred(g, text, px + Math.round(pw * at[c]), y, colours[c]) }
             }
-            hits += Hit(px + 4, y - 1, pw - 8, ROW) { selectedRun = if (selectedRun == index) -1 else index }
+            hits += Hit(px + 4, y - 1, pw - 8, ROW) {
+                selectedRun = if (selectedRun == index) -1 else index
+                if (selectedRun >= 0) {
+                    val rowsWithDetail = maxOf(1, (detailBottom - detailHeight - 4 - listTop) / ROW)
+                    scroll[Tab.RUNS] = maxOf(offset, selectedRun - rowsWithDetail + 1)
+                }
+            }
         }
         scrollbar(g, offset, px + pw - 8)
-        val detailY = py + ph - 44
-        val detail = runs.getOrNull(selectedRun)
-        if (detail != null) {
-            if (detail.hasSparkling()) centred(g, "§d✦ ${detail.sparklings.size} Sparkling${if (detail.sparklings.size == 1) "" else "s"}: " +
-                detail.sparklings.joinToString("§7, ") { colour(it.substringAfter(':')) + it.substringAfter(':') } + " §d✦", px + pw / 2, detailY, PINK)
-            else centred(g, "§7No sparklings this run", px + pw / 2, detailY, MUTED)
-            val splits = SafariBiome.entries.mapNotNull { b -> detail.splits[b.label]?.let { "§f${b.label} §b${pbTime(it)}" } }
-            val extra = "§7Macaws §f${detail.macaws}  §7Rainbow Feathers §f${detail.feathers}  §7Loot shares §f${detail.lootShares}  §7Tickets §f${detail.tickets}" +
-                (if (detail.safariEssence >= 0) "  §7Essence §f${detail.safariEssence}" else "") +
-                (if (detail.summaryShards >= 0) "  §7Shards §f${detail.summaryShards}" else "") +
-                if (detail.imported) "  §8(from logs${if (detail.modeEstimated || detail.coinsEstimated) "; mode/profit estimated" else ""})" else "  §7Party §f${detail.partySize}"
-            centred(g, if (splits.isEmpty()) extra else splits.joinToString(" §8· "), px + pw / 2, detailY + 11, TEXT)
-            if (mx in px until px + pw && my in detailY until detailY + 22)
-                g.setComponentTooltipForNextFrame(font, listOfNotNull(Component.literal(extra),
-                    detail.hotspot.takeIf { it.isNotEmpty() }?.let { Component.literal("Hotspot: $it") },
-                    detail.huntingXp.takeIf { it >= 0 }?.let { Component.literal("Hunting XP: %,d".format(it)) }), mx, my)
-        } else if (runs.isNotEmpty()) centred(g, "§8Click a run for details", px + pw / 2, detailY + 5, DIM)
+        if (detail != null && detailHeight > 0) runSummary(g, mx, my, detail, detailTop, detailHeight)
+        else if (runs.isNotEmpty()) centred(g, "Click a run for details", px + pw / 2, detailBottom - 13, DIM)
         val fy = py + ph - 20
         toggle(g, mx, my, px + pw / 2 - 150, fy, "Sparkling Runs", sparklingRunsOnly) { sparklingRunsOnly = !sparklingRunsOnly; selectedRun = -1; scroll[Tab.RUNS] = 0 }
         button(g, mx, my, px + pw / 2 - 30, fy, 110, "Sort: ${runSort.label}") { runSort = RunSort.entries[(runSort.ordinal + 1) % RunSort.entries.size]; selectedRun = -1; pendingRunJump = runQuery.isNotBlank() }
+    }
+
+    private fun runSummary(g: GuiGraphicsExtractor, mx: Int, my: Int, run: RunRecord, y: Int, height: Int) {
+        val left = px + 8
+        val right = px + pw - 8
+        val chipWidth = right - left - 18
+        val firstColumn = chipWidth * 56 / 100
+        val secondColumn = chipWidth - firstColumn
+        g.fill(left, y, right, y + height, 0xE0221D17.toInt())
+        g.outline(left, y, right - left, height, 0x806E5533.toInt())
+        g.fill(left, y, left + 2, y + height, GOLD)
+
+        val mode = when (run.mode) {
+            "UNIQUE" -> "Unique Run"
+            "FULL_CLEAR" -> "Full Clear"
+            "SPARKLING" -> "Sparkling"
+            else -> "Unknown"
+        }
+        val modeDetails = listOfNotNull("Run mode",
+            mode + if (run.modeEstimated) " (estimated from logs)" else "",
+            when (run.hotspotRun) {
+                true -> "Hotspot assigning was enabled during this run."
+                false -> "Hotspot assigning stayed off."
+                null -> "Hotspot assigning status wasn’t recorded."
+            },
+            run.hotspot.takeIf { it.isNotBlank() }?.let { "Hunting hotspot: $it" })
+        val names = run.partyMembers?.values?.filter { it.isNotBlank() }.orEmpty().sortedBy { it.lowercase(Locale.ROOT) }
+        val partyDetails = listOf("Party members") + names +
+            if (run.partyMembers == null) listOf("Only the party size was recorded for this run.")
+            else if (names.size < run.partySize) listOf("Some player names were unavailable.") else emptyList()
+        val rewards = listOfNotNull("Run rewards", "${run.tickets} tickets used", "${run.macaws} Macaws",
+            run.safariEssence.takeIf { it >= 0 }?.let { "%,d Safari Essence".format(it) },
+            run.summaryShards.takeIf { it >= 0 }?.let { "%,d shards".format(it) },
+            run.huntingXp.takeIf { it >= 0 }?.let { "%,d Hunting XP".format(it) },
+            if (run.imported) "Imported from logs." else null,
+            if (run.coinsEstimated) "Coin value estimated." else null)
+        if (height >= 36) {
+            val heading = "Run #${run.number}"
+            g.text(font, heading, left + 6, y + 5, GOLD)
+            val time = cut("", WHEN.format(Instant.ofEpochMilli(run.start).atZone(ZoneId.systemDefault())),
+                (right - left - font.width(heading) - 20).coerceAtLeast(1))
+            g.text(font, time, right - 6 - font.width(time), y + 5, MUTED)
+            tip(g, mx, my, left + 2, y + 2, right - left - 3, 14, *rewards.toTypedArray())
+        }
+        val chipTop = y + if (height >= 36) 18 else 1
+        runSummaryChip(g, mx, my, left + 6, chipTop, firstColumn, "Mode",
+            mode + if (run.hotspotRun == true) " · Hotspot" else "", if (run.hotspotRun == true) GOLD else TEXT, modeDetails)
+        runSummaryChip(g, mx, my, left + 12 + firstColumn, chipTop, secondColumn, "Party",
+            if (run.partySize == 1) "1 player" else "${run.partySize} players", TEXT, partyDetails)
+        if (height < 76) return
+
+        val stats = listOf("Duration" to if (run.length > 0) clock(run.length) else "–",
+            "Loot shares" to run.lootShares.toString(), "Feathers" to run.feathers.toString(),
+            "Coins" to ((if (run.coinsEstimated) "~" else "") + BazaarPrices.format(run.coins)))
+        val statsWidth = right - left - 12
+        val statWidth = statsWidth / stats.size
+        stats.forEachIndexed { index, (label, value) ->
+            val x = left + 6 + index * statWidth
+            val center = x + statWidth / 2
+            if (index != 0) g.fill(x, y + 38, x + 1, y + 55, 0x30998056)
+            centred(g, cut("", label, statWidth - 6), center, y + 37, MUTED)
+            centred(g, cut("", value, statWidth - 6), center, y + 47, if (label == "Coins") GOLD else TEXT)
+            if (label == "Coins") tip(g, mx, my, x, y + 35, statWidth, 22, *rewards.toTypedArray())
+        }
+        val splits = SafariBiome.entries.mapNotNull { biome -> run.splits[biome.label]?.let { "${biome.label}  ${pbTime(it)}" } }
+        val sparklings = run.sparklings.map { "${it.substringAfter(':')} · ${it.substringBefore(':')}" }
+        runSummaryChip(g, mx, my, left + 6, y + 58, firstColumn, "Biome splits", "${splits.size}/${SafariBiome.entries.size}", TEXT,
+            listOf("Biome splits") + splits.ifEmpty { listOf("No biome times recorded.") })
+        runSummaryChip(g, mx, my, left + 12 + firstColumn, y + 58, secondColumn, "Sparklings", sparklings.size.toString(),
+            if (sparklings.isEmpty()) MUTED else PINK, listOf("Sparklings") + sparklings.ifEmpty { listOf("No sparklings this run.") })
+    }
+
+    private fun runSummaryChip(g: GuiGraphicsExtractor, mx: Int, my: Int, x: Int, y: Int, w: Int,
+        label: String, value: String, color: Int, tooltip: List<String>) {
+        val hover = mx in x until x + w && my in y until y + 14
+        g.fill(x, y, x + w, y + 14, if (hover) 0xFF443526.toInt() else 0xFF32271C.toInt())
+        val fittedLabel = cut("", label, (w / 2 - 6).coerceAtLeast(1))
+        val fittedValue = cut("", value, (w - font.width(fittedLabel) - 13).coerceAtLeast(1))
+        g.text(font, fittedLabel, x + 4, y + 3, MUTED)
+        g.text(font, fittedValue, x + w - 4 - font.width(fittedValue), y + 3, color)
+        tip(g, mx, my, x, y, w, 14, *tooltip.toTypedArray())
     }
 
     // ------------------------------------------------------------------ bests

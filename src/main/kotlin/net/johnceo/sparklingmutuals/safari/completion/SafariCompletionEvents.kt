@@ -10,11 +10,18 @@ import net.johnceo.sparklingmutuals.safari.SafariRun
 class SafariCompletionEvents(private val clock: () -> Long = System::currentTimeMillis) {
     private data class Departure(val mode: SafariMode,val needed: Set<String>,val until: Long)
     private val departures=mutableMapOf<SafariBiome,Departure>()
+    // Retained only when every variable-population critter was verified while inside the biome.
+    private val fullClearDepartures = mutableSetOf<SafariBiome>()
     private var hideyhoDialogueAt: Long?=null
     fun hideyhoDialogue(now: Long) { hideyhoDialogueAt=now }
     fun pendingDeparture(biome: SafariBiome) = departures[biome]?.let { clock()<=it.until } == true
     private fun rememberDeparture(run: SafariRun, biome: SafariBiome, mode: SafariMode, party: PartySparklingState) {
         if(run.lastBiome!=biome) return
+        fullClearDepartures.remove(biome)
+        if (mode == SafariMode.FULL_CLEAR && run.hasCaptureEvidence(biome) && biome != SafariBiome.FOREST &&
+            biome.critters.filterNot { it.name in SafariFullClear.maximumCaptures }.all { run.captureComplete(it.name) }) {
+            fullClearDepartures.add(biome)
+        }
         departures.remove(biome)
         val special=when(biome) {
             SafariBiome.FOREST -> setOf("Bluebird","Parakeet","Macaw")
@@ -46,12 +53,18 @@ class SafariCompletionEvents(private val clock: () -> Long = System::currentTime
     private val announced = mutableMapOf<SafariBiome, SafariMode?>()
     private val pending = mutableSetOf<SafariBiome>()
     private var alerted = false
-    fun reopen(biome: SafariBiome) { announced.remove(biome); pending.remove(biome); alerted = false }
+    fun reopen(biome: SafariBiome) {
+        announced.remove(biome); pending.remove(biome); fullClearDepartures.remove(biome); alerted = false
+    }
     /** Local clearing can trigger supplies even if a teammate's report suppresses our announcement. */
     fun locallyComplete(run: SafariRun, biome: SafariBiome, mode: SafariMode, party: PartySparklingState): Boolean {
         if (run.endedAt!=null || !run.hasCaptureEvidence(biome) || run.hasUnusedStartingForBiome(biome) ||
             mode == SafariMode.SPARKLING && !party.ready) return false
-        if(run.lastBiome!=biome) return departureComplete(run,biome,mode,party)
+        if (run.lastBiome != biome) {
+            if (mode == SafariMode.FULL_CLEAR && biome in fullClearDepartures)
+                return biome.critters.all { run.captureComplete(it.name) }
+            return departureComplete(run,biome,mode,party)
+        }
         val targets = biome.critters.filter { mode != SafariMode.SPARKLING || party.needs(it.name) }
         return run.completed(mode, targets, party, localOnly = true) == targets.size &&
             (mode != SafariMode.UNIQUE || allNeededChecked(run, biome, party, localOnly = true))

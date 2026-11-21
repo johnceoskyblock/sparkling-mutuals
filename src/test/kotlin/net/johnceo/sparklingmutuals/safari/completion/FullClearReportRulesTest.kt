@@ -27,7 +27,7 @@ class FullClearReportRulesTest {
             assertFalse(unreported.fullClearComplete(name), "variable progress still waits for that report")
         }
     }
-    @Test fun `fixed spawn progress uses catches while missing panel still needs local proof`() {
+    @Test fun `fixed spawn catches complete progress and the missing panel without rendering`() {
         ConfigManager.fullClearMode = true; ConfigManager.sparklingMode = false
         for ((name, minimum) in SafariFullClear.fixedCaptureTargets) {
             val run = SafariRun(0); val species = SafariRoster.named(name)!!
@@ -35,7 +35,7 @@ class FullClearReportRulesTest {
             assertFalse(run.fullClearComplete(name))
             caught(run, name, 1)
             assertTrue(run.fullClearComplete(name))
-            assertTrue(SafariPanels.missing(run, species.biome, false, 0).rows.any { it.label == name })
+            assertFalse(SafariPanels.missing(run, species.biome, false, 0).rows.any { it.label == name })
             val zone = SafariCompletionZones.forBiome(species.biome)[name]
             run.updateCaptureEvidence(species.biome, emptySet(), false,
                 playerX = zone?.x ?: 0.0, playerZ = zone?.z ?: 0.0)

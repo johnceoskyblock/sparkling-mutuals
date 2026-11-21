@@ -21,27 +21,36 @@ class BossCaptureFeedbackTest {
         val bests = SafariPersonalBests(); val run = SafariRun(1000)
         bests.rememberParty(listOf("JohnFounder", "NeverCaught"))
         val first = bests.captureFeedback("LOOT SHARE! You received a Doomspiral Shard from JohnFounder catching a Doomspiral!", run, 61000, "Me")!!
-        assertTrue(first.changed); assertTrue(first.notice.contains("1:00.000"))
+        assertTrue(first.changed)
+        assertEquals(BossPbCategory.OBSERVED_SOLO, first.category)
+        assertEquals("[SM] JohnFounder caught Doomspiral in 1:00.000 — Observed Solo, new record (PB: 1:00.000)", first.notice)
         assertNull(bests.time("Doomspiral", duo = true))
         val slower = bests.captureFeedback("LOOT SHARE! You received a Doomspiral Shard from johnfounder catching a Doomspiral!", run, 66000, "Me")!!
-        assertFalse(slower.changed); assertTrue(slower.notice.contains("5.000s slower"))
+        assertFalse(slower.changed)
+        assertEquals("[SM] JohnFounder caught Doomspiral in 1:05.000 — Observed Solo (PB: 1:00.000)", slower.notice)
         val saved = Properties(); bests.save(saved)
         val restored = SafariPersonalBests(); restored.load(saved)
         assertTrue(restored.trackedResponse("JOHNFOUNDER", "Doomspiral").endsWith("1:00.000"))
         assertTrue(restored.trackedResponse("NeverCaught", "Wumpa").contains("Not recorded yet"))
         assertTrue(saved.stringPropertyNames().any { it.contains("nevercaught") })
     }
-    @Test fun `personal feedback selects solo when eligible and compares previous best even without improvement`() {
+    @Test fun `personal feedback shows the best time within the matching category`() {
         val bests = SafariPersonalBests(); val run = SafariRun(0)
-        assertTrue(bests.captureFeedback("CAPTURE! You caught a Doomspiral!", run, 1000, "Me")!!.notice.contains("Duo"))
+        val line = "CAPTURE! You caught a Doomspiral!"
+        assertEquals(BossPbCategory.DUO, bests.captureFeedback(line, run, 1000, "Me")!!.category)
         run.inventoryEvidence(listOf("Soothing Incense" to 4))
-        val solo = bests.captureFeedback("CAPTURE! You caught a Doomspiral!", run, 2000, "Me")!!
-        assertTrue(solo.notice.contains("Solo")); assertTrue(solo.notice.contains("first recorded"))
-        val slower = bests.captureFeedback("CAPTURE! You caught a Doomspiral!", run, 2500, "Me")!!
-        assertTrue(slower.notice.contains("Solo")); assertTrue(slower.notice.contains("0.500s slower"))
+        val solo = bests.captureFeedback(line, run, 2000, "Me")!!
+        assertEquals(BossPbCategory.SOLO, solo.category)
+        assertTrue(solo.notice.endsWith("Solo, new record (PB: 0:02.000)"))
+        val slower = bests.captureFeedback(line, run, 2500, "Me")!!
+        assertTrue(slower.notice.endsWith("Solo (PB: 0:02.000)"))
         assertFalse(slower.changed)
-        val faster = bests.captureFeedback("CAPTURE! You caught a Doomspiral!", run, 1500, "Me")!!
-        assertTrue(faster.notice.contains("0.500s faster")); assertTrue(faster.changed)
+        val faster = bests.captureFeedback(line, run, 1500, "Me")!!
+        assertTrue(faster.notice.endsWith("Solo, new record (PB: 0:01.500)"))
+        assertTrue(faster.changed)
+        val tied = bests.captureFeedback(line, run, 1500, "Me")!!
+        assertTrue(tied.notice.endsWith("Solo (PB: 0:01.500)"))
+        assertFalse(tied.changed)
         assertEquals(1500L, bests.time("Doomspiral")); assertEquals(1000L, bests.time("Doomspiral", duo = true))
     }
     @Test fun `invalid capture sources and stale runs never create records or notices`() {

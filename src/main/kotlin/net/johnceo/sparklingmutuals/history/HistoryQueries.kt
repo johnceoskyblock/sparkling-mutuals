@@ -2,6 +2,14 @@ package net.johnceo.sparklingmutuals.history
 
 /** Shared, read-only history filters. Unknown and AFK lengths do not distort the run average. */
 object HistoryQueries {
+    /** History is newest first. Runs without hotspot enabled still establish party continuity. */
+    internal fun consecutiveHotspotRuns(runs: List<RunRecord>, roster: Set<String>, since: Long): Int {
+        if (roster.size < 2) return 0
+        return runs.asSequence()
+            .takeWhile { it.start >= since && it.partyMembers?.keys == roster }
+            .count { it.hotspotRun == true && it.fullPartyPresent && it.rewardSummarySeen }
+    }
+
     data class LiveLuck(val runs: Int, val sparklingDryStreak: Int, val macawDrought: Int, val macawRuns: Int = 0)
     fun liveLuck(runs: List<RunRecord>): LiveLuck {
         var sparkling = 0; var macaw = 0; var longestSparkling = 0; var longestMacaw = 0

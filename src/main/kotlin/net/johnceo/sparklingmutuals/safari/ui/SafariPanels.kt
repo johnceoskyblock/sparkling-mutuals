@@ -183,7 +183,7 @@ object SafariPanels {
         else if (complete) 0xFF55FF55.toInt() else 0xFFFF5555.toInt()
     fun captures(run: SafariRun?, biome: SafariBiome, party: PartySparklingState = SafariSparklingMode.state) = HudPanel("${biome.label} captures", biome.color, buildList {
         biome.critters.forEach { val count = run?.captureProgress(it.name) ?: 0
-            val knownComplete = SafariFullClear.maximumCaptures[it.name]?.let { maximum -> count >= maximum } == true
+            val knownComplete = run?.knownCaptureQuotaMet(it.name) == true
             val locallyObserved = run?.visitedBiome(biome) == true && run.hasCaptureEvidence(biome)
             val status = when (SafariFullClear.mode) {
                 SafariMode.FULL_CLEAR -> when {

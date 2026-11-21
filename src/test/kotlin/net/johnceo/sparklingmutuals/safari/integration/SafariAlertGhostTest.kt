@@ -1,14 +1,20 @@
 package net.johnceo.sparklingmutuals.safari.integration
 
+import java.util.UUID
 import net.johnceo.sparklingmutuals.safari.SafariBiome
 import net.johnceo.sparklingmutuals.safari.SafariCatch
+import net.johnceo.sparklingmutuals.safari.SafariChatFilter
+import net.johnceo.sparklingmutuals.safari.SafariMessages
 import net.johnceo.sparklingmutuals.safari.SafariRoster
 import net.johnceo.sparklingmutuals.safari.SafariRun
 import net.johnceo.sparklingmutuals.safari.esp.EspCaptureCandidate
 import net.johnceo.sparklingmutuals.safari.esp.EspCaptureMemory
+import net.johnceo.sparklingmutuals.safari.esp.EspCapsuleTarget
 import net.johnceo.sparklingmutuals.safari.esp.EspEntity
 import net.johnceo.sparklingmutuals.safari.esp.SafariEspRules
 import net.johnceo.sparklingmutuals.safari.sparkling.SparklingAlert
+import net.minecraft.world.phys.AABB
+import net.minecraft.world.phys.Vec3
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -33,6 +39,38 @@ class SafariAlertGhostTest {
         assertEquals("Flitter", SafariEspRules.escapedSpecies("The Flitter dodged your critter capsule!"))
         assertNull(SafariEspRules.thrownSpecies("Party > Friend: You threw a Critter Capsule at the Driftling!"))
         assertNull(SafariEspRules.thrownSpecies("You threw a Critter Capsule at the Fake Critter!"))
+    }
+    @Test fun `a Troodon just above the crosshair gets pity from a hidden server confirmed throw`() {
+        val target = EspCapsuleTarget(UUID(0, 1), "Troodon", AABB(-.3, .1, 1.85, .3, .7, 2.45), display = true)
+        val aim = SafariEspRules.capsuleAim(Vec3.ZERO, Vec3(0.0, 0.0, 1.7), listOf(target)) { true }
+        val memory = EspCaptureMemory()
+        memory.throwingAt(100, aim)
+        assertEquals(0, memory.pityFor(target.id))
+        val raw = "You threw a Critter Capsule at the §9Troodon!"
+        assertTrue(SafariChatFilter.hidden(raw, true) { true })
+        SafariMessages.lines(raw).mapNotNull(SafariEspRules::thrownSpecies).forEach { memory.threw(it, 150) }
+        assertEquals(1, memory.pityFor(target.id))
+        assertEquals(target.id, memory.escaped("Troodon", 800))
+        assertEquals(1, memory.pityFor(target.id))
+    }
+    @Test fun `close model fallback ignores occluded or ambiguous bodies and defers to an exact hit`() {
+        val target = EspCapsuleTarget(UUID(0, 1), "Troodon", AABB(-.3, .1, 1.85, .3, .7, 2.45), display = true)
+        val other = target.copy(id = UUID(0, 2), box = target.box.move(.2, 0.0, 0.0))
+        val limit = Vec3(0.0, 0.0, 1.7)
+        assertTrue(SafariEspRules.capsuleAim(Vec3.ZERO, limit, listOf(target)) { false }.isEmpty())
+        assertTrue(SafariEspRules.capsuleAim(Vec3.ZERO, limit, listOf(target, other)) { true }.isEmpty())
+        val exact = EspCapsuleTarget(UUID(0, 3), "Gemzie", AABB(-.1, -.15, 1.0, .1, .15, 1.3), display = false)
+        assertEquals(mapOf("Gemzie" to exact.id), SafariEspRules.capsuleAim(Vec3.ZERO, limit, listOf(target, exact)) { true })
+    }
+    @Test fun `a confirmed species can recover a slightly off-axis native critter`() {
+        val target = EspCapsuleTarget(UUID(0, 1), "Rockmite", AABB(.25, .0, 9.8, .65, .6, 10.2), display = false)
+        val limit = Vec3(0.0, 0.0, 24.0)
+        val memory = EspCaptureMemory()
+        memory.threw(target.species, 100) {
+            SafariEspRules.capsuleAim(Vec3.ZERO, limit, listOf(target), confirmedSpecies = true) { true }[target.species]
+        }
+        assertEquals(target.id, memory.escaped(target.species, 1000))
+        assertEquals(1, memory.pityFor(target.id))
     }
     @Test fun `turning away before delayed server chat still retires the model aimed at during the throw`() {
         val memory = EspCaptureMemory()

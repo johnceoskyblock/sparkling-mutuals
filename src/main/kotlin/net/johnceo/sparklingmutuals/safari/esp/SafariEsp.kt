@@ -11,7 +11,10 @@ import com.mojang.authlib.GameProfile
 import java.util.UUID
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents
+import net.fabricmc.fabric.api.event.player.UseBlockCallback
 import net.fabricmc.fabric.api.event.player.UseItemCallback
+import net.fabricmc.fabric.api.event.player.UseEntityCallback
+import net.fabricmc.fabric.api.event.player.AttackEntityCallback
 import net.johnceo.sparklingmutuals.config.AppearanceConfig
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.config.CritterNameplates
@@ -37,6 +40,7 @@ import net.minecraft.world.entity.Display
 import net.minecraft.world.entity.Entity
 import net.minecraft.world.entity.EquipmentSlot
 import net.minecraft.world.entity.animal.fish.TropicalFish
+import net.minecraft.world.entity.animal.armadillo.Armadillo
 import net.minecraft.world.entity.animal.parrot.Parrot
 import net.minecraft.world.entity.decoration.ArmorStand
 import net.minecraft.world.entity.monster.Shulker
@@ -60,6 +64,8 @@ object SafariEsp {
         private set
     private data class Target(val entity: Entity, val species: String, val shulker: Boolean)
     private var targets = emptyList<Target>()
+    private var captureTargets = emptyList<Target>()
+    private var captureMarkers = emptyList<Entity>()
     private val dropPredictor = FloorDropPredictor()
     private var predictedDrops = emptyList<PredictedFloorDrop>()
     private var predictedIncenseIds = emptySet<Int>()
@@ -114,18 +120,79 @@ object SafariEsp {
     private val logger = LoggerFactory.getLogger("sparkling-mutuals/esp")
     private val lines = WorldRenderCompat.renderType("safari_esp")
     private val fill = WorldRenderCompat.renderType("safari_drops", filled = true)
+    private var lastCapsuleInputTick: Int? = null
 
     fun register() {
         WorldRenderCompat.register(::render)
+        AttackEntityCallback.EVENT.register { player, world, _, entity, _ ->
+            val client = Minecraft.getInstance()
+            if (world === client.level && player === client.player && !player.isSpectator)
+                SafariStructures.moundAttack(entity, client)
+            InteractionResult.PASS
+        }
         UseItemCallback.EVENT.register { player, world, hand ->
             val client = Minecraft.getInstance()
-            val id = player.getItemInHand(hand).get(DataComponents.CUSTOM_DATA)?.copyTag()?.getStringOr("id", "")
-            if (world === client.level && player === client.player && SafariAssist.inSafari &&
-                id in setOf("CRITTER_CAPSULE", "MASTERFUL_CRITTER_CAPSULE")) {
-                rememberAim(client, includeWormParts = true)
-                captures.throwing(System.currentTimeMillis());contactRevision++
-            }
+            if (world === client.level && player === client.player)
+                rememberCapsuleInput(client, player, player.getItemInHand(hand))
             InteractionResult.PASS
+        }
+        UseBlockCallback.EVENT.register { player, world, hand, _ ->
+            val client = Minecraft.getInstance()
+            if (world === client.level && player === client.player)
+                rememberCapsuleInput(client, player, player.getItemInHand(hand))
+            InteractionResult.PASS
+        }
+        UseEntityCallback.EVENT.register { player, world, hand, entity, _ ->
+            val client = Minecraft.getInstance()
+            if (world === client.level && player === client.player)
+                rememberCapsuleInput(client, player, player.getItemInHand(hand), entity)
+            InteractionResult.PASS
+        }
+    }
+
+    private fun rememberCapsuleInput(client: Minecraft, player: Player, stack: ItemStack, clicked: Entity? = null) {
+        if (!SafariAssist.inSafari || player.isSpectator || lastCapsuleInputTick == player.tickCount) return
+        val id = stack.get(DataComponents.CUSTOM_DATA)?.copyTag()?.getStringOr("id", "")
+        if (id != "CRITTER_CAPSULE" && id != "MASTERFUL_CRITTER_CAPSULE" &&
+            stack.hoverName.string !in setOf("Critter Capsule", "Masterful Critter Capsule")) return
+        val now = System.currentTimeMillis()
+        val direct = clicked ?: (client.hitResult as? net.minecraft.world.phys.EntityHitResult)?.entity
+        val target = direct?.let { entity ->
+            captureTargets.firstOrNull { it.entity === entity && capsuleCandidate(it, client) }
+                ?: captureTargets.singleOrNull { modelLabels.label(it.entity.uuid) == entity.uuid && capsuleCandidate(it, client) }
+        }
+        if (target != null) {
+            captures.throwingAt(now, target.entity.uuid, target.species)
+        } else {
+            val aim = capsuleRayAim(client, player)
+            if (aim.isNotEmpty()) captures.throwingAt(now, aim)
+            else {
+                rememberAim(client, includeWormParts = true)
+                captures.throwing(now)
+            }
+        }
+        lastCapsuleInputTick = player.tickCount
+        contactRevision++
+    }
+
+    private fun capsuleCandidate(target: Target, client: Minecraft) =
+        target.species != "Hideyho" && !(target.species == "Rockmite" && target.entity is Display.ItemDisplay) &&
+            live(target, client)
+
+    /** Capsule range can exceed vanilla's entity interaction range. Freeze aim at launch. */
+    private fun capsuleRayAim(client: Minecraft, player: Player, species: String? = null): Map<String, UUID> {
+        val level = client.level ?: return emptyMap()
+        val eye = player.eyePosition
+        val end = eye.add(player.lookAngle.scale(24.0))
+        fun terrain(to: net.minecraft.world.phys.Vec3) = level.clip(net.minecraft.world.level.ClipContext(eye, to,
+            net.minecraft.world.level.ClipContext.Block.COLLIDER, net.minecraft.world.level.ClipContext.Fluid.NONE, player))
+        val candidates = captureTargets.mapNotNull { target ->
+            if (species != null && target.species != species ||
+                eye.distanceToSqr(target.entity.position()) > 26.0 * 26 || !capsuleCandidate(target, client)) null
+            else EspCapsuleTarget(target.entity.uuid, target.species, bounds(target, 1f), target.entity is Display)
+        }
+        return SafariEspRules.capsuleAim(eye, terrain(end).location, candidates, confirmedSpecies = species != null) {
+            terrain(it).type == net.minecraft.world.phys.HitResult.Type.MISS
         }
     }
     internal fun texture(profile: GameProfile?) = SafariEspRules.textureHash(profile?.properties()?.get("textures")?.firstOrNull()?.value())
@@ -157,8 +224,7 @@ object SafariEsp {
     fun isRockmiteMound(entity: Entity, client: Minecraft): Boolean {
         if (entity.isRemoved || client.level?.getEntity(entity.id) !== entity || !SafariAssist.inSafari) return false
         return entity is Display.ItemDisplay && SafariEspRules.identify(describe(entity))?.name == "Rockmite" ||
-            entity.type == EntityType.INTERACTION && SafariStructures.isMoundAttack(entity,
-                entity.blockPosition().let { Triple(it.x, it.y, it.z) }, client)
+            SafariStructures.isMoundAttack(entity, SafariStructures.moundSite(entity.blockPosition()), client)
     }
     private fun modelVisible(entity: Entity): Boolean {
         if (entity !is Display) return true
@@ -168,11 +234,11 @@ object SafariEsp {
     /** Keep per-species aim; server chat names the target after the original model can disappear. */
     private fun rememberAim(client: Minecraft, includeWormParts: Boolean = false) {
         val hit = (client.hitResult as? net.minecraft.world.phys.EntityHitResult)?.entity ?: return
-        val target = targets.singleOrNull { it.entity === hit && live(it, client) }
+        val target = captureTargets.singleOrNull { it.entity === hit && live(it, client) }
         if (target == null) {
             if (!includeWormParts || hit !is ArmorStand || texture(hit.getItemBySlot(EquipmentSlot.HEAD)) !=
                 net.johnceo.sparklingmutuals.safari.shots.preview.contacts.ShywormContactParts.BODY_TEXTURE) return
-            val heads = targets.filter { it.species == "Shyworm" && live(it, client) }.map { it.entity }
+            val heads = captureTargets.filter { it.species == "Shyworm" && live(it, client) }.map { it.entity }
             val bodies = client.level?.entitiesForRendering()?.filterIsInstance<ArmorStand>()?.filter {
                 it.distanceToSqr(hit) <= 14.0 * 14 && texture(it.getItemBySlot(EquipmentSlot.HEAD)) ==
                     net.johnceo.sparklingmutuals.safari.shots.preview.contacts.ShywormContactParts.BODY_TEXTURE
@@ -184,19 +250,25 @@ object SafariEsp {
         if (target.species == "Rockmite" && target.entity is Display.ItemDisplay) return
         captures.sighted(target.entity.uuid, target.species, System.currentTimeMillis())
     }
-    fun threw(species: String) { captures.threw(species, System.currentTimeMillis());contactRevision++ }
+    fun threw(species: String) {
+        val client = Minecraft.getInstance()
+        captures.threw(species, System.currentTimeMillis()) {
+            client.player?.let { capsuleRayAim(client, it, species)[species] }
+        }
+        contactRevision++
+    }
     fun shywormMessage(text: String, now: Long) {
         val player = Minecraft.getInstance().player ?: return
         shyworms.chat(text, now, player.x, player.z)
     }
-    fun escaped(species: String) { captures.escaped(species, System.currentTimeMillis())?.let(modelLabels::release);contactRevision++ }
+    fun escaped(species: String, brokeOut: Boolean) {
+        captures.escaped(species, System.currentTimeMillis(), brokeOut)?.let(modelLabels::release)
+        contactRevision++
+    }
     fun caught(species: String, personal: Boolean = true) {
         contactRevision++
         val now=System.currentTimeMillis()
         val id = (if (personal) captures.caught(species, now) else null) ?: modelLabels.captureCandidate(species,now)
-        if (id != null) { captures.retire(id); modelLabels.release(id) }
-        if (species == "Litterbug" && id != null) litterbugs.caught(id)
-        if (species == "Shyworm" && id != null) shyworms.caught(id).forEach { captures.retire(it); modelLabels.release(it) }
         if (id == null) {
             if (species == "Shyworm") shyworms.unassociatedCapture(now)
             if (species == "Litterbug") litterbugs.unassociatedCapture(now)
@@ -204,15 +276,22 @@ object SafariEsp {
                 logger.info("Capture of {} had no throw/model association; checking name-tag lifecycle instead.", species)
             return
         }
+        retireCapture(species, id)
+    }
+    private fun retireCapture(species: String, id: UUID) {
+        captures.retire(id)
+        modelLabels.release(id)
+        if (species == "Litterbug") litterbugs.caught(id)
+        if (species == "Shyworm") shyworms.caught(id).forEach { captures.retire(it); modelLabels.release(it) }
         logger.info("Retired captured {} model {}.", species, id)
         targets = targets.filterNot { captures.hidden(it.entity.uuid) }
     }
-    fun clearCaptured() { cavernDiagnostics.clear(); captures.reset(); modelLabels.reset(); motion.reset(); litterbugs.reset(); shyworms.reset(); scrappyFoods.reset();contactRevision++ }
+    fun clearCaptured() { cavernDiagnostics.clear(); captures.reset(); lastCapsuleInputTick = null; captureMarkers = emptyList(); captureTargets = emptyList(); modelLabels.reset(); motion.reset(); litterbugs.reset(); shyworms.reset(); scrappyFoods.reset();contactRevision++ }
     fun tick(client: Minecraft) {
         if (level !== client.level) { reset(); level = client.level }
         SafariFloorDrops.state.visit(SafariAssist.biome)
         if (!SafariAssist.inSafari || client.player == null || client.level == null) {
-            targets = emptyList(); stringDisplays = emptyList(); ticks = 0; scanned = false; return
+            targets = emptyList(); captureTargets = emptyList(); captureMarkers = emptyList(); stringDisplays = emptyList(); ticks = 0; scanned = false; return
         }
         rememberAim(client)
         if (++ticks < 5) return
@@ -226,6 +305,7 @@ object SafariEsp {
         val entityIds = mutableListOf<Int>()
         val armadillos = mutableListOf<Pair<UUID, Int>>()
         val scannedTargets = mutableListOf<Target>()
+        val scannedCaptureMarkers = mutableListOf<Entity>()
         for (entity in world.entitiesForRendering()) {
             if (entity.isRemoved || world.getEntity(entity.id) !== entity) continue
             entitiesByUuid.putIfAbsent(entity.uuid, entity)
@@ -238,8 +318,9 @@ object SafariEsp {
                     net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(entity.itemStack.item).toString() +
                         ":" + SafariRules.strip(entity.itemStack.hoverName.string)))
             }
-            val label = entity.customName?.string?.let(SafariEspRules::labelSpecies)
+            val label = labelText(entity)?.let(SafariEspRules::labelSpecies)
             if (label != null) labels.getOrPut(label) { mutableListOf() }.add(entity)
+            if (entity !is Player && isCaptureMarker(entity)) scannedCaptureMarkers.add(entity)
             if (captures.hidden(entity.uuid)) continue
             if (floorDisplay) {
                 val pos = entity.blockPosition()
@@ -253,7 +334,10 @@ object SafariEsp {
         // Incense membership follows the scan's predicted types, independently of pickup evidence.
         val knownDrops = dropPredictor.knownDrops
         predictedIncenseIds = SafariFloorDrops.state.incenseDropIds(knownDrops)
+        captureMarkers = scannedCaptureMarkers
+        val lastCaptureTargets = captureTargets
         targets = scannedTargets
+        captureTargets = scannedTargets
         scrappyFoods.observe(armadillos, entityIds)
         val now = System.currentTimeMillis()
         val liveBodyIds = targets.mapTo(hashSetOf()) { it.entity.uuid }
@@ -263,6 +347,7 @@ object SafariEsp {
             motion.observe(e.uuid, target.species, e.x, e.y, e.z, client.player!!.distanceToSqr(e), now)
             if (target.species == "Litterbug") litterbugs.observe(e.uuid, e.x, e.y, e.z, now)
         }
+        val pityBodies = mutableListOf<EspPityBody>()
         for (target in targets) {
             if (!SafariEspRules.requiresCaptureLabel(target.species, target.entity.type.toShortString())) continue
             val candidates = mutableListOf<EspModelLabel>()
@@ -274,7 +359,7 @@ object SafariEsp {
                 if (!(distance <= 9)) continue
                 val separate = label !== target.entity
                 if (separate) hasSeparateLabel = true
-                val visible = label.isCustomNameVisible
+                val visible = label is Display.TextDisplay || label.isCustomNameVisible
                 if (visibleRequired && !visible) continue
                 val candidate = EspModelLabel(label.uuid, target.species, distance, visible)
                 if (separate) candidates.add(candidate) else ownLabel = candidate
@@ -284,10 +369,25 @@ object SafariEsp {
             modelLabels.observe(target.entity.uuid, target.species, candidates, now)
             val labelId = modelLabels.label(target.entity.uuid)
             if (labelId != null) captures.bindLabel(target.entity.uuid, target.species, labelId, liveBodyIds)
-            val labelText = labelId?.let { entitiesByUuid[it]?.customName?.string }
+            val label = labelId?.let(entitiesByUuid::get)
+            val labelText = label?.let(::labelText)
+            val named = label != null && (label is Display.TextDisplay || label.isCustomNameVisible) &&
+                label.distanceToSqr(target.entity) <= 9.0 && labelText?.let(SafariEspRules::labelSpecies) == target.species
+            val inCapsule = SafariEspRules.isCapturingLabel(labelText) || inCaptureAnimation(target.entity, client)
+            pityBodies.add(EspPityBody(target.entity.uuid, target.species, target.entity.position(), named, inCapsule))
             modelLabels.captureState(target.entity.uuid, labelText, now)
             modelLabels.observeRange(target.entity.uuid, target.species, client.player!!.distanceToSqr(target.entity), now)
         }
+        // A body can shrink out of the scan before the bound name switches to CAPTURING.
+        for (old in lastCaptureTargets) {
+            if (old.entity.uuid in liveBodyIds || captures.hidden(old.entity.uuid)) continue
+            val label = modelLabels.label(old.entity.uuid)?.let(entitiesByUuid::get) ?: continue
+            val text = labelText(label)
+            if (!SafariEspRules.isCapturingLabel(text)) continue
+            pityBodies.add(EspPityBody(old.entity.uuid, old.species, old.entity.position(), named = false, capturing = true))
+            modelLabels.captureState(old.entity.uuid, text, now)
+        }
+        captures.observeBodies(pityBodies, now).forEach { (species, id) -> retireCapture(species, id) }
         SafariTracking.ledger.current?.takeIf { it.fullClearReportReceived(SafariBiome.CAVERN) }?.let { run ->
             targets.filter { it.species in setOf("Driftling", "Chuckwalla") &&
                 run.count(it.species) >= net.johnceo.sparklingmutuals.safari.completion.SafariFullClear.minimum(it.species) }
@@ -360,9 +460,7 @@ object SafariEsp {
     private fun live(target: Target, client: Minecraft, forEsp: Boolean = false): Boolean {
         val entity = target.entity
         if (target.species == "Rockmite" && entity is Display.ItemDisplay) {
-            val pos = entity.blockPosition()
-            val block = Triple(pos.x, pos.y, pos.z)
-            val site = net.johnceo.sparklingmutuals.sync.PartySyncSites.moundAt(block) ?: block
+            val site = SafariStructures.moundSite(entity.blockPosition())
             if (SafariTracking.ledger.current?.moundSurvey?.confirmedBroken(site) == true) return false
         }
         // The quest NPC can stay loaded or change UUID after its successful reward.
@@ -376,7 +474,7 @@ object SafariEsp {
         val moving = motion.current(entity.uuid, now)
         val visualLabel = if (forEsp) modelLabels.visualCurrent(entity.uuid, target.species,
             client.player!!.distanceToSqr(entity), now, when(target.species) {
-                "Shyworm" -> shyworms.hiddenHeight(entity.uuid)
+                "Shyworm" -> shyworms.hiddenHeight(entity.uuid, entity.y)
                 "Litterbug" -> litterbugs.hiddenHeight(entity.uuid,entity.x,entity.y,entity.z)
                 else -> null
             }) else false
@@ -450,6 +548,8 @@ object SafariEsp {
     }
 
     fun debug(client: Minecraft) {
+        logger.info("Recent capsule attempts: {}", captures.recentAttempts())
+        SafariTracking.ledger.current?.moundSurvey?.let { logger.info("Mound hit progress: {}", it.hitDiagnostics(System.currentTimeMillis())) }
         logger.info("Shared party sync: {}",net.johnceo.sparklingmutuals.sync.SafariPartySync.diagnostics())
         val player = client.player ?: return
         val entities = client.level?.entitiesForRendering()?.filter { !it.isRemoved && player.distanceToSqr(it) <= 6400 }?.toList() ?: return
@@ -502,8 +602,8 @@ object SafariEsp {
             if (species in setOf("Driftling", "Chuckwalla")) logger.info("Cavern lifecycle species={} uuid={} movementObserved={} recentMovement={} labelVisible={} active={}",
                 species, entity.uuid, motion.movementObserved(entity.uuid), motion.recentMovement(entity.uuid, System.currentTimeMillis()),
                 modelLabels.visible(entity.uuid), contactCurrent(entity, species, client))
-            logger.info("ESP model species={} id={} uuid={} type={} pos={} retired={} label={} labelName={} labelVisible={} labelDistance={} labelCurrent={} descriptor={} vehicle={} passengers={} modelName={} nearbyLabels={}",
-                species, entity.id, entity.uuid, entity.type.toShortString(), entity.position(), captures.hidden(entity.uuid), tag,
+            logger.info("ESP model species={} id={} uuid={} type={} pos={} retired={} pity={} label={} labelName={} labelVisible={} labelDistance={} labelCurrent={} descriptor={} vehicle={} passengers={} modelName={} nearbyLabels={}",
+                species, entity.id, entity.uuid, entity.type.toShortString(), entity.position(), captures.hidden(entity.uuid), captures.pityFor(entity.uuid), tag,
                 label?.customName?.string, label?.isCustomNameVisible, label?.distanceToSqr(entity),
                 modelLabels.current(entity.uuid, System.currentTimeMillis()), describe(entity), entity.vehicle?.id, entity.passengers.map { it.id }, entity.customName?.string,
                 entities.filter { it.customName != null && it.distanceToSqr(entity) <= 9 }.map { "${it.id}:${it.customName?.string}:${it.isCustomNameVisible}" })
@@ -513,8 +613,7 @@ object SafariEsp {
     internal fun renderedMoundSites(client: Minecraft): Set<Triple<Int, Int, Int>> {
         if (level !== client.level || client.player == null) return emptySet()
         return targets.asSequence().filter { it.species == "Rockmite" && it.entity is Display.ItemDisplay && drawable(it, client) }
-            .map { it.entity.blockPosition() }
-            .map { val site = Triple(it.x, it.y, it.z); net.johnceo.sparklingmutuals.sync.PartySyncSites.moundAt(site) ?: site }
+            .map { SafariStructures.moundSite(it.entity.blockPosition()) }
             .toSet()
     }
 
@@ -612,6 +711,7 @@ object SafariEsp {
         if(!SafariEspConfig.critterGlow || !SafariAssist.visualsActive(client) || client.player==null || client.options.smHideGui)return null
         val target = indexedTarget(entity) ?: return null
         if(target.species=="Rockmite" && entity is Display.ItemDisplay)return null
+        if (target.species == "Shyworm" && (entity.y <= 2.0 || shyworms.hiddenHeight(entity.uuid, entity.y) != null)) return null
         if(!drawable(target,client) || critterEspDecision(target,client,SafariAssist.biome,System.currentTimeMillis())!="Eligible")return null
         return targetColor(target)
     }
@@ -622,6 +722,23 @@ object SafariEsp {
             !(target.species=="Rockmite" && target.entity is Display.ItemDisplay) &&
             critterEspDecision(target,client,SafariAssist.biome,System.currentTimeMillis())=="Eligible"
     }
+    private fun labelText(entity: Entity): String? =
+        if (entity is Display.TextDisplay) entity.text.string else entity.customName?.string
+
+    private fun isCaptureMarker(entity: Entity) = SafariEspRules.isCapturingLabel(labelText(entity))
+
+    private fun inCaptureAnimation(entity: Entity, client: Minecraft): Boolean {
+        val level = client.level ?: return false
+        if (isCaptureMarker(entity)) return true
+        val vehicleItem = entity.vehicle?.let(CritterCapsuleHider::itemId)
+        if (vehicleItem == "CRITTER_CAPSULE" || vehicleItem == "MASTERFUL_CRITTER_CAPSULE") return true
+        return captureMarkers.any { marker ->
+            !marker.isRemoved && level.getEntity(marker.id) === marker &&
+                SafariEspRules.nearCaptureMarker(marker.x - entity.x, marker.y - entity.y, marker.z - entity.z) &&
+                isCaptureMarker(marker)
+        }
+    }
+
     fun hideVanillaNameTag(entity: Entity): Boolean {
         if(CritterNameplates.showsVanilla())return false
         if (targets.isEmpty()) return false
@@ -681,17 +798,20 @@ object SafariEsp {
                 val box = bounds(target, delta)
                 val height = when (mob.name) {
                     "Litterbug" -> litterbugs.hiddenHeight(e.uuid, e.x, e.y, e.z)
-                    "Shyworm" -> shyworms.hiddenHeight(e.uuid)
+                    "Shyworm" -> shyworms.hiddenHeight(e.uuid, e.y)
                     else -> null
                 }
-                val projected = if (height == null) box else box.move(0.0, height - e.getPosition(delta).y, 0.0)
-                val food = if (mob.name == "Scrappy") scrappyFoods.food(e.uuid) else null
+                val projected = when {
+                    height == null -> box
+                    mob.name == "Shyworm" -> ShywormProjection.projectHead(box, e.getPosition(delta), height)
+                    else -> box.move(0.0, height - e.getPosition(delta).y, 0.0)
+                }
+                val food = if (mob.name == "Scrappy" && e is Armadillo && e.isScared) scrappyFoods.food(e.uuid) else null
                 val color = targetColor(target)
                 val mound = mob.name == "Rockmite" && e is Display.ItemDisplay
-                if (mound && CritterNameplates.settings.pity) {
-                    val pos = e.blockPosition()
-                    val site = Triple(pos.x, pos.y, pos.z)
-                    val key = net.johnceo.sparklingmutuals.sync.PartySyncSites.moundAt(site) ?: site
+                val showPity = CritterNameplates.settings.pity && !inCaptureAnimation(e, client)
+                if (mound && showPity) {
+                    val key = SafariStructures.moundSite(e.blockPosition())
                     run?.moundSurvey?.hitLabel(key)?.let { label ->
                         WorldRenderCompat.markerLabel(context, label, color, projected.center.x,
                             projected.maxY + .4, projected.center.z, false)
@@ -701,10 +821,10 @@ object SafariEsp {
                         if (run == null) "Hideyho (START)" else run.hideyhoMarker.title(e.blockPosition())
                     } else food?.label ?: mob.name
                     if (title != null) {
-                        val distance = kotlin.math.sqrt(client.player!!.distanceToSqr(e))
+                        val distance = client.player!!.position().distanceTo(projected.center)
                         val sparkling = SafariAssist.isHighlighted(e.id) || sparklingDuplicoColor(e) != null
                         val label = CritterNameplates.label(mob.name, captures.pityFor(e.uuid), distance, sparkling,
-                            title = title, showPity = food == null)
+                            title = title, showPity = food == null && showPity)
                         val matchEsp = CritterNameplates.matchesEspColor(mob.name)
                         val espColor = if (sparkling) SafariEspConfig.rgb(AppearanceConfig.sparklingColor) else color
                         val nameColor = CritterNameplates.color(mob.name, (run?.captureProgress(mob.name) ?: 0) > 0, espColor)
@@ -712,7 +832,11 @@ object SafariEsp {
                             projected.maxY + .4, projected.center.z, sparkling && !matchEsp)
                     }
                 }
-                if (SafariEspConfig.showCritterBox(mob.name) || mound) frame(projected, color)
+                val retainedWormHead = mob.name == "Shyworm" && height != null
+                if (SafariEspConfig.showCritterBox(mob.name) || mound ||
+                    retainedWormHead && ShywormProjection.showRetainedHead(SafariEspConfig.critterBoxes, SafariEspConfig.critterGlow))
+                    frame(projected, if (retainedWormHead && SafariAssist.isHighlighted(e.id))
+                        SafariEspConfig.rgb(AppearanceConfig.sparklingColor) else color)
                 if (mob.name == "Scrappy" && food != null &&
                     (!CritterNameplates.settings.enabled || !CritterNameplates.enabledFor(mob.name))) WorldRenderCompat.label(context, food.label, color,
                     projected.center.x, projected.maxY + .2, projected.center.z, SafariEspConfig.scrappyLabelWorldScale)
@@ -751,10 +875,11 @@ object SafariEsp {
             SafariEspRules.visible(true, wormGroup.enabled, wormGroup.onlyInBiome && !SafariEspConfig.alwaysOn("Shyworm"), playerBiome, wormMob.biome)) {
             for (marker in shyworms.missingMarkers()) {
                 if (captures.hidden(marker.id)) continue
-                val box = AABB(marker.x - .4, marker.y, marker.z - .4,
-                    marker.x + .4, marker.y + .8, marker.z + .4)
-                if(SafariEspConfig.critterBoxes) frame(box, SafariEspConfig.rgb(SafariEspConfig.entityColor("Shyworm", false)))
-                timers.add(Triple("Shyworm (last seen)", SafariEspConfig.rgb(SafariEspConfig.entityColor("Shyworm", false)), box))
+                val box = AABB(marker.x - .3, marker.y + 1.35, marker.z - .3,
+                    marker.x + .3, marker.y + 1.95, marker.z + .3)
+                val color = SafariEspConfig.rgb(SafariEspConfig.entityColor("Shyworm", false))
+                if (ShywormProjection.showRetainedHead(SafariEspConfig.critterBoxes, SafariEspConfig.critterGlow)) frame(box, color)
+                timers.add(Triple("Shyworm (last seen)", color, box))
             }
         }
         }

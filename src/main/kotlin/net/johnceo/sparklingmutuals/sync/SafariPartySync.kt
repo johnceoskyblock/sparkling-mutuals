@@ -10,13 +10,13 @@ import net.johnceo.sparklingmutuals.safari.*
 import net.johnceo.sparklingmutuals.safari.automation.SafariPartyInput
 import net.johnceo.sparklingmutuals.safari.automation.GemzieGem
 import net.johnceo.sparklingmutuals.safari.esp.SafariEsp
+import net.johnceo.sparklingmutuals.safari.esp.SafariEspRules
 import net.johnceo.sparklingmutuals.safari.resources.*
 import net.johnceo.sparklingmutuals.safari.structures.*
 import net.johnceo.sparklingmutuals.history.RunTally
 import net.johnceo.sparklingmutuals.history.TicketCounter
 import net.johnceo.sparklingmutuals.safari.sparkling.SparklingEncounters
 import net.minecraft.client.Minecraft
-import net.minecraft.world.entity.Entity
 import org.slf4j.LoggerFactory
 
 /** Adapter between per-visit shared observations and Mutuals' existing mode-aware ledgers. */
@@ -126,20 +126,6 @@ object SafariPartySync {
         ClientReceiveMessageEvents.CHAT.register { message,_,_,_,_ ->
             Minecraft.getInstance().execute { observeReport(message.string) }
         }
-    }
-    internal fun moundAttack(entity: Entity) {
-        if (!SafariIsland.onIsland || SafariAssist.biome != SafariBiome.CAVERN ||
-            transferRevision == SafariIsland.locationRevision) return
-        val pos = entity.blockPosition()
-        val observed = Triple(pos.x, pos.y, pos.z)
-        val site = PartySyncSites.moundAt(observed) ?: observed
-        val client = Minecraft.getInstance()
-        if (!SafariStructures.isMoundAttack(entity, site, client) && !net.johnceo.sparklingmutuals.safari.esp.SafariEsp.isRockmiteMound(entity, client)) {
-            SafariDeveloper.event("Unmatched cavern attack · ${entity.type} · $observed", showOnHud = false)
-            return
-        }
-        if (SafariTracking.ledger.current?.moundSurvey?.attack(site, System.currentTimeMillis()) == true)
-            SafariDeveloper.event("Local mound hit · slot ${PartySyncSites.mounds.indexOf(site)} · $observed → $site")
     }
     private fun roster(client: Minecraft): List<String>? {
         val self=client.player?.uuid?.toString() ?: return null
@@ -494,15 +480,6 @@ object SafariPartySync {
             val species=spawn.groupValues[2].removeSuffix("s")
             val index=birds.indexOf(species)
             if(index>=0) { local[14+index]=(local[14+index]+if(spawn.groupValues[1]=="Two") 2 else 1).coerceAtMost(256);changed=true }
-        }
-        SafariMounds.hitStage(text)?.let { stage ->
-            val survey = SafariTracking.ledger.current?.moundSurvey
-            val site = survey?.confirmHit(stage, System.currentTimeMillis())
-            if (stage == SafariMounds.HITS_TO_BREAK && survey != null) {
-                if (site != null)
-                    SafariDeveloper.event("Confirmed mound slot ${PartySyncSites.mounds.indexOf(site)} from break chat")
-                else SafariDeveloper.event("Mound break unassigned · ${survey.recentHitCandidates} recent sites")
-            }
         }
         if(local[26]!=0) local[24]=4
         if(changed) mark(public)

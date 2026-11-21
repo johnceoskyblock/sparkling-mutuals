@@ -1,28 +1,28 @@
-## Nameplates and custom names
+## Capture tracking, ESP, and nameplates
 
-- Reworked critter nameplates with shared **None / Vanilla / Marker / Both** display modes and per-critter visibility toggles. Nameplates now default enabled in **Marker** mode; Litterbug's individual marker defaults off. Saved preferences for the shared controls take priority.
-- Added optional distance labels, catch-attempt/pity counts, and Eagle pet rarity settings. Identified capture attempts stay attached to the correct critter, including supported body changes; a new run resets pity tracking.
-- Added server-confirmed Rockmite mound hit progress, displayed as `(0/5)` through `(4/5)` until the mound breaks. Ambiguous or stale hits do not assign progress to a guessed mound.
-- Nameplates can follow ESP colors or use fixed, rarity, or first-capture colors. First-capture and rarity colors default **off**; Sparkling markers retain animated highlighting. Hideyho labels describe its encounter phase instead of capture pity.
-- Replaced the old per-critter nameplate templates with shared controls while preserving custom critter aliases. Obsolete template settings are retired when saved.
-- Custom critter names now also appear in rendered Hypixel chat and Hunting Box tooltips, including plural names and formatted text. Original chat/log messages, item data, tracking, and outgoing messages keep canonical names.
+- Improved capture-to-model matching for delayed server messages, repeated throws, slightly off-target throws, hidden chat, and models that disappear before confirmation. Captured critters retire from ESP without hiding unrelated nearby critters.
+- Improved pity tracking across escapes and body/name-tag replacements, including Hideon critters and other capsule species. Ambiguous nearby critters no longer inherit each other's attempts, and capture-animation markers are matched to the relevant target.
+- **Show catch pity now defaults off.** Existing saved preferences are preserved.
+- Fixed Rockmite mound progress when hit messages are hidden or the player switches targets.
+- Improved retained Shyworm head positioning and visibility while underground, including when glow ESP is enabled without Box ESP.
 
-## Settings and presentation
+## Completion and personal bests
 
-- Reorganized customization into separate **Critter Names, Nameplates, Colors, and Other ESP** views, with clearer labels, descriptions, and matching search routes.
-- Put common controls before specialized helpers and HUD content before appearance and placement. Group headers expand their options; on/off switches remain inside each group.
-- Kept existing saved settings and HUD editor links through the presentation changes.
-- Updated HUD/icon drawing and reduced bundled image and sound file sizes.
+- Fixed Full Clear handling for species with known capture quotas, so leftover models do not keep verified quota completion pending. Eligible biome-clear reports can finish after leaving the biome.
+- Corrected **Lake Cleared** timing: Unique and Sparkling modes require one personal catch of Tepid, Nozzlenose, and Mantis Shrimp; Full Clear waits for their full observed populations. Loot shares alone do not trigger the alert.
+- Added **Local PB messages** controls for Doomspiral and Wumpa solo, duo, observed-solo, and observed-duo catches, plus Full Clear, Unique Run, and Party Unique Run biome records. These default on; hiding messages does not stop PB recording.
+- PB feedback now shows the relevant best time in `(PB: …)` form and identifies new records.
 
-## Connection recovery
+## Hotspot party-run history
 
-- Added independent **Auto-reconnect to Hypixel** and **Auto-join SkyBlock** options, both **off by default**.
-- Auto-reconnect retries unexpected disconnects with backoff and stops on recognized connection denials. Leaving the disconnect screen cancels recovery.
-- Auto-join can return from Limbo through Prototype, enter SkyBlock from Prototype, and join SkyBlock after an automatic reconnect.
+- Added a completed party-run count to the Hotspot HUD, backed by saved run history and the current party's UUIDs.
+- Tracks whether Hotspot assigning was enabled, whether the roster was present together, and whether the reward summary was received. Roster refreshes, late summaries, and teammates leaving before the summary do not lose or double-count the recorded run.
+- Party changes reset continuity; older or unconfirmed history is not guessed into the count.
 
-## Performance and maintenance
+## Recovery and presentation
 
-- Reduced repeated work in ESP, HUD/icon rendering, retained Sparkling checks, Honeyhive label matching, bird-food inventory reads, and capsule projection rendering.
-- Added a PowerShell shipping command to automate commit, rebase, PR checks, merge, and verified three-target releases, with a preview mode and regression tests.
+- Fixed automatic reconnect handling for network/login failures and disconnects during server configuration. Retry backoff survives failed attempts; cancellation, intentional quits, and recognized non-retryable denials stop further retries.
+- Refreshed the Doomspiral Lottery reveal with revised reel timing, a clear **SPARKLING / REGULAR** marquee, and animated critter-name styling.
+- Added project credits and attribution links to the README.
 
-Minecraft targets remain **26.1.2, 26.2, and 26.3**. Pick the JAR matching your Minecraft version.
+Builds target **Minecraft 26.1.2, 26.2, and 26.3**. Choose the JAR matching your Minecraft version.

@@ -56,6 +56,12 @@ class RunRecord(
     var macawsSeen: Int? = null,
     /** First time all 37 types were caught or loot-shared, measured from run start. */
     var allTypesMillis: Long = -1,
+    /** UUID to name for the observed party roster, including the local player. Null in older history. */
+    var partyMembers: Map<String, String>? = null,
+    /** Whether Hotspot assigning was enabled at any point. Null when that setting was not recorded. */
+    var hotspotRun: Boolean? = null,
+    var fullPartyPresent: Boolean = false,
+    var rewardSummarySeen: Boolean = false,
 ) {
     fun hasSparkling() = sparklings.isNotEmpty()
 }

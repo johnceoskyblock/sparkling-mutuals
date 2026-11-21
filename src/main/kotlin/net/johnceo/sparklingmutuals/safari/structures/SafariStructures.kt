@@ -8,7 +8,9 @@ import net.minecraft.world.entity.EntityType
 
 import net.johnceo.sparklingmutuals.safari.SafariAssist
 import net.johnceo.sparklingmutuals.safari.SafariBiome
+import net.johnceo.sparklingmutuals.safari.SafariIsland
 import net.johnceo.sparklingmutuals.safari.SafariTracking
+import net.johnceo.sparklingmutuals.debug.SafariDeveloper
 import net.johnceo.sparklingmutuals.safari.esp.EspEntity
 import net.johnceo.sparklingmutuals.safari.esp.SafariEspRules
 import net.johnceo.sparklingmutuals.safari.esp.SafariEsp
@@ -17,6 +19,7 @@ import net.johnceo.sparklingmutuals.safari.resources.SafariWaypointSites
 import net.minecraft.client.Minecraft
 import net.minecraft.core.BlockPos
 import net.minecraft.world.entity.Entity
+import net.minecraft.world.entity.Display
 
 /** Loaded-world observations adapted from CritterMod 0.9.0; never request chunks. */
 object SafariStructures {
@@ -34,6 +37,33 @@ object SafariStructures {
     private val absentSince = mutableMapOf<Triple<Int, Int, Int>, Long>()
     private val scaffolding = setOf(EntityType.ARMOR_STAND, EntityType.ITEM_DISPLAY, EntityType.BLOCK_DISPLAY,
         EntityType.TEXT_DISPLAY, EntityType.PLAYER, EntityType.ITEM, EntityType.INTERACTION)
+    internal fun moundSite(pos: BlockPos): Triple<Int, Int, Int> {
+        val observed = Triple(pos.x, pos.y, pos.z)
+        return PartySyncSites.moundAt(observed) ?: observed
+    }
+
+    internal fun moundAttack(entity: Entity, client: Minecraft) {
+        if (!SafariIsland.onIsland || !SafariAssist.inSafari || SafariAssist.departing ||
+            SafariEspRules.biomeAt(entity.x, entity.z) != SafariBiome.CAVERN ||
+            client.level?.getEntity(entity.id) !== entity) return
+        val pos = entity.blockPosition()
+        val site = moundSite(pos)
+        // Known server interaction sites can be offset from the rendered mound model.
+        val catalogInteraction = entity.type == EntityType.INTERACTION && site in PartySyncSites.mounds
+        if (!catalogInteraction && !isMoundAttack(entity, site, client)) {
+            SafariDeveloper.event("Unmatched cavern attack · ${entity.type} · $pos", showOnHud = false)
+            return
+        }
+        if (SafariTracking.ledger.current?.moundSurvey?.attack(site, System.currentTimeMillis()) == true)
+            SafariDeveloper.event("Local mound hit · slot ${PartySyncSites.mounds.indexOf(site)} · $site", showOnHud = false)
+    }
+
+    internal fun confirmMoundHit(survey: MoundSurvey, stage: Int, now: Long) {
+        val site = survey.confirmHit(stage, now)
+        if (site != null) SafariDeveloper.event("Mound hit $stage/5 · slot ${PartySyncSites.mounds.indexOf(site)} · $site")
+        else SafariDeveloper.event("Mound hit $stage/5 unassigned · ${survey.recentHitCandidates} recent sites", showOnHud = false)
+    }
+
     internal fun isMoundAttack(entity: Entity, site: Triple<Int, Int, Int>, client: Minecraft): Boolean =
         entity.type == EntityType.INTERACTION &&
             (SafariTracking.ledger.current?.moundSurvey?.seenUnopened(site) == true ||
@@ -77,11 +107,6 @@ object SafariStructures {
         val creatures = entities.filter { it.type !in scaffolding }
         val interactions = entities.filter { it.type == EntityType.INTERACTION &&
             SafariEspRules.biomeAt(it.x, it.z) == SafariBiome.CAVERN }
-        fun site(entity: Entity): Triple<Int, Int, Int> {
-            val pos = entity.blockPosition()
-            val observed = Triple(pos.x, pos.y, pos.z)
-            return PartySyncSites.moundAt(observed) ?: observed
-        }
         val mounds = interactions.filter { box ->
             val pos = box.blockPosition()
             val occupied = creatures.any { kotlin.math.abs(it.x - box.x) <= .35 &&
@@ -91,11 +116,11 @@ object SafariStructures {
                 level.getFluidState(pos).isEmpty && level.getFluidState(pos.below()).isEmpty &&
                 SafariMounds.detected(MoundShape(box.x, box.y, box.z, box.boundingBox.xsize, box.boundingBox.ysize,
                     player.distanceToSqr(box), occupied), limitRange = false)
-        }.map(::site).toSet() + SafariEsp.renderedMoundSites(client).filter { it in SafariWaypointSites.mounds }
+        }.map { moundSite(it.blockPosition()) }.toSet() + SafariEsp.renderedMoundSites(client).filter { it in SafariWaypointSites.mounds }
         val unopened = mounds.filterNot(run.moundSurvey::confirmedBroken).toSet()
         nearbyMounds = unopened.size
         if (SafariAssist.biome == SafariBiome.CAVERN || mounds.isNotEmpty() || run.moundSurvey.hasSites) {
-            val loadedInteractions = interactions.mapTo(mutableSetOf(), ::site)
+            val loadedInteractions = interactions.mapTo(mutableSetOf()) { moundSite(it.blockPosition()) }
             val now = System.currentTimeMillis()
             absentSince.keys.retainAll { pos ->
                 pos !in loadedInteractions && SafariAssist.biome == SafariBiome.CAVERN &&

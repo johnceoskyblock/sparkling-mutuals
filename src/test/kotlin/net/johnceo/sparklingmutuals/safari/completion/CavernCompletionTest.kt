@@ -14,7 +14,7 @@ class CavernCompletionTest {
     @Test fun `full clear absence is confirmed only inside each supplied radius and never invents captures`() {
         for ((name, point) in mapOf("Cavernfish" to Triple(-85.0,81.0,30.0), "Flitter" to Triple(-84.0,62.0,30.0),
             "Shyworm" to Triple(-119.0,43.0,30.0), "Driftling" to Triple(-120.0,55.0,40.0),
-            "Chuckwalla" to Triple(-100.0,45.0,40.0), "Gemzie" to Triple(-141.0,51.0,30.0))) {
+            "Chuckwalla" to Triple(-100.0,45.0,40.0))) {
             val run=SafariRun(0); val (x,z,radius)=point
             run.updateCaptureEvidence(SafariBiome.CAVERN,emptySet(),false,playerX=x,playerZ=z)
             assertFalse(run.captureComplete(name)); assertEquals(0,run.count(name))

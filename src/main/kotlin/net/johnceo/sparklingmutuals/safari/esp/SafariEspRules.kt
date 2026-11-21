@@ -1,10 +1,13 @@
 package net.johnceo.sparklingmutuals.safari.esp
 
+import java.util.UUID
 import net.johnceo.sparklingmutuals.safari.PartySparklingState
 import net.johnceo.sparklingmutuals.safari.SafariBiome
 import net.johnceo.sparklingmutuals.safari.SafariRoster
 import net.johnceo.sparklingmutuals.safari.SafariRules
 import net.johnceo.sparklingmutuals.safari.SafariRun
+import net.minecraft.world.phys.AABB
+import net.minecraft.world.phys.Vec3
 
 /** Identification, palette and quadrant limits adapted from Nebulune a573283 (BSD-3-Clause). */
 data class EspEntity(val type: String, val texture: String? = null, val shulker: String? = null,
@@ -13,12 +16,43 @@ data class EspMob(val name: String, val biome: SafariBiome, val color: Int, val 
 data class EspDrop(val id: Int, val x: Int, val y: Int, val z: Int)
 data class EspCaptureCandidate(val id: Int, val species: String, val display: Boolean, val mound: Boolean,
     val rangeSquared: Double, val aimSquared: Double)
+internal data class EspCapsuleTarget(val id: UUID, val species: String, val box: AABB, val display: Boolean)
+internal data class EspCapsuleEscape(val species: String, val brokeOut: Boolean)
 object SafariEspRules {
     private val throwMessage = Regex("^You threw a (?:Masterful )?Critter Capsule at the (.+)!$")
-    private val escapeMessage = Regex("^The (.+?) (?:escaped your (?:Masterful )?Critter Capsule|dodged your critter capsule)[!.]?$")
+    private val escapeMessage = Regex("^The (.+?) (escaped your (?:Masterful )?Critter Capsule|dodged your critter capsule)\\b", RegexOption.IGNORE_CASE)
     fun labelSpecies(raw: String) = SafariRules.strip(raw).let { SafariRules.sparklingSpecies(it) ?: SafariRoster.named(it)?.name }
+    internal fun isCapturingLabel(raw: String?) =
+        raw?.let(SafariRules::strip)?.trimStart()?.startsWith("CAPTURING", ignoreCase = true) == true
+
+    internal fun nearCaptureMarker(dx: Double, dy: Double, dz: Double) =
+        dx * dx + dz * dz <= .75 * .75 && kotlin.math.abs(dy) <= 2.5
     fun thrownSpecies(text: String) = throwMessage.matchEntire(text)?.groupValues?.get(1)?.let(::labelSpecies)
-    fun escapedSpecies(text: String) = escapeMessage.matchEntire(text)?.groupValues?.get(1)?.let(::labelSpecies)
+    internal fun capsuleEscape(text: String): EspCapsuleEscape? {
+        val match = escapeMessage.find(text) ?: return null
+        val species = labelSpecies(match.groupValues[1]) ?: return null
+        return EspCapsuleEscape(species, match.groupValues[2].startsWith("escaped", ignoreCase = true))
+    }
+    fun escapedSpecies(text: String) = capsuleEscape(text)?.species
+    internal fun hideonForm(species: String) = species == "Hideonfloor" || species == "Hideonwall"
+
+    /** Use exact hits first. A close display can represent a larger server hitbox than the visible model. */
+    internal fun capsuleAim(eye: Vec3, limit: Vec3, targets: List<EspCapsuleTarget>, confirmedSpecies: Boolean = false,
+        visible: (Vec3) -> Boolean): Map<String, UUID> {
+        fun hit(box: AABB) = if (box.contains(eye)) eye else box.clip(eye, limit).orElse(null)
+        val exact = targets.mapNotNull { target -> hit(target.box)?.let { target to eye.distanceToSqr(it) } }
+            .minByOrNull { it.second }?.first
+        if (exact != null) return mapOf(exact.species to exact.id)
+
+        // The server-confirmed species allows the wider capsule contact area on native bodies too.
+        // Leave two possible bodies of that species unresolved.
+        return targets.filter { target ->
+            (confirmedSpecies || target.display && eye.distanceToSqr(target.box.center) <= 64.0) &&
+                hit(target.box.inflate(if (confirmedSpecies) .6 else .45)) != null && visible(target.box.center)
+        }.groupBy { it.species }.mapNotNull { (species, options) ->
+            options.singleOrNull()?.let { species to it.id }
+        }.toMap()
+    }
     fun profitableEsp(species: String, enabled: Boolean) = enabled &&
         net.johnceo.sparklingmutuals.config.SafariEspConfig.profitableEnabled(species) &&
         species in net.johnceo.sparklingmutuals.commands.ProfitableCritters.cachedSpecies()

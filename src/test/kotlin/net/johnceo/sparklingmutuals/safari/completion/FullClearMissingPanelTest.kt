@@ -14,7 +14,7 @@ class FullClearMissingPanelTest {
 
     @Test fun `every ordinary zoned species needs minimum catches and an empty scan inside its radius`() {
         for (biome in SafariBiome.entries) {
-            for ((name, zone) in SafariCompletionZones.forBiome(biome).filterKeys { it != "Wumpa" }) {
+            for ((name, zone) in SafariCompletionZones.forBiome(biome).filterKeys { it !in SafariFullClear.maximumCaptures }) {
                 val run = SafariRun(0)
                 run.visitBiome(biome)
                 caught(run, name, SafariFullClear.minimum(name) - 1)

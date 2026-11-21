@@ -1,5 +1,8 @@
 package net.johnceo.sparklingmutuals.safari.structures
 
+import net.johnceo.sparklingmutuals.config.SafariChatCategory
+import net.johnceo.sparklingmutuals.safari.SafariChatFilter
+import net.johnceo.sparklingmutuals.safari.SafariMessages
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -42,5 +45,26 @@ class MoundHitProgressTest {
         assertNull(survey.confirmHit(2, 4000))
         assertEquals("(0/5)", survey.hitLabel(first))
         assertEquals("(0/5)", survey.hitLabel(second))
+    }
+
+    @Test fun hiddenMoundStagesStillAdvanceWhenSwitchingTargets() {
+        val survey = MoundSurvey()
+        val first = Triple(-80, 57, 61)
+        val second = Triple(-95, 43, 24)
+        val stageOne = "§7Small cracks begin to form in the mound..."
+        val stageTwo = "§7The cracks seem to be getting larger, keep hitting it!"
+        assertTrue(SafariChatFilter.hidden(stageOne, true) { it == SafariChatCategory.ROCKMITE })
+        assertTrue(SafariChatFilter.hidden(stageTwo, true) { it == SafariChatCategory.ROCKMITE })
+        val firstHit = SafariMounds.hitStage(SafariMessages.lines(stageOne).single())!!
+        val secondHit = SafariMounds.hitStage(SafariMessages.lines(stageTwo).single())!!
+
+        survey.attack(first, 1000)
+        assertEquals(first, survey.confirmHit(firstHit, 1050))
+        survey.attack(second, 1100)
+        assertEquals(second, survey.confirmHit(firstHit, 1150))
+        survey.attack(second, 1200)
+        assertEquals(second, survey.confirmHit(secondHit, 1250))
+        assertEquals("(1/5)", survey.hitLabel(first))
+        assertEquals("(2/5)", survey.hitLabel(second))
     }
 }

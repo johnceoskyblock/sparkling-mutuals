@@ -2,6 +2,7 @@ package net.johnceo.sparklingmutuals.safari
 
 import net.johnceo.sparklingmutuals.safari.ui.ProfitableChecklist
 import net.johnceo.sparklingmutuals.safari.completion.SharedCritterProgress
+import net.johnceo.sparklingmutuals.safari.completion.SafariFullClear
 import net.johnceo.sparklingmutuals.config.*
 import net.johnceo.sparklingmutuals.hud.SafariHud
 import org.junit.jupiter.api.Assertions.*
@@ -63,17 +64,41 @@ class ProfitableChecklistAndLakeTest {
         assertEquals("? left", ProfitableChecklist.panel(run, SafariBiome.CAVERN, listOf("Rockmite")).rows.single().value)
         assertTrue(ProfitableChecklist.panel(run, SafariBiome.ICY, emptyList()).rows.single().label.contains("loading"))
     }
-    @Test fun `lake requires all three personal catches once per run`() {
-        val run = SafariRun(0)
-        fun consume() = run.lakeCatchMilestone.consume(run::personalCount)
-        for (name in LakeCatchMilestone.species) run.record(SafariCatch(SafariRoster.named(name)!!, personal = false, catcherName = "Peer"))
-        assertFalse(consume(), "loot shares do not qualify")
-        for (name in listOf("Tepid", "Nozzlenose")) run.record(SafariCatch(SafariRoster.named(name)!!))
-        assertFalse(consume())
-        run.record(SafariCatch(SafariRoster.named("Mantis Shrimp")!!))
-        assertTrue(consume()); assertFalse(consume())
-        assertFalse(SafariRun(1).lakeCatchMilestone.consume { 0 })
+    @Test fun `Unique and Sparkling alert after one personal catch of each lake critter`() {
+        for (mode in listOf(SafariMode.UNIQUE, SafariMode.SPARKLING)) {
+            val run = SafariRun(0)
+            fun consume() = run.lakeCatchMilestone.consume(run, mode)
+            for (name in LakeCatchMilestone.species) run.record(SafariCatch(SafariRoster.named(name)!!, personal = false, catcherName = "Peer"))
+            assertFalse(consume(), "loot shares do not qualify")
+            for (name in listOf("Tepid", "Nozzlenose")) run.record(SafariCatch(SafariRoster.named(name)!!))
+            assertFalse(consume())
+            run.record(SafariCatch(SafariRoster.named("Mantis Shrimp")!!))
+            assertTrue(consume())
+            assertFalse(consume())
+        }
         assertEquals("Lake Cleared", LakeClearAlert.preview().title)
+    }
+    @Test fun `Full Clear waits for the entire observed lake population`() {
+        val run = SafariRun(0)
+        val shrimp = "Mantis Shrimp"
+        val mode = SafariMode.FULL_CLEAR
+        run.visitBiome(SafariBiome.ICY)
+        run.observePopulation(List(4) { shrimp to java.util.UUID.randomUUID() })
+        fun caught(name: String) = run.record(SafariCatch(SafariRoster.named(name)!!))
+        fun scan(remaining: Set<String> = emptySet()) = run.updateCaptureEvidence(SafariBiome.ICY,
+            remaining, false, playerX = -73.0, playerZ = -46.0)
+        LakeCatchMilestone.species.forEach(::caught)
+        scan()
+        assertFalse(run.lakeCatchMilestone.consume(run, mode))
+        LakeCatchMilestone.species.forEach { name -> repeat(SafariFullClear.minimum(name) - 1) { caught(name) } }
+        scan()
+        assertFalse(run.lakeCatchMilestone.consume(run, mode), "an extra observed shrimp still needs a catch")
+        caught(shrimp)
+        scan(setOf(shrimp))
+        assertFalse(run.lakeCatchMilestone.consume(run, mode), "a live remainder blocks the alert")
+        scan()
+        assertTrue(run.lakeCatchMilestone.consume(run, mode))
+        assertFalse(run.lakeCatchMilestone.consume(run, mode))
     }
     @Test fun `walls never become Snoozle counts and a cleared empty survey can prove zero`() {
         val run = SafariRun(0)

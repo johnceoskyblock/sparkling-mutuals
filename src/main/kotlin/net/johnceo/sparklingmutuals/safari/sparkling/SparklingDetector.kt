@@ -27,13 +27,11 @@ data class SparklingDetection(val species: String, val body: Int, val label: Int
 /** Positive identification feeds alerts, glow and the nearby HUD without gating completion. */
 object SparklingDetector {
     internal fun captureMarkers(entities: List<SparklingEntity>) = entities.filter {
-        it.capsule || !it.realPlayer && it.name?.let(SafariRules::strip)?.trimStart()?.startsWith("CAPTURING", true) == true
+        it.capsule || !it.realPlayer && SafariEspRules.isCapturingLabel(it.name)
     }
 
     internal fun atCapture(x: Double, y: Double, z: Double, markers: List<SparklingEntity>) = markers.any {
-        val dx = it.x - x
-        val dz = it.z - z
-        dx * dx + dz * dz <= .75 * .75 && kotlin.math.abs(it.y - y) <= 2.5
+        SafariEspRules.nearCaptureMarker(it.x - x, it.y - y, it.z - z)
     }
 
     fun detect(snapshots: List<SparklingEntity>): List<SparklingDetection> {

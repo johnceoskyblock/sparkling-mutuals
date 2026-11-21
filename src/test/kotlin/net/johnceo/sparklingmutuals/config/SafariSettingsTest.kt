@@ -2,12 +2,44 @@ package net.johnceo.sparklingmutuals.config
 
 import java.nio.file.Path
 import net.johnceo.sparklingmutuals.safari.SafariAreaMap
+import net.johnceo.sparklingmutuals.safari.completion.BossPbCategory
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 
 class SafariSettingsTest {
     @TempDir lateinit var dir: Path
+    @Test fun `each local PB category has an independent switch that survives reload`() {
+        ConfigManager.init(dir)
+        ContestConfig.init(dir)
+        val settings = SafariSettings()
+        val catalog = SettingsCatalog(settings)
+        val bossCategories = BossPbCategory.entries.zip(listOf("solo", "duo", "observedSolo", "observedDuo"))
+        val toggles = buildMap<List<String>, () -> Boolean> {
+            for ((bossField, species) in listOf("doom" to "Doomspiral", "wumpa" to "Wumpa")) {
+                for ((category, field) in bossCategories) {
+                    put(listOf(bossField, field)) { ConfigManager.showBossPbChat(species, category) }
+                }
+            }
+            put(listOf("fullClear")) { ConfigManager.fullClearPbChat }
+            put(listOf("unique")) { ConfigManager.uniquePbChat }
+            put(listOf("partyUnique")) { ConfigManager.partyUniquePbChat }
+        }
+        assertTrue(toggles.values.all { it() })
+        for (path in toggles.keys) {
+            val target = SettingsTarget("Party Interactions", listOf("pbChat") + path)
+            val row = catalog.locate(target)!!.second.last()
+            assertTrue(catalog.location(row).startsWith("Party → Interactions → Local PB messages"))
+            row.write(false)
+            settings.apply()
+            ConfigManager.init(dir)
+            assertEquals(setOf(path), toggles.filterValues { !it() }.keys)
+            row.write(true)
+        }
+        settings.apply()
+        assertTrue(toggles.values.all { it() })
+    }
+
     @Test fun `HUD contest visibility saves independently from contest tracking`() {
         ConfigManager.init(dir);ContestConfig.init(dir)
         val settings=SafariSettings()

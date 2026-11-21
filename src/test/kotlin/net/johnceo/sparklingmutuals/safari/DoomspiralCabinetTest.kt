@@ -7,22 +7,24 @@ import kotlin.math.exp
 
 class DoomspiralCabinetTest {
     @Test fun `positive Sparkling evidence stays visually hidden until the server reveal`() {
-        for (remaining in listOf<Int?>(null, 98, 6)) {
-            val frame = DoomspiralCabinet.frame(3f, 1f, remaining, 92.99f, 7)
-            assertNull(frame.label)
+        for (remaining in listOf<Int?>(null, 98, 26)) {
+            val frame = DoomspiralCabinet.frame(3f, 1f, remaining, 72.99f, 7)
+            assertFalse(frame.revealed)
             assertFalse(frame.jackpot)
         }
-        val frame = DoomspiralCabinet.frame(3f, 1f, 5, 93f, 7)
-        assertEquals("Sparkling Doomspiral", frame.label)
-        assertEquals(0xFFFFD87A.toInt(), frame.labelColor)
+        val frame = DoomspiralCabinet.frame(3f, 1f, 25, 73f, 7)
+        assertTrue(frame.revealed)
         assertTrue(frame.jackpot)
+        assertEquals(0f, frame.revealProgress)
+        val lastFrame = DoomspiralCabinet.frame(8f, 1f, 1, 97.99f, 7)
+        assertTrue(lastFrame.jackpot)
+        assertTrue(lastFrame.revealProgress > .99f)
     }
 
-    @Test fun `all ordinary layouts have the same white regular result`() {
+    @Test fun `all seven ordinary layouts reveal a regular result with 25 ticks to go`() {
         for (mask in 0..6) {
-            val frame = DoomspiralCabinet.frame(8f, 1f, 1, 97f, mask)
-            assertEquals("Regular Doomspiral", frame.label)
-            assertEquals(0xFFFFFFFF.toInt(), frame.labelColor)
+            val frame = DoomspiralCabinet.frame(8f, 1f, 25, 73f, mask)
+            assertTrue(frame.revealed)
             assertFalse(frame.jackpot)
         }
     }
@@ -35,9 +37,9 @@ class DoomspiralCabinetTest {
             val end = ceil((initial + 4) / 6) * 6 + if (mask and (1 shl index) != 0) 0 else 1
             assertEquals(initial, DoomspiralCabinet.frame(1f, 1f, 98, 0f, mask).offset(index), .00001f)
             assertEquals(initial + (end - initial) * .75f,
-                DoomspiralCabinet.frame(20f, 1f, 52, 46.5f, mask).offset(index), .00001f)
-            for (tick in listOf(93f, 94f, 97.99f))
-                assertEquals(end, DoomspiralCabinet.frame(100f, 1f, 5, tick, mask).offset(index), .00001f)
+                DoomspiralCabinet.frame(20f, 1f, 62, 36.5f, mask).offset(index), .00001f)
+            for ((remaining, tick) in listOf(25 to 73f, 24 to 74f, 1 to 97.99f))
+                assertEquals(end, DoomspiralCabinet.frame(100f, 1f, remaining, tick, mask).offset(index), .00001f)
         }
     }
 
@@ -46,7 +48,7 @@ class DoomspiralCabinetTest {
         val lagged = DoomspiralCabinet.frame(100f, 1f, 70, 28f, 7)
         for (i in 0..2) assertEquals(early.offset(i), lagged.offset(i))
         assertFalse(lagged.jackpot)
-        assertNull(lagged.label)
+        assertFalse(lagged.revealed)
     }
 
     @Test fun `cabinet lever and celebration fit the viewport at every GUI scale`() {

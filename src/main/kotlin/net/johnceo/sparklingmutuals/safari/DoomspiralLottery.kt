@@ -12,15 +12,15 @@ import net.minecraft.world.entity.monster.warden.Warden
 import net.minecraft.world.phys.AABB
 import kotlin.random.Random
 
+internal const val DOOMSPIRAL_CAPTURE_TICKS = 98
+internal const val DOOMSPIRAL_JACKPOT_MASK = 0b111
+
 /** A local reveal of Hypixel's encounter, driven by the same ping clock as the throw timer. */
 object DoomspiralLottery {
     private const val RITUAL_X = -5.5
     private const val RITUAL_Y = 46.0
     private const val RITUAL_Z = -23.5
     private const val RADIUS = 15.0
-    private const val CAPTURE_TICKS = 98
-    private const val REVEAL_TICKS = 5
-    private const val JACKPOT = 0b111
     private const val LAST_CANDLE = "You used the Soothing Incense to light the candle! The ground beneath your feet starts to shift..."
     private const val SUMMONED = "Your ritual summoned a Doomspiral into this world. Stay still."
     private val ritualBounds = AABB(RITUAL_X, RITUAL_Y, RITUAL_Z, RITUAL_X, RITUAL_Y, RITUAL_Z).inflate(RADIUS)
@@ -70,13 +70,13 @@ object DoomspiralLottery {
             run = current
             world = client.level
             // Pick one losing layout per ritual. A positive Sparkling detection upgrades it to the jackpot.
-            resultMask = Random.nextInt(JACKPOT)
+            resultMask = Random.nextInt(DOOMSPIRAL_JACKPOT_MASK)
             startAt = now + 1_000_000_000L
             return
         }
         if (startAt == null || world !== client.level || run !== SafariTracking.ledger.current) return
         if (cue == SUMMONED) summoned = true
-        if (cue == DOOMSPIRAL_STIRS && countdown.trigger(cue, true, CAPTURE_TICKS, 0)) {
+        if (cue == DOOMSPIRAL_STIRS && countdown.trigger(cue, true, DOOMSPIRAL_CAPTURE_TICKS, 0)) {
             lastPulse = now
             settleAt = now
         }
@@ -99,10 +99,10 @@ object DoomspiralLottery {
             finish()
             return
         }
-        if ((!summoned && remaining == null) || now < start || resultMask == JACKPOT) return
+        if ((!summoned && remaining == null) || now < start || resultMask == DOOMSPIRAL_JACKPOT_MASK) return
         if (run?.sparklingCaptures?.pending("Doomspiral") == true ||
             SafariPartySync.hasOutstandingSharedSparkling("Doomspiral")) {
-            resultMask = JACKPOT
+            resultMask = DOOMSPIRAL_JACKPOT_MASK
             return
         }
         val level = client.level ?: return
@@ -112,7 +112,7 @@ object DoomspiralLottery {
         val labels = level.getEntities(warden, warden.boundingBox.inflate(2.0))
             .mapNotNull { it.customName?.string } + listOfNotNull(warden.customName?.string)
         if (labels.any { SafariRules.sparklingSpecies(it) == "Doomspiral" }) {
-            resultMask = JACKPOT
+            resultMask = DOOMSPIRAL_JACKPOT_MASK
         }
     }
 
@@ -123,7 +123,7 @@ object DoomspiralLottery {
         lastPulse = System.nanoTime()
         if (countdown.remaining == 0) {
             finish()
-            if (resultMask == JACKPOT) SparklingEncounters.doomspiralRevealed()
+            if (resultMask == DOOMSPIRAL_JACKPOT_MASK) SparklingEncounters.doomspiralRevealed()
         }
     }
 
@@ -154,7 +154,7 @@ object DoomspiralLottery {
         val elapsed = (now - start) / 1_000_000_000f
         val remaining = countdown.remaining
         val settleElapsed = settleAt?.let { ((it - start) / 1_000_000_000f).coerceAtLeast(0f) }
-        val ticksSinceStirs = if (remaining == null) 0f else CAPTURE_TICKS - remaining +
+        val ticksSinceStirs = if (remaining == null) 0f else DOOMSPIRAL_CAPTURE_TICKS - remaining +
             ((now - lastPulse) / 50_000_000f).coerceIn(0f, .99f)
         val frame = DoomspiralCabinet.frame(elapsed, settleElapsed, remaining, ticksSinceStirs, resultMask)
         DoomspiralCabinetRenderer.render(g, width, height, frame)

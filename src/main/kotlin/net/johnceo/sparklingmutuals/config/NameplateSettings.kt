@@ -9,7 +9,7 @@ import net.johnceo.sparklingmutuals.safari.SafariRoster
  */
 object CritterNameplates {
     data class Options(val enabled: Boolean=true, val display: Int=2, val distance: Boolean=false,
-        val pity: Boolean=true, val eagle: Int=0, val color: String=AppearanceConfig.color(0xFFFFFF),
+        val pity: Boolean=false, val eagle: Int=0, val color: String=AppearanceConfig.color(0xFFFFFF),
         val uniqueColors: Boolean=false, val rarityColors: Boolean=false, val entityColorOverride: Boolean=false,
         val fixedColor: Boolean=false)
     var settings=Options()
@@ -44,7 +44,7 @@ object CritterNameplates {
         fun bool(key: String, default: Boolean)=p.getProperty(PREFIX+key)?.toBooleanStrictOrNull() ?: default
         // The old per-critter template implementation is deliberately replaced; aliases use separate keys.
         settings=Options(bool("enabled",true),(p.getProperty(PREFIX+"display")?.toIntOrNull() ?: 2).coerceIn(0,3),
-            bool("distance",false),bool("pity",true),(p.getProperty(PREFIX+"eagle")?.toIntOrNull() ?: 0).coerceIn(0,5),
+            bool("distance",false),bool("pity",false),(p.getProperty(PREFIX+"eagle")?.toIntOrNull() ?: 0).coerceIn(0,5),
             SafariEspConfig.validColor(p.getProperty(PREFIX+"color"),AppearanceConfig.color(0xFFFFFF)),
             bool("uniqueColors",false),bool("rarityColors",false),bool("entityColorOverride",false),bool("fixedColor",false))
         for (critter in SafariRoster.all) {

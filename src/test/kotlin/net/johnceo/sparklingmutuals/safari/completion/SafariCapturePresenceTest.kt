@@ -21,12 +21,12 @@ class SafariCapturePresenceTest {
             run.record(SafariCatch(critter))
             assertTrue(run.captureComplete(name))
             run.updateCaptureEvidence(critter.biome, setOf(name), false)
-            assertFalse(run.captureComplete(name))
+            assertEquals(name in SafariFullClear.maximumCaptures, run.captureComplete(name))
             run.updateCaptureEvidence(critter.biome, setOf("Macaw"), false)
             assertTrue(run.captureComplete(name))
             val unscanned = SafariRun(0)
             repeat(minimum) { unscanned.record(SafariCatch(critter)) }
-            assertFalse(unscanned.captureComplete(name))
+            assertEquals(name in SafariFullClear.maximumCaptures, unscanned.captureComplete(name))
         }
     }
     @Test fun `birds clear independently after feeding and every remaining species blocks itself`() {
