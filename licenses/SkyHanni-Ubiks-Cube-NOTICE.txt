@@ -1,0 +1,10 @@
+Ubik's Cube Cooldown attribution
+
+Adapted from SkyHanni's UbikReminder.kt by SkyHanni contributors, including
+NopoTheGamer's timer GUI in PR #4909.
+https://github.com/SkyHanniStudios/SkyHanni/pull/4909
+https://github.com/SkyHanniStudios/SkyHanni/blob/9cfab4c88/src/main/java/at/hannibal2/skyhanni/features/rift/area/mountaintop/UbikReminder.kt
+
+UbiksCubeTimer.kt retains LGPL-2.1. See SkyHanni-LGPL-2.1.txt.
+The adaptation uses Sparkling Mutuals' event handlers, profile storage, settings,
+and HUD editor for the two-hour countdown and the server-reported wait time.

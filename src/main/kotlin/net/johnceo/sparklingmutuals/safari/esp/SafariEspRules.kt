@@ -1,8 +1,10 @@
 package net.johnceo.sparklingmutuals.safari.esp
 
 import java.util.UUID
+import net.johnceo.sparklingmutuals.config.BiomeObjectiveConfig
 import net.johnceo.sparklingmutuals.safari.PartySparklingState
 import net.johnceo.sparklingmutuals.safari.SafariBiome
+import net.johnceo.sparklingmutuals.safari.SafariMode
 import net.johnceo.sparklingmutuals.safari.SafariRoster
 import net.johnceo.sparklingmutuals.safari.SafariRules
 import net.johnceo.sparklingmutuals.safari.SafariRun
@@ -59,17 +61,20 @@ object SafariEspRules {
     fun neededForRun(species: String, mound: Boolean, run: SafariRun?, fullClear: Boolean, profitable: Boolean = true,
         party: PartySparklingState? = null) =
         if (fullClear) true
+        else if (!BiomeObjectiveConfig.allowsEsp(species, SafariMode.UNIQUE, run)) false
         else if (profitableEsp(species, profitable)) true
-        else if (species == "Rockmite" && mound) (run?.captureProgress(species) ?: 0) == 0 || party?.needs(species) == true
+        else if (species == "Rockmite" && mound) (run?.captureProgress(species) ?: 0) == 0 || party?.let { BiomeObjectiveConfig.needs(species, it) } == true
         else (run?.captureProgress(species) ?: 0) == 0 && run?.uniqueUnavailable(species) != true && run?.sharedCritterComplete(species, net.johnceo.sparklingmutuals.safari.SafariMode.UNIQUE) != true
     @Suppress("UNUSED_PARAMETER")
     fun neededForSparkling(species: String, mound: Boolean, party: PartySparklingState, profitable: Boolean,
         run: SafariRun? = null, uuid: java.util.UUID? = null, now: Long = System.currentTimeMillis()): Boolean {
+        if (run?.sparklingChecks?.wumpaPrerequisite(species, party) == true && run.captureProgress("Wumpa") == 0 &&
+            run.captureProgress(species) == 0) return true
+        if (!BiomeObjectiveConfig.check(species)) return false
         if (net.johnceo.sparklingmutuals.safari.completion.ScannableCritterChecks.pending(species,run,party)) return true
         if (profitableEsp(species, profitable)) return true
         if (species == "Honeybug" || species == "Rockmite" && !mound) return false
         if (species == "Doomspiral" || species == "Wumpa") return party.needs(species) && (run?.captureProgress(species) ?: 0) == 0
-        if (run?.sparklingChecks?.wumpaPrerequisite(species, party) == true && run.captureProgress(species) == 0) return true
         if (!party.needs(species)) return false
         if (mound && species == "Rockmite") return run?.sparklingComplete(species, party) != true
         return false // Automatic checking needs no ordinary critter highlight or per-UUID linger.

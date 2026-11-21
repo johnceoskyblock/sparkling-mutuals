@@ -98,6 +98,7 @@ class HudLayout(private val defaultX: Float, private val defaultY: Float, privat
 
 enum class SafariHud(private val defaultLabel: String, val layout: HudLayout) {
     PROGRESS("Safari progress", HudLayout(.015f, .22f)), MISSING("Missing critters", HudLayout(.72f, .22f)),
+    SPLITS("Safari splits", HudLayout(.18f, .17777778f, .6f, 640f, 360f)),
     PROFITABLE("Profitable mobs", HudLayout(.72f, .30f, .6f,640f,360f)),
     LAKE_CLEARED("Lake Cleared", HudLayout(.40f, .14f, 1.5f,640f,360f)),
     OBJECTIVES("Biome Objectives", HudLayout(.72f, .62f)),
@@ -114,6 +115,7 @@ enum class SafariHud(private val defaultLabel: String, val layout: HudLayout) {
     ENTRY_COOLDOWN("Safari entry cooldown", HudLayout(.40f, .65f)),
     SHARD_GUIDANCE("Shard sale guidance", HudLayout(.75f,.2f)),
     HUNTING_BOX_VALUE("Hunting Box value", HudLayout(.35f,.1f)),
+    UBIKS_CUBE("Ubik's Cube Cooldown", HudLayout(.0140625f, .08888889f, .6f, 640f, 360f)),
     DEVELOPER("Safari developer", HudLayout(.34f, .24f));
     val label get() = if (this == MISSING && net.johnceo.sparklingmutuals.config.ConfigManager.sparklingMode)
         "Unchecked critters" else defaultLabel

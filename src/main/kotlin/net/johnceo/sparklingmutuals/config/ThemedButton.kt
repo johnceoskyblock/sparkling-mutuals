@@ -6,11 +6,16 @@ import net.minecraft.client.gui.components.Button
 import net.minecraft.network.chat.Component
 
 /** Native button interaction/narration, with the same surfaces as the settings workspace. */
-class ThemedButton private constructor(x: Int,y: Int,w: Int,h: Int,label: Component,action: OnPress) : Button(x,y,w,h,label,action,DEFAULT_NARRATION) {
+class ThemedButton private constructor(x: Int,y: Int,w: Int,h: Int,label: Component,action: OnPress, private val primary: Boolean) : Button(x,y,w,h,label,action,DEFAULT_NARRATION) {
     override fun extractContents(g: GuiGraphicsExtractor,mx: Int,my: Int,delta: Float) {
         val highlighted=isHoveredOrFocused
-        g.fill(x,y,x+width,y+height,if(highlighted && active) SettingsPalette.hover else SettingsPalette.card)
-        val border=if(highlighted && active) SettingsPalette.accent else SettingsPalette.border
+        val fill = when {
+            highlighted && active -> if (primary) SettingsPalette.selected else SettingsPalette.hover
+            primary && active -> SettingsPalette.hover
+            else -> SettingsPalette.card
+        }
+        g.fill(x,y,x+width,y+height,fill)
+        val border=if((highlighted || primary) && active) SettingsPalette.accent else SettingsPalette.border
         g.fill(x,y,x+width,y+1,border);g.fill(x,y+height-1,x+width,y+height,border)
         g.fill(x,y,x+1,y+height,border);g.fill(x+width-1,y,x+width,y+height,border)
         val font=net.johnceo.sparklingmutuals.hud.HudFonts.font
@@ -20,9 +25,11 @@ class ThemedButton private constructor(x: Int,y: Int,w: Int,h: Int,label: Compon
     }
     class Builder(private val message: Component,private val action: OnPress) {
         private var x=0;private var y=0;private var w=150;private var h=20
+        private var primary = false
         fun bounds(x: Int,y: Int,w: Int,h: Int)=apply { this.x=x;this.y=y;this.w=w;this.h=h }
         fun width(w: Int)=apply { this.w=w }
-        fun build()=ThemedButton(x,y,w,h,message,action)
+        fun primary()=apply { primary=true }
+        fun build()=ThemedButton(x,y,w,h,message,action,primary)
     }
     companion object { fun builder(message: Component,action: OnPress)=Builder(message,action) }
 }

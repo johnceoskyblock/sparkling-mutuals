@@ -1,6 +1,7 @@
 package net.johnceo.sparklingmutuals.safari.structures
 
 import net.johnceo.sparklingmutuals.config.ConfigManager
+import net.johnceo.sparklingmutuals.config.BiomeObjectiveConfig
 
 import net.johnceo.sparklingmutuals.compat.*
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext
@@ -116,6 +117,7 @@ object BeeNests {
         val moundGroup = SafariEspConfig.groups.getValue("cavern")
         val alwaysShowMounds = SafariEspConfig.alwaysOn("Rockmite")
         val retainedMounds = if (moundGroup.enabled && SafariEspConfig.entityEnabled("Rockmite", mound = true) &&
+            BiomeObjectiveConfig.allowsEsp("Rockmite", SafariFullClear.mode, run) &&
             (SafariAssist.biome == SafariBiome.CAVERN || !moundGroup.onlyInBiome || alwaysShowMounds) &&
             (alwaysShowMounds || SafariHelperRules.highlightSource("Rockmite", SafariFullClear.mode, run, SafariSparklingMode.state))) {
             val rendered = net.johnceo.sparklingmutuals.safari.esp.SafariEsp.renderedMoundSites(client)

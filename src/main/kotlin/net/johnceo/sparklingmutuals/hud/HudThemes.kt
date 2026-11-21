@@ -10,11 +10,12 @@ object HudThemes {
     fun border(hud: SafariHud): Int? {
         if(!BannerConfig.biomeBorders) return null
         val biome=SafariAssist.biome ?: return null
-        if(hud !in setOf(SafariHud.PROGRESS,SafariHud.MISSING,SafariHud.PROFITABLE,SafariHud.CAPTURES,SafariHud.OBJECTIVES,SafariHud.SPARKLINGS)) return null
+        if(hud !in setOf(SafariHud.PROGRESS,SafariHud.SPLITS,SafariHud.MISSING,SafariHud.PROFITABLE,SafariHud.CAPTURES,SafariHud.OBJECTIVES,SafariHud.SPARKLINGS)) return null
         if(hud==SafariHud.MISSING) {
             val run=SafariTracking.run
             val party=SafariSparklingMode.state
-            val targets=biome.critters.filter { SafariFullClear.mode!=SafariMode.SPARKLING || party.needs(it.name) }
+            val targets=biome.critters.filter { SafariFullClear.mode!=SafariMode.SPARKLING ||
+                net.johnceo.sparklingmutuals.config.BiomeObjectiveConfig.needs(it.name, party) }
             if((SafariFullClear.mode!=SafariMode.SPARKLING || party.ready) && run?.completed(SafariFullClear.mode,targets,party)==targets.size) return 0xFF55FF55.toInt()
         }
         return biome.color

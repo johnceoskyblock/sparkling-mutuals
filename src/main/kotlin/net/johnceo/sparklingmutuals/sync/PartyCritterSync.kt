@@ -101,7 +101,7 @@ internal object CritterProgressProtocol {
         }
         add("rows", JsonArray().apply { PartySyncProtocol.species.forEach { name ->
             // Export only existing local proof, never any newly received C data.
-            val unique = run.uniqueComplete(name, party, localOnly = true) || run.uniqueUnavailable(name)
+            val unique = run.uniqueComplete(name, party, localOnly = true, respectObjectiveChoices = false) || run.uniqueUnavailable(name)
             val checked = run.sparklingComplete(name, party, localOnly = true)
             val full = run.captureComplete(name)
             add(JsonArray().apply {

@@ -19,10 +19,10 @@ internal object SettingsOrder {
             "darkness", "hideGroundCapsules", "hideFlyingCapsules", "capsuleHideDistance", "paintings"),
         "Alerts" to listOf("shiny", "alert", "appearance", "sound", "volume", "saveSound", "announce", "nearbyAppearance",
             "caught", "alwaysCelebrate", "caughtStyle", "previewCatch", "catchCount"),
-        "Tracking" to listOf("where", "progressHud", "missingHud", "objectivesHud", "capturesHud",
+        "Tracking" to listOf("where", "progressHud", "splitsHud", "missingHud", "objectivesHud", "capturesHud",
             "contestHud", "hotspotHud", "profitableHud", "lakeClearedHud"),
         "HotspotHudOptions" to listOf("showAllPlayers", "appearance", "placement"),
-        "SkyBlockHelpers" to listOf("shardSaleGuidance", "huntingBoxValue", "skillOverflow", "skillOverflowChat", "skillOverflowNumbers"),
+        "SkyBlockHelpers" to listOf("shardSaleGuidance", "huntingBoxValue", "skillOverflow", "skillOverflowChat", "skillOverflowNumbers", "ubiksCubeTimer"),
         "BannerSettings" to listOf("enabled", "safari", "encounters", "contest", "appearance", "placement", "preview"),
         "SafariBannerOptions" to listOf("complete", "biome", "fullParty", "warp"),
         "EncountersBanners" to listOf("hideyho", "gems", "food", "feeder", "incense", "coins"),
@@ -45,7 +45,7 @@ internal object SettingsOrder {
 
     fun rows(owner: Any, rows: List<SettingsCatalog.Row>): List<SettingsCatalog.Row> {
         val order = fields[owner.javaClass.simpleName] ?: if (owner is SafariSettings.HudOptions)
-            listOf("enabled", "profit", "hotspot", "captureReminder", "shinyReminder", "bracket", "score", "appearance", "placement")
+            listOf("enabled", "timeFormat", "showSession", "profit", "hotspot", "captureReminder", "shinyReminder", "rows", "checks", "bracket", "score", "appearance", "placement")
         else return rows
         // Unknown/new fields keep their declared order after the explicitly arranged controls.
         return rows.sortedBy { order.indexOf(it.navigationName).takeIf { index -> index >= 0 } ?: order.size }

@@ -8,6 +8,12 @@
       "members": {
         "0123456789abcdef0123456789abcdef": {
           "safari": {
+            "biome_captures": {
+              "forest": 12000,
+              "cavern": 34,
+              "icy": 56,
+              "haunted": 311
+            },
             "discovered_sparkling_critters": [
               "SOLSNATCHER",
               "GAZER"

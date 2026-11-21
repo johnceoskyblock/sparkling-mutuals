@@ -11,11 +11,12 @@ import java.time.Duration
 /**
  * Shiny Hunter's shared API: a Cloudflare Worker that holds a Hypixel key, so lookups work without one of your own.
  * `/profile/<uuid>` returns `/v2/skyblock/profiles` cut down to the selected profile and that one member, in Hypixel's
- * own shape. The member keeps exactly these fields:
- *  - `safari` (whole: sparkling discoveries, tickets, ...)
+ * own shape. Fields used here include:
+ *  - `safari` (whole: sparkling discoveries, tickets, biome captures, ...)
  *  - `player_data.experience.SKILL_HUNTING`
  *  - `currencies.essence.SAFARI`
  *  - `foraging.honey` (whole: `refill_times`, ...)
+ *  - `bestiary.kills` when available
  * A field Hypixel itself leaves out (a player who has never looted a hive has no `foraging.honey`) is left out here
  * too, never replaced by an empty value; readers must treat a missing field as unknown. `src/test/resources/cloud`
  * holds two responses produced by the Worker's own trimming code. The Worker limits requests per address and caches

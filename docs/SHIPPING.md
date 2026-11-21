@@ -34,6 +34,8 @@ It fetches `origin`, rebases onto the equivalent remote branch when present and 
 
 ## Publish a new version
 
+Append flagship features to [the in-game highlights catalog](../src/main/resources/releases/flagship-highlights.json) under the version that ships them, and keep older entries for players skipping releases. Use a short feature name and a sentence or two on what changed or where to find it. Patch-only releases can omit an entry.
+
 Write a short notes file describing the final features and fixes. You can keep it outside the repository so it is not included in the commit. For example, create `$HOME/Desktop/sm-release-notes.txt` in a text editor:
 
 ```text

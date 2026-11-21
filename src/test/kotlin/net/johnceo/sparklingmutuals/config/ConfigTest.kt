@@ -4,11 +4,35 @@ import java.nio.file.Files
 import java.nio.file.Path
 import net.johnceo.sparklingmutuals.hud.SafariHud
 import net.johnceo.sparklingmutuals.safari.SafariRun
+import net.johnceo.sparklingmutuals.safari.SplitTimeFormat
+import net.johnceo.sparklingmutuals.safari.ui.SafariPanels
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 
 class ConfigTest {
+    @Test fun `splits preferences persist and the optional compact footer is measured in the editor`() {
+        ConfigManager.init(dir); ContestConfig.init(dir)
+        assertEquals(SplitTimeFormat.MILLISECONDS, ConfigManager.splitsTimeFormat)
+        val before = SafariPanels.splitsPreview()
+        assertEquals("1:13.245", before.rows.first().value)
+        assertEquals(listOf("1:48.150", "100", "1 (100.0 r/s)"), before.compactFooter.map { it.value })
+
+        SafariSettings().apply {
+            tracking.splitsHud.timeFormat = SplitTimeFormat.SECONDS.ordinal
+            tracking.splitsHud.showSession = false
+        }.apply()
+        ConfigManager.init(dir)
+        assertEquals(SplitTimeFormat.SECONDS, ConfigManager.splitsTimeFormat)
+        assertFalse(ConfigManager.splitsShowSession)
+        val after = SafariPanels.splitsPreview()
+        assertEquals("1:13", after.rows.first().value)
+        assertTrue(after.compactFooter.isEmpty())
+        assertTrue(after.height < before.height)
+        val measure = { text: String -> text.length * 6 }
+        assertTrue(after.width(measure) < before.width(measure))
+    }
+
     @Test fun `warping timing upgrade resets once and sliders preserve later customization`() {
         val file=dir.resolve("sparkling-mutuals.properties")
         Files.writeString(file,"warpDelaySeconds=23\nrepartyDelaySeconds=24\nshinyDetection=false\n")
@@ -94,12 +118,17 @@ class ConfigTest {
         assertFalse(defaults.containsKey("apiKey"))
         assertFalse(defaults.stringPropertyNames().any { it.startsWith("pb.") || it.contains("uuid", true) })
         assertFalse(defaults.getProperty("warpList.players").isBlank())
-        for(key in listOf("hotspotAnnouncer","warpAlertsEnabled","leechMode","announceStartingItems"))
+        for(key in listOf("hotspotAnnouncer","warpAlertsEnabled","leechMode","announceStartingItems","ubiksCubeTimer"))
             assertEquals("false",defaults.getProperty(key),key)
         assertFalse(defaults.getProperty("leechWhitelist").isBlank())
         ConfigManager.init(dir); ContestConfig.init(dir)
         assertEquals(0, ConfigManager.safariTicketPreference)
         assertFalse(AppearanceConfig.panels.getValue("progress").borderEnabled)
+        val cube = AppearanceConfig.panels.getValue("ubiks_cube")
+        assertFalse(cube.borderEnabled)
+        assertEquals(20, cube.transparency)
+        assertEquals(0, cube.backgroundArgb and 0xFFFFFF)
+        assertFalse(SafariSettings().skyblock.helpers.ubiksCubeTimer.enabled)
         assertEquals(.0140625f, SafariHud.PROGRESS.layout.x)
         val contest = ContestConfig.layoutFor(640, 360).bounds(640, 360, 150, 42)
         assertEquals(104, contest.x); assertEquals(8, contest.y)

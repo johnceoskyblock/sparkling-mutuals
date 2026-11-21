@@ -48,7 +48,7 @@ object JoinWelcome {
     fun message(updateTag: String? = null): Component {
         fun text(value: String, color: Int = SafariTheme.CHAT_TEXT) = Component.literal(value)
             .withStyle { it.withColor(color) }
-        fun command(value: String, description: String) = text(value, SafariTheme.CHAT_ACCENT).withStyle {
+        fun command(value: String, description: String, label: String = value) = text(label, SafariTheme.CHAT_ACCENT).withStyle {
             it.withClickEvent(ClickEvent.RunCommand(value))
                 .withHoverEvent(HoverEvent.ShowText(text(description)))
         }

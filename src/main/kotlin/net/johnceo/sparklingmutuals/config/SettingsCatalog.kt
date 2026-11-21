@@ -119,6 +119,10 @@ class SettingsCatalog(settings: SafariSettings) {
             }
         }
         private fun rows(owner: Any,path: String): List<Row> {
+            if (owner is BiomeObjectiveToggles) {
+                val field = BiomeObjectiveToggle::class.java.getField("enabled")
+                return owner.entries.map { Row(it, field, it.label, it.description, "$path / ${it.label}", navigationName = it.key) }
+            }
             if(owner is CritterNameBiomeSettings) return owner.entries.map { entry ->
                 val field = CritterNameEntry::class.java.getField("name")
                 val itemPath = path+" / "+entry.canonical

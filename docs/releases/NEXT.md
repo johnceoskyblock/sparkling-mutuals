@@ -1,28 +1,30 @@
-## Capture tracking, ESP, and nameplates
+## Biome Objectives controls
 
-- Improved capture-to-model matching for delayed server messages, repeated throws, slightly off-target throws, hidden chat, and models that disappear before confirmation. Captured critters retire from ESP without hiding unrelated nearby critters.
-- Improved pity tracking across escapes and body/name-tag replacements, including Hideon critters and other capsule species. Ambiguous nearby critters no longer inherit each other's attempts, and capture-animation markers are matched to the relevant target.
-- **Show catch pity now defaults off.** Existing saved preferences are preserved.
-- Fixed Rockmite mound progress when hit messages are hidden or the player switches targets.
-- Improved retained Shyworm head positioning and visibility while underground, including when glow ESP is enabled without Box ESP.
+- Added independent switches for HUD rows such as nests, bird food, feeder contents, podiums, Snoozle walls, Rockmite mounds, coins, and Gazers.
+- Added per-species optional Sparkling-check choices for Unique and Sparkle modes. Skipped checks no longer delay biome completion or appear in missing-objective replies; Full Clear requirements and required Unique captures remain in place.
+- Hiding a HUD row only changes its display. Optional-check choices also guide related critter and resource ESP, while preserving targets still needed for captures. Skipped checks are not shared as completed evidence.
 
-## Completion and personal bests
+## Safari Splits HUD
 
-- Fixed Full Clear handling for species with known capture quotas, so leftover models do not keep verified quota completion pending. Eligible biome-clear reports can finish after leaving the biome.
-- Corrected **Lake Cleared** timing: Unique and Sparkling modes require one personal catch of Tepid, Nozzlenose, and Mantis Shrimp; Full Clear waits for their full observed populations. Loot shares alone do not trigger the alert.
-- Added **Local PB messages** controls for Doomspiral and Wumpa solo, duo, observed-solo, and observed-duo catches, plus Full Clear, Unique Run, and Party Unique Run biome records. These default on; hiding messages does not stop PB recording.
-- PB feedback now shows the relevant best time in `(PB: …)` form and identifies new records.
+- Added a biome splits HUD for Unique and Full Clear runs, with configurable seconds, tenths, hundredths, or milliseconds.
+- Added an optional current-session summary with average run time, run count, credited Sparklings, and runs per Sparkling when available.
+- Splits lock against the mode's capture and report requirements. The HUD defaults on and supports normal placement and appearance controls.
 
-## Hotspot party-run history
+## Party commands and capture stats
 
-- Added a completed party-run count to the Hotspot HUD, backed by saved run history and the current party's UUIDs.
-- Tracks whether Hotspot assigning was enabled, whether the roster was present together, and whether the reward summary was received. Roster refreshes, late summaries, and teammates leaving before the summary do not lose or double-count the recorded run.
-- Party changes reset continuity; older or unconfirmed history is not guessed into the count.
+- Added `!profit` with `session`, `lifetime`, `week`, or `day`; no argument defaults to the current session. Each responding mod user reports their recorded Safari profit, runs, and hourly rate when available, including whether values use sell offers or instant selling.
+- Added `!captures [IGN]` for total and per-biome Safari capture counts. With no IGN, it looks up the sender.
+- Individual `/sparkling` cards now include those capture totals and biome counts. Unavailable counts are reported as unavailable rather than invented as zero.
+- Updated party-command help and player-name suggestions for the new commands.
 
-## Recovery and presentation
+## Ubik's Cube cooldown
 
-- Fixed automatic reconnect handling for network/login failures and disconnects during server configuration. Retry backoff survives failed attempts; cancellation, intentional quits, and recognized non-retryable denials stop further retries.
-- Refreshed the Doomspiral Lottery reveal with revised reel timing, a clear **SPARKLING / REGULAR** marquee, and animated critter-name styling.
-- Added project credits and attribution links to the README.
+- Added an opt-in Rift Split or Steal cooldown timer under **SkyBlock → Helpers**.
+- Tracks the cooldown from the game menu or the server's wait message, saves it by player/profile, and retains it across relogs. The HUD supports placement and appearance settings; the feature defaults off.
+
+## In-game release highlights
+
+- Added a feature highlights screen with curated descriptions of what changed and where to find the new controls.
+- Tracks installed versions and unread highlights, including features from releases skipped during an upgrade. The bundled catalog works without fetching release notes and adapts to compact or wide screens.
 
 Builds target **Minecraft 26.1.2, 26.2, and 26.3**. Choose the JAR matching your Minecraft version.

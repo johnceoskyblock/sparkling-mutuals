@@ -9,6 +9,7 @@ import net.johnceo.sparklingmutuals.history.importing.LogImporter
 import net.johnceo.sparklingmutuals.history.ui.HistoryScreen
 import net.johnceo.sparklingmutuals.safari.SafariBiome
 import net.johnceo.sparklingmutuals.safari.SafariMode
+import net.johnceo.sparklingmutuals.safari.SplitTimeFormat
 import net.johnceo.sparklingmutuals.safari.completion.SafariFullClear
 import net.johnceo.sparklingmutuals.safari.sparkling.SparklingEncounters
 import net.johnceo.sparklingmutuals.safari.ui.CatchCountScreen
@@ -52,6 +53,7 @@ class SafariSettings {
         safari.capture.doomAppearance = customization.huds.doomThrow
         tracking.hotspotHud.appearance=customization.huds.hotspot
         tracking.progressHud.appearance=customization.huds.progress
+        tracking.splitsHud.appearance=customization.huds.splits
         tracking.missingHud.appearance=customization.huds.missing
         tracking.objectivesHud.appearance=customization.huds.objectives
         tracking.capturesHud.appearance=customization.huds.captures
@@ -75,6 +77,8 @@ class SafariSettings {
         @JvmField var estimatedChestValue = ConfigManager.estimatedChestValue
         @JvmField @ConfigOption(name = "Hunting Box value", desc = "Estimate the total value of shards on the pages you have opened.")
         @ConfigEditorBoolean var huntingBoxValue = ConfigManager.huntingBoxValue
+        @JvmField @ConfigOption(name = "Ubik's Cube Cooldown", desc = "Show when you can play Split or Steal again in the Rift.") @Accordion
+        val ubiksCubeTimer = HudOptions(ConfigManager.ubiksCubeTimer, "ubiks_cube")
     }
 
     class MiscEndgame {
@@ -475,6 +479,7 @@ class SafariSettings {
     class Tracking {
         @JvmField @ConfigOption(name = "Hotspot assignments", desc = "Show party hotspots, assigned biomes and wins while /hotspot is on.") @Accordion val hotspotHud=HotspotHudOptions()
         @JvmField @ConfigOption(name = "Run progress", desc = "Track overall and per-biome completion, time and profit.") @Accordion val progressHud=ProgressHudOptions()
+        @JvmField @ConfigOption(name = "Safari splits", desc = "Show when each biome was completed in Unique and Full Clear runs.") @Accordion val splitsHud=SplitsHudOptions()
         @JvmField @ConfigOption(name = "Missing critters", desc = "Show critters still needed for the current mode.") @Accordion val missingHud=HudOptions(ConfigManager.missingPanel,"missing")
         @JvmField @ConfigOption(name = "Profitable critters", desc = "Show the current biome's ten most profitable critters and captures remaining. Unique and Sparkling modes only.") @Accordion val profitableHud=HudOptions(ConfigManager.profitableChecklist,"profitable")
         @JvmField @ConfigOption(name = "Lake cleared alert", desc = "Catch one Tepid, Nozzlenose and Mantis Shrimp in Unique or Sparkling mode. In Full Clear, catch them all.") @Accordion val lakeClearedHud=HudOptions(ConfigManager.lakeClearAlert,"lake_cleared")
@@ -507,10 +512,21 @@ class SafariSettings {
     class ObjectivesHudOptions: HudOptions(ConfigManager.biomeObjectives,"objectives") {
         @JvmField @ConfigOption(name = "Show capture reminder", desc = "Show the Capture all uniques or Capture all critters line while captures are missing.") @ConfigEditorBoolean var captureReminder=ConfigManager.objectiveCaptureReminder
         @JvmField @ConfigOption(name = "Show sparkling-check reminder", desc = "Show a reminder while sparkling checks are still needed.") @ConfigEditorBoolean var shinyReminder=ConfigManager.objectiveShinyReminder
+        @JvmField @ConfigOption(name = "HUD rows", desc = "Choose what appears on this HUD.") @Accordion
+        val rows = BiomeObjectiveToggles.rows()
+        @JvmField @ConfigOption(name = "Optional sparkling checks", desc = "Skip these checks in Unique and Sparkle mode. Required captures still count.") @Accordion
+        val checks = BiomeObjectiveToggles.checks()
     }
     class ProgressHudOptions: HudOptions(ConfigManager.progressHud,"progress") {
         @JvmField @ConfigOption(name = "Show profit", desc = "Show estimated profit from shards, feathers and essence.") @ConfigEditorBoolean var profit=ConfigManager.progressProfit
         @JvmField @ConfigOption(name = "Show hotspot", desc = "Show the hotspot Hypixel gave you for this run.") @ConfigEditorBoolean var hotspot=ConfigManager.progressHotspot
+    }
+    class SplitsHudOptions: HudOptions(ConfigManager.splitsHud, "splits") {
+        @JvmField @ConfigOption(name = "Time format", desc = "Choose how precisely the HUD shows splits and the session average.")
+        @ConfigEditorDropdown(values = ["Milliseconds (1:48.150)", "Hundredths (1:48.15)", "Tenths (1:48.1)", "Seconds (1:48)"])
+        var timeFormat = ConfigManager.splitsTimeFormat.ordinal
+        @JvmField @ConfigOption(name = "Show session stats", desc = "Show average run time, run count and credited sparklings for the current session.")
+        @ConfigEditorBoolean var showSession = ConfigManager.splitsShowSession
     }
     class ContestHudOptions: HudOptions(ContestConfig.showContestTimer,"miria") {
         @JvmField @ConfigOption(name = "Show bracket", desc = "") @ConfigEditorBoolean var bracket=ContestConfig.showBracket
@@ -632,7 +648,7 @@ class SafariSettings {
             ConfigManager::fullClearHideCritterEsp to modes.fullClear.hideCritters, ConfigManager::fullClearHideFloorDropEsp to modes.fullClear.hideDrops,
             ConfigManager::sparklingHideCritterEsp to modes.sparkling.hideCritters, ConfigManager::sparklingHideFloorDropEsp to modes.sparkling.hideDrops, ConfigManager::announceStartingItems to party.startingItems, ConfigManager::huntingBoxValue to skyblock.helpers.huntingBoxValue, ConfigManager::shardSaleGuidance to skyblock.helpers.shardSaleGuidance, ConfigManager::skillOverflow to skyblock.helpers.skillOverflow, ConfigManager::skillOverflowChat to skyblock.helpers.skillOverflowChat, ConfigManager::skillOverflowNumbers to skyblock.helpers.skillOverflowNumbers, ConfigManager::estimatedItemValue to skyblock.helpers.estimatedItemValue, ConfigManager::estimatedChestValue to skyblock.helpers.estimatedChestValue, ConfigManager::phantomleafSolver to miscEndgame.phantomleafSolver, ConfigManager::highlightTeammates to safari.highlightTeammates, ConfigManager::showTeammateNames to safari.showTeammateNames, ConfigManager::profitableShardEsp to modes.unique.profitable, ConfigManager::sparklingProfitableShardEsp to modes.sparkling.profitable, ConfigManager::partyCommandsEnabled to party.enabled, ConfigManager::downtimeCommand to party.downtime, ConfigManager::useCloudApi to api.cloud, ConfigManager::hideHauntedPaintings to safari.paintings,
             ConfigManager::shinyDetection to safari.shiny, ConfigManager::hideyhoAutoAccept to safari.hideyhoAutoAccept, ConfigManager::autoSelectSafariTicket to safari.autoSelectTicket,
-            ConfigManager::progressHud to tracking.progress, ConfigManager::progressProfit to tracking.progressHud.profit, ConfigManager::progressHotspot to tracking.progressHud.hotspot, ConfigManager::hotspotShowAllPlayers to tracking.hotspotHud.showAllPlayers, ConfigManager::catchCountPanel to tracking.captures,
+            ConfigManager::progressHud to tracking.progress, ConfigManager::splitsHud to tracking.splitsHud.enabled, ConfigManager::progressProfit to tracking.progressHud.profit, ConfigManager::progressHotspot to tracking.progressHud.hotspot, ConfigManager::hotspotShowAllPlayers to tracking.hotspotHud.showAllPlayers, ConfigManager::catchCountPanel to tracking.captures,
             ConfigManager::experimentalCapsulePath to safari.experimentalCapsulePath,
             ConfigManager::gemzieGemAutoSelect to safari.gemzieGemAutoSelect,
             ConfigManager::showCapsuleGuideThroughTerrain to safari.showCapsuleGuideThroughTerrain,
@@ -640,6 +656,8 @@ class SafariSettings {
             ConfigManager::removeDarkness to safari.darkness,
             ConfigManager::clearWater to safari.visibility.clearWater,
             ConfigManager::sparklingAlert to safari.alert, ConfigManager::sparklingPartyAnnouncer to safari.announce,
+            ConfigManager::ubiksCubeTimer to skyblock.helpers.ubiksCubeTimer.enabled,
+            ConfigManager::splitsShowSession to tracking.splitsHud.showSession,
             ConfigManager::autoClicker to safari.autoClicker, ConfigManager::candleHitbox to safari.candleHitbox, ConfigManager::holdManagerOnKick to safari.holdManagerOnKick, ConfigManager::honeyHives to miria.honeyHives, ConfigManager::hideCaptureChat to safari.hideCaptureChat, ConfigManager::runHistory to history.runs, ConfigManager::achievements to history.achievements, ConfigManager::achievementSound to history.sound, ConfigManager::achievementsToParty to history.toParty, ConfigManager::runCoinsInstaSell to history.instaSell,
             ConfigManager::allGemsAlert to safari.alerts.gems, ConfigManager::allBirdFoodAlert to safari.alerts.birdFood,
             ConfigManager::allCoinsAlert to safari.alerts.coins, ConfigManager::allIncenseAlert to safari.alerts.incense, ConfigManager::runCompleteAlert to safari.alerts.runComplete,
@@ -647,22 +665,28 @@ class SafariSettings {
         val espChanged = listOf(espGeneral.apply(),esp.apply()).any {it}
         val modWideCrittersChanged = modWideCritters.apply(SafariEspConfig.modWideToggles)
         val profitableCrittersChanged = profitableCritters.apply(SafariEspConfig.profitableToggles)
-        val cooldownAppearanceChanged = listOf(safari.entryCooldown.appearance,tracking.profitableHud.appearance,tracking.lakeClearedHud.appearance).map {it.apply()}.any {it}
-        val customizationChanged = customization.apply() || cooldownAppearanceChanged
+        val hudAppearanceChanged = listOf(safari.entryCooldown.appearance,tracking.profitableHud.appearance,tracking.lakeClearedHud.appearance,
+            skyblock.helpers.ubiksCubeTimer.appearance).map {it.apply()}.any {it}
+        val customizationChanged = customization.apply() || hudAppearanceChanged
         val distance = ConfigManager.validCapsuleDistance(safari.capsuleHideDistance)
         val pathWidth = ConfigManager.validCapsulePathWidth(safari.capsulePathWidth)
         val waterOpacity = safari.visibility.waterOpacity.values()
         val alwaysOnCrittersChanged = alwaysOnCritters.apply(SafariEspConfig.alwaysOnToggles)
         val alwaysOnFloorDropsChanged = alwaysOnFloorDrops.apply()
         val chatTogglesChanged = safari.visibility.chatToggles.apply()
-        val generalChanged = espChanged || modWideCrittersChanged || profitableCrittersChanged || alwaysOnCrittersChanged || alwaysOnFloorDropsChanged || chatTogglesChanged ||
+        val objectivesChanged = BiomeObjectiveConfig.apply(tracking.objectivesHud.rows, tracking.objectivesHud.checks)
+        val splitTimeFormat = SplitTimeFormat.entries.getOrElse(tracking.splitsHud.timeFormat) { SplitTimeFormat.MILLISECONDS }
+        val generalChanged = espChanged || modWideCrittersChanged || profitableCrittersChanged || alwaysOnCrittersChanged || alwaysOnFloorDropsChanged || chatTogglesChanged || objectivesChanged ||
+            ConfigManager.splitsTimeFormat != splitTimeFormat ||
             bannerChanged || ConfigManager.specialCatchStyle != safari.alerts.caughtStyle || whitelistChanged || warpModesChanged || warpConfigurationChanged || ConfigManager.doomspiralEmergenceTicks != safari.capture.doomTicks.coerceIn(1, 600) ||
             ConfigManager.doomspiralThrowLeadTicks != safari.capture.doomLead.coerceIn(0, 40) || ConfigManager.biomeWaterOpacity != waterOpacity || ConfigManager.capsulePathWidth != pathWidth || customizationChanged || changes.any { (property, value) -> property.get() != value } ||
             ConfigManager.safariTicketPreference != safari.ticketPreference || ConfigManager.showWhere != tracking.where || ConfigManager.capsuleHideDistance != distance ||
             ConfigManager.runCompleteVolume != safari.alerts.runVolume.coerceIn(0, 100) || ConfigManager.sparklingSoundVolume != safari.alerts.volume.coerceIn(0, 100)
+        val profitPriceChanged = ConfigManager.runCoinsInstaSell != history.instaSell
         changes.forEach { (property, value) -> property.set(value) }
         ConfigManager.safariTicketPreference = safari.ticketPreference.coerceIn(0, 1)
         ConfigManager.showWhere = tracking.where.coerceIn(0, 2)
+        ConfigManager.splitsTimeFormat = splitTimeFormat
         ConfigManager.capsuleHideDistance = distance
         ConfigManager.biomeWaterOpacity = waterOpacity
         ConfigManager.capsulePathWidth = pathWidth
@@ -672,6 +696,7 @@ class SafariSettings {
         ConfigManager.runCompleteVolume = safari.alerts.runVolume.coerceIn(0, 100)
         ConfigManager.sparklingSoundVolume = safari.alerts.volume.coerceIn(0, 100)
         if (generalChanged) ConfigManager.save()
+        if (profitPriceChanged) net.johnceo.sparklingmutuals.history.RunHistory.reprice()
         val warnings = listOfNotNull(5.takeIf { miria.five }, 3.takeIf { miria.three }, 1.takeIf { miria.one })
         val ticketMessageChanged=miria.applyTicketMessage()
         val contestChanged = ticketMessageChanged || ContestConfig.announceTicket!=miria.announceTicket || ContestConfig.showBracket != tracking.contestHud.bracket || ContestConfig.showScore != tracking.contestHud.score || ContestConfig.showContestTimer != tracking.contestTimer || ContestConfig.ticketMode != miria.ticketMode || ContestConfig.autoContestDowntime != miria.autoContestDowntime || ContestConfig.trackContest != miria.enabled || ContestConfig.contestWarnTitle != miria.titles ||

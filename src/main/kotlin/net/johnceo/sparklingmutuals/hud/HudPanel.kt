@@ -9,6 +9,7 @@ import net.johnceo.sparklingmutuals.safari.SafariRules
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.Font
 import net.minecraft.client.gui.GuiGraphicsExtractor
+import kotlin.math.ceil
 
 data class HudIconCount(val icon: UiIcons.Kind,val count: Int,val color: Int)
 
@@ -31,7 +32,8 @@ data class HudRow(val label: String = "", val value: String? = null, val color: 
     }
 }
 open class HudPanel(val title: String, val titleColor: Int = HudRow.GOLD, val rows: List<HudRow>,
-    val titleIcon: UiIcons.Kind? = UiIcons.forLabel(title),private val widthOverride: Int?=null,private val heightOverride: Int?=null) {
+    val titleIcon: UiIcons.Kind? = UiIcons.forLabel(title),private val widthOverride: Int?=null,private val heightOverride: Int?=null,
+    val compactFooter: List<HudRow> = emptyList()) {
     protected class DrawMetrics(val font: Font, val title: String, val labelWidths: IntArray, val valueWidths: IntArray) {
         var width = 0
         var valueColumnWidth = 0
@@ -61,9 +63,15 @@ open class HudPanel(val title: String, val titleColor: Int = HudRow.GOLD, val ro
         }
         val valueWidth = values ?: 0
         metrics?.valueColumnWidth = valueWidth
+        val footerWidth = if (compactFooter.isEmpty()) 0 else {
+            val label = compactFooter.maxOf { measure(it.label) }
+            val value = compactFooter.maxOf { measure(it.value.orEmpty()) }
+            ceil((label + 8 + value) * FOOTER_SCALE).toInt()
+        }
         return widthOverride ?: maxOf(
             measure(heading) + if (titleIcon != null) 14 else 0,
-            (labels ?: 0) + (if (valueWidth > 0) valueWidth + 6 else 0) + if (hasTrack) 40 else 0
+            (labels ?: 0) + (if (valueWidth > 0) valueWidth + 6 else 0) + if (hasTrack) 40 else 0,
+            footerWidth
         ) + 12
     }
 
@@ -74,7 +82,8 @@ open class HudPanel(val title: String, val titleColor: Int = HudRow.GOLD, val ro
         return metrics
     }
 
-    val height get() = heightOverride ?: (12 + 11 * (1 + rows.size))
+    val height get() = heightOverride ?: (12 + 11 * (1 + rows.size) +
+        if (compactFooter.isEmpty()) 0 else 4 + ceil(compactFooter.size * 11 * FOOTER_SCALE).toInt())
     fun draw(graphics: GuiGraphicsExtractor, x: Int, y: Int, scale: Float = 1f,
         style: PanelStyle = AppearanceConfig.panels.getValue("captures"), borderOverride: Int? = null) {
         drawMeasured(graphics, x, y, scale, style, borderOverride, measureForDraw(style))
@@ -118,8 +127,26 @@ open class HudPanel(val title: String, val titleColor: Int = HudRow.GOLD, val ro
                 if (fraction > 0) graphics.fill(left, top + 3, left + filled.coerceAtLeast(1), top + 7, row.valueColor)
             }
         }
+        if (compactFooter.isNotEmpty()) drawFooter(graphics, style, font, w, shadow)
         graphics.pose().popMatrix()
     }
+
+    private fun drawFooter(graphics: GuiGraphicsExtractor, style: PanelStyle, font: Font, width: Int, shadow: Boolean) {
+        val dividerY = 17 + rows.size * 11
+        graphics.fill(6, dividerY, width - 6, dividerY + 1, 0x4D808080)
+        graphics.pose().pushMatrix()
+        graphics.pose().translate(6f, (dividerY + 5).toFloat())
+        graphics.pose().scale(FOOTER_SCALE, FOOTER_SCALE)
+        val right = ((width - 12) / FOOTER_SCALE).toInt()
+        compactFooter.forEachIndexed { index, row ->
+            val y = index * 11
+            graphics.text(font, row.label, 0, y, row.labelColor(style), shadow)
+            row.value?.let { graphics.text(font, it, right - font.width(it), y, row.numberColor(style), shadow) }
+        }
+        graphics.pose().popMatrix()
+    }
+
+    private companion object { const val FOOTER_SCALE = .8f }
     fun bounds(hud: SafariHud, screenWidth: Int, screenHeight: Int) =
         hud.layout.renderBounds(screenWidth, screenHeight, width(HudFonts.font::width,AppearanceConfig.panels[hud.name.lowercase()]), height)
     fun draw(graphics: GuiGraphicsExtractor, hud: SafariHud) {

@@ -25,10 +25,12 @@ object HudConfigLinks {
         return when(hud) {
             net.johnceo.sparklingmutuals.hud.SafariHud.SHARD_GUIDANCE -> SettingsTarget("SkyBlock",listOf("helpers","shardSaleGuidance"))
             net.johnceo.sparklingmutuals.hud.SafariHud.HUNTING_BOX_VALUE -> SettingsTarget("SkyBlock",listOf("helpers","huntingBoxValue"))
+            net.johnceo.sparklingmutuals.hud.SafariHud.UBIKS_CUBE -> SettingsTarget("SkyBlock",listOf("helpers","ubiksCubeTimer","enabled"))
             net.johnceo.sparklingmutuals.hud.SafariHud.HOTSPOT -> SettingsTarget(huds,listOf("hotspotHud","appearance"))
             net.johnceo.sparklingmutuals.hud.SafariHud.ENTRY_COOLDOWN -> SettingsTarget(safari,listOf("entryCooldown","enabled"))
             net.johnceo.sparklingmutuals.hud.SafariHud.DEVELOPER -> SettingsTarget(huds, emptyList())
             net.johnceo.sparklingmutuals.hud.SafariHud.PROGRESS -> SettingsTarget(huds,listOf("progressHud","enabled"))
+            net.johnceo.sparklingmutuals.hud.SafariHud.SPLITS -> SettingsTarget(huds,listOf("splitsHud","enabled"))
             net.johnceo.sparklingmutuals.hud.SafariHud.PROFITABLE -> SettingsTarget(huds,listOf("profitableHud","enabled"))
             net.johnceo.sparklingmutuals.hud.SafariHud.LAKE_CLEARED -> SettingsTarget(huds,listOf("lakeClearedHud","enabled"))
             net.johnceo.sparklingmutuals.hud.SafariHud.MISSING -> SettingsTarget(huds,listOf("missingHud","enabled"))

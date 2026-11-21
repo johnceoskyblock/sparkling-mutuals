@@ -1,5 +1,6 @@
 package net.johnceo.sparklingmutuals.commands
 
+import net.johnceo.sparklingmutuals.config.BiomeObjectiveConfig
 import net.johnceo.sparklingmutuals.safari.SafariBiome
 import net.johnceo.sparklingmutuals.safari.SafariMode
 import net.johnceo.sparklingmutuals.safari.SafariRun
@@ -55,7 +56,7 @@ object SafariMissingReply {
             result.add("Uniques left to capture: ${left.joinToString(", ").ifEmpty { "None" }}")
         }
         if (!party.ready) return result
-        fun needs(name: String) = party.needs(name) && !run.sparklingComplete(name,party)
+        fun needs(name: String) = BiomeObjectiveConfig.needs(name, party) && !run.sparklingComplete(name,party)
         when(biome) {
             SafariBiome.CAVERN -> {
                 if(needs("Rockmite") && mounds > 0) result.add("Mounds: $mounds")

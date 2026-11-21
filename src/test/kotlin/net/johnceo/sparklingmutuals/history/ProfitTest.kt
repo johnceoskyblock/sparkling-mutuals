@@ -6,6 +6,23 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class ProfitTest {
+    @Test fun `session summary counts recorded runs and sparklings but averages known durations`() {
+        val recorded = listOf(
+            RunRecord(start = 1000, length = 99_000, sparklings = mutableListOf("Old:Wumpa")),
+            RunRecord(start = 2000, length = 94_300, sparklings = mutableListOf("Teammate:Macaw")),
+            RunRecord(start = 3000, length = 122_000, sparklings = mutableListOf("Self:Gazer"), ownSparklings = 1),
+            RunRecord(start = 4000, length = 0, imported = true),
+        )
+        val current = ProfitPeriods.currentRuns(recorded, SafariProfitPeriod.SESSION, 2000L, 5000L)
+        val stats = SafariSessionStats.of(current)
+        assertEquals(3, stats.runs)
+        assertEquals(108_150L, stats.averageRunMillis)
+        assertEquals(2L, stats.sparklings)
+        assertEquals(1.5, stats.runsPerSparkling)
+        assertNull(SafariSessionStats.of(listOf(recorded.last())).averageRunMillis)
+        assertNull(SafariSessionStats.of(emptyList()).runsPerSparkling)
+    }
+
     @Test fun `legacy runs are current until a session boundary and rows keep their own totals`() {
         val first = RunRecord(start = 1000, length = 1_800_000, coins = 500, feathers = 3)
         val second = RunRecord(start = 2000, length = 3_600_000, coins = 900, feathers = 1)

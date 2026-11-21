@@ -20,7 +20,7 @@ import net.minecraft.network.chat.HoverEvent
 import net.minecraft.network.chat.MutableComponent
 
 /**
- * `/sparkling` — a player's Safari card: hunting level, sparkling discoveries, tickets and essence, with every line
+ * `/sparkling` — a player's Safari card: hunting level, sparkling discoveries, captures, tickets and essence, with every line
  * carrying a hover that lays out caught and missing sparklings per biome. `/sparkling <name>` for someone else,
  * `/sparkling <a> <b> ...` or `/sparkling party` for the sparklings all of them share.
  */
@@ -65,23 +65,35 @@ object SparklingLookup {
         val player = Minecraft.getInstance().player ?: return
         val hover = hover(profile.caught, profile.missing)
         wide.add(hover)
-        val lines = buildList {
-            add("§6§l$name")
-            add("§7Hunting level §f${profile.huntingLevel?.let { if (it > 60) "%.2f".format(it) else it.toInt().toString() } ?: "?"}")
-            add("§f${profile.caught.size}§7/${SafariRoster.all.size} sparklings §8(hover to expand)")
+        val lines = buildList<Component> {
+            fun line(text: String) { add(Component.literal(text)) }
+            line("§6§l$name")
+            line("§7Hunting level §f${profile.huntingLevel?.let { if (it > 60) "%.2f".format(it) else it.toInt().toString() } ?: "?"}")
+            line("§f${profile.caught.size}§7/${SafariRoster.all.size} sparklings §8(hover to expand)")
             profile.totalCaptured?.let { total ->
                 val repeats = maxOf(0L, total - profile.caught.size)
-                add("§7Total sparklings: §f$total §8($repeats duplicate${if (repeats == 1L) "" else "s"})")
+                line("§7Total sparklings: §f$total §8($repeats duplicate${if (repeats == 1L) "" else "s"})")
             }
-            add("§7Tickets: " + SafariProfile.TICKET_TIERS.zip(listOf("§a", "§9", "§5", "§6"))
+            profile.totalCritterCaptures?.let { total ->
+                line("§7Total captures: §f${SafariCaptureReply.amount(total)}")
+                val details = Component.literal("§7Captures by biome: ")
+                val biomes = SafariBiome.entries.filter { it in profile.biomeCaptures }
+                biomes.forEachIndexed { index, biome ->
+                    if (index > 0) details.append(" §8| ")
+                    details.append(Component.literal(biome.label).withColor(biome.color and 0xFFFFFF))
+                        .append(" §f${SafariCaptureReply.amount(profile.biomeCaptures.getValue(biome))}")
+                }
+                add(details)
+            }
+            line("§7Tickets: " + SafariProfile.TICKET_TIERS.zip(listOf("§a", "§9", "§5", "§6"))
                 .joinToString(" §8| ") { (tier, colour) -> "$colour${profile.tickets[tier] ?: 0}" } +
                 " §8| §b(${profile.tickets.values.sum()})")
-            profile.essence?.let { add("§7Safari Essence: §d" + "%,d".format(it)) }
+            profile.essence?.let { line("§7Safari Essence: §d" + "%,d".format(it)) }
         }
         val rule = Component.literal("                    ").withStyle(ChatFormatting.GOLD, ChatFormatting.STRIKETHROUGH)
         player.sendSystemMessage(rule)
         // One message per line, each with the hover, so it's one hover away wherever the cursor is.
-        lines.forEach { line -> player.sendSystemMessage(net.johnceo.sparklingmutuals.safari.ui.CritterNames.component(Component.literal(line).withStyle { it.withHoverEvent(HoverEvent.ShowText(net.johnceo.sparklingmutuals.safari.ui.CritterNames.component(hover))) })) }
+        lines.forEach { line -> player.sendSystemMessage(net.johnceo.sparklingmutuals.safari.ui.CritterNames.component(line.copy().withStyle { it.withHoverEvent(HoverEvent.ShowText(net.johnceo.sparklingmutuals.safari.ui.CritterNames.component(hover))) })) }
         player.sendSystemMessage(rule)
     }
 

@@ -175,6 +175,7 @@ class TrackingAppearanceSettings(private val selection: () -> String) : Appearan
     private fun panel(id: String) = PanelAppearanceSettings(AppearanceConfig.panels.getValue(id), selection)
     @JvmField @ConfigOption(name = "Doomspiral throw timer HUD", desc = "") @Accordion val doomThrow = panel("doom_throw")
     @JvmField @ConfigOption(name = "Progress HUD", desc = "") @Accordion val progress = panel("progress")
+    @JvmField @ConfigOption(name = "Safari splits HUD", desc = "") @Accordion val splits = panel("splits")
     @JvmField @ConfigOption(name = "Missing panel HUD", desc = "") @Accordion val missing = panel("missing")
     @JvmField @ConfigOption(name = "Biome Objectives HUD", desc = "") @Accordion val objectives = panel("objectives")
     @JvmField @ConfigOption(name = "Biome captures HUD", desc = "") @Accordion val captures = panel("captures")

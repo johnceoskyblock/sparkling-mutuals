@@ -21,7 +21,7 @@ class PartyNameSuggestionsTest {
     }
     @Test fun `party command names complete through supported chat wrappers with correct replacement ranges`() {
         for (prefix in listOf("", "/pc ", "/pchat ", "/p chat ", "/party chat ")) {
-            for (command in listOf("!missing ", "!ticket ", "!tickets ", "!pb doom ", "!pb wumpa ", "!pb forest ", "!pb cavern ", "!pb icy ", "!pb haunted ")) {
+            for (command in listOf("!missing ", "!ticket ", "!tickets ", "!captures ", "!pb doom ", "!pb wumpa ", "!pb forest ", "!pb cavern ", "!pb icy ", "!pb haunted ")) {
                 val input = prefix + command + "jo"
                 val suggestions = PartyNameSuggestions.chat(input, input.length, names)!!.join()
                 assertEquals(listOf("JohnCEO", "JohnFounder"), suggestions.list.map { it.text }, input)

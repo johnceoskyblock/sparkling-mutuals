@@ -51,6 +51,8 @@ class ContestGui(private val parent: Screen? = null) : Screen(Component.literal(
             SafariHud.DEVELOPER to net.johnceo.sparklingmutuals.debug.SafariDeveloper.preview(),
             SafariHud.DOOM_THROW to net.johnceo.sparklingmutuals.safari.DoomspiralThrowTimer.preview(),
             SafariHud.PROGRESS to SafariPanels.progress(run, ConfigManager.countUniqueOnly, 49000),
+            SafariHud.SPLITS to SafariPanels.splitsPreview(),
+            SafariHud.UBIKS_CUBE to net.johnceo.sparklingmutuals.skyblock.UbiksCubeTimer.preview(),
             SafariHud.MISSING to SafariPanels.missing(run, SafariBiome.FOREST, ConfigManager.countUniqueOnly, 3),
             SafariHud.PROFITABLE to net.johnceo.sparklingmutuals.safari.ui.ProfitableChecklist.preview(),
             SafariHud.LAKE_CLEARED to net.johnceo.sparklingmutuals.safari.LakeClearAlert.preview(),

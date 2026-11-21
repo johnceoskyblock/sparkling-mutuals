@@ -1,6 +1,7 @@
 package net.johnceo.sparklingmutuals.commands
 
 import java.security.MessageDigest
+import net.johnceo.sparklingmutuals.history.SafariProfitPeriod
 import net.johnceo.sparklingmutuals.safari.SafariAssist
 import net.johnceo.sparklingmutuals.safari.SafariBiome
 import net.johnceo.sparklingmutuals.safari.SafariMode
@@ -17,13 +18,13 @@ data class PartyChat(val sender: String, val body: String) {
     }
 }
 
-enum class PartyCommandKind { MUTUALS, MISSING, TICKETS, DYE, HELP, PB_DOOM, PB_WUMPA, PB_FOREST, PB_HAUNTED, PB_ICY, PB_CAVERN, MISSING_RUN, SINCE_SPARKLING, SINCE_UNIQUE }
+enum class PartyCommandKind { MUTUALS, MISSING, TICKETS, CAPTURES, DYE, PROFIT, HELP, PB_DOOM, PB_WUMPA, PB_FOREST, PB_HAUNTED, PB_ICY, PB_CAVERN, MISSING_RUN, SINCE_SPARKLING, SINCE_UNIQUE }
 
 data class PartyCommand(val kind: PartyCommandKind, val ign: String = "", val duo: Boolean = false, val trackedPlayer: Boolean = false,
-    val biome: SafariBiome? = null, val sinceCritter: String? = null) {
+    val biome: SafariBiome? = null, val sinceCritter: String? = null, val profitPeriod: SafariProfitPeriod = SafariProfitPeriod.SESSION) {
     val isSince get() = kind == PartyCommandKind.SINCE_SPARKLING || kind == PartyCommandKind.SINCE_UNIQUE
-    val personalResult get() = isSince || kind == PartyCommandKind.DYE
-    val requiresApiKey get() = kind in listOf(PartyCommandKind.MUTUALS, PartyCommandKind.MISSING, PartyCommandKind.TICKETS)
+    val personalResult get() = isSince || kind == PartyCommandKind.DYE || kind == PartyCommandKind.PROFIT
+    val requiresApiKey get() = kind in listOf(PartyCommandKind.MUTUALS, PartyCommandKind.MISSING, PartyCommandKind.TICKETS, PartyCommandKind.CAPTURES)
     val pbName get() = when (kind) {
         PartyCommandKind.PB_DOOM -> "Doomspiral"
         PartyCommandKind.PB_WUMPA -> "Wumpa"
@@ -41,15 +42,16 @@ data class PartyCommand(val kind: PartyCommandKind, val ign: String = "", val du
     /** `!m` describes the run in progress, so only clients inside the Safari answer it. */
     fun answerable(inSafari: Boolean = SafariAssist.inSafari, currentBiome: SafariBiome? = SafariAssist.biome, responderBiome: SafariBiome? = net.johnceo.sparklingmutuals.safari.SafariTracking.ledger.current?.biomeAtThirtySeconds) =
         kind != PartyCommandKind.MISSING_RUN || inSafari && responderBiome != null && (biome == null || biome == responderBiome)
-    // Streak replies describe each responding client; explicit PB queries retain their requested IGN.
-    fun forResponder(name: String) = if (isSince || kind == PartyCommandKind.DYE || pbName != null && !trackedPlayer)
+    // Personal replies describe each responding client; explicit PB queries retain their requested IGN.
+    fun forResponder(name: String) = if (personalResult || pbName != null && !trackedPlayer)
         copy(ign = name) else this
     private val failurePrefix: String get() = when (kind) {
         PartyCommandKind.MUTUALS -> "Mutual Timesave Shiny Critters: "
         PartyCommandKind.MISSING -> "Missing Timesave Shinies for $ign: "
         PartyCommandKind.TICKETS -> "Safari Tickets for $ign: "
+        PartyCommandKind.CAPTURES -> "Safari Captures for $ign: "
         PartyCommandKind.DYE -> "$ign: Emerald Dyes: "
-        PartyCommandKind.SINCE_SPARKLING, PartyCommandKind.SINCE_UNIQUE -> ""
+        PartyCommandKind.SINCE_SPARKLING, PartyCommandKind.SINCE_UNIQUE, PartyCommandKind.PROFIT -> ""
         PartyCommandKind.HELP -> "Commands: "
         PartyCommandKind.MISSING_RUN -> SafariMissingReply.prefix(biome)
         PartyCommandKind.PB_DOOM -> "Doomspiral PB: "
@@ -80,7 +82,9 @@ data class PartyCommand(val kind: PartyCommandKind, val ign: String = "", val du
                 "^${Regex.escape(ign)}: Basic \\(\\d+\\), Economy \\(\\d+\\), Premium \\(\\d+\\), First-Class \\(\\d+\\)(?:, Total \\(\\d+\\))?$",
                 RegexOption.IGNORE_CASE
             ).matches(body)
+            PartyCommandKind.CAPTURES -> SafariCaptureReply.matches(ign, body)
             PartyCommandKind.DYE -> Regex("^Emerald Dyes: \\d+$", RegexOption.IGNORE_CASE).matches(body)
+            PartyCommandKind.PROFIT -> body.startsWith(SafariProfitReply.PREFIX + profitPeriod.label + ", ", true)
             PartyCommandKind.SINCE_SPARKLING, PartyCommandKind.SINCE_UNIQUE -> SafariSinceReply.matches(this, body)
             PartyCommandKind.HELP -> body.startsWith("[SM] Commands: ")
             PartyCommandKind.MISSING_RUN -> body.startsWith(SafariMissingReply.prefix(biome), true)
@@ -94,7 +98,9 @@ data class PartyCommand(val kind: PartyCommandKind, val ign: String = "", val du
         PartyCommandKind.MUTUALS -> "!mutuals"
         PartyCommandKind.MISSING -> "!missing $ign"
         PartyCommandKind.TICKETS -> "!tickets $ign"
+        PartyCommandKind.CAPTURES -> "!captures $ign"
         PartyCommandKind.DYE -> "!dye"
+        PartyCommandKind.PROFIT -> "!profit ${profitPeriod.name.lowercase()}"
         PartyCommandKind.SINCE_SPARKLING -> sinceCritter?.let { "!since $it" } ?: "!since"
         PartyCommandKind.SINCE_UNIQUE -> "!since unique"
         PartyCommandKind.HELP -> "!commands"
@@ -108,8 +114,9 @@ data class PartyCommand(val kind: PartyCommandKind, val ign: String = "", val du
         private val names = (SafariRoster.all.map { Regex.escape(it.name) } + "All Birds").joinToString("|")
         private val lookupResult = Regex("^(?:None|None\\. :skull:|All\\. :skull:|(?:$names)(?:, (?:$names))*)$", RegexOption.IGNORE_CASE)
         private val bossLookup = Regex("""^!pb\s+(doom|wumpa|forest|haunted|icy|cavern)\s+([A-Za-z0-9_]{1,16})(?:\s+(duo|party))?$""", RegexOption.IGNORE_CASE)
-        private val lookup = Regex("""^!(missing|tickets?)(?:\s+([A-Za-z0-9_]{1,16}))?$""", RegexOption.IGNORE_CASE)
+        private val lookup = Regex("""^!(missing|tickets?|captures)(?:\s+([A-Za-z0-9_]{1,16}))?$""", RegexOption.IGNORE_CASE)
         private val since = Regex("""^!since(?:\s+(.+))?$""", RegexOption.IGNORE_CASE)
+        private val profit = Regex("""^!profit(?:\s+(session|lifetime|week|day))?$""", RegexOption.IGNORE_CASE)
         private val sinceAliases = mapOf("doom" to "Doomspiral", "goat" to "Billygoat",
             "shrimp" to "Mantis Shrimp", "nozzle" to "Nozzlenose", "squid" to "Shuddersquid")
         private val missingRun = Regex("""^!m(?:\s+(\S+))?$""", RegexOption.IGNORE_CASE)
@@ -127,7 +134,11 @@ data class PartyCommand(val kind: PartyCommandKind, val ign: String = "", val du
                 "!pb haunted" -> PartyCommand(PartyCommandKind.PB_HAUNTED)
                 "!pb icy" -> PartyCommand(PartyCommandKind.PB_ICY)
                 "!pb cavern" -> PartyCommand(PartyCommandKind.PB_CAVERN)
-                else -> since.matchEntire(chat.body)?.let { match ->
+                else -> profit.matchEntire(chat.body)?.let { match ->
+                    val period = SafariProfitPeriod.entries.firstOrNull { it.name.equals(match.groupValues[1], true) }
+                        ?: SafariProfitPeriod.SESSION
+                    PartyCommand(PartyCommandKind.PROFIT, profitPeriod = period)
+                } ?: since.matchEntire(chat.body)?.let { match ->
                     val argument = match.groupValues[1]
                     when {
                         argument.isEmpty() -> PartyCommand(PartyCommandKind.SINCE_SPARKLING)
@@ -152,8 +163,12 @@ data class PartyCommand(val kind: PartyCommandKind, val ign: String = "", val du
                     }, boss.groupValues[2], duo = boss.groupValues[3].isNotEmpty(), trackedPlayer = true)
                     else {
                         val match = lookup.matchEntire(chat.body) ?: return null
-                        PartyCommand(if (match.groupValues[1].equals("missing", true))
-                            PartyCommandKind.MISSING else PartyCommandKind.TICKETS, match.groupValues[2].ifBlank { chat.sender })
+                        val kind = when (match.groupValues[1].lowercase()) {
+                            "missing" -> PartyCommandKind.MISSING
+                            "captures" -> PartyCommandKind.CAPTURES
+                            else -> PartyCommandKind.TICKETS
+                        }
+                        PartyCommand(kind, match.groupValues[2].ifBlank { chat.sender })
                     }
                 }
             }

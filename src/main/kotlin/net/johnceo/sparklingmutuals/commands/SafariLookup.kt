@@ -53,6 +53,7 @@ object SafariLookup {
 
     fun run(command: PartyCommand, members: List<String>, localName: String = "You"): String = when (command.kind) {
         PartyCommandKind.DYE -> command.dyeResult(net.johnceo.sparklingmutuals.history.Achievements.emeraldDyes)
+        PartyCommandKind.PROFIT -> SafariProfitReply.current(command.profitPeriod)
         PartyCommandKind.PB_DOOM -> if (command.trackedPlayer) ConfigManager.personalBests.trackedResponse(command.ign, "Doomspiral", command.duo, localName) else ConfigManager.personalBests.response(localName, "Doomspiral", command.duo)
         PartyCommandKind.PB_WUMPA -> if (command.trackedPlayer) ConfigManager.personalBests.trackedResponse(command.ign, "Wumpa", command.duo, localName) else ConfigManager.personalBests.response(localName, "Wumpa", command.duo)
         PartyCommandKind.PB_FOREST -> if (command.trackedPlayer) ConfigManager.personalBests.trackedResponse(command.ign, "Forest", command.duo) else ConfigManager.personalBests.response(localName, "Forest")
@@ -76,6 +77,10 @@ object SafariLookup {
             val tickets = HypixelApi.getSafariTickets(uuid, HypixelApi.getCurrentProfileUuid(uuid,fresh=true))
             "${command.ign}: Basic (${tickets["basic"]}), Economy (${tickets["economy"]}), " +
                 "Premium (${tickets["premium"]}), First-Class (${tickets["first_class"]}), Total (${tickets.values.sum()})"
+        }
+        PartyCommandKind.CAPTURES -> {
+            val uuid = HypixelApi.getPlayerUuid(command.ign)
+            SafariCaptureReply.party(command.ign, HypixelApi.getSafariProfile(uuid, fresh = true))
         }
     }
 

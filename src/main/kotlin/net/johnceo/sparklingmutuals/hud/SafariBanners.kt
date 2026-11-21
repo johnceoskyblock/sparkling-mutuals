@@ -91,7 +91,8 @@ object SafariBanners {
             once("full-party",BannerKind.FULL_PARTY)
         val party=SafariSparklingMode.state
         if(biome!=null && (SafariFullClear.mode!=SafariMode.SPARKLING || party.ready)) {
-            val targets=biome.critters.filter { SafariFullClear.mode!=SafariMode.SPARKLING || party.needs(it.name) }
+            val targets=biome.critters.filter { SafariFullClear.mode!=SafariMode.SPARKLING ||
+                net.johnceo.sparklingmutuals.config.BiomeObjectiveConfig.needs(it.name, party) }
             if(targets.isNotEmpty() && current.completed(SafariFullClear.mode,targets,party,localOnly=true)==targets.size)
                 once("biome:$biome",BannerKind.BIOME_DONE,biome)
         }

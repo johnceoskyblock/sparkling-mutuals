@@ -81,10 +81,12 @@ object HypixelApi {
         }
     }
 
-    fun getSafariProfile(playerUuid: String): SafariProfile = data {
+    fun getSafariProfile(playerUuid: String, fresh: Boolean = false): SafariProfile = data {
         val source = provider
         val observation = net.johnceo.sparklingmutuals.commands.SafariLookup.discoveryObservation(playerUuid, source)
-        SafariProfile.from(getMember(playerUuid, getCurrentProfileUuid(playerUuid))).also {
+        val body = profiles(playerUuid, fresh)
+        val profile = CloudProfiles.selectedProfileId(body) ?: throw ApiFailure.dataUnavailable()
+        SafariProfile.from(CloudProfiles.member(body, playerUuid, profile) ?: throw ApiFailure.dataUnavailable()).also {
             if (source == provider && observation != null) net.johnceo.sparklingmutuals.commands.SafariLookup.observeDiscoveries(playerUuid, source, it.discoveries, observation)
         }
     }

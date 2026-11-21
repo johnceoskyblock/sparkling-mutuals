@@ -5,6 +5,7 @@ import com.google.gson.JsonParser
 import net.johnceo.sparklingmutuals.commands.PartyCommand
 import net.johnceo.sparklingmutuals.commands.PartyCommandKind
 import net.johnceo.sparklingmutuals.commands.PartyLookupResult
+import net.johnceo.sparklingmutuals.commands.SafariCaptureReply
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -39,6 +40,18 @@ class CloudApiTest {
         val tickets = PartyCommand(PartyCommandKind.TICKETS, "JohnCEO")
         val reply = PartyLookupResult.fetch(tickets, "", cloud = true) { "JohnCEO: Basic (1), Economy (0), Premium (0), First-Class (0)" }
         assertTrue(reply.successful)
+    }
+    @Test fun `capture replies use the same cloud profile as the sparkling card`() {
+        val member = CloudProfiles.member(fixture("profile"), player, profile)!!
+        val safari = SafariProfile.from(member)
+        assertEquals(12_401L, safari.totalCritterCaptures)
+        assertNull(safari.catches, "Biome captures are separate from the bestiary achievement count")
+        val command = PartyCommand.fromChat("Party > Runner: !captures")!!.command
+        val response = PartyLookupResult.fetch(command, "", cloud = true) { SafariCaptureReply.party(command.ign, safari) }
+        assertEquals("Runner: Total captures 12,401 | Forest 12,000 | Cavern 34 | Icy 56 | Haunted 311", response.partyMessage)
+        assertTrue(command.matchesResponse(requireNotNull(response.partyMessage)))
+        assertFalse(command.copy(ign = "Other").matchesResponse(requireNotNull(response.partyMessage)))
+        assertFalse(command.matchesResponse("Runner: Total captures 12,401 | Forest unknown"))
     }
     @Test fun `cloud API errors stay local and map busy to the rate limit`() {
         assertNull(CloudApi.failure(200))

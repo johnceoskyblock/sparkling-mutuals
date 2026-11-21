@@ -121,11 +121,12 @@ object PartyCommands {
                 val connection = client.connection
                 val key = state.provider.key
                 val localName = client.player!!.name.string
-                // `!m` reads the bound run's ledger, so it is answered here on the client thread, not by the lookup thread.
+                // Run and history commands read client-thread state before any lookup work.
                 val localReply = when {
                     state.request.command.kind == PartyCommandKind.MISSING_RUN -> SafariMissingReply.current(state.request.command.biome, state.run)
                     state.request.command.isSince -> SafariSinceReply.current(state.request.command)
                     state.request.command.kind == PartyCommandKind.DYE -> state.request.command.dyeResult(net.johnceo.sparklingmutuals.history.Achievements.emeraldDyes)
+                    state.request.command.kind == PartyCommandKind.PROFIT -> SafariProfitReply.current(state.request.command.profitPeriod)
                     else -> null
                 }
                 state.task = executor.submit {

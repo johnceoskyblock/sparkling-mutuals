@@ -14,6 +14,7 @@ class SafariVisibilityHelpTest {
         assertTrue(reply.length + "/pc ".length <= 256, "Help reply has ${reply.length} characters")
         assertTrue(reply.startsWith("[SM] Commands: "))
         assertTrue(reply.contains("!dye"))
+        assertTrue(reply.contains("!captures [IGN]"))
         assertFalse(reply.contains("Local:"))
         assertFalse(reply.contains("/"))
         assertTrue(reply.contains("!pb doom"))

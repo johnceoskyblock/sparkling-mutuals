@@ -11,7 +11,7 @@ import java.util.concurrent.CompletableFuture
 /** Suggestions resolve verified party UUIDs, including members absent from the current tab list. */
 object PartyNameSuggestions {
     private val wrapper = Regex("""^/(?:pc|pchat|(?:p|party)\s+chat)\s+""", RegexOption.IGNORE_CASE)
-    private val lookup = Regex("""^!(?:missing|tickets?)\s+([A-Za-z0-9_]*)$""", RegexOption.IGNORE_CASE)
+    private val lookup = Regex("""^!(?:missing|tickets?|captures)\s+([A-Za-z0-9_]*)$""", RegexOption.IGNORE_CASE)
     private val boss = Regex("""^!pb\s+(?:doom|wumpa|forest|haunted|icy|cavern)\s+([A-Za-z0-9_]*)$""", RegexOption.IGNORE_CASE)
 
     private data class NameLookup(val future: CompletableFuture<String?>, val expiresAt: Long)

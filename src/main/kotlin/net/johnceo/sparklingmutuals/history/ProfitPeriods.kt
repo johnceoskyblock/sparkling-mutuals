@@ -10,6 +10,10 @@ internal enum class ProfitTimeframe(val header: String) {
     DAY("Day"), SESSION("Session #"), WEEK("Week")
 }
 
+enum class SafariProfitPeriod(val label: String) {
+    SESSION("Session"), LIFETIME("Lifetime"), WEEK("Week"), DAY("Day")
+}
+
 internal data class ProfitTotals(val runs: Int, val coins: Long, val millis: Long, val feathers: Int, val best: RunRecord?) {
     val perHour get() = if (millis > 0) coins * 3_600_000L / millis else 0L
     val perRun get() = if (runs > 0) coins / runs else 0L
@@ -17,6 +21,26 @@ internal data class ProfitTotals(val runs: Int, val coins: Long, val millis: Lon
     companion object {
         fun of(runs: List<RunRecord>) = ProfitTotals(runs.size, runs.sumOf { it.coins.coerceAtLeast(0) },
             runs.sumOf { it.length }, runs.sumOf { it.feathers }, runs.maxByOrNull { it.coins })
+    }
+}
+
+internal data class SafariSessionStats(val runs: Int, val averageRunMillis: Long?, val sparklings: Long) {
+    val runsPerSparkling get() = if (sparklings > 0) runs.toDouble() / sparklings else null
+
+    companion object {
+        fun of(runs: List<RunRecord>): SafariSessionStats {
+            var timed = 0
+            var duration = 0L
+            var sparklings = 0L
+            for (run in runs) {
+                if (run.length > 0) {
+                    timed++
+                    duration += run.length
+                }
+                sparklings += run.sparklings.size
+            }
+            return SafariSessionStats(runs.size, if (timed > 0) duration / timed else null, sparklings)
+        }
     }
 }
 
@@ -32,9 +56,23 @@ internal object ProfitPeriods {
             }
             return (sessionStarts.size downTo 0).map { Row(ProfitTotals.of(groups[it].orEmpty()), session = it) }
         }
-        return runs.groupBy { run ->
-            val date = Instant.ofEpochMilli(run.start).atZone(zone).toLocalDate()
-            if (timeframe == ProfitTimeframe.WEEK) date.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)) else date
-        }.entries.sortedByDescending { it.key }.map { (date, group) -> Row(ProfitTotals.of(group), date = date) }
+        return runs.groupBy { run -> periodDate(run.start, timeframe == ProfitTimeframe.WEEK, zone) }
+            .entries.sortedByDescending { it.key }.map { (date, group) -> Row(ProfitTotals.of(group), date = date) }
+    }
+
+    fun currentRuns(runs: List<RunRecord>, period: SafariProfitPeriod, sessionStart: Long?, now: Long,
+                    zone: ZoneId = ZoneId.systemDefault()): List<RunRecord> {
+        val start = when (period) {
+            SafariProfitPeriod.LIFETIME -> return runs
+            SafariProfitPeriod.SESSION -> sessionStart ?: return runs
+            SafariProfitPeriod.DAY, SafariProfitPeriod.WEEK ->
+                periodDate(now, period == SafariProfitPeriod.WEEK, zone).atStartOfDay(zone).toInstant().toEpochMilli()
+        }
+        return runs.filter { it.start in start..now }
+    }
+
+    private fun periodDate(at: Long, week: Boolean, zone: ZoneId): LocalDate {
+        val date = Instant.ofEpochMilli(at).atZone(zone).toLocalDate()
+        return if (week) date.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)) else date
     }
 }

@@ -2,15 +2,19 @@ package net.johnceo.sparklingmutuals.api
 
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
+import java.util.Locale
+import net.johnceo.sparklingmutuals.safari.SafariBiome
 import net.johnceo.sparklingmutuals.safari.SafariRoster
 
 /** One player's Safari stats from their selected SkyBlock profile, for `/sparkling`. */
 data class SafariProfile(val discoveries: Set<String>, val tickets: Map<String, Long>, val huntingXp: Double?,
-    val essence: Long?, val totalCaptured: Long?, val runs: Long? = null, val catches: Long? = null) {
+    val essence: Long?, val totalCaptured: Long?, val runs: Long? = null, val catches: Long? = null,
+    val biomeCaptures: Map<SafariBiome, Long> = emptyMap()) {
     /** Roster names of the discovered sparklings, in roster order. */
     val caught get() = SafariRoster.all.filter { key(it.name) in discoveries }.map { it.name }
     val missing get() = SafariRoster.all.filter { key(it.name) !in discoveries }.map { it.name }
     val huntingLevel get() = huntingXp?.let(::levelFromXp)
+    val totalCritterCaptures get() = biomeCaptures.takeIf { it.isNotEmpty() }?.values?.sum()
 
     companion object {
         val TICKET_TIERS = listOf("basic", "economy", "premium", "first_class")
@@ -41,10 +45,16 @@ data class SafariProfile(val discoveries: Set<String>, val tickets: Map<String, 
             // Bestiary kills of the Safari critters are your own catches.
             val kills = at("bestiary.kills")?.takeIf { it.isJsonObject }?.asJsonObject
             fun kills(name: String) = kills?.get(bestiaryId(name))?.takeIf { it.isJsonPrimitive && it.asJsonPrimitive.isNumber }?.asLong ?: 0L
+            // ShinyHunter's profile card reads the Safari counters, separate from bestiary kills.
+            val biomeCaptures = SafariBiome.entries.mapNotNull { biome ->
+                val count = number("safari.biome_captures.${biome.name.lowercase(Locale.ROOT)}")
+                    ?.asString?.toLongOrNull()?.takeIf { it >= 0 } ?: return@mapNotNull null
+                biome to count
+            }.toMap()
             return SafariProfile(discoveries, tickets, number("player_data.experience.SKILL_HUNTING")?.asDouble,
                 number("currencies.essence.SAFARI.current")?.asLong,
                 number("safari.total_captured_sparkling_critters")?.asLong ?: 0L.takeIf { discoveries.isEmpty() },
-                kills?.let { ONCE_A_RUN.maxOf(::kills) }, kills?.let { SafariRoster.all.sumOf { kills(it.name) } })
+                kills?.let { ONCE_A_RUN.maxOf(::kills) }, kills?.let { SafariRoster.all.sumOf { kills(it.name) } }, biomeCaptures)
         }
 
         /** SkyBlock's shared skill table, levels 1-60. */

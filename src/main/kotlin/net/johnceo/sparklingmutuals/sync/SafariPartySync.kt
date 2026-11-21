@@ -4,6 +4,7 @@ import com.google.gson.JsonObject
 import net.johnceo.sparklingmutuals.debug.SafariDeveloper
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents
 import net.johnceo.sparklingmutuals.config.ConfigManager
+import net.johnceo.sparklingmutuals.config.BiomeObjectiveConfig
 import net.johnceo.sparklingmutuals.hud.HotspotAssignmentAlert
 import net.johnceo.sparklingmutuals.party.PartyManager
 import net.johnceo.sparklingmutuals.safari.*
@@ -752,7 +753,7 @@ object SafariPartySync {
         if (biome == SafariBiome.FOREST) {
             val current = state ?: return emptyList()
             if (run == null || run !== SafariTracking.ledger.current || !transport.ready ||
-                !party.ready || listOf("Bluebird", "Parakeet", "Macaw").none(party::needs)) return emptyList()
+                !party.ready || listOf("Bluebird", "Parakeet", "Macaw").none { BiomeObjectiveConfig.needs(it, party) }) return emptyList()
             val client = Minecraft.getInstance()
             return current.roster.filter { it in lastRoster }.mapNotNull { id ->
                 val items = startingFoodSlots.keys.associateWith { food ->

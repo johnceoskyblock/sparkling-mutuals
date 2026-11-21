@@ -6,6 +6,7 @@ import java.util.Properties
 import net.johnceo.sparklingmutuals.hud.SafariHud
 import net.johnceo.sparklingmutuals.safari.SafariBiome
 import net.johnceo.sparklingmutuals.safari.SafariMode
+import net.johnceo.sparklingmutuals.safari.SplitTimeFormat
 import net.johnceo.sparklingmutuals.safari.completion.BossPbCategory
 import net.johnceo.sparklingmutuals.safari.completion.SafariFullClear
 import net.johnceo.sparklingmutuals.safari.completion.SafariPersonalBests
@@ -101,6 +102,9 @@ object ConfigManager {
     var hideHauntedPaintings = true
     var shinyDetection = true
     var progressHud = true
+    var splitsHud = true
+    var splitsShowSession = true
+    internal var splitsTimeFormat = SplitTimeFormat.MILLISECONDS
     var progressProfit = true
     var progressHotspot = true
     var countUniqueOnly = false
@@ -110,6 +114,8 @@ object ConfigManager {
     var biomeObjectives = true
     var objectiveCaptureReminder = true
     var objectiveShinyReminder = true
+    internal var installedVersionHistory = InstalledVersionHistory()
+        private set
     var highlightBeeNests = true
     var highlightSnooperWalls = true
     var showBeeNests = true
@@ -149,6 +155,7 @@ object ConfigManager {
     var estimatedItemValue = true
     var estimatedChestValue = true
     var huntingBoxValue = true
+    var ubiksCubeTimer = false
     var phantomleafSolver = true
     var runHistory = true
     var achievements = true
@@ -168,14 +175,14 @@ object ConfigManager {
         ::fullClearHideCritterEsp to false, ::fullClearHideFloorDropEsp to false, ::allScannableCritterChecks to false,
         ::sparklingHideCritterEsp to false, ::sparklingHideFloorDropEsp to false, ::announceStartingItems to false, ::hotspotAnnouncer to false, ::uniqueHotspotAnnouncer to false, ::fullClearHotspotAnnouncer to false, ::sparklingHotspotAnnouncer to false, ::highlightTeammates to true, ::showTeammateNames to true, ::partyCommandsEnabled to true, ::useCloudApi to true, ::fullClearMode to false, ::sparklingMode to false, ::sparklingProfitableShardEsp to true, ::profitableShardEsp to true, ::timesaveOnly to true, ::warpAlertsEnabled to false,
         ::hideyhoAutoAccept to true, ::autoSelectSafariTicket to true, ::safariEntryAutoEnter to false, ::hideyhoInsideOutside to true, ::hideHauntedPaintings to true, ::shinyDetection to true,
-        ::progressHud to true, ::progressProfit to true, ::progressHotspot to true, ::hotspotShowAllPlayers to true, ::countUniqueOnly to false, ::profitableChecklist to true, ::lakeClearAlert to true, ::missingPanel to true, ::biomeObjectives to true,
+        ::progressHud to true, ::splitsHud to true, ::splitsShowSession to true, ::progressProfit to true, ::progressHotspot to true, ::hotspotShowAllPlayers to true, ::countUniqueOnly to false, ::profitableChecklist to true, ::lakeClearAlert to true, ::missingPanel to true, ::biomeObjectives to true,
         ::objectiveCaptureReminder to true, ::objectiveShinyReminder to true,
         ::doomSoloPbChat to true, ::doomDuoPbChat to true, ::doomObservedSoloPbChat to true, ::doomObservedDuoPbChat to true,
         ::wumpaSoloPbChat to true, ::wumpaDuoPbChat to true, ::wumpaObservedSoloPbChat to true, ::wumpaObservedDuoPbChat to true,
         ::fullClearPbChat to true, ::uniquePbChat to true, ::partyUniquePbChat to true,
         ::autoReconnectHypixel to false, ::autoJoinSkyBlock to false,
         ::highlightBeeNests to true, ::removeDarkness to true, ::clearWater to true, ::sparklingAlert to true, ::sparklingCatchCount to true,
-        ::sparklingPartyAnnouncer to true, ::catchCountPanel to false, ::autoClicker to true, ::candleHitbox to true, ::holdManagerOnKick to true, ::downtimeCommand to true, ::honeyHives to true, ::huntingBoxValue to true, ::shardSaleGuidance to true, ::skillOverflow to true, ::skillOverflowChat to true, ::skillOverflowNumbers to false, ::estimatedItemValue to true, ::estimatedChestValue to true, ::phantomleafSolver to true, ::runHistory to true, ::achievements to true, ::achievementSound to true, ::achievementsToParty to false, ::runCoinsInstaSell to false,
+        ::sparklingPartyAnnouncer to true, ::catchCountPanel to false, ::autoClicker to true, ::candleHitbox to true, ::holdManagerOnKick to true, ::downtimeCommand to true, ::honeyHives to true, ::huntingBoxValue to true, ::ubiksCubeTimer to false, ::shardSaleGuidance to true, ::skillOverflow to true, ::skillOverflowChat to true, ::skillOverflowNumbers to false, ::estimatedItemValue to true, ::estimatedChestValue to true, ::phantomleafSolver to true, ::runHistory to true, ::achievements to true, ::achievementSound to true, ::achievementsToParty to false, ::runCoinsInstaSell to false,
         ::hideCaptureChat to true, ::hideGroundCapsules to true, ::hideFlyingCapsules to true,
         ::experimentalCapsulePath to true, ::showCapsuleGuideThroughTerrain to true, ::gemzieGemAutoSelect to true,
         ::highlightSnooperWalls to true, ::showBeeNests to true, ::showMoundCount to true,
@@ -186,10 +193,15 @@ object ConfigManager {
     fun validCapsulePathWidth(value: Float?) = value?.takeIf { it.isFinite() }?.coerceIn(1f,5f) ?: 3f
     fun validSparklingSound(value: String?) = value?.trim()?.let(Identifier::tryParse)?.toString() ?: "minecraft:block.amethyst_block.chime"
 
-    fun init(configDirectory: Path) {
+    fun init(configDirectory: Path, installedVersion: String? = null, recoverPreviousVersion: () -> String? = { null }) {
         configPath = configDirectory.resolve("sparkling-mutuals.properties")
-        val properties = if (Files.exists(configPath)) Properties() else FreshInstallDefaults.main()
-        if (Files.exists(configPath)) Files.newInputStream(configPath).use(properties::load)
+        val existing = Files.exists(configPath)
+        val properties = if (existing) Properties() else FreshInstallDefaults.main()
+        if (existing) Files.newInputStream(configPath).use(properties::load)
+        val savedVersions = InstalledVersionHistory.load(properties)
+        installedVersionHistory = savedVersions.launch(installedVersion, !existing, recoverPreviousVersion)
+        val versionChanged = installedVersionHistory != savedVersions
+        if (versionChanged) installedVersionHistory.save(properties)
         // Introduce the redesigned guidance once, then respect every subsequent saved choice.
         val introduceShardGuidance = properties.getProperty("migration.shardSaleGuidanceV2") != "true"
         if (introduceShardGuidance) {
@@ -203,6 +215,8 @@ object ConfigManager {
             properties.setProperty("migration.sparkleWarpTimers22_27","true")
         }
         settingsTheme = properties.getProperty("settingsTheme")?.toIntOrNull()?.coerceIn(0,33) ?: 4
+        splitsTimeFormat = SplitTimeFormat.entries.firstOrNull { it.name == properties.getProperty("splitsTimeFormat") }
+            ?: SplitTimeFormat.MILLISECONDS
         specialCatchAlert = properties.getProperty("specialCatchAlert")?.toBooleanStrictOrNull() ?: true
         alwaysCelebrateSparkling = properties.getProperty("alwaysCelebrateSparkling")?.toBooleanStrictOrNull() ?: false
         specialCatchStyle = properties.getProperty("specialCatchStyle")?.toIntOrNull()?.coerceIn(0,40) ?: 0
@@ -240,19 +254,34 @@ object ConfigManager {
         SafariFullClear.syncMode()
         SafariEspConfig.load(properties)
         SafariChatConfig.load(properties)
+        BiomeObjectiveConfig.load(properties)
         SafariFullClear.applyEspPreset()
         BannerConfig.load(properties)
         AppearanceConfig.load(properties)
-        if (introduceShardGuidance || updateWarpTimings) {
+        if (introduceShardGuidance || updateWarpTimings || versionChanged) {
             Files.createDirectories(configPath.parent)
             PersonalBestConfig.write(configPath, properties, "Sparkling Mutuals configuration")
         }
+    }
+
+    internal fun acknowledgeReleaseHighlights(version: String) {
+        val acknowledged = installedVersionHistory.acknowledge(version)
+        if (acknowledged == installedVersionHistory) return
+        installedVersionHistory = acknowledged
+        // Keep the rest of the saved config untouched when the player finishes reading.
+        runCatching {
+            val properties = Properties()
+            Files.newInputStream(configPath).use(properties::load)
+            acknowledged.save(properties)
+            PersonalBestConfig.write(configPath, properties, "Sparkling Mutuals configuration")
+        }.onFailure { org.slf4j.LoggerFactory.getLogger("sparkling-mutuals/updates").warn("Could not save release highlights state", it) }
     }
 
     fun save() {
         Files.createDirectories(configPath.parent)
         personalBestConfig.save(personalBests)
         Properties().apply {
+            installedVersionHistory.save(this)
             setProperty("apiKey", apiKey)
             setProperty("runCompleteTitle", runCompleteTitle)
             setProperty("runCompleteSound", runCompleteSound)
@@ -267,6 +296,7 @@ object ConfigManager {
             setProperty("sparkleWarpMode", sparkleWarpMode.toString())
             setProperty("warpDuo", warpDuo)
             setProperty("settingsTheme", settingsTheme.toString())
+            setProperty("splitsTimeFormat", splitsTimeFormat.name)
             setProperty("specialCatchAlert", specialCatchAlert.toString())
             setProperty("alwaysCelebrateSparkling", alwaysCelebrateSparkling.toString())
             setProperty("specialCatchStyle", specialCatchStyle.toString())
@@ -287,6 +317,7 @@ object ConfigManager {
             SafariHud.save(this)
             SafariEspConfig.save(this)
             SafariChatConfig.save(this)
+            BiomeObjectiveConfig.save(this)
             AppearanceConfig.save(this)
             BannerConfig.save(this)
             PersonalBestConfig.write(configPath, this, "Sparkling Mutuals configuration")

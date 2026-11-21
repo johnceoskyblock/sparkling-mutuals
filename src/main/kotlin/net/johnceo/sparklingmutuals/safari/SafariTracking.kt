@@ -179,6 +179,7 @@ object SafariTracking {
         if (SafariAssist.location != SafariLocation.INSIDE) return
         val now = System.currentTimeMillis()
         run.localPlayer(player.name.string)
+        run.splits.observe(run, now)
         // Sample on the boat too, before anyone can use starting supplies or collect floor drops.
         run.inventoryEvidence(net.johnceo.sparklingmutuals.safari.resources.BirdfeederInventory.snapshot(client), now)
         announceStarting(client,run,now)
@@ -221,6 +222,9 @@ object SafariTracking {
         val run = run
         val unique = ConfigManager.countUniqueOnly
         if (ConfigManager.progressHud) SafariPanels.progress(run, unique, System.currentTimeMillis()).draw(graphics, SafariHud.PROGRESS)
+        val mode = SafariFullClear.mode
+        if (ConfigManager.splitsHud && mode != SafariMode.SPARKLING && SafariAssist.inSafari)
+            ledger.current?.takeIf { it.endedAt == null }?.let { SafariPanels.splits(it, mode).draw(graphics, SafariHud.SPLITS) }
         if (!SafariVisibility.biomePanels(ConfigManager.showWhere, SafariAssist.inSafari, ledger.current != null, SafariAssist.biome)) return
         val biome = SafariAssist.biome ?: return
         if (ConfigManager.missingPanel) {

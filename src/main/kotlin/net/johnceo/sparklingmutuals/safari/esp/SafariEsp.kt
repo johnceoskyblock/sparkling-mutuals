@@ -16,11 +16,13 @@ import net.fabricmc.fabric.api.event.player.UseItemCallback
 import net.fabricmc.fabric.api.event.player.UseEntityCallback
 import net.fabricmc.fabric.api.event.player.AttackEntityCallback
 import net.johnceo.sparklingmutuals.config.AppearanceConfig
+import net.johnceo.sparklingmutuals.config.BiomeObjectiveConfig
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.config.CritterNameplates
 import net.johnceo.sparklingmutuals.config.SafariEspConfig
 import net.johnceo.sparklingmutuals.safari.SafariAssist
 import net.johnceo.sparklingmutuals.safari.SafariBiome
+import net.johnceo.sparklingmutuals.safari.SafariMode
 import net.johnceo.sparklingmutuals.safari.SafariRoster
 import net.johnceo.sparklingmutuals.safari.SafariRules
 import net.johnceo.sparklingmutuals.safari.SafariSparklingMode
@@ -678,7 +680,11 @@ object SafariEsp {
         val display = entity is Display.ItemDisplay
         val run = SafariTracking.ledger.current
         val party = SafariSparklingMode.state
-        val forceIcy = mob.biome == SafariBiome.ICY && party.needs("Wumpa") && (run?.count(mob.name) ?: 0) == 0
+        val mode = net.johnceo.sparklingmutuals.safari.completion.SafariFullClear.mode
+        val forceIcy = mob.biome == SafariBiome.ICY && BiomeObjectiveConfig.needs("Wumpa", party) &&
+            (run?.count("Wumpa") ?: 0) == 0 && (run?.count(mob.name) ?: 0) == 0
+        if (!BiomeObjectiveConfig.allowsEsp(mob.name, mode, run) && !(mode == SafariMode.SPARKLING && forceIcy))
+            return "Optional sparkling check disabled"
         if (!forceIcy && !live(target, client, forEsp = true)) return "Inactive model or label"
         val alwaysOn = SafariEspConfig.alwaysOn(mob.name)
         val needed = alwaysOn || forceIcy || if (ConfigManager.sparklingMode)

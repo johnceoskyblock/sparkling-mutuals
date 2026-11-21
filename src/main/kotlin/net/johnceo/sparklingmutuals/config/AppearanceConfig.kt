@@ -40,7 +40,7 @@ object AppearanceConfig {
     var hudTextShadow = true
     var pixelAlignedHuds = false
     fun color(rgb: Int) = "0:255:${rgb shr 16 and 255}:${rgb shr 8 and 255}:${rgb and 255}"
-    val panels = listOf("hotspot", "miria", "progress", "profitable", "lake_cleared", "missing", "objectives", "captures", "sparklings", "alert", "gems", "bird_food", "incense", "coins", "warp", "run_complete", "doom_throw", "entry_cooldown", "developer", "shard_guidance", "hunting_box_value").associateWith { PanelStyle() }
+    val panels = listOf("hotspot", "miria", "progress", "splits", "profitable", "lake_cleared", "missing", "objectives", "captures", "sparklings", "alert", "gems", "bird_food", "incense", "coins", "warp", "run_complete", "doom_throw", "entry_cooldown", "developer", "shard_guidance", "hunting_box_value", "ubiks_cube").associateWith { PanelStyle() }
     var runCompleteColor = color(0x55FF55)
     var selectedHex = "#FFD700"
     var nestColor = color(0x55FF55)
@@ -68,12 +68,13 @@ object AppearanceConfig {
                 text.enabled=properties.getProperty("appearance.$id.text.$name.enabled")?.toBooleanStrictOrNull() ?: false
                 text.color=SafariEspConfig.validColor(properties.getProperty("appearance.$id.text.$name.color"),color(if(name=="header") SafariTheme.ACCENT else 0xFFFFFF))
             }
-            style.borderEnabled = saved("borderEnabled")?.toBooleanStrictOrNull() ?: true
+            val blackWithoutBorder = id == "splits" || id == "ubiks_cube"
+            style.borderEnabled = saved("borderEnabled")?.toBooleanStrictOrNull() ?: !blackWithoutBorder
             val background = saved("backgroundColor")
             val legacyCompletion = id == "run_complete" && background == color(0xAAFFAA)
             // Upgrade exact old defaults only; user-picked colors, alpha and chroma remain intact.
             style.borderColor = migratedColor(saved("borderColor"), SafariTheme.BORDER, setOf(0xE3C77E))
-            style.backgroundColor = migratedColor(background, SafariTheme.BACKGROUND,
+            style.backgroundColor = migratedColor(background, if (blackWithoutBorder) 0x000000 else SafariTheme.BACKGROUND,
                 if (id == "run_complete") setOf(0x241F18, 0xAAFFAA) else setOf(0x241F18))
             val transparency = saved("transparency")?.toIntOrNull()
             style.transparency = if (legacyCompletion && transparency == 80) 20 else transparency ?: 20

@@ -2,10 +2,20 @@ package net.johnceo.sparklingmutuals.api
 
 import com.google.gson.JsonParser
 import net.johnceo.sparklingmutuals.commands.SparklingLookup
+import net.johnceo.sparklingmutuals.safari.SafariBiome
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class SparklingLookupTest {
+    @Test fun `capture totals accept sparse biome counts and preserve zero versus unavailable`() {
+        fun read(json: String) = SafariProfile.from(JsonParser.parseString(json).asJsonObject)
+        val sparse = read("""{"safari":{"biome_captures":{"icy":0,"haunted":3000000000,"forest":-1,"cavern":"14","other":99},"total_captured_sparkling_critters":2}}""")
+        assertEquals(mapOf(SafariBiome.ICY to 0L, SafariBiome.HAUNTED to 3_000_000_000L), sparse.biomeCaptures)
+        assertEquals(3_000_000_000L, sparse.totalCritterCaptures)
+        assertEquals(2L, sparse.totalCaptured)
+        assertEquals(0L, read("""{"safari":{"biome_captures":{"icy":0}}}""").totalCritterCaptures)
+        assertNull(read("""{"bestiary":{"kills":{"doomspiral_1":30}}}""").totalCritterCaptures)
+    }
     @Test fun `discovery fallback accepts absent profile data but preserves actual failures`() {
         val lookup = net.johnceo.sparklingmutuals.commands.SafariLookup
         assertTrue(lookup.discoveriesOrEmpty { throw ApiFailure.dataUnavailable() }.isEmpty())

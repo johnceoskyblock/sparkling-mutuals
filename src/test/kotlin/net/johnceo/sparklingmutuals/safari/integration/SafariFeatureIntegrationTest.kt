@@ -52,7 +52,7 @@ class SafariFeatureIntegrationTest {
         val exceptions = setOf("esp.nameplates.colors.fixedColor", "esp.nameplates.critters.litterbug", "warp.autoReconnectHypixel", "warp.autoJoinSkyBlock", "esp.nameplates.colors.uniqueColors", "esp.nameplates.colors.rarityColors", "esp.nameplates.distance", "esp.nameplates.colors.entityColorOverride", "customization.biomeBorders", "modes.sparkling.allScannable", "warp.autoPartyOnlineOnly", "safari.alerts.alwaysCelebrate", "tracking.progressHud.hotspot", "espGeneral.floorVisibility.icebreaker", "warp.autoEnter", "warp.leech", "skyblock.helpers.skillOverflowNumbers", "tracking.capturesHud.enabled", "history.instaSell", "history.toParty", "warp.enabled", "espGeneral.floorVisibility.generic", "miria.warning.five", "party.startingItems",
             "espGeneral.boxes", "esp.biomeColors.enabled", "esp.floorDrops.visibility.icebreaker", "esp.floorDrops.visibility.generic", "general.font.pixelAlignedHuds", "esp.nameplates.pity",
             "modes.unique.hideCritters", "modes.unique.hideDrops", "modes.fullClear.hideCritters",
-            "modes.fullClear.hideDrops", "modes.sparkling.hideCritters", "modes.sparkling.hideDrops")
+            "modes.fullClear.hideDrops", "modes.sparkling.hideCritters", "modes.sparkling.hideDrops", "skyblock.helpers.ubiksCubeTimer.enabled")
         val modes = setOf("modes.unique.enabled", "modes.fullClear.enabled", "modes.sparkling.enabled")
         assertAll(switches.filterKeys { it !in modes && !it.startsWith("banner.") }.map { (name,value) ->
             org.junit.jupiter.api.function.Executable {
@@ -78,6 +78,7 @@ class SafariFeatureIntegrationTest {
         ConfigManager.shinyDetection = false
         ConfigManager.runCoinsInstaSell = true
         ConfigManager.achievementsToParty = true
+        SafariSettings().apply { skyblock.helpers.ubiksCubeTimer.enabled = true }.apply()
         AppearanceConfig.panels.values.forEach { it.borderEnabled = false }
         ConfigManager.save(); ConfigManager.init(dir)
         assertFalse(ConfigManager.warpAlertsEnabled)
@@ -85,6 +86,7 @@ class SafariFeatureIntegrationTest {
         assertFalse(ConfigManager.shinyDetection)
         assertTrue(ConfigManager.runCoinsInstaSell)
         assertTrue(ConfigManager.achievementsToParty)
+        assertTrue(ConfigManager.ubiksCubeTimer)
         assertTrue(AppearanceConfig.panels.values.none { it.borderEnabled })
     }
 
@@ -94,7 +96,14 @@ class SafariFeatureIntegrationTest {
         assertFalse(ConfigManager.shinyDetection)
         assertFalse(ConfigManager.warpAlertsEnabled)
         assertTrue(ConfigManager.hideCaptureChat)
-        assertTrue(AppearanceConfig.panels.values.all { it.borderEnabled })
+        assertTrue(AppearanceConfig.panels.filterKeys { it != "splits" && it != "ubiks_cube" }.values.all { it.borderEnabled })
+        assertTrue(ConfigManager.splitsHud)
+        assertFalse(ConfigManager.ubiksCubeTimer)
+        assertFalse(AppearanceConfig.panels.getValue("ubiks_cube").borderEnabled)
+        val splits = AppearanceConfig.panels.getValue("splits")
+        assertFalse(splits.borderEnabled)
+        assertEquals(20, splits.transparency)
+        assertEquals(0, splits.backgroundArgb and 0xFFFFFF)
         assertEquals(42, ConfigManager.warpDelaySeconds)
         assertEquals(2, ConfigManager.showWhere)
         assertFalse(ConfigManager.runCoinsInstaSell)

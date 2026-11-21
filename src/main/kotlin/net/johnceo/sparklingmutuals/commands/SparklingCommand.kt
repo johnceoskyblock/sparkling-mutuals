@@ -6,6 +6,9 @@ import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.LocalChat
 import net.johnceo.sparklingmutuals.config.SafariConfigScreen
+import net.johnceo.sparklingmutuals.config.ReleaseHighlights
+import net.johnceo.sparklingmutuals.config.SettingsTarget
+import net.johnceo.sparklingmutuals.config.UpdateDetailsScreen
 import net.johnceo.sparklingmutuals.contest.ContestGui
 import net.johnceo.sparklingmutuals.history.importing.LogImporter
 import net.johnceo.sparklingmutuals.history.ui.HistoryScreen
@@ -28,6 +31,10 @@ object SparklingCommand {
         val client = Minecraft.getInstance()
         client.execute { client.setScreenAndShow(screen()) }
         return 1
+    }
+    private fun openSettings(target: SettingsTarget? = null) = open {
+        val settings = SafariConfigScreen(initialTarget = target)
+        ReleaseHighlights.pending(ConfigManager.installedVersionHistory)?.let { UpdateDetailsScreen(settings, it) } ?: settings
     }
 
     fun register() {
@@ -65,8 +72,12 @@ object SparklingCommand {
             })
             dispatcher.register(
                 historyShortcuts
-                    .executes { open(::SafariConfigScreen) }
-                    .then(ClientCommands.literal("config").executes { open(::SafariConfigScreen) })
+                    .executes { openSettings() }
+                    .then(ClientCommands.literal("config").executes { openSettings() })
+                    .then(ClientCommands.literal("objectives").executes {
+                        openSettings(net.johnceo.sparklingmutuals.config.HudConfigLinks.target(
+                            net.johnceo.sparklingmutuals.hud.SafariHud.OBJECTIVES))
+                    })
                     .then(ClientCommands.literal("help").executes { context ->
                         CommandHelp.localLines().forEach { context.source.sendFeedback(LocalChat.component(it)) }; 1
                     })

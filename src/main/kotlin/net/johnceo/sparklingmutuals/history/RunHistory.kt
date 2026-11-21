@@ -18,7 +18,8 @@ import net.minecraft.client.Minecraft
 object RunHistory {
     class Data(var nextNumber: Int = 1, var runs: MutableList<RunRecord> = mutableListOf(),
                var sessionStarts: List<Long> = emptyList(),
-               private var hotspotPartyRoster: Set<String>? = null, private var hotspotPartySince: Long = 0) {
+               private var hotspotPartyRoster: Set<String>? = null, private var hotspotPartySince: Long = 0,
+               var pricedInstaSell: Boolean? = null) {
         internal fun observeHotspotRoster(roster: Set<String>, now: Long): Boolean {
             if (hotspotPartyRoster == roster) return false
             if (hotspotPartyRoster != null) breakHotspotStreak(now)
@@ -39,6 +40,7 @@ object RunHistory {
     private var data = Data()
     private var hotspotRunCount: Pair<Set<String>, Int>? = null
     private var hotspotRosterRevision = Long.MIN_VALUE
+    private var cachedSessionStats: SafariSessionStats? = null
     private val session = LiveHistorySession()
     private val tally get() = session.tally
     private val splits get() = session.splits
@@ -51,6 +53,10 @@ object RunHistory {
 
     val runs: List<RunRecord> get() = data.runs
     val sessionStarts: List<Long> get() = data.sessionStarts
+    internal fun currentSessionStats(): SafariSessionStats = cachedSessionStats ?: SafariSessionStats.of(
+        ProfitPeriods.currentRuns(runs, SafariProfitPeriod.SESSION, sessionStarts.lastOrNull(), System.currentTimeMillis())
+    ).also { cachedSessionStats = it }
+    internal val priceChangePending get() = data.pricedInstaSell?.let { it != ConfigManager.runCoinsInstaSell } == true
     internal fun hotspotRunsFor(roster: Set<String>): Int {
         hotspotRunCount?.takeIf { it.first == roster }?.let { return it.second }
         return data.hotspotRunsFor(roster).also { hotspotRunCount = roster to it }
@@ -70,6 +76,8 @@ object RunHistory {
 
     fun register() {
         data = HistoryStore.load("runs", Data::class.java, ::Data).also { d -> d.runs.sortByDescending { it.start } }
+        cachedSessionStats = null
+        if (data.pricedInstaSell == null) data.pricedInstaSell = ConfigManager.runCoinsInstaSell
         val overlong = HistoryMerge.removeOverlongRuns(data.runs)
         val duplicates = HistoryMerge.removeExactDuplicates(data.runs)
         if (overlong + duplicates > 0) {
@@ -174,7 +182,7 @@ object RunHistory {
      */
     fun reconcileImport(found: List<RunRecord>, alpha: List<RunRecord>): Int =
         net.johnceo.sparklingmutuals.history.importing.HistoryImportRepair.runs(data.runs, found, alpha)
-            .also { if (it > 0) hotspotRunCount = null }
+            .also { if (it > 0) { hotspotRunCount = null; cachedSessionStats = null } }
 
     fun importRuns(found: List<RunRecord>): Int {
         val existing = data.runs.toSet()
@@ -189,6 +197,7 @@ object RunHistory {
 
     /** Fills in coins for runs saved before the prices had loaded. */
     fun fillMissingCoins() {
+        if (priceChangePending) { reprice(); return }
         val missing = data.runs.filter { !it.coinsEstimated && it.coins < 0 }
         missing.forEach { it.coins = BazaarPrices.value(it.shards, it.feathers) }
         val essenceChanged = data.runs.map(::addEssenceValue).any { it }
@@ -218,7 +227,7 @@ object RunHistory {
     fun reprice() {
         BazaarPrices.ensureFresh()
         val quotes = BazaarPrices.cachedPrices
-        if (quotes.isEmpty()) return
+        if (quotes.isEmpty()) { save(); return }
         val reference = data.runs.map { RunRecord(caught = it.caught, lootShares = it.lootShares, party = it.party,
             feathers = it.feathers, sparklings = it.sparklings.toMutableList(), coins = it.coins, essenceCoins = it.essenceCoins) }
         data.runs.forEach { run ->
@@ -226,11 +235,13 @@ object RunHistory {
             else run.coins = BazaarPrices.value(run.shards, run.feathers, quotes)
             run.essenceCoins = -1; addEssenceValue(run)
         }
+        data.pricedInstaSell = ConfigManager.runCoinsInstaSell
         save()
     }
 
     fun save(): Result<Unit> {
         hotspotRunCount = null
+        cachedSessionStats = null
         return HistoryStore.save("runs", data)
     }
 }

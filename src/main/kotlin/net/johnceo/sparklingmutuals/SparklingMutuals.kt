@@ -60,7 +60,9 @@ object SparklingMutuals : ModInitializer {
     override fun onInitialize() {
         logger.info("Sparkling Mutuals loaded!")
         val configDirectory = ConfigStorage.migrate(FabricLoader.getInstance().configDir)
-        ConfigManager.init(configDirectory)
+        ConfigManager.init(configDirectory, net.johnceo.sparklingmutuals.config.ModUpdates.installed) {
+            net.johnceo.sparklingmutuals.config.PreviousModVersion.fromLogs(FabricLoader.getInstance().gameDir.resolve("logs"))
+        }
         ContestConfig.init(configDirectory)
         registerCommands()
         registerFeatures()
@@ -97,6 +99,7 @@ object SparklingMutuals : ModInitializer {
         ContestTracker.register()
         PhantomleafSolver.register()
         net.johnceo.sparklingmutuals.skyblock.SkillOverflow.register()
+        net.johnceo.sparklingmutuals.skyblock.UbiksCubeTimer.register()
         net.johnceo.sparklingmutuals.skyblock.market.ShardSaleGuidance.register()
         SafariEsp.register()
         TeammateEsp.register()
@@ -122,6 +125,7 @@ object SparklingMutuals : ModInitializer {
             net.johnceo.sparklingmutuals.hud.HotspotHud.render(graphics)
             net.johnceo.sparklingmutuals.safari.SafariEntryCooldown.render(graphics)
             SafariTracking.render(graphics)
+            net.johnceo.sparklingmutuals.skyblock.UbiksCubeTimer.render(graphics)
             net.johnceo.sparklingmutuals.debug.SafariDeveloper.render(graphics, Minecraft.getInstance())
             net.johnceo.sparklingmutuals.hud.HotspotAssignmentAlert.render(graphics)
             SparklingEncounters.render(graphics)
@@ -153,6 +157,7 @@ object SparklingMutuals : ModInitializer {
         SafariAssist.onClientTick(client)
         net.johnceo.sparklingmutuals.safari.ClearWater.tick(client)
         SafariTracking.onClientTick(client)
+        net.johnceo.sparklingmutuals.skyblock.UbiksCubeTimer.tick(client)
         AlertManager.tick(client)
         net.johnceo.sparklingmutuals.sync.SafariPartySync.tick(client)
         net.johnceo.sparklingmutuals.hud.HotspotAssignmentAlert.tick(client)
@@ -188,6 +193,7 @@ object SparklingMutuals : ModInitializer {
         net.johnceo.sparklingmutuals.skyblock.market.ShardSaleGuidance.reset()
         net.johnceo.sparklingmutuals.sync.SafariPartySync.reset()
         net.johnceo.sparklingmutuals.skyblock.SkillOverflow.reset()
+        net.johnceo.sparklingmutuals.skyblock.UbiksCubeTimer.reset()
         net.johnceo.sparklingmutuals.hud.SafariBanners.reset()
         net.johnceo.sparklingmutuals.safari.ClearWater.reset()
         net.johnceo.sparklingmutuals.hud.MaxWin.reset()
