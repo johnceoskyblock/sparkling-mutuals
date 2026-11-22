@@ -1,5 +1,6 @@
 name: release
 on:
+  workflow_dispatch:
   push:
     tags: ['v*']
 
@@ -44,13 +45,30 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
       - run: chmod +x gradlew
       - run: ./gradlew validateReleaseTag
+        if: github.event_name == 'push'
       - run: ./gradlew -p buildSrc test
+  windows-updater:
+    runs-on: windows-2025
+    env:
+      JAVA_TOOL_OPTIONS: -Djunit.jupiter.tempdir.cleanup.mode.default=NEVER
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: 'microsoft'
+      - uses: gradle/actions/setup-gradle@v6
+      - name: Verify restart installation with a locked Windows JAR
+        run: .\gradlew.bat :26.1.2:test -Pedition=full --tests '*UpdateInstallTest'
   target:
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
         minecraft: ['26.1.2', '26.2', '26.3']
+        edition: [standard, full, full-no-auto-update]
     steps:
       - uses: actions/checkout@v6
         with:
@@ -63,14 +81,14 @@ jobs:
           distribution: 'microsoft'
       - uses: gradle/actions/setup-gradle@v6
       - run: chmod +x gradlew
-      - run: ./gradlew validateReleaseTag :${{ matrix.minecraft }}:verifyTargetJar
+      - run: ./gradlew :${{ matrix.minecraft }}:verifyTargetJar -Pedition=${{ matrix.edition }}
       - uses: actions/upload-artifact@v7
         with:
-          name: jar-mc${{ matrix.minecraft }}
-          path: versions/${{ matrix.minecraft }}/build/libs/sparkling-mutuals-*+mc${{ matrix.minecraft }}.jar
+          name: jar-${{ matrix.edition }}-mc${{ matrix.minecraft }}
+          path: versions/${{ matrix.minecraft }}/build/${{ matrix.edition != 'full' && format('{0}/', matrix.edition) || '' }}libs/sparkling-mutuals-*+mc${{ matrix.minecraft }}.jar
           if-no-files-found: error
   verify:
-    needs: [sync-backend, build-logic, target]
+    needs: [sync-backend, build-logic, windows-updater, target]
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
@@ -84,15 +102,15 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
       - uses: actions/download-artifact@v8
         with:
-          pattern: jar-mc*
+          pattern: jar-*-mc*
           path: incoming
           merge-multiple: true
       - run: chmod +x gradlew
-      - run: ./gradlew validateReleaseTag verifyDistributions -PdistributionDir=incoming
+      - run: ./gradlew verifyReleaseMatrix -PdistributionDir=incoming
       - uses: actions/upload-artifact@v7
         with:
-          name: verified-release-jars
-          path: incoming/*.jar
+          name: verified-release-assets
+          path: build/release-assets/*
           if-no-files-found: error
   publish:
     needs: verify
@@ -112,7 +130,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
       - uses: actions/download-artifact@v8
         with:
-          name: verified-release-jars
+          name: verified-release-assets
           path: incoming
       - run: chmod +x gradlew
       - run: ./gradlew publishVerifiedRelease -PdistributionDir=incoming

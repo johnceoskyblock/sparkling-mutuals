@@ -2,6 +2,7 @@ package net.johnceo.sparklingmutuals.history
 
 import java.util.concurrent.Executors
 import net.johnceo.sparklingmutuals.LocalChat
+import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.api.HypixelApi
 import net.johnceo.sparklingmutuals.api.ApiRetryWindow
 import net.johnceo.sparklingmutuals.hud.SkyblockSidebar
@@ -33,6 +34,7 @@ object OwnStats {
     private var generation = 0L
 
     fun tick(client: Minecraft) {
+        if (!ConfigManager.achievements) return
         val now = System.currentTimeMillis()
         val provider = HypixelApi.provider
         val uuid = client.player?.uuid?.toString() ?: return
@@ -49,6 +51,7 @@ object OwnStats {
             client.execute {
                 if (revision != generation) return@execute
                 fetching = false
+                if (!ConfigManager.achievements) { fetchedAt = 0; return@execute }
                 result.onFailure {
                     retry.failed(System.currentTimeMillis(), provider)
                     logger.info("Own Safari stats lookup failed: {}", it.message)

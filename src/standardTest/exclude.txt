@@ -1,0 +1,11 @@
+kotlin/net/johnceo/sparklingmutuals/alerts/WarpListDefaultsTest.kt
+kotlin/net/johnceo/sparklingmutuals/alerts/WarpListRefreshTest.kt
+kotlin/net/johnceo/sparklingmutuals/config/CjsNewSmConfigTest.kt
+kotlin/net/johnceo/sparklingmutuals/config/CjsSingleToggleTest.kt
+kotlin/net/johnceo/sparklingmutuals/config/GemzieConfigTest.kt
+kotlin/net/johnceo/sparklingmutuals/safari/automation/entry/CjsCrowdedApproachTest.kt
+kotlin/net/johnceo/sparklingmutuals/safari/automation/entry/CjsEntryInputTest.kt
+kotlin/net/johnceo/sparklingmutuals/safari/automation/entry/CjsGameplayHookTest.kt
+kotlin/net/johnceo/sparklingmutuals/safari/automation/entry/CjsPhysicalInputTest.kt
+kotlin/net/johnceo/sparklingmutuals/safari/automation/entry/CjsWalkingKeysTest.kt
+kotlin/net/johnceo/sparklingmutuals/safari/automation/entry/CjsWebsocketSessionTest.kt

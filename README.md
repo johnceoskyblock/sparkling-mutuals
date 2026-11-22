@@ -16,8 +16,16 @@ A Fabric client mod for Hypixel SkyBlock’s Critter Safari.
 
 1. Set up **Minecraft 26.1.2, 26.2, or 26.3** with **Java 25** and [Fabric Loader](https://fabricmc.net/use/installer/) **0.19.5 or newer**.
 2. Put [Fabric API](https://modrinth.com/mod/fabric-api) for your Minecraft version and [Fabric Language Kotlin](https://modrinth.com/mod/fabric-language-kotlin) in your `mods` folder.
-3. Download Sparkling Mutuals from [GitHub Releases](https://github.com/johnceoskyblock/sparkling-mutuals/releases/latest). Pick the JAR whose `+mc` suffix matches your Minecraft version, put it in `mods`, and remove any older Sparkling Mutuals JAR.
+3. Pick one edition and the JAR whose `+mc` suffix matches your Minecraft version. Install it in `mods` and remove older Sparkling Mutuals JARs. [GitHub Releases](https://github.com/johnceoskyblock/sparkling-mutuals/releases/latest)
 4. Launch the Fabric profile and use `/sm` to open settings.
+
+## Editions
+
+- **Standard** uses JohnKuudra’s visibility restrictions for markers and sparkling alerts. It retains Safari modes, party progress sync, HUDs, and history. Standard builds are available through Actions during release testing. [Original Standard changes](https://github.com/1tsethan/sparkling-mutuals/commit/b297adf)
+- **Full** is the original feature set, with optional update downloads that install after the game closes. GitHub JARs keep the existing filename.
+- **Full No Auto Update** has the Full feature set with in-game update checks, downloads, and the installer removed. Look for `-full-no-auto-update` in the JAR filename.
+
+The feature list below describes Full. See the [shipping guide](docs/SHIPPING.md) for local builds and release testing.
 
 ## Features
 
@@ -30,8 +38,8 @@ A Fabric client mod for Hypixel SkyBlock’s Critter Safari.
 | Critter ESP | Highlight eligible critters with model glow, optional boxes, and configurable species or biome colors. |
 | Floor-drop and structure ESP | Locate biome-specific floor drops, bee nests, Rockmite mounds, Snoozle walls, and other spawn sources. |
 | Sparkling alerts | Highlight detected Sparklings and announce sightings with configurable visual and sound alerts. |
-| Sparkling lookups | Compare personal and party discoveries with `/sparkling`. Individual cards include total and per-biome captures, also available in party chat with `!captures [IGN]`. |
-| Sparkling rates | See estimated runs per Sparkling with `/rates`. |
+| Sparkling lookups | Compare personal and party discoveries with `/sparkling`. Individual cards include total and per-biome captures, also available in party chat with `!captures [IGN]`. Use `!sparkling [IGN]` for total, unique, and duplicate sparklings. |
+| Sparkling rates | Use `/rates` for estimates or `!rates` in party chat to share each responding player’s current session catch count and runs per sparkling. |
 | Capsule Projection | Preview estimated capsule paths and landing points. |
 | Gemzie auto-select | Select the matching hotbar gem while holding right-click over a Gemzie podium. |
 | Rockmite auto-clicker | Repeatedly click Rockmite mounds while holding left-click. |

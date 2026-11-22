@@ -6,8 +6,8 @@ import net.johnceo.sparklingmutuals.safari.completion.SafariFullClear
 /** Local slash-command help and the separate mode-aware party command reply. */
 object CommandHelp {
     private val party = listOf(
-        PartyCommandKind.MUTUALS, PartyCommandKind.MISSING, PartyCommandKind.TICKETS, PartyCommandKind.CAPTURES, PartyCommandKind.DYE,
-        PartyCommandKind.SINCE_SPARKLING, PartyCommandKind.SINCE_UNIQUE, PartyCommandKind.PROFIT,
+        PartyCommandKind.MUTUALS, PartyCommandKind.MISSING, PartyCommandKind.TICKETS, PartyCommandKind.CAPTURES, PartyCommandKind.SPARKLING, PartyCommandKind.DYE,
+        PartyCommandKind.SINCE_SPARKLING, PartyCommandKind.SINCE_UNIQUE, PartyCommandKind.PROFIT, PartyCommandKind.RATES,
         PartyCommandKind.PB_DOOM, PartyCommandKind.PB_WUMPA, PartyCommandKind.PB_FOREST,
         PartyCommandKind.PB_CAVERN, PartyCommandKind.PB_ICY, PartyCommandKind.PB_HAUNTED,
         PartyCommandKind.MISSING_RUN, PartyCommandKind.HELP
@@ -38,7 +38,7 @@ object CommandHelp {
         "/sm debug" to "Save diagnostics"
     )
     private fun available(mode: SafariMode) = party.map { kind ->
-        PartyCommand(kind, if (kind in listOf(PartyCommandKind.MISSING, PartyCommandKind.TICKETS, PartyCommandKind.CAPTURES)) "[IGN]" else "")
+        PartyCommand(kind, if (kind in listOf(PartyCommandKind.MISSING, PartyCommandKind.TICKETS, PartyCommandKind.CAPTURES, PartyCommandKind.SPARKLING)) "[IGN]" else "")
     }.filter { it.allowed(mode) }
 
     @Suppress("UNUSED_PARAMETER")

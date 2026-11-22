@@ -55,10 +55,21 @@ object ContestConfig {
     }
 
     private fun load() {
-        Properties().apply {
-            if (!Files.exists(configPath)) putAll(FreshInstallDefaults.contest())
-            if (Files.exists(configPath)) Files.newInputStream(configPath).use(::load)
+        val properties = if (Files.exists(configPath)) Properties().apply { Files.newInputStream(configPath).use(::load) }
+            else FreshInstallDefaults.contest()
+        loadSettings(properties)
+    }
 
+    internal fun resetSettings() {
+        val defaults = FreshInstallDefaults.contest().apply {
+            ticketAnnouncements.forEach { (key, window) -> setProperty("ticketAnnounced.$key", window.toString()) }
+        }
+        PersonalBestConfig.write(configPath, defaults, "Sparkling Mutuals contest configuration")
+        loadSettings(defaults)
+    }
+
+    private fun loadSettings(properties: Properties) {
+        with(properties) {
             hudX = getProperty("hudX", "10").toIntOrNull() ?: 10
             hudY = getProperty("hudY", "10").toIntOrNull() ?: 10
             hudScale = getProperty("hudScale", "1.0")
@@ -127,9 +138,7 @@ object ContestConfig {
             setProperty("contestSound", contestSound)
             setProperty("contestSoundVolume", contestSoundVolume.toString())
 
-            Files.newOutputStream(configPath).use {
-                store(it, "Sparkling Mutuals contest configuration")
-            }
+            PersonalBestConfig.write(configPath, this, "Sparkling Mutuals contest configuration")
         }
     }
 }

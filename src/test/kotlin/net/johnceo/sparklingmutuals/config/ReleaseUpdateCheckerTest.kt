@@ -7,6 +7,30 @@ class ReleaseUpdateCheckerTest {
     private fun row(version: String, mc: String = "26.3", flags: String = "") =
         """{"tag_name":"v$version","name":"v$version","body":null,"assets":[{"name":"sparkling-mutuals-$version+mc$mc.jar"}]$flags}"""
 
+    @Test fun `download links must identify the exact repository tag and Full Minecraft asset`() {
+        val prefix = "https://github.com/johnceoskyblock/sparkling-mutuals/releases/download/v4.1.0/"
+        fun body(asset: String, manifest: String) = """[{"tag_name":"v4.1.0","assets":[{"name":"sparkling-mutuals-4.1.0+mc26.3.jar","browser_download_url":"$asset"},{"name":"build-manifest.json","browser_download_url":"$manifest"}]}]"""
+        val name = "sparkling-mutuals-4.1.0+mc26.3.jar"
+        val valid = ReleaseUpdateChecker.newest(body(prefix+name.replace("+", "%2B"), prefix+"build-manifest.json"), "26.3")!!
+        assertEquals(prefix+name, valid.asset.toString())
+        assertNotNull(valid.manifest)
+        for (url in listOf("https://example.com/$name", prefix.replace("v4.1.0", "v4.2.0")+name,
+            prefix+name.replace("26.3", "26.2"), prefix+name+"?download=1")) {
+            assertNull(ReleaseUpdateChecker.newest(body(url, prefix+"build-manifest.json"), "26.3")!!.asset)
+        }
+        assertNull(ReleaseUpdateChecker.newest(body(prefix+name, "https://example.com/build-manifest.json"), "26.3")!!.manifest)
+    }
+
+    @Test fun `update callback runs only for a newer compatible stable release`() {
+        var body = "[${row("4.0.0")}]"
+        val updates = mutableListOf<String>()
+        val checker = ReleaseUpdateChecker("4.0.0", "26.3", { body }, { it() }, onUpdate = { updates.add(it.tag) })
+        checker.check()
+        body = "[${row("4.1.0")}]"
+        checker.check(force = true)
+        assertEquals(listOf("v4.1.0"), updates)
+    }
+
     @Test fun `final stable release upgrades the matching installed beta while preview releases remain excluded`() {
         val body = "[${row("4.0.0")},${row("4.1.0-beta.1", flags=",\"prerelease\":true")}]"
         val checker = ReleaseUpdateChecker("4.0.0-beta.1", "26.3", { body }, { it() })

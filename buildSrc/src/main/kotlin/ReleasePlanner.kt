@@ -11,24 +11,32 @@ interface ReleaseApi {
     fun generatedNotes(tag: String): String
     fun updateBody(id: Long, body: String)
     fun deleteAsset(id: Long)
-    fun upload(id: Long, file: VerifiedJar): ReleaseAsset
+    fun upload(id: Long, file: VerifiedAsset): ReleaseAsset
     fun publish(id: Long)
 }
-fun planRelease(tag: String, modVersion: String, files: List<VerifiedJar>, existing: ExistingRelease?): ReleasePlan {
+fun planRelease(tag: String, modVersion: String, files: List<VerifiedAsset>, existing: ExistingRelease?): ReleasePlan {
     val prerelease = prereleaseForTag(tag)
     require(tag == "v$modVersion") { "Tag must match the internal mod version" }
-    require(files.size == 3 && files.map { it.minecraft }.toSet() == setOf("26.1.2", "26.2", "26.3")) { "Publication requires exactly three verified targets" }
-    files.forEach {
-        require(it.modVersion == modVersion && it.path.fileName.toString() == "sparkling-mutuals-$modVersion+mc${it.minecraft}.jar" &&
-            it.size > 0 && it.sha256.matches(Regex("[a-f0-9]{64}"))) { "Invalid verified target: ${it.minecraft}" }
+    val jars = files.filterIsInstance<VerifiedJar>()
+    val manifests = files.filterIsInstance<VerifiedManifest>()
+    val editionMatrix = if (manifests.isEmpty()) setOf(Edition.FULL) else setOf(Edition.FULL, Edition.FULL_NO_AUTO_UPDATE)
+    val expected = editionMatrix.flatMap { edition -> minecraftTargets.map { edition to it } }.toSet()
+    require(jars.size == expected.size && jars.map { it.edition to it.minecraft }.toSet() == expected &&
+        manifests.size <= 1 && jars.size + manifests.size == files.size) { "Publication requires the complete verified GitHub distribution" }
+    jars.forEach {
+        require(it.modVersion == modVersion && it.path.fileName.toString() == it.edition.jarName(modVersion, it.minecraft)) {
+            "Invalid verified target: ${it.edition.id} ${it.minecraft}"
+        }
     }
+    require(manifests.all { it.path.fileName.toString() == "build-manifest.json" } &&
+        files.all { it.size > 0 && it.sha256.matches(Regex("[a-f0-9]{64}")) }) { "Invalid verified asset" }
     if (existing == null) return ReleasePlan(ReleaseDecision.CREATE_DRAFT, false)
     require(existing.prerelease == prerelease) { "Release prerelease classification does not match its tag; review it manually" }
-    val jars = existing.assets.filter { it.name.endsWith(".jar", ignoreCase = true) }
+    val assets = if (manifests.isEmpty()) existing.assets.filter { it.name.endsWith(".jar", ignoreCase = true) } else existing.assets
     val names = files.map { it.path.fileName.toString() }.toSet()
-    require(jars.all { it.name in names } && jars.map { it.name }.distinct().size == jars.size) { "Unexpected or duplicate JAR assets; review them manually" }
+    require(assets.all { it.name in names } && assets.map { it.name }.distinct().size == assets.size) { "Unexpected or duplicate release assets; review them manually" }
     if (!existing.draft) {
-        require(files.all { file -> jars.singleOrNull { it.name == file.path.fileName.toString() }?.matches(file) == true }) {
+        require(files.all { file -> assets.singleOrNull { it.name == file.path.fileName.toString() }?.matches(file) == true }) {
             "Published release differs from the verified distribution; it will not be modified"
         }
         return ReleasePlan(ReleaseDecision.PUBLISHED_NOOP, !existing.body.isNullOrBlank())
@@ -41,10 +49,10 @@ internal fun prereleaseForTag(tag: String): Boolean {
     return tag.contains("-beta.")
 }
 
-private fun ReleaseAsset.matches(file: VerifiedJar) = size == file.size && sha256?.removePrefix("sha256:") == file.sha256
+private fun ReleaseAsset.matches(file: VerifiedAsset) = size == file.size && sha256?.removePrefix("sha256:") == file.sha256
 
 /** Only a complete, verified draft can cross the final publish boundary. */
-fun publishVerifiedRelease(api: ReleaseApi, tag: String, modVersion: String, files: List<VerifiedJar>): ReleaseDecision {
+fun publishVerifiedRelease(api: ReleaseApi, tag: String, modVersion: String, files: List<VerifiedAsset>): ReleaseDecision {
     planRelease(tag, modVersion, files, null)
     var remote = api.find(tag)
     val initial = planRelease(tag, modVersion, files, remote?.state)
@@ -71,7 +79,7 @@ fun publishVerifiedRelease(api: ReleaseApi, tag: String, modVersion: String, fil
     }
     val ready = draft()
     require(files.all { file -> ready.state.assets.singleOrNull { it.name == file.path.fileName.toString() }?.matches(file) == true }) {
-        "Draft does not contain all three matching uploads"
+        "Draft is missing verified uploads"
     }
     api.publish(releaseId)
     val published = requireNotNull(api.find(tag)) { "Published release could not be read back" }

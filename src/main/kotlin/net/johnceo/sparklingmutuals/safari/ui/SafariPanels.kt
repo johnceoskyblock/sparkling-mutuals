@@ -1,9 +1,9 @@
 package net.johnceo.sparklingmutuals.safari.ui
 
 import net.johnceo.sparklingmutuals.config.ConfigManager
+import net.johnceo.sparklingmutuals.config.ProgressRowDisplay
 import net.johnceo.sparklingmutuals.config.BiomeObjectiveConfig
 import net.johnceo.sparklingmutuals.config.BiomeObjectiveRow
-import java.util.Locale
 import net.johnceo.sparklingmutuals.history.RunHistory
 import net.johnceo.sparklingmutuals.history.SafariSessionStats
 import net.johnceo.sparklingmutuals.hud.HudPanel
@@ -37,7 +37,7 @@ object SafariPanels {
         val time = "%d:%02d".format(seconds / 60, seconds % 60)
         val title = when { run == null -> "Critter Safari (ready)"; run.endedAt != null -> "Last Safari  $time"; else -> "Critter Safari  $time" }
         val mode = SafariFullClear.mode
-        fun bar(label: String, critters: List<SafariCritter>, color: Int): HudRow {
+        fun bar(label: String, critters: List<SafariCritter>, color: Int, display: ProgressRowDisplay): HudRow {
             val areas = critters.map { it.biome }.distinct()
             val iconComplete = run?.let { current -> areas.all { area ->
                 current.backendBiomeReportReceived(area) || if (current.manualReportReceived(area))
@@ -53,7 +53,11 @@ object SafariPanels {
                 else run?.completed(mode, targets, party) ?: 0
             val complete = iconComplete
             return HudRow(label, "$count/${targets.size}", color, color,
-                if (targets.isEmpty()) 1f else count.toFloat() / targets.size, complete = complete,
+                when {
+                    !ConfigManager.progressTracks || display == ProgressRowDisplay.COUNT_ONLY -> null
+                    targets.isEmpty() -> 1f
+                    else -> count.toFloat() / targets.size
+                }, complete = complete,
                 completedIcon = net.johnceo.sparklingmutuals.hud.UiIcons.forLabel(label) ?: net.johnceo.sparklingmutuals.hud.UiIcons.Kind.CHECK)
         }
         val extras=buildList {
@@ -68,8 +72,19 @@ object SafariPanels {
             SafariMode.UNIQUE -> "Completed"
             SafariMode.FULL_CLEAR -> "Fully Collected"
         }
-        return HudPanel(title, rows = listOf(bar(overall, SafariRoster.all, HudRow.WHITE), HudRow()) +
-            SafariBiome.entries.map { bar(it.label, it.critters, it.color) } + if(extras.isEmpty()) emptyList() else listOf(HudRow())+extras)
+        val biomes = SafariBiome.entries.filter { ConfigManager.progressRow(it) != ProgressRowDisplay.HIDDEN }
+        return HudPanel(title, rows = buildList {
+            val overallDisplay = ConfigManager.progressRow(null)
+            if (overallDisplay != ProgressRowDisplay.HIDDEN) {
+                add(bar(overall, SafariRoster.all, HudRow.WHITE, overallDisplay))
+                if (biomes.isNotEmpty()) add(HudRow())
+            }
+            biomes.forEach { add(bar(it.label, it.critters, it.color, ConfigManager.progressRow(it))) }
+            if (extras.isNotEmpty()) {
+                if (isNotEmpty()) add(HudRow())
+                addAll(extras)
+            }
+        })
 
     }
     /** Critters of this biome the current mode still needs; the missing panel and `!m` both read it. */
@@ -246,7 +261,7 @@ object SafariPanels {
         }
         val footer = session?.let { stats ->
             val teal = 0xFF55FFFF.toInt()
-            val runsPerSparkling = stats.runsPerSparkling?.let { " (%.1f r/s)".format(Locale.ROOT, it) }.orEmpty()
+            val runsPerSparkling = stats.formattedRunsPerSparkling?.let { " ($it r/s)" }.orEmpty()
             listOf(
                 HudRow("Session avg", stats.averageRunMillis?.let(format::format) ?: "—", teal, icon = null),
                 HudRow("Runs", stats.runs.toString(), teal, icon = null),

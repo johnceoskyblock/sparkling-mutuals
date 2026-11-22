@@ -48,12 +48,28 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
       - run: chmod +x gradlew
       - run: ./gradlew -p buildSrc test
+  windows-updater:
+    runs-on: windows-2025
+    env:
+      JAVA_TOOL_OPTIONS: -Djunit.jupiter.tempdir.cleanup.mode.default=NEVER
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: 'microsoft'
+      - uses: gradle/actions/setup-gradle@v6
+      - name: Verify restart installation with a locked Windows JAR
+        run: .\gradlew.bat :26.1.2:test -Pedition=full --tests '*UpdateInstallTest'
   target:
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
         minecraft: ["26.1.2", "26.2", "26.3"]
+        edition: [standard, full, full-no-auto-update]
     steps:
       - uses: actions/checkout@v6
         with:
@@ -66,17 +82,17 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
       - run: chmod +x gradlew
       - name: Test, build and verify target
-        run: ./gradlew :${{ matrix.minecraft }}:verifyTargetJar
+        run: ./gradlew :${{ matrix.minecraft }}:verifyTargetJar -Pedition=${{ matrix.edition }}
       - uses: actions/upload-artifact@v7
         with:
-          name: jar-mc${{ matrix.minecraft }}
-          path: versions/${{ matrix.minecraft }}/build/libs/sparkling-mutuals-*+mc${{ matrix.minecraft }}.jar
+          name: jar-${{ matrix.edition }}-mc${{ matrix.minecraft }}
+          path: versions/${{ matrix.minecraft }}/build/${{ matrix.edition != 'full' && format('{0}/', matrix.edition) || '' }}libs/sparkling-mutuals-*+mc${{ matrix.minecraft }}.jar
           if-no-files-found: error
       - uses: actions/upload-artifact@v7
         if: always()
         with:
-          name: tests-mc${{ matrix.minecraft }}
-          path: versions/${{ matrix.minecraft }}/build/test-results/test/TEST-*.xml
+          name: tests-${{ matrix.edition }}-mc${{ matrix.minecraft }}
+          path: versions/${{ matrix.minecraft }}/build/${{ matrix.edition != 'full' && format('{0}/', matrix.edition) || '' }}test-results/test/TEST-*.xml
           if-no-files-found: error
   verify-all-targets:
     needs: [build-logic, target]
@@ -92,14 +108,14 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
       - uses: actions/download-artifact@v8
         with:
-          pattern: jar-mc*
+          pattern: jar-*-mc*
           path: incoming
           merge-multiple: true
       - run: chmod +x gradlew
-      - run: ./gradlew verifyDistributions -PdistributionDir=incoming
+      - run: ./gradlew verifyReleaseMatrix -PdistributionDir=incoming
   build:
     if: always()
-    needs: [ship-script, sync-backend, build-logic, target, verify-all-targets]
+    needs: [ship-script, sync-backend, build-logic, windows-updater, target, verify-all-targets]
     runs-on: ubuntu-24.04
     steps:
       - name: Require every applicable build and verification job to pass
@@ -108,6 +124,7 @@ jobs:
           TARGET_RESULT: ${{ needs.target.result }}
           DISTRIBUTION_RESULT: ${{ needs.verify-all-targets.result }}
           SYNC_BACKEND_RESULT: ${{ needs.sync-backend.result }}
+          WINDOWS_UPDATER_RESULT: ${{ needs.windows-updater.result }}
           SHIP_SCRIPT_RESULT: ${{ needs.ship-script.result }}
         run: |
           test "$BUILD_LOGIC_RESULT" = success
@@ -115,3 +132,4 @@ jobs:
           test "$DISTRIBUTION_RESULT" = success
           test "$SYNC_BACKEND_RESULT" = success
           test "$SHIP_SCRIPT_RESULT" = success
+          test "$WINDOWS_UPDATER_RESULT" = success

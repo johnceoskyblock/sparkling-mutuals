@@ -18,6 +18,8 @@ class CritterNameBiomeSettings(biome: SafariBiome) {
     fun apply() = entries.map {CritterNames.set(it.canonical,it.name)}.any {it}
 }
 class CritterNameSettings {
+        @JvmField @ConfigOption(name = "Use custom critter names", desc = "Show your saved custom names in client-side visuals.")
+        @ConfigEditorBoolean var enabled = ConfigManager.customCritterNames
     @JvmField @ConfigOption(name="Forest",desc="") @Accordion val forest=CritterNameBiomeSettings(SafariBiome.FOREST)
     @JvmField @ConfigOption(name="Cavern",desc="") @Accordion val cavern=CritterNameBiomeSettings(SafariBiome.CAVERN)
     @JvmField @ConfigOption(name="Icy",desc="") @Accordion val icy=CritterNameBiomeSettings(SafariBiome.ICY)

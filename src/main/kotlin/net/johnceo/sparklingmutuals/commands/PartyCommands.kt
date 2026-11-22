@@ -92,7 +92,7 @@ object PartyCommands {
             val reply = replies.first()
             if (reply.mode != SafariFullClear.mode || !stillFor(reply.command, reply.run, reply.world) || !stillUsing(reply.command, reply.provider) ||
                 !sameParty(client, reply.roster) ||
-                (!reply.command.personalResult && history.containsResult(reply.body, reply.cursor, reply.roster))) replies.removeFirst()
+                history.alreadyAnswered(reply.command, reply.body, reply.cursor, reply.roster)) replies.removeFirst()
             else if (reply.part == 0 || now - sentReplyAt >= 1500) {
                 replies.removeFirst()
                 PartyManager.sendPartyChat(client, "${reply.body}")
@@ -113,7 +113,7 @@ object PartyCommands {
             val chunks = state.chunks
             if (chunks != null && state.election.canPublish(now)) {
                 chunks.forEachIndexed { part, body ->
-                    if (state.request.command.personalResult || !history.containsResult(body, state.chatCursor, state.roster))
+                    if (!history.alreadyAnswered(state.request.command, body, state.chatCursor, state.roster))
                         replies.addLast(QueuedReply(token, body, state.roster, state.mode, state.chatCursor, part, state.request.command, state.run, state.world, state.provider))
                 }
                 iterator.remove()
@@ -127,6 +127,7 @@ object PartyCommands {
                     state.request.command.isSince -> SafariSinceReply.current(state.request.command)
                     state.request.command.kind == PartyCommandKind.DYE -> state.request.command.dyeResult(net.johnceo.sparklingmutuals.history.Achievements.emeraldDyes)
                     state.request.command.kind == PartyCommandKind.PROFIT -> SafariProfitReply.current(state.request.command.profitPeriod)
+                    state.request.command.kind == PartyCommandKind.RATES -> SafariSparklingReply.currentRates()
                     else -> null
                 }
                 state.task = executor.submit {

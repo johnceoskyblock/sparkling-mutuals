@@ -15,10 +15,21 @@ import java.util.zip.ZipFile
 import java.util.zip.ZipInputStream
 
 data class TargetSpec(val minecraft: String, val fabricApi: String, val hmApi: String)
-data class VerifiedJar(val path: Path, val minecraft: String, val modVersion: String, val size: Long, val sha256: String)
+interface VerifiedAsset {
+    val path: Path
+    val size: Long
+    val sha256: String
+}
+data class VerifiedJar(override val path: Path, val minecraft: String, val modVersion: String,
+    override val size: Long, override val sha256: String, val edition: Edition = Edition.FULL) : VerifiedAsset
+data class VerifiedManifest(override val path: Path, override val size: Long, override val sha256: String) : VerifiedAsset
 
-fun collectDistribution(paths: List<Path>, targets: List<TargetSpec>, modVersion: String, destination: Path): List<VerifiedJar> {
-    val verified = verifyDistribution(paths, targets, modVersion)
+private const val MANIFEST = "build-manifest.json"
+internal val minecraftTargets = setOf("26.1.2", "26.2", "26.3")
+
+fun collectDistribution(paths: List<Path>, targets: List<TargetSpec>, modVersion: String, destination: Path,
+    editions: Set<Edition> = setOf(Edition.FULL)): List<VerifiedJar> {
+    val verified = verifyDistribution(paths, targets, modVersion, editions)
     val dest = destination.toAbsolutePath().normalize()
     require(!Files.isSymbolicLink(dest)) { "Distribution destination must not be a symbolic link" }
     val parent = dest.parent
@@ -38,10 +49,8 @@ fun collectDistribution(paths: List<Path>, targets: List<TargetSpec>, modVersion
     try {
         verified.forEach { Files.copy(it.path, stage.resolve(it.path.fileName)) }
         // Validate the copied bytes too, before replacing the previous complete directory.
-        val staged = verifyDistribution(verified.map { stage.resolve(it.path.fileName) }, targets, modVersion)
-        Files.writeString(stage.resolve("build-manifest.json"), JsonOutput.prettyPrint(JsonOutput.toJson(mapOf(
-            "version" to modVersion, "files" to staged.map { mapOf("name" to it.path.fileName.toString(),
-                "minecraft" to it.minecraft, "size" to it.size, "sha256" to it.sha256) }))))
+        val staged = verifyDistribution(verified.map { stage.resolve(it.path.fileName) }, targets, modVersion, editions)
+        Files.writeString(stage.resolve(MANIFEST), manifestText(modVersion, staged))
         if (Files.exists(dest)) move(dest, backup)
         try { move(stage, dest) }
         catch (failure: Exception) {
@@ -55,6 +64,21 @@ fun collectDistribution(paths: List<Path>, targets: List<TargetSpec>, modVersion
         // If rollback failed, retain the backup for recovery.
         if (installed) removeTemporary(backup)
     }
+}
+
+private fun manifestText(version: String, jars: List<VerifiedJar>) = JsonOutput.prettyPrint(JsonOutput.toJson(mapOf(
+    "version" to version, "files" to jars.sortedBy { it.path.fileName.toString() }.map {
+        mapOf("name" to it.path.fileName.toString(), "minecraft" to it.minecraft, "edition" to it.edition.id,
+            "size" to it.size, "sha256" to it.sha256)
+    }
+)))
+
+fun verifyPublicManifest(path: Path, version: String, jars: List<VerifiedJar>): VerifiedManifest {
+    require(path.fileName.toString() == MANIFEST && Files.isRegularFile(path) &&
+        Files.size(path) in 1..65536L && Files.readString(path) == manifestText(version, jars)) {
+        "The public manifest does not match the verified GitHub JARs"
+    }
+    return VerifiedManifest(path, Files.size(path), sha256(path))
 }
 
 private const val MAX_ENTRY = 32 * 1024 * 1024
@@ -87,8 +111,8 @@ private fun accepts(requirement: Any?, version: String): Boolean = when (require
     else -> false
 }
 
-fun verifyJar(path: Path, target: TargetSpec, modVersion: String): VerifiedJar {
-    require(path.fileName.toString() == "sparkling-mutuals-$modVersion+mc${target.minecraft}.jar") { "Unexpected installable filename: $path" }
+fun verifyJar(path: Path, target: TargetSpec, modVersion: String, edition: Edition = Edition.FULL): VerifiedJar {
+    require(path.fileName.toString() == edition.jarName(modVersion, target.minecraft)) { "Unexpected installable filename: $path" }
     require(Files.isRegularFile(path) && Files.size(path) in 1..(64L * 1024 * 1024)) { "Missing or oversized JAR: $path" }
     try {
         ZipFile(path.toFile()).use { z ->
@@ -98,6 +122,9 @@ fun verifyJar(path: Path, target: TargetSpec, modVersion: String): VerifiedJar {
                 ?: throw IllegalArgumentException("Missing runtime resource: $name")
             val metadata = json(entry("fabric.mod.json"))
             require(metadata["id"] == "sparkling-mutuals" && metadata["version"] == modVersion && metadata["environment"] == "client") { "Incorrect mod identity/version/environment" }
+            val declaredEdition = (metadata["custom"] as? Map<*, *>)?.get("sparkling-mutuals:edition")
+            require(declaredEdition == edition.id) { "Incorrect mod edition" }
+            verifyEditionContents(edition, names)
             val depends = metadata["depends"] as? Map<*, *> ?: error("Missing dependency metadata")
             require(depends["minecraft"] == target.minecraft && depends["java"] == ">=25" && depends["fabricloader"] == ">=0.19.5") { "Incorrect target/Java/loader metadata" }
             require(depends["fabric-api"] != null && accepts(depends["fabric-api"], target.fabricApi)) { "Incompatible Fabric API" }
@@ -139,21 +166,49 @@ fun verifyJar(path: Path, target: TargetSpec, modVersion: String): VerifiedJar {
         if (e is IllegalArgumentException) throw e
         throw IllegalArgumentException("Invalid distributable $path: ${e.message}", e)
     }
-    val digest = Files.newInputStream(path).use { input ->
-        val md = MessageDigest.getInstance("SHA-256"); val buffer = ByteArray(8192)
-        while (true) { val read = input.read(buffer); if (read < 0) break; md.update(buffer, 0, read) }
-        md.digest().joinToString("") { "%02x".format(it) }
-    }
-    return VerifiedJar(path, target.minecraft, modVersion, Files.size(path), digest)
+    return VerifiedJar(path, target.minecraft, modVersion, Files.size(path), sha256(path), edition)
 }
 
-fun verifyDistribution(paths: List<Path>, targets: List<TargetSpec>, modVersion: String): List<VerifiedJar> {
-    require(targets.map { it.minecraft }.toSet() == setOf("26.1.2", "26.2", "26.3") && targets.size == 3) { "Expected exactly three supported targets" }
-    require(paths.size == 3 && paths.map { it.toAbsolutePath().normalize() }.distinct().size == 3) { "Missing or duplicate target JARs" }
-    val verified = targets.map { target ->
-        val file = paths.singleOrNull { it.fileName.toString() == "sparkling-mutuals-$modVersion+mc${target.minecraft}.jar" }
-            ?: throw IllegalArgumentException("Missing or duplicate target ${target.minecraft}")
-        verifyJar(file, target, modVersion)
+private fun sha256(path: Path) = Files.newInputStream(path).use { input ->
+    val digest = MessageDigest.getInstance("SHA-256")
+    val buffer = ByteArray(8192)
+    while (true) {
+        val read = input.read(buffer)
+        if (read < 0) break
+        digest.update(buffer, 0, read)
+    }
+    digest.digest().joinToString("") { "%02x".format(it) }
+}
+
+private fun verifyEditionContents(edition: Edition, names: List<String>) {
+    val prefix = "net/johnceo/sparklingmutuals/"
+    if (edition != Edition.FULL) {
+        require(names.none { it.startsWith(prefix + "config/ReleaseUpdateChecker") || it.startsWith(prefix + "update/") }) { "Updater class found in ${edition.id}" }
+    }
+    if (edition == Edition.STANDARD) {
+        require(prefix + "safari/visibility/LocalVisibility.class" in names) { "Standard visibility policy is missing" }
+        val forbidden = listOf("alerts/SparkleAutoParty", "alerts/WarpListRefresh", "alerts/WarpListScreen", "commands/AlertCommand",
+            "config/SafariSettings\$Warp",
+            "safari/automation/AutoClicker", "safari/automation/GemzieAutoSelect", "safari/automation/entry/CjsApproachInput",
+            "safari/automation/entry/CjsEntryDispatch", "safari/automation/entry/CjsEntryInput",
+            "safari/automation/entry/CjsSafariEntry", "safari/automation/entry/CjsWalkingKeys", "safari/hideyho/HideyhoQuest",
+            "mixin/CjsEntry", "mixin/DisconnectedScreenAccessor", "mixin/GemzieUseMixin", "mixin/HypixelDisconnectMixin",
+            "mixin/SafariAttackKeyAccessor", "mixin/SafariAutoClickerMixin", "mixin/SafariCandleMixin", "mixin/SafariTicketScreenMixin")
+        require(names.none { name -> forbidden.any { name.startsWith(prefix + it) } }) { "Full gameplay automation found in Standard" }
+    }
+}
+
+fun verifyDistribution(paths: List<Path>, targets: List<TargetSpec>, modVersion: String,
+    editions: Set<Edition> = setOf(Edition.FULL)): List<VerifiedJar> {
+    require(targets.map { it.minecraft }.toSet() == minecraftTargets && targets.size == minecraftTargets.size) { "Expected exactly three supported targets" }
+    val count = targets.size * editions.size
+    require(count > 0 && paths.size == count && paths.map { it.toAbsolutePath().normalize() }.distinct().size == count) { "Missing or duplicate target JARs" }
+    val verified = editions.flatMap { edition ->
+        targets.map { target ->
+            val file = paths.singleOrNull { it.fileName.toString() == edition.jarName(modVersion, target.minecraft) }
+                ?: throw IllegalArgumentException("Missing or duplicate ${edition.id} target ${target.minecraft}")
+            verifyJar(file, target, modVersion, edition)
+        }
     }
     // Platform adapters compile differently, but every target must ship the same feature classes and assets.
     // Only the 26.1.2 immediate renderer needs this anonymous captured-pose adapter for Iris composition.
@@ -163,11 +218,13 @@ fun verifyDistribution(paths: List<Path>, targets: List<TargetSpec>, modVersion:
             .associate { entry -> entry.name to if (entry.name.endsWith(".class")) "class" else
                 zip.getInputStream(entry).use { MessageDigest.getInstance("SHA-256").digest(bytes(it)) }.joinToString("") { "%02x".format(it) } }
     }
-    val baseline = contents(verified.first().path)
-    verified.drop(1).forEach { jar ->
-        val actual = contents(jar.path)
-        require(actual == baseline) { "Feature/resource parity differs for ${jar.minecraft}: " +
-            (baseline.keys + actual.keys).filter { baseline[it] != actual[it] }.joinToString() }
+    verified.groupBy { it.edition }.values.forEach { jars ->
+        val baseline = contents(jars.first().path)
+        jars.drop(1).forEach { jar ->
+            val actual = contents(jar.path)
+            require(actual == baseline) { "Feature/resource parity differs for ${jar.edition.id} ${jar.minecraft}: " +
+                (baseline.keys + actual.keys).filter { baseline[it] != actual[it] }.joinToString() }
+        }
     }
     return verified
 }

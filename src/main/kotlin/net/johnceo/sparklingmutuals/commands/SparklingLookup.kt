@@ -71,7 +71,7 @@ object SparklingLookup {
             line("§7Hunting level §f${profile.huntingLevel?.let { if (it > 60) "%.2f".format(it) else it.toInt().toString() } ?: "?"}")
             line("§f${profile.caught.size}§7/${SafariRoster.all.size} sparklings §8(hover to expand)")
             profile.totalCaptured?.let { total ->
-                val repeats = maxOf(0L, total - profile.caught.size)
+                val repeats = profile.duplicateSparklings ?: 0L
                 line("§7Total sparklings: §f$total §8($repeats duplicate${if (repeats == 1L) "" else "s"})")
             }
             profile.totalCritterCaptures?.let { total ->

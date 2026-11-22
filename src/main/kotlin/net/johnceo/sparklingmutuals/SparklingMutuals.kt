@@ -63,6 +63,7 @@ object SparklingMutuals : ModInitializer {
         ConfigManager.init(configDirectory, net.johnceo.sparklingmutuals.config.ModUpdates.installed) {
             net.johnceo.sparklingmutuals.config.PreviousModVersion.fromLogs(FabricLoader.getInstance().gameDir.resolve("logs"))
         }
+        net.johnceo.sparklingmutuals.config.ModUpdates.initialize(configDirectory)
         ContestConfig.init(configDirectory)
         registerCommands()
         registerFeatures()

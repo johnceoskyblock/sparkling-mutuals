@@ -13,7 +13,7 @@ import org.junit.jupiter.api.io.TempDir
 class InstalledVersionHistoryTest {
     @TempDir lateinit var directory: Path
 
-    @Test fun `multiple upgrades accumulate until the highlights are read`() {
+    @Test fun `only releases since the previous install appear even when earlier updates are unread`() {
         fun launch(history: InstalledVersionHistory, version: String) = history.launch(version, newConfig = false) { error("already tracked") }
         val fresh = InstalledVersionHistory().launch("4.3.7+mc26.3", newConfig = true) { null }
         assertNull(ReleaseHighlights.pending(fresh))
@@ -21,12 +21,13 @@ class InstalledVersionHistoryTest {
         val updated = launch(intermediate, "v4.4.2+mc26.1.2")
         assertEquals("4.4.0", updated.previous)
         assertEquals("4.3.7", updated.highlightsSeenThrough)
-        assertEquals(listOf("4.4.2", "4.4.1", "4.4.0", "4.3.9", "4.3.8"),
-            ReleaseHighlights.pending(updated)?.releases?.map { it.version })
+        assertEquals(listOf("4.4.2", "4.4.1"), ReleaseHighlights.pending(updated)?.releases?.map { it.version })
+        assertEquals("4.4.0", ReleaseHighlights.pending(updated)?.through)
         assertEquals(updated, launch(updated, "4.4.2+mc26.2"))
         assertEquals(updated, updated.acknowledge("4.4.0"))
         val read = updated.acknowledge("4.4.2")
         assertNull(ReleaseHighlights.pending(read))
+        assertEquals(ReleaseHighlights.pending(updated), ReleaseHighlights.forCurrentInstall(read))
         assertNull(ReleaseHighlights.pending(launch(launch(read, "4.4.1"), "4.4.2")))
     }
 
@@ -45,6 +46,19 @@ class InstalledVersionHistoryTest {
         assertEquals("4.3.9", props.getProperty("updates.previousVersion"))
         assertEquals("4.4.1", props.getProperty("updates.highlightsSeenThrough"))
         assertNull(ReleaseHighlights.pending(ConfigManager.installedVersionHistory))
+        assertEquals(pending, ReleaseHighlights.forCurrentInstall(ConfigManager.installedVersionHistory))
+
+        ConfigManager.init(directory, "4.4.2+mc26.1.2") { error("should not scan again") }
+        val next = ReleaseHighlights.forCurrentInstall(ConfigManager.installedVersionHistory)
+        assertEquals("4.4.1", next.through)
+        assertEquals("4.4.2", next.installed)
+        assertEquals(listOf("4.4.2"), next.releases.map { it.version })
+        assertEquals(next, ReleaseHighlights.pending(ConfigManager.installedVersionHistory))
+
+        ConfigManager.acknowledgeReleaseHighlights("4.4.2")
+        ConfigManager.init(directory, "4.4.2+mc26.3") { error("should not scan again") }
+        assertEquals(next, ReleaseHighlights.forCurrentInstall(ConfigManager.installedVersionHistory))
+        assertNull(ReleaseHighlights.pending(ConfigManager.installedVersionHistory))
     }
 
     @Test fun `legacy installations without recoverable history only get the current release`() {
@@ -55,6 +69,16 @@ class InstalledVersionHistoryTest {
         assertEquals(listOf("4.4.1"), pending?.releases?.map { it.version })
         val patch = InstalledVersionHistory().launch("4.3.6", newConfig = false) { null }
         assertNull(ReleaseHighlights.pending(patch))
+        assertTrue(ReleaseHighlights.forCurrentInstall(patch).releases.isEmpty())
+    }
+
+    @Test fun `manual highlights for a fresh install show the installed release`() {
+        val fresh = InstalledVersionHistory().launch("v4.4.1+mc26.1.2", newConfig = true) { null }
+        val highlights = ReleaseHighlights.forCurrentInstall(fresh)
+        assertEquals("4.4.1", highlights.installed)
+        assertEquals(listOf("4.4.1"), highlights.releases.map { it.version })
+        assertNull(highlights.through)
+        assertNull(ReleaseHighlights.pending(fresh))
     }
 
     @Test fun `log recovery uses newest numeric archive and excludes the active log`() {

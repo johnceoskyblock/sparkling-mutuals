@@ -227,6 +227,10 @@ class FloorDropScaleSettings {
 }
 
 class EspGeneralSettings(limits: EspBiomeSettings,val drops: FloorDropEspSettings) {
+        @JvmField @ConfigOption(name = "Critter ESP", desc = "Highlight Safari critters and their related objectives.")
+        @ConfigEditorBoolean var critterEsp = ConfigManager.critterEspEnabled
+        @JvmField @ConfigOption(name = "Floor Drop ESP", desc = "Highlight uncollected Safari floor drops.")
+        @ConfigEditorBoolean var floorDropEsp = ConfigManager.floorDropEspEnabled
     @JvmField @ConfigOption(name = "Critter glow outlines", desc = "Outline the critter's model. Can be used with boxes.") @ConfigEditorBoolean
     var glow=SafariEspConfig.critterGlow
     @JvmField @ConfigOption(name = "Critter boxes", desc = "Draw a box around each highlighted critter. Can be used with glow outlines.") @ConfigEditorBoolean

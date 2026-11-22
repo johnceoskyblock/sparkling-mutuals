@@ -7,6 +7,27 @@ function Invoke-ShipNative([string]$Program, [string[]]$Arguments) {
 function Invoke-ShipJson([string[]]$Arguments) {
     Invoke-ShipNative gh $Arguments | ConvertFrom-Json -Depth 100
 }
+function Test-ShipNotes([string]$Actual,[string]$Expected) {
+    # Preserve Markdown spaces/content; normalize only line endings and final newlines.
+    $actualText = $Actual.Replace("`r`n","`n").Replace("`r","`n").TrimEnd([char[]]"`n")
+    $expectedText = $Expected.Replace("`r`n","`n").Replace("`r","`n").TrimEnd([char[]]"`n")
+    return $actualText -ceq $expectedText
+}
+function Wait-ShipReleaseMetadata(
+    [string]$Tag,[long]$ReleaseId,[string]$Title,[string]$Notes,
+    [ValidateRange(1,10)][int]$Attempts = 5,
+    [ValidateRange(0,30)][int]$DelaySeconds = 2
+) {
+    for ($attempt = 1; $attempt -le $Attempts; $attempt++) {
+        $current = Invoke-ShipJson @('api','--hostname','github.com',"$api/releases/$ReleaseId",'--header','Cache-Control: no-cache')
+        if ($current.id -ne $ReleaseId -or $current.tag_name -cne $Tag -or $current.draft -or $current.prerelease) {
+            throw 'Release identity/publication changed during metadata verification. Review it manually.'
+        }
+        if ($current.name -ceq $Title -and (Test-ShipNotes $current.body $Notes)) { return $current }
+        if ($attempt -lt $Attempts) { Start-Sleep -Seconds $DelaySeconds }
+    }
+    throw "Release $Tag is published, but notes/title could not be confirmed after $Attempts reads. Inspect its page; do not rerun release mode."
+}
 function Get-ShipVersion([string]$Properties) {
     $matches = [regex]::Matches($Properties,'(?m)^mod_version=([^\r\n]+)\r?$')
     if ($matches.Count -ne 1) { throw 'Expected exactly one mod_version in gradle.properties.' }
@@ -56,15 +77,47 @@ function Wait-ShipWorkflow([string]$Workflow,[string]$Sha,[string]$Branch,[strin
         Start-Sleep -Seconds 15
     } while ($true)
 }
-function Assert-ShipAssets($Assets,[string]$Version) {
-    $expected = @('26.1.2','26.2','26.3' | ForEach-Object { "sparkling-mutuals-$Version+mc$_.jar" })
-    if (@($Assets).Count -ne 3 -or @(Compare-Object ($Assets.name | Sort-Object) ($expected | Sort-Object)).Count) {
-        throw 'Release must contain exactly the three expected Minecraft JARs.'
+function Get-ShipReleaseLayout([string]$Properties) {
+    $entries = [regex]::Matches($Properties,'(?m)^[ \t]*release_artifact_layout[ \t]*=[ \t]*([^\r\n]*)')
+    if (!$entries.Count) { return 'legacy' }
+    if ($entries.Count -eq 1 -and $entries[0].Groups[1].Value.Trim() -ceq 'editions') { return 'editions' }
+    throw 'Expected release_artifact_layout=editions once in gradle.properties, or omit it for the legacy release layout.'
+}
+function Get-ShipJarNames([string]$Version,[string]$Layout) {
+    foreach ($minecraft in @('26.1.2','26.2','26.3')) {
+        "sparkling-mutuals-$Version+mc$minecraft.jar"
+        if ($Layout -eq 'editions') { "sparkling-mutuals-$Version-full-no-auto-update+mc$minecraft.jar" }
     }
+}
+function Assert-ShipAssets($Assets,[string]$Version,[string]$Layout) {
+    $expected = @(Get-ShipJarNames $Version $Layout)
+    if ($Layout -eq 'editions') { $expected += 'build-manifest.json' }
+    $names = @($Assets | ForEach-Object { $_.name })
+    if ($names.Count -ne $expected.Count -or @(Compare-Object $expected $names -CaseSensitive).Count) {
+        if ($Layout -eq 'legacy') { throw 'Release must contain exactly the three expected Minecraft JARs.' }
+        throw 'Release must contain exactly the six expected GitHub JARs and build-manifest.json.'
+    }
+    $downloadBase = "https://github.com/johnceoskyblock/sparkling-mutuals/releases/download/v$Version"
     foreach ($asset in $Assets) {
+        $encodedName = [uri]::EscapeDataString($asset.name)
         if ($asset.size -le 0 -or $asset.digest -notmatch '^sha256:[a-f0-9]{64}$' -or
-            !$asset.browser_download_url.StartsWith("https://github.com/johnceoskyblock/sparkling-mutuals/releases/download/v$Version/")) {
+            $asset.browser_download_url -cnotin @("$downloadBase/$($asset.name)", "$downloadBase/$encodedName")) {
             throw "Invalid public asset metadata: $($asset.name)"
+        }
+    }
+}
+function Assert-ShipManifest([string]$ManifestPath,$Assets,[string]$Version) {
+    $manifest = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json -AsHashtable
+    $jars = @($Assets | Where-Object name -cne 'build-manifest.json')
+    if ($manifest.version -cne $Version -or $manifest.files -isnot [array] -or $manifest.files.Count -ne $jars.Count) {
+        throw 'The public manifest must describe the six GitHub JARs for the tagged version.'
+    }
+    foreach ($asset in $jars) {
+        $rows = @($manifest.files | Where-Object { $_.name -ceq $asset.name })
+        $minecraft = ($asset.name -split '\+mc')[1] -replace '\.jar$',''
+        if ($rows.Count -ne 1 -or $rows[0].minecraft -cne $minecraft -or $rows[0].size -ne $asset.size -or
+            "sha256:$($rows[0].sha256)" -ne $asset.digest) {
+            throw "The public manifest disagrees with the verified JAR: $($asset.name)"
         }
     }
 }

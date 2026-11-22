@@ -39,10 +39,10 @@ internal data class InstalledVersionHistory(
         fun load(properties: Properties) = InstalledVersionHistory(
             canonical(properties.getProperty(INSTALLED)), canonical(properties.getProperty(PREVIOUS)), canonical(properties.getProperty(SEEN)))
 
-        fun canonical(version: String?): String? = version?.trim()?.takeIf { ReleaseUpdateChecker.compareVersions(it, it) == 0 }
+        fun canonical(version: String?): String? = version?.trim()?.takeIf { ReleaseVersion.compareVersions(it, it) == 0 }
             ?.removePrefix("v")?.substringBefore('+')
 
-        fun compare(a: String, b: String) = requireNotNull(ReleaseUpdateChecker.compareVersions(a, b))
+        fun compare(a: String, b: String) = requireNotNull(ReleaseVersion.compareVersions(a, b))
     }
 }
 

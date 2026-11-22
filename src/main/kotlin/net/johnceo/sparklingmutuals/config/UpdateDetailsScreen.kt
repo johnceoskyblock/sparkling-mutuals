@@ -12,7 +12,8 @@ import net.minecraft.client.gui.screens.ConfirmLinkScreen
 import net.minecraft.util.FormattedCharSequence
 
 /** Shares a scrollable notes layout between the update checker and installed release highlights. */
-internal class UpdateDetailsScreen(private val parent: Screen, private val highlights: ReleaseHighlights.Update? = null) :
+internal class UpdateDetailsScreen(private val parent: Screen, private val highlights: ReleaseHighlights.Update? = null,
+    private val acknowledge: Boolean = true) :
     Screen(Component.literal(if (highlights == null) "Sparkling Mutuals updates" else "What's New")) {
     private data class Row(val kind: ReleaseNotes.Kind, val lines: List<FormattedCharSequence>, val height: Int, val indent: Int)
     private data class FeatureText(val title: List<FormattedCharSequence>, val details: List<FormattedCharSequence>)
@@ -33,6 +34,8 @@ internal class UpdateDetailsScreen(private val parent: Screen, private val highl
     private val right get()=width-left
     private val notesBottom get() = highlightsPage?.layout?.contentBottom ?: height-52
     private val trackX get() = highlightsPage?.layout?.trackX ?: right-7
+    private var downloadButton: Button? = null
+    private var autoUpdateButton: Button? = null
     override fun init() {
         dragging=false
         wrappedBlocks = null
@@ -40,22 +43,34 @@ internal class UpdateDetailsScreen(private val parent: Screen, private val highl
             val page = makeHighlightsPage(highlights)
             highlightsPage = page
             notesTop = page.layout.contentTop
-            addRenderableWidget(Button.builder(Component.literal("Open Settings")) { onClose() }.primary()
+            addRenderableWidget(Button.builder(Component.literal(if (acknowledge) "Open Settings" else "Back")) { onClose() }.primary()
                 .bounds(page.layout.buttonRight - 124, page.layout.buttonY, 124, 22).build())
             return
         }
         ModUpdates.check(force=true)
+        val buttonWidth = ((right-left-18)/4).coerceAtMost(150)
+        autoUpdateButton = addRenderableWidget(Button.builder(Component.literal("Auto Update: Off")) {
+            ModUpdates.toggleAutoUpdate()
+        }.bounds(left+buttonWidth+6,height-34,buttonWidth,22).build())
+        downloadButton = addRenderableWidget(Button.builder(Component.literal("Download Update")) {
+            ModUpdates.download()
+        }.bounds(left+2*(buttonWidth+6),height-34,buttonWidth,22).build())
+        refreshUpdateControls()
         addRenderableWidget(Button.builder(Component.literal("GitHub releases")) {
             ConfirmLinkScreen.confirmLinkNow(this,java.net.URI.create(ModUpdates.REPOSITORY+"/releases"))
-        }.bounds(left,height-34,130,22).build())
+        }.bounds(left,height-34,buttonWidth,22).build())
         addRenderableWidget(Button.builder(Component.literal("Back")) { onClose() }
             .bounds(right-60,height-34,60,22).build())
     }
     override fun onClose() {
-        highlights?.let { ConfigManager.acknowledgeReleaseHighlights(it.installed) }
+        if (acknowledge) highlights?.let { ConfigManager.acknowledgeReleaseHighlights(it.installed) }
         minecraft.smSetScreen(parent)
     }
-    override fun tick() { if (highlights == null) ModUpdates.check() }
+    private fun refreshUpdateControls() {
+        downloadButton?.let { it.active = ModUpdates.canDownload; it.message = Component.literal(ModUpdates.downloadLabel) }
+        autoUpdateButton?.let { it.active = ModUpdates.canToggle; it.message = Component.literal("Auto Update: " + if (ModUpdates.autoUpdate) "On" else "Off") }
+    }
+    override fun tick() { if (highlights == null) { ModUpdates.check(); refreshUpdateControls() } }
     override fun isPauseScreen()=false
     override fun extractRenderState(g: GuiGraphicsExtractor,mx: Int,my: Int,delta: Float) {
         g.fill(0,0,width,height,SettingsPalette.background or 0xFF000000.toInt())
@@ -168,6 +183,13 @@ internal class UpdateDetailsScreen(private val parent: Screen, private val highl
         if (notesBottom <= notesTop) return
         g.enableScissor(layout.contentLeft, notesTop, layout.contentRight, notesBottom)
         val start = notesTop - offset
+        if (page.content.sections.isEmpty()) {
+            val empty = font.split(Component.literal("No highlights were published for this update."),
+                (layout.contentRight - layout.contentLeft).coerceAtLeast(1))
+            empty.forEachIndexed { index, line ->
+                g.text(font, line, layout.contentLeft, start + index * page.lineHeight, palette.muted, false)
+            }
+        }
         page.content.sections.forEachIndexed { sectionIndex, section ->
             val labelY = start + section.labelTop
             if (labelY + page.lineHeight > notesTop && labelY < notesBottom) {

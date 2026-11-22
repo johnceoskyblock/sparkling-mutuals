@@ -1,0 +1,61 @@
+package net.johnceo.sparklingmutuals.safari.ui
+
+import net.johnceo.sparklingmutuals.commands.CommandHelp
+import net.johnceo.sparklingmutuals.commands.PartyReplyChunks
+import net.johnceo.sparklingmutuals.safari.SafariBiome
+import net.johnceo.sparklingmutuals.safari.SafariLocation
+import net.johnceo.sparklingmutuals.safari.SafariMode
+import net.johnceo.sparklingmutuals.safari.SafariRules
+import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Test
+
+class SafariVisibilityHelpTest {
+    @Test fun `party help chunks fit the server command length and exclude local commands`() {
+        val reply = CommandHelp.partyReply(SafariMode.UNIQUE)
+        assertTrue(reply.startsWith("[SM] Commands: "))
+        assertTrue(reply.contains("!dye"))
+        assertTrue(reply.contains("!captures [IGN]"))
+        assertTrue(reply.contains("!sparkling [IGN]"))
+        assertTrue(reply.contains("!rates"))
+        assertFalse(reply.contains("Local:"))
+        assertFalse(reply.contains("/"))
+        assertTrue(reply.contains("!pb doom"))
+        assertTrue(reply.contains("!pb haunted"))
+        assertFalse(reply.contains("/sparkling fc"))
+        assertFalse(reply.contains("/pb toggle"))
+        for (mode in SafariMode.entries) {
+            val commands = CommandHelp.partyReply(mode)
+            assertTrue(commands.contains("!commands"))
+            assertTrue(PartyReplyChunks.split(commands).all { it.length + "/pc ".length <= 256 })
+            assertFalse(commands.contains("/"), "Party help leaked local commands in $mode")
+        }
+    }
+    @Test fun `entrance visibility is limited to the actual named subarea`() {
+        assertFalse(SafariRules.isEntrance(listOf("Area: Torrhus Canyon")))
+        assertFalse(SafariRules.isEntrance(listOf("Area: Hub", "Critter Safari Entrance")))
+        assertTrue(SafariRules.isEntrance(listOf("Area: Critter Safari Entrance")))
+        assertFalse(SafariRules.isEntrance(listOf("Area: Critter Safari")))
+        assertEquals(SafariLocation.OUTSIDE, SafariLocation.resolve(listOf("Area: Torrhus Canyon"), null, true))
+        assertEquals(SafariLocation.OUTSIDE, SafariLocation.resolve(listOf("Area: Critter Safari"), null, false))
+        for (area in listOf("Torrhus Canyon", "Hub", "Village")) {
+            val location = SafariLocation.resolve(listOf("Area: $area"), null, false)
+            assertFalse(SafariVisibility.visible(1, location == SafariLocation.INSIDE, location == SafariLocation.ENTRANCE))
+        }
+        assertTrue(SafariVisibility.visible(1, false, SafariRules.isEntrance(listOf("⏣ Critter Safari Entrance"))))
+    }
+    @Test fun `biome panels hide at center and outside regardless of show where`() {
+        for (where in 0..2) {
+            assertFalse(SafariVisibility.biomePanels(where, true, true, null))
+            assertFalse(SafariVisibility.biomePanels(where, false, true, SafariBiome.FOREST))
+            assertFalse(SafariVisibility.biomePanels(where, true, false, SafariBiome.FOREST))
+            SafariBiome.entries.forEach { assertTrue(SafariVisibility.biomePanels(where, true, true, it)) }
+        }
+    }
+    @Test fun `local help contains only slash commands with brief descriptions`() {
+        val lines = CommandHelp.localLines(SafariMode.UNIQUE).map(SafariRules::strip)
+        assertTrue(lines.drop(1).all { it.startsWith("/") && !it.contains("!") })
+        for (command in listOf("/sm", "/sm gui", "/captures", "/fc", "/unique", "/apikey")) {
+            assertTrue(lines.any { it.startsWith(command) && it.contains(" — ") }, command)
+        }
+    }
+}

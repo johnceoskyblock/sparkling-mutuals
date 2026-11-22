@@ -213,6 +213,7 @@ object Achievements {
     }
 
     fun onSparkling(entry: SparklingEntry, own: Boolean) {
+        if (!ConfigManager.achievements) return
         data.runsSinceOwnSparkling = 0
         if (own) {
             if(personalRunGaps().any { it.toLong() in 0..goal("instant") }) unlock("instant",true)
@@ -227,12 +228,18 @@ object Achievements {
         checkAll(true)
     }
     fun onUnique(@Suppress("UNUSED_PARAMETER") own: Boolean) {
+        if (!ConfigManager.achievements) return
         data.runsSinceOwnUnique = 0; data.uniqueSinceLastRun = true; save()
         checkAll(true)
     }
-    fun onTicket() { data.ticketsSinceOwnSparkling++; save() }
+    fun onTicket() {
+        if (!ConfigManager.achievements) return
+        data.ticketsSinceOwnSparkling++
+        save()
+    }
 
     fun onRunEnd(run: RunRecord) {
+        if (!ConfigManager.achievements) return
         data.runsSinceMacaw = if (run.macaws > 0) 0 else data.runsSinceMacaw + 1
         data.longestRunsWithoutMacaw = maxOf(data.longestRunsWithoutMacaw, data.runsSinceMacaw)
         val own = run.ownSparklings > 0

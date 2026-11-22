@@ -3,6 +3,7 @@ import buildlogic.verifyDistribution
 import buildlogic.verifyJar
 import buildlogic.PublishReleaseTask
 import buildlogic.collectDistribution
+import buildlogic.Edition
 
 plugins {
     id("dev.kikugie.stonecutter")
@@ -12,6 +13,8 @@ plugins {
 stonecutter active "26.1.2"
 
 val releaseVersion = providers.gradleProperty("mod_version")
+val edition = Edition.parse(providers.gradleProperty("edition").orElse("standard").get())
+fun editionDistribution(edition: Edition) = layout.buildDirectory.dir("distributions/${releaseVersion.get()}/${edition.id}")
 tasks.register("validateReleaseTag") {
     doLast { require(System.getenv("GITHUB_REF") == "refs/tags/v${releaseVersion.get()}") { "Tag must match mod_version" } }
 }
@@ -32,6 +35,10 @@ val verifyDistributions = tasks.register("verifyDistributions") {
     description = "Verifies a collected three-JAR distribution without rebuilding it."
     mustRunAfter(buildAllTargets)
 }
+val verifyReleaseMatrix = tasks.register("verifyReleaseMatrix") {
+    group = "verification"
+    description = "Verifies all nine edition/version JARs and prepares the GitHub release assets."
+}
 
 gradle.projectsEvaluated {
     val targets = subprojects.sortedBy { it.name }
@@ -41,26 +48,43 @@ gradle.projectsEvaluated {
         p.tasks.register("verifyTargetJar") {
             group = "verification"
             dependsOn(p.tasks.named("build"))
-            doLast { verifyJar(p.tasks.named<Jar>("jar").get().archiveFile.get().asFile.toPath(), spec(p), p.version.toString()) }
+            doLast { verifyJar(p.tasks.named<Jar>("jar").get().archiveFile.get().asFile.toPath(), spec(p), p.version.toString(), edition) }
         }
     }
     buildAllTargets.configure {
         dependsOn(targets.map { it.tasks.named("verifyTargetJar") })
         doLast {
-            val destination = layout.buildDirectory.dir("distributions/${releaseVersion.get()}").get().asFile
+            val destination = editionDistribution(edition).get().asFile
             collectDistribution(targets.map { it.tasks.named<Jar>("jar").get().archiveFile.get().asFile.toPath() },
-                targets.map(::spec), releaseVersion.get(), destination.toPath())
+                targets.map(::spec), releaseVersion.get(), destination.toPath(), setOf(edition))
             logger.lifecycle("Verified three-target distribution: $destination")
         }
     }
     verifyDistributions.configure {
         doLast {
             val directory = providers.gradleProperty("distributionDir").orNull?.let(::file)
-                ?: layout.buildDirectory.dir("distributions/${releaseVersion.get()}").get().asFile
+                ?: editionDistribution(edition).get().asFile
             require(directory.isDirectory) { "Missing distribution directory: $directory" }
             verifyDistribution(directory.listFiles()!!.filter { it.isFile && it.extension == "jar" }.map { it.toPath() },
-                targets.map(::spec), releaseVersion.get())
+                targets.map(::spec), releaseVersion.get(), setOf(edition))
             logger.lifecycle("Verified all three installable JARs in $directory")
+        }
+    }
+    verifyReleaseMatrix.configure {
+        doLast {
+            val input = providers.gradleProperty("distributionDir").orNull?.let { listOf(file(it)) }
+                ?: Edition.entries.map { editionDistribution(it).get().asFile }
+            val jars = input.flatMap { directory ->
+                require(directory.isDirectory) { "Missing distribution directory: $directory" }
+                directory.listFiles()!!.filter { it.isFile && it.extension == "jar" }.map { it.toPath() }
+            }
+            val version = releaseVersion.get()
+            val specs = targets.map(::spec)
+            val matrix = verifyDistribution(jars, specs, version, Edition.entries.toSet())
+            val destination = layout.buildDirectory.dir("release-assets").get().asFile
+            collectDistribution(matrix.filter { it.edition != Edition.STANDARD }.map { it.path }, specs, version,
+                destination.toPath(), setOf(Edition.FULL, Edition.FULL_NO_AUTO_UPDATE))
+            logger.lifecycle("Verified all nine installable JARs. GitHub assets: $destination")
         }
     }
     tasks.register<PublishReleaseTask>("publishVerifiedRelease") {
@@ -69,6 +93,6 @@ gradle.projectsEvaluated {
         modVersion = releaseVersion
         targetProperties = targets.associate { p -> val s = spec(p); s.minecraft to "${s.fabricApi}|${s.hmApi}" }
         distributionDirectory = providers.gradleProperty("distributionDir").map { layout.projectDirectory.dir(it) }
-            .orElse(layout.buildDirectory.dir("distributions/${releaseVersion.get()}"))
+            .orElse(layout.buildDirectory.dir("release-assets"))
     }
 }

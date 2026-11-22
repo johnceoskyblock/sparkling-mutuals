@@ -40,6 +40,25 @@ class SafariBannerTest {
         queue.tick(5_000)
         assertEquals(listOf("gems", "finish gems", "catch", "finish catch", "warp"), events)
     }
+    @Test fun `disabling features preserves both active and pending coin celebrations`() {
+        val queue = AlertSequence()
+        val events = mutableListOf<String>()
+        val coins = "coins"
+        queue.submit(coins, 500, 7, finish = { events.add("finish 7") }) { events.add("start 7") }
+        queue.submit("banner", 500) { fail<Unit>("disabled banner") }
+        queue.submit(coins, 500, 8, finish = { events.add("finish 8") }) { events.add("start 8") }
+
+        queue.tick(0)
+        queue.reset(except = coins)
+        assertEquals(listOf("start 7"), events)
+        queue.tick(500)
+        assertEquals(listOf("start 7", "finish 7", "start 8"), events)
+
+        queue.reset()
+        assertEquals(listOf("start 7", "finish 7", "start 8", "finish 8"), events)
+        assertFalse(queue.busy)
+    }
+
     @Test fun `sound only waits its turn and stale requests can be skipped`() {
         val queue = AlertSequence()
         val events = mutableListOf<String>()

@@ -31,7 +31,7 @@ object HotspotHud {
     }
     fun render(g: GuiGraphicsExtractor) {
         val client=Minecraft.getInstance()
-        if(!ConfigManager.hotspotAnnouncer || !SafariIsland.onIsland || client.player==null || client.options.smHideGui || client.smScreen is ContestGui) return
+        if(!ConfigManager.hotspotHudEnabled || !ConfigManager.hotspotAnnouncer || !SafariIsland.onIsland || client.player==null || client.options.smHideGui || client.smScreen is ContestGui) return
         panel().draw(g,SafariHud.HOTSPOT)
     }
 }

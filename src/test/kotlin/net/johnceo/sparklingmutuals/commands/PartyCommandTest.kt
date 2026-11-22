@@ -11,13 +11,15 @@ class PartyCommandTest {
         assertEquals("!commands", PartyCommand.fromChat("Party > [VIP] Farmer: !commands")?.command?.text)
         for (line in listOf("Guild > Farmer: !mutuals", "Party > Farmer: I typed !mutuals",
             "Party > Farmer: !tickets Farmer extra", "Party > Farmer: !missing Farmer extra", "!commands",
-            "Party > Farmer: !captures Farmer extra", "Guild > Farmer: !captures")) {
+            "Party > Farmer: !captures Farmer extra", "Guild > Farmer: !captures",
+            "Party > Farmer: !sparkling Other extra", "Party > Farmer: !rates extra", "Guild > Farmer: !rates")) {
             assertNull(PartyCommand.fromChat(line), line)
         }
     }
     @Test fun `profile commands without names target the requesting party member`() {
         for ((text, kind) in listOf("!ticket" to PartyCommandKind.TICKETS, "!tickets" to PartyCommandKind.TICKETS,
-            "!missing" to PartyCommandKind.MISSING, "!captures" to PartyCommandKind.CAPTURES)) {
+            "!missing" to PartyCommandKind.MISSING, "!captures" to PartyCommandKind.CAPTURES,
+            "!sparkling" to PartyCommandKind.SPARKLING)) {
             val request = PartyCommand.fromChat("Party > [MVP++] Friend: $text")!!
             assertEquals("Friend", request.command.ign)
             assertEquals(kind, request.command.kind)

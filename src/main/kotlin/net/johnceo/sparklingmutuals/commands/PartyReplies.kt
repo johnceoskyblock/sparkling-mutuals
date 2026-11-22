@@ -33,5 +33,11 @@ class PartyResponseHistory {
         it.id > after && (it.senderUuid == null || roster.any { id -> id.equals(it.senderUuid, true) }) &&
             result.isNotEmpty() && it.text.contains(result)
     }
+    internal fun alreadyAnswered(command: PartyCommand, result: String, after: Long, roster: List<String>): Boolean = when {
+        command.personalResult -> false
+        command.kind == PartyCommandKind.SPARKLING -> hasReply(command, after, roster)
+        else -> containsResult(result, after, roster)
+    }
+
     fun clear() { messages.clear(); cursor = 0 }
 }

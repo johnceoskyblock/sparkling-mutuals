@@ -26,7 +26,7 @@ object HudConfigLinks {
             net.johnceo.sparklingmutuals.hud.SafariHud.SHARD_GUIDANCE -> SettingsTarget("SkyBlock",listOf("helpers","shardSaleGuidance"))
             net.johnceo.sparklingmutuals.hud.SafariHud.HUNTING_BOX_VALUE -> SettingsTarget("SkyBlock",listOf("helpers","huntingBoxValue"))
             net.johnceo.sparklingmutuals.hud.SafariHud.UBIKS_CUBE -> SettingsTarget("SkyBlock",listOf("helpers","ubiksCubeTimer","enabled"))
-            net.johnceo.sparklingmutuals.hud.SafariHud.HOTSPOT -> SettingsTarget(huds,listOf("hotspotHud","appearance"))
+            net.johnceo.sparklingmutuals.hud.SafariHud.HOTSPOT -> SettingsTarget(huds,listOf("hotspotHud","enabled"))
             net.johnceo.sparklingmutuals.hud.SafariHud.ENTRY_COOLDOWN -> SettingsTarget(safari,listOf("entryCooldown","enabled"))
             net.johnceo.sparklingmutuals.hud.SafariHud.DEVELOPER -> SettingsTarget(huds, emptyList())
             net.johnceo.sparklingmutuals.hud.SafariHud.PROGRESS -> SettingsTarget(huds,listOf("progressHud","enabled"))

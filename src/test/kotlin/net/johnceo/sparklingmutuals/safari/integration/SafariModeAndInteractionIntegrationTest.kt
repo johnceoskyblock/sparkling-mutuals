@@ -4,6 +4,7 @@ import java.nio.file.Path
 import net.johnceo.sparklingmutuals.commands.CommandHelp
 import net.johnceo.sparklingmutuals.commands.PartyCommand
 import net.johnceo.sparklingmutuals.commands.PartyCommandKind
+import net.johnceo.sparklingmutuals.commands.PartyReplyChunks
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.config.SafariSettings
 import net.johnceo.sparklingmutuals.safari.SafariMode
@@ -33,10 +34,11 @@ class SafariModeAndInteractionIntegrationTest {
             }
         }
     }
-    @Test fun `party help lists actual active PB commands and fits one server message`() {
+    @Test fun `party help lists active PB commands and each reply fits server chat`() {
         for (mode in SafariMode.entries) {
             val help = CommandHelp.partyReply(mode)
-            assertTrue(help.length + 4 <= 256)
+            val replies = PartyReplyChunks.split(help)
+            assertTrue(replies.all { it.length + "/pc ".length <= 256 })
             assertFalse(help.contains("doom/wumpa"))
             assertFalse(help.contains("[gui]"))
             assertFalse(help.contains("/sm gui"))
@@ -44,7 +46,7 @@ class SafariModeAndInteractionIntegrationTest {
                 val command = PartyCommand(kind)
                 assertEquals(command.allowed(mode), help.contains(command.text), "$mode / ${command.text}")
             }
-            assertTrue(PartyCommand(PartyCommandKind.HELP).matchesResponse(help))
+            assertTrue(replies.all(PartyCommand(PartyCommandKind.HELP)::matchesResponse))
         }
     }
     @Test fun `clicker requires a physical held click on a mound and stops immediately on release or target change`() {
@@ -71,8 +73,10 @@ class SafariModeAndInteractionIntegrationTest {
         settings.safari.candleHitbox = false
         settings.apply(); ConfigManager.init(dir)
         assertFalse(ConfigManager.candleHitbox)
-        assertTrue(SafariSettings.Warp::class.java.fields.mapNotNull {
-            it.getAnnotation(net.johnceo.sparklingmutuals.config.ConfigOption::class.java)?.desc
-        }.any { it.contains("warp list",true) && it.contains("priority order") })
+        SafariSettings::class.java.declaredClasses.firstOrNull { it.simpleName == "Warp" }?.let { warp ->
+            assertTrue(warp.fields.mapNotNull {
+                it.getAnnotation(net.johnceo.sparklingmutuals.config.ConfigOption::class.java)?.desc
+            }.any { it.contains("warp list",true) && it.contains("priority order") })
+        }
     }
 }

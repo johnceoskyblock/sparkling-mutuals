@@ -1,0 +1,2 @@
+kotlin/net/johnceo/sparklingmutuals/config/ReleaseUpdateChecker.kt
+kotlin/net/johnceo/sparklingmutuals/update/UpdateTransport.kt
