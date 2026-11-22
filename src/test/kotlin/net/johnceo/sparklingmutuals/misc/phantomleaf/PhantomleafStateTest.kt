@@ -65,18 +65,18 @@ class PhantomleafStateTest {
         }
         assertTrue(state.candidates.isEmpty())
     }
-    @Test fun `solver defaults on and its new category toggle persists`(@TempDir dir: Path) {
+    @Test fun `solver defaults on and its SkyBlock Helpers toggle persists`(@TempDir dir: Path) {
         val old = ConfigManager.phantomleafSolver
         try {
             ConfigManager.init(dir)
             assertTrue(ConfigManager.phantomleafSolver)
             val settings = SafariSettings()
-            assertTrue(settings.miscEndgame.phantomleafSolver)
-            settings.miscEndgame.phantomleafSolver = false
+            assertTrue(settings.skyblock.helpers.phantomleafSolver)
+            settings.skyblock.helpers.phantomleafSolver = false
             settings.apply()
             ConfigManager.init(dir)
             assertFalse(ConfigManager.phantomleafSolver)
-            assertFalse(SafariSettings().miscEndgame.phantomleafSolver)
+            assertFalse(SafariSettings().skyblock.helpers.phantomleafSolver)
         } finally { ConfigManager.phantomleafSolver = old }
     }
 }

@@ -40,7 +40,8 @@ function New-Fixture {
         $head = Invoke-ShipNative git @('rev-parse','HEAD')
     } finally { Pop-Location }
     $global:ShipMock = @{ Work=$work; Bare=$bare; Initial=$head; Calls=0; Merges=0; FailBuild=$false;
-        Merged=$null; Release=$null; ReleaseTag=$null; BadAssets=$false; DirtyDuringBuild=$false }
+        Merged=$null; Release=$null; ReleaseTag=$null; BadAssets=$false; DirtyDuringBuild=$false;
+        StaleMetadataReads=0; MetadataReads=0; Editions=$false; Manifest=$null; BadManifest=$false }
     return $work
 }
 
@@ -87,15 +88,42 @@ function global:gh {
             $inputIndex = [array]::IndexOf($a,'--input') + 1
             $r = Get-Content -LiteralPath $a[$inputIndex] -Raw | ConvertFrom-Json
             $s.ReleaseTag = $r.tag_name
-            $assets = @('26.1.2','26.2','26.3' | ForEach-Object {
-                $name="sparkling-mutuals-$($r.tag_name.Substring(1))+mc$_.jar"
-                @{id=$_;name=$name;size=3;digest='sha256:ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad';
-                    browser_download_url="https://github.com/johnceoskyblock/sparkling-mutuals/releases/download/$($r.tag_name)/$name"}
+            $version = $r.tag_name.Substring(1)
+            $baseUrl = "https://github.com/johnceoskyblock/sparkling-mutuals/releases/download/$($r.tag_name)"
+            $hash = 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad'
+            $jars = @(foreach ($minecraft in @('26.1.2','26.2','26.3')) {
+                @{name="sparkling-mutuals-$version+mc$minecraft.jar"; minecraft=$minecraft; size=3; sha256=$hash}
+                if ($s.Editions) {
+                    @{name="sparkling-mutuals-$version-full-no-auto-update+mc$minecraft.jar"; minecraft=$minecraft; size=3; sha256=$hash}
+                }
             })
+            $assets = @($jars | ForEach-Object {
+                @{name=$_.name; size=$_.size; digest="sha256:$($_.sha256)"; browser_download_url="$baseUrl/$([uri]::EscapeDataString($_.name))"}
+            })
+            if ($s.Editions) {
+                if ($s.BadManifest) { $jars[0].sha256 = '0' * 64 }
+                $s.Manifest = @{version=$version; files=$jars} | ConvertTo-Json -Depth 8 -Compress
+                $bytes = [Text.Encoding]::UTF8.GetBytes($s.Manifest)
+                $sha256 = [Security.Cryptography.SHA256]::Create()
+                try { $manifestHash = [BitConverter]::ToString($sha256.ComputeHash($bytes)).Replace('-','').ToLowerInvariant() }
+                finally { $sha256.Dispose() }
+                $assets += @{name='build-manifest.json'; size=$bytes.Length; digest="sha256:$manifestHash";
+                    browser_download_url="$baseUrl/build-manifest.json"}
+            }
             if ($s.BadAssets) { $assets = @($assets[0],$assets[1]) }
             $s.Release = @{id=10;draft=$false;prerelease=$false;body=$r.body;name=$r.name;tag_name=$r.tag_name;
                 html_url="https://github.com/example/test/releases/tag/$($r.tag_name)";assets=$assets}
             return @{id=10;draft=$true;tag_name=$r.tag_name} | ConvertTo-Json -Compress
+        }
+        if ($route -match '/releases/10$') {
+            $s.MetadataReads++
+            if ($s.StaleMetadataReads -gt 0) {
+                $s.StaleMetadataReads--
+                $stale = $s.Release.Clone()
+                $stale.body = 'Stale release notes'
+                return $stale | ConvertTo-Json -Depth 8 -Compress
+            }
+            return $s.Release | ConvertTo-Json -Depth 8 -Compress
         }
         if ($route -match '/releases/(tags/[^/]+|latest)$') { return $s.Release | ConvertTo-Json -Depth 8 -Compress }
     }
@@ -104,7 +132,8 @@ function global:gh {
 function global:Invoke-WebRequest {
     param($Uri,$OutFile,$MaximumRetryCount,$RetryIntervalSec)
     if (!$Uri.StartsWith('https://github.com/johnceoskyblock/sparkling-mutuals/releases/download/')) { throw 'Unexpected test HTTP URL' }
-    [IO.File]::WriteAllText($OutFile,'abc')
+    $content = if ($Uri.EndsWith('/build-manifest.json')) { $global:ShipMock.Manifest } else { 'abc' }
+    [IO.File]::WriteAllText($OutFile,$content)
 }
 
 try {
@@ -113,6 +142,27 @@ try {
         Expect-Failure { Set-ShipVersion 'mod_version=4.3.9' '4.3.9' } 'must be newer'
         Expect-Failure { Set-ShipVersion 'mod_version=4.3.9' '4.2.9' } 'must be newer'
         Assert ((Set-ShipVersion 'mod_version=4.4.0-beta.1' '4.4.0') -eq 'mod_version=4.4.0') 'Beta promotion failed'
+    }
+    Test 'Notes comparison tolerates line endings but preserves Markdown content and case' {
+        Assert (Test-ShipNotes "## Features`r`n- Fix`r`n" "## Features`n- Fix") 'Line endings were treated as a content change'
+        Assert (!(Test-ShipNotes 'Fix A' 'Fix B')) 'Different notes were accepted'
+        Assert (!(Test-ShipNotes 'FIX' 'Fix')) 'Changed case was accepted'
+        Assert (!(Test-ShipNotes "Line  `nNext" "Line`nNext")) 'Meaningful Markdown spaces were ignored'
+    }
+    Test 'Metadata verification waits for stale reads without republishing' {
+        $null = New-Fixture
+        $api = 'repos/johnceoskyblock/sparkling-mutuals'
+        $global:ShipMock.Release = @{id=10;tag_name='v4.3.10';name='v4.3.10';draft=$false;prerelease=$false;body="Feature notes`r`n"}
+        $global:ShipMock.StaleMetadataReads = 2
+        $release = Wait-ShipReleaseMetadata 'v4.3.10' 10 'v4.3.10' "Feature notes`n" -DelaySeconds 0
+        Assert ($release.id -eq 10 -and $global:ShipMock.MetadataReads -eq 3) 'Stale reads were not retried correctly'
+    }
+    Test 'Metadata verification fails after its bounded retries for genuinely different notes' {
+        $null = New-Fixture
+        $api = 'repos/johnceoskyblock/sparkling-mutuals'
+        $global:ShipMock.Release = @{id=10;tag_name='v4.3.10';name='v4.3.10';draft=$false;prerelease=$false;body='Wrong notes'}
+        Expect-Failure { Wait-ShipReleaseMetadata 'v4.3.10' 10 'v4.3.10' 'Expected notes' -DelaySeconds 0 } 'after 5 reads'
+        Assert ($global:ShipMock.MetadataReads -eq 5) 'Metadata read retries were unbounded'
     }
     Test 'WhatIf leaves HEAD, branch, files, and GitHub untouched' {
         $work = New-Fixture
@@ -210,6 +260,23 @@ try {
         $global:ShipMock.BadAssets = $true
         $notes = Join-Path $fixtures 'notes.txt'
         Expect-Failure { & $ship -RepositoryPath $work -Message 'Bad release' -Version 4.3.10 -NotesFile $notes } 'exactly the three expected'
+    }
+    Test 'Consolidated release verifies six JARs and manifest at the merged tag' {
+        $work = New-Fixture
+        $global:ShipMock.Editions = $true
+        Add-Content -LiteralPath (Join-Path $work 'gradle.properties') -Value 'release_artifact_layout=editions'
+        $notes = Join-Path $fixtures 'notes.txt'
+        & $ship -RepositoryPath $work -Message 'Consolidated release' -Version 4.3.10 -NotesFile $notes
+        Assert ($global:ShipMock.Release.assets.Count -eq 7) 'Wrong number of public assets'
+        Assert ((Invoke-ShipNative git @('--git-dir',$global:ShipMock.Bare,'rev-parse','v4.3.10')) -eq $global:ShipMock.Merged) 'Tagged unmerged commit'
+    }
+    Test 'Consolidated release rejects a published manifest with the wrong JAR hash' {
+        $work = New-Fixture
+        $global:ShipMock.Editions = $true
+        $global:ShipMock.BadManifest = $true
+        Add-Content -LiteralPath (Join-Path $work 'gradle.properties') -Value 'release_artifact_layout=editions'
+        $notes = Join-Path $fixtures 'notes.txt'
+        Expect-Failure { & $ship -RepositoryPath $work -Message 'Bad manifest' -Version 4.3.10 -NotesFile $notes } 'public manifest disagrees'
     }
     Write-Host "$passed shipping script tests passed. No real GitHub or HTTP requests were made."
 } finally {

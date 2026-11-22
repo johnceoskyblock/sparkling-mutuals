@@ -7,7 +7,7 @@ Commit local changes, rebase, push a PR, and merge after CI. Optionally publish 
 .EXAMPLE
 ./scripts/Ship.ps1 -Message 'Fix Safari highlights'
 .EXAMPLE
-./scripts/Ship.ps1 -Message 'Improve Safari highlights' -Version 4.3.10 -NotesFile ./release-notes.txt
+./scripts/Ship.ps1 -Message 'Improve Safari highlights' -Version 4.4.3 -NotesFile ./release-notes.txt
 #>
 [CmdletBinding(SupportsShouldProcess)]
 param(
@@ -52,11 +52,17 @@ try {
     Invoke-ShipNative git @('diff','--cached','--check') | Out-Host
     $properties = Join-Path $root 'gradle.properties'
     $originalProperties = [IO.File]::ReadAllText($properties)
-    if ($Version) { $null = Set-ShipVersion $originalProperties $Version }
+    if ($Version) {
+        $null = Set-ShipVersion $originalProperties $Version
+        $layout = Get-ShipReleaseLayout $originalProperties
+    }
     Write-Host "Repository: $repository"
     Invoke-ShipNative git @('status','--short') | Out-Host
     Write-Host 'Plan: commit ALL tracked/untracked local changes, rebase on the remote branch and master, push, create/update PR, wait for CI, merge.'
-    if ($Version) { Write-Host "Then publish v$Version with three verified Minecraft JARs and your notes." }
+    if ($Version) {
+        $githubAssets = if ($layout -eq 'editions') { 'six verified GitHub JARs and their manifest' } else { 'three verified GitHub JARs' }
+        Write-Host "Then publish v$Version with $githubAssets and your notes."
+    }
     else { Write-Host 'No release or tag will be created.' }
     if (!$PSCmdlet.ShouldProcess($repository, $(if ($Version) { "Ship and release v$Version" } else { 'Ship and merge local changes' }))) { return }
 
@@ -86,8 +92,11 @@ try {
     $lease = Invoke-ShipNative git @('for-each-ref','--format=%(objectname)',"refs/remotes/origin/$branch")
     if ($lease) { Invoke-ShipNative git @('rebase',"origin/$branch") | Out-Host }
     Invoke-ShipNative git @('rebase','origin/master') | Out-Host
-    if ($Version -and (Get-ShipVersion ([IO.File]::ReadAllText($properties))) -ne $Version) {
-        throw 'The version changed during rebase. Review gradle.properties before continuing.'
+    if ($Version) {
+        $rebasedProperties = [IO.File]::ReadAllText($properties)
+        if ((Get-ShipVersion $rebasedProperties) -ne $Version -or (Get-ShipReleaseLayout $rebasedProperties) -ne $layout) {
+            throw 'The version or release layout changed during rebase. Review gradle.properties before continuing.'
+        }
     }
     if (!(Invoke-ShipNative git @('log','--oneline','origin/master..HEAD'))) { throw 'There are no commits to merge.' }
     $tested = Invoke-ShipNative git @('rev-parse','HEAD')
@@ -143,28 +152,31 @@ try {
         Wait-ShipWorkflow 'release.yml' $merged $tag 'push' | Out-Host
         $release = Invoke-ShipJson @('api','--hostname','github.com',"$api/releases/tags/$tag")
         if ($release.draft -or $release.prerelease -or $release.id -ne $draft.id) { throw 'Release identity/publication differs from the staged draft. Review it manually.' }
-        Assert-ShipAssets $release.assets $Version
+        Assert-ShipAssets $release.assets $Version $layout
         foreach ($asset in $release.assets) {
             $destination = Join-Path $temporary $asset.name
             Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $destination -MaximumRetryCount 3 -RetryIntervalSec 2
             if ((Get-Item -LiteralPath $destination).Length -ne $asset.size -or
                 'sha256:' + (Get-FileHash -LiteralPath $destination -Algorithm SHA256).Hash.ToLowerInvariant() -ne $asset.digest) {
-                throw "Public JAR failed digest verification: $($asset.name)"
+                throw "Public asset failed digest verification: $($asset.name)"
             }
         }
-        if ($release.body -ne $notes -or $release.name -ne $title) {
+        if ($layout -eq 'editions') {
+            Assert-ShipManifest (Join-Path $temporary 'build-manifest.json') $release.assets $Version
+        }
+        if (!(Test-ShipNotes $release.body $notes) -or $release.name -cne $title) {
             $notesSnapshot = Join-Path $temporary 'notes.md'
             [IO.File]::WriteAllText($notesSnapshot,$notes)
             Invoke-ShipNative gh @('release','edit',$tag,'-R',"github.com/$repository",'--title',$title,'--notes-file',$notesSnapshot) | Out-Host
-            $release = Invoke-ShipJson @('api','--hostname','github.com',"$api/releases/tags/$tag")
-            if ($release.body -ne $notes -or $release.name -ne $title) { throw 'Release notes/title did not persist.' }
         }
+        # GitHub may briefly serve pre-edit metadata. Retry reads, never publication or uploads.
+        $release = Wait-ShipReleaseMetadata $tag $draft.id $title $notes
         $latest = Invoke-ShipJson @('api','--hostname','github.com',"$api/releases/latest")
         if ($latest.id -ne $release.id) { throw 'This release is not the latest stable release. Review it manually.' }
         $remoteTag = Invoke-ShipNative git @('ls-remote','--tags','origin',"refs/tags/$tag")
         if (($remoteTag -split '\s+')[0] -ne $merged) { throw 'The release tag moved during publication.' }
         Write-Host "Release: $($release.html_url)"
-        Write-Host 'All three public JAR sizes and SHA-256 hashes verified.'
+        Write-Host "Verified $githubAssets."
     }
     Assert-ShipUnchanged $tested
     # Update local master only if it can be fast-forwarded without losing local commits.

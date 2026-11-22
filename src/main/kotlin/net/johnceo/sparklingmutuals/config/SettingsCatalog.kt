@@ -36,7 +36,7 @@ class SettingsCatalog(settings: SafariSettings) {
         val routes=mapOf("General" to "HUDs → Overview","HUDs" to "HUDs → HUDs","Customization" to "HUDs → Appearance",
             "Modes" to "Safari → Modes","Safari helpers" to "Safari → Helpers","Miria contest" to "Safari → Contest",
             "Banner" to "Safari → Banner","Party Interactions" to "Party → Interactions","Sparkle Warping" to "Party → Sparkle Warping",
-            "History" to "History → History","API key" to "Advanced → API","SkyBlock" to "Advanced → SkyBlock","ESP" to "ESP → Customization","ESP General" to "ESP → General",
+            "History" to "History → History","API key" to "Misc → API","SkyBlock" to "Misc → SkyBlock","Reset" to "Reset","ESP" to "ESP → Customization","ESP General" to "ESP → General",
             "Mode-wide Critter Toggles" to "ESP → Mode critters", "Profitable Critter Toggles" to "ESP → Profitable critters",
             "Always On Toggle" to "ESP → Always on critters", "Floor Drop Always On Toggle" to "ESP → Always on drops")
         fun collect(rows: List<Row>,parent: String) { rows.forEach { row ->
@@ -78,6 +78,17 @@ class SettingsCatalog(settings: SafariSettings) {
             pages.forEach { visit(it.rows) }
         }
     }
+    internal fun disableSwitches() {
+        fun visit(rows: List<Row>) {
+            rows.forEach { row ->
+                if (row.field.isAnnotationPresent(ConfigEditorBoolean::class.java) &&
+                    !(row.owner is SafariSettings.History && row.field.name == "instaSell")) row.write(false)
+                visit(row.children)
+            }
+        }
+        pages.forEach { visit(it.rows) }
+    }
+
     fun defaultExpanded(): Set<String> = pages.flatMap { it.rows }.filter {
         it.group && it.children.size<=4
     }.mapTo(mutableSetOf()) { it.path }

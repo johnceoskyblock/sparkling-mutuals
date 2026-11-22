@@ -1,6 +1,7 @@
 package net.johnceo.sparklingmutuals.safari.ui
 
 import net.johnceo.sparklingmutuals.commands.CommandHelp
+import net.johnceo.sparklingmutuals.commands.PartyReplyChunks
 import net.johnceo.sparklingmutuals.safari.SafariBiome
 import net.johnceo.sparklingmutuals.safari.SafariLocation
 import net.johnceo.sparklingmutuals.safari.SafariMode
@@ -9,12 +10,13 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class SafariVisibilityHelpTest {
-    @Test fun `party help fits the server command length and excludes local commands`() {
+    @Test fun `party help chunks fit the server command length and exclude local commands`() {
         val reply = CommandHelp.partyReply(SafariMode.UNIQUE)
-        assertTrue(reply.length + "/pc ".length <= 256, "Help reply has ${reply.length} characters")
         assertTrue(reply.startsWith("[SM] Commands: "))
         assertTrue(reply.contains("!dye"))
         assertTrue(reply.contains("!captures [IGN]"))
+        assertTrue(reply.contains("!sparkling [IGN]"))
+        assertTrue(reply.contains("!rates"))
         assertFalse(reply.contains("Local:"))
         assertFalse(reply.contains("/"))
         assertTrue(reply.contains("!pb doom"))
@@ -24,7 +26,7 @@ class SafariVisibilityHelpTest {
         for (mode in SafariMode.entries) {
             val commands = CommandHelp.partyReply(mode)
             assertTrue(commands.contains("!commands"))
-            assertTrue(commands.length + "/pc ".length <= 256)
+            assertTrue(PartyReplyChunks.split(commands).all { it.length + "/pc ".length <= 256 })
             assertFalse(commands.contains("/"), "Party help leaked local commands in $mode")
         }
     }

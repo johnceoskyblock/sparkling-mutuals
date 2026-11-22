@@ -2,6 +2,7 @@ package net.johnceo.sparklingmutuals.safari.ui
 
 import java.util.Optional
 import java.util.Properties
+import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.safari.SafariRoster
 import net.minecraft.network.chat.Component
 import net.minecraft.network.chat.FormattedText
@@ -12,6 +13,7 @@ import net.minecraft.util.FormattedCharSequence
 object CritterNames {
     var revision=0L
         private set
+    internal fun invalidateDisplay() { revision++ }
     private val names = SafariRoster.all.map { it.name }
     private val canonical = names.associateBy { it.lowercase(java.util.Locale.ROOT) }
     private val pattern = Regex("(?<![\\p{L}\\p{N}_])((?:§.)*)(" + names.sortedByDescending {it.length}.joinToString("|") {Regex.escape(it)} + ")(s?)(?![\\p{L}\\p{N}_])",RegexOption.IGNORE_CASE)
@@ -30,7 +32,8 @@ object CritterNames {
     private fun key(name: String) = "appearance.critterName." + name.lowercase(java.util.Locale.ROOT).replace(' ','_')
     fun load(properties: Properties) { aliases.clear();names.forEach { set(it,properties.getProperty(key(it)).orEmpty()) };revision++ }
     fun save(properties: Properties) { names.forEach { if(get(it).isNotEmpty()) properties.setProperty(key(it),get(it)) else properties.remove(key(it)) } }
-    fun display(text: String): String = if(aliases.isEmpty()) text else pattern.replace(text) {
+    private val active get() = ConfigManager.customCritterNames && aliases.isNotEmpty()
+    fun display(text: String): String = if(!active) text else pattern.replace(text) {
         canonical[it.groupValues[2].lowercase(java.util.Locale.ROOT)]?.let(aliases::get)?.let { alias ->
             it.groupValues[1]+alias+it.groupValues[3]
         } ?: it.value
@@ -44,7 +47,7 @@ object CritterNames {
     fun tooltip(lines: List<Component>): List<Component> = lines.map(::component)
     fun component(text: Component): Component = formatted(text) as Component
     fun formatted(text: FormattedText): FormattedText {
-        if(text is NamedText || aliases.isEmpty()) return text
+        if(text is NamedText || !active) return text
         val raw = StringBuilder();val styles = mutableListOf<Style>()
         text.visit(FormattedText.StyledContentConsumer<Unit> { style,part ->
             raw.append(part);repeat(part.length) {styles.add(style)};Optional.empty()
@@ -74,7 +77,7 @@ object CritterNames {
         return NamedText(result)
     }
     fun sequence(text: FormattedCharSequence): FormattedCharSequence {
-        if(text is NamedSequence || aliases.isEmpty()) return text
+        if(text is NamedSequence || !active) return text
         val raw=StringBuilder();val styles=mutableListOf<Style>()
         text.accept { _,style,codepoint -> raw.appendCodePoint(codepoint);repeat(Character.charCount(codepoint)) {styles.add(style)};true }
         return styled(raw.toString(),styles)?.visualOrderText ?: text

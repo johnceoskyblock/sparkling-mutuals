@@ -17,6 +17,11 @@ internal object WarpListRefresh {
     private var pending: Lookup?=null
     private var nextAt=0L
     fun tick(client: Minecraft,now: Long) {
+        if (!ConfigManager.warpListRefresh) {
+            pending?.job?.cancel(false)
+            pending = null
+            return
+        }
         pending?.let { lookup ->
             if(!lookup.job.isDone) return
             pending=null

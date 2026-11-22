@@ -68,6 +68,7 @@ object SparklingEncounters {
 
     internal fun shared(name: String) {
         requestAlert(SparklingNotice(UUID.randomUUID(), name, "Party discovery"))
+        net.johnceo.sparklingmutuals.alerts.SparkleAutoParty.detected(name)
     }
 
     internal fun doomspiralRevealed() {

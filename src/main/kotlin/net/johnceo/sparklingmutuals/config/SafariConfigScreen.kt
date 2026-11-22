@@ -8,6 +8,8 @@ import net.minecraft.client.gui.components.EditBox
 import net.minecraft.client.gui.components.MultiLineEditBox
 import net.minecraft.util.FormattedCharSequence
 import net.minecraft.client.gui.screens.Screen
+import net.minecraft.client.gui.screens.ConfirmScreen
+import net.minecraft.client.gui.screens.AlertScreen
 import net.minecraft.client.input.MouseButtonEvent
 import net.minecraft.client.input.KeyEvent
 import net.minecraft.network.chat.Component
@@ -17,9 +19,21 @@ import kotlin.math.round
 class SafariConfigScreen(private val settings: SafariSettings = SafariSettings(), private val initialTarget: SettingsTarget? = null, private val returnTo: Screen? = null) : Screen(net.minecraft.client.Minecraft.getInstance(),net.johnceo.sparklingmutuals.hud.HudFonts.font,Component.literal("Sparkling Mutuals")) {
     private val catalog=SettingsCatalog(settings)
     private data class Area(val name: String,val pages: List<Int>)
-    private val areas=listOf(Area("HUDs",listOf(0,7,10)),Area("Safari",listOf(1,6,3,12)),Area("Party",listOf(2,5)),
-        Area("ESP",listOf(17,9,13,14,15,16)),Area("History",listOf(4)),Area("Advanced",listOf(8,11)))
-    private val tabNames=mapOf(13 to "Mode critters",14 to "Profitable critters",15 to "Always on critters",16 to "Always on drops",17 to "General",0 to "Overview",7 to "HUDs",1 to "Modes",6 to "Helpers",3 to "Contest",2 to "Interactions",5 to "Sparkle Warping",9 to "Customization",10 to "Appearance",4 to "History",8 to "API",11 to "SkyBlock",12 to "Banner")
+    private fun page(name: String) = catalog.pages.indexOfFirst { it.name == name }
+    private fun area(name: String, vararg pages: String) = Area(name, pages.map(::page).filter { it >= 0 })
+    private val skyblockPage = page("SkyBlock")
+    private val customizationPage = page("ESP")
+    private val areas = listOf(
+        area("HUDs", "General", "HUDs", "Customization"),
+        area("Safari", "Modes", "Safari helpers", "Miria contest", "Banner"),
+        area("Party", "Party Interactions", "Sparkle Warping"),
+        area("ESP", "ESP General", "ESP", "Mode-wide Critter Toggles", "Profitable Critter Toggles", "Always On Toggle", "Floor Drop Always On Toggle"),
+        area("History", "History"), area("Misc", "API key", "SkyBlock"), area("Reset", "Reset")
+    )
+    private val tabNames = mapOf("Mode-wide Critter Toggles" to "Mode critters", "Profitable Critter Toggles" to "Profitable critters",
+        "Always On Toggle" to "Always on critters", "Floor Drop Always On Toggle" to "Always on drops", "ESP General" to "General",
+        "General" to "Overview", "Safari helpers" to "Helpers", "Miria contest" to "Contest", "Party Interactions" to "Interactions",
+        "ESP" to "Customization", "Customization" to "Appearance", "API key" to "API")
     private val areaTabs=rememberedNavigation.areaTabs.toMutableMap().apply {
         areas.forEach {area -> get(area.name)?.let { if(it !in area.pages)remove(area.name) } }
     }
@@ -28,7 +42,6 @@ class SafariConfigScreen(private val settings: SafariSettings = SafariSettings()
     private val expanded=rememberedNavigation.expanded.toMutableSet().apply { if(!navigationInitialized) { addAll(catalog.defaultExpanded());navigationInitialized=true } }
     private val scrolls=rememberedNavigation.scrolls.toMutableMap()
     private var scroll=rememberedNavigation.scroll
-    private var skyblockTab=rememberedNavigation.skyblockTab
     private var customizationTab=rememberedNavigation.customizationTab
     private var navScroll=rememberedNavigation.navScroll
     private var initialQuery=rememberedNavigation.query
@@ -76,8 +89,7 @@ class SafariConfigScreen(private val settings: SafariSettings = SafariSettings()
             initialTarget?.let(catalog::locate)?.let { (page,chain) ->
                 initialQuery=""
                 selected=page;expanded.addAll(catalog.expansionFor(initialTarget!!))
-                if(page==11) skyblockTab=if(chain.first().field.name=="endgame") 1 else 0
-                if(page==9) customizationTab=when(chain.first().field.name) {"names"->0;"nameplates"->1;"biomeColors","critterColors"->2;else->3}
+                if(page==customizationPage) customizationTab=when(chain.first().field.name) {"names"->0;"nameplates"->1;"biomeColors","critterColors"->2;else->3}
                 focusPath=chain.last().path;scrollToFocus=true;highlightUntil=System.currentTimeMillis()+8000
             }
         }
@@ -100,6 +112,34 @@ class SafariConfigScreen(private val settings: SafariSettings = SafariSettings()
         if(modal!=null || choices!=null) { closeModal();return }
         minecraft.smSetScreen(returnTo)
     }
+    internal fun confirmBulkAction(resetDefaults: Boolean) {
+        val action = if (resetDefaults) "Reset to Defaults" else "Disable All Features"
+        val description = if (resetDefaults)
+            "Restore fresh-install settings and HUD layouts? This does not reset saved Safari records."
+        else "Turn off all feature switches, including HUDs and automation?"
+        val confirm = ConfirmScreen({ accepted ->
+            if (!accepted) minecraft.smSetScreen(this)
+            else {
+                val result = runCatching {
+                    if (resetDefaults) ConfigManager.resetSettings()
+                    else {
+                        SafariSettings().also { SettingsCatalog(it).disableSwitches() }.apply()
+                        net.johnceo.sparklingmutuals.hud.SafariAlertSequence.queue.reset(except = net.johnceo.sparklingmutuals.hud.MaxWin)
+                    }
+                }
+                val next = freshForReturn()
+                if (result.isSuccess) minecraft.smSetScreen(next)
+                else {
+                    org.slf4j.LoggerFactory.getLogger("sparkling-mutuals/config").error("Could not save settings", result.exceptionOrNull())
+                    minecraft.smSetScreen(AlertScreen({ minecraft.smSetScreen(next) },
+                        Component.literal("Could not save settings"),
+                        Component.literal("Check that the Sparkling Mutuals config folder is writable.")))
+                }
+            }
+        }, Component.literal(action), Component.literal(description), Component.literal(action), Component.literal("Cancel"))
+        minecraft.smSetScreen(confirm)
+    }
+
     private fun closeModal() {
         editor?.let(::removeWidget);multilineEditor?.let(::removeWidget)
         editor=null;multilineEditor=null;modal=null;choices=null;choose=null;validation=""
@@ -115,6 +155,16 @@ class SafariConfigScreen(private val settings: SafariSettings = SafariSettings()
         g.fill(r.x,r.y,r.x+r.w,r.y+1,SettingsPalette.border);g.fill(r.x,r.y+r.h-1,r.x+r.w,r.y+r.h,SettingsPalette.border)
         g.fill(r.x,r.y,r.x+1,r.y+r.h,SettingsPalette.border);g.fill(r.x+r.w-1,r.y,r.x+r.w,r.y+r.h,SettingsPalette.border)
     }
+    private fun warningIcon(g: GuiGraphicsExtractor, center: Int, y: Int) {
+        val red = 0xFFFF626A.toInt()
+        repeat(6) { row ->
+            val halfWidth = 1 + row * 2 / 3
+            g.fill(center - halfWidth, y + row, center + halfWidth + 1, y + row + 1, red)
+        }
+        g.fill(center, y + 1, center + 1, y + 3, SettingsPalette.background)
+        g.fill(center, y + 4, center + 1, y + 5, SettingsPalette.background)
+    }
+
     private fun button(g: GuiGraphicsExtractor,s: String,r: Rect,mx: Int,my: Int,action: ()->Unit) {
         shell(g,r,if(r.contains(mx.toDouble(),my.toDouble())) SettingsPalette.hover else SettingsPalette.card)
         val lines=font.split(Component.literal(s),(r.w-16).coerceAtLeast(1))
@@ -150,7 +200,14 @@ class SafariConfigScreen(private val settings: SafariSettings = SafariSettings()
                 g.fill(0,y,nav-1,y+32,color)
                 if(active) g.fill(0,y,3,y+32,SettingsPalette.accent)
                 val title=Component.literal(area.name).withStyle { it.withBold(true) }
-                g.text(font,title,12,y+12,if(active) SettingsPalette.text else SettingsPalette.muted,false)
+                val danger = area.name == "Reset"
+                val titleWidth = font.width(title)
+                val x = if (danger) (nav - titleWidth) / 2 else 12
+                if (danger) {
+                    warningIcon(g, x - 9, y + 13)
+                    warningIcon(g, x + titleWidth + 9, y + 13)
+                }
+                g.text(font,title,x,y+12,if(active) SettingsPalette.text else SettingsPalette.muted,false)
                 hit(Rect(0,maxOf(y,54),nav,(minOf(y+32,height-36)-maxOf(y,54)).coerceAtLeast(0))) {
                     areaTabs[activeArea.name]=selected;scrolls[selected]=scroll
                     selected=areaTabs[area.name]?:area.pages.first();scroll=scrolls[selected]?:0;search.value=""
@@ -164,18 +221,20 @@ class SafariConfigScreen(private val settings: SafariSettings = SafariSettings()
             val y=56+(navHeight-thumb)*navScroll/(areas.size*36-navHeight).coerceAtLeast(1)
             g.fill(nav-4,y,nav-2,y+thumb,SettingsPalette.border)
         }
-        val update=Rect(5,height-34,nav-10,30)
-        shell(g,update,if(update.contains(px.toDouble(),py.toDouble())) SettingsPalette.hover else SettingsPalette.card)
-        if(ModUpdates.label=="Up to Date") UiIcons.draw(g,12,height-23,UiIcons.Kind.CHECK,SettingsPalette.green)
-        val status=if(ModUpdates.label=="Up to Date") "Up to date" else ModUpdates.label
-        val statusLines=font.split(Component.literal(status),nav-40)
-        statusLines.forEachIndexed { i,line -> g.text(font,line,28,update.y+(update.h-statusLines.size*10)/2+i*10,
-            if(ModUpdates.label=="Up to Date") SettingsPalette.green else SettingsPalette.muted,false) }
-        hit(update) { minecraft.smSetScreen(UpdateDetailsScreen(this)) }
+        if (ModUpdates.canCheck) {
+            val update=Rect(5,height-34,nav-10,30)
+            shell(g,update,if(update.contains(px.toDouble(),py.toDouble())) SettingsPalette.hover else SettingsPalette.card)
+            if(ModUpdates.label=="Up to Date") UiIcons.draw(g,12,height-23,UiIcons.Kind.CHECK,SettingsPalette.green)
+            val status=if(ModUpdates.label=="Up to Date") "Up to date" else ModUpdates.label
+            val statusLines=font.split(Component.literal(status),nav-40)
+            statusLines.forEachIndexed { i,line -> g.text(font,line,28,update.y+(update.h-statusLines.size*10)/2+i*10,
+                if(ModUpdates.label=="Up to Date") SettingsPalette.green else SettingsPalette.muted,false) }
+            hit(update) { minecraft.smSetScreen(UpdateDetailsScreen(this)) }
+        }
         if(search.value.isBlank()) {
             var tabX=left;var tabY=56
             activeArea.pages.forEach { page ->
-                val name=tabNames[page]?:catalog.pages[page].name
+                val name=catalog.pages[page].name.let { tabNames[it] ?: it }
                 val w=(font.width(name)+24).coerceIn(66,(right-left).coerceAtLeast(66))
                 if(tabX>left && tabX+w>right) { tabX=left;tabY+=27 }
                 shell(g,Rect(tabX,tabY,w,22),if(selected==page) SettingsPalette.selected else SettingsPalette.card)
@@ -183,7 +242,7 @@ class SafariConfigScreen(private val settings: SafariSettings = SafariSettings()
                 hit(Rect(tabX,tabY,w,22)) { scrolls[selected]=scroll;selected=page;scroll=scrolls[page]?:0 }
                 tabX+=w+6
             }
-            if(selected==9) {
+            if(selected==customizationPage) {
                 tabX=left;tabY+=27
                 catalog.customizationTabs.forEachIndexed {index,label ->
                     val w=(font.width(label)+24).coerceAtMost((right-left).coerceAtLeast(1))
@@ -195,16 +254,13 @@ class SafariConfigScreen(private val settings: SafariSettings = SafariSettings()
                     tabX+=w+6
                 }
             }
-            if (selected==11) {
+            if (selected==skyblockPage) {
                 tabY+=29
-                var subX=left
-                listOf("Helpers","Endgame").forEachIndexed { index,label ->
-                    val r=Rect(subX,tabY,font.width(label)+24,22)
-                    shell(g,r,if(skyblockTab==index) SettingsPalette.selected else SettingsPalette.card)
-                    text(g,label,r.x+12,r.y+7)
-                    hit(r) { skyblockTab=index;scroll=0 }
-                    subX+=r.w+6
-                }
+                val helpers = "Helpers"
+                val tab = Rect(left,tabY,font.width(helpers)+24,22)
+                shell(g,tab,SettingsPalette.selected)
+                text(g,helpers,tab.x+12,tab.y+7)
+                hit(tab) { scroll=0 }
             }
             contentTop=(tabY+34).coerceAtMost(height-70)
         } else { text(g,"Search results",left,58,SettingsPalette.accent);contentTop=80 }
@@ -248,8 +304,16 @@ class SafariConfigScreen(private val settings: SafariSettings = SafariSettings()
             hit(Rect(right-6,top,10,viewport)) { draggingScroll=true;scrollGrab=if(track.contains(mx.toDouble(),my.toDouble())) my-track.y.toDouble() else track.h/2.0;dragTo(my.toDouble()) }
         }
         g.fill(nav,height-32,width,height,SettingsPalette.surface)
-        text(g,"Changes save automatically",left,height-20,SettingsPalette.muted)
-        button(g,"Done",Rect(right-54,height-27,54,21),px,py) { onClose() }
+        val whatsNewWidth = maxOf(74, font.width("What's New") + 16)
+        button(g,"What's New",Rect(left,height-27,whatsNewWidth,21),px,py) {
+            val highlights = ReleaseHighlights.forCurrentInstall(ConfigManager.installedVersionHistory, ModUpdates.installed)
+            minecraft.smSetScreen(UpdateDetailsScreen(this, highlights, acknowledge = false))
+        }
+        val doneX = left + whatsNewWidth + 6
+        button(g,"Done",Rect(doneX,height-27,54,21),px,py) { onClose() }
+        val autosaveX = doneX + 68
+        if (autosaveX + font.width("Changes save automatically") <= right)
+            text(g,"Changes save automatically",autosaveX,height-20,SettingsPalette.muted)
         if(blocked) { hits.clear();drawModal(g,mx,my) }
         search.visible=!blocked;search.active=!blocked;super.extractRenderState(g,mx,my,delta)
     }
@@ -285,7 +349,7 @@ class SafariConfigScreen(private val settings: SafariSettings = SafariSettings()
             Card(row,x,w,h,title,desc,Rect(x+w-12-columns.controlWidth,(h-24)/2,columns.controlWidth,24),(h-textHeight)/2)
         }
     }
-    private fun navigation() = Navigation(selected, expanded.toSet(), scrolls.toMap(), scroll, skyblockTab,
+    private fun navigation() = Navigation(selected, expanded.toSet(), scrolls.toMap(), scroll,
         navScroll, areaTabs.toMap(), if (::search.isInitialized) search.value else initialQuery,customizationTab)
 
     fun freshForReturn()=SafariConfigScreen(returnTo=returnTo).also {
@@ -296,7 +360,6 @@ class SafariConfigScreen(private val settings: SafariSettings = SafariSettings()
         it.scrolls.clear()
         it.scrolls.putAll(state.scrolls)
         it.scroll=state.scroll
-        it.skyblockTab=state.skyblockTab
         it.customizationTab=state.customizationTab
         it.navScroll=state.navScroll
         it.areaTabs.clear()
@@ -313,8 +376,8 @@ class SafariConfigScreen(private val settings: SafariSettings = SafariSettings()
             }
         }
         if(query.isBlank()) {
-            if (selected==11) visit(catalog.pages[selected].rows[skyblockTab].children,0)
-            else if(selected==9)visit(catalog.customizationRows(customizationTab),0)
+            if (selected==skyblockPage) visit(catalog.pages[selected].rows.single().children,0)
+            else if(selected==customizationPage)visit(catalog.customizationRows(customizationTab),0)
             else visit(catalog.pages[selected].rows,0)
         } else catalog.pages.forEach { visit(it.rows,0) }
     }
@@ -466,7 +529,7 @@ class SafariConfigScreen(private val settings: SafariSettings = SafariSettings()
     }
     private data class Navigation(
         val page: Int = 0, val expanded: Set<String> = emptySet(), val scrolls: Map<Int,Int> = emptyMap(),
-        val scroll: Int = 0, val skyblockTab: Int = 0, val navScroll: Int = 0,
+        val scroll: Int = 0, val navScroll: Int = 0,
         val areaTabs: Map<String,Int> = emptyMap(), val query: String = "",val customizationTab: Int=0
     )
     companion object { private var rememberedNavigation=Navigation();private var navigationInitialized=false }

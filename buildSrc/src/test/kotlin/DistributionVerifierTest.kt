@@ -22,7 +22,8 @@ class DistributionVerifierTest {
             z.putNextEntry(ZipEntry(name)); z.write(data); z.closeEntry()
         } }; bytes.toByteArray()
     }
-    private fun jar(target: TargetSpec, change: (MutableMap<String, Any>, MutableMap<String, ByteArray>) -> Unit = { _, _ -> }): Path {
+    private fun jar(target: TargetSpec, edition: Edition = Edition.FULL,
+        change: (MutableMap<String, Any>, MutableMap<String, ByteArray>) -> Unit = { _, _ -> }): Path {
         val hmName = "META-INF/jars/hm-api-${target.hmApi}.jar"
         val entries = mutableMapOf(
             "net/johnceo/sparklingmutuals/SparklingMutuals.class" to byteArrayOf(1),
@@ -37,13 +38,53 @@ class DistributionVerifierTest {
         )
         val metadata = mutableMapOf<String, Any>("schemaVersion" to 1, "id" to "sparkling-mutuals", "version" to "3.3.0",
             "environment" to "client", "icon" to "assets/sparkling-mutuals/icon.png",
+            "custom" to mapOf("sparkling-mutuals:edition" to edition.id),
             "entrypoints" to mapOf("main" to listOf(mapOf("value" to "net.johnceo.sparklingmutuals.SparklingMutuals", "adapter" to "kotlin"))),
             "mixins" to listOf("sparkling-mutuals.mixins.json"), "jars" to listOf(mapOf("file" to hmName)),
             "depends" to mapOf("minecraft" to target.minecraft, "java" to ">=25", "fabricloader" to ">=0.19.5",
                 "fabric-api" to "*", "fabric-language-kotlin" to "*"))
+        if (edition == Edition.STANDARD) entries["net/johnceo/sparklingmutuals/safari/visibility/LocalVisibility.class"] = byteArrayOf(1)
         change(metadata, entries)
         entries["fabric.mod.json"] = JsonOutput.toJson(metadata).toByteArray()
-        return dir.resolve("sparkling-mutuals-3.3.0+mc${target.minecraft}.jar").also { Files.write(it, zip(entries)) }
+        return dir.resolve(edition.jarName("3.3.0", target.minecraft)).also { Files.write(it, zip(entries)) }
+    }
+    @Test fun verifyNineJarsAndPreparePublicManifestFromOnlyTheFullEditions() {
+        val editions = Edition.entries.toSet()
+        val matrix = verifyDistribution(editions.flatMap { edition -> targets.map { jar(it, edition) } },
+            targets, "3.3.0", editions)
+        assertEquals(9, matrix.size)
+        val publicEditions = editions - Edition.STANDARD
+        val output = dir.resolve("public")
+        val publicJars = collectDistribution(matrix.filter { it.edition in publicEditions }.map { it.path },
+            targets, "3.3.0", output, publicEditions)
+        val manifest = output.resolve("build-manifest.json")
+        assertEquals(6, publicJars.size)
+        assertFalse(Files.readString(manifest).contains("standard"))
+        assertTrue(verifyPublicManifest(manifest, "3.3.0", publicJars).size > 0)
+        Files.writeString(manifest, "{}")
+        assertThrows(IllegalArgumentException::class.java) { verifyPublicManifest(manifest, "3.3.0", publicJars) }
+    }
+    @Test fun rejectFullAutomationAndUpdaterClassesFromOtherEditions() {
+        val target = targets.first()
+        val standard = jar(target, Edition.STANDARD) { _, entries ->
+            entries["net/johnceo/sparklingmutuals/safari/automation/AutoClicker.class"] = byteArrayOf(1)
+        }
+        val noUpdate = jar(target, Edition.FULL_NO_AUTO_UPDATE) { _, entries ->
+            entries["net/johnceo/sparklingmutuals/config/ReleaseUpdateChecker.class"] = byteArrayOf(1)
+        }
+        assertThrows(IllegalArgumentException::class.java) { verifyJar(standard, target, "3.3.0", Edition.STANDARD) }
+        assertThrows(IllegalArgumentException::class.java) { verifyJar(noUpdate, target, "3.3.0", Edition.FULL_NO_AUTO_UPDATE) }
+    }
+    @Test fun rejectInstallerAndTransportClassesFromBothNonUpdaterEditions() {
+        for (edition in listOf(Edition.STANDARD, Edition.FULL_NO_AUTO_UPDATE)) {
+            for (entry in listOf("UpdateInstall.class", "UpdateInstall\$Artifact.class", "UpdateTransport.class", "FullUpdateManifest.class")) {
+                val target = targets.first()
+                val path = jar(target, edition) { _, entries ->
+                    entries["net/johnceo/sparklingmutuals/update/$entry"] = byteArrayOf(1)
+                }
+                assertThrows(IllegalArgumentException::class.java) { verifyJar(path, target, "3.3.0", edition) }
+            }
+        }
     }
     @Test fun completeDistributionHasExactlyThreeVerifiedTargets() {
         val files = targets.map { jar(it) }

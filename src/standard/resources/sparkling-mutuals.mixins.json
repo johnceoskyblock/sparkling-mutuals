@@ -1,0 +1,28 @@
+{
+  "required": true,
+  "package": "net.johnceo.sparklingmutuals.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "mixins": [],
+  "client": [
+    "ChatCritterNamesMixin",
+    "HuntingBoxNamesMixin",
+    "CritterTextDisplayMixin",
+    "HudFontAccessor",
+    "GuiGraphicsExtractorAccessor",
+    "DoomspiralServerTickMixin",
+    "DisplayStateAccessor",
+    "SafariChatMixin",
+    "SafariCapsuleMixin",
+    "SparklingHoverMixin",
+    "PartyNameSuggestionsMixin",
+    "SafariParticleMixin",
+    "ShardSaleContainerMixin",
+    "ShardSaleScreenBounds"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "overwrites": {
+    "requireAnnotations": true
+  }
+}

@@ -625,7 +625,6 @@ object SafariPartySync {
                 SafariTracking.ledger.current?.sparklingCaptures?.captured(species)!=true && notifiedSparks.add(species)) {
                 SafariDeveloper.event("Shared sparkling · $species")
                 SparklingEncounters.shared(species)
-                net.johnceo.sparklingmutuals.alerts.SparkleAutoParty.detected(species)
             }
         }
     }

@@ -37,7 +37,10 @@ internal class AlertSequence(private val audioPlaying: () -> Boolean = { false }
         if (active?.let { it.owner == owner && keyMatches(it.key) } == true) finishActive()
     }
 
-    fun reset() { pending.clear(); finishActive() }
+    fun reset(except: Any? = null) {
+        pending.removeAll { it.owner != except }
+        if (active?.owner != except) finishActive()
+    }
 
     private fun finishActive() {
         val request = active

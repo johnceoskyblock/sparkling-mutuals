@@ -12,6 +12,7 @@ data class SafariProfile(val discoveries: Set<String>, val tickets: Map<String, 
     val biomeCaptures: Map<SafariBiome, Long> = emptyMap()) {
     /** Roster names of the discovered sparklings, in roster order. */
     val caught get() = SafariRoster.all.filter { key(it.name) in discoveries }.map { it.name }
+    internal val duplicateSparklings get() = totalCaptured?.let { (it - caught.size).coerceAtLeast(0L) }
     val missing get() = SafariRoster.all.filter { key(it.name) !in discoveries }.map { it.name }
     val huntingLevel get() = huntingXp?.let(::levelFromXp)
     val totalCritterCaptures get() = biomeCaptures.takeIf { it.isNotEmpty() }?.values?.sum()

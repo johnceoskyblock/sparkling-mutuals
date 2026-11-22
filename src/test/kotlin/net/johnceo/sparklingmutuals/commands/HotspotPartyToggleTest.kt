@@ -1,5 +1,6 @@
 package net.johnceo.sparklingmutuals.commands
 
+import java.nio.file.Files
 import java.nio.file.Path
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import org.junit.jupiter.api.Assertions.*
@@ -8,7 +9,8 @@ import org.junit.jupiter.api.io.TempDir
 
 class HotspotPartyToggleTest {
     @TempDir lateinit var dir: Path
-    @Test fun `party hotspot controls work while responses are disabled and only emit local feedback`() {
+    @Test fun `party hotspot controls ignore the removed opt-out and only emit local feedback`() {
+        Files.writeString(dir.resolve("sparkling-mutuals.properties"), "acceptPartyHotspotCommands=false\n")
         ConfigManager.init(dir)
         ConfigManager.partyCommandsEnabled=false
         val local=mutableListOf<String>()

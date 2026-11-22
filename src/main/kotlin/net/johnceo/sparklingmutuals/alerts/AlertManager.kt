@@ -39,7 +39,7 @@ object AlertManager {
         if(warp==ConfigManager.warpDelaySeconds && reparty==ConfigManager.repartyDelaySeconds)return
         val warpChanged=warp!=ConfigManager.warpDelaySeconds
         ConfigManager.warpDelaySeconds=warp;ConfigManager.repartyDelaySeconds=reparty
-        ConfigManager.save()
+        ConfigManager.saveSettings()
         if(!warpChanged)return // The Auto-party cutoff reads its timer live; keep the armed warp.
         val previous=armedRun.takeIf {pendingAlert!=null}
         cancelPendingAlert()

@@ -1,8 +1,10 @@
 {
   "4.4.2": [
+    {"title": "Settings reset and progress HUD controls", "details": "Restore default settings or turn off configurable features from the Reset tab. Saved Safari records stay intact. Customize each progress row or show just the timer."},
     {"title": "Biome Objectives controls", "details": "Choose which objective rows to show and which optional sparkling checks your run should require. Skipped checks no longer hold up biome completion or appear in your missing-objectives reply."},
     {"title": "Safari Splits HUD", "details": "See when each biome finishes in Unique or Full Clear. Customize the time precision and show a compact summary of your current session."},
     {"title": "Party profit commands", "details": "Use !profit with session, lifetime, week, or day. Each responding player reports their own saved Safari profit and the Bazaar pricing method used."},
+    {"title": "Party sparkling commands", "details": "Use !sparkling to look up a player’s total, unique, and duplicate sparklings. Use !rates to see each responding party member’s session catches and runs per sparkling."},
     {"title": "Safari capture stats", "details": "See a player’s total critter captures and biome counts in /sparkling. In party chat, use !captures for your own stats or !captures followed by an IGN."},
     {"title": "Ubik’s Cube cooldown", "details": "Track the Rift’s Split or Steal cooldown across relogs. Enable the timer under SkyBlock → Helpers."}
   ],

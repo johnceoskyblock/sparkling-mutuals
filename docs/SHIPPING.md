@@ -2,6 +2,31 @@
 
 Run `scripts/Ship.ps1` in PowerShell 7 to handle the mechanical Git/GitHub steps. It reuses this repository's build and release Actions; no AI is involved in a normal run. Review and test the mod yourself first. The script cannot judge whether a feature works in-game or write accurate feature notes from code.
 
+## One repository for all editions
+
+Ship from `johnceoskyblock/sparkling-mutuals`. Use one PR into protected `master` and one version tag per release. Keep the legit fork available as a migration reference while the edition source sets and release workflow are under development. [Edition consolidation handoff](EDITION_CONSOLIDATION_HANDOFF.md)
+
+This repository uses `release_artifact_layout=editions`. The release workflow builds and verifies all nine combinations. GitHub receives the six Full and Full No Auto Update JARs and `build-manifest.json`. Standard JARs are available in the Actions run for testing. Enable public Standard publication after the Modrinth review.
+
+Full keeps update checks and adds a **Download Update** button plus an **Auto Update** toggle (off by default) in the update screen. Downloads must match the release manifest's SHA-256 and the JAR's mod ID, Full edition, version, and exact Minecraft target. Installation waits for the game to exit, preserves the last working JAR outside the mods folder, and supports retry after a failed installation. Standard and Full No Auto Update exclude the downloader and installer classes and controls.
+
+Windows CI also tests restart installation while the running JAR is locked. A live Minecraft smoke test is still recommended before release. Standard publication remains pending Modrinth review; no Modrinth upload job is enabled.
+
+## Rehearse a release
+
+Run the **release** workflow from the Actions tab using **Run workflow** after the workflow is available on `master`. The manual run uses the selected branch, verifies all nine JARs, and produces the `verified-release-assets` workflow artifact. The publication job requires a matching version tag pushed to the main repository.
+
+To build one edition locally, run one of these commands in PowerShell with Java 25. Omit `-Pedition` for Standard.
+
+```powershell
+.\gradlew.bat buildAllTargets -Pedition=standard
+.\gradlew.bat buildAllTargets -Pedition=full
+.\gradlew.bat buildAllTargets -Pedition=full-no-auto-update
+.\gradlew.bat verifyReleaseMatrix
+```
+
+Each build verifies all three Minecraft targets for the selected edition and writes them under `build/distributions/<version>/<edition>`. The last command verifies the nine collected JARs and prepares `build/release-assets` with the assets intended for GitHub. Use `-PdistributionDir=<folder>` to verify nine JARs collected elsewhere.
+
 ## One-time setup
 
 Install PowerShell 7 and [GitHub CLI](https://cli.github.com/), then authenticate with the account that can push and merge this repository. These installation commands also work in Command Prompt:
@@ -49,8 +74,8 @@ Write a short notes file describing the final features and fixes. You can keep i
 Then run:
 
 ```powershell
-pwsh -File ./scripts/Ship.ps1 -Message "Release v4.3.10" -Version 4.3.10 -NotesFile "$HOME/Desktop/sm-release-notes.txt" -WhatIf
-pwsh -File ./scripts/Ship.ps1 -Message "Release v4.3.10" -Version 4.3.10 -NotesFile "$HOME/Desktop/sm-release-notes.txt"
+pwsh -File ./scripts/Ship.ps1 -Message "Release v4.4.3" -Version 4.4.3 -NotesFile "$HOME/Desktop/sm-release-notes.txt" -WhatIf
+pwsh -File ./scripts/Ship.ps1 -Message "Release v4.4.3" -Version 4.4.3 -NotesFile "$HOME/Desktop/sm-release-notes.txt"
 ```
 
 Choose an unused version newer than the current `mod_version` and remote master. The number above is an example. Optional `-ReleaseTitle "My release v4.3.10"` changes the GitHub display title. `-TimeoutMinutes 60` changes the per-stage waiting limit; the default is 45 minutes.
@@ -61,7 +86,7 @@ Release mode also:
 2. Waits for the PR to merge, then verifies the merged tree exactly matches the tested branch and belongs to remote master.
 3. Creates a draft with your notes and tags that verified merged commit.
 4. Lets the tag-triggered Actions build, test, and verify Minecraft **26.1.2, 26.2, and 26.3**, then publish the verified JARs.
-5. Checks the published release identity, latest-release metadata, tag, notes, and title; downloads all three public JARs and verifies their sizes and SHA-256 hashes.
+5. Checks the published release identity, latest-release metadata, tag, notes, and title. Downloads the expected GitHub assets and verifies sizes and SHA-256 hashes. For the consolidated layout, it also checks the manifest's version, Minecraft targets, and JAR sizes and hashes against the verified assets.
 
 Stable releases only: `X.Y.Z`. Same-version re-releases, beta releases, deleting old versions, README edits, and conflict resolution remain manual tasks. A new stable version with the expected assets is discoverable by the mod's existing updater. This script does not run a live Minecraft GUI test.
 

@@ -5,6 +5,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.temporal.TemporalAdjusters
+import java.util.Locale
 
 internal enum class ProfitTimeframe(val header: String) {
     DAY("Day"), SESSION("Session #"), WEEK("Week")
@@ -26,6 +27,7 @@ internal data class ProfitTotals(val runs: Int, val coins: Long, val millis: Lon
 
 internal data class SafariSessionStats(val runs: Int, val averageRunMillis: Long?, val sparklings: Long) {
     val runsPerSparkling get() = if (sparklings > 0) runs.toDouble() / sparklings else null
+    val formattedRunsPerSparkling get() = runsPerSparkling?.let { "%.1f".format(Locale.ROOT, it) }
 
     companion object {
         fun of(runs: List<RunRecord>): SafariSessionStats {

@@ -48,12 +48,12 @@ object ConfigManager {
     var fullClearHideFloorDropEsp = false
     var sparklingHideCritterEsp = false
     var sparklingHideFloorDropEsp = false
-    fun hideCritterEsp(mode: SafariMode = SafariFullClear.mode) = when(mode) {
+    fun hideCritterEsp(mode: SafariMode = SafariFullClear.mode) = !critterEspEnabled || when(mode) {
         SafariMode.UNIQUE -> uniqueHideCritterEsp
         SafariMode.FULL_CLEAR -> fullClearHideCritterEsp
         SafariMode.SPARKLING -> sparklingHideCritterEsp
     }
-    fun hideFloorDropEsp(mode: SafariMode = SafariFullClear.mode) = when(mode) {
+    fun hideFloorDropEsp(mode: SafariMode = SafariFullClear.mode) = !floorDropEspEnabled || when(mode) {
         SafariMode.UNIQUE -> uniqueHideFloorDropEsp
         SafariMode.FULL_CLEAR -> fullClearHideFloorDropEsp
         SafariMode.SPARKLING -> sparklingHideFloorDropEsp
@@ -101,7 +101,20 @@ object ConfigManager {
     var hideyhoInsideOutside = true
     var hideHauntedPaintings = true
     var shinyDetection = true
+    var critterEspEnabled = true
+    var floorDropEspEnabled = true
+    var warpListRefresh = true
+    var customCritterNames = true
+        set(value) {
+            if (field != value) net.johnceo.sparklingmutuals.safari.ui.CritterNames.invalidateDisplay()
+            field = value
+        }
+    var hotspotHudEnabled = true
     var progressHud = true
+    var progressTracks = true
+    internal var progressRows = emptyMap<SafariBiome?, ProgressRowDisplay>()
+    internal fun progressRow(biome: SafariBiome?) = progressRows[biome] ?: ProgressRowDisplay.BAR_AND_COUNT
+    private fun progressRowKey(biome: SafariBiome?) = "progressRow." + (biome?.name?.lowercase() ?: "overall")
     var splitsHud = true
     var splitsShowSession = true
     internal var splitsTimeFormat = SplitTimeFormat.MILLISECONDS
@@ -157,7 +170,6 @@ object ConfigManager {
     var huntingBoxValue = true
     var ubiksCubeTimer = false
     var phantomleafSolver = true
-    var runHistory = true
     var achievements = true
     var achievementSound = true
     var achievementsToParty = false
@@ -175,14 +187,14 @@ object ConfigManager {
         ::fullClearHideCritterEsp to false, ::fullClearHideFloorDropEsp to false, ::allScannableCritterChecks to false,
         ::sparklingHideCritterEsp to false, ::sparklingHideFloorDropEsp to false, ::announceStartingItems to false, ::hotspotAnnouncer to false, ::uniqueHotspotAnnouncer to false, ::fullClearHotspotAnnouncer to false, ::sparklingHotspotAnnouncer to false, ::highlightTeammates to true, ::showTeammateNames to true, ::partyCommandsEnabled to true, ::useCloudApi to true, ::fullClearMode to false, ::sparklingMode to false, ::sparklingProfitableShardEsp to true, ::profitableShardEsp to true, ::timesaveOnly to true, ::warpAlertsEnabled to false,
         ::hideyhoAutoAccept to true, ::autoSelectSafariTicket to true, ::safariEntryAutoEnter to false, ::hideyhoInsideOutside to true, ::hideHauntedPaintings to true, ::shinyDetection to true,
-        ::progressHud to true, ::splitsHud to true, ::splitsShowSession to true, ::progressProfit to true, ::progressHotspot to true, ::hotspotShowAllPlayers to true, ::countUniqueOnly to false, ::profitableChecklist to true, ::lakeClearAlert to true, ::missingPanel to true, ::biomeObjectives to true,
+        ::critterEspEnabled to true, ::floorDropEspEnabled to true, ::warpListRefresh to true, ::customCritterNames to true, ::hotspotHudEnabled to true, ::progressHud to true, ::progressTracks to true, ::splitsHud to true, ::splitsShowSession to true, ::progressProfit to true, ::progressHotspot to true, ::hotspotShowAllPlayers to true, ::countUniqueOnly to false, ::profitableChecklist to true, ::lakeClearAlert to true, ::missingPanel to true, ::biomeObjectives to true,
         ::objectiveCaptureReminder to true, ::objectiveShinyReminder to true,
         ::doomSoloPbChat to true, ::doomDuoPbChat to true, ::doomObservedSoloPbChat to true, ::doomObservedDuoPbChat to true,
         ::wumpaSoloPbChat to true, ::wumpaDuoPbChat to true, ::wumpaObservedSoloPbChat to true, ::wumpaObservedDuoPbChat to true,
         ::fullClearPbChat to true, ::uniquePbChat to true, ::partyUniquePbChat to true,
         ::autoReconnectHypixel to false, ::autoJoinSkyBlock to false,
         ::highlightBeeNests to true, ::removeDarkness to true, ::clearWater to true, ::sparklingAlert to true, ::sparklingCatchCount to true,
-        ::sparklingPartyAnnouncer to true, ::catchCountPanel to false, ::autoClicker to true, ::candleHitbox to true, ::holdManagerOnKick to true, ::downtimeCommand to true, ::honeyHives to true, ::huntingBoxValue to true, ::ubiksCubeTimer to false, ::shardSaleGuidance to true, ::skillOverflow to true, ::skillOverflowChat to true, ::skillOverflowNumbers to false, ::estimatedItemValue to true, ::estimatedChestValue to true, ::phantomleafSolver to true, ::runHistory to true, ::achievements to true, ::achievementSound to true, ::achievementsToParty to false, ::runCoinsInstaSell to false,
+        ::sparklingPartyAnnouncer to true, ::catchCountPanel to false, ::autoClicker to true, ::candleHitbox to true, ::holdManagerOnKick to true, ::downtimeCommand to true, ::honeyHives to true, ::huntingBoxValue to true, ::ubiksCubeTimer to false, ::shardSaleGuidance to true, ::skillOverflow to true, ::skillOverflowChat to true, ::skillOverflowNumbers to false, ::estimatedItemValue to true, ::estimatedChestValue to true, ::phantomleafSolver to true, ::achievements to true, ::achievementSound to true, ::achievementsToParty to false, ::runCoinsInstaSell to false,
         ::hideCaptureChat to true, ::hideGroundCapsules to true, ::hideFlyingCapsules to true,
         ::experimentalCapsulePath to true, ::showCapsuleGuideThroughTerrain to true, ::gemzieGemAutoSelect to true,
         ::highlightSnooperWalls to true, ::showBeeNests to true, ::showMoundCount to true,
@@ -213,6 +225,19 @@ object ConfigManager {
             properties.setProperty("warpDelaySeconds","27")
             properties.setProperty("repartyDelaySeconds","22")
             properties.setProperty("migration.sparkleWarpTimers22_27","true")
+        }
+        personalBestConfig = PersonalBestConfig(configPath)
+        personalBestConfig.load(properties, personalBests)
+        loadSettings(properties)
+        if (introduceShardGuidance || updateWarpTimings || versionChanged) {
+            PersonalBestConfig.write(configPath, properties, "Sparkling Mutuals configuration")
+        }
+    }
+
+    private fun loadSettings(properties: Properties) {
+        progressRows = (listOf(null) + SafariBiome.entries).associateWith { biome ->
+            ProgressRowDisplay.entries.firstOrNull { it.name == properties.getProperty(progressRowKey(biome)) }
+                ?: ProgressRowDisplay.BAR_AND_COUNT
         }
         settingsTheme = properties.getProperty("settingsTheme")?.toIntOrNull()?.coerceIn(0,33) ?: 4
         splitsTimeFormat = SplitTimeFormat.entries.firstOrNull { it.name == properties.getProperty("splitsTimeFormat") }
@@ -249,8 +274,6 @@ object ConfigManager {
         doomspiralEmergenceTicks = properties.getProperty("doomspiralEmergenceTicks")?.toIntOrNull()?.coerceIn(1, 600) ?: 98
         doomspiralThrowLeadTicks = properties.getProperty("doomspiralThrowLeadTicks")?.toIntOrNull()?.coerceIn(0, 40) ?: 4
         SafariHud.load(properties)
-        personalBestConfig = PersonalBestConfig(configPath)
-        personalBestConfig.load(properties, personalBests)
         SafariFullClear.syncMode()
         SafariEspConfig.load(properties)
         SafariChatConfig.load(properties)
@@ -258,10 +281,29 @@ object ConfigManager {
         SafariFullClear.applyEspPreset()
         BannerConfig.load(properties)
         AppearanceConfig.load(properties)
-        if (introduceShardGuidance || updateWarpTimings || versionChanged) {
-            Files.createDirectories(configPath.parent)
-            PersonalBestConfig.write(configPath, properties, "Sparkling Mutuals configuration")
+    }
+
+    internal fun resetSettings() {
+        val previous = Properties().apply { Files.newInputStream(configPath).use(::load) }
+        val defaults = FreshInstallDefaults.main().apply {
+            installedVersionHistory.save(this)
+            setProperty("apiKey", apiKey)
+            setProperty("profitsTicketMode", profitsTicketMode.toString())
+            setProperty("runCoinsInstaSell", runCoinsInstaSell.toString())
+            setProperty("hotspotAnnouncer", hotspotAnnouncer.toString())
+            setProperty("migration.shardSaleGuidanceV2", "true")
+            setProperty("migration.sparkleWarpTimers22_27", "true")
         }
+        PersonalBestConfig.write(configPath, defaults, "Sparkling Mutuals configuration")
+        try {
+            ContestConfig.resetSettings()
+        } catch (error: java.io.IOException) {
+            runCatching { PersonalBestConfig.write(configPath, previous, "Sparkling Mutuals configuration") }
+                .onFailure(error::addSuppressed)
+            throw error
+        }
+        loadSettings(defaults)
+        net.johnceo.sparklingmutuals.alerts.SparkleWarping.configurationChanged()
     }
 
     internal fun acknowledgeReleaseHighlights(version: String) {
@@ -278,8 +320,11 @@ object ConfigManager {
     }
 
     fun save() {
-        Files.createDirectories(configPath.parent)
         personalBestConfig.save(personalBests)
+        saveSettings()
+    }
+
+    internal fun saveSettings() {
         Properties().apply {
             installedVersionHistory.save(this)
             setProperty("apiKey", apiKey)
@@ -297,6 +342,7 @@ object ConfigManager {
             setProperty("warpDuo", warpDuo)
             setProperty("settingsTheme", settingsTheme.toString())
             setProperty("splitsTimeFormat", splitsTimeFormat.name)
+            progressRows.forEach { (biome, display) -> setProperty(progressRowKey(biome), display.name) }
             setProperty("specialCatchAlert", specialCatchAlert.toString())
             setProperty("alwaysCelebrateSparkling", alwaysCelebrateSparkling.toString())
             setProperty("specialCatchStyle", specialCatchStyle.toString())

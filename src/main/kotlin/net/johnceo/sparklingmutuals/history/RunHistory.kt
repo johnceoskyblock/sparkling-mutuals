@@ -145,7 +145,7 @@ object RunHistory {
     }
 
     private fun finish(run: SafariRun, client: Minecraft) {
-        if (run.historyExcluded || !ConfigManager.runHistory ||
+        if (run.historyExcluded ||
             tally.party.isEmpty() && tally.summaryShards < 0 && tally.safariEssence < 0 && !tally.rewardSummarySeen) return
         // The run start is stable across callbacks; never insert or award the same live run twice.
         if (data.runs.any { !it.imported && it.start == run.startedAt }) return

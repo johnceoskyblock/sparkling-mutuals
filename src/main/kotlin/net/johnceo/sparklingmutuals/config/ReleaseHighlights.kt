@@ -29,13 +29,22 @@ internal object ReleaseHighlights {
     fun preceding(version: String, releases: List<Release> = catalog): String? =
         releases.firstOrNull { compare(it.version, version) < 0 }?.version
 
+    fun forCurrentInstall(history: InstalledVersionHistory, fallbackVersion: String = "dev",
+        releases: List<Release> = catalog): Update {
+        val installed = history.installed ?: InstalledVersionHistory.canonical(fallbackVersion)
+            ?: return Update(fallbackVersion, null, emptyList())
+        val previous = history.previous?.takeIf { compare(it, installed) < 0 }
+        val highlights = releases.filter { release ->
+            if (previous == null) release.version == installed
+            else compare(release.version, previous) > 0 && compare(release.version, installed) <= 0
+        }
+        return Update(installed, previous, highlights)
+    }
+
     fun pending(history: InstalledVersionHistory, releases: List<Release> = catalog): Update? {
         val installed = history.installed ?: return null
-        val through = history.highlightsSeenThrough
-        val unread = releases.filter { release ->
-            compare(release.version, installed) <= 0 &&
-                if (through != null) compare(release.version, through) > 0 else release.version == installed
-        }
-        return unread.takeIf { it.isNotEmpty() }?.let { Update(installed, through?.takeIf { history.previous != null }, it) }
+        if (history.highlightsSeenThrough?.let { compare(it, installed) >= 0 } == true ||
+            history.previous?.let { compare(it, installed) >= 0 } == true) return null
+        return forCurrentInstall(history, releases = releases).takeIf { it.releases.isNotEmpty() }
     }
 }

@@ -13,7 +13,7 @@ class NativeSettingsTest {
         assertSame(settings.customization.huds.progress,settings.tracking.progressHud.appearance)
         assertSame(settings.customization.huds.objectives,settings.tracking.objectivesHud.appearance)
         assertSame(settings.customization.huds.doomThrow,settings.safari.capture.doomAppearance)
-        assertEquals(18,catalog.pages.size)
+        assertEquals(19,catalog.pages.size)
         assertNotNull(catalog.pages.firstOrNull {it.name=="ESP General"})
         assertNotNull(catalog.pages.firstOrNull { it.name=="Mode-wide Critter Toggles" })
         assertNotNull(catalog.pages.firstOrNull { it.name=="Profitable Critter Toggles" })
@@ -34,8 +34,10 @@ class NativeSettingsTest {
         catalog.pages.forEach { visit(it.rows) }
         assertNotNull(catalog.locate(SettingsTarget("HUDs",listOf("progressHud","profit"))))
         assertNotNull(catalog.locate(SettingsTarget("HUDs",listOf("contestHud","score"))))
-        val edits=catalog.pages.first { it.name=="Party Interactions" }.rows
-        assertTrue(edits.none { it.name == "Hotspot assigning" })
+        val removed = listOf("Safari Party Sync", "Hotspot assigning", "Accept party hotspot commands",
+            "SkyBlock welcome message", "Check for updates automatically", "Read Safari playtime",
+            "Record sparkling history", "Record personal bests", "Save run history", "Shining coin celebration")
+        removed.forEach { label -> assertTrue(catalog.search(label).none { it.name.equals(label, true) }, label) }
         assertTrue(catalog.pages.first { it.name=="Modes" }.rows.all { it.children.none { row -> row.name.endsWith("mode",true) && !row.group } })
     }
     @Test fun `replacement colors preserve alpha hue and legacy speed encoding`() {

@@ -69,9 +69,8 @@ class SafariSinceReplyTest {
             assertFalse((if (isUnique) normal else unique).matchesResponse(found))
         }
         SafariMode.entries.forEach {
-            assertTrue(CommandHelp.partyReply(it).contains("!since,"))
-            assertFalse(Regex("sparkling|sparkle", RegexOption.IGNORE_CASE).containsMatchIn(CommandHelp.partyReply(it)))
-            assertTrue(CommandHelp.partyReply(it).contains("!since unique"))
+            val commands = CommandHelp.partyReply(it).split(", ").filter { it.startsWith("!since") }
+            assertEquals(listOf("!since", "!since unique", "!since <critter>"), commands)
         }
     }
 }
