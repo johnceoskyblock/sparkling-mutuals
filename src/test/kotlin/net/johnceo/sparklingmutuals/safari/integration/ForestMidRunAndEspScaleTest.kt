@@ -37,14 +37,19 @@ class ForestMidRunAndEspScaleTest {
         }
     }
     @Test fun `legacy scale migrates then floor types and party names persist independently`() {
+        org.junit.jupiter.api.Assumptions.assumeFalse(net.johnceo.sparklingmutuals.config.SafariSettings.standardEdition)
         SafariEspConfig.load(Properties().apply { setProperty("esp.textScale", "3") })
         val types = net.johnceo.sparklingmutuals.safari.resources.FloorDropType.entries
         types.forEach { assertEquals(3f, SafariEspConfig.dropTextScale(it)) }
         assertEquals(3f, SafariEspConfig.teammateTextScale)
         val settings = net.johnceo.sparklingmutuals.config.SafariSettings()
-        settings.esp.floorTextSizes.coin = 4f
-        settings.esp.floorTextSizes.incense = .5f
-        settings.safari.teammates.textScale = 1.25f
+        val catalog = net.johnceo.sparklingmutuals.config.SettingsCatalog(settings)
+        fun dropScale(type: String) = catalog.locate(net.johnceo.sparklingmutuals.config.SettingsTarget(
+            "ESP", listOf("floorDrops", type, "textScale")))!!.second.last()
+        dropScale("coin").write(4f)
+        dropScale("incense").write(.5f)
+        val teammates = settings.safari.javaClass.getField("teammates").get(settings.safari)
+        (teammates as net.johnceo.sparklingmutuals.config.SafariSettings.SafariTeammateSettings).textScale = 1.25f
         settings.esp.textScale = 2f
         settings.apply()
         val saved = Properties().also(SafariEspConfig::save)

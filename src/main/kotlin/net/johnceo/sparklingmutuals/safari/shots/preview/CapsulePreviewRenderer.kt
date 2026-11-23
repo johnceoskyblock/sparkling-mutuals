@@ -11,10 +11,10 @@ import net.minecraft.client.Minecraft
 import net.minecraft.client.multiplayer.ClientLevel
 
 object CapsulePreviewRenderer {
-    private val occludedType by lazy { WorldRenderCompat.renderType("capsule_path_preview",depth=WorldDepthMode.OCCLUDED) }
-    private val throughType by lazy { WorldRenderCompat.renderType("capsule_path_preview_through",depth=WorldDepthMode.THROUGH_TERRAIN) }
-    private val shaderOccludedType by lazy { WorldRenderCompat.renderType("capsule_path_preview_shader_occluded",depth=WorldDepthMode.OCCLUDED,afterShaders=true) }
-    private val shaderThroughType by lazy { WorldRenderCompat.renderType("capsule_path_preview_shader_through",depth=WorldDepthMode.THROUGH_TERRAIN,afterShaders=true) }
+    private val occludedType by lazy { WorldRenderCompat.capsulePathType("capsule_path_preview", WorldDepthMode.OCCLUDED) }
+    private val throughType by lazy { WorldRenderCompat.capsulePathType("capsule_path_preview_through", WorldDepthMode.THROUGH_TERRAIN) }
+    private val shaderOccludedType by lazy { WorldRenderCompat.capsulePathType("capsule_path_preview_shader_occluded", WorldDepthMode.OCCLUDED, afterShaders = true) }
+    private val shaderThroughType by lazy { WorldRenderCompat.capsulePathType("capsule_path_preview_shader_through", WorldDepthMode.THROUGH_TERRAIN, afterShaders = true) }
     private data class Pending(val context: LevelRenderContext, val mesh: ContactGuideMesh, val world: ClientLevel, val through: Boolean, val modelView: Matrix4f)
     private var pending: Pending? = null
     fun clearPending() { pending=null }

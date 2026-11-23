@@ -92,7 +92,8 @@ function global:gh {
             $baseUrl = "https://github.com/johnceoskyblock/sparkling-mutuals/releases/download/$($r.tag_name)"
             $hash = 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad'
             $jars = @(foreach ($minecraft in @('26.1.2','26.2','26.3')) {
-                @{name="sparkling-mutuals-$version+mc$minecraft.jar"; minecraft=$minecraft; size=3; sha256=$hash}
+                $suffix = if ($s.Editions) { '-full' } else { '' }
+                @{name="sparkling-mutuals-$version$suffix+mc$minecraft.jar"; minecraft=$minecraft; size=3; sha256=$hash}
                 if ($s.Editions) {
                     @{name="sparkling-mutuals-$version-full-no-auto-update+mc$minecraft.jar"; minecraft=$minecraft; size=3; sha256=$hash}
                 }

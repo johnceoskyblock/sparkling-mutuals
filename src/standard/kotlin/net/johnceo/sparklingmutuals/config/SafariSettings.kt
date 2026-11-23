@@ -18,6 +18,7 @@ import net.minecraft.resources.Identifier
 
 /** Settings view model; the existing properties files remain the saved configuration. */
 class SafariSettings {
+    internal companion object { const val standardEdition = true }
     @JvmField @Category(name = "General", desc = "") val general = General()
     @JvmField @Category(name = "Modes", desc = "") val modes = Modes()
     @JvmField @Category(name = "Party Interactions", desc = "") val party = Party()
@@ -38,13 +39,10 @@ class SafariSettings {
     val profitableCritters = CritterToggleSettings { SafariEspConfig.profitableToggles.getValue(it) }
     @JvmField @Category(name = "Always On Toggle", desc = "")
     val alwaysOnCritters = CritterToggleSettings(SafariEspConfig::alwaysOn)
-    @JvmField @Category(name = "Floor Drop Always On Toggle", desc = "")
-    val alwaysOnFloorDrops = FloorDropToggleSettings()
     @JvmField @Category(name="ESP General",desc="") val espGeneral=EspGeneralSettings(esp.biomes,esp.floorDrops)
     @JvmField @Category(name="Reset",desc="") val reset=Reset()
     init {
         esp.critterColors = customization.critters
-        esp.teammates = TeammateAppearanceSettings(safari.teammates)
         esp.waypointColors = customization.waypoints
         safari.alerts.appearance = customization.alert
         safari.alerts.nearbyAppearance = customization.huds.sparklings
@@ -106,13 +104,13 @@ class SafariSettings {
         @ConfigEditorBoolean var hideDrops = ConfigManager.fullClearHideFloorDropEsp
     }
     class Sparkling {
-        @JvmField @ConfigOption(name = "Check all scannable critters", desc = "Show easy-to-scan critters in ESP and the missing panel, even if the party already has their sparkling variant.")
+        @JvmField @ConfigOption(name = "Check all scannable critters", desc = "Highlight visible, easy-to-check critters and list them in the missing panel. Includes species the party already has.")
         @ConfigEditorBoolean var allScannable = ConfigManager.allScannableCritterChecks
         @JvmField @ConfigOption(name = "Hide critter ESP", desc = "")
         @ConfigEditorBoolean var hideCritters = ConfigManager.sparklingHideCritterEsp
         @JvmField @ConfigOption(name = "Hide floor-drop ESP", desc = "")
         @ConfigEditorBoolean var hideDrops = ConfigManager.sparklingHideFloorDropEsp
-        @JvmField @ConfigOption(name = "Profitable critter ESP", desc = "Also highlight the ten most profitable critters, including their walls and mounds.")
+        @JvmField @ConfigOption(name = "Profitable critter highlights", desc = "Also highlight visible critters among the ten most valuable, plus their visible walls and mounds.")
         @ConfigEditorBoolean var profitable = ConfigManager.sparklingProfitableShardEsp
     }
     class Unique {
@@ -120,10 +118,12 @@ class SafariSettings {
         @ConfigEditorBoolean var hideCritters = ConfigManager.uniqueHideCritterEsp
         @JvmField @ConfigOption(name = "Hide floor-drop ESP", desc = "")
         @ConfigEditorBoolean var hideDrops = ConfigManager.uniqueHideFloorDropEsp
-        @JvmField @ConfigOption(name = "Profitable critter ESP", desc = "Also highlight the ten most profitable critters, including their walls and mounds.")
+        @JvmField @ConfigOption(name = "Profitable critter highlights", desc = "Also highlight visible critters among the ten most valuable, plus their visible walls and mounds.")
         @ConfigEditorBoolean var profitable = ConfigManager.profitableShardEsp
     }
     class Party {
+        @JvmField @ConfigOption(name = "Sparkling invite list", desc = "Set invite priorities for visible sparklings. Each press of Invite Next Sparkling Player sends one invite.")
+        @ConfigEditorButton(runnableId = 16, buttonText = "Invite List") var inviteList = false
         @JvmField @ConfigOption(name = "Announce biome completion", desc = "Send fd, cd, id or hd in party chat when a biome is complete. Completion still syncs when this is off.")
         @ConfigEditorBoolean var biomeReports = ConfigManager.autoBiomeReports
         @JvmField @ConfigOption(name = "Announce starting quest items", desc = "Tell the party which quest items you started with and remind you to use them.")
@@ -239,9 +239,8 @@ class SafariSettings {
         @JvmField @ConfigOption(name = "Sparkling detection and alerts", desc = "") @Accordion val alerts = Alerts()
         @JvmField @ConfigOption(name = "Capture tools", desc = "") @Accordion val capture = SafariCaptureSettings()
         val interactions = SafariInteractionSettings()
-        @JvmField @ConfigOption(name = "Party visibility", desc = "") @Accordion val teammates = SafariTeammateSettings()
         @JvmField @ConfigOption(name = "Visual cleanup", desc = "") @Accordion val visibility = SafariVisibilitySettings()
-        val gambling = SafariGamblingSettings()
+        @JvmField @ConfigOption(name = "Gambling", desc = "") @Accordion val gambling = SafariGamblingSettings()
         var holdManagerOnKick
             get() = entry.holdManagerOnKick
             set(value) { entry.holdManagerOnKick = value }
@@ -272,12 +271,6 @@ class SafariSettings {
         var hideyhoAutoAccept
             get() = interactions.hideyhoAutoAccept
             set(value) { interactions.hideyhoAutoAccept = value }
-        var highlightTeammates
-            get() = teammates.highlightTeammates
-            set(value) { teammates.highlightTeammates = value }
-        var showTeammateNames
-            get() = teammates.showTeammateNames
-            set(value) { teammates.showTeammateNames = value }
         var hideCaptureChat
             get() = visibility.hideCaptureChat
             set(value) { visibility.hideCaptureChat = value }
@@ -312,7 +305,7 @@ class SafariSettings {
         var ticketPreference = ConfigManager.safariTicketPreference
     }
     class SafariCaptureSettings {
-        @JvmField @ConfigOption(name = "Doomspiral throw timer", desc = "Show when to throw a capsule while within 10 blocks of Doomspiral.")
+        @JvmField @ConfigOption(name = "Doomspiral throw timer", desc = "Show when to throw a capsule if Doomspiral is visible within 10 blocks.")
         @ConfigEditorBoolean var doomTimer = ConfigManager.doomspiralThrowTimer
         @JvmField @ConfigOption(name = "Doomspiral emergence delay (ticks)", desc = "Time from the spawn cue until Doomspiral can be caught.")
         @ConfigEditorSlider(minValue = 1f, maxValue = 600f, minStep = 1f) var doomTicks = ConfigManager.doomspiralEmergenceTicks
@@ -320,9 +313,12 @@ class SafariSettings {
         @ConfigEditorSlider(minValue = 0f, maxValue = 40f, minStep = 1f) var doomLead = ConfigManager.doomspiralThrowLeadTicks
         @JvmField @ConfigOption(name="Throw timer appearance",desc="") @Accordion
         var doomAppearance=PanelAppearanceSettings(AppearanceConfig.panels.getValue("doom_throw")) { AppearanceConfig.selectedHex }
-        var experimentalCapsulePath = ConfigManager.experimentalCapsulePath
-        var capsulePathWidth = ConfigManager.capsulePathWidth
-        var showCapsuleGuideThroughTerrain = ConfigManager.showCapsuleGuideThroughTerrain
+        @JvmField @ConfigOption(name = "Capsule trajectory preview", desc = "Estimate the path while aiming a Critter or Masterful Critter Capsule.")
+        @ConfigEditorBoolean var experimentalCapsulePath = ConfigManager.experimentalCapsulePath
+        @JvmField @ConfigOption(name = "Trajectory line width", desc = "Set how thick the capsule preview line appears.")
+        @ConfigEditorSlider(minValue = 1f, maxValue = 5f, minStep = 1f) var capsulePathWidth = ConfigManager.capsulePathWidth
+        @JvmField @ConfigOption(name = "Show projection through terrain", desc = "Keep the predicted path visible when terrain blocks your view of it.")
+        @ConfigEditorBoolean var showCapsuleGuideThroughTerrain = ConfigManager.showCapsuleGuideThroughTerrain
         var autoClicker = ConfigManager.autoClicker
     }
     class SafariInteractionSettings {
@@ -330,15 +326,9 @@ class SafariSettings {
         var candleHitbox = ConfigManager.candleHitbox
         var hideyhoAutoAccept = ConfigManager.hideyhoAutoAccept
     }
+    // Shared configuration types for Full. Standard never creates this settings group.
     class SafariTeammateSettings {
-        @JvmField @ConfigOption(name = "Highlight teammates", desc = "Draw boxes around currently visible party members.")
-        @ConfigEditorBoolean var highlightTeammates = ConfigManager.highlightTeammates
-        @JvmField @ConfigOption(name = "Show teammate names", desc = "Label currently visible party members.")
-        @ConfigEditorBoolean var showTeammateNames = ConfigManager.showTeammateNames
-        @JvmField @ConfigOption(name = "Highlight color", desc = "")
-        @ConfigEditorColour var color = SafariEspConfig.teammateColor
-        @JvmField @ConfigOption(name = "Name text scale", desc = "")
-        @ConfigEditorSlider(minValue = .5f, maxValue = 4f, minStep = .25f)
+        var color = SafariEspConfig.teammateColor
         var textScale = SafariEspConfig.teammateTextScale
     }
     class WaterOpacitySettings {
@@ -359,7 +349,7 @@ class SafariSettings {
             SafariBiome.ICY to icy, SafariBiome.HAUNTED to haunted).mapValues { it.value.coerceIn(0, 100) }
     }
     class SafariGamblingSettings {
-        @JvmField @ConfigOption(name = "Doomspiral gambling", desc = "Play a slot animation when summoning Doomspiral within 15 blocks of its spawning area.")
+        @JvmField @ConfigOption(name = "Doomspiral Gambling", desc = "Play a slot animation when the ritual starts within 15 blocks. The reels reveal a result when you can see Doomspiral and its name.")
         @ConfigEditorBoolean var doomspiral = ConfigManager.doomspiralLottery
     }
     class SafariVisibilitySettings {
@@ -392,15 +382,15 @@ class SafariSettings {
         @JvmField @ConfigOption(name = "Preview catch celebration", desc = "")
         @ConfigEditorButton(runnableId = 13, buttonText = "Preview") var previewCatch = false
 
-        @JvmField @ConfigOption(name = "Detect nearby sparklings", desc = "Look for sparkling critters within 80 blocks in your biome.")
+        @JvmField @ConfigOption(name = "Detect visible sparklings", desc = "Show sparkling critters you can see in Safari.")
         @ConfigEditorBoolean var shiny = ConfigManager.shinyDetection
         @JvmField @ConfigOption(name = "Nearby sparklings HUD appearance", desc = "") @Accordion
         var nearbyAppearance=PanelAppearanceSettings(AppearanceConfig.panels.getValue("sparklings")) { AppearanceConfig.selectedHex }
-        @JvmField @ConfigOption(name = "Show sparkling detection alert", desc = "Show an alert when you or a connected party member finds a sparkling.")
+        @JvmField @ConfigOption(name = "Show sparkling detection alert", desc = "Show an alert when you see a sparkling critter.")
         @ConfigEditorBoolean var alert = ConfigManager.sparklingAlert
         @JvmField @ConfigOption(name="Detection alert appearance",desc="") @Accordion
         var appearance=PanelAppearanceSettings(AppearanceConfig.panels.getValue("alert")) { AppearanceConfig.selectedHex }
-        @JvmField @ConfigOption(name = "Announce sparklings to party", desc = "Share detected sparklings in party chat.")
+        @JvmField @ConfigOption(name = "Announce sparklings to party", desc = "Share your visible sparkling sightings in party chat.")
         @ConfigEditorBoolean var announce = ConfigManager.sparklingPartyAnnouncer
         @JvmField @ConfigOption(name = "Detection sound", desc = "Minecraft sound ID, such as minecraft:block.note_block.pling.")
         @ConfigEditorText var sound = ConfigManager.sparklingSound
@@ -503,14 +493,14 @@ class SafariSettings {
     class Reset {
         @JvmField @ConfigOption(name = "Restore default settings", desc = "Restore fresh-install settings and HUD layouts. This does not reset saved Safari records.")
         @ConfigEditorButton(runnableId = 14, buttonText = "Reset to Defaults") var defaults = false
-        @JvmField @ConfigOption(name = "Turn off features", desc = "Turn off all feature switches, including HUDs and automation. You can turn them back on individually.")
+        @JvmField @ConfigOption(name = "Turn off features", desc = "Turn off HUDs and other feature switches. You can turn them back on individually.")
         @ConfigEditorButton(runnableId = 15, buttonText = "Disable All Features") var disable = false
     }
 
     class Api {
         @JvmField @ConfigOption(name = "Use Shiny Hunter API", desc = "Fetch player data without your own API key. A personal key takes priority.")
         @ConfigEditorBoolean var cloud = ConfigManager.useCloudApi
-        @JvmField @ConfigOption(name = "Hypixel API key", desc = "Add your own key for online-status checks or as an alternative to Shiny Hunter.")
+        @JvmField @ConfigOption(name = "Hypixel API key", desc = "Use your own key for player data lookups.")
         @ConfigEditorButton(runnableId = 4, buttonText = "Edit API key") var edit = false
     }
 
@@ -538,13 +528,14 @@ class SafariSettings {
             13 -> { apply(); client.smSetScreen(CatchCelebrationPreviewScreen(client.smScreen ?: SafariConfigScreen(this))) }
             14 -> (client.smScreen as? SafariConfigScreen)?.confirmBulkAction(resetDefaults = true)
             15 -> (client.smScreen as? SafariConfigScreen)?.confirmBulkAction(resetDefaults = false)
+            16 -> { apply(); client.smSetScreen(net.johnceo.sparklingmutuals.alerts.WarpListScreen(client.smScreen)) }
             11 -> { apply(); client.execute {
                 client.smSetScreen(null)
                 LogImporter.runImport(LogImporter.defaultLogs())
             } }
         }
     }
-    fun isValidRunnable(id: Int) = id in setOf(1,2,3,4,7,8,9,10,11,13,14,15)
+    fun isValidRunnable(id: Int) = id in setOf(1,2,3,4,7,8,9,10,11,13,14,15,16)
     private fun saveSound() {
         val sound = miria.sound.trim()
         if (Identifier.tryParse(sound) == null) feedback("Enter a valid Minecraft sound identifier.")
@@ -594,7 +585,7 @@ class SafariSettings {
             ConfigManager::autoBiomeReports to party.biomeReports,
             ConfigManager::uniqueHideCritterEsp to modes.unique.hideCritters, ConfigManager::uniqueHideFloorDropEsp to modes.unique.hideDrops,
             ConfigManager::fullClearHideCritterEsp to modes.fullClear.hideCritters, ConfigManager::fullClearHideFloorDropEsp to modes.fullClear.hideDrops,
-            ConfigManager::sparklingHideCritterEsp to modes.sparkling.hideCritters, ConfigManager::sparklingHideFloorDropEsp to modes.sparkling.hideDrops, ConfigManager::announceStartingItems to party.startingItems, ConfigManager::huntingBoxValue to skyblock.helpers.huntingBoxValue, ConfigManager::shardSaleGuidance to skyblock.helpers.shardSaleGuidance, ConfigManager::skillOverflow to skyblock.helpers.skillOverflow, ConfigManager::skillOverflowChat to skyblock.helpers.skillOverflowChat, ConfigManager::skillOverflowNumbers to skyblock.helpers.skillOverflowNumbers, ConfigManager::estimatedItemValue to skyblock.helpers.estimatedItemValue, ConfigManager::estimatedChestValue to skyblock.helpers.estimatedChestValue, ConfigManager::highlightTeammates to safari.highlightTeammates, ConfigManager::showTeammateNames to safari.showTeammateNames, ConfigManager::profitableShardEsp to modes.unique.profitable, ConfigManager::sparklingProfitableShardEsp to modes.sparkling.profitable, ConfigManager::partyCommandsEnabled to party.enabled, ConfigManager::downtimeCommand to party.downtime, ConfigManager::useCloudApi to api.cloud, ConfigManager::hideHauntedPaintings to safari.paintings,
+            ConfigManager::sparklingHideCritterEsp to modes.sparkling.hideCritters, ConfigManager::sparklingHideFloorDropEsp to modes.sparkling.hideDrops, ConfigManager::announceStartingItems to party.startingItems, ConfigManager::huntingBoxValue to skyblock.helpers.huntingBoxValue, ConfigManager::shardSaleGuidance to skyblock.helpers.shardSaleGuidance, ConfigManager::skillOverflow to skyblock.helpers.skillOverflow, ConfigManager::skillOverflowChat to skyblock.helpers.skillOverflowChat, ConfigManager::skillOverflowNumbers to skyblock.helpers.skillOverflowNumbers, ConfigManager::estimatedItemValue to skyblock.helpers.estimatedItemValue, ConfigManager::estimatedChestValue to skyblock.helpers.estimatedChestValue, ConfigManager::profitableShardEsp to modes.unique.profitable, ConfigManager::sparklingProfitableShardEsp to modes.sparkling.profitable, ConfigManager::partyCommandsEnabled to party.enabled, ConfigManager::downtimeCommand to party.downtime, ConfigManager::useCloudApi to api.cloud, ConfigManager::hideHauntedPaintings to safari.paintings,
             ConfigManager::shinyDetection to safari.shiny, ConfigManager::hideyhoAutoAccept to safari.hideyhoAutoAccept, ConfigManager::autoSelectSafariTicket to safari.autoSelectTicket,
             ConfigManager::progressHud to tracking.progress, ConfigManager::splitsHud to tracking.splitsHud.enabled, ConfigManager::progressProfit to tracking.progressHud.profit, ConfigManager::progressHotspot to tracking.progressHud.hotspot, ConfigManager::hotspotShowAllPlayers to tracking.hotspotHud.showAllPlayers, ConfigManager::catchCountPanel to tracking.captures,
             ConfigManager::experimentalCapsulePath to safari.experimentalCapsulePath,
@@ -615,7 +606,9 @@ class SafariSettings {
             ConfigManager::allGemsAlert to safari.alerts.gems, ConfigManager::allBirdFoodAlert to safari.alerts.birdFood,
             ConfigManager::allCoinsAlert to safari.alerts.coins, ConfigManager::allIncenseAlert to safari.alerts.incense, ConfigManager::runCompleteAlert to safari.alerts.runComplete,
             ConfigManager::hideGroundCapsules to safari.hideGroundCapsules, ConfigManager::hideFlyingCapsules to safari.hideFlyingCapsules)
-        val espChanged = listOf(espGeneral.apply(),esp.apply()).any {it}
+        val espChanged = esp.apply()
+        val glowChanged = SafariEspConfig.critterGlow != espGeneral.glow
+        SafariEspConfig.critterGlow = espGeneral.glow
         val modWideCrittersChanged = modWideCritters.apply(SafariEspConfig.modWideToggles)
         val profitableCrittersChanged = profitableCritters.apply(SafariEspConfig.profitableToggles)
         val hudAppearanceChanged = listOf(safari.entryCooldown.appearance,tracking.profitableHud.appearance,tracking.lakeClearedHud.appearance,
@@ -623,27 +616,23 @@ class SafariSettings {
         val customizationChanged = customization.apply() || hudAppearanceChanged
         val distance = ConfigManager.validCapsuleDistance(safari.capsuleHideDistance)
         val pathWidth = ConfigManager.validCapsulePathWidth(safari.capsulePathWidth)
-        val waterOpacity = safari.visibility.waterOpacity.values()
         val alwaysOnCrittersChanged = alwaysOnCritters.apply(SafariEspConfig.alwaysOnToggles)
-        val alwaysOnFloorDropsChanged = alwaysOnFloorDrops.apply()
         val chatTogglesChanged = safari.visibility.chatToggles.apply()
         val objectivesChanged = BiomeObjectiveConfig.apply(tracking.objectivesHud.rows, tracking.objectivesHud.checks)
         val splitTimeFormat = SplitTimeFormat.entries.getOrElse(tracking.splitsHud.timeFormat) { SplitTimeFormat.MILLISECONDS }
         val progressRows = tracking.progressHud.rows.values()
-        val generalChanged = ConfigManager.progressRows != progressRows || espChanged || modWideCrittersChanged || profitableCrittersChanged || alwaysOnCrittersChanged || alwaysOnFloorDropsChanged || chatTogglesChanged || objectivesChanged ||
+        val generalChanged = ConfigManager.progressRows != progressRows || espChanged || glowChanged || modWideCrittersChanged || profitableCrittersChanged || alwaysOnCrittersChanged || chatTogglesChanged || objectivesChanged ||
             ConfigManager.splitsTimeFormat != splitTimeFormat ||
             bannerChanged || ConfigManager.specialCatchStyle != safari.alerts.caughtStyle || ConfigManager.doomspiralEmergenceTicks != safari.capture.doomTicks.coerceIn(1, 600) ||
-            ConfigManager.doomspiralThrowLeadTicks != safari.capture.doomLead.coerceIn(0, 40) || ConfigManager.biomeWaterOpacity != waterOpacity || ConfigManager.capsulePathWidth != pathWidth || customizationChanged || changes.any { (property, value) -> property.get() != value } ||
-            ConfigManager.safariTicketPreference != safari.ticketPreference || ConfigManager.showWhere != tracking.where || ConfigManager.capsuleHideDistance != distance ||
+            ConfigManager.doomspiralThrowLeadTicks != safari.capture.doomLead.coerceIn(0, 40) || customizationChanged || changes.any { (property, value) -> property.get() != value } ||
+            ConfigManager.showWhere != tracking.where || ConfigManager.capsuleHideDistance != distance || ConfigManager.capsulePathWidth != pathWidth ||
             ConfigManager.runCompleteVolume != safari.alerts.runVolume.coerceIn(0, 100) || ConfigManager.sparklingSoundVolume != safari.alerts.volume.coerceIn(0, 100)
         val profitPriceChanged = ConfigManager.runCoinsInstaSell != history.instaSell
         changes.forEach { (property, value) -> property.set(value) }
-        ConfigManager.safariTicketPreference = safari.ticketPreference.coerceIn(0, 1)
         ConfigManager.showWhere = tracking.where.coerceIn(0, 2)
         ConfigManager.splitsTimeFormat = splitTimeFormat
         ConfigManager.progressRows = progressRows
         ConfigManager.capsuleHideDistance = distance
-        ConfigManager.biomeWaterOpacity = waterOpacity
         ConfigManager.capsulePathWidth = pathWidth
         ConfigManager.doomspiralEmergenceTicks = safari.capture.doomTicks.coerceIn(1, 600)
         ConfigManager.doomspiralThrowLeadTicks = safari.capture.doomLead.coerceIn(0, 40)
@@ -666,13 +655,5 @@ class SafariSettings {
         ContestConfig.contestSoundVolume = miria.volume.coerceIn(0, 100)
         ContestConfig.contestWarnMinutes = warnings.joinToString(", ")
         ContestConfig.contestWarnEnabled = warnings.isNotEmpty()
-        if (contestChanged) ContestConfig.save()
-        val teammateColor = SafariEspConfig.validColor(safari.teammates.color, SafariEspConfig.teammateColor)
-        val teammateScale = SafariEspConfig.validTextScale(safari.teammates.textScale)
-        if (teammateColor != SafariEspConfig.teammateColor || teammateScale != SafariEspConfig.teammateTextScale) {
-            SafariEspConfig.teammateColor = teammateColor
-            SafariEspConfig.teammateTextScale = teammateScale
-            ConfigManager.saveSettings()
-        }
-    }
+        if (contestChanged) ContestConfig.save()    }
 }

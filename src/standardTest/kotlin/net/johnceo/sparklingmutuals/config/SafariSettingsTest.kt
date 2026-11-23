@@ -59,7 +59,6 @@ class SafariSettingsTest {
         val settings = SafariSettings()
         assertFalse(settings.party.startingItems)
         settings.party.startingItems = true
-        settings.safari.teammates.color = "0:255:100:80:200"
         ConfigManager.hotspotAnnouncer = true
         settings.miria.ticketMode = 1
         settings.miria.three = false
@@ -73,8 +72,6 @@ class SafariSettingsTest {
         ContestConfig.init(dir)
         assertTrue(ContestConfig.firstClassTicket)
         assertTrue(ConfigManager.announceStartingItems)
-        assertEquals("0:255:100:80:200", SafariEspConfig.teammateColor)
-        assertEquals(0xFF6450C8.toInt(), net.johnceo.sparklingmutuals.safari.esp.TeammateEsp.COLOR)
         assertTrue(ConfigManager.hotspotAnnouncer)
         assertFalse(ConfigManager.hideHauntedPaintings)
         assertFalse(ConfigManager.shinyDetection)

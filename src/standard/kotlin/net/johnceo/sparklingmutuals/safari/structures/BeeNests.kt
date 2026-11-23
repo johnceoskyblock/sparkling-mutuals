@@ -43,6 +43,7 @@ object BeeNests {
     val locallyResolved get() = survey.locallyResolved
     fun sharedResolved(positions: Collection<Triple<Int,Int,Int>>) { positions.forEach(survey::acceptResolved);syncRun() }
     private val lines = WorldRenderCompat.renderType("nests", cull = null)
+    private val snoozleLines by lazy(WorldRenderCompat::snoozleWaypointType)
 
     fun register() {
         AttackBlockCallback.EVENT.register { _, level, _, pos, _ ->
@@ -93,7 +94,7 @@ object BeeNests {
         val level = client.level ?: return
         if (ConfigManager.hideCritterEsp() || client.player == null || client.options.smHideGui || !SafariAssist.visualsActive(client)) return
         val camera = client.gameRenderer.smCamera.position()
-        val run = SafariTracking.ledger.current
+        val showWalls = SafariAssist.biome == SafariBiome.CAVERN
         val markers = when {
             SafariAssist.biome == SafariBiome.FOREST &&
                 SafariHelperRules.showNests(SafariFullClear.mode, SafariTracking.ledger.current, SafariSparklingMode.state) ->
@@ -109,27 +110,24 @@ object BeeNests {
                         else -> "Nest"
                     }, if (waypoint.nest) SafariEspConfig.rgb(AppearanceConfig.nestColor) else 0xFFAAAAAA.toInt())
                 }
-            SafariAssist.biome == SafariBiome.CAVERN &&
+            showWalls &&
                 SafariHelperRules.highlightSource("Snoozle", SafariFullClear.mode, SafariTracking.ledger.current, SafariSparklingMode.state) ->
-                SafariStructures.intactWalls.filter { net.johnceo.sparklingmutuals.safari.visibility.LocalVisibility.block(it, client) && level.isLoaded(it) && !level.getBlockState(it).isAir &&
+                SafariStructures.intactWalls.filter { level.isLoaded(it) && !level.getBlockState(it).isAir &&
                     it.distToCenterSqr(camera) < 40000 }.map { Triple(it, "Snoozle wall", SafariEspConfig.rgb(AppearanceConfig.snooperColor)) }
             else -> emptyList()
         }
-        val retainedMounds = emptyList<Triple<BlockPos, String, Int>>()
-        val allMarkers = markers + retainedMounds
-        lastRenderedMarkers = allMarkers.size
-        for ((pos, _, color) in allMarkers) {
-            WorldRenderCompat.box(context, lines, net.minecraft.world.phys.AABB(
+        lastRenderedMarkers = markers.size
+        if (markers.isEmpty()) return
+        val lineType = if (showWalls) snoozleLines else lines
+        for ((pos, _, color) in markers) {
+            WorldRenderCompat.box(context, lineType, net.minecraft.world.phys.AABB(
                 pos.x - .005, pos.y - .005, pos.z - .005, pos.x + 1.005, pos.y + 1.005, pos.z + 1.005), color, 3f)
         }
-        WorldRenderCompat.flush(context, lines)
+        WorldRenderCompat.flush(context, lineType)
         for ((pos, label, color) in markers) {
             val text = "$label · ${kotlin.math.sqrt(pos.distToCenterSqr(camera)).toInt()}m"
-            WorldRenderCompat.label(context, text, color, pos.x + .5, pos.y + 1.4, pos.z + .5, SafariEspConfig.labelWorldScale)
-        }
-        for ((pos, label, color) in retainedMounds) {
-            if (label.isNotEmpty()) WorldRenderCompat.markerLabel(context, label, color,
-                pos.x + .5, pos.y + 1.4, pos.z + .5, false)
+            if (showWalls) WorldRenderCompat.snoozleWallLabel(context, text, color, pos, SafariEspConfig.labelWorldScale)
+            else WorldRenderCompat.label(context, text, color, pos.x + .5, pos.y + 1.4, pos.z + .5, SafariEspConfig.labelWorldScale)
         }
     }
     /** Explain the block-data -> survey -> helper -> render boundaries without assuming a GPU failure. */

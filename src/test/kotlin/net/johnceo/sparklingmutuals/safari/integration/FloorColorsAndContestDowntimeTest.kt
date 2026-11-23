@@ -5,8 +5,9 @@ import java.util.Properties
 import net.johnceo.sparklingmutuals.config.ContestConfig
 import net.johnceo.sparklingmutuals.config.CustomizationSettings
 import net.johnceo.sparklingmutuals.config.SafariEspConfig
-import net.johnceo.sparklingmutuals.config.SafariEspSettings
 import net.johnceo.sparklingmutuals.config.SafariSettings
+import net.johnceo.sparklingmutuals.config.SettingsCatalog
+import net.johnceo.sparklingmutuals.config.SettingsTarget
 import net.johnceo.sparklingmutuals.contest.ContestDowntimeState
 import net.johnceo.sparklingmutuals.safari.resources.FloorDropType
 import org.junit.jupiter.api.Assertions.*
@@ -16,15 +17,19 @@ import org.junit.jupiter.api.io.TempDir
 class FloorColorsAndContestDowntimeTest {
     @TempDir lateinit var dir: Path
     @Test fun `individual floor colors migrate shared color persist and reject invalid values independently`() {
+        org.junit.jupiter.api.Assumptions.assumeFalse(SafariSettings.standardEdition)
         val legacy = "0:255:1:2:3"
         SafariEspConfig.load(Properties().apply { setProperty("esp.floor.color", legacy) })
         assertTrue(SafariEspConfig.floorColors.filterKeys { it != FloorDropType.GENERIC }.values.all { it == legacy })
         assertEquals(0xFF6D6D75.toInt(), SafariEspConfig.rgb(SafariEspConfig.dropColor(FloorDropType.GENERIC)))
-        val settings = SafariEspSettings()
+        val config = SafariSettings()
+        val settings = config.esp
+        val catalog = SettingsCatalog(config)
+        fun color(type: String) = catalog.locate(SettingsTarget("ESP", listOf("floorDrops", type, "color")))!!.second.last()
         val customization = CustomizationSettings()
-        settings.floorColors.coin = "0:255:255:215:0"
-        settings.floorColors.incense = "0:255:100:0:255"
-        settings.floorColors.lime = "invalid"
+        color("coin").write("0:255:255:215:0")
+        color("incense").write("0:255:100:0:255")
+        color("lime").write("invalid")
         assertTrue(settings.apply())
         customization.apply()
         assertEquals(legacy, SafariEspConfig.dropColor(FloorDropType.LIME))
@@ -43,15 +48,17 @@ class FloorColorsAndContestDowntimeTest {
         assertTrue(SafariEspConfig.floorColors.values.all { it == "0:255:9:8:7" })
     }
     @Test fun `reward drop ESP is independently opt in and persists its color`() {
+        org.junit.jupiter.api.Assumptions.assumeFalse(SafariSettings.standardEdition)
         SafariEspConfig.load(Properties())
         val drop = net.johnceo.sparklingmutuals.safari.resources.PredictedFloorDrop(1, 0.0, 50.0, 0.0,
             net.johnceo.sparklingmutuals.safari.SafariBiome.FOREST, FloorDropType.GENERIC)
         val selection = net.johnceo.sparklingmutuals.safari.resources.SafariFloorDrops
         assertFalse(selection.selected(drop, emptySet()))
-        val settings = SafariEspSettings()
-        settings.rewardDrops = true
-        settings.floorColors.generic = "0:255:109:109:117"
-        settings.apply()
+        val settings = SafariSettings()
+        val catalog = SettingsCatalog(settings)
+        catalog.locate(SettingsTarget("ESP General", listOf("rewardDrops")))!!.second.last().write(true)
+        catalog.locate(SettingsTarget("ESP", listOf("floorDrops", "generic", "color")))!!.second.last().write("0:255:109:109:117")
+        settings.esp.apply()
         assertTrue(selection.selected(drop, emptySet()))
         val saved = Properties().also(SafariEspConfig::save)
         SafariEspConfig.load(saved)

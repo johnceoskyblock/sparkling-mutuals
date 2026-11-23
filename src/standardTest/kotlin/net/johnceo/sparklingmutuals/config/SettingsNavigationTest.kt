@@ -25,10 +25,12 @@ class SettingsNavigationTest {
     }
     @Test fun `same label retains distinct mode locations and searches visible tab names`() {
         val catalog=SettingsCatalog(SafariSettings())
-        val rows=catalog.search("hide critter ESP")
+        val rows=catalog.search("hide critter highlights")
         assertTrue(rows.any { catalog.location(it)=="Safari → Modes → Unique mode" })
         assertTrue(rows.any { catalog.location(it)=="Safari → Modes → Full clear mode" })
-        assertTrue(catalog.search("Safari Unique hide").any { it.name=="Hide critter ESP" })
+        assertTrue(catalog.search("Safari Unique hide").any { it.name=="Hide critter highlights" })
+        assertEquals("Highlight Visible", catalog.highlightSection)
+        assertTrue(catalog.search("ESP").none { Regex("\\bESP\\b", RegexOption.IGNORE_CASE).containsMatchIn(it.name + " " + it.description + " " + catalog.location(it)) })
         assertTrue(catalog.search("Phantomleaf solver").isEmpty())
     }
     @Test fun `search does not duplicate shared HUD appearance bindings`() {

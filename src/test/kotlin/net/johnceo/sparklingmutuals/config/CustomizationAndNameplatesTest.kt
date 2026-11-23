@@ -6,15 +6,17 @@ import net.johnceo.sparklingmutuals.safari.*
 import net.johnceo.sparklingmutuals.safari.completion.SafariFullClear
 import net.johnceo.sparklingmutuals.safari.ui.SafariPanels
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assumptions.assumeFalse
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 
 class CustomizationAndNameplatesTest {
     @TempDir lateinit var dir: Path
     @Test fun sharedNameplatesSaveWithoutResettingAliases() {
+        assumeFalse(SafariSettings.standardEdition)
         ConfigManager.init(dir)
         val settings=SafariSettings()
-        val plates=settings.esp.nameplates
+        val plates = settings.esp.javaClass.getField("nameplates").get(settings.esp) as NameplateSettings
         plates.display=2;plates.distance=true;plates.pity=false;plates.eagle=4
         plates.colors.uniqueColors=false;plates.colors.rarityColors=false
         plates.colors.fixedColor=true;plates.critters.litterbug=true;plates.critters.wumpa=false
@@ -33,19 +35,23 @@ class CustomizationAndNameplatesTest {
         ConfigManager.init(dir)
         val catalog=SettingsCatalog(SafariSettings())
         val esp=catalog.pages.single {it.name=="ESP"}
-        val plate=esp.rows.single {it.name=="Critter nameplates"}
-        assertTrue(plate.children.any {it.field.name=="display"})
-        assertEquals("ESP → Customization → Nameplates",catalog.location(plate))
-        val visibility=catalog.pages.single {it.name=="Safari helpers"}.rows.single {it.name=="Party visibility"}
-        assertFalse(visibility.children.any {it.field.name in setOf("color","textScale")})
+        if (!SafariSettings.standardEdition) {
+            val plate=esp.rows.single {it.name=="Critter nameplates"}
+            assertTrue(plate.children.any {it.field.name=="display"})
+            assertEquals("${catalog.highlightSection} → Customization → Nameplates",catalog.location(plate))
+            val visibility=catalog.pages.single {it.name=="Safari helpers"}.rows.single {it.name=="Party visibility"}
+            assertFalse(visibility.children.any {it.field.name in setOf("color","textScale")})
+        }
         for(hud in listOf(SafariHud.PROGRESS,SafariHud.MISSING,SafariHud.OBJECTIVES,SafariHud.CAPTURES,SafariHud.HOTSPOT))
             assertNotNull(catalog.locate(HudConfigLinks.target(hud)))
     }
     @Test fun `moved teammate appearance still uses existing saved keys`() {
+        assumeFalse(SafariSettings.standardEdition)
         ConfigManager.init(dir)
         val settings=SafariSettings()
-        settings.esp.teammates.color=AppearanceConfig.color(0x123456)
-        settings.esp.teammates.textScale=3f
+        val teammates = settings.esp.javaClass.getField("teammates").get(settings.esp) as TeammateAppearanceSettings
+        teammates.color=AppearanceConfig.color(0x123456)
+        teammates.textScale=3f
         settings.apply();ConfigManager.init(dir)
         assertEquals(AppearanceConfig.color(0x123456),SafariEspConfig.teammateColor)
         assertEquals(3f,SafariEspConfig.teammateTextScale)

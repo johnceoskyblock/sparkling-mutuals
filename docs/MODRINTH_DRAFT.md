@@ -33,6 +33,6 @@ Safari party sync shares objectives with compatible clients in the current room.
 
 ### Installation and updates
 
-Use the Standard file matching your exact Minecraft version. Close Minecraft and replace the previous Sparkling Mutuals JAR before launching. If you already use the legit edition, Standard reads the same existing configuration and local history. Future Standard updates will come through Modrinth.
+Use the Standard file matching your exact Minecraft version. Close Minecraft and replace the previous Sparkling Mutuals JAR before launching. Standard uses `config/sparkling-mutuals` and imports missing saves from the previous Standard folder on first launch. Future Standard updates will come through Modrinth.
 
 Review Hypixel's modification rules before connecting. [Hypixel Allowed Modifications](https://support.hypixel.net/hc/en-us/articles/6472550754962-Hypixel-Allowed-Modifications)

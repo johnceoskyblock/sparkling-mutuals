@@ -1,4 +1,7 @@
 package net.johnceo.sparklingmutuals
+
+import net.johnceo.sparklingmutuals.safari.DoomspiralLottery
+import net.johnceo.sparklingmutuals.safari.shots.preview.CapsulePreview
 import net.johnceo.sparklingmutuals.compat.*
 
 import net.fabricmc.api.ModInitializer
@@ -34,7 +37,6 @@ import net.johnceo.sparklingmutuals.safari.SafariTracking
 import net.johnceo.sparklingmutuals.safari.automation.SafariDowntime
 import net.johnceo.sparklingmutuals.safari.completion.SafariBiomeClearTracking
 import net.johnceo.sparklingmutuals.safari.esp.SafariEsp
-import net.johnceo.sparklingmutuals.safari.esp.TeammateEsp
 import net.johnceo.sparklingmutuals.safari.hideyho.HideyhoSpotter
 import net.johnceo.sparklingmutuals.safari.resources.SafariInventoryAlerts
 import net.johnceo.sparklingmutuals.safari.sparkling.SparklingEncounters
@@ -70,9 +72,13 @@ object SparklingMutuals : ModInitializer {
     }
 
     private fun registerFeatures() {
+        net.johnceo.sparklingmutuals.alerts.WarpListRanks.register()
+        DoomspiralLottery.register()
+        CapsulePreview.register()
         net.johnceo.sparklingmutuals.safari.SafariEntryCooldown.register()
         PartyManager.init()
         HideyhoSpotter.register()
+        net.johnceo.sparklingmutuals.safari.StandardSafariKeys.register()
         SafariTracking.register()
         net.johnceo.sparklingmutuals.hud.HotspotAssignmentAlert.register()
         RunHistory.register()
@@ -88,7 +94,6 @@ object SparklingMutuals : ModInitializer {
         net.johnceo.sparklingmutuals.skyblock.UbiksCubeTimer.register()
         net.johnceo.sparklingmutuals.skyblock.market.ShardSaleGuidance.register()
         SafariEsp.register()
-        TeammateEsp.register()
         SafariIsland.register()
     }
 
@@ -99,6 +104,7 @@ object SparklingMutuals : ModInitializer {
             VanillaHudElements.CHAT,
             id("contest_hud")
         ) { graphics, deltaTracker ->
+            if (DoomspiralLottery.active) return@attachElementBefore
             ContestHud.render(graphics, deltaTracker)
             SafariAssist.render(graphics)
             net.johnceo.sparklingmutuals.hud.HotspotHud.render(graphics)
@@ -125,7 +131,6 @@ object SparklingMutuals : ModInitializer {
         net.johnceo.sparklingmutuals.hud.SafariBanners.tick(client)
         JoinWelcome.tick(client)
         PartyManager.onClientTick(client)
-        TeammateEsp.tick(client)
         PartyCommands.onClientTick(client)
         ContestTracker.onClientTick(client)
         HoneyHives.tick(client)
@@ -147,12 +152,16 @@ object SparklingMutuals : ModInitializer {
         SafariBiomeClearTracking.tick(client)
         SafariInventoryAlerts.tick(client)
         net.johnceo.sparklingmutuals.hud.MaxWin.tick(client)
-        net.johnceo.sparklingmutuals.hud.SafariAlertSequence.tick()
+        CapsulePreview.tick(client)
+        DoomspiralLottery.tick(client)
+        if (!DoomspiralLottery.active) net.johnceo.sparklingmutuals.hud.SafariAlertSequence.tick()
         HideyhoSpotter.onClientTick(client)
         SafariDowntime.onClientTick(client)
     }
 
     private fun resetSession() {
+        DoomspiralLottery.reset()
+        CapsulePreview.reset()
         net.johnceo.sparklingmutuals.alerts.AutomatedCommands.reset()
         net.johnceo.sparklingmutuals.safari.SafariEntryCooldown.reset()
         HoneyHives.disconnect()

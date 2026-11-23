@@ -5,9 +5,10 @@ Use `johnceoskyblock/sparkling-mutuals` as the home for all editions. Use the [e
 ## Edition boundaries
 
 - Keep tracking, modes, party sync, HUDs, and history in shared code. Apply shared changes once. Place edition-specific code and resources in separate source sets.
-- **Standard** is the default build and the only Modrinth edition. Reuse the legit fork's line-of-sight behavior and tests. Exclude gameplay automation, through-terrain visuals, and hidden sparkling detection and alerts from the JAR, including hooks, mixins, commands, and settings. Apply visibility rules to features that consume shared sync data. Check uncertain behavior against [Hypixel's Allowed Modifications guide](https://support.hypixel.net/hc/en-us/articles/6472550754962-Hypixel-Allowed-Modifications).
-- **Full** keeps the original features, settings, and GitHub artifact names. Offer opt-in update downloads for the same edition and Minecraft version.
+- **Standard** is the default build and the only Modrinth edition. Reuse the legit fork's line-of-sight behavior and tests. Exclude gameplay automation, through-terrain highlights of dynamic targets, and hidden sparkling detection and alerts from the JAR, including hooks, mixins, commands, and settings. Capsule trajectory geometry and fixed Snoozle wall waypoints may remain visible through terrain. Apply visibility rules to features that consume shared sync data and to critter contacts in the projection. Check uncertain behavior against [Hypixel's Allowed Modifications guide](https://support.hypixel.net/hc/en-us/articles/6472550754962-Hypixel-Allowed-Modifications).
+- **Full** keeps the original features and settings. Use the `-full` filename suffix and offer opt-in downloads for the same edition and Minecraft version.
 - **Full No Auto Update** has Full gameplay features and excludes updater code and settings from its JAR.
+- All editions share `config/sparkling-mutuals`. Standard keeps Full-only values on disk when saving or resetting settings and leaves those values inactive. Add new Full-only properties to Standard's preservation rules.
 
 ## Development and shipping
 

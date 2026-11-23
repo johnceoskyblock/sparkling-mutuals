@@ -3,6 +3,7 @@ package net.johnceo.sparklingmutuals.alerts
 import com.mojang.blaze3d.platform.InputConstants
 import net.johnceo.sparklingmutuals.compat.*
 import net.johnceo.sparklingmutuals.config.ConfigManager
+import net.johnceo.sparklingmutuals.config.SafariSettings
 import net.johnceo.sparklingmutuals.config.SettingsPalette
 import net.johnceo.sparklingmutuals.hud.UiIcons
 import net.johnceo.sparklingmutuals.safari.SafariBiome
@@ -18,7 +19,8 @@ import java.nio.file.Path
 
 /** Player cards and per-biome sparkling flags adapted from SafariUtils Ticket Trading (MIT). */
 class WarpListScreen(private val parent: Screen?, private val autoPartyChanged: (Boolean) -> Unit = {},
-                     private val onlineOnlyChanged: (Boolean) -> Unit = {}) : Screen(net.minecraft.client.Minecraft.getInstance(), net.johnceo.sparklingmutuals.hud.HudFonts.font, Component.literal("Sparkle Warping · Warp List")) {
+                     private val onlineOnlyChanged: (Boolean) -> Unit = {}) : Screen(net.minecraft.client.Minecraft.getInstance(), net.johnceo.sparklingmutuals.hud.HudFonts.font,
+    Component.literal(if (SafariSettings.standardEdition) "Sparkling Invite List" else "Sparkle Warping · Warp List")) {
     private data class Hit(val x: Int,val y: Int,val w: Int,val h: Int,val critter: String? = null,val action: ()->Unit) {
         fun contains(mx: Double,my: Double)=mx>=x && mx<x+w && my>=y && my<y+h
     }
@@ -29,7 +31,8 @@ class WarpListScreen(private val parent: Screen?, private val autoPartyChanged: 
     private var biome=SafariBiome.FOREST
     private var playerScroll=0
     private var flagScroll=0
-    private var status="Select a player, then choose which sparklings trigger an invite."
+    private var status=if (SafariSettings.standardEdition) "The invite shortcut sends one invite per press, in priority order."
+        else "Select a player, then choose which sparklings trigger an invite."
     private var importing=false
     private lateinit var name: EditBox
     private lateinit var filter: EditBox
@@ -37,7 +40,7 @@ class WarpListScreen(private val parent: Screen?, private val autoPartyChanged: 
     private val contentLeft get()=sidebar+24
     private val right get()=width-16
     private val headerControlsShareRow get() = font.width(title.string) + 16 <= right - 234
-    private val sectionTop get() = if (headerControlsShareRow) 42 else 65
+    private val sectionTop get() = if (SafariSettings.standardEdition || headerControlsShareRow) 42 else 65
     private val preferenceTop get() = sectionTop + 25
     private val inputTop get() = preferenceTop + 20
     private val actionsTop get() = inputTop + 30
@@ -73,15 +76,17 @@ class WarpListScreen(private val parent: Screen?, private val autoPartyChanged: 
         hits.clear();g.fill(0,0,width,height,SettingsPalette.background)
         g.fill(8,8,width-8,height-8,SettingsPalette.surface)
         text(g,font.plainSubstrByWidth(title.string,(right-134).coerceAtLeast(30)),16,18,SettingsPalette.accent)
-        button(g,if(ConfigManager.autoParty) "Auto-party: On" else "Auto-party: Off",if (headerControlsShareRow) right-230 else right-112,12,112,mx,my) {
-            val enabled=!ConfigManager.autoParty;ConfigManager.autoParty=enabled;autoPartyChanged(enabled);save()
-        }
-        button(g,if(ConfigManager.autoPartyOnlineOnly) "Online only: On" else "Online only: Off",right-112, if (headerControlsShareRow) 12 else 35,112,mx,my) {
-            val enabled = !ConfigManager.autoPartyOnlineOnly
-            ConfigManager.autoPartyOnlineOnly = enabled
-            onlineOnlyChanged(enabled)
-            status = "Online checks run every 2 hours and need a personal Hypixel API key (/apikey)."
-            save()
+        if (!SafariSettings.standardEdition) {
+            button(g,if(ConfigManager.autoParty) "Auto-party: On" else "Auto-party: Off",if (headerControlsShareRow) right-230 else right-112,12,112,mx,my) {
+                val enabled=!ConfigManager.autoParty;ConfigManager.autoParty=enabled;autoPartyChanged(enabled);save()
+            }
+            button(g,if(ConfigManager.autoPartyOnlineOnly) "Online only: On" else "Online only: Off",right-112, if (headerControlsShareRow) 12 else 35,112,mx,my) {
+                val enabled = !ConfigManager.autoPartyOnlineOnly
+                ConfigManager.autoPartyOnlineOnly = enabled
+                onlineOnlyChanged(enabled)
+                status = "Online checks run every 2 hours and need a personal Hypixel API key (/apikey)."
+                save()
+            }
         }
         text(g,"Players",16,sectionTop+6,SettingsPalette.muted)
         name.setY(inputTop+7);filter.setY(inputTop+7)
@@ -120,7 +125,7 @@ class WarpListScreen(private val parent: Screen?, private val autoPartyChanged: 
             text(g, font.plainSubstrByWidth(current, (right-contentLeft-100).coerceAtLeast(1)), contentLeft, sectionTop+6, rankColors[current.lowercase()] ?: SettingsPalette.text)
             button(g,"All",right-98,sectionTop,46,mx,my) { WarpList.critters.forEach { WarpList.select(current,it,true) };save() }
             button(g,"None",right-46,sectionTop,46,mx,my) { WarpList.critters.forEach { WarpList.select(current,it,false) };save() }
-            invitePreferences(g, current)
+            if (!SafariSettings.standardEdition) invitePreferences(g, current)
             val tabW=((right-contentLeft-9)/4).coerceAtLeast(30)
             SafariBiome.entries.forEachIndexed { index,entry ->
                 val x=contentLeft+index*(tabW+3)

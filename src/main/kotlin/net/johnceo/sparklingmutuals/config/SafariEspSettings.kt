@@ -66,6 +66,20 @@ class FloorDropEspSettings {
     @Accordion val floorTextSizes = FloorDropScaleSettings()
     @JvmField @ConfigOption(name = "Floor-drop colors", desc = "")
     @Accordion val floorColors = FloorDropColorSettings()
+
+    internal fun rows(path: String): List<SettingsCatalog.Row> {
+        val order=listOf("seeds","worm","berry","lime","purple","orange","icebreaker","incense","coin","generic")
+        return order.map {key ->
+            val type=net.johnceo.sparklingmutuals.safari.resources.FloorDropType.valueOf(key.uppercase())
+            val color=floorColors.javaClass.getDeclaredField(key).apply {isAccessible=true}
+            val scale=floorTextSizes.javaClass.getDeclaredField(key).apply {isAccessible=true}
+            val itemPath=path+" / "+type.label
+            SettingsCatalog.Row(floorColors,color,type.label,"",itemPath,listOf(
+                SettingsCatalog.Row(floorColors,color,"Color","",itemPath+" / Color",navigationName="color"),
+                SettingsCatalog.Row(floorTextSizes,scale,"Text size","1 = original size.",itemPath+" / Text size",navigationName="textScale")
+            ),navigationName=key,groupOverride=true)
+        }
+    }
 }
 
 class FloorDropVisibilitySettings {

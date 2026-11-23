@@ -9,8 +9,8 @@ class ReleaseUpdateCheckerTest {
 
     @Test fun `download links must identify the exact repository tag and Full Minecraft asset`() {
         val prefix = "https://github.com/johnceoskyblock/sparkling-mutuals/releases/download/v4.1.0/"
-        fun body(asset: String, manifest: String) = """[{"tag_name":"v4.1.0","assets":[{"name":"sparkling-mutuals-4.1.0+mc26.3.jar","browser_download_url":"$asset"},{"name":"build-manifest.json","browser_download_url":"$manifest"}]}]"""
-        val name = "sparkling-mutuals-4.1.0+mc26.3.jar"
+        val name = "sparkling-mutuals-4.1.0-full+mc26.3.jar"
+        fun body(asset: String, manifest: String) = """[{"tag_name":"v4.1.0","assets":[{"name":"$name","browser_download_url":"$asset"},{"name":"build-manifest.json","browser_download_url":"$manifest"}]}]"""
         val valid = ReleaseUpdateChecker.newest(body(prefix+name.replace("+", "%2B"), prefix+"build-manifest.json"), "26.3")!!
         assertEquals(prefix+name, valid.asset.toString())
         assertNotNull(valid.manifest)
@@ -19,6 +19,8 @@ class ReleaseUpdateCheckerTest {
             assertNull(ReleaseUpdateChecker.newest(body(url, prefix+"build-manifest.json"), "26.3")!!.asset)
         }
         assertNull(ReleaseUpdateChecker.newest(body(prefix+name, "https://example.com/build-manifest.json"), "26.3")!!.manifest)
+        assertNull(ReleaseUpdateChecker.newest(body(prefix+name, prefix+"build-manifest.json").replace("-full+mc", "+mc"), "26.3"))
+        assertNull(ReleaseUpdateChecker.newest("[${row("4.0.0")}]", "26.3")!!.asset)
     }
 
     @Test fun `update callback runs only for a newer compatible stable release`() {

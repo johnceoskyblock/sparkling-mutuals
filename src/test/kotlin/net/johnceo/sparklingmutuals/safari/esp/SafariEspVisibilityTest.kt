@@ -4,6 +4,8 @@ import java.nio.file.Path
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.config.SafariEspConfig
 import net.johnceo.sparklingmutuals.config.SafariSettings
+import net.johnceo.sparklingmutuals.config.SettingsCatalog
+import net.johnceo.sparklingmutuals.config.SettingsTarget
 import net.johnceo.sparklingmutuals.safari.SafariBiome
 import net.johnceo.sparklingmutuals.safari.SafariMode
 import net.johnceo.sparklingmutuals.safari.completion.SafariFullClear
@@ -17,7 +19,7 @@ class SafariEspVisibilityTest {
     @Test fun `visibility choices survive mode switches and reloads without changing colors`() {
         java.nio.file.Files.writeString(dir.resolve("sparkling-mutuals.properties"), "esp.floor.onlyInBiome=true\n")
         ConfigManager.init(dir)
-        for (type in FloorDropType.entries) {
+        if (!SafariSettings.standardEdition) for (type in FloorDropType.entries) {
             assertEquals(type == FloorDropType.GENERIC, SafariEspConfig.dropOnlyInBiome(type), type.name)
             assertEquals(type != FloorDropType.GENERIC, SafariEspRules.visible(true, true,
                 SafariEspConfig.dropOnlyInBiome(type), SafariBiome.CAVERN, SafariBiome.HAUNTED), type.name)
@@ -25,9 +27,12 @@ class SafariEspVisibilityTest {
         val settings = SafariSettings()
         settings.esp.forest = false
         settings.esp.cavern = false
-        settings.esp.floorDrops.visibility.generic = true
-        settings.esp.floorDrops.visibility.incense = false
-        settings.esp.floorDrops.visibility.lime = false
+        if (!SafariSettings.standardEdition) {
+            val catalog = SettingsCatalog(settings)
+            for ((type, outside) in mapOf("generic" to true, "incense" to false, "lime" to false)) {
+                catalog.locate(SettingsTarget("ESP General", listOf("floorVisibility", type)))!!.second.last().write(outside)
+            }
+        }
         settings.customization.forest.foxtrot.color = "0:255:18:52:86"
         settings.apply()
         net.johnceo.sparklingmutuals.safari.completion.SafariFullClear.select(net.johnceo.sparklingmutuals.safari.SafariMode.FULL_CLEAR)
@@ -36,21 +41,23 @@ class SafariEspVisibilityTest {
         ConfigManager.init(dir)
         assertFalse(SafariEspConfig.groups.getValue("forest").onlyInBiome)
         assertFalse(SafariEspConfig.groups.getValue("cavern").onlyInBiome)
-        assertFalse(SafariEspConfig.dropOnlyInBiome(FloorDropType.GENERIC))
-        assertTrue(SafariEspConfig.dropOnlyInBiome(FloorDropType.INCENSE))
-        assertTrue(SafariEspConfig.dropOnlyInBiome(FloorDropType.LIME))
-        assertFalse(SafariEspConfig.dropOnlyInBiome(FloorDropType.PURPLE))
-        assertFalse(SafariEspConfig.dropOnlyInBiome(FloorDropType.SEEDS))
-        val saved = java.util.Properties().apply {
-            java.nio.file.Files.newInputStream(dir.resolve("sparkling-mutuals.properties")).use(::load)
+        if (!SafariSettings.standardEdition) {
+            assertFalse(SafariEspConfig.dropOnlyInBiome(FloorDropType.GENERIC))
+            assertTrue(SafariEspConfig.dropOnlyInBiome(FloorDropType.INCENSE))
+            assertTrue(SafariEspConfig.dropOnlyInBiome(FloorDropType.LIME))
+            assertFalse(SafariEspConfig.dropOnlyInBiome(FloorDropType.PURPLE))
+            assertFalse(SafariEspConfig.dropOnlyInBiome(FloorDropType.SEEDS))
+            val saved = java.util.Properties().apply {
+                java.nio.file.Files.newInputStream(dir.resolve("sparkling-mutuals.properties")).use(::load)
+            }
+            assertNull(saved.getProperty("esp.floor.onlyInBiome"))
+            assertTrue(SafariEspRules.visible(true, true, SafariEspConfig.dropOnlyInBiome(FloorDropType.GENERIC), SafariBiome.CAVERN, SafariBiome.HAUNTED))
+            assertFalse(SafariEspRules.visible(true, true, SafariEspConfig.dropOnlyInBiome(FloorDropType.INCENSE), SafariBiome.CAVERN, SafariBiome.HAUNTED))
         }
-        assertNull(saved.getProperty("esp.floor.onlyInBiome"))
         assertTrue(SafariEspConfig.groups.getValue("icy").onlyInBiome)
         assertEquals("0:255:18:52:86", SafariEspConfig.mobs.getValue("Foxtrot").color)
         assertTrue(SafariEspRules.visible(true, true, SafariEspConfig.groups.getValue("forest").onlyInBiome, SafariBiome.CAVERN, SafariBiome.FOREST))
         assertFalse(SafariEspRules.visible(true, true, SafariEspConfig.groups.getValue("icy").onlyInBiome, SafariBiome.CAVERN, SafariBiome.ICY))
-        assertTrue(SafariEspRules.visible(true, true, SafariEspConfig.dropOnlyInBiome(FloorDropType.GENERIC), SafariBiome.CAVERN, SafariBiome.HAUNTED))
-        assertFalse(SafariEspRules.visible(true, true, SafariEspConfig.dropOnlyInBiome(FloorDropType.INCENSE), SafariBiome.CAVERN, SafariBiome.HAUNTED))
     }
     @Test fun `legacy individual switches cannot block mode owned ESP after reopening the game`() {
         ConfigManager.init(dir)

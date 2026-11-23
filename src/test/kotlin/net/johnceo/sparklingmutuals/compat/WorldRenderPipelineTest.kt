@@ -3,10 +3,13 @@ package net.johnceo.sparklingmutuals.compat
 //? if >=26.3 {
 /*import com.mojang.renderpearl.api.pipeline.DepthStencilState
 import com.mojang.renderpearl.api.pipeline.BlendFunction
+import com.mojang.renderpearl.api.pipeline.CompareOp
 *///? } else {
 import com.mojang.blaze3d.pipeline.DepthStencilState
 import com.mojang.blaze3d.pipeline.BlendFunction
+import com.mojang.blaze3d.platform.CompareOp
 //? }
+import net.johnceo.sparklingmutuals.config.SafariSettings
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -30,5 +33,13 @@ class WorldRenderPipelineTest {
             assertEquals(DepthStencilState.DEFAULT.depthTest(), pipeline.depthStencilState!!.depthTest())
             assertFalse(pipeline.depthStencilState!!.writeDepth())
         }
+    }
+
+    @Test fun `capsule paths can render through terrain while Standard world markers still use depth`() {
+        val projection = WorldRenderCompat.capsulePathType("test_capsule_path", WorldDepthMode.THROUGH_TERRAIN)
+        assertEquals(CompareOp.ALWAYS_PASS, projection.pipeline().depthStencilState!!.depthTest())
+        val marker = WorldRenderCompat.renderType("test_floor_tile", filled = true, depth = WorldDepthMode.THROUGH_TERRAIN)
+        val expected = if (SafariSettings.standardEdition) DepthStencilState.DEFAULT.depthTest() else CompareOp.ALWAYS_PASS
+        assertEquals(expected, marker.pipeline().depthStencilState!!.depthTest())
     }
 }

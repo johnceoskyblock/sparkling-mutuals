@@ -27,7 +27,7 @@ class SafariConfigScreen(private val settings: SafariSettings = SafariSettings()
         area("HUDs", "General", "HUDs", "Customization"),
         area("Safari", "Modes", "Safari helpers", "Miria contest", "Banner"),
         area("Party", "Party Interactions", "Sparkle Warping"),
-        area("ESP", "ESP General", "ESP", "Mode-wide Critter Toggles", "Profitable Critter Toggles", "Always On Toggle", "Floor Drop Always On Toggle"),
+        area(catalog.highlightSection, "ESP General", "ESP", "Mode-wide Critter Toggles", "Profitable Critter Toggles", "Always On Toggle", "Floor Drop Always On Toggle"),
         area("History", "History"), area("Misc", "API key", "SkyBlock"), area("Reset", "Reset")
     )
     private val tabNames = mapOf("Mode-wide Critter Toggles" to "Mode critters", "Profitable Critter Toggles" to "Profitable critters",
@@ -89,7 +89,7 @@ class SafariConfigScreen(private val settings: SafariSettings = SafariSettings()
             initialTarget?.let(catalog::locate)?.let { (page,chain) ->
                 initialQuery=""
                 selected=page;expanded.addAll(catalog.expansionFor(initialTarget!!))
-                if(page==customizationPage) customizationTab=when(chain.first().field.name) {"names"->0;"nameplates"->1;"biomeColors","critterColors"->2;else->3}
+                if(page==customizationPage) customizationTab=catalog.customizationTabFor(chain.first().field.name)
                 focusPath=chain.last().path;scrollToFocus=true;highlightUntil=System.currentTimeMillis()+8000
             }
         }

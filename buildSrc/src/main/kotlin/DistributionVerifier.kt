@@ -187,7 +187,7 @@ private fun verifyEditionContents(edition: Edition, names: List<String>) {
     }
     if (edition == Edition.STANDARD) {
         require(prefix + "safari/visibility/LocalVisibility.class" in names) { "Standard visibility policy is missing" }
-        val forbidden = listOf("alerts/SparkleAutoParty", "alerts/WarpListRefresh", "alerts/WarpListScreen", "commands/AlertCommand",
+        val forbidden = listOf("alerts/SparkleAutoParty", "alerts/WarpListRefresh", "commands/AlertCommand",
             "config/SafariSettings\$Warp",
             "safari/automation/AutoClicker", "safari/automation/GemzieAutoSelect", "safari/automation/entry/CjsApproachInput",
             "safari/automation/entry/CjsEntryDispatch", "safari/automation/entry/CjsEntryInput",
@@ -195,6 +195,11 @@ private fun verifyEditionContents(edition: Edition, names: List<String>) {
             "mixin/CjsEntry", "mixin/DisconnectedScreenAccessor", "mixin/GemzieUseMixin", "mixin/HypixelDisconnectMixin",
             "mixin/SafariAttackKeyAccessor", "mixin/SafariAutoClickerMixin", "mixin/SafariCandleMixin", "mixin/SafariTicketScreenMixin")
         require(names.none { name -> forbidden.any { name.startsWith(prefix + it) } }) { "Full gameplay automation found in Standard" }
+        val fullRenderers = listOf("safari/esp/TeammateEsp", "safari/esp/DuplicoGlow",
+            "mixin/CritterTextDisplayMixin", "mixin/SafariShinyMixin")
+        require(names.none { it.removePrefix(prefix).removeSuffix(".class").substringBefore('$') in fullRenderers }) {
+            "Full nameplate, unrestricted glow or teammate renderer found in Standard"
+        }
     }
 }
 

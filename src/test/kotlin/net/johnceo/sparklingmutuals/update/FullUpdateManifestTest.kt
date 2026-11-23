@@ -7,7 +7,7 @@ import java.net.URI
 
 class FullUpdateManifestTest {
     private val hash = "0123456789abcdef".repeat(4)
-    private val name = "sparkling-mutuals-4.1.0+mc26.3.jar"
+    private val name = "sparkling-mutuals-4.1.0-full+mc26.3.jar"
 
     private fun row(
         edition: String = "full", minecraft: String = "26.3", filename: String = name,
@@ -19,8 +19,8 @@ class FullUpdateManifestTest {
 
     @Test fun `loads the exact Full entry alongside other distribution entries`() {
         val result = FullUpdateManifest.artifact(manifest(
-            row("standard", filename = "sparkling-mutuals-standard-4.1.0+mc26.3.jar"),
-            row(minecraft = "26.2", filename = "sparkling-mutuals-4.1.0+mc26.2.jar"),
+            row("standard", filename = "sparkling-mutuals-4.1.0+mc26.3.jar"),
+            row(minecraft = "26.2", filename = "sparkling-mutuals-4.1.0-full+mc26.2.jar"),
             row(),
         ), "4.1.0", "26.3")
         assertEquals("4.1.0", result.version())
@@ -32,6 +32,7 @@ class FullUpdateManifestTest {
         listOf(
             manifest(), manifest(row(), row()), manifest(row(), version = "4.1.1"),
             manifest(row("noauto", filename = "sparkling-mutuals-full-noautoupdate-4.1.0+mc26.3.jar")),
+            manifest(row(filename = name.replace("-full", ""))),
             manifest(row(minecraft = "26.2", filename = "sparkling-mutuals-4.1.0+mc26.2.jar")),
             manifest(row(filename = "../$name")), manifest(row(sha256 = "broken")),
             manifest(row(size = "67108865")), manifest(row(size = "-1")),

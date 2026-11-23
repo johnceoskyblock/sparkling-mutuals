@@ -180,7 +180,7 @@ object HideyhoSpotter {
     }
 
     private fun position(knownOnly: Boolean = false): HideyhoHiding.Spot? {
-        val pos = SafariEsp.hideyhoPosition() ?: return null
+        val pos = SafariEsp.hideyhoPosition(visibleOnly = true) ?: return null
         return HideyhoHiding.nearestSpot(pos.x, pos.y, pos.z)
             ?: if (knownOnly) null else HideyhoHiding.Spot(floor(pos.x).toInt(), floor(pos.y).toInt(), floor(pos.z).toInt())
     }

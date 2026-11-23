@@ -84,7 +84,7 @@ object WarpList {
         }
     }
     private fun key(critter: String) = "warpList." + critter.replace(' ', '_')
-    fun load(properties: Properties) {
+    fun load(properties: Properties, automation: Boolean = true) {
         loadRevision++
         discoveryChecks.clear();resolvedPlayers.clear()
         entries.clear();players.clear();settings.clear();critterPriorities.clear()
@@ -99,14 +99,14 @@ object WarpList {
         }
         players.forEach { name ->
             val prefix = "warpList.player.${name.lowercase()}"
-            properties.getProperty("$prefix.discoveryCheckedAt")?.toLongOrNull()?.takeIf { it>=0 }?.let { discoveryChecks[name.lowercase()]=it }
+            if (automation) properties.getProperty("$prefix.discoveryCheckedAt")?.toLongOrNull()?.takeIf { it>=0 }?.let { discoveryChecks[name.lowercase()]=it }
             properties.getProperty("$prefix.uuid")?.let(net.johnceo.sparklingmutuals.sync.PartySyncProtocol::uuid)?.let { resolvedPlayers[name.lowercase()]=it }
             configure(name, InviteSettings(properties.getProperty("$prefix.priority")?.toIntOrNull() ?: 10,
-                properties.getProperty("$prefix.alwaysInvite").toBoolean()))
+                automation && properties.getProperty("$prefix.alwaysInvite").toBoolean()))
         }
     }
-    fun save(properties: Properties) {
-        discoveryChecks.forEach { (name,at) -> properties.setProperty("warpList.player.$name.discoveryCheckedAt",at.toString()) }
+    fun save(properties: Properties, automation: Boolean = true) {
+        if (automation) discoveryChecks.forEach { (name,at) -> properties.setProperty("warpList.player.$name.discoveryCheckedAt",at.toString()) }
         resolvedPlayers.forEach { (name,uuid) -> properties.setProperty("warpList.player.$name.uuid",uuid) }
         properties.setProperty("warpList.players", players.joinToString(" "))
         critters.forEach { properties.setProperty(key(it), names(it).joinToString(" ")) }
@@ -115,7 +115,7 @@ object WarpList {
         }
         settings.forEach { (name, value) ->
             properties.setProperty("warpList.player.$name.priority", value.priority.toString())
-            properties.setProperty("warpList.player.$name.alwaysInvite", value.alwaysInvite.toString())
+            if (automation) properties.setProperty("warpList.player.$name.alwaysInvite", value.alwaysInvite.toString())
         }
     }
 }

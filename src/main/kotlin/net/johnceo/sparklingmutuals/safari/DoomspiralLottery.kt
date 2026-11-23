@@ -4,10 +4,13 @@ import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents
 import net.johnceo.sparklingmutuals.compat.smHideGui
 import net.johnceo.sparklingmutuals.compat.smScreen
 import net.johnceo.sparklingmutuals.config.ConfigManager
+import net.johnceo.sparklingmutuals.config.SafariSettings
+import net.johnceo.sparklingmutuals.safari.esp.SafariEspRules
 import net.johnceo.sparklingmutuals.safari.sparkling.SparklingEncounters
 import net.johnceo.sparklingmutuals.sync.SafariPartySync
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphicsExtractor
+import net.minecraft.world.entity.Display
 import net.minecraft.world.entity.monster.warden.Warden
 import net.minecraft.world.phys.AABB
 import kotlin.random.Random
@@ -32,6 +35,7 @@ object DoomspiralLottery {
     private var summoned = false
     private var settleAt: Long? = null
     private var resultMask = 0
+    private var resultConfirmed = false
 
     internal val active get() = startAt?.let { System.nanoTime() >= it } == true
 
@@ -100,20 +104,23 @@ object DoomspiralLottery {
             return
         }
         if ((!summoned && remaining == null) || now < start || resultMask == DOOMSPIRAL_JACKPOT_MASK) return
-        if (run?.sparklingCaptures?.pending("Doomspiral") == true ||
-            SafariPartySync.hasOutstandingSharedSparkling("Doomspiral")) {
+        if (!SafariSettings.standardEdition && (run?.sparklingCaptures?.pending("Doomspiral") == true ||
+            SafariPartySync.hasOutstandingSharedSparkling("Doomspiral"))) {
             resultMask = DOOMSPIRAL_JACKPOT_MASK
             return
         }
         val level = client.level ?: return
         val warden = level.getEntitiesOfClass(Warden::class.java, ritualBounds) {
-            !it.isRemoved && it.isAlive
+            !it.isRemoved && it.isAlive && SafariPreviewVisibility.entity(client, it)
         }.minByOrNull { it.distanceToSqr(RITUAL_X, RITUAL_Y, RITUAL_Z) } ?: return
-        val labels = level.getEntities(warden, warden.boundingBox.inflate(2.0))
-            .mapNotNull { it.customName?.string } + listOfNotNull(warden.customName?.string)
+        val labels = (level.getEntities(warden, warden.boundingBox.inflate(2.0)) + warden)
+            .filter { SafariPreviewVisibility.label(client, it) }
+            .mapNotNull { if (SafariSettings.standardEdition && it is Display.TextDisplay) it.text.string else it.customName?.string }
         if (labels.any { SafariRules.sparklingSpecies(it) == "Doomspiral" }) {
+            resultConfirmed = true
             resultMask = DOOMSPIRAL_JACKPOT_MASK
-        }
+        } else if (SafariSettings.standardEdition && labels.any { SafariEspRules.labelSpecies(it) == "Doomspiral" })
+            resultConfirmed = true
     }
 
     fun serverTick(listener: Any, pingId: Int) {
@@ -121,9 +128,14 @@ object DoomspiralLottery {
         if (pingId == 0 || client.connection !== listener || world !== client.level || countdown.remaining == null) return
         countdown.serverTick()
         lastPulse = System.nanoTime()
+        if (SafariSettings.standardEdition && !resultConfirmed &&
+            (countdown.remaining ?: 0) <= DoomspiralCabinet.REVEAL_TICKS) {
+            finish()
+            return
+        }
         if (countdown.remaining == 0) {
             finish()
-            if (resultMask == DOOMSPIRAL_JACKPOT_MASK) SparklingEncounters.doomspiralRevealed()
+            if (!SafariSettings.standardEdition && resultMask == DOOMSPIRAL_JACKPOT_MASK) SparklingEncounters.doomspiralRevealed()
         }
     }
 
@@ -140,6 +152,7 @@ object DoomspiralLottery {
         summoned = false
         settleAt = null
         resultMask = 0
+        resultConfirmed = false
     }
 
     /** Returns true when the lottery takes over the vanilla and mod HUD for this frame. */

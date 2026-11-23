@@ -45,11 +45,21 @@ object WorldRenderCompat {
                     .setNormal(pose,line.normal.x.toFloat(),line.normal.y.toFloat(),line.normal.z.toFloat()).setLineWidth(width)
         }
     }
-    fun renderType(name: String, filled: Boolean = false, cull: Boolean? = false, depth: WorldDepthMode = WorldDepthMode.OCCLUDED, afterShaders: Boolean = false): RenderType {
+    fun capsulePathType(name: String, depth: WorldDepthMode, afterShaders: Boolean = false): RenderType =
+        createType(name, false, false, depth, afterShaders)
+
+    fun snoozleWaypointType(): RenderType =
+        createType("snoozle_wall_waypoints", false, false, WorldDepthMode.THROUGH_TERRAIN, false)
+
+    fun renderType(name: String, filled: Boolean = false, cull: Boolean? = false, depth: WorldDepthMode = WorldDepthMode.OCCLUDED, afterShaders: Boolean = false): RenderType =
+        createType(name, filled, cull, WorldDepthMode.OCCLUDED, afterShaders)
+
+    private fun createType(name: String, filled: Boolean, cull: Boolean?, depth: WorldDepthMode, afterShaders: Boolean): RenderType {
         val builder = RenderPipeline.builder(
             if (filled) RenderPipelines.DEBUG_FILLED_SNIPPET else RenderPipelines.LINES_SNIPPET)
             .withLocation(SparklingMutuals.id("pipeline/$name"))
-            .withDepthStencilState(DepthStencilState(DepthStencilState.DEFAULT.depthTest(), false))
+            .withDepthStencilState(DepthStencilState(
+                if (depth == WorldDepthMode.THROUGH_TERRAIN) CompareOp.ALWAYS_PASS else DepthStencilState.DEFAULT.depthTest(), false))
         // 26.3's line snippet leaves color targets to its caller; filled geometry already supplies one.
         //? if >=26.3 {
         /*if (!filled) builder.withColorTargetState(ColorTargetState(BlendFunction.TRANSLUCENT))
@@ -128,6 +138,11 @@ object WorldRenderCompat {
         labelComponent(context,Component.literal(net.johnceo.sparklingmutuals.safari.ui.CritterNames.display(text)),color,x,y,z,scale,background,shadow)
     }
 
+    fun snoozleWallLabel(context: LevelRenderContext, text: String, color: Int, pos: net.minecraft.core.BlockPos, scale: Float) {
+        labelComponent(context, Component.literal(text), color, pos.x + .5, pos.y + 1.4, pos.z + .5,
+            scale, 0x40000000, false, throughTerrain = true)
+    }
+
     /** SafariUtils' fixed vanilla-size, full-bright marker titles; sparkling titles animate per character. */
     fun markerLabel(context: LevelRenderContext, text: String, color: Int, x: Double, y: Double, z: Double, sparkling: Boolean) {
         val shown=net.johnceo.sparklingmutuals.safari.ui.CritterNames.display(text)
@@ -146,9 +161,10 @@ object WorldRenderCompat {
     }
 
     private fun labelComponent(context: LevelRenderContext, shown: Component, color: Int, x: Double, y: Double, z: Double,
-        scale: Float, background: Int, shadow: Boolean) {
+        scale: Float, background: Int, shadow: Boolean, throughTerrain: Boolean = false) {
         val client = Minecraft.getInstance()
-        if (!net.johnceo.sparklingmutuals.safari.visibility.LocalVisibility.position(Vec3(x,y,z), client)) return
+        if (!throughTerrain && !net.johnceo.sparklingmutuals.safari.visibility.LocalVisibility.position(Vec3(x,y,z), client)) return
+        val displayMode = if (throughTerrain) Font.DisplayMode.SEE_THROUGH else Font.DisplayMode.NORMAL
         val camera = client.gameRenderer.smCamera
         val pos = camera.position()
         val poses = context.poseStack()
@@ -162,11 +178,11 @@ object WorldRenderCompat {
         poses.scale(scale, -scale, scale)
         //? if >=26.2 {
         /*context.submitNodeCollector().submitText(poses, -client.font.width(shown) / 2f, 0f,
-            shown.visualOrderText, shadow, Font.DisplayMode.NORMAL,
+            shown.visualOrderText, shadow, displayMode,
             LightCoordsUtil.FULL_BRIGHT, color, background, 0)
         *///? } else {
         client.font.drawInBatch(shown.visualOrderText, -client.font.width(shown) / 2f, 0f, color, shadow,
-            Matrix4f(poses.last().pose()), context.bufferSource(), Font.DisplayMode.NORMAL, background, LightCoordsUtil.FULL_BRIGHT)
+            Matrix4f(poses.last().pose()), context.bufferSource(), displayMode, background, LightCoordsUtil.FULL_BRIGHT)
         //? }
         poses.popPose()
     }

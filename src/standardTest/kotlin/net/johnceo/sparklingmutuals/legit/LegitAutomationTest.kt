@@ -2,6 +2,7 @@ package net.johnceo.sparklingmutuals.legit
 
 import java.nio.file.Files
 import java.nio.file.Path
+import java.util.Properties
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -17,10 +18,41 @@ class LegitAutomationTest {
         assertTrue(commands.allowed("profileid"))
     }
     @TempDir lateinit var root: Path
-    @Test fun `legacy values and settings edits cannot enable gameplay automation`() {
-        Files.writeString(root.resolve("sparkling-mutuals.properties"),
-            "autoClicker=true\nautoParty=true\nwarpAlertsEnabled=true\nautoSelectSafariTicket=true\nsafariEntryAutoEnter=true\ngemzieGemAutoSelect=true\nhideyhoAutoAccept=true\nleechMode=true\nautoReconnectHypixel=true\nautoJoinSkyBlock=true\ncandleHitbox=true\nclearWater=true\n")
-        ConfigManager.init(root); ContestConfig.init(root)
+    @Test fun `Standard ignores Full values and preserves them when saving or resetting settings`() {
+        val file = root.resolve("sparkling-mutuals.properties")
+        val fullSettings = listOf("autoClicker", "autoParty", "warpAlertsEnabled", "autoSelectSafariTicket",
+            "safariEntryAutoEnter", "gemzieGemAutoSelect", "hideyhoAutoAccept", "leechMode", "autoReconnectHypixel",
+            "autoJoinSkyBlock", "candleHitbox", "clearWater").associateWith { "true" } + mapOf(
+            "warpList.players" to "TestPlayer",
+            "warpList.Foxtrot.priority.testplayer" to "3",
+            "warpDelaySeconds" to "25",
+            "repartyDelaySeconds" to "20",
+            "waterOpacity.forest" to "25",
+            "highlightTeammates" to "false",
+            "showTeammateNames" to "true",
+            "esp.teammate.color" to "0:255:12:34:56",
+            "esp.nameplates.distance" to "true",
+            "esp.critterBoxes" to "true",
+            "esp.floor.coin.textScale" to "4.0",
+            "esp.floor.coin.color" to "0:255:65:53:32",
+            "esp.floor.lime.alwaysOn" to "false",
+            "esp.floor.incense.onlyInBiome" to "true",
+            "esp.floor.rewards.enabled" to "true",
+            "esp.scrappy.textScale" to "3.0",
+            "safariTicketPreference" to "1",
+            "migration.sparkleWarpTimers22_27" to "false"
+        )
+        Files.newOutputStream(file).use { output ->
+            Properties().apply { putAll(fullSettings) }.store(output, null)
+        }
+        fun assertPreserved() {
+            val saved = Properties().apply { Files.newInputStream(file).use(::load) }
+            assertEquals(fullSettings, fullSettings.keys.associateWith(saved::getProperty))
+        }
+
+        ConfigManager.init(root, "4.4.3")
+        ContestConfig.init(root)
+        assertPreserved()
         assertFalse(ConfigManager.autoClicker)
         assertFalse(ConfigManager.autoParty)
         assertFalse(ConfigManager.warpAlertsEnabled)
@@ -33,14 +65,20 @@ class LegitAutomationTest {
         assertFalse(ConfigManager.autoJoinSkyBlock)
         assertFalse(ConfigManager.candleHitbox)
         assertFalse(ConfigManager.clearWater)
+        assertEquals(27, ConfigManager.warpDelaySeconds)
+        assertEquals(0, ConfigManager.safariTicketPreference)
         ConfigManager.autoClicker = true
         ConfigManager.safariEntryAutoEnter = true
         assertFalse(ConfigManager.autoClicker)
         assertFalse(ConfigManager.safariEntryAutoEnter)
+        ConfigManager.progressHud = false
         ConfigManager.save()
-        val saved = java.util.Properties().apply { Files.newInputStream(root.resolve("sparkling-mutuals.properties")).use(::load) }
-        assertNull(saved.getProperty("autoClicker"))
-        assertNull(saved.getProperty("leechMode"))
+        assertPreserved()
+        ConfigManager.init(root)
+        assertFalse(ConfigManager.progressHud)
+        ConfigManager.resetSettings()
+        assertPreserved()
+        assertTrue(ConfigManager.progressHud)
         val catalog = SettingsCatalog(SafariSettings())
         assertTrue(catalog.search("auto-click").isEmpty())
         assertTrue(catalog.search("auto-entry").isEmpty())

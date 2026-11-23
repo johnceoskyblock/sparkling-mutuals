@@ -85,7 +85,8 @@ function Get-ShipReleaseLayout([string]$Properties) {
 }
 function Get-ShipJarNames([string]$Version,[string]$Layout) {
     foreach ($minecraft in @('26.1.2','26.2','26.3')) {
-        "sparkling-mutuals-$Version+mc$minecraft.jar"
+        $suffix = if ($Layout -eq 'editions') { '-full' } else { '' }
+        "sparkling-mutuals-$Version$suffix+mc$minecraft.jar"
         if ($Layout -eq 'editions') { "sparkling-mutuals-$Version-full-no-auto-update+mc$minecraft.jar" }
     }
 }

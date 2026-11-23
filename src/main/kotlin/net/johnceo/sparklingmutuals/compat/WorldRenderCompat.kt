@@ -45,6 +45,9 @@ object WorldRenderCompat {
                     .setNormal(pose,line.normal.x.toFloat(),line.normal.y.toFloat(),line.normal.z.toFloat()).setLineWidth(width)
         }
     }
+    fun capsulePathType(name: String, depth: WorldDepthMode, afterShaders: Boolean = false): RenderType =
+        renderType(name, depth = depth, afterShaders = afterShaders)
+
     fun renderType(name: String, filled: Boolean = false, cull: Boolean? = false, depth: WorldDepthMode = WorldDepthMode.THROUGH_TERRAIN, afterShaders: Boolean = false): RenderType {
         val builder = RenderPipeline.builder(
             if (filled) RenderPipelines.DEBUG_FILLED_SNIPPET else RenderPipelines.LINES_SNIPPET)

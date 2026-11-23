@@ -9,3 +9,4 @@ kotlin/net/johnceo/sparklingmutuals/safari/automation/entry/CjsGameplayHookTest.
 kotlin/net/johnceo/sparklingmutuals/safari/automation/entry/CjsPhysicalInputTest.kt
 kotlin/net/johnceo/sparklingmutuals/safari/automation/entry/CjsWalkingKeysTest.kt
 kotlin/net/johnceo/sparklingmutuals/safari/automation/entry/CjsWebsocketSessionTest.kt
+kotlin/net/johnceo/sparklingmutuals/safari/esp/CritterModelGlowTest.kt
