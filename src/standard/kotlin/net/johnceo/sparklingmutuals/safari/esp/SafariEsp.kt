@@ -201,6 +201,12 @@ object SafariEsp {
             terrain(it).type == net.minecraft.world.phys.HitResult.Type.MISS
         }
     }
+    /** Reuse the existing species/body scan; capture markers compete before exclusion. */
+    internal fun sparklingParticleCandidates(client: Minecraft): List<Triple<Entity,String?,Boolean>> =
+        captureTargets.filter { live(it, client) }.map {
+            Triple(it.entity, it.species as String?, hiddenOrCapturing(it, client))
+        } + captureMarkers.filterNot { it.isRemoved }.map { Triple(it, null, true) }
+
     internal fun texture(profile: GameProfile?) = SafariEspRules.textureHash(profile?.properties()?.get("textures")?.firstOrNull()?.value())
     private fun texture(stack: ItemStack) = texture(stack.get(DataComponents.PROFILE)?.partialProfile())
     internal fun describe(entity: Entity): EspEntity = describe(entity, entity.type.toShortString())
@@ -761,7 +767,7 @@ object SafariEsp {
         val client = Minecraft.getInstance()
         if (!SafariAssist.visualsActive(client) || client.player == null || client.options.smHideGui) return
         val playerBiome = SafariAssist.biome
-        if (SafariEspConfig.critterBoxes) {
+        if (SafariEspConfig.critterBoxes || SafariEspConfig.critterGlow) {
             val delta = client.deltaTracker.getGameTimeDeltaPartialTick(false)
             val now = System.currentTimeMillis()
             for (target in targets) {
@@ -777,6 +783,11 @@ object SafariEsp {
                     if (!LocalVisibility.entity(entity, client, body)) continue
                     body
                 }
+                // Vanilla glow outlines the entire model; use depth-tested geometry when terrain
+                // hides part of it, or when this model cannot use the glow pass.
+                if (!net.johnceo.sparklingmutuals.safari.visibility.VisibleCritterHighlightPolicy.box(
+                        SafariEspConfig.critterBoxes, SafariEspConfig.critterGlow, supportsGlow(target),
+                        SafariEspConfig.critterGlow && supportsGlow(target) && LocalVisibility.clearModel(entity, client, box))) continue
                 WorldRenderCompat.box(context, lines, box, highlightColor(target))
             }
             WorldRenderCompat.flush(context, lines)

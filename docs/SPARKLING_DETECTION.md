@@ -4,7 +4,7 @@
 
 The client matches sparkling names and known skins to a critter and its displayed model, then reconciles the label and body as one sighting. Capture labels and models riding a capture capsule are excluded from new alerts. The **Detected sparklings** HUD lists identified critters with biome and distance, up to six rows plus an overflow count.
 
-- **Standard** gates highlights, HUD rows, and identified alerts on local visibility and rechecks visibility before a queued alert plays. It uses local identified sightings for the alert.
+- **Standard** gates highlights, HUD rows, and identified alerts on local visibility and rechecks visibility before a queued alert plays. Once started, the seven-second alert finishes even if the critter leaves view; highlights and nearby rows still require current visibility. A recognised sparkling skin can identify a visible body without a visible nametag. It uses local identified sightings for the alert.
 - **Full** and **Full No Auto Update** can display loaded detections and accept a named discovery from another compatible client in the same Safari run. Local and shared detections use the same per-species alert memory.
 
 ## Particle evidence
@@ -26,3 +26,13 @@ Sightings do not add capture requirements. Confirmed sparkling catches are evalu
 ## Last updated
 
 2026-11-23 (America/New_York) — Reconciled visible, shared, and particle-only sightings with the two gameplay editions.
+
+Standard critter highlighting uses a depth-tested box fallback when terrain partially blocks a model or the model cannot use glow. Fully hidden models stay unmarked; covered box edges remain hidden by terrain.
+
+## Standard detection integration
+
+Standard combines named sightings and known skins with repeated particle corroboration on the existing critter-body scan. It requires three matching WAX_ON packets (count 5, spreads 0.30/0.50/0.30, speed 1.00), associates them within 1.5 blocks with a live identified body, rejects equidistant ambiguity and capture candidates, and expires evidence after 2.5 seconds. Evidence is bounded to 256 identities and resets on departure/world change. Anonymous packet locations no longer drive Standard alerts.
+
+The first alert requires body visibility for Hideyho, Hideonwall, Duplico, Bloodbat and Hideonfloor. Other species can qualify by visible body or a vanilla-rendered custom name, including through terrain. Duplico accepts direct targeting or a ray reaching its nearby disguise surface; paintings remain blockers. Started alerts keep their normal duration; moving highlights remain visibility-gated. This does not add personal catches or replace run completion rules.
+
+Behavior reference inspected: SafariUtils commit 12525e676f44299ebbe117c665351b8dc4650a9b, SparklingWatch, ParticleDiagnostics, VisibilityCheck and HideyhoSolver. This integration reuses Mutuals' own detector, alert queue, skin registry and capture tracking rather than importing their Java implementation.

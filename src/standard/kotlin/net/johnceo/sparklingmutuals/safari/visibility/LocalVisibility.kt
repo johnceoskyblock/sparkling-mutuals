@@ -65,9 +65,33 @@ internal object LocalVisibility {
             position(entity.position().add(0.0, entity.bbHeight + .5, 0.0), client)
     }
 
-    fun sighting(body: Entity, name: Entity, client: Minecraft = Minecraft.getInstance()): Boolean =
-        if (body === name) entity(body, client) || label(name, client)
-        else entity(body, client) && label(name, client)
+    fun sighting(body: Entity, name: Entity, client: Minecraft = Minecraft.getInstance(), species: String = ""): Boolean {
+        val direct = entity(body,client) ||
+            ((client.hitResult as? net.minecraft.world.phys.EntityHitResult)?.entity === body && !body.isRemoved)
+        val hidden = species in setOf("Hideyho","Hideonwall","Duplico","Bloodbat","Hideonfloor")
+        val bodyVisible = direct || species == "Duplico" && decorated(body,client)
+        return VisibleSparklingPolicy.sighting(bodyVisible, !hidden && visibleName(name,client), hidden)
+    }
+
+    private fun decorated(body: Entity, client: Minecraft): Boolean {
+        val level=client.level ?: return false
+        val player=client.player ?: return false
+        if (body.isRemoved || level.getEntity(body.id) !== body || !inView(body.boundingBox,client)) return false
+        val point=body.boundingBox.center
+        val hit=level.clip(ClipContext(client.gameRenderer.smCamera.position(),point,
+            ClipContext.Block.OUTLINE,ClipContext.Fluid.NONE,player))
+        return hit.type==HitResult.Type.BLOCK && hit.location.distanceToSqr(point)<=.81 &&
+            reaches(hit.location,client,hit.blockPos)
+    }
+
+    /** Vanilla deliberately renders these custom names through terrain. */
+    private fun visibleName(name: Entity, client: Minecraft): Boolean {
+        val level=client.level ?: return false
+        val camera=client.gameRenderer.smCamera.position()
+        return !name.isRemoved && level.getEntity(name.id) === name && name.isCustomNameVisible &&
+            !name.customName?.string.isNullOrBlank() && name.distanceToSqr(camera.x,camera.y,camera.z)<=4096 &&
+            name.shouldRender(camera.x,camera.y,camera.z) && inView(name.boundingBox.inflate(.5),client)
+    }
 
     fun block(pos: BlockPos, client: Minecraft = Minecraft.getInstance()): Boolean {
         val level = client.level ?: return false

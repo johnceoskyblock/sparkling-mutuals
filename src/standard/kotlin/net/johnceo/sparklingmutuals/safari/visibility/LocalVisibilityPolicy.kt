@@ -15,3 +15,15 @@ internal class VisibleDiscoveryMemory {
     fun contains(key: String) = key in seen
     fun reset() = seen.clear()
 }
+
+/** Standard sparkling presentation decisions, kept independent of Minecraft for lifecycle tests. */
+internal object VisibleSparklingPolicy {
+    fun sighting(modelVisible: Boolean, labelVisible: Boolean, hiddenSpecies: Boolean) =
+        modelVisible || !hiddenSpecies && labelVisible
+    fun alertVisible(currentlyVisible: Boolean, started: Boolean) = started || currentlyVisible
+}
+
+internal object VisibleCritterHighlightPolicy {
+    fun box(explicitBoxes: Boolean, glow: Boolean, supportsGlow: Boolean, clearModel: Boolean) =
+        explicitBoxes || glow && (!supportsGlow || !clearModel)
+}

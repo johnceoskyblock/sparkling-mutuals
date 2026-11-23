@@ -24,3 +24,9 @@ GitHub releases provide all three builds for Minecraft **26.1.2**, **26.2**, and
 | **Standard** | None | Manual downloads |
 | **Full** | `-full` | Verified in-game downloads with optional automatic downloads |
 | **Full No Auto Update** | `-full-no-auto-update` | Manual downloads |
+
+### Standard fixes
+- Keep an already-started Sparkling alert visible for its normal duration after the critter goes out of sight.
+- Recognise visible Sparkling skins without requiring a visible nametag, including Hideyho.
+- Keep partially visible critters marked with a depth-tested box when their whole-model glow cannot be shown safely.
+- Add corroborated particle-based Sparkling identification and SafariUtils-style Safe Mode visibility, including body-only checks for hidden species and prop-aware Duplico sighting.

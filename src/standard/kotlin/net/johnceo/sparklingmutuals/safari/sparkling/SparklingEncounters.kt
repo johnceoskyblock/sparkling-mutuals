@@ -109,10 +109,13 @@ object SparklingEncounters {
         val world = Minecraft.getInstance().level
         val alerts = net.johnceo.sparklingmutuals.hud.SafariAlertSequence.queue
         if (notice.unknown) queuedParticle = notice
+        var started = false
         alerts.submit(this, 7_000, notice.name, valid = {
-            visibility[notice.id]?.invoke() == true && ConfigManager.sparklingAlert && Minecraft.getInstance().level === world &&
+            net.johnceo.sparklingmutuals.safari.visibility.VisibleSparklingPolicy.alertVisible(
+                visibility[notice.id]?.invoke() == true, started) && ConfigManager.sparklingAlert && Minecraft.getInstance().level === world &&
                 (SafariAssist.inSafari || net.johnceo.sparklingmutuals.safari.SafariIsland.onIsland)
         }, finish = { banner = null }) {
+            started = true
             banner = if (notice.unknown) queuedParticle ?: notice else notice
             if (notice.unknown) queuedParticle = null
             memory.alert(notice.id, true, notice.name)
@@ -134,7 +137,6 @@ object SparklingEncounters {
         val client = Minecraft.getInstance()
         if (!SafariAssist.inSafari && !net.johnceo.sparklingmutuals.safari.SafariIsland.onIsland) return
         val notice = banner ?: return
-        if (visibility[notice.id]?.invoke() != true) return
         val name = notice.name
         val where = notice.where
         val remaining = 7000 - (System.currentTimeMillis() - shownAt)
