@@ -5,7 +5,15 @@ function Invoke-ShipNative([string]$Program, [string[]]$Arguments) {
     return ($output -join "`n").TrimEnd()
 }
 function Invoke-ShipJson([string[]]$Arguments) {
-    Invoke-ShipNative gh $Arguments | ConvertFrom-Json -Depth 100
+    # gh emits UTF-8 JSON. CMD can leave PowerShell using an OEM code page,
+    # which corrupts Unicode notes before JSON parsing and defeats every retry.
+    $previousEncoding = [Console]::OutputEncoding
+    try {
+        [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
+        Invoke-ShipNative gh $Arguments | ConvertFrom-Json -Depth 100
+    } finally {
+        [Console]::OutputEncoding = $previousEncoding
+    }
 }
 function Test-ShipNotes([string]$Actual,[string]$Expected) {
     # Preserve Markdown spaces/content; normalize only line endings and final newlines.

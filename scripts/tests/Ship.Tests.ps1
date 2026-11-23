@@ -158,6 +158,28 @@ try {
         Expect-Failure { Set-ShipVersion 'mod_version=4.3.9' '4.2.9' } 'must be newer'
         Assert ((Set-ShipVersion 'mod_version=4.4.0-beta.1' '4.4.0') -eq 'mod_version=4.4.0') 'Beta promotion failed'
     }
+    Test 'GitHub JSON preserves Unicode under CMD encoding and restores encoding on errors' {
+        $previousEncoding = [Console]::OutputEncoding
+        $nativePowerShell = (Get-Process -Id $PID).Path
+        $expected = "What$([char]0x2019)s New $([char]0x2192) Standard"
+        $jsonBytes = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes((@{body=$expected} | ConvertTo-Json)))
+        $emitter = "[Console]::OpenStandardOutput().Write([Convert]::FromBase64String('$jsonBytes'))"
+        $nativeJsonCommand = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($emitter))
+        # Retain a real native-process byte boundary; the normal gh mock is a PS function.
+        function gh { & $nativePowerShell -NoProfile -EncodedCommand $nativeJsonCommand }
+        try {
+            [Console]::OutputEncoding = [Text.Encoding]::GetEncoding(437)
+            $decoded = Invoke-ShipJson @('api','fixture')
+            Assert ($decoded.body -ceq $expected) 'UTF-8 release text was corrupted by the CMD code page'
+            Assert ([Console]::OutputEncoding.CodePage -eq 437) 'Caller encoding was not restored after success'
+            $emitter = "[Console]::OpenStandardOutput().Write([Text.Encoding]::UTF8.GetBytes('invalid JSON'))"
+            $nativeJsonCommand = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($emitter))
+            Expect-Failure { Invoke-ShipJson @('api','fixture') } 'JSON'
+            Assert ([Console]::OutputEncoding.CodePage -eq 437) 'Caller encoding was not restored after failure'
+        } finally {
+            [Console]::OutputEncoding = $previousEncoding
+        }
+    }
     Test 'Notes comparison tolerates line endings but preserves Markdown content and case' {
         Assert (Test-ShipNotes "## Features`r`n- Fix`r`n" "## Features`n- Fix") 'Line endings were treated as a content change'
         Assert (!(Test-ShipNotes 'Fix A' 'Fix B')) 'Different notes were accepted'
