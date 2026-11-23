@@ -122,6 +122,7 @@ fun verifyJar(path: Path, target: TargetSpec, modVersion: String, edition: Editi
                 ?: throw IllegalArgumentException("Missing runtime resource: $name")
             val metadata = json(entry("fabric.mod.json"))
             require(metadata["id"] == "sparkling-mutuals" && metadata["version"] == modVersion && metadata["environment"] == "client") { "Incorrect mod identity/version/environment" }
+            require(metadata["license"] == "LGPL-2.1-only") { "Incorrect project license metadata" }
             val declaredEdition = (metadata["custom"] as? Map<*, *>)?.get("sparkling-mutuals:edition")
             require(declaredEdition == edition.id) { "Incorrect mod edition" }
             verifyEditionContents(edition, names)
@@ -133,7 +134,11 @@ fun verifyJar(path: Path, target: TargetSpec, modVersion: String, edition: Editi
             require(main?.any { it is Map<*, *> && it["value"] == "net.johnceo.sparklingmutuals.SparklingMutuals" && it["adapter"] == "kotlin" } == true) { "Missing Kotlin entrypoint" }
             entry("net/johnceo/sparklingmutuals/SparklingMutuals.class")
             entry(metadata["icon"] as? String ?: throw IllegalArgumentException("Missing icon"))
-            entry("LICENSE_sparkling-mutuals")
+            val projectLicense = String(entry("LICENSE_sparkling-mutuals"), Charsets.UTF_8)
+            require(projectLicense.contains("GNU LESSER GENERAL PUBLIC LICENSE") && projectLicense.contains("Version 2.1")) { "Incorrect packaged project license" }
+            entry("licenses/SkyHanni-LGPL-2.1.txt")
+            entry("licenses/README.md")
+            entry("licenses/HM-API-LICENSE")
             require(names.any { it.startsWith("licenses/") && !it.endsWith("/") }) { "Missing third-party notices" }
             val mixinFiles = metadata["mixins"] as? List<*> ?: throw IllegalArgumentException("Missing mixins")
             require(mixinFiles.isNotEmpty()) { "Empty mixin configuration" }

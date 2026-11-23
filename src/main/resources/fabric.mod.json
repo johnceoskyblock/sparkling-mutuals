@@ -17,7 +17,7 @@
 		"sources": "https://github.com/johnceoskyblock/sparkling-mutuals",
 		"issues": "https://github.com/johnceoskyblock/sparkling-mutuals/issues"
 	},
-	"license": "CC0-1.0",
+	"license": "LGPL-2.1-only",
 	"icon": "assets/sparkling-mutuals/icon.png",
 	"environment": "client",
 	"entrypoints": {

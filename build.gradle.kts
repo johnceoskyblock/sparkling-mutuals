@@ -160,4 +160,7 @@ tasks.jar {
     from(rootProject.file("licenses")) { into("licenses") }
     from(rootProject.file("LICENSE")) { rename { "LICENSE_sparkling-mutuals" } }
 }
-tasks.named<Jar>("sourcesJar") { from(rootProject.file("licenses")) { into("licenses") } }
+tasks.named<Jar>("sourcesJar") {
+    from(rootProject.file("licenses")) { into("licenses") }
+    from(rootProject.file("LICENSE")) { rename { "LICENSE_sparkling-mutuals" } }
+}

@@ -90,11 +90,27 @@ The features below are available in **Standard**, the default edition of Sparkli
 | **Full** | `sparkling-mutuals-<version>-full+mc<minecraft>.jar` | `./gradlew buildAllTargets -Pedition=full` |
 | **Full No Auto Update** | `sparkling-mutuals-<version>-full-no-auto-update+mc<minecraft>.jar` | `./gradlew buildAllTargets -Pedition=full-no-auto-update` |
 
-**Standard** is the default edition described above. **Full** is the extended version of the mod, with **Download Update** and opt-in **Auto Update** in `/sm`. Verified updates install after Minecraft closes. **Full No Auto Update** has the same features as Full and uses manual downloads, as does Standard. Standard’s Modrinth publication is pending.
+**Standard** is the default edition described above. **Full** is the extended version of the mod, with **Download Update** and opt-in **Auto Update** in `/sm`. Verified updates install after Minecraft closes. **Full No Auto Update** has the same gameplay features as Full and uses manual downloads, as does Standard. Standard’s Modrinth publication is pending.
 
 All editions share settings, HUD layouts, and Safari records within the same Minecraft instance at `config/sparkling-mutuals`. Edition-specific preferences are saved for when you switch back.
 
 Use Java 25 to build and replace `./gradlew` with `./gradlew.bat` on Windows. Verified JARs go to `build/distributions/<version>/<edition>`. [Shipping guide](docs/SHIPPING.md)
+
+</details>
+
+<details>
+<summary><strong>Full version features</strong></summary>
+
+Full and Full No Auto Update extend the Standard feature set with:
+
+- Through-terrain critter highlights, named floor drops, teammate highlights, custom nameplates, and catch pity.
+- Sparkling alerts shared by compatible clients in the same Safari instance.
+- Sparkle Warping, the Warp List, automatic party invites, reparty and warp timers, and leech invites.
+- Sparkling Auto-entry, ticket selection, entry guards, and capture helpers.
+
+These additions are excluded from Standard. Only Full includes update checks, verified downloads, and the restart installer; Full No Auto Update excludes that update code too.
+
+[Edition boundaries and Standard verification](docs/EDITION_CONSOLIDATION_HANDOFF.md) · [Modrinth submission notes](docs/MODRINTH_DRAFT.md)
 
 </details>
 
@@ -106,6 +122,10 @@ Use Java 25 to build and replace `./gradlew` with `./gradlew.bat` on Windows. Ve
 - [GitHub releases](https://github.com/johnceoskyblock/sparkling-mutuals/releases)
 - [GitHub issues](https://github.com/johnceoskyblock/sparkling-mutuals/issues)
 - [Discord](https://discord.com/channels/1567856303341051905/1567859199491186749)
+
+## License
+
+Sparkling Mutuals is distributed under [LGPL-2.1-only](LICENSE). Third-party code retains its original notices and applicable license terms. See the [license and attribution inventory](licenses/README.md) for component sources, original assets, and the earlier CC0 dedication. Corresponding source and build scripts are available from this repository at each release tag.
 
 ## Credits
 

@@ -9,8 +9,8 @@ https://github.com/SkyHanniStudios/SkyHanni/blob/b3543887dfb80d95ff9880b3f610167
 Adaptation date: 2026-10-19.
 Adapted files: misc/phantomleaf/PhantomleafState.kt and
 misc/phantomleaf/PhantomleafSolver.kt under src/main/kotlin/net/johnceo/sparklingmutuals/.
-These derived files retain LGPL-2.1 rather than the CC0 license for the
-original portions of Sparkling Mutuals. The LGPL license is included alongside
+These derived files retain LGPL-2.1 and are not covered by the historical CC0 dedication for original
+Sparkling Mutuals contributions. The current project distribution is LGPL-2.1-only. The LGPL license is included alongside
 this notice in SkyHanni-LGPL-2.1.txt.
 
 Changes: separated client-independent calculation/state, replaced SkyHanni
