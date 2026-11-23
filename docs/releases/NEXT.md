@@ -4,7 +4,7 @@
 - **Standard** includes shared Safari tracking, party sync, HUDs, and history with visible critter outlines, generic floor-drop highlights, and local sparkling alerts. Gameplay automation and hidden-target highlights are excluded.
 - **Full** keeps the original gameplay features and adds a **Download Update** button and opt-in **Auto Update** toggle. Downloads match your edition and Minecraft version, are verified before installation, and install after Minecraft closes. Automatic downloads default off; failed installations retain a verified rollback copy and support retry.
 - **Full No Auto Update** keeps Full's gameplay features without in-game update checks, downloads, or the installer.
-- GitHub releases provide Full (`-full`) and Full No Auto Update (`-full-no-auto-update`) JARs. Standard uses the unsuffixed filename and remains available through Actions test builds while Modrinth publication is pending. Install only one edition and match its `+mc` suffix to your Minecraft version.
+- GitHub releases provide all three editions: Standard (unsuffixed), Full (`-full`), and Full No Auto Update (`-full-no-auto-update`). Modrinth publication is pending. Install only one edition and match its `+mc` suffix to your Minecraft version.
 
 ## Shared settings and Standard helpers
 
@@ -23,4 +23,4 @@
 
 - Improved Warp List rank colors using party-roster and tab-list evidence.
 - Corrected installed-release highlights so the What's New screen reflects the current upgrade and includes features from skipped releases.
-- Updated release detection and download verification for the new Full filenames, and strengthened shipping checks for the six GitHub JARs and their manifest.
+- Updated release detection and download verification for the new Full filenames, and strengthened shipping checks for all nine GitHub JARs and their manifest.

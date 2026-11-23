@@ -66,20 +66,24 @@ class ReleasePublishingTest {
         assertEquals(0,api.writes); assertEquals(0,api.publications)
     }
 
-    @Test fun consolidatedReleasePublishesSixFullFamilyJarsAndManifest() {
+    @Test fun consolidatedReleasePublishesAllNineJarsAndManifest() {
         val legacy = releaseFiles()
         val noUpdate = legacy.map {
             val edition = Edition.FULL_NO_AUTO_UPDATE
             it.copy(path = it.path.resolveSibling(edition.jarName(it.modVersion, it.minecraft)), edition = edition)
         }
+        val standard = legacy.map {
+            val edition = Edition.STANDARD
+            it.copy(path = it.path.resolveSibling(edition.jarName(it.modVersion, it.minecraft)), edition = edition)
+        }
         val manifest = VerifiedManifest(java.nio.file.Path.of("build-manifest.json"), 500, "c".repeat(64))
         val api = FakeApi()
-        publishVerifiedRelease(api, "v3.3.0", "3.3.0", legacy + noUpdate + manifest)
-        assertEquals(7, api.uploads)
+        publishVerifiedRelease(api, "v3.3.0", "3.3.0", legacy + noUpdate + standard + manifest)
+        assertEquals(10, api.uploads)
         assertEquals(1, api.publications)
         val incomplete = FakeApi()
         assertThrows(IllegalArgumentException::class.java) {
-            publishVerifiedRelease(incomplete, "v3.3.0", "3.3.0", legacy + noUpdate)
+            publishVerifiedRelease(incomplete, "v3.3.0", "3.3.0", legacy + noUpdate + manifest)
         }
         assertEquals(0, incomplete.writes)
     }

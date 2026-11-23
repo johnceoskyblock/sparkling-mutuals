@@ -35,7 +35,7 @@ abstract class PublishReleaseTask : DefaultTask() {
         }
         val directory = distributionDirectory.get().asFile
         val files = verifyDistribution(directory.listFiles()!!.filter { it.extension == "jar" }.map { it.toPath() }, targets,
-            version, setOf(Edition.FULL, Edition.FULL_NO_AUTO_UPDATE))
+            version, Edition.entries.toSet())
         val manifest = verifyPublicManifest(directory.resolve("build-manifest.json").toPath(), version, files)
         val token = requireNotNull(env["GITHUB_TOKEN"]?.takeIf { it.isNotBlank() }) { "Missing GitHub token" }
         val api = GitHubReleaseApi(token, sha)

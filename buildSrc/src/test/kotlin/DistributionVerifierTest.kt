@@ -48,18 +48,18 @@ class DistributionVerifierTest {
         entries["fabric.mod.json"] = JsonOutput.toJson(metadata).toByteArray()
         return dir.resolve(edition.jarName("3.3.0", target.minecraft)).also { Files.write(it, zip(entries)) }
     }
-    @Test fun verifyNineJarsAndPreparePublicManifestFromOnlyTheFullEditions() {
+    @Test fun verifyNineJarsAndPreparePublicManifestForAllEditions() {
         val editions = Edition.entries.toSet()
         val matrix = verifyDistribution(editions.flatMap { edition -> targets.map { jar(it, edition) } },
             targets, "3.3.0", editions)
         assertEquals(9, matrix.size)
-        val publicEditions = editions - Edition.STANDARD
+        val publicEditions = editions
         val output = dir.resolve("public")
         val publicJars = collectDistribution(matrix.filter { it.edition in publicEditions }.map { it.path },
             targets, "3.3.0", output, publicEditions)
         val manifest = output.resolve("build-manifest.json")
-        assertEquals(6, publicJars.size)
-        assertFalse(Files.readString(manifest).contains("standard"))
+        assertEquals(9, publicJars.size)
+        assertTrue(Files.readString(manifest).contains("standard"))
         assertTrue(verifyPublicManifest(manifest, "3.3.0", publicJars).size > 0)
         Files.writeString(manifest, "{}")
         assertThrows(IllegalArgumentException::class.java) { verifyPublicManifest(manifest, "3.3.0", publicJars) }

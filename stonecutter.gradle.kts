@@ -82,8 +82,8 @@ gradle.projectsEvaluated {
             val specs = targets.map(::spec)
             val matrix = verifyDistribution(jars, specs, version, Edition.entries.toSet())
             val destination = layout.buildDirectory.dir("release-assets").get().asFile
-            collectDistribution(matrix.filter { it.edition != Edition.STANDARD }.map { it.path }, specs, version,
-                destination.toPath(), setOf(Edition.FULL, Edition.FULL_NO_AUTO_UPDATE))
+            collectDistribution(matrix.map { it.path }, specs, version,
+                destination.toPath(), Edition.entries.toSet())
             logger.lifecycle("Verified all nine installable JARs. GitHub assets: $destination")
         }
     }

@@ -19,11 +19,15 @@ function Wait-ShipReleaseMetadata(
     [ValidateRange(0,30)][int]$DelaySeconds = 2
 ) {
     for ($attempt = 1; $attempt -le $Attempts; $attempt++) {
-        $current = Invoke-ShipJson @('api','--hostname','github.com',"$api/releases/$ReleaseId",'--header','Cache-Control: no-cache')
-        if ($current.id -ne $ReleaseId -or $current.tag_name -cne $Tag -or $current.draft -or $current.prerelease) {
-            throw 'Release identity/publication changed during metadata verification. Review it manually.'
+        # GitHub's ID and tag endpoints can briefly serve different cached representations.
+        # Accept either only after checking the exact release identity and intended metadata.
+        foreach ($route in @("$api/releases/$ReleaseId", "$api/releases/tags/$Tag")) {
+            $current = Invoke-ShipJson @('api','--hostname','github.com',$route,'--header','Cache-Control: no-cache')
+            if ($current.id -ne $ReleaseId -or $current.tag_name -cne $Tag -or $current.draft -or $current.prerelease) {
+                throw 'Release identity/publication changed during metadata verification. Review it manually.'
+            }
+            if ($current.name -ceq $Title -and (Test-ShipNotes $current.body $Notes)) { return $current }
         }
-        if ($current.name -ceq $Title -and (Test-ShipNotes $current.body $Notes)) { return $current }
         if ($attempt -lt $Attempts) { Start-Sleep -Seconds $DelaySeconds }
     }
     throw "Release $Tag is published, but notes/title could not be confirmed after $Attempts reads. Inspect its page; do not rerun release mode."
@@ -85,6 +89,7 @@ function Get-ShipReleaseLayout([string]$Properties) {
 }
 function Get-ShipJarNames([string]$Version,[string]$Layout) {
     foreach ($minecraft in @('26.1.2','26.2','26.3')) {
+        if ($Layout -eq 'editions') { "sparkling-mutuals-$Version+mc$minecraft.jar" }
         $suffix = if ($Layout -eq 'editions') { '-full' } else { '' }
         "sparkling-mutuals-$Version$suffix+mc$minecraft.jar"
         if ($Layout -eq 'editions') { "sparkling-mutuals-$Version-full-no-auto-update+mc$minecraft.jar" }
@@ -96,7 +101,7 @@ function Assert-ShipAssets($Assets,[string]$Version,[string]$Layout) {
     $names = @($Assets | ForEach-Object { $_.name })
     if ($names.Count -ne $expected.Count -or @(Compare-Object $expected $names -CaseSensitive).Count) {
         if ($Layout -eq 'legacy') { throw 'Release must contain exactly the three expected Minecraft JARs.' }
-        throw 'Release must contain exactly the six expected GitHub JARs and build-manifest.json.'
+        throw 'Release must contain exactly the nine expected GitHub JARs and build-manifest.json.'
     }
     $downloadBase = "https://github.com/johnceoskyblock/sparkling-mutuals/releases/download/v$Version"
     foreach ($asset in $Assets) {
@@ -111,7 +116,7 @@ function Assert-ShipManifest([string]$ManifestPath,$Assets,[string]$Version) {
     $manifest = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json -AsHashtable
     $jars = @($Assets | Where-Object name -cne 'build-manifest.json')
     if ($manifest.version -cne $Version -or $manifest.files -isnot [array] -or $manifest.files.Count -ne $jars.Count) {
-        throw 'The public manifest must describe the six GitHub JARs for the tagged version.'
+        throw 'The public manifest must describe the nine GitHub JARs for the tagged version.'
     }
     foreach ($asset in $jars) {
         $rows = @($manifest.files | Where-Object { $_.name -ceq $asset.name })
