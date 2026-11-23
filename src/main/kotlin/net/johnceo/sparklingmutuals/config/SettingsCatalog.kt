@@ -4,7 +4,7 @@ import java.lang.reflect.Field
 
 /** Reflect only explicit UI metadata; properties and tracking objects remain the owners of behavior. */
 class SettingsCatalog(settings: SafariSettings) {
-    internal val highlightSection = if (SafariSettings.standardEdition) "Highlight Visible" else "ESP"
+    internal val highlightSection = if (SafariSettings.standardEdition) "Highlights" else "ESP"
     private val espWord = Regex("\\bESP\\b", RegexOption.IGNORE_CASE)
     private fun displayText(value: String) = if (SafariSettings.standardEdition)
         espWord.replace(value, "highlights") else value
@@ -151,14 +151,14 @@ class SettingsCatalog(settings: SafariSettings) {
             if(owner is FloorDropEspSettings)return owner.rows(path)
             val result=fields(owner.javaClass).mapNotNull { field ->
                 if(owner is SafariSettings.SafariTeammateSettings && field.name in setOf("color","textScale"))return@mapNotNull null
-                if (SafariSettings.standardEdition && owner is ScrappyAppearanceSettings && field.name == "textScale") return@mapNotNull null
                 if(owner is PanelAppearanceSettings && field.name=="expansion" && !owner.supportsExpansion)return@mapNotNull null
                 field.getAnnotation(ConfigOption::class.java)?.let { meta ->
                     field.isAccessible=true
                     val grouped=field.isAnnotationPresent(Accordion::class.java)
-                    val value=if(grouped)field.get(owner)else null
-                    if(path.startsWith("ESP /") && (value is ColorChoice || value is EspLabelSettings)) {
-                        val child=rows(value,path+" / "+meta.name).single()
+                    val value=if(grouped) field.get(owner) ?: return@mapNotNull null else null
+                    val singleControl = if (SafariSettings.standardEdition && value is ScrappyAppearanceSettings) value.unknown else value
+                    if(path.startsWith("ESP /") && (singleControl is ColorChoice || singleControl is EspLabelSettings)) {
+                        val child=rows(singleControl,path+" / "+meta.name).single()
                         return@mapNotNull child.copy(name=meta.name,description=meta.desc,path=path+" / "+meta.name,navigationName=field.name)
                     }
                     Row(owner,field,meta.name,if(owner is BannerOption && field.name=="text") owner.textHint else meta.desc,path+" / "+meta.name,

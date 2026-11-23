@@ -12,7 +12,7 @@ class ConfigPresentationTest {
     @Test fun allPlayerHudLinksStillResolveAfterRenamingAndOrdering() {
         ConfigManager.init(dir)
         val catalog=SettingsCatalog(SafariSettings())
-        for(hud in SafariHud.entries.filter {it!=SafariHud.DEVELOPER}) {
+        for(hud in SafariHud.entries.filter {it.editionEnabled && it!=SafariHud.DEVELOPER}) {
             val target=HudConfigLinks.target(hud)
             assertNotNull(catalog.locate(target),hud.name)
             assertTrue(catalog.expansionFor(target).isNotEmpty(),hud.name)

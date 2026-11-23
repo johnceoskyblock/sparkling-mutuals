@@ -86,7 +86,6 @@ class SafariEspClickerTest {
         val settings = SafariSettings()
         settings.safari.autoClicker = false
         net.johnceo.sparklingmutuals.safari.completion.SafariFullClear.select(net.johnceo.sparklingmutuals.safari.SafariMode.FULL_CLEAR)
-        settings.esp.cavern = true
         settings.customization.rockmite.color = "0:255:255:0:0"
         settings.apply()
         ConfigManager.init(dir)

@@ -4,7 +4,7 @@ Run `scripts/Ship.ps1` in PowerShell 7 to handle the mechanical Git/GitHub steps
 
 ## One repository for all editions
 
-Ship from `johnceoskyblock/sparkling-mutuals`. Use one PR into protected `master` and one version tag per release. Keep the legit fork available as a migration reference while the edition source sets and release workflow are under development. [Edition consolidation handoff](EDITION_CONSOLIDATION_HANDOFF.md)
+Ship from `johnceoskyblock/sparkling-mutuals`. Use one PR into protected `master` and one version tag per release. The former Standard fork is a migration reference. [Edition layout](EDITION_CONSOLIDATION_HANDOFF.md)
 
 This repository uses `release_artifact_layout=editions`. The release workflow builds and verifies all nine combinations. GitHub receives all nine Standard, Full, and Full No Auto Update JARs and `build-manifest.json`. Standard uses the plain filename; Full uses `-full` and Full No Auto Update uses `-full-no-auto-update`. Modrinth publication remains pending review.
 
@@ -61,26 +61,16 @@ It fetches `origin`, rebases onto the equivalent remote branch when present and 
 
 ## Publish a new version
 
-Append flagship features to [the in-game highlights catalog](../src/main/resources/releases/flagship-highlights.json) under the version that ships them, and keep older entries for players skipping releases. Use a short feature name and a sentence or two on what changed or where to find it. Patch-only releases can omit an entry.
+Append flagship features to the in-game highlights catalog under the version that ships them, and keep older entries for players skipping releases. Use a short feature name and a sentence or two on what changed or where to find it. Set `audience` to `shared` for all editions, `standard` for Standard only, `full` for both Full editions, or `updater` for the Full edition with update downloads. Split entries when editions need different wording. Patch-only releases can omit an entry. [In-game highlights catalog](../src/main/resources/releases/flagship-highlights.json)
 
-Write a short notes file describing the final features and fixes. You can keep it outside the repository so it is not included in the commit. For example, create `$HOME/Desktop/sm-release-notes.txt` in a text editor:
-
-```text
-### Features
-- Describe the new behavior users can use.
-
-### Fixes
-- Describe the bug and the corrected behavior.
-```
-
-Then run:
+Review [NEXT.md](releases/NEXT.md) against the last released tag. It is the repository's release-notes draft and can be passed directly to the script. The version below is the prepared release. Substitute the intended unused version when shipping a later release.
 
 ```powershell
-pwsh -File ./scripts/Ship.ps1 -Message "Release v4.4.3" -Version 4.4.3 -NotesFile "$HOME/Desktop/sm-release-notes.txt" -WhatIf
-pwsh -File ./scripts/Ship.ps1 -Message "Release v4.4.3" -Version 4.4.3 -NotesFile "$HOME/Desktop/sm-release-notes.txt"
+pwsh -NoProfile -File ./scripts/Ship.ps1 -Message "Release v4.4.4" -Version 4.4.4 -NotesFile ./docs/releases/NEXT.md -WhatIf
+pwsh -NoProfile -File ./scripts/Ship.ps1 -Message "Release v4.4.4" -Version 4.4.4 -NotesFile ./docs/releases/NEXT.md
 ```
 
-Choose an unused version newer than the current `mod_version` and remote master. The number above is an example. Optional `-ReleaseTitle "My release v4.3.10"` changes the GitHub display title. `-TimeoutMinutes 60` changes the per-stage waiting limit; the default is 45 minutes.
+Choose an unused version newer than the local and remote `mod_version`. Use `-ReleaseTitle` to set a custom GitHub display title. The default waiting limit is 45 minutes per stage and can be adjusted with `-TimeoutMinutes`.
 
 Release mode also:
 

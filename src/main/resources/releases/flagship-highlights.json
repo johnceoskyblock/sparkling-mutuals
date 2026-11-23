@@ -1,145 +1,159 @@
 {
+  "4.4.4": [
+    {"audience":"shared", "title":"Edition-specific What's New", "details":"See release highlights for your installed edition. Each edition remembers where you left off."},
+    {"audience":"standard", "title":"Torrhus Honeyhive markers", "details":"See beacons for ready hives from a distance using known Torrhus locations and saved refill timers."},
+    {"audience":"standard", "title":"Standard Highlights", "details":"Choose glow and boxes separately under Highlights → General. Visible Scrappies share one customizable color."},
+    {"audience":"standard", "title":"Safari party alerts", "details":"Party leaders announce pending downtime requests upon returning to Torrhus Canyon. A banner shows when a teammate reports a kick during Safari."},
+    {"audience":"standard", "title":"Hideyho keybind setup", "details":"Bind Accept Hideyho Quest at startup or in Safari Helpers. Press the key after Hideyho offers the quest in chat."}
+  ],
   "4.4.3": [
-    {"title": "Shared edition settings", "details": "Switch editions in the same Minecraft instance and keep your HUD layouts, settings, and Safari history. Standard leaves Full-only settings inactive and preserves them for when you switch back."},
-    {"title": "Standard Safari visuals", "details": "Standard glows clearly visible critters, marks live floor drops with a generic tile, and shows known Snoozle wall waypoints through terrain. Capsule trajectory previews and the Doomspiral lottery are available under Safari Helpers."},
-    {"title": "Settings reset and progress HUD controls", "details": "Restore default settings or turn off configurable features from the Reset tab. Saved Safari records stay intact. Customize each progress row or show just the timer."},
-    {"title": "Party sparkling commands", "details": "Use !sparkling to look up a player’s total, unique, and duplicate sparklings. Use !rates to see each responding party member’s session catches and runs per sparkling."}
+    {"audience":"shared", "title":"Shared edition settings", "details":"Switch editions in the same Minecraft instance and keep your HUD layouts, shared settings, edition preferences, and Safari records."},
+    {"audience":"standard", "title":"Standard Safari visuals", "details":"Standard glows clearly visible critters, marks live floor drops with a generic tile, and shows known Snoozle wall waypoints through terrain. Capsule trajectory previews and the Doomspiral lottery are available under Safari Helpers."},
+    {"audience":"shared", "title":"Settings reset and progress HUD controls", "details":"Restore default settings or turn off configurable features from the Reset tab. Saved Safari records stay intact. Customize each progress row or show just the timer."},
+    {"audience":"shared", "title":"Party sparkling commands", "details":"Use !sparkling to look up a player’s total, unique, and duplicate sparklings. Use !rates to see each responding party member’s session catches and runs per sparkling."},
+    {"audience":"updater", "title":"In-game update downloads", "details":"Choose whether to download updates for your Minecraft version from the update screen."}
   ],
   "4.4.2": [
-    {"title": "Biome Objectives controls", "details": "Choose which objective rows to show and which optional sparkling checks your run should require. Skipped checks no longer hold up biome completion or appear in your missing-objectives reply."},
-    {"title": "Safari Splits HUD", "details": "See when each biome finishes in Unique or Full Clear. Customize the time precision and show a compact summary of your current session."},
-    {"title": "Party profit commands", "details": "Use !profit with session, lifetime, week, or day. Each responding player reports their own saved Safari profit and the Bazaar pricing method used."},
-    {"title": "Safari capture stats", "details": "See a player’s total critter captures and biome counts in /sparkling. In party chat, use !captures for your own stats or !captures followed by an IGN."},
-    {"title": "Ubik’s Cube cooldown", "details": "Track the Rift’s Split or Steal cooldown across relogs. Enable the timer under SkyBlock → Helpers."}
+    {"audience":"shared", "title":"Biome Objectives controls", "details":"Choose which objective rows to show and which optional sparkling checks your run should require. Skipped checks no longer hold up biome completion or appear in your missing-objectives reply."},
+    {"audience":"shared", "title":"Safari Splits HUD", "details":"See when each biome finishes in Unique or Full Clear. Customize the time precision and show a compact summary of your current session."},
+    {"audience":"shared", "title":"Party profit commands", "details":"Use !profit with session, lifetime, week, or day. Each responding player reports their own saved Safari profit and the Bazaar pricing method used."},
+    {"audience":"shared", "title":"Safari capture stats", "details":"See a player’s total critter captures and biome counts in /sparkling. In party chat, use !captures for your own stats or !captures followed by an IGN."},
+    {"audience":"shared", "title":"Ubik’s Cube cooldown", "details":"Track the Rift’s Split or Steal cooldown across relogs. Enable the timer under SkyBlock → Helpers."}
   ],
   "4.4.1": [
-    {"title": "Hotspot party run count", "details": "The Hotspot HUD counts completed runs with your current party. Saved history preserves the count across reconnects, and roster changes start a new streak."},
-    {"title": "Personal best messages", "details": "Choose which boss and biome PB messages appear in local chat. Messages now include the relevant best time."},
-    {"title": "More reliable capture tracking", "details": "Improved how catch confirmation and escape attempts match critter models, including underground Shyworms, Hideon critters, and Rockmite mounds."},
-    {"title": "Doomspiral Lottery reveal", "details": "The reels reveal the result earlier and give regular and Sparkling Doomspirals distinct animated text."}
+    {"audience":"shared", "title":"Hotspot party run count", "details":"The Hotspot HUD counts completed runs with your current party. Saved history preserves the count across reconnects, and roster changes start a new streak."},
+    {"audience":"shared", "title":"Personal best messages", "details":"Choose which boss and biome PB messages appear in local chat. Messages now include the relevant best time."},
+    {"audience":"shared", "title":"More reliable capture tracking", "details":"Improved how catch confirmations and capsule escapes match Shyworms, Hideon critters, and Rockmite mounds."},
+    {"audience":"shared", "title":"Doomspiral Lottery reveal", "details":"The reels reveal the result earlier and give regular and Sparkling Doomspirals distinct animated text."}
   ],
   "4.4.0": [
-    {"title": "Critter nameplates", "details": "Choose vanilla tags, ESP markers, both, or neither. Customize distance, pity, colors, and visibility by critter. Custom names also appear in local chat and Hunting Box tooltips."},
-    {"title": "Connection recovery", "details": "Two opt-in settings can reconnect after an unexpected Hypixel disconnect and return to SkyBlock from Prototype or Limbo."},
-    {"title": "Easier settings navigation", "details": "Critter Names, Nameplates, Colors, and other ESP options have dedicated pages. Related controls and HUD appearance settings are grouped together."}
+    {"audience":"full", "title":"Critter nameplates", "details":"Choose vanilla tags, custom markers, both, or neither. Customize distance, pity, colors, and visibility by critter."},
+    {"audience":"full", "title":"Connection recovery", "details":"Two opt-in settings can reconnect after an unexpected Hypixel disconnect and return to SkyBlock from Prototype or Limbo."},
+    {"audience":"shared", "title":"Easier settings navigation", "details":"Find critter names, highlight colors, and HUD appearance in grouped settings pages."}
   ],
   "4.3.9": [
-    {"title": "HUD text customization", "details": "Give supported HUDs a custom title and choose separate colors for headings, labels, and values. HUD Appearance settings are available from the editor."},
-    {"title": "World ESP customization", "details": "Critter names, nameplates, and highlight colors moved to Customization. Capture and sparkling-check reminder lines in Biome Objectives gained separate toggles."}
+    {"audience":"shared", "title":"HUD text customization", "details":"Give supported HUDs a custom title and choose separate colors for headings, labels, and values. HUD Appearance settings are available from the editor."},
+    {"audience":"full", "title":"World ESP customization", "details":"Critter names, nameplates, and highlight colors moved to Customization."},
+    {"audience":"shared", "title":"Biome Objectives reminders", "details":"Capture and sparkling-check reminders can be turned on or off individually."}
   ],
   "4.3.8": [
-    {"title": "Custom critter names", "details": "Rename any of the 37 critters in your local interface. HUDs, alerts, history, and in-world names use your choices while party chat uses official names."},
-    {"title": "Party Hotspot controls", "details": "Use !hotspot on or !hotspot off to change Hotspot assigning for Sparkling Mutuals users in your party."}
+    {"audience":"shared", "title":"Custom critter names", "details":"Rename any of the 37 critters in your local interface, including HUDs, alerts, and history. Party chat uses official names."},
+    {"audience":"shared", "title":"Party Hotspot controls", "details":"Use !hotspot on or !hotspot off to change Hotspot assigning for Sparkling Mutuals users in your party."}
   ],
   "4.3.7": [
-    {"title": "Adjustable Sparkle Warping", "details": "Set the reparty and automatic warp deadlines separately. The reparty deadline also ends auto-party invites. Defaults are 22 seconds and 27 seconds."},
-    {"title": "HUD fonts and transparency", "details": "Use your resource pack’s font on mod HUDs and alerts. Background transparency now works the same way across HUD settings."},
-    {"title": "Emerald Dye party count", "details": "Use !dye to see each responding player’s recorded Emerald Dye drops."}
+    {"audience":"full", "title":"Adjustable Sparkle Warping", "details":"Set the reparty and automatic warp deadlines separately. The reparty deadline also ends auto-party invites. Defaults are 22 seconds and 27 seconds."},
+    {"audience":"shared", "title":"HUD fonts and transparency", "details":"Use your resource pack’s font on mod HUDs and alerts. Background transparency now works the same way across HUD settings."},
+    {"audience":"shared", "title":"Emerald Dye party count", "details":"Use !dye to see each responding player’s recorded Emerald Dye drops."}
   ],
   "4.3.5": [
-    {"title": "Critter Glow and biome colors", "details": "Turn on glowing outlines, boxes, or both. Choose a shared color for individual biomes or keep each critter’s own color."},
-    {"title": "Custom ticket messages", "details": "Turn ticket-earned party messages on or off and set separate wording for Basic and First-Class tickets."}
+    {"audience":"shared", "title":"Critter highlights and biome colors", "details":"Choose glow outlines or boxes, and set one color per biome or individual critter colors."},
+    {"audience":"shared", "title":"Custom ticket messages", "details":"Turn ticket-earned party messages on or off and set separate wording for Basic and First-Class tickets."}
   ],
   "4.3.4": [
-    {"title": "Hunting Box shard guidance", "details": "Compare sell offers, instant selling, and salvaging for all 37 Safari shards. Hover a row to see the estimated value and how its seven-day trading volume compares with other Safari shards."},
-    {"title": "Daily Warp List refresh", "details": "The list checks for newly acquired sparklings once a day while connected to Hypixel, removes confirmed matches, and updates invite priorities."},
-    {"title": "HUD growth direction", "details": "Choose which direction HUDs grow as their contents change. Fresh installs use matching black backgrounds and border settings."},
-    {"title": "All Scannable Critter Checks", "details": "An optional Sparkle mode setting tracks ordinary scannable critters until checked, even when the party already owns their sparkling variants."}
+    {"audience":"shared", "title":"Hunting Box shard guidance", "details":"Compare sell offers, instant selling, and salvaging for all 37 Safari shards. Hover a row to see the estimated value and how its seven-day trading volume compares with other Safari shards."},
+    {"audience":"full", "title":"Daily Warp List refresh", "details":"The list checks for newly acquired sparklings once a day while connected to Hypixel, removes confirmed matches, and updates invite priorities."},
+    {"audience":"shared", "title":"HUD growth direction", "details":"Choose which direction HUDs grow as their contents change. Fresh installs use matching black backgrounds and border settings."},
+    {"audience":"shared", "title":"All Scannable Critter Checks", "details":"An optional Sparkle mode setting tracks ordinary scannable critters until checked, even when the party already owns their sparkling variants."}
   ],
   "4.3.2": [
-    {"title": "Safari sync during reconnects", "details": "The primary and backup servers preserve finalized Hotspot assignments and share corrected critter completion. Late arrivals can report their hotspot without moving assigned players."}
+    {"audience":"shared", "title":"Safari sync during reconnects", "details":"The primary and backup servers preserve finalized Hotspot assignments and share corrected critter completion. Late arrivals can report their hotspot without moving assigned players."}
   ],
   "4.3.1": [
-    {"title": "Hotspot instructions and win counts", "details": "Party leaders can recover missing assignment messages after a reconnect. The Hotspot HUD retains the party’s last confirmed win counts while a new tally loads."}
+    {"audience":"shared", "title":"Hotspot instructions and win counts", "details":"Party leaders can recover missing assignment messages after a reconnect. The Hotspot HUD retains the party’s last confirmed win counts while a new tally loads."}
   ],
   "4.3.0": [
-    {"title": "Shared critter progress", "details": "Compatible clients share per-critter completion for Safari mode displays. Local catches, history, and profit continue to come from your own run data."},
-    {"title": "Safari HUD and alert additions", "details": "Added a profitable critter checklist, a personal Lake Cleared alert, an entry cooldown timer, and a Hotspot HUD option to show only your own result."}
+    {"audience":"shared", "title":"Shared critter progress", "details":"Compatible clients share per-critter completion for Safari mode displays. Local catches, history, and profit continue to come from your own run data."},
+    {"audience":"shared", "title":"Safari HUD and alert additions", "details":"Added a profitable critter checklist, a personal Lake Cleared alert, an entry cooldown timer, and a Hotspot HUD option to show only your own result."}
   ],
   "4.2.2": [
-    {"title": "Settings search and HUD shortcuts", "details": "Search across category and option names. Right-click a HUD in /sm gui to open its settings."},
-    {"title": "Backup Safari sync", "details": "Compatible clients can switch to an independent backup connection while preserving shared objectives, catches, and assignments during service interruptions."}
+    {"audience":"shared", "title":"Settings search and HUD shortcuts", "details":"Search across category and option names. Right-click a HUD in /sm gui to open its settings."},
+    {"audience":"shared", "title":"Backup Safari sync", "details":"Compatible clients can switch to an independent backup connection while preserving shared objectives, catches, and assignments during service interruptions."}
   ],
   "4.2.1": [
-    {"title": "Doomspiral Lottery visuals", "details": "The lottery gained a teal slot cabinet, scrolling reels, and a gold celebration for sparkling results."}
+    {"audience":"shared", "title":"Doomspiral Lottery visuals", "details":"The lottery gained a teal slot cabinet, scrolling reels, and a gold celebration for sparkling results."}
   ],
   "4.2.0": [
-    {"title": "Doomspiral Lottery", "details": "Watch a slot-machine reveal when Doomspiral is summoned nearby. The overlay hides spoilers and shows the sparkling alert after a win."},
-    {"title": "Sparkling Auto-entry updates", "details": "Automatically select the lowest available Safari ticket after a confirmed sparkling warp, including while tabbed out. Successful entry announces you in party chat."}
+    {"audience":"shared", "title":"Doomspiral Lottery", "details":"Watch a slot-machine reveal when Doomspiral is summoned nearby. The overlay hides spoilers until the result."},
+    {"audience":"full", "title":"Sparkling Auto-entry updates", "details":"Automatically select the lowest available Safari ticket after a confirmed sparkling warp, including while tabbed out. Successful entry announces you in party chat."}
   ],
   "4.1.2": [
-    {"title": "Floor-drop visibility and chat filters", "details": "Choose which floor drops stay highlighted across modes and which types of Safari chat messages to hide."},
-    {"title": "Remembered history views", "details": "History tabs remember your scroll position, filters, and selections when reopened."}
+    {"audience":"full", "title":"Floor-drop visibility", "details":"Choose which supply types stay highlighted across modes."},
+    {"audience":"shared", "title":"Safari chat filters", "details":"Choose which types of Safari chat messages to hide."},
+    {"audience":"shared", "title":"Remembered history views", "details":"History tabs remember your scroll position, filters, and selections when reopened."}
   ],
   "4.1.1": [
-    {"title": "Profit periods and saved sessions", "details": "Review profit by day, week, or session in history. Use /newsession to file the current session and start another."},
-    {"title": "Safari visibility controls", "details": "Keep selected critters highlighted across modes and customize the banner that shows where Hideyho appears."}
+    {"audience":"shared", "title":"Profit periods and saved sessions", "details":"Review profit by day, week, or session in history. Use /newsession to file the current session and start another."},
+    {"audience":"shared", "title":"Safari visibility controls", "details":"Keep selected critters highlighted across modes and customize the banner that shows where Hideyho appears."}
   ],
   "4.1.0": [
-    {"title": "Shared Safari coordination", "details": "Sparkling Mutuals and SafariUtils can share objective evidence, sparkling sightings, and Hotspot assignments in the same run."},
-    {"title": "Sparkling Auto-entry", "details": "Opt in to ticket entry after a verified sparkling warp from your party leader."},
-    {"title": "Warp List priorities", "details": "Choose which players to invite for individual sparkling critters, with priority and availability controls for automatic invites."}
+    {"audience":"shared", "title":"Shared Safari coordination", "details":"Sparkling Mutuals and SafariUtils can share objective evidence, sparkling sightings, and Hotspot assignments in the same run."},
+    {"audience":"full", "title":"Sparkling Auto-entry", "details":"Opt in to ticket entry after a verified sparkling warp from your party leader."},
+    {"audience":"full", "title":"Warp List priorities", "details":"Choose which players to invite for individual sparkling critters, with priority and availability controls for automatic invites."}
   ],
   "4.0.2": [
-    {"title": "Hunting Box value and market advice", "details": "See the estimated value of shards across visited Hunting Box pages and get market guidance for top Safari shards and Safari Essence."}
+    {"audience":"shared", "title":"Hunting Box value and market advice", "details":"See the estimated value of shards across visited Hunting Box pages and get market guidance for top Safari shards and Safari Essence."}
   ],
   "4.0.1": [
-    {"title": "HUD snapping", "details": "Align HUDs with guides and nudge their position a pixel at a time in the HUD editor."},
-    {"title": "Mixed-party Hotspot assigning", "details": "The party leader coordinates assignments and can tell teammates without the mod where to go in party chat."}
+    {"audience":"shared", "title":"HUD snapping", "details":"Align HUDs with guides and nudge their position a pixel at a time in the HUD editor."},
+    {"audience":"shared", "title":"Mixed-party Hotspot assigning", "details":"The party leader coordinates assignments and can tell teammates without the mod where to go in party chat."}
   ],
   "4.0.0": [
-    {"title": "Redesigned settings and HUDs", "details": "Settings gained search, themes, a revised HUD editor, and release checks. Biome Objectives now has a separate panel for Safari tasks and supplies."},
-    {"title": "Custom Safari alerts", "details": "Customize banners, sounds, and sparkling catch celebrations for Safari encounters and Miria’s contests."},
-    {"title": "Warp Lists and sparkling collections", "details": "Import per-player Warp Lists from CSV and explore expanded achievements, sparkling dex tiers, and run history."},
-    {"title": "Skill overflow tooltips", "details": "See the levels and progress earned beyond a skill’s usual cap in the SkyBlock Skills menu."}
+    {"audience":"shared", "title":"Redesigned settings and HUDs", "details":"Settings gained search, themes, and a revised HUD editor. Biome Objectives now has a separate panel for Safari tasks and supplies."},
+    {"audience":"shared", "title":"Custom Safari alerts", "details":"Customize banners, sounds, and sparkling catch celebrations for Safari encounters and Miria’s contests."},
+    {"audience":"full", "title":"Warp Lists and sparkling collections", "details":"Import per-player Warp Lists from CSV and explore expanded achievements, sparkling dex tiers, and run history."},
+    {"audience":"standard", "title":"Sparkling collections", "details":"Explore expanded achievements, sparkling dex tiers, and run history."},
+    {"audience":"shared", "title":"Skill overflow tooltips", "details":"See the levels and progress earned beyond a skill’s usual cap in the SkyBlock Skills menu."}
   ],
   "3.6.4": [
-    {"title": "Sparkle Warping party setup", "details": "Use /start to prepare the current party, save its returning players, and begin the warping cycle. Leeching can accept invites from a selected whitelist."}
+    {"audience":"full", "title":"Sparkle Warping party setup", "details":"Use /start to prepare the current party, save its returning players, and begin the warping cycle. Leeching can accept invites from a selected whitelist."}
   ],
   "3.6.3": [
-    {"title": "Hotspot assigning", "details": "Use /hotspot to coordinate who covers each Safari biome based on the party’s reported hotspots."}
+    {"audience":"shared", "title":"Hotspot assigning", "details":"Use /hotspot to coordinate who covers each Safari biome based on the party’s reported hotspots."}
   ],
   "3.6.0": [
-    {"title": "Mode-specific ESP visibility", "details": "Hide critter or floor-drop highlights independently in each Safari mode. Clear Water includes an opacity slider."}
+    {"audience":"shared", "title":"Mode-specific highlights", "details":"Hide critter or floor-drop highlights independently in each Safari mode."},
+    {"audience":"full", "title":"Water opacity", "details":"Adjust the opacity of Safari water."}
   ],
   "3.5.5": [
-    {"title": "Clear Safari water", "details": "Reduce underwater fog and adjust water opacity while in the Safari."}
+    {"audience":"full", "title":"Clear Safari water", "details":"Reduce underwater fog and adjust water opacity while in the Safari."}
   ],
   "3.5.4": [
-    {"title": "Welcome shortcuts and command help", "details": "The welcome message gives quick access to settings, modes, history, and HUD editing. Use /sm help for a command list."}
+    {"audience":"shared", "title":"Welcome shortcuts and command help", "details":"The welcome message gives quick access to settings, modes, history, and HUD editing. Use /sm help for a command list."}
   ],
   "3.5.3": [
-    {"title": "Safari profit rankings", "details": "Rank up to ten critters by estimated coins per run using Bazaar prices and expected captures."}
+    {"audience":"shared", "title":"Safari profit rankings", "details":"Rank up to ten critters by estimated coins per run using Bazaar prices and expected captures."}
   ],
   "3.5.0": [
-    {"title": "Sparkling rates and profitable critters", "details": "Estimate how many runs a sparkling variant may take and use cached Bazaar data to find valuable critters."}
+    {"audience":"shared", "title":"Sparkling rates and profitable critters", "details":"Estimate how many runs a sparkling variant may take and use cached Bazaar data to find valuable critters."}
   ],
   "3.4.0": [
-    {"title": "Garden Phantomleaf Solver", "details": "Use the search sounds to narrow down possible hiding spots, shown as highlighted locations."}
+    {"audience":"full", "title":"Garden Phantomleaf Solver", "details":"Use the search sounds to narrow down possible hiding spots, shown as highlighted locations."}
   ],
   "3.3.0": [
-    {"title": "Sparkling skin detection", "details": "Recognize sparkling critters from known skins and names across loaded Safari biomes, with shared detection for alerts, ESP, and the nearby HUD."}
+    {"audience":"full", "title":"Sparkling skin detection", "details":"Recognize sparkling critters from known skins and names across loaded Safari biomes, with shared detection for alerts, ESP, and the nearby HUD."}
   ],
   "3.2.0": [
-    {"title": "Floor-drop colors and contest downtime", "details": "Customize highlight colors for individual supply types and optionally request party downtime when a Miria contest begins."}
+    {"audience":"full", "title":"Floor-drop colors", "details":"Customize highlight colors for individual supply types."},
+    {"audience":"shared", "title":"Contest downtime", "details":"Coordinate party downtime when a Miria contest begins."}
   ],
   "3.1.0": [
-    {"title": "Named Safari floor drops", "details": "See predicted supply types and colors on floor waypoints, with separate scaling for ESP text."}
+    {"audience":"full", "title":"Named Safari floor drops", "details":"See predicted supply types and colors on floor waypoints, with separate scaling for ESP text."}
   ],
   "3.0.0": [
-    {"title": "Three Safari modes", "details": "Choose Full Clear, Unique, or party-aware Sparkling mode. Progress, missing species, and capture HUDs follow your selected goal."},
-    {"title": "Safari personal bests", "details": "Track biome clear times and solo or duo boss records, with feedback when a catch sets a new best."}
+    {"audience":"shared", "title":"Three Safari modes", "details":"Choose Full Clear, Unique, or party-aware Sparkling mode. Progress, missing species, and capture HUDs follow your selected goal."},
+    {"audience":"shared", "title":"Safari personal bests", "details":"Track biome clear times and solo or duo boss records, with feedback when a catch sets a new best."}
   ],
   "2.0.0": [
-    {"title": "Safari helpers and HUDs", "details": "Configure in-run Safari displays and use party commands to coordinate runs."}
+    {"audience":"shared", "title":"Safari helpers and HUDs", "details":"Configure in-run Safari displays and use party commands to coordinate runs."}
   ],
   "1.0.2": [
-    {"title": "Miria tracker and party warp alerts", "details": "Track contest progress and coordinate party warps with dedicated alerts."}
+    {"audience":"shared", "title":"Miria contest tracker", "details":"See the time left and your progress toward your ticket target."},
+    {"audience":"full", "title":"Party warp alerts", "details":"Coordinate party warps with dedicated alerts."}
   ],
   "1.0.1": [
-    {"title": "Missing sparkling lookup", "details": "Use !missing with a player name to see which time-saving sparkling critters they still need."}
+    {"audience":"shared", "title":"Missing sparkling lookup", "details":"Use !missing with a player name to see which time-saving sparkling critters they still need."}
   ],
   "1.0.0": [
-    {"title": "Sparkling mutuals and tickets", "details": "Use party commands to find shared sparkling needs and look up Safari ticket counts."}
+    {"audience":"shared", "title":"Sparkling mutuals and tickets", "details":"Use party commands to find shared sparkling needs and look up Safari ticket counts."}
   ]
 }

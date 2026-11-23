@@ -6,7 +6,7 @@ The support inquiry and project copy below are drafts. Use the source link and a
 
 Hello Modrinth team,
 
-We're preparing to submit Sparkling Mutuals, a client-side Fabric mod for Hypixel SkyBlock's Safari. The proposed listing would distribute only the Standard build for Minecraft 26.1.2, 26.2 and 26.3. Standard keeps local line-of-sight markers, run tracking, party progress sync, HUDs, and history. Its build excludes gameplay automation, through-terrain rendering, hidden-discovery alerts, and the custom updater.
+We're preparing to submit Sparkling Mutuals, a client-side Fabric mod for Hypixel SkyBlock's Safari. The proposed listing would distribute only Standard for Minecraft 26.1.2, 26.2, and 26.3. Standard includes line-of-sight critter highlights, run tracking, party progress sync, HUDs, and history. Gameplay automation, through-terrain highlights of dynamic targets, hidden-discovery alerts, and the custom updater are excluded. Known Snoozle wall and Torrhus Honeyhive markers and the optional capsule path can appear through terrain.
 
 We maintain Standard and the Full builds in one repository. The Full builds are distributed separately on GitHub and include automation and through-terrain features. Our release checks verify what each Standard JAR contains, and we intend to upload only verified Standard JARs after approval. Modrinth publishing is not enabled yet. Can we use the shared repository as the Modrinth source link, or should we provide a Standard-only source location? Please let us know what disclosures or source review you require.
 
@@ -23,7 +23,7 @@ The Sparkling Mutuals maintainers
 
 ### Safari tracking and HUDs
 
-Track Unique, Full Clear, and Sparkle runs. See Safari objectives, splits, capture counts, and Miria contest reminders in configurable HUDs. Review local run history, personal bests, and profit estimates. Local highlights and sparkling alerts are limited to sightings the client can currently see.
+Track Unique, Full Clear, and Sparkle runs. See Safari objectives, capture counts, and Miria contest reminders in configurable HUDs. Review local run history, personal bests, and profit estimates. Critter highlights and sparkling alerts use local visibility. Known fixed markers and the capsule path help with navigation and aiming.
 
 ### Party progress and network use
 
@@ -33,6 +33,6 @@ Safari party sync shares objectives with compatible clients in the current room.
 
 ### Installation and updates
 
-Use the Standard file matching your exact Minecraft version. Close Minecraft and replace the previous Sparkling Mutuals JAR before launching. Standard uses `config/sparkling-mutuals` and imports missing saves from the previous Standard folder on first launch. Future Standard updates will come through Modrinth.
+Use the Standard file matching your exact Minecraft version. Close Minecraft and replace the previous Sparkling Mutuals JAR before launching. Standard uses `config/sparkling-mutuals` and imports missing saves from the former Standard folder on first launch. GitHub currently provides updates. The Modrinth listing is pending.
 
 Review Hypixel's modification rules before connecting. [Hypixel Allowed Modifications](https://support.hypixel.net/hc/en-us/articles/6472550754962-Hypixel-Allowed-Modifications)

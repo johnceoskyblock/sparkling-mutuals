@@ -36,7 +36,8 @@ class ScrappyFoodsTest {
         foods.observe(emptyList())
         assertEquals(ScrappyFood.FISH, foods.food(fish))
     }
-    @Test fun `independent food colors and shared label size round trip through customization`() {
+    @Test fun `Full food colors and label size round trip through customization`() {
+        org.junit.jupiter.api.Assumptions.assumeFalse(net.johnceo.sparklingmutuals.config.SafariSettings.standardEdition)
         val before = Properties().also(SafariEspConfig::save)
         try {
             SafariEspConfig.load(Properties())

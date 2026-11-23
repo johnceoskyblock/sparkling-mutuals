@@ -187,7 +187,10 @@ private fun verifyEditionContents(edition: Edition, names: List<String>) {
     }
     if (edition == Edition.STANDARD) {
         require(prefix + "safari/visibility/LocalVisibility.class" in names) { "Standard visibility policy is missing" }
-        val forbidden = listOf("alerts/SparkleAutoParty", "alerts/WarpListRefresh", "commands/AlertCommand",
+        val forbidden = listOf("alerts/SparkleAutoParty", "alerts/SparkleWarpPolicy", "alerts/AlertManager",
+            "alerts/WarpAlertTimer", "alerts/WarpInvitations", "alerts/WarpList.class", "alerts/WarpList\$",
+            "alerts/WarpListCsv", "alerts/WarpListRefresh", "alerts/WarpListScreen", "alerts/WarpPlayerStatus",
+            "commands/AlertCommand", "mixin/StandardInvite", "mixin/SafariManagerMixin",
             "config/SafariSettings\$Warp",
             "safari/automation/AutoClicker", "safari/automation/GemzieAutoSelect", "safari/automation/entry/CjsApproachInput",
             "safari/automation/entry/CjsEntryDispatch", "safari/automation/entry/CjsEntryInput",

@@ -1,8 +1,8 @@
 # Clear water
 
-**Safari helpers > Visual cleanup > Clear water** defaults on and is saved in the existing configuration. It only applies inside Safari.
+In **Full** and **Full No Auto Update**, **Safari → Helpers → Visual cleanup → Clear water** applies the saved water opacity settings inside Safari.
 
-Water fog and the underwater overlay are cleared. The adjacent Water opacity slider sets the water surface vertex alpha cap from 0% to 100%, defaulting to 60% so loaded terrain can be seen through the surface from shore. The same water-only color rule handles vanilla rendering and Sodium's optional fluid mesher. Lava, powder snow, ordinary distance fog and water physics are unchanged. Changing the toggle or active opacity rebuilds chunk meshes once. Opacity is saved in the main config; configs without a saved opacity use 60%; existing saved values are preserved.
+**Water opacity by biome** has a slider for Forest, Cavern, Icy, and Haunted, from 0% invisible to 100% solid. A legacy single opacity supplies the fallback when a biome value is missing. Water fog and the underwater overlay are cleared while the feature is active. The same water color rule handles vanilla and Sodium fluid meshes. Changing the toggle or active opacity rebuilds chunk meshes once.
 
 This is an independent water-only implementation; the supplied ClearWaterLava JAR is not embedded. That standalone mod independently changes lava/water fog and should be removed when testing the integrated toggle. Shaders or renderers that replace these hooks still need in-game validation.
 

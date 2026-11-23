@@ -32,6 +32,7 @@ class HudLayoutTest {
         for ((id, size) in mapOf("progress" to (150 to 98), "captures" to (150 to 166),
             "missing" to (180 to 140), "sparklings" to (220 to 45), "gems" to (104 to 23),
             "bird_food" to (175 to 23), "incense" to (145 to 23), "run_complete" to (100 to 23), "warp" to (100 to 23))) {
+            if (id == "warp" && !SafariHud.WARP.editionEnabled) continue
             val layout = HudLayout(0f, 0f).apply { load(profile, id) }
             val reference = layout.bounds(640, 360, size.first, size.second)
             val saved = Properties().also { layout.save(it, id) }

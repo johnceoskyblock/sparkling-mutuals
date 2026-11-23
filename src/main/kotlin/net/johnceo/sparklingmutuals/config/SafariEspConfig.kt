@@ -62,6 +62,8 @@ object SafariEspConfig {
     val floorTextScales = FloorDropType.entries.associateWith { DEFAULT_TEXT_SCALE }.toMutableMap()
     fun dropTextScale(type: FloorDropType) = validTextScale(floorTextScales[type] ?: textScale)
     fun dropLabelWorldScale(type: FloorDropType) = .025f * dropTextScale(type)
+    internal const val STANDARD_SCRAPPY_COLOR = "standard.esp.scrappy.color"
+    internal var standardScrappyColor = defaultColor(palette.getValue("Scrappy"))
     val scrappyFoodColors = net.johnceo.sparklingmutuals.safari.esp.ScrappyFood.entries.associateWith { defaultColor(it.defaultRgb) }.toMutableMap()
     var scrappyTextScale = DEFAULT_TEXT_SCALE
         set(value) { field = validTextScale(value) }
@@ -104,6 +106,7 @@ object SafariEspConfig {
     fun entityColor(name: String, mound: Boolean = false) =
         if (name == "Rockmite" && mound) rockmiteMoundColor
         else if(usesBiomeColor(name)) biomeColors.getValue(SafariEspRules.mobs.first {it.name==name}.biome.name.lowercase())
+        else if (SafariSettings.standardEdition && name == "Scrappy") standardScrappyColor
         else mobs.getValue(name).color
     private fun defaultColor(rgb: Int) = "0:255:${rgb shr 16 and 255}:${rgb shr 8 and 255}:${rgb and 255}"
     fun validColor(value: String?, fallback: String): String = value?.takeIf { color ->
@@ -112,12 +115,13 @@ object SafariEspConfig {
     } ?: fallback
     fun rgb(color: String) = SettingsColor.argb(color)
     private fun key(name: String) = name.lowercase().replace(' ', '_')
+    private fun critterBoxesKey(includeFullPresentation: Boolean) =
+        if (includeFullPresentation) "esp.critterBoxes" else "standard.esp.critterBoxes"
+
     fun load(properties: Properties, includeFullPresentation: Boolean = true) {
         critterGlow = properties.getProperty("esp.critterGlow")?.toBooleanStrictOrNull() ?: true
-        if (includeFullPresentation) {
-            CritterNameplates.load(properties)
-            critterBoxes=properties.getProperty("esp.critterBoxes")?.toBooleanStrictOrNull() ?: false
-        }
+        critterBoxes = properties.getProperty(critterBoxesKey(includeFullPresentation))?.toBooleanStrictOrNull() ?: false
+        if (includeFullPresentation) CritterNameplates.load(properties)
         biomeCritterColors=properties.getProperty("esp.biomeCritterColors")?.toBooleanStrictOrNull() ?: false
         biomePalette.forEach {(id,color)->
             biomeColors[id]=validColor(properties.getProperty("esp.biomeColor.$id"),defaultColor(color))
@@ -135,11 +139,11 @@ object SafariEspConfig {
             }
         }
         textScale = properties.getProperty("esp.textScale")?.toFloatOrNull() ?: DEFAULT_TEXT_SCALE
-        if (includeFullPresentation) scrappyTextScale = properties.getProperty("esp.scrappy.textScale")?.toFloatOrNull() ?: DEFAULT_TEXT_SCALE
-        scrappyFoodColors.keys.forEach { food ->
-            scrappyFoodColors[food] = validColor(properties.getProperty("esp.scrappy.${food.name.lowercase()}.color"), defaultColor(food.defaultRgb))
-        }
         if (includeFullPresentation) {
+            scrappyTextScale = properties.getProperty("esp.scrappy.textScale")?.toFloatOrNull() ?: DEFAULT_TEXT_SCALE
+            scrappyFoodColors.keys.forEach { food ->
+                scrappyFoodColors[food] = validColor(properties.getProperty("esp.scrappy.${food.name.lowercase()}.color"), defaultColor(food.defaultRgb))
+            }
             teammateTextScale = properties.getProperty("esp.teammate.textScale")?.toFloatOrNull() ?: textScale
             teammateColor = validColor(properties.getProperty("esp.teammate.color"), defaultColor(0xFF55FF55.toInt()))
             floorTextScales.keys.forEach { type ->
@@ -148,7 +152,8 @@ object SafariEspConfig {
         }
         groups.forEach { (name, group) ->
             group.enabled = properties.getProperty("esp.$name.enabled")?.toBooleanStrictOrNull() ?: true
-            group.onlyInBiome = properties.getProperty("esp.$name.onlyInBiome")?.toBooleanStrictOrNull() ?: true
+            group.onlyInBiome = !includeFullPresentation ||
+                properties.getProperty("esp.$name.onlyInBiome")?.toBooleanStrictOrNull() != false
         }
         mobs.forEach { (name, mob) ->
             modWideToggles[name] = properties.getProperty("esp.${key(name)}.modWide")?.toBooleanStrictOrNull() ?: true
@@ -156,6 +161,9 @@ object SafariEspConfig {
             alwaysOnToggles[name] = properties.getProperty("esp.${key(name)}.alwaysOn")?.toBooleanStrictOrNull() ?: (name == "Hideyho")
             mob.enabled = properties.getProperty("esp.${key(name)}.enabled")?.toBooleanStrictOrNull() ?: true
             mob.color = validColor(properties.getProperty("esp.${key(name)}.color"), defaultColor(palette.getValue(name)))
+        }
+        if (!includeFullPresentation) {
+            standardScrappyColor = validColor(properties.getProperty(STANDARD_SCRAPPY_COLOR), mobs.getValue("Scrappy").color)
         }
         floorColor = validColor(properties.getProperty("esp.floor.color"), defaultColor(0xFF00FF00.toInt()))
         floorColors.keys.forEach { type -> floorColors[type] = validColor(properties.getProperty("esp.floor.${type.name.lowercase()}.color"),
@@ -166,11 +174,10 @@ object SafariEspConfig {
             properties.getProperty("esp.rockmite.color")?.let { mobs.getValue("Rockmite").color } ?: defaultColor(0xFFFFFFFF.toInt()))
     }
     fun save(properties: Properties, includeFullPresentation: Boolean = true) {
+        properties.remove("esp.floor.onlyInBiome")
         properties.setProperty("esp.critterGlow", critterGlow.toString())
-        if (includeFullPresentation) {
-            CritterNameplates.save(properties)
-            properties.setProperty("esp.critterBoxes",critterBoxes.toString())
-        }
+        properties.setProperty(critterBoxesKey(includeFullPresentation), critterBoxes.toString())
+        if (includeFullPresentation) CritterNameplates.save(properties)
         properties.setProperty("esp.biomeCritterColors",biomeCritterColors.toString())
         biomeColors.forEach {(id,color)->properties.setProperty("esp.biomeColor.$id",color)}
         biomeColorEnabled.forEach {(id,on)->properties.setProperty("esp.biomeColor.$id.enabled",on.toString())}
@@ -183,26 +190,28 @@ object SafariEspConfig {
                 properties.setProperty("esp.floor.${type.name.lowercase()}.onlyInBiome", value.toString())
             }
         }
-        if (includeFullPresentation) properties.setProperty("esp.scrappy.textScale", scrappyTextScale.toString())
-        scrappyFoodColors.forEach { (food,color) -> properties.setProperty("esp.scrappy.${food.name.lowercase()}.color",color) }
         properties.setProperty("esp.textScale", textScale.toString())
         if (includeFullPresentation) {
+            properties.setProperty("esp.scrappy.textScale", scrappyTextScale.toString())
+            scrappyFoodColors.forEach { (food,color) -> properties.setProperty("esp.scrappy.${food.name.lowercase()}.color",color) }
             properties.setProperty("esp.teammate.textScale", teammateTextScale.toString())
             properties.setProperty("esp.teammate.color", teammateColor)
             floorTextScales.forEach { (type, _) ->
                 properties.setProperty("esp.floor.${type.name.lowercase()}.textScale", dropTextScale(type).toString())
             }
+        } else {
+            properties.setProperty(STANDARD_SCRAPPY_COLOR, standardScrappyColor)
         }
         groups.forEach { (name, group) ->
             properties.setProperty("esp.$name.enabled", group.enabled.toString())
-            if (name != "floor") properties.setProperty("esp.$name.onlyInBiome", group.onlyInBiome.toString())
+            if (includeFullPresentation && name != "floor") properties.setProperty("esp.$name.onlyInBiome", group.onlyInBiome.toString())
         }
         mobs.forEach { (name, mob) ->
             properties.setProperty("esp.${key(name)}.modWide", modWideEnabled(name).toString())
             properties.setProperty("esp.${key(name)}.profitable", profitableToggles.getValue(name).toString())
             properties.setProperty("esp.${key(name)}.alwaysOn", alwaysOn(name).toString())
             properties.setProperty("esp.${key(name)}.enabled", mob.enabled.toString())
-            properties.setProperty("esp.${key(name)}.color", mob.color)
+            if (includeFullPresentation || name != "Scrappy") properties.setProperty("esp.${key(name)}.color", mob.color)
         }
         properties.setProperty("esp.floor.color", floorColor)
         floorColors.forEach { (type, color) ->

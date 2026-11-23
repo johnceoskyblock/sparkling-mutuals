@@ -12,26 +12,27 @@ Start with [installation and features](../README.md), then use this index for ga
 | Gameplay overview | [Modes and completion](../SAFARI_LOGIC.md), [37 species](critters/README.md) |
 | Evidence | [Tracking](critters/TRACKING.md), [exact messages](critters/MESSAGES.md), [floor drops](critters/FLOOR_DROPS.md) |
 | API data and recovery | [Safari API lookups and retries](API_LOOKUPS.md), [request and cache inventory](API_FETCH_AUDIT.md) |
-| Experimental shard ranges | [Hunting Box colors and observed sell-offer alerts](SHARD_SALE_GUIDANCE.md) |
+| Shard sale guidance | [Hunting Box prices, volume, salvage, and sell offers](SHARD_SALE_GUIDANCE.md) |
 | Cached-data estimates | [Profitable critters](PROFITABLE_CRITTERS.md), [Sparkling rates](SPARKLING_RATES.md) |
 | Banners and HUD themes | [Safari banners, customization ownership and ticket progress](BANNERS.md) |
 | Gameplay display | [Bird completion](BIRD_COMPLETION.md), [missing panel](MISSING_PANEL.md), [Sparkling detection](SPARKLING_DETECTION.md) |
 | Biome assignments | [Hotspot assigning](HOTSPOT_ASSIGNMENTS.md) |
 | Native UI | [Settings and catch celebrations](NATIVE_UI.md) |
-| Controls | [Configuration](CONFIG_DEFAULTS.md), [entry guard](SAFARI_ENTRY_GUARD.md), [warp alerts](WARP_ALERTS.md) |
+| Controls | [Configuration](CONFIG_DEFAULTS.md), [Safari entry and alerts](SAFARI_ENTRY_GUARD.md), [Sparkle Warping in Full](WARP_ALERTS.md) |
 | Contest and Canyon | [Contest/downtime](CONTEST_DOWNTIME.md), [Honeyhives](HONEYHIVES.md) |
 | SkyBlock helpers | [Hunting Box total value](HUNTING_BOX_VALUE.md), [Skills overflow tooltips](SKILL_OVERFLOW.md) |
-| Misc Endgame Features | [Garden Phantomleaf Solver](PHANTOMLEAF_SOLVER.md) |
+| Full SkyBlock helpers | [Garden Phantomleaf Solver](PHANTOMLEAF_SOLVER.md) |
 | History | [History and imports](HISTORY_IMPORT.md), [achievement requirements and dex tiers](ACHIEVEMENTS.md), [credited party streaks](SINCE_COMMAND.md) |
 | Capsule aiming guide | [Capture projections](CAPTURE_PROJECTIONS.md) |
-| Development | [multi-version builds](MULTI_VERSION_BUILDS.md), [source synchronization](SOURCE_SYNC.md) |
+| Development | [Edition layout](EDITION_CONSOLIDATION_HANDOFF.md), [build matrix](MULTI_VERSION_BUILDS.md), [source synchronization](SOURCE_SYNC.md) |
 | Push and release automation | [PowerShell shipping command and setup](SHIPPING.md) |
-| Validation | [Manual scenarios](IMPLEMENTATION_TEST_CHECKLIST.md), [audit discrepancies](IMPLEMENTATION_AUDIT.md) |
+| Validation | [Manual scenarios](IMPLEMENTATION_TEST_CHECKLIST.md), [October 2026 audit baseline](IMPLEMENTATION_AUDIT.md) |
+| Upcoming release | [NEXT.md](releases/NEXT.md) |
 | Requests and release notes | [GitHub Issues](https://github.com/johnceoskyblock/sparkling-mutuals/issues), [GitHub Releases](https://github.com/johnceoskyblock/sparkling-mutuals/releases) |
 
 ## Rule ownership and navigation
 
-The [ownership table](DOCUMENTATION_GUIDE.md#rule-ownership-and-navigation) assigns one current owner per rule. Species pages summarize their exceptions and link there. Current requests, unresolved proposals and approval discussions stay in GitHub Issues; superseded specifications and plans stay in Git history.
+The [ownership table](DOCUMENTATION_GUIDE.md#rule-ownership-and-navigation) assigns one current owner per rule. Species pages summarize their exceptions and link there. Current requests and approval discussions belong in GitHub Issues. The older protocol handoffs record design history. Use the [party sync guide](PARTY_SYNC.md) and current sources for the implemented protocol.
 
 ### Source and test map
 
@@ -82,7 +83,7 @@ Generated `.gradle/`, `.kotlin/`, `build/`, `versions/<target>/build/`, IDE file
 - JavaBetter contributed player cards, cloud lookups, party helpers, honeyhives, history, achievements and profit tracking; GamingLegend123 contributed the Shiny Hunter icon.
 - Adapted work: [CritterMod v0.9.0](https://github.com/MrCloudy2/critterMod/tree/v0.9.0), [ShinyHunter](https://github.com/javabetter/ShinyHunter), [Nebulune](https://github.com/Gaeritag/Nebulune), and [SkyHanni 9.1.0](https://github.com/hannibal002/SkyHanni/tree/9.1.0).
 - Settings workspace, HUD symbols and catch celebrations: [SafariUtils](https://github.com/Serkosea/safariutils) (MIT).
-- Phantomleaf Solver: adapted from [SkyHanni](https://github.com/SkyHanniStudios/SkyHanni/blob/b3543887dfb80d95ff9880b3f610167ac2c104f2/src/main/java/at/hannibal2/skyhanni/features/garden/greenhouse/PhantomleafSolver.kt) under LGPL-2.1; open `/sm` → Misc Endgame Features. See [feature guide](PHANTOMLEAF_SOLVER.md).
+- The Full Phantomleaf Solver is adapted from SkyHanni under LGPL-2.1. [Upstream solver](https://github.com/SkyHanniStudios/SkyHanni/blob/b3543887dfb80d95ff9880b3f610167ac2c104f2/src/main/java/at/hannibal2/skyhanni/features/garden/greenhouse/PhantomleafSolver.kt) · [Settings path](PHANTOMLEAF_SOLVER.md)
 - Licensing and attribution: [LICENSE](../LICENSE) and [third-party notices](../licenses).
 
 ## Last updated

@@ -58,7 +58,6 @@ class SparklingMemory {
 object SparklingEncounters {
     private val memory = SparklingMemory()
     private val visibility = mutableMapOf<UUID, () -> Boolean>()
-    private val localSightings = linkedMapOf<UUID, String>()
     private val queue = SparklingNotices()
     private var banner: SparklingNotice? = null
     private var shownAt = 0L
@@ -84,7 +83,6 @@ object SparklingEncounters {
             queuedParticle?.let { it.unknown && it.id in ids } == true
     }
     fun captured(name: String, ids: Collection<UUID>) {
-        localSightings.entries.removeIf { it.key in ids || it.value == name }
         queue.captured(name, ids)
         val particle = queuedParticle ?: banner
         val clearParticle = particle?.let { it.name == name || it.unknown && it.id in ids } == true
@@ -97,15 +95,12 @@ object SparklingEncounters {
                 alreadyAlertedByParticle: Boolean = false, visible: () -> Boolean = { false }) {
         visibility[id] = visible
         if (!visible() || unknown) return
-        localSightings[id] = name
         val previouslyShared = !unknown && net.johnceo.sparklingmutuals.sync.SafariPartySync.found(name)
         val where = "${biome.label} ${pos.x} ${pos.y} ${pos.z}"
         val notice = SparklingNotice(id, name, where, unknown)
         requestAlert(notice, false)
         if (!unknown && !previouslyShared && memory.announce(id, ConfigManager.sparklingPartyAnnouncer, name)) queue.add(notice)
     }
-    internal fun visibleCritter(): String? =
-        localSightings.entries.toList().asReversed().firstOrNull { visibility[it.key]?.invoke() == true }?.value
     private fun requestAlert(notice: SparklingNotice, alreadyAlertedByParticle: Boolean = false) {
         if (visibility[notice.id]?.invoke() != true) return
         if (ConfigManager.sparklingAlert && !memory.alerted(notice.id, notice.name)) enqueue(notice)
@@ -189,7 +184,6 @@ object SparklingEncounters {
     fun reset() {
         leave()
         visibility.clear()
-        localSightings.clear()
         memory.reset()
         sentAt = 0
     }

@@ -51,6 +51,9 @@ object WorldRenderCompat {
     fun snoozleWaypointType(): RenderType =
         createType("snoozle_wall_waypoints", false, false, WorldDepthMode.THROUGH_TERRAIN, false)
 
+    fun honeyHiveWaypointType(): RenderType =
+        createType("honeyhive_lines", false, false, WorldDepthMode.THROUGH_TERRAIN, false)
+
     fun renderType(name: String, filled: Boolean = false, cull: Boolean? = false, depth: WorldDepthMode = WorldDepthMode.OCCLUDED, afterShaders: Boolean = false): RenderType =
         createType(name, filled, cull, WorldDepthMode.OCCLUDED, afterShaders)
 

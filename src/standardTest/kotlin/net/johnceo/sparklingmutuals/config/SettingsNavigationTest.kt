@@ -29,7 +29,10 @@ class SettingsNavigationTest {
         assertTrue(rows.any { catalog.location(it)=="Safari → Modes → Unique mode" })
         assertTrue(rows.any { catalog.location(it)=="Safari → Modes → Full clear mode" })
         assertTrue(catalog.search("Safari Unique hide").any { it.name=="Hide critter highlights" })
-        assertEquals("Highlight Visible", catalog.highlightSection)
+        assertEquals("Highlights", catalog.highlightSection)
+        val generalRows = catalog.pages.single { it.name == "ESP General" }.rows
+        assertTrue(generalRows.map { it.name }.containsAll(listOf("Critter highlights", "Floor drop highlights", "Glow highlights", "Box highlights")))
+        assertTrue(generalRows.all { catalog.location(it) == "Highlights → General" })
         assertTrue(catalog.search("ESP").none { Regex("\\bESP\\b", RegexOption.IGNORE_CASE).containsMatchIn(it.name + " " + it.description + " " + catalog.location(it)) })
         assertTrue(catalog.search("Phantomleaf solver").isEmpty())
     }

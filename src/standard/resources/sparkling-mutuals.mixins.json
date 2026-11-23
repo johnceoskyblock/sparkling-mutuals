@@ -9,8 +9,6 @@
     "CritterGlowStateMixin",
     "CritterArmorStandMixin",
     "VisibleCritterGlowMixin",
-    "StandardInviteKeyboardMixin",
-    "StandardInviteMouseMixin",
     "HudFontAccessor",
     "GuiGraphicsExtractorAccessor",
     "DoomspiralServerTickMixin",

@@ -12,32 +12,14 @@ class SafariEspSettings {
     @JvmField @ConfigOption(name = "Structure and sparkling colors", desc = "") @Accordion
     var waypointColors = WaypointAppearanceSettings { AppearanceConfig.selectedHex }
     @JvmField @ConfigOption(name = "Structure label size", desc = "Adjust bee nest and Snoozle wall labels.") @Accordion val labels = EspLabelSettings()
-    val biomes = EspBiomeSettings()
     var textScale
         get() = labels.textScale
         set(value) { labels.textScale = value }
-    var forest
-        get() = biomes.forest
-        set(value) { biomes.forest = value }
-    var cavern
-        get() = biomes.cavern
-        set(value) { biomes.cavern = value }
-    var icy
-        get() = biomes.icy
-        set(value) { biomes.icy = value }
-    var haunted
-        get() = biomes.haunted
-        set(value) { biomes.haunted = value }
     fun apply(): Boolean {
         val scale = SafariEspConfig.validTextScale(textScale)
         val colorsChanged = listOf(floorDrops.apply(), biomeColors.apply(), names.apply()).any { it }
-        var changed = colorsChanged || SafariEspConfig.textScale != scale
+        val changed = colorsChanged || SafariEspConfig.textScale != scale
         SafariEspConfig.textScale = scale
-        mapOf("forest" to forest, "cavern" to cavern, "icy" to icy, "haunted" to haunted).forEach { (key, value) ->
-            val group = SafariEspConfig.groups.getValue(key)
-            if (group.onlyInBiome != value) changed = true
-            group.onlyInBiome = value
-        }
         return changed
     }
 }
@@ -66,25 +48,22 @@ class EspLabelSettings {
     var textScale = SafariEspConfig.textScale
 }
 
-class EspBiomeSettings {
-    @JvmField @ConfigOption(name = "Forest critters only in Forest", desc = "")
-    @ConfigEditorBoolean var forest = SafariEspConfig.groups.getValue("forest").onlyInBiome
-    @JvmField @ConfigOption(name = "Cavern critters only in Cavern", desc = "")
-    @ConfigEditorBoolean var cavern = SafariEspConfig.groups.getValue("cavern").onlyInBiome
-    @JvmField @ConfigOption(name = "Icy critters only in Icy", desc = "")
-    @ConfigEditorBoolean var icy = SafariEspConfig.groups.getValue("icy").onlyInBiome
-    @JvmField @ConfigOption(name = "Haunted critters only in Haunted", desc = "")
-    @ConfigEditorBoolean var haunted = SafariEspConfig.groups.getValue("haunted").onlyInBiome
-}
-
-class EspGeneralSettings(limits: EspBiomeSettings,val drops: FloorDropEspSettings) {
-    @JvmField @ConfigOption(name = "Highlight visible critters", desc = "Show highlights on visible critters and objectives.")
+class EspGeneralSettings(val drops: FloorDropEspSettings) {
+    @JvmField @ConfigOption(name = "Critter highlights", desc = "Mark critters and objectives in view.")
     @ConfigEditorBoolean var critterEsp = ConfigManager.critterEspEnabled
-    @JvmField @ConfigOption(name = "Glow outlines", desc = "Outline clearly visible critter models. Use boxes when the model is partly covered or cannot glow.")
+    @JvmField @ConfigOption(name = "Glow highlights", desc = "Outline clearly visible critter models that support glow.")
     @ConfigEditorBoolean var glow = SafariEspConfig.critterGlow
-    @JvmField @ConfigOption(name = "Highlight visible floor drops", desc = "Mark visible floor drops in your current biome with a colored tile.")
+    @JvmField @ConfigOption(name = "Box highlights", desc = "Draw boxes around visible critters.")
+    @ConfigEditorBoolean var boxes = SafariEspConfig.critterBoxes
+    @JvmField @ConfigOption(name = "Floor drop highlights", desc = "Draw a colored tile at floor drops you can see in your biome.")
     @ConfigEditorBoolean var floorDropEsp = ConfigManager.floorDropEspEnabled
-    @JvmField @ConfigOption(name = "Critter visibility by biome", desc = "Choose whether each biome's critters are shown only while you are in that biome.") @Accordion val biomes=limits
+
+    fun apply(): Boolean {
+        val changed = SafariEspConfig.critterGlow != glow || SafariEspConfig.critterBoxes != boxes
+        SafariEspConfig.critterGlow = glow
+        SafariEspConfig.critterBoxes = boxes
+        return changed
+    }
 }
 
 class BiomeCritterColorSettings {

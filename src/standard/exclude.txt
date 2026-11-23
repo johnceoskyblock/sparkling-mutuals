@@ -1,6 +1,15 @@
 kotlin/net/johnceo/sparklingmutuals/alerts/SparkleAutoParty.kt
+kotlin/net/johnceo/sparklingmutuals/alerts/AlertManager.kt
+kotlin/net/johnceo/sparklingmutuals/alerts/SparkleWarpPolicy.kt
+kotlin/net/johnceo/sparklingmutuals/alerts/WarpAlertTimer.kt
+kotlin/net/johnceo/sparklingmutuals/alerts/WarpList.kt
+kotlin/net/johnceo/sparklingmutuals/alerts/WarpListCsv.kt
+kotlin/net/johnceo/sparklingmutuals/alerts/WarpListScreen.kt
 kotlin/net/johnceo/sparklingmutuals/alerts/WarpListRefresh.kt
+kotlin/net/johnceo/sparklingmutuals/alerts/WarpPlayerStatus.kt
 kotlin/net/johnceo/sparklingmutuals/commands/AlertCommand.kt
+kotlin/net/johnceo/sparklingmutuals/compat/NativeCsvDialog.kt
+kotlin/net/johnceo/sparklingmutuals/mixin/SafariManagerMixin.kt
 kotlin/net/johnceo/sparklingmutuals/mixin/CjsEntryFocusMixin.kt
 kotlin/net/johnceo/sparklingmutuals/mixin/CjsEntryInputMixin.kt
 kotlin/net/johnceo/sparklingmutuals/mixin/DisconnectedScreenAccessor.kt

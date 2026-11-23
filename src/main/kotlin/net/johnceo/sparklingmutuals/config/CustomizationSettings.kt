@@ -193,7 +193,8 @@ class AlertAppearanceSettings(private val selection: () -> String) : AppearanceS
     @JvmField @ConfigOption(name = "Run completion alert HUD", desc = "") @Accordion val runComplete = panel("run_complete")
     @JvmField @ConfigOption(name = "Run completion text color", desc = "") @Accordion val runCompleteText = ColorChoice(
         { AppearanceConfig.runCompleteColor }, { AppearanceConfig.runCompleteColor = it }, selection)
-    @JvmField @ConfigOption(name = "Warping HUD", desc = "") @Accordion val warp = panel("warp")
+    @JvmField @ConfigOption(name = "Warping HUD", desc = "") @Accordion
+    val warp = AppearanceConfig.panels["warp"]?.let { PanelAppearanceSettings(it, selection) }
 }
 
 class WaypointAppearanceSettings(private val selection: () -> String) : AppearanceSettingsGroup() {
@@ -234,11 +235,14 @@ class ScrappyAppearanceSettings(private val selection: () -> String) {
     @JvmField @ConfigOption(name="Lily Pad",desc="") @Accordion
     val lilyPad = food(net.johnceo.sparklingmutuals.safari.esp.ScrappyFood.LILY_PAD)
     @JvmField @ConfigOption(name = "Unidentified", desc = "Used until this Scrappy's food is known.") @Accordion
-    val unknown = ColorChoice({ SafariEspConfig.mobs.getValue("Scrappy").color }, { SafariEspConfig.mobs.getValue("Scrappy").color=it },selection)
+    val unknown = if (SafariSettings.standardEdition)
+        ColorChoice({ SafariEspConfig.standardScrappyColor }, { SafariEspConfig.standardScrappyColor = it }, selection)
+    else ColorChoice({ SafariEspConfig.mobs.getValue("Scrappy").color }, { SafariEspConfig.mobs.getValue("Scrappy").color = it }, selection)
     @JvmField @ConfigOption(name="Text size",desc="1 = original size.")
     @ConfigEditorSlider(minValue=.5f,maxValue=4f,minStep=.25f)
     var textScale = SafariEspConfig.scrappyTextScale
     fun apply(): Boolean {
+        if (SafariSettings.standardEdition) return unknown.apply()
         val changed = SafariEspConfig.scrappyTextScale != SafariEspConfig.validTextScale(textScale)
         SafariEspConfig.scrappyTextScale = textScale
         return listOf(wheat.apply(),fish.apply(),lilyPad.apply(),unknown.apply(),changed).any { it }

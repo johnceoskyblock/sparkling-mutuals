@@ -42,4 +42,10 @@ class WorldRenderPipelineTest {
         val expected = if (SafariSettings.standardEdition) DepthStencilState.DEFAULT.depthTest() else CompareOp.ALWAYS_PASS
         assertEquals(expected, marker.pipeline().depthStencilState!!.depthTest())
     }
+
+    @Test fun `known Torrhus hive waypoints pass the depth test in both editions`() {
+        val depth = WorldRenderCompat.honeyHiveWaypointType().pipeline().depthStencilState!!
+        assertEquals(CompareOp.ALWAYS_PASS, depth.depthTest())
+        assertFalse(depth.writeDepth())
+    }
 }

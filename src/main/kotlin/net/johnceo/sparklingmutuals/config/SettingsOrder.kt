@@ -24,7 +24,7 @@ internal object SettingsOrder {
         "HotspotHudOptions" to listOf("enabled", "showAllPlayers", "appearance", "placement"),
         "SkyBlockHelpers" to listOf("shardSaleGuidance", "huntingBoxValue", "skillOverflow", "skillOverflowChat", "skillOverflowNumbers", "ubiksCubeTimer", "phantomleafSolver"),
         "BannerSettings" to listOf("enabled", "safari", "encounters", "contest", "appearance", "placement", "preview"),
-        "SafariBannerOptions" to listOf("complete", "biome", "fullParty", "warp"),
+        "SafariBannerOptions" to listOf("complete", "biome", "fullParty", "warp", "partyKicked"),
         "EncountersBanners" to listOf("hideyho", "gems", "food", "feeder", "incense", "coins"),
         "ContestBanners" to listOf("ticket", "start", "five", "three", "one", "end"),
         "BannerOption" to listOf("enabled", "playback", "text", "color", "duration", "sound", "volume", "pitch", "preview"),

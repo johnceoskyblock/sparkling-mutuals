@@ -25,10 +25,11 @@ class SafariEspVisibilityTest {
                 SafariEspConfig.dropOnlyInBiome(type), SafariBiome.CAVERN, SafariBiome.HAUNTED), type.name)
         }
         val settings = SafariSettings()
-        settings.esp.forest = false
-        settings.esp.cavern = false
         if (!SafariSettings.standardEdition) {
             val catalog = SettingsCatalog(settings)
+            for (biome in listOf("forest", "cavern")) {
+                catalog.locate(SettingsTarget("ESP General", listOf("biomes", biome)))!!.second.last().write(false)
+            }
             for ((type, outside) in mapOf("generic" to true, "incense" to false, "lime" to false)) {
                 catalog.locate(SettingsTarget("ESP General", listOf("floorVisibility", type)))!!.second.last().write(outside)
             }
@@ -39,8 +40,8 @@ class SafariEspVisibilityTest {
         settings.apply(); settings.apply()
         assertTrue(SafariEspConfig.mobs.values.all { it.enabled })
         ConfigManager.init(dir)
-        assertFalse(SafariEspConfig.groups.getValue("forest").onlyInBiome)
-        assertFalse(SafariEspConfig.groups.getValue("cavern").onlyInBiome)
+        assertEquals(SafariSettings.standardEdition, SafariEspConfig.groups.getValue("forest").onlyInBiome)
+        assertEquals(SafariSettings.standardEdition, SafariEspConfig.groups.getValue("cavern").onlyInBiome)
         if (!SafariSettings.standardEdition) {
             assertFalse(SafariEspConfig.dropOnlyInBiome(FloorDropType.GENERIC))
             assertTrue(SafariEspConfig.dropOnlyInBiome(FloorDropType.INCENSE))
@@ -56,7 +57,8 @@ class SafariEspVisibilityTest {
         }
         assertTrue(SafariEspConfig.groups.getValue("icy").onlyInBiome)
         assertEquals("0:255:18:52:86", SafariEspConfig.mobs.getValue("Foxtrot").color)
-        assertTrue(SafariEspRules.visible(true, true, SafariEspConfig.groups.getValue("forest").onlyInBiome, SafariBiome.CAVERN, SafariBiome.FOREST))
+        assertEquals(!SafariSettings.standardEdition, SafariEspRules.visible(true, true,
+            SafariEspConfig.groups.getValue("forest").onlyInBiome, SafariBiome.CAVERN, SafariBiome.FOREST))
         assertFalse(SafariEspRules.visible(true, true, SafariEspConfig.groups.getValue("icy").onlyInBiome, SafariBiome.CAVERN, SafariBiome.ICY))
     }
     @Test fun `legacy individual switches cannot block mode owned ESP after reopening the game`() {

@@ -2,7 +2,9 @@
 
 ## Purpose and audience
 
-All 37 implemented roster species use one [page template](../DOCUMENTATION_GUIDE.md#page-families). Start with a species for its exceptions; use [Safari logic](../../SAFARI_LOGIC.md) for mode composition and [tracking](TRACKING.md) for shared evidence. Counts below summarize source targets/minima and must be read with the species population model. Zero/variable never means automatically complete.
+Start with a species for its exceptions, and use the shared tracking and mode guides for evidence and completion. Counts below summarize source targets and minima and depend on the species population model. [Safari modes](../../SAFARI_LOGIC.md) · [Shared tracking](TRACKING.md)
+
+The species pages describe shared gameplay requirements. Where they refer to ESP, retained positions, or automation, apply the edition’s display rules. Standard highlights visible critters and provides the static waypoints and other helpers described in the edition guide. [Edition layout](../EDITION_CONSOLIDATION_HANDOFF.md)
 
 ## Categorized links
 

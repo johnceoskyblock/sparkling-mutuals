@@ -19,7 +19,7 @@ class PartyDiscoveryCacheTest {
             cache.select(setOf("me"),provider)
             assertNotNull(cache.known("leechA",provider))
             assertEquals(emptySet<String>(),cache.load("leechA",provider) { fail("Reserved members remain readable while a command selects the actual solo roster") })
-            val expected=net.johnceo.sparklingmutuals.alerts.SparkleWarpPolicy.requirementRoster(setOf("me"),party)
+            val expected=party
             cache.select(expected,provider)
             val state=PartySparklingState()
             state.select(expected,provider)

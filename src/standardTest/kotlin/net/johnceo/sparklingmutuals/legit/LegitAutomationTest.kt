@@ -24,6 +24,10 @@ class LegitAutomationTest {
             "safariEntryAutoEnter", "gemzieGemAutoSelect", "hideyhoAutoAccept", "leechMode", "autoReconnectHypixel",
             "autoJoinSkyBlock", "candleHitbox", "clearWater").associateWith { "true" } + mapOf(
             "warpList.players" to "TestPlayer",
+            "warpList.player.testplayer.alwaysInvite" to "true",
+            "banner.warp.text" to "Warp time",
+            "hud.warp.scale" to "1.3",
+            "appearance.warp.borderEnabled" to "true",
             "warpList.Foxtrot.priority.testplayer" to "3",
             "warpDelaySeconds" to "25",
             "repartyDelaySeconds" to "20",
@@ -37,6 +41,7 @@ class LegitAutomationTest {
             "esp.floor.coin.color" to "0:255:65:53:32",
             "esp.floor.lime.alwaysOn" to "false",
             "esp.floor.incense.onlyInBiome" to "true",
+            "esp.cavern.onlyInBiome" to "false",
             "esp.floor.rewards.enabled" to "true",
             "esp.scrappy.textScale" to "3.0",
             "safariTicketPreference" to "1",
@@ -65,6 +70,8 @@ class LegitAutomationTest {
         assertFalse(ConfigManager.autoJoinSkyBlock)
         assertFalse(ConfigManager.candleHitbox)
         assertFalse(ConfigManager.clearWater)
+        assertFalse(SafariEspConfig.critterBoxes)
+        assertTrue(SafariEspConfig.groups.getValue("cavern").onlyInBiome)
         assertEquals(27, ConfigManager.warpDelaySeconds)
         assertEquals(0, ConfigManager.safariTicketPreference)
         ConfigManager.autoClicker = true
@@ -84,6 +91,31 @@ class LegitAutomationTest {
         assertTrue(catalog.search("auto-entry").isEmpty())
         assertTrue(catalog.search("auto-reconnect").isEmpty())
         assertFalse(catalog.pages.any { it.name == "Sparkle Warping" })
+        assertTrue(catalog.search("Sparkling invite list").isEmpty())
+        assertTrue(catalog.search("Warping now").isEmpty())
+        assertTrue(catalog.search("Warping HUD").isEmpty())
+        assertNull(catalog.locate(SettingsTarget("ESP General", listOf("biomes"))))
+        assertTrue(catalog.search("Forest critters only in Forest").isEmpty())
+        assertFalse(net.johnceo.sparklingmutuals.hud.SafariHud.WARP in net.johnceo.sparklingmutuals.hud.SafariHud.available)
         assertFalse(SafariSettings::class.java.declaredClasses.any { it.simpleName == "Warp" })
+    }
+
+    @Test fun `Standard kick banner recognizes kick reports and stays in the run and party group`() {
+        ConfigManager.init(root)
+        ContestConfig.init(root)
+        val settings = SafariSettings()
+        val catalog = SettingsCatalog(settings)
+        assertTrue(catalog.locate(SettingsTarget("Banner", listOf("safari", "partyKicked", "enabled"))) != null)
+        assertTrue(catalog.locate(SettingsTarget("Safari helpers", listOf("capture", "hideyhoKey"))) != null)
+        val guard = net.johnceo.sparklingmutuals.safari.automation.SafariManagerGuard
+        assertTrue(guard.isKickReport("kick!"))
+        assertTrue(guard.isKickReport("I got kicked"))
+        assertFalse(guard.isKickReport("kickstart the run"))
+        assertFalse(guard.isKickReport("can someone kick Steve?"))
+        settings.banner.safari.partyKicked.enabled = false
+        settings.banner.apply()
+        ConfigManager.saveSettings()
+        ConfigManager.init(root)
+        assertFalse(guard.tracksKickReports())
     }
 }

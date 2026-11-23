@@ -16,6 +16,7 @@
 ## What makes this critter different
 
 - Implemented fixed target: 3. Progress and missing-row removal use different Full Clear conditions.
+- Standard uses one highlight color for visible Scrappies. Both Full editions can color the three food types separately.
 
 ## Spawn prerequisites
 

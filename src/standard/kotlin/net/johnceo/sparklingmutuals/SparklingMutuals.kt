@@ -95,6 +95,7 @@ object SparklingMutuals : ModInitializer {
         net.johnceo.sparklingmutuals.skyblock.market.ShardSaleGuidance.register()
         SafariEsp.register()
         SafariIsland.register()
+        net.johnceo.sparklingmutuals.safari.automation.SafariPartyInput.register()
     }
 
     private fun registerCallbacks() {
@@ -156,6 +157,7 @@ object SparklingMutuals : ModInitializer {
         DoomspiralLottery.tick(client)
         if (!DoomspiralLottery.active) net.johnceo.sparklingmutuals.hud.SafariAlertSequence.tick()
         HideyhoSpotter.onClientTick(client)
+        net.johnceo.sparklingmutuals.safari.automation.SafariPartyInput.tick(client)
         SafariDowntime.onClientTick(client)
     }
 

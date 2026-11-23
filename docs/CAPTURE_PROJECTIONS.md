@@ -10,6 +10,8 @@ The route starts from the player's interpolated eye and current player aim. Came
 
 ## Behavior
 
+The path is available in all editions. Standard can show the projected line through terrain when enabled and checks local visibility before displaying a critter contact. [Edition boundaries](EDITION_CONSOLIDATION_HANDOFF.md)
+
 ### Spatial guide and evidence boundary
 
 The compiled model is `ordinary-stationary-visual-ordinal-candidate-v1`:

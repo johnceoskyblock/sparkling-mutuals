@@ -1,4 +1,6 @@
-Replace the early hotspot allocation deadlines with allocation as soon as all active party members have supplied a current-run actual hotspot. Retain a 30-second fallback from the first confirmed eligible report for missing reports. Duplicate reports and retries must not restart the deadline.
+This protocol proposal records the earlier change to hotspot allocation. Use the current Hotspot and sync guides for implemented behavior. [Hotspot assigning](HOTSPOT_ASSIGNMENTS.md) · [Party sync](PARTY_SYNC.md)
+
+The proposed allocator starts when all active party members have supplied a current-run actual hotspot, with a 30-second fallback from the first confirmed eligible report. Duplicate reports and retries preserve the deadline.
 
 - Tab-list presence establishes attendance only. It does not establish ticket admission or an actual hotspot.
 - Accept `ticketed` in H hello. A valid current-run actual-hotspot report also establishes ticket admission for that player, but still requires attendance evidence.

@@ -119,7 +119,6 @@ object SafariEsp {
     private val motion = EspMotion()
     private val litterbugs = LitterbugProjection()
     private val shyworms = ShywormProjection()
-    private val scrappyFoods = ScrappyFoods()
     private val logger = LoggerFactory.getLogger("sparkling-mutuals/esp")
     //? if >=26.3 {
     /*private val lines = RenderTypes.linesTranslucentNoDepthWrite()
@@ -293,7 +292,7 @@ object SafariEsp {
         logger.info("Retired captured {} model {}.", species, id)
         targets = targets.filterNot { captures.hidden(it.entity.uuid) }
     }
-    fun clearCaptured() { cavernDiagnostics.clear(); captures.reset(); lastCapsuleInputTick = null; captureMarkers = emptyList(); captureTargets = emptyList(); modelLabels.reset(); motion.reset(); litterbugs.reset(); shyworms.reset(); scrappyFoods.reset();contactRevision++ }
+    fun clearCaptured() { cavernDiagnostics.clear(); captures.reset(); lastCapsuleInputTick = null; captureMarkers = emptyList(); captureTargets = emptyList(); modelLabels.reset(); motion.reset(); litterbugs.reset(); shyworms.reset();contactRevision++ }
     fun tick(client: Minecraft) {
         if (level !== client.level) { reset(); level = client.level }
         SafariFloorDrops.state.visit(SafariAssist.biome)
@@ -310,16 +309,12 @@ object SafariEsp {
         val floorDisplays = mutableListOf<FloorDisplay>()
         val labels = mutableMapOf<String, MutableList<Entity>>()
         val entitiesByUuid = mutableMapOf<UUID, Entity>()
-        val entityIds = mutableListOf<Int>()
-        val armadillos = mutableListOf<Pair<UUID, Int>>()
         val scannedTargets = mutableListOf<Target>()
         val scannedCaptureMarkers = mutableListOf<Entity>()
         for (entity in world.entitiesForRendering()) {
             if (entity.isRemoved || world.getEntity(entity.id) !== entity) continue
             entitiesByUuid.putIfAbsent(entity.uuid, entity)
-            entityIds.add(entity.id)
             val type = entity.type.toShortString()
-            if (type == "armadillo") armadillos.add(entity.uuid to entity.id)
             val floorDisplay = activeFloorDisplay(entity)
             if (floorMarker(entity)) {
                 val pos = entity.blockPosition()
@@ -348,7 +343,6 @@ object SafariEsp {
         val lastCaptureTargets = captureTargets
         targets = scannedTargets
         captureTargets = scannedTargets
-        scrappyFoods.observe(armadillos, entityIds)
         val now = System.currentTimeMillis()
         val liveBodyIds = targets.mapTo(hashSetOf()) { it.entity.uuid }
         motion.retain(liveBodyIds)
@@ -707,8 +701,7 @@ object SafariEsp {
 
     private fun targetColor(target: Target): Int {
         val mound=target.species=="Rockmite" && target.entity is Display.ItemDisplay
-        val food=if(target.species=="Scrappy" && !SafariEspConfig.usesBiomeColor("Scrappy")) scrappyFoods.food(target.entity.uuid) else null
-        return SafariEspConfig.rgb(food?.let {SafariEspConfig.scrappyFoodColors.getValue(it)} ?: SafariEspConfig.entityColor(target.species,mound))
+        return SafariEspConfig.rgb(SafariEspConfig.entityColor(target.species, mound))
     }
     private fun highlightColor(target: Target): Int =
         if (SafariAssist.isHighlighted(target.entity.id)) SafariEspConfig.rgb(AppearanceConfig.sparklingColor)
@@ -768,26 +761,26 @@ object SafariEsp {
         val client = Minecraft.getInstance()
         if (!SafariAssist.visualsActive(client) || client.player == null || client.options.smHideGui) return
         val playerBiome = SafariAssist.biome
-        val delta = client.deltaTracker.getGameTimeDeltaPartialTick(false)
-        val now = System.currentTimeMillis()
-        for (target in targets) {
-            if (critterEspDecision(target, client, playerBiome, now) != "Eligible") continue
-            val entity = target.entity
-            if (hiddenOrCapturing(target, client)) continue
-            val box = if (entity.type == EntityType.INTERACTION) {
-                val block = entity.blockPosition()
-                if (!LocalVisibility.block(block, client)) continue
-                AABB(block).inflate(.005)
-            } else {
-                val body = bounds(target, delta)
-                if (!LocalVisibility.entity(entity, client, body)) continue
-                body
+        if (SafariEspConfig.critterBoxes) {
+            val delta = client.deltaTracker.getGameTimeDeltaPartialTick(false)
+            val now = System.currentTimeMillis()
+            for (target in targets) {
+                if (critterEspDecision(target, client, playerBiome, now) != "Eligible") continue
+                val entity = target.entity
+                if (hiddenOrCapturing(target, client)) continue
+                val box = if (entity.type == EntityType.INTERACTION) {
+                    val block = entity.blockPosition()
+                    if (!LocalVisibility.block(block, client)) continue
+                    AABB(block).inflate(.005)
+                } else {
+                    val body = bounds(target, delta)
+                    if (!LocalVisibility.entity(entity, client, body)) continue
+                    body
+                }
+                WorldRenderCompat.box(context, lines, box, highlightColor(target))
             }
-            if (SafariEspConfig.critterGlow && supportsGlow(target) && LocalVisibility.clearModel(entity, client, box)) continue
-            WorldRenderCompat.box(context, lines, box, highlightColor(target))
+            WorldRenderCompat.flush(context, lines)
         }
-
-        WorldRenderCompat.flush(context, lines)
         val floorColor = SafariEspConfig.rgb(SafariEspConfig.dropColor(FloorDropType.GENERIC))
         for ((pos, ids) in floorHighlightSites) {
             if (!visibleFloorDrop(pos, ids, client, playerBiome)) continue

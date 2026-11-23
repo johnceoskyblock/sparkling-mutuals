@@ -66,8 +66,8 @@ object SafariPartyInput {
         val downtime = contest || ConfigManager.downtimeCommand &&
             (chat.body.matches(Regex("^!dt(?:\\s+.*)?$", RegexOption.IGNORE_CASE)) ||
                 SafariDowntime.readyMessage(chat.body) || SafariDowntime.ticketMessage(chat.body))
-        val kick = ConfigManager.holdManagerOnKick && SafariManagerGuard.inSafariInstance() &&
-            chat.body.contains("kick", true)
+        val kick = SafariManagerGuard.tracksKickReports() && SafariManagerGuard.inSafariInstance() &&
+            SafariManagerGuard.isKickReport(chat.body)
         if (!downtime && !kick) return
         displayNames[chat.sender.lowercase()] = chat.sender
         // Duplicate delivery on GAME/CHAT is idempotent while identity is pending.
@@ -77,8 +77,9 @@ object SafariPartyInput {
     fun tick(client: Minecraft) {
         val contest = ContestTracker.contestWaiting().isNotEmpty()
         if (!ConfigManager.downtimeCommand && !contest) queue.disableDowntime()
-        if (!ConfigManager.holdManagerOnKick) queue.disableKick()
-        if (!ConfigManager.downtimeCommand && !ConfigManager.holdManagerOnKick && !contest) { resetPending(); return }
+        val trackKickReports = SafariManagerGuard.tracksKickReports()
+        if (!trackKickReports) queue.disableKick()
+        if (!ConfigManager.downtimeCommand && !trackKickReports && !contest) { resetPending(); return }
         val world = client.level ?: return
         queue.observeWorld(world)
         val connection = client.connection ?: return

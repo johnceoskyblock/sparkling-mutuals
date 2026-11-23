@@ -1,3 +1,3 @@
-The deployed protocol contract is implemented. No additional wire-format decisions are outstanding.
+This note records the deployment follow-up at the time of the protocol handoff. See the current guide for implementation and validation scenarios. [Party sync](PARTY_SYNC.md)
 
-Mixed-client testing remains: reconnect or lease renewal in the same run; a reused lobby with a new visit; late ticket admission; corrected lower completion rows and 45-second expiry; retained inventory marked stale; and one party member using an older client. Confirm assignments, caught-state replay and automatic entry remain consistent on both clients.
+The handoff listed reconnects, lease renewal, reused lobbies, late ticket admission, corrected completion rows, stale inventory, and older clients as mixed-client validation scenarios.
