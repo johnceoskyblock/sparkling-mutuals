@@ -16,12 +16,13 @@ class EspPresentationConfigTest {
         val settings=SafariSettings()
         val catalog=SettingsCatalog(settings)
         fun control(page: String,vararg fields: String)=catalog.locate(SettingsTarget(page,fields.toList()))!!.second.last()
-        assertNotNull(control("ESP General","biomes"))
         if (SafariSettings.standardEdition) {
+            assertNull(catalog.locate(SettingsTarget("ESP General", listOf("biomes"))))
             assertNull(catalog.locate(SettingsTarget("ESP General", listOf("floorVisibility"))))
             assertNull(catalog.locate(SettingsTarget("ESP General", listOf("rewardDrops"))))
             assertEquals(listOf("generic"), control("ESP", "floorDrops").children.map { it.navigationName })
         } else {
+            assertNotNull(control("ESP General","biomes"))
             assertNotNull(control("ESP General","floorVisibility"))
             control("ESP General","rewardDrops").write(true)
         }
@@ -47,21 +48,22 @@ class EspPresentationConfigTest {
         val glow = catalog.locate(SettingsTarget("ESP General", listOf("glow")))?.second?.last()
         val boxes = catalog.locate(SettingsTarget("ESP General", listOf("boxes")))?.second?.last()
         assertTrue(SafariEspConfig.critterGlow)
-        if (SafariSettings.standardEdition) {
-            assertNull(boxes)
-            glow!!.write(false)
-            settings.apply()
-            init()
-            assertFalse(SafariEspConfig.critterGlow)
-            return
-        }
         assertFalse(SafariEspConfig.critterBoxes)
-        glow!!.write(false)
         boxes!!.write(true)
+        settings.apply()
+        init()
+        assertTrue(SafariEspConfig.critterGlow)
+        assertTrue(SafariEspConfig.critterBoxes)
+        glow!!.write(false)
         settings.apply()
         init()
         assertFalse(SafariEspConfig.critterGlow)
         assertTrue(SafariEspConfig.critterBoxes)
+        boxes.write(false)
+        settings.apply()
+        init()
+        assertFalse(SafariEspConfig.critterGlow)
+        assertFalse(SafariEspConfig.critterBoxes)
     }
 
     @Test fun `biome override covers every species without overwriting individual or mound colors`() {

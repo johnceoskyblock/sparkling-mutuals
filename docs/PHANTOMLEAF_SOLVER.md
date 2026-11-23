@@ -2,7 +2,7 @@
 
 ## Settings and behavior
 
-Open `/sm` → **Misc Endgame Features** → **Phantomleaf Solver**. The switch defaults on, matching upstream, and saves as `phantomleafSolver` in `sparkling-mutuals.properties`.
+In **Full** or **Full No Auto Update**, open `/sm` → **Misc → SkyBlock → Helpers → Phantomleaf solver**. The switch defaults on and saves as `phantomleafSolver` in `sparkling-mutuals.properties`.
 
 This Garden-only helper is adapted from [SkyHanni's PhantomleafSolver](https://github.com/SkyHanniStudios/SkyHanni/blob/b3543887dfb80d95ff9880b3f610167ac2c104f2/src/main/java/at/hannibal2/skyhanni/features/garden/greenhouse/PhantomleafSolver.kt). The upstream revision is pinned in the source and attribution notice. Garden eligibility uses the Hypixel location mode `garden`. It has no effect in Safari, Torrhus Canyon or other islands.
 

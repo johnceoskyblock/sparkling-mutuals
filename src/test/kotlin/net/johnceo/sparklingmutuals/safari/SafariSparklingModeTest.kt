@@ -4,6 +4,8 @@ import java.nio.file.Path
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.config.SafariEspConfig
 import net.johnceo.sparklingmutuals.config.SafariSettings
+import net.johnceo.sparklingmutuals.config.SettingsCatalog
+import net.johnceo.sparklingmutuals.config.SettingsTarget
 import net.johnceo.sparklingmutuals.safari.completion.SafariFullClear
 import net.johnceo.sparklingmutuals.safari.esp.SafariEspRules
 import net.johnceo.sparklingmutuals.safari.resources.FloorDropState
@@ -103,9 +105,10 @@ class SafariSparklingModeTest : net.johnceo.sparklingmutuals.safari.esp.Profitab
         assertFalse(ConfigManager.sparklingProfitableShardEsp)
         assertTrue(ConfigManager.profitableShardEsp)
         assertTrue(SafariEspConfig.mobs.values.all { it.enabled })
-        settings.esp.forest = false
+        SettingsCatalog(settings).locate(SettingsTarget("ESP General", listOf("biomes", "forest")))
+            ?.second?.last()?.write(false)
         settings.apply()
-        assertFalse(SafariEspConfig.groups.getValue("forest").onlyInBiome)
+        assertEquals(SafariSettings.standardEdition, SafariEspConfig.groups.getValue("forest").onlyInBiome)
         net.johnceo.sparklingmutuals.safari.completion.SafariFullClear.select(net.johnceo.sparklingmutuals.safari.SafariMode.FULL_CLEAR)
         settings.apply(); settings.apply()
         assertTrue(ConfigManager.fullClearMode)

@@ -106,6 +106,12 @@ object WarpList {
         }
     }
     fun save(properties: Properties, automation: Boolean = true) {
+        for (key in properties.stringPropertyNames()) {
+            if (!key.startsWith("warpList.")) continue
+            val automatedInvite = key.startsWith("warpList.player.") &&
+                (key.endsWith(".alwaysInvite") || key.endsWith(".discoveryCheckedAt"))
+            if (automation || !automatedInvite) properties.remove(key)
+        }
         if (automation) discoveryChecks.forEach { (name,at) -> properties.setProperty("warpList.player.$name.discoveryCheckedAt",at.toString()) }
         resolvedPlayers.forEach { (name,uuid) -> properties.setProperty("warpList.player.$name.uuid",uuid) }
         properties.setProperty("warpList.players", players.joinToString(" "))

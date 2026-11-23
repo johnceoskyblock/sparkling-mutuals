@@ -1,4 +1,12 @@
 kotlin/net/johnceo/sparklingmutuals/alerts/WarpListDefaultsTest.kt
+kotlin/net/johnceo/sparklingmutuals/alerts/WarpListCsvTest.kt
+kotlin/net/johnceo/sparklingmutuals/alerts/WarpListPlayersTest.kt
+kotlin/net/johnceo/sparklingmutuals/alerts/WarpInvitationsTest.kt
+kotlin/net/johnceo/sparklingmutuals/alerts/SparkleWarpPolicyTest.kt
+kotlin/net/johnceo/sparklingmutuals/config/AlertDefaultsTest.kt
+kotlin/net/johnceo/sparklingmutuals/contest/ContestTicketAndAutoWarpTest.kt
+kotlin/net/johnceo/sparklingmutuals/safari/automation/SafariManagerGuardTest.kt
+kotlin/net/johnceo/sparklingmutuals/safari/automation/EntryBoundaryTest.kt
 kotlin/net/johnceo/sparklingmutuals/alerts/WarpListRefreshTest.kt
 kotlin/net/johnceo/sparklingmutuals/config/CjsNewSmConfigTest.kt
 kotlin/net/johnceo/sparklingmutuals/config/CjsSingleToggleTest.kt

@@ -54,7 +54,9 @@ object SafariManagerGuard {
         presence.update(now, safari, false, client.level, roster, present, player.uuid.toString())
         kick.observe(client.level)
     }
-    fun callsKick(text: String) = PartyChat.parse(text)?.body?.contains("kick", true) == true
+    fun tracksKickReports() = ConfigManager.holdManagerOnKick
+    fun isKickReport(body: String) = body.contains("kick", true)
+    fun callsKick(text: String) = PartyChat.parse(text)?.body?.let(::isKickReport) == true
     /** Sender identity is verified before this callback. Use receipt time, not delayed lookup time. */
     fun partyKick(chat: PartyChat, receivedAt: Long = System.currentTimeMillis()) {
         val client = Minecraft.getInstance()

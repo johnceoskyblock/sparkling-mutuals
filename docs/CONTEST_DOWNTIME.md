@@ -10,12 +10,12 @@ Track Miria's contest window, warn while incomplete, and coordinate party readin
 | --- | --- | --- |
 | **Miria contest → Contest tracking** | On | Enables contest tracking and warnings. |
 | **HUDs → HUDs → Safari contest timer** | On | Shows the timer and score without affecting tracking or ticket logic. |
-| **Party Contest Guard Entry** | On | Holds Torrhus entry while the leader waits for ticket confirmations. |
-| **5 / 3 / 1 minute warning** | All on | Selects warning thresholds while below Uncommon. |
+| **Party contest entry guard** | Full editions only | Holds Torrhus entry while the leader waits for ticket confirmations. |
+| **5 / 3 / 1 minute warning** | See bundled defaults | Selects warning thresholds while below the ticket target. |
 | Warning title/sound | On; `minecraft:block.bell.use`, volume 100 | Local incomplete-contest warning. |
-| **Party Interactions → Respect !dt requests** | On | Records readiness requests and holds Torrhus entry. |
+| **Party → Interactions → Respect !dt requests** | On | Tracks outstanding requests. The leader posts the reason upon returning to Torrhus Canyon. Full builds also hold entry. |
 
-Contest controls persist in `config/sparkling-mutuals-contest.properties`; downtime and [Honeyhive beacons](HONEYHIVES.md) use the general configuration. Ticket detection continues independently of HUD/tracking, warnings, beacons and automatic requests. **Hold either physical Shift key** to bypass the current entry interaction without clearing requests.
+Contest controls persist in `config/sparkling-mutuals/sparkling-mutuals-contest.properties`. Downtime and Honeyhive beacons use the main settings file. Full users can hold Shift to bypass the entry hold. Standard displays the notifications and leaves the normal entry interaction available. [Configuration](CONFIG_DEFAULTS.md) · [Honeyhives](HONEYHIVES.md)
 
 ## Implemented behavior
 
@@ -23,17 +23,17 @@ Contest controls persist in `config/sparkling-mutuals-contest.properties`; downt
 
 Every ten client ticks, the tracker uses the computer's local clock: twenty-minute windows offset to minute 15, with a thirty-second end gap. Absolute window keys distinguish dates. This is the implemented schedule, not an independently synchronized server clock. Warning thresholds are only 5, 3 and 1 minutes. Repeated scans warn once per selected threshold; joining late coalesces elapsed thresholds into one warning.
 
-The leader announces `New Contest Started!` only when a different window is observed in its first ten seconds, with a loaded player/world, SkyBlock detection, a known party of more than one member and a server-confirmed local Party Leader role. The first observation establishes a baseline. Disabled, solo, unknown-leader, member/moderator and non-SkyBlock transitions are consumed without sending; enabling/joining/becoming leader mid-window does not catch up.
+When the Full contest guard is enabled, the leader announces `New Contest Started!` when a different window is observed in its first ten seconds, with a loaded player/world, SkyBlock detection, a known party with teammates, and a confirmed local Party Leader role. The first observation establishes a baseline.
 
 The guard waits for the other players on the roster at announcement time. The 30-second timer starts in Torrhus while the local player is leader. After an unrecognized return from an active Safari, it waits until a teammate is on the same server. It sends one reminder naming up to three teammates still waiting. Shift-clicking a Safari entry interaction clears this guard for the current contest. Each verified party member clears their own hold with readiness or ticket chat. Departures remove that member from the wait. The legacy manual downtime flow below is separate.
 
 ### Requests and readiness
 
-Any verified current party member may send `!dt [reason]`. Requests during an active run are banked; outside a run they hold the next Torrhus entry immediately. A verified leader's exact `!dt contest` creates separate contest holds for every current party member, including self. Other members' requests remain individual, and preexisting other-person reasons are retained.
+Any verified current party member may send `!dt [reason]`. Requests during an active run are saved for the return to Torrhus. The party leader sends outstanding requests as `DT request by <IGN> (Reason: <Reason>)`. In Full the requests can also hold the next entry. A verified leader's exact `!dt contest` creates separate readiness requests for the current roster. Other members' requests remain individual.
 
 Each sender releases only their own outstanding request by a party message containing `ticket` (case-insensitive, for any reason), or an accepted affirmative readiness message. Accepted examples: `r`, `rdy`, `ready`, `I'm ready`, `ready to go`, `ready when you are`, punctuation/case variants, short r-spam and a single adjacent-key typo such as `r/`, `rrr`, `rt` or `er`. Questions, `nr`, `not ready`, `almost ready`, `I will be ready`, `party`, `red` and `brb` do not count. The same parser is used while identity verification is pending.
 
-Under Miria Contest, **Ticket mode** selects Basic (default: Uncommon or higher, announcing **Ticket earned!**) or First-Class (Legendary / 5,000 points, announcing **First-Class Ticket earned!**). The announcer is always enabled, including with the contest HUD disabled. Current Miria scoreboard evidence at least ten seconds into the window establishes the selected target and clears the local contest hold. An earned ticket stays eligible for an announcement until party chat is available. Successful sends are remembered across relogs. Announcements are deduplicated per player/window/target: changing to First-Class can announce the higher reward, while changing back cannot repeat an already announced Basic reward. Contest warnings and hive completion visibility follow the selected target. Received ticket-containing party messages retain their existing readiness behavior. The selector persists in the contest config and is independent of the automatic Safari entry ticket preference.
+**Ticket target** selects Basic (Uncommon or higher) or First-Class (Legendary). **Announce ticket earned** controls the party message, and each target keeps its own wording. Ticket progress still uses the selected target with the HUD hidden. Successful announcements are remembered across relogs and deduplicated by player, contest, and ticket target. Contest warnings and Honeyhive visibility follow the selected target. The contest ticket target and Full’s auto-selection preference are separate controls.
 
 ### Combined reminder
 

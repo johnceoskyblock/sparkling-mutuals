@@ -151,6 +151,22 @@ class SafariCustomizationTest {
         SafariRoster.all.filter { it.name != "Rockmite" }.forEach { assertEquals(1, names.count { name -> name == it.name }) }
         assertTrue(names.containsAll(listOf("Rockmite", "Rockmite mounds")))
     }
+    @Test fun `Standard Scrappy has one color setting and keeps Full's colors intact`() {
+        ConfigManager.init(dir)
+        val settings = SafariSettings()
+        val rows = SettingsCatalog(settings).search("Scrappy").filter { it.path.contains("Individual critter colors") }
+        assertEquals(listOf("Scrappy"), rows.map { it.name })
+        assertTrue(rows.single().children.isEmpty())
+        val choice = rows.single().owner as ColorChoice
+        val fullColor = SafariEspConfig.mobs.getValue("Scrappy").color
+        choice.color = "0:255:10:20:30"
+        assertTrue(choice.apply())
+        assertEquals(choice.color, SafariEspConfig.entityColor("Scrappy"))
+        assertEquals(fullColor, SafariEspConfig.mobs.getValue("Scrappy").color)
+        ConfigManager.saveSettings()
+        ConfigManager.init(dir)
+        assertEquals(choice.color, SafariEspConfig.entityColor("Scrappy"))
+    }
     @Test fun `warnings live in their accordion and mode-owned structure controls are absent`() {
         fun names(type: Class<*>) = type.fields.mapNotNull { it.getAnnotation(net.johnceo.sparklingmutuals.config.ConfigOption::class.java)?.name }
         assertEquals(setOf("Ticket target", "Announce ticket earned", "Ticket earned message", "Track Miria's contest", "Honeyhive beacons"), names(SafariSettings.Miria::class.java).toSet())

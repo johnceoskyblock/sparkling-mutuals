@@ -45,7 +45,7 @@ object HoneyHives {
     private var beamsBroken = false
     private val file get() = ConfigStorage.directory.resolve("sparkling-mutuals-honeyhives.properties")
 
-    private val lines = WorldRenderCompat.renderType("honeyhive_lines")
+    private val lines = WorldRenderCompat.honeyHiveWaypointType()
 
     fun register() {
         load()

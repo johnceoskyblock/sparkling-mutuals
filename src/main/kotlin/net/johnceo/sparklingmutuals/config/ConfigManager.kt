@@ -205,14 +205,18 @@ object ConfigManager {
     fun validCapsulePathWidth(value: Float?) = value?.takeIf { it.isFinite() }?.coerceIn(1f,5f) ?: 3f
     fun validSparklingSound(value: String?) = value?.trim()?.let(Identifier::tryParse)?.toString() ?: "minecraft:block.amethyst_block.chime"
 
+    private fun readSavedSettings() = Properties().apply {
+        if (Files.exists(configPath)) Files.newInputStream(configPath).use(::load)
+    }
+
     fun init(configDirectory: Path, installedVersion: String? = null, recoverPreviousVersion: () -> String? = { null }) {
         configPath = configDirectory.resolve("sparkling-mutuals.properties")
         val existing = Files.exists(configPath)
-        val properties = if (existing) Properties() else FreshInstallDefaults.main()
-        if (existing) Files.newInputStream(configPath).use(properties::load)
+        val properties = if (existing) readSavedSettings() else FreshInstallDefaults.main()
         val savedVersions = InstalledVersionHistory.load(properties)
         installedVersionHistory = savedVersions.launch(installedVersion, !existing, recoverPreviousVersion)
-        val versionChanged = installedVersionHistory != savedVersions
+        val versionChanged = installedVersionHistory != savedVersions ||
+            installedVersionHistory.installed != null && !InstalledVersionHistory.hasTrack(properties)
         if (versionChanged) installedVersionHistory.save(properties)
         // Introduce the redesigned guidance once, then respect every subsequent saved choice.
         val introduceShardGuidance = properties.getProperty("migration.shardSaleGuidanceV2") != "true"
@@ -284,8 +288,13 @@ object ConfigManager {
     }
 
     internal fun resetSettings() {
-        val previous = Properties().apply { Files.newInputStream(configPath).use(::load) }
+        val previous = readSavedSettings()
         val defaults = FreshInstallDefaults.main().apply {
+            for (key in previous.stringPropertyNames()) {
+                if (key.startsWith("updates.") || key.startsWith("standard.")) {
+                    setProperty(key, previous.getProperty(key))
+                }
+            }
             installedVersionHistory.save(this)
             setProperty("apiKey", apiKey)
             setProperty("profitsTicketMode", profitsTicketMode.toString())
@@ -325,7 +334,10 @@ object ConfigManager {
     }
 
     internal fun saveSettings() {
-        Properties().apply {
+        readSavedSettings().apply {
+            remove("allowUncalibratedCapsuleEstimates")
+            remove("safariEntryDryRun")
+            remove("safariEntryApproach")
             installedVersionHistory.save(this)
             setProperty("apiKey", apiKey)
             setProperty("runCompleteTitle", runCompleteTitle)

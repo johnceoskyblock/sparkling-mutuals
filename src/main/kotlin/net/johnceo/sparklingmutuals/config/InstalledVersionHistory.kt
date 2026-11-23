@@ -25,19 +25,31 @@ internal data class InstalledVersionHistory(
         return copy(highlightsSeenThrough = version)
     }
 
-    fun save(properties: Properties) {
-        if (installed != null) properties.setProperty(INSTALLED, installed) else properties.remove(INSTALLED)
-        if (previous != null) properties.setProperty(PREVIOUS, previous) else properties.remove(PREVIOUS)
-        if (highlightsSeenThrough != null) properties.setProperty(SEEN, highlightsSeenThrough) else properties.remove(SEEN)
+    fun save(properties: Properties, track: ReleaseTrack = ReleaseTrack.current) {
+        val prefix = "updates.${track.id}."
+        for ((suffix, version) in listOf(INSTALLED to installed, PREVIOUS to previous, SEEN to highlightsSeenThrough)) {
+            val key = prefix + suffix
+            if (version != null) properties.setProperty(key, version) else properties.remove(key)
+        }
     }
 
     companion object {
-        private const val INSTALLED = "updates.installedVersion"
-        private const val PREVIOUS = "updates.previousVersion"
-        private const val SEEN = "updates.highlightsSeenThrough"
+        private const val INSTALLED = "installedVersion"
+        private const val PREVIOUS = "previousVersion"
+        private const val SEEN = "highlightsSeenThrough"
 
-        fun load(properties: Properties) = InstalledVersionHistory(
-            canonical(properties.getProperty(INSTALLED)), canonical(properties.getProperty(PREVIOUS)), canonical(properties.getProperty(SEEN)))
+        fun hasTrack(properties: Properties, track: ReleaseTrack = ReleaseTrack.current): Boolean =
+            properties.containsKey("updates.${track.id}.$INSTALLED")
+
+        fun load(properties: Properties, track: ReleaseTrack = ReleaseTrack.current): InstalledVersionHistory {
+            val scoped = hasTrack(properties, track)
+            val prefix = if (scoped) "updates.${track.id}." else "updates."
+            return InstalledVersionHistory(
+                canonical(properties.getProperty(prefix + INSTALLED)),
+                canonical(properties.getProperty(prefix + PREVIOUS)),
+                if (scoped || track == ReleaseTrack.FULL) canonical(properties.getProperty(prefix + SEEN)) else null,
+            )
+        }
 
         fun canonical(version: String?): String? = version?.trim()?.takeIf { ReleaseVersion.compareVersions(it, it) == 0 }
             ?.removePrefix("v")?.substringBefore('+')

@@ -34,7 +34,7 @@ object SafariBanners {
         val current=SafariTracking.ledger.current
         if(current!==run) { run=current;fired.clear();cooldown.clear();chamberTarget=null;previousBiome=null;feeder=0;heldFood=0 }
     }
-    fun fire(kind: BannerKind,biome: SafariBiome?=null,critter: String?=null,text: String?=null,preview: Boolean=false,location: String?=null,visible: () -> Boolean = { true }, onStart: () -> Unit = {}) {
+    fun fire(kind: BannerKind,biome: SafariBiome?=null,critter: String?=null,text: String?=null,preview: Boolean=false,location: String?=null,player: String?=null,visible: () -> Boolean = { true }, onStart: () -> Unit = {}) {
         if(!kind.supported) return
         if(!preview && kind==BannerKind.HIDEYHO_LOCATION &&
             (!SafariAssist.inSafari || SafariAssist.biome!=SafariBiome.HAUNTED || SafariFullClear.mode==SafariMode.SPARKLING)) return
@@ -46,6 +46,7 @@ object SafariBanners {
         if(!preview && (!BannerConfig.enabled || !option.enabled)) return
         val formatted=(text ?: option.text).replace("<BIOME>",biome?.label ?: "Safari").replace("<CRITTER>",critter ?: "Critter")
             .replace("<LOCATION>",location ?: "Inside").replace("<TICKET>",if(ContestConfig.firstClassTicket) "First-Class" else "Basic")
+            .let { if (kind == BannerKind.PARTY_KICKED) it.replace("<PLAYER>", player ?: "Party member") else it }
         val color=if(biome!=null && kind in setOf(BannerKind.HOTSPOT,BannerKind.FLOOR_DROPS,BannerKind.BIOME_DONE)) biome.color
             else if(kind==BannerKind.BIRDS && critter!=null) SafariRoster.named(critter)?.color ?: (0xFF000000.toInt() or kind.rgb)
             else SafariEspConfig.rgb(option.color)

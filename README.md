@@ -4,41 +4,116 @@
   <img src="src/main/resources/assets/sparkling-mutuals/icon.png" width="80" height="80" alt="Sparkling Mutuals logo">
 </p>
 
-A Fabric client mod for Hypixel SkyBlock’s Critter Safari. Track runs, coordinate with your party, and customize your HUDs.
+<p align="center">A Fabric mod for Hypixel SkyBlock’s Critter Safari. Track runs, coordinate your party, and customize your HUDs.</p>
 
-[GitHub Releases](https://github.com/johnceoskyblock/sparkling-mutuals/releases/latest) · [Discord](https://discord.com/channels/1567856303341051905/1567859199491186749)
+<p align="center">
+  <a href="https://github.com/johnceoskyblock/sparkling-mutuals/releases/latest"><img alt="Download on GitHub" src="https://img.shields.io/badge/Download-GitHub-24292f?style=for-the-badge&amp;logo=github"></a>
+  <a href="https://github.com/johnceoskyblock/sparkling-mutuals/releases"><img alt="GitHub downloads" src="https://img.shields.io/github/downloads/johnceoskyblock/sparkling-mutuals/total?style=for-the-badge&amp;logo=github"></a>
+  <a href="https://discord.com/channels/1567856303341051905/1567859199491186749"><img alt="Discord" src="https://img.shields.io/badge/Community-Discord-5865F2?style=for-the-badge&amp;logo=discord&amp;logoColor=white"></a>
+</p>
 
-## Editions
+<p align="center">Minecraft <strong>26.1.2</strong>, <strong>26.2</strong>, and <strong>26.3</strong> · Fabric · Java 25</p>
 
-| Edition | Features and updates | JAR filename |
-| --- | --- | --- |
-| **Standard** | Shared Safari features with visible critter outlines, generic floor-drop highlights, and local sparkling alerts. Includes capsule trajectory previews and the Doomspiral lottery with a locally visible result. Modrinth publication is pending. [GitHub Releases](https://github.com/johnceoskyblock/sparkling-mutuals/releases/latest) | `sparkling-mutuals-<version>+mc<minecraft>.jar` |
-| **Full** | Adds through-terrain highlights, remote sparkling alerts, and gameplay automation. Supports in-game update downloads. [GitHub Releases](https://github.com/johnceoskyblock/sparkling-mutuals/releases/latest) | `sparkling-mutuals-<version>-full+mc<minecraft>.jar` |
-| **Full No Auto Update** | Same gameplay features as Full, with manual updates. [GitHub Releases](https://github.com/johnceoskyblock/sparkling-mutuals/releases/latest) | `sparkling-mutuals-<version>-full-no-auto-update+mc<minecraft>.jar` |
-
-In Full, open the update status in `/sm` and choose **Download Update**. Turn on **Auto Update** there for automatic downloads. Updates install after Minecraft closes.
-
-In Standard, bind **Invite Next Sparkling Player**, **Prepare Party Warp**, and **Accept Hideyho Quest** under Minecraft Controls → Sparkling Mutuals. Each tap sends one invite in priority order for the visible sparkling critter. The warp shortcut prepares a chat command and the Hideyho shortcut selects the current quest prompt. Set invite priorities under `/sm` → Party → Interactions.
-
-All three editions share `config/sparkling-mutuals` within the same Minecraft instance, so settings, HUD layouts, and Safari history carry over. Standard leaves Full-only settings inactive and preserves their saved values. On first launch, missing saves are copied from the old Standard folder.
-
-## Installation
-
-1. Use **Minecraft 26.1.2, 26.2, or 26.3** with **Java 25** and **Fabric Loader 0.19.5 or newer**. [Fabric installer](https://fabricmc.net/use/installer/)
-2. Add the Fabric API for your Minecraft version and Fabric Language Kotlin to your `mods` folder. [Fabric API](https://modrinth.com/mod/fabric-api) · [Fabric Language Kotlin](https://modrinth.com/mod/fabric-language-kotlin)
-3. Install one Sparkling Mutuals JAR with the `+mc` suffix matching your Minecraft version. Remove any previous Sparkling Mutuals JAR from the same `mods` folder.
-4. Launch the Fabric profile. Use `/sm` for settings, `/sm gui` to move or resize HUDs, and `/sm help` for the command list.
+---
 
 ## Features
 
-- **Safari tracking** — Use `/unique`, `/fc`, or `/sparkle` to track catches and sparkling checks. Progress, objectives, missing critters, captures, and splits have their own HUDs.
-- **Party coordination** — Share objectives and confirmed progress with compatible SafariUtils clients. Use `/hotspot` for biome assignments and `/sparkling` for collection and capture stats. Use `!commands` for party commands, including `!captures`, `!sparkling`, `!rates`, and `!profit`. [Party sync](docs/PARTY_SYNC.md)
-- **History and profit** — Open `/sm history` for runs, personal bests, catches, and profit. Start a profit session with `/newsession`. Compare sell offers, instant selling, and salvaging from the Hunting Box.
-- **Customization** — Adjust HUD layouts, colors, and fonts. Customize local critter names, banners, sounds, and catch celebrations. The Full editions also offer custom nameplates and teammate highlights.
-- **SkyBlock helpers** — Track Miria’s contests and Honeyhive timers, view overflow skill levels, and see the Rift’s Ubik’s Cube cooldown.
-- **Full editions** — Add Sparkle Warping and the Warp List, leech invites, Safari auto-entry and ticket selection, and capture helpers.
+<details>
+<summary><strong>Safari tracking and party coordination · all editions</strong></summary>
 
-See the [documentation index](docs/README.md) for feature guides and details.
+- Unique, Full Clear, and Sparkle modes with progress, objectives, capture counts, and missing critters. Unique and Full Clear also have a biome splits HUD.
+- Party sync for biome objectives, confirmed progress, and Hotspot assignments with compatible SafariUtils clients. [Party sync](docs/PARTY_SYNC.md)
+- Run history, personal bests, sparkling collections, capture stats, and profit by session, day, or week.
+- Custom HUD positions, colors, fonts, critter names, banners, sounds, and catch celebrations.
+
+</details>
+
+<details>
+<summary><strong>Safari and SkyBlock helpers · all editions</strong></summary>
+
+- Miria contest progress, Torrhus Honeyhive refill beacons, and known Snoozle wall waypoints.
+- Capsule trajectory previews and the Doomspiral Lottery.
+- Hunting Box valuation and shard sale guidance for sell offers, instant selling, and salvaging.
+- Skill overflow tooltips and the Rift’s Ubik’s Cube cooldown timer.
+
+</details>
+
+<details>
+<summary><strong>Standard</strong></summary>
+
+- Line-of-sight critter highlights with separate glow and box controls under **Highlights → General**, one Scrappy color, and generic floor-drop tiles.
+- Sparkling alerts and Doomspiral Lottery results based on what you can see.
+- **Accept Hideyho Quest** keybind setup at startup and a **Party member kicked** banner for kick reports in party chat.
+
+</details>
+
+<details>
+<summary><strong>Full and Full No Auto Update</strong></summary>
+
+- Through-terrain critter highlights, named floor drops, teammate highlights, custom nameplates, and catch pity.
+- Sparkling alerts from compatible party clients in the same Safari instance.
+- Sparkle Warping with the Warp List, auto-party, reparty, and warp timers, plus leech invites.
+- Sparkling Auto-entry, ticket selection, entry guards, and capture helpers.
+
+</details>
+
+---
+
+## Commands
+
+<details>
+<summary><strong>Slash commands</strong></summary>
+
+- `/sm` opens settings, `/sm gui` moves and resizes HUDs, and `/sm help` lists commands.
+- `/unique`, `/fc`, and `/sparkle` choose the run mode. `/hotspot` toggles biome assignments.
+- `/sparkling [IGN|party]` looks up sparkling collections and capture counts. `/captures` shows captures during your current run.
+- `/sm history`, `/sm bests`, `/sm sparklings`, `/sm stats`, and `/sm profits` open history tabs. `/newsession` starts a new profit session.
+- **Both Full editions** also offer `/warping`, `/start`, `/warpingdelay`, `/autoparty`, `/duo`, and `/leech`.
+
+</details>
+
+<details>
+<summary><strong>Party commands</strong></summary>
+
+- `!commands` lists available commands. `!captures [IGN]` and `!sparkling [IGN]` look up the sender when you omit the name.
+- `!rates` shows responding players’ session sparkling catches and runs per sparkling. `!profit [session|lifetime|week|day]` shows their recorded Safari profit.
+- `!dt [reason]` requests downtime. `!hotspot on` and `!hotspot off` set Hotspot assigning for party members using Sparkling Mutuals.
+
+</details>
+
+---
+
+## Installation
+
+1. Set up a supported Minecraft version with **Java 25** and **Fabric Loader 0.19.5 or newer**. Add Fabric API for your Minecraft version and Fabric Language Kotlin. [Fabric installer](https://fabricmc.net/use/installer/) · [Fabric API](https://modrinth.com/mod/fabric-api) · [Fabric Language Kotlin](https://modrinth.com/mod/fabric-language-kotlin)
+2. Download one Sparkling Mutuals edition and match its `+mc` suffix to your Minecraft version. Replace the previous Sparkling Mutuals JAR in your `mods` folder. [GitHub releases](https://github.com/johnceoskyblock/sparkling-mutuals/releases)
+3. Launch the Fabric profile and use `/sm` to open settings. The **What’s New** button shows highlights for your installed edition.
+
+<details open>
+<summary><strong>Editions and building from source</strong></summary>
+
+| Edition | Filename pattern | Build command |
+| --- | --- | --- |
+| **Standard** (default) | `sparkling-mutuals-<version>+mc<minecraft>.jar` | `./gradlew buildAllTargets -Pedition=standard` |
+| **Full** | `sparkling-mutuals-<version>-full+mc<minecraft>.jar` | `./gradlew buildAllTargets -Pedition=full` |
+| **Full No Auto Update** | `sparkling-mutuals-<version>-full-no-auto-update+mc<minecraft>.jar` | `./gradlew buildAllTargets -Pedition=full-no-auto-update` |
+
+**Full** offers **Download Update** and opt-in **Auto Update** in `/sm`. Verified updates install after Minecraft closes. **Standard** and **Full No Auto Update** use manual downloads. Standard’s Modrinth publication is pending.
+
+All editions share settings, HUD layouts, and Safari records within the same Minecraft instance at `config/sparkling-mutuals`. Edition-specific preferences are saved for when you switch back.
+
+Use Java 25 to build and replace `./gradlew` with `./gradlew.bat` on Windows. Verified JARs go to `build/distributions/<version>/<edition>`. [Shipping guide](docs/SHIPPING.md)
+
+</details>
+
+---
+
+## Links
+
+- [Documentation and feature guides](docs/README.md)
+- [GitHub releases](https://github.com/johnceoskyblock/sparkling-mutuals/releases)
+- [GitHub issues](https://github.com/johnceoskyblock/sparkling-mutuals/issues)
+- [Discord](https://discord.com/channels/1567856303341051905/1567859199491186749)
 
 ## Credits
 
@@ -50,5 +125,6 @@ See the [documentation index](docs/README.md) for feature guides and details.
 - **SkyHanni** provided the basis for skill overflow tooltips and level-up messages, capsule hiding, the Phantomleaf Solver, and the Ubik's Cube cooldown timer. The Safari area data also traces back to SkyHanni. [Repository](https://github.com/SkyHanniStudios/SkyHanni)
 - **SkyOcean** and its Vanguard Gambling feature inspired the Doomspiral Lottery and informed the original reel animation. [Repository](https://github.com/meowdding/SkyOcean)
 - **NoammAddons** informed the Doomspiral throw timer’s server tick clock, the Safari entry cooldown HUD, and teammate ESP. [Repository](https://github.com/Noamm9/NoammAddons)
+- **Phantom Addons** inspired the edition and download layout. [Repository](https://github.com/PhantomOrigin/Phantom-Addons)
 
 See [third-party licenses and notices](licenses/) for attribution and license terms.

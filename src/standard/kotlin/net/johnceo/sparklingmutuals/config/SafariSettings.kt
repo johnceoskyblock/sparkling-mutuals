@@ -39,7 +39,7 @@ class SafariSettings {
     val profitableCritters = CritterToggleSettings { SafariEspConfig.profitableToggles.getValue(it) }
     @JvmField @Category(name = "Always On Toggle", desc = "")
     val alwaysOnCritters = CritterToggleSettings(SafariEspConfig::alwaysOn)
-    @JvmField @Category(name="ESP General",desc="") val espGeneral=EspGeneralSettings(esp.biomes,esp.floorDrops)
+    @JvmField @Category(name="ESP General",desc="") val espGeneral=EspGeneralSettings(esp.floorDrops)
     @JvmField @Category(name="Reset",desc="") val reset=Reset()
     init {
         esp.critterColors = customization.critters
@@ -122,15 +122,13 @@ class SafariSettings {
         @ConfigEditorBoolean var profitable = ConfigManager.profitableShardEsp
     }
     class Party {
-        @JvmField @ConfigOption(name = "Sparkling invite list", desc = "Set invite priorities for visible sparklings. Each press of Invite Next Sparkling Player sends one invite.")
-        @ConfigEditorButton(runnableId = 16, buttonText = "Invite List") var inviteList = false
         @JvmField @ConfigOption(name = "Announce biome completion", desc = "Send fd, cd, id or hd in party chat when a biome is complete. Completion still syncs when this is off.")
         @ConfigEditorBoolean var biomeReports = ConfigManager.autoBiomeReports
         @JvmField @ConfigOption(name = "Announce starting quest items", desc = "Tell the party which quest items you started with and remind you to use them.")
         @ConfigEditorBoolean var startingItems = ConfigManager.announceStartingItems
         @JvmField @ConfigOption(name = "Respond to party commands", desc = "Answer party commands such as !since and !dye.")
         @ConfigEditorBoolean var enabled = ConfigManager.partyCommandsEnabled
-        @JvmField @ConfigOption(name = "Respect !dt requests", desc = "Pause Safari entry when a party member requests downtime. Hold Shift to bypass.")
+        @JvmField @ConfigOption(name = "Respect !dt requests", desc = "Announce outstanding downtime requests in party chat when you return to Torrhus Canyon as party leader.")
         @ConfigEditorBoolean var downtime = ConfigManager.downtimeCommand
         @JvmField @ConfigOption(name = "Local PB messages", desc = "Choose which personal best messages appear in your chat.")
         @Accordion val pbChat = PbChatSettings()
@@ -305,6 +303,9 @@ class SafariSettings {
         var ticketPreference = ConfigManager.safariTicketPreference
     }
     class SafariCaptureSettings {
+        @JvmField @ConfigOption(name = "Accept Hideyho quest key", desc = "Bind a key or mouse button to accept the quest from Hideyho's chat prompt.")
+        @ConfigEditorButton(buttonText = "Set Keybind")
+        val hideyhoKey = Runnable { net.johnceo.sparklingmutuals.safari.StandardSafariKeys.openSetup(net.minecraft.client.Minecraft.getInstance()) }
         @JvmField @ConfigOption(name = "Doomspiral throw timer", desc = "Show when to throw a capsule if Doomspiral is visible within 10 blocks.")
         @ConfigEditorBoolean var doomTimer = ConfigManager.doomspiralThrowTimer
         @JvmField @ConfigOption(name = "Doomspiral emergence delay (ticks)", desc = "Time from the spawn cue until Doomspiral can be caught.")
@@ -528,7 +529,6 @@ class SafariSettings {
             13 -> { apply(); client.smSetScreen(CatchCelebrationPreviewScreen(client.smScreen ?: SafariConfigScreen(this))) }
             14 -> (client.smScreen as? SafariConfigScreen)?.confirmBulkAction(resetDefaults = true)
             15 -> (client.smScreen as? SafariConfigScreen)?.confirmBulkAction(resetDefaults = false)
-            16 -> { apply(); client.smSetScreen(net.johnceo.sparklingmutuals.alerts.WarpListScreen(client.smScreen)) }
             11 -> { apply(); client.execute {
                 client.smSetScreen(null)
                 LogImporter.runImport(LogImporter.defaultLogs())
@@ -607,8 +607,7 @@ class SafariSettings {
             ConfigManager::allCoinsAlert to safari.alerts.coins, ConfigManager::allIncenseAlert to safari.alerts.incense, ConfigManager::runCompleteAlert to safari.alerts.runComplete,
             ConfigManager::hideGroundCapsules to safari.hideGroundCapsules, ConfigManager::hideFlyingCapsules to safari.hideFlyingCapsules)
         val espChanged = esp.apply()
-        val glowChanged = SafariEspConfig.critterGlow != espGeneral.glow
-        SafariEspConfig.critterGlow = espGeneral.glow
+        val highlightStyleChanged = espGeneral.apply()
         val modWideCrittersChanged = modWideCritters.apply(SafariEspConfig.modWideToggles)
         val profitableCrittersChanged = profitableCritters.apply(SafariEspConfig.profitableToggles)
         val hudAppearanceChanged = listOf(safari.entryCooldown.appearance,tracking.profitableHud.appearance,tracking.lakeClearedHud.appearance,
@@ -621,7 +620,7 @@ class SafariSettings {
         val objectivesChanged = BiomeObjectiveConfig.apply(tracking.objectivesHud.rows, tracking.objectivesHud.checks)
         val splitTimeFormat = SplitTimeFormat.entries.getOrElse(tracking.splitsHud.timeFormat) { SplitTimeFormat.MILLISECONDS }
         val progressRows = tracking.progressHud.rows.values()
-        val generalChanged = ConfigManager.progressRows != progressRows || espChanged || glowChanged || modWideCrittersChanged || profitableCrittersChanged || alwaysOnCrittersChanged || chatTogglesChanged || objectivesChanged ||
+        val generalChanged = ConfigManager.progressRows != progressRows || espChanged || highlightStyleChanged || modWideCrittersChanged || profitableCrittersChanged || alwaysOnCrittersChanged || chatTogglesChanged || objectivesChanged ||
             ConfigManager.splitsTimeFormat != splitTimeFormat ||
             bannerChanged || ConfigManager.specialCatchStyle != safari.alerts.caughtStyle || ConfigManager.doomspiralEmergenceTicks != safari.capture.doomTicks.coerceIn(1, 600) ||
             ConfigManager.doomspiralThrowLeadTicks != safari.capture.doomLead.coerceIn(0, 40) || customizationChanged || changes.any { (property, value) -> property.get() != value } ||

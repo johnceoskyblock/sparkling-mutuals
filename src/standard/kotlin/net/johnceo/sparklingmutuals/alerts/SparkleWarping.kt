@@ -7,5 +7,4 @@ object SparkleWarping {
     internal val preparingParty get() = false
     fun retainingRequirements(client: Minecraft) = false
     fun requirementMembers(client: Minecraft, actual: Set<String>): Set<String> = actual
-    fun contestPaused(client: Minecraft) = false
 }

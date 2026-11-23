@@ -2,7 +2,9 @@
 
 ## Purpose
 
-Cancel recognized Safari entry interactions before their normal packet path while party readiness or presence is unresolved. The guard only blocks interactions. An independently configurable ticket-selection helper can finish a manually initiated Manager interaction, through the same guard. [Contest and downtime](CONTEST_DOWNTIME.md) owns requests, readiness parsing and ticket release.
+In **Full** and **Full No Auto Update**, the entry guard blocks recognized Safari entry interactions while party readiness or presence is unresolved. The separately configurable ticket-selection helper can finish a manually initiated Manager interaction and observes the same guard. [Contest and downtime](CONTEST_DOWNTIME.md) owns request and readiness parsing.
+
+In **Standard**, Safari entry proceeds normally. The **Party member kicked** banner reports a teammate's kick message, and **Respect !dt requests** allows the party leader to announce outstanding requests when returning to Torrhus Canyon. The Safari re-entry cooldown display is available in all editions. [Banner settings](BANNERS.md)
 
 ## Controls and defaults
 

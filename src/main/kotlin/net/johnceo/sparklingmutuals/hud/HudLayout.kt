@@ -119,10 +119,11 @@ enum class SafariHud(private val defaultLabel: String, val layout: HudLayout) {
     DEVELOPER("Safari developer", HudLayout(.34f, .24f));
     val label get() = if (this == MISSING && net.johnceo.sparklingmutuals.config.ConfigManager.sparklingMode)
         "Unchecked critters" else defaultLabel
+    internal val editionEnabled get() = this != WARP || !net.johnceo.sparklingmutuals.config.SafariSettings.standardEdition
     companion object {
-        val available get() = entries.filter { when(it) { SHARD_GUIDANCE,HUNTING_BOX_VALUE -> net.johnceo.sparklingmutuals.skyblock.market.HuntingBoxHuds.available(it); DEVELOPER -> net.johnceo.sparklingmutuals.debug.SafariDeveloper.enabled; else -> true } }
-        fun load(properties: Properties) = entries.forEach { it.layout.load(properties, it.name.lowercase()) }
-        fun save(properties: Properties) = entries.forEach { it.layout.save(properties, it.name.lowercase()) }
+        val available get() = entries.filter { it.editionEnabled && when(it) { SHARD_GUIDANCE,HUNTING_BOX_VALUE -> net.johnceo.sparklingmutuals.skyblock.market.HuntingBoxHuds.available(it); DEVELOPER -> net.johnceo.sparklingmutuals.debug.SafariDeveloper.enabled; else -> true } }
+        fun load(properties: Properties) = entries.filter { it.editionEnabled }.forEach { it.layout.load(properties, it.name.lowercase()) }
+        fun save(properties: Properties) = entries.filter { it.editionEnabled }.forEach { it.layout.save(properties, it.name.lowercase()) }
         fun resetDefaults() = load(net.johnceo.sparklingmutuals.config.FreshInstallDefaults.main())
     }
 }

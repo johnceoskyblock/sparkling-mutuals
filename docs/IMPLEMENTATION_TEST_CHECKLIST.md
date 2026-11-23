@@ -10,6 +10,13 @@ Use a matching client/JAR, record revision, mode, party state and relevant confi
 
 ## Procedure
 
+### Edition-specific release checks
+
+- Test the first `/sm` open after an upgrade, the manual **What’s New** button, skipped releases, and switching editions on the same version. Standard should show shared and Standard highlights. Both Full builds should show Full gameplay highlights. Updater highlights belong to Full.
+- In Standard, test both critter highlight switches, visible and occluded models, one Scrappy color, and fresh glow-on/box-off defaults. Confirm the saved Full color palette, Warp List, and biome limits survive ordinary saves and reset.
+- Start Standard with **Accept Hideyho Quest** unbound. Test assigning, skipping, relaunching with a saved binding, and opening the setup from Safari Helpers.
+- In a party, send `!dt` during Safari and return to Torrhus as leader. Verify the reason is announced. Send a teammate kick report and check the Standard banner while entry still works normally. Check Honeyhive waypoints at a distance and after a relog.
+
 ### Safari-wide Cavern sources
 
 - Exit the boat and remain outside Cavern. In Unique, receive one Rockmite and one Snoozle loot share, then have a teammate break all mounds and all five walls. Each species should complete without cd or entering its scan circle.
@@ -116,13 +123,11 @@ Use a matching client/JAR, record revision, mode, party state and relevant confi
 - Check an older config with only the shared floor color: all types inherit it. Use **Customization → All floor-drop colors** to recolor every type, then change an individual color again and save without modifying the shared control: the individual choice must survive.
 - Follow [automatic contest downtime checks](CONTEST_DOWNTIME.md#source-and-validation-references): enabled sends one party request from the confirmed leader at a new contest start; members and moderators remain silent, disabled stays silent, the toggle persists, and joining/enabling mid-contest does not send a stale request.
 
-### Shared Sparkling detector and skin range
+### Sparkling sighting and alert visibility
 
-- Follow [detector checks](SPARKLING_DETECTION.md#source-and-validation-references): delayed post-start skins, skin-before-name aliasing, unchanged ordinary scan circles, real-player exclusion, cross-biome loaded detections and the observed Duplico unload point. The sheet covers 36 skins; Tepid keeps the name fallback.
-
-- Inside Safari, receive WAX_ON packets without a name/skin: show one unknown alert/party notice per run and retain coordinates/world labels. Repeated bursts and new locations remain silent; a later identified species may alert once.
-- Receive particles from another loaded biome, lower vanilla particle settings and unload the area: process received packets and retain last-seen locations, without claiming server-wide delivery. Torrhus/outside-Safari particles produce no markers.
-- Identify a body/name within three blocks of a location: retire its anonymous waypoint and cancel unsent unknown text/banner. Test moving/nearby critters to observe grouping ambiguity, then start a new run and verify locations/notification histories reset.
+- In Full, test a delayed name after a matching skin and a party discovery before a local detection. Confirm the same species alert is deduplicated. [Sparkling detection](SPARKLING_DETECTION.md)
+- In Full, receive wax-on packets without a known name or skin. Verify one **Critter Unknown** alert and no particle-only HUD row, waypoint, or party announcement. Repeat with a capture capsule and a known party detection in the biome.
+- In Standard, repeat with a hidden model and a party discovery. The alert should play only once the model is identified and visible. Verify occlusion updates the nearby HUD.
 
 ### Sparkling detections do not gate completion
 
@@ -274,10 +279,10 @@ If a scenario fails, preserve a minimal reproduction and compare the current own
 
 2026-10-19 (America/New_York) — Added early resource, local-title and late-entry report scenarios. Reviewed source: working changes on `78885e0`; live validation pending.
 
-## Experimental shard ranges — live checks pending
+## Shard sale guidance
 
-- Enable the experimental SkyBlock / Helpers switch on26.1.2; verify persistence and unchanged /profit. Cold caches may stay gray while history loads.
-- Open box pages/sort/filter rapidly: only actual owned Safari slots get range outlines and local explanations. No stale advice follows reused slots; icons remain readable.
+- Verify the default-on **Shard sale guidance** switch under SkyBlock → Helpers and that disabling it persists. Check that `/profit` ranking and the independent Hunting Box total are unaffected.
+- Open and page through the Hunting Box. Check the 37-shard guide, scroll behavior, value and volume labels, and the explanation of sell offers and salvage. Reopen `/sm gui` after the guide has rendered to check placement. [Shard sale guidance](SHARD_SALE_GUIDANCE.md)
 - Confirm current Profile ID, observe SELL offers, verify explicit unit-price lore and co-op ownership. Repeat partial fills, duplicate products, detail/unknown screens and page changes. A cancel button or missing row never proves all offers cancelled.
 - Verify one last-observed advisory after confirmed SELL→HOLD with real ask decline; no repeat spam, target-only false drop, UNKNOWN/recovery or profile/account leakage. Restart requires revalidation.
 - Disable/disconnect during downloads/menu loading: no late colors/alerts. Never place/cancel test orders automatically. Offline checks do not certify trading outcomes.

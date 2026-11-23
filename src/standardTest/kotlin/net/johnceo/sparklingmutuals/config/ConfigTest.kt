@@ -71,7 +71,6 @@ class ConfigTest {
         assertFalse(ConfigManager.fullClearMode)
         assertFalse(ConfigManager.sparklingMode)
         assertFalse(ConfigManager.hotspotAnnouncer)
-        assertTrue(net.johnceo.sparklingmutuals.alerts.WarpList.names("Hideyho").isEmpty())
         assertFalse(ConfigManager.leechMode)
         for((w,h) in listOf(320 to 240,640 to 360,1280 to 720)) for(hud in SafariHud.entries) {
             val box=hud.layout.bounds(w,h,180,100)

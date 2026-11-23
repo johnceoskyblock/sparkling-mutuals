@@ -1,5 +1,7 @@
 # Implementation documentation audit
 
+This is the October 2026 audit snapshot. Use the documentation index to find the current feature guides and their sources. [Documentation index](README.md)
+
 ## Scope and reviewed revision
 
 Documentation-only audit for [issue #65](https://github.com/johnceoskyblock/sparkling-mutuals/issues/65). The reviewed runtime, tests, build logic and scripts are from **`93de7ff3b0de2ccdd4a42bf48bc19efda6e9caee`**. There are **no local runtime/source differences** in this change. Documentation describes the implementation, including its limitations; it does not implement proposed gameplay corrections.

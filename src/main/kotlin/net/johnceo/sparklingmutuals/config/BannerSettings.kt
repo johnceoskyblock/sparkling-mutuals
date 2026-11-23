@@ -26,12 +26,6 @@ class BannerSettings {
         return changed
     }
 }
-class SafariBannerOptions {
-    @JvmField @ConfigOption(name="Full party joined",desc="") @Accordion val fullParty=BannerOption(BannerKind.FULL_PARTY)
-    @JvmField @ConfigOption(name="Biome complete",desc="") @Accordion val biome=BannerOption(BannerKind.BIOME_DONE)
-    @JvmField @ConfigOption(name="Run complete",desc="") @Accordion val complete=BannerOption(BannerKind.RUN_COMPLETE)
-    @JvmField @ConfigOption(name="Warping now",desc="") @Accordion val warp=BannerOption(BannerKind.WARP)
-}
 class EncountersBanners {
     @JvmField @ConfigOption(name = "Hideyho location", desc = "Announce inside or outside while you are in Haunted. Unique and Full Clear modes only.")
     @Accordion val hideyho=BannerOption(BannerKind.HIDEYHO_LOCATION)
@@ -53,6 +47,7 @@ class BannerOption(private val kind: BannerKind) {
     val textHint get()=when(kind) {
         BannerKind.HIDEYHO_LOCATION -> "Use <LOCATION> for Inside or Outside."
         BannerKind.BIOME_DONE -> "Use <BIOME> for the completed biome."
+        BannerKind.PARTY_KICKED -> "Use <PLAYER> for the player reporting a kick."
         else -> ""
     }
     private val saved=BannerConfig.options.getValue(kind)

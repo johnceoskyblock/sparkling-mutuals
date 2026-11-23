@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Show personal loot-ready Honeyhives during an incomplete Miria contest. Out of hologram range, saved personal loot/corrected deadlines determine readiness, including across relogs. Waypoints return automatically at expiry. Nearby current status holograms override that saved state and persist the correction for later distant viewing. Block honey levels never determine readiness.
+Show personal loot-ready Honeyhives during an incomplete Miria contest in Standard, Full, and Full No Auto Update. Outside hologram range, saved personal refill deadlines determine readiness across relogs. Beacons and waypoints return at expiry. Nearby status holograms update the saved state for later distant viewing. Readiness comes from refill evidence and saved deadlines.
 
 ## Controls and defaults
 
@@ -32,7 +32,7 @@ The bundled `hive_7` position is **(-705, 92, 225)**. Saved **(-704, 92, 225)** 
 
 ## Lifecycle and persistence
 
-`config/sparkling-mutuals-honeyhives.properties` stores the bundled positions and per-player/profile state. On upgrade, saved positions outside the catalogue and their associated state are removed, with the original file backed up as `sparkling-mutuals-honeyhives.properties.pre-waypoint-cleanup.bak`. Valid known-hive timers and scopes remain intact. On relog, only that player's last confirmed profile scope can resume while waiting for the explicit profile-ID line. With no known profile, fresh observations use a provisional scope; confirmation promotes correlated personal loot/Queen evidence, not arbitrary provisional hologram corrections.
+`config/sparkling-mutuals/sparkling-mutuals-honeyhives.properties` stores per-player and per-profile state for known positions. On upgrade, saved positions outside the catalog and their associated state are cleaned up with the original file backed up as `sparkling-mutuals-honeyhives.properties.pre-waypoint-cleanup.bak`. On relog, the last confirmed profile can resume while waiting for confirmation. New observations use a provisional scope until the profile is known.
 
 Version-2 fallback `refill` deadlines remain usable. Exact `looted` timestamps rebuild one-hour deadlines on load, then saved `observedRefill` hologram corrections take precedence. Explicit `queenFull` markers from correlated Queen Bee messages bypass the timer until a new loot or current nearby hologram corrects it. Legacy `full` markers mixed hologram observations and actual procs, so they no longer override cooldowns; the pre-migration file is backed up as `.pre-timer-priority.bak`. A fresh confirmed loot/Queen event clears old corrections, and a confirmed ready hologram clears stale loot timestamps. Loading and periodic maintenance prune expired deadlines; losing loaded visuals does not reset an unexpired timer. World changes clear visible/click-correlation state, not saved cooldowns. Disconnect forgets the current profile, retaining its saved scope for resumption.
 

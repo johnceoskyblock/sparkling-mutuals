@@ -33,9 +33,15 @@ enum class BannerKind(val label: String,val text: String,val rgb: Int=0x55FF55,v
     CONTEST_ONE("Contest: one minute","1 Minute Left",0xFFAA00,30,priority=20),
     CONTEST_END("Contest ended","Contest Ended",0xFF5555,30),
     TICKET("Ticket earned","<TICKET> Ticket Earned!",sound=49,priority=20),
-    WARP("Warping now","Warping Now",0xFF5555,9,priority=30);
+    WARP("Warping now","Warping Now",0xFF5555,9,priority=30),
+    PARTY_KICKED("Party member kicked","Safari kick reported by <PLAYER>",0xFF5555,sound=30);
+    val availableInEdition get()=when(this) {
+        WARP -> !net.johnceo.sparklingmutuals.config.SafariSettings.standardEdition
+        PARTY_KICKED -> net.johnceo.sparklingmutuals.config.SafariSettings.standardEdition
+        else -> true
+    }
     val supported get()=this in setOf(FULL_PARTY,BIOME_DONE,RUN_COMPLETE,GEMS,BIRD_FOOD,COINS,INCENSE,FEEDER_EMPTY,HIDEYHO_LOCATION,
-        CONTEST_START,CONTEST_FIVE,CONTEST_THREE,CONTEST_ONE,CONTEST_END,TICKET,WARP)
+        CONTEST_START,CONTEST_FIVE,CONTEST_THREE,CONTEST_ONE,CONTEST_END,TICKET,WARP,PARTY_KICKED) && availableInEdition
     val encounterBiome get()=when(this) { GEMS -> net.johnceo.sparklingmutuals.safari.SafariBiome.CAVERN
         BIRD_FOOD,FEEDER_EMPTY -> net.johnceo.sparklingmutuals.safari.SafariBiome.FOREST
         COINS,INCENSE -> net.johnceo.sparklingmutuals.safari.SafariBiome.HAUNTED;else -> null }

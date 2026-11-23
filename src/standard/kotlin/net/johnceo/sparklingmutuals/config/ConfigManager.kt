@@ -236,16 +236,17 @@ object ConfigManager {
         "warpAlertsEnabled", "warpDelaySeconds", "warpDuo", "warpListRefresh", "waterOpacity", "migration.sparkleWarpTimers22_27"
     )
 
-    private fun preserveFullSettings(saved: Properties, output: Properties, preserveInviteList: Boolean = false) {
+    private fun preserveFullSettings(saved: Properties, output: Properties) {
         for (key in saved.stringPropertyNames()) {
-            val automatedInvite = key.startsWith("warpList.player.") &&
-                (key.endsWith(".alwaysInvite") || key.endsWith(".discoveryCheckedAt"))
             val floorAppearance = key.startsWith("esp.floor.") &&
                 (key.endsWith(".alwaysOn") || key.endsWith(".onlyInBiome") ||
                     key.endsWith(".textScale") || key.endsWith(".color") && key != "esp.floor.generic.color")
+            val scrappyColor = key.startsWith("esp.scrappy.") && key.endsWith(".color")
+            val critterBiomeLimit = SafariEspConfig.groups.keys.any { it != "floor" && key == "esp.$it.onlyInBiome" }
             if (key in fullOnlySettings || key.startsWith("waterOpacity.") || key.startsWith("esp.nameplate.") ||
-                key.startsWith("esp.nameplates.") || key.startsWith("esp.teammate.") || floorAppearance || automatedInvite ||
-                preserveInviteList && key.startsWith("warpList.")) {
+                key.startsWith("esp.nameplates.") || key.startsWith("esp.teammate.") || floorAppearance ||
+                scrappyColor || critterBiomeLimit || key.startsWith("warpList.") || key.startsWith("banner.warp.") ||
+                key.startsWith("hud.warp.") || key.startsWith("appearance.warp.")) {
                 output.setProperty(key, saved.getProperty(key))
             }
         }
@@ -283,7 +284,8 @@ object ConfigManager {
         val properties = if (existing) readSavedSettings() else FreshInstallDefaults.main()
         val savedVersions = InstalledVersionHistory.load(properties)
         installedVersionHistory = savedVersions.launch(installedVersion, !existing, recoverPreviousVersion)
-        val versionChanged = installedVersionHistory != savedVersions
+        val versionChanged = installedVersionHistory != savedVersions ||
+            installedVersionHistory.installed != null && !InstalledVersionHistory.hasTrack(properties)
         if (versionChanged) installedVersionHistory.save(properties)
         // Introduce the redesigned guidance once, then respect every subsequent saved choice.
         val introduceShardGuidance = properties.getProperty("migration.shardSaleGuidanceV2") != "true"
@@ -324,7 +326,6 @@ object ConfigManager {
         showWhere = properties.getProperty("showWhere")?.toIntOrNull()?.takeIf { it in 0..2 } ?: 1
         capsuleHideDistance = validCapsuleDistance(properties.getProperty("capsuleHideDistance")?.toFloatOrNull())
         capsulePathWidth = validCapsulePathWidth(properties.getProperty("capsulePathWidth")?.toFloatOrNull())
-        net.johnceo.sparklingmutuals.alerts.WarpList.load(properties, automation = false)
         doomspiralEmergenceTicks = properties.getProperty("doomspiralEmergenceTicks")?.toIntOrNull()?.coerceIn(1, 600) ?: 98
         doomspiralThrowLeadTicks = properties.getProperty("doomspiralThrowLeadTicks")?.toIntOrNull()?.coerceIn(0, 40) ?: 4
         SafariHud.load(properties)
@@ -340,13 +341,17 @@ object ConfigManager {
     internal fun resetSettings() {
         val previous = readSavedSettings()
         val defaults = FreshInstallDefaults.main().apply {
+            setProperty(SafariEspConfig.STANDARD_SCRAPPY_COLOR, getProperty("esp.scrappy.color"))
+            for (key in previous.stringPropertyNames()) {
+                if (key.startsWith("updates.")) setProperty(key, previous.getProperty(key))
+            }
             installedVersionHistory.save(this)
             setProperty("apiKey", apiKey)
             setProperty("profitsTicketMode", profitsTicketMode.toString())
             setProperty("runCoinsInstaSell", runCoinsInstaSell.toString())
             setProperty("hotspotAnnouncer", hotspotAnnouncer.toString())
             setProperty("migration.shardSaleGuidanceV2", "true")
-            preserveFullSettings(previous, this, preserveInviteList = true)
+            preserveFullSettings(previous, this)
         }
         PersonalBestConfig.write(configPath, defaults, "Sparkling Mutuals configuration")
         try {
@@ -378,9 +383,8 @@ object ConfigManager {
     }
 
     internal fun saveSettings() {
-        val previous = readSavedSettings()
-        Properties().apply {
-            preserveFullSettings(previous, this)
+        readSavedSettings().apply {
+            remove("allowUncalibratedCapsuleEstimates")
             installedVersionHistory.save(this)
             setProperty("apiKey", apiKey)
             setProperty("runCompleteTitle", runCompleteTitle)
@@ -406,7 +410,6 @@ object ConfigManager {
             setProperty("showWhere", showWhere.coerceIn(0, 2).toString())
             setProperty("capsuleHideDistance", validCapsuleDistance(capsuleHideDistance).toString())
             setProperty("capsulePathWidth", validCapsulePathWidth(capsulePathWidth).toString())
-            net.johnceo.sparklingmutuals.alerts.WarpList.save(this, automation = false)
 
             SafariHud.save(this)
             SafariEspConfig.save(this, includeFullPresentation = false)

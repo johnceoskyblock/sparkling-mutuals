@@ -41,10 +41,11 @@ class InstalledVersionHistoryTest {
         ConfigManager.save()
         ConfigManager.init(directory, "4.4.1+mc26.1.2") { error("should not scan again") }
         val props = Properties().apply { Files.newInputStream(path).use(::load) }
+        val prefix = "updates.${ReleaseTrack.current.id}."
         assertEquals("false", props.getProperty("shinyDetection"))
-        assertEquals("4.4.1", props.getProperty("updates.installedVersion"))
-        assertEquals("4.3.9", props.getProperty("updates.previousVersion"))
-        assertEquals("4.4.1", props.getProperty("updates.highlightsSeenThrough"))
+        assertEquals("4.4.1", props.getProperty(prefix + "installedVersion"))
+        assertEquals("4.3.9", props.getProperty(prefix + "previousVersion"))
+        assertEquals("4.4.1", props.getProperty(prefix + "highlightsSeenThrough"))
         assertNull(ReleaseHighlights.pending(ConfigManager.installedVersionHistory))
         assertEquals(pending, ReleaseHighlights.forCurrentInstall(ConfigManager.installedVersionHistory))
 
@@ -59,6 +60,54 @@ class InstalledVersionHistoryTest {
         ConfigManager.init(directory, "4.4.2+mc26.3") { error("should not scan again") }
         assertEquals(next, ReleaseHighlights.forCurrentInstall(ConfigManager.installedVersionHistory))
         assertNull(ReleaseHighlights.pending(ConfigManager.installedVersionHistory))
+    }
+
+    @Test fun `each edition shows only its own highlights and shares the version range rules`() {
+        val history = InstalledVersionHistory(installed = "4.4.3", previous = "4.1.1")
+        fun titles(track: ReleaseTrack) = ReleaseHighlights.forCurrentInstall(history, track = track)
+            .releases.flatMap { it.features }.map { it.title }
+        val standard = titles(ReleaseTrack.STANDARD)
+        val full = titles(ReleaseTrack.FULL)
+        val noUpdater = titles(ReleaseTrack.FULL_NO_AUTO_UPDATE)
+        assertTrue("Safari Splits HUD" in standard && "Safari Splits HUD" in full)
+        assertTrue("Standard Safari visuals" in standard && "Standard Safari visuals" !in full)
+        assertTrue("Critter nameplates" !in standard && "Critter nameplates" in full)
+        assertTrue("Floor-drop visibility" !in standard && "Safari chat filters" in standard)
+        assertEquals(full.filterNot { it == "In-game update downloads" }, noUpdater)
+        assertTrue("In-game update downloads" in full)
+
+        val fullOnly = InstalledVersionHistory(installed = "3.4.0")
+        assertNull(ReleaseHighlights.pending(fullOnly, track = ReleaseTrack.STANDARD))
+        assertTrue(ReleaseHighlights.pending(fullOnly, track = ReleaseTrack.FULL) != null)
+    }
+
+    @Test fun `saving and resetting keep another edition's settings and version history`() {
+        val otherTrack = if (ReleaseTrack.current == ReleaseTrack.STANDARD) ReleaseTrack.FULL else ReleaseTrack.STANDARD
+        val path = directory.resolve("sparkling-mutuals.properties")
+        val otherHistory = InstalledVersionHistory("4.4.3", "4.4.0", "4.4.3")
+        val otherSetting = if (otherTrack == ReleaseTrack.STANDARD) SafariEspConfig.STANDARD_SCRAPPY_COLOR else "esp.scrappy.fish.color"
+        val custom = "0:255:1:23:45"
+        val initial = Properties().apply {
+            otherHistory.save(this, otherTrack)
+            setProperty(otherSetting, custom)
+        }
+        Files.newOutputStream(path).use { initial.store(it, null) }
+        ConfigManager.init(directory, "4.4.3")
+        ContestConfig.init(directory)
+        assertNull(ConfigManager.installedVersionHistory.previous)
+        assertTrue(ReleaseHighlights.pending(ConfigManager.installedVersionHistory) != null)
+        ConfigManager.acknowledgeReleaseHighlights("4.4.3")
+
+        fun assertPreserved() {
+            val saved = Properties().apply { Files.newInputStream(path).use(::load) }
+            assertEquals(otherHistory, InstalledVersionHistory.load(saved, otherTrack))
+            assertEquals(custom, saved.getProperty(otherSetting))
+            assertNull(ReleaseHighlights.pending(InstalledVersionHistory.load(saved)))
+        }
+        ConfigManager.saveSettings()
+        assertPreserved()
+        ConfigManager.resetSettings()
+        assertPreserved()
     }
 
     @Test fun `legacy installations without recoverable history only get the current release`() {

@@ -1,5 +1,7 @@
 # Safari WebSocket implementation handoff
 
+This handoff records the earlier cross-mod design request. Use the current guide for the implemented client protocol and endpoints. [Party sync](PARTY_SYNC.md)
+
 JohnKuudra, extend Safari party sync so Sparkling Mutuals users see the same confirmed critter and biome progress across the run. Coordinate the shared protocol with Serkosea so SafariUtils keeps working in mixed parties. Use the Sparkling Mutuals WebSocket as a backup when the shared service is unavailable. Keep sync automatic for eligible parties.
 
 ## 1. Agree on the shared protocol first

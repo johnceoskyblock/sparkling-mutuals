@@ -36,9 +36,10 @@ class SafariModeConfigTest {
     @Test fun `setting the existing mode preserves biome visibility choices`() {
         ConfigManager.init(dir)
         val settings = SafariSettings()
-        settings.esp.forest = false
+        SettingsCatalog(settings).locate(SettingsTarget("ESP General", listOf("biomes", "forest")))
+            ?.second?.last()?.write(false)
         settings.apply(); settings.apply()
-        assertFalse(SafariEspConfig.groups.getValue("forest").onlyInBiome)
+        assertEquals(SafariSettings.standardEdition, SafariEspConfig.groups.getValue("forest").onlyInBiome)
         assertTrue(CommandHelp.localLines().any { it.contains("/fc") })
     }
 }
