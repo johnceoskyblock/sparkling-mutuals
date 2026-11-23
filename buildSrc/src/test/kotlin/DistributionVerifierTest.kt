@@ -28,7 +28,9 @@ class DistributionVerifierTest {
         val entries = mutableMapOf(
             "net/johnceo/sparklingmutuals/SparklingMutuals.class" to byteArrayOf(1),
             "assets/sparkling-mutuals/icon.png" to byteArrayOf(1),
-            "LICENSE_sparkling-mutuals" to "CC0".toByteArray(),
+            "LICENSE_sparkling-mutuals" to "GNU LESSER GENERAL PUBLIC LICENSE\nVersion 2.1".toByteArray(),
+            "licenses/SkyHanni-LGPL-2.1.txt" to "LGPL".toByteArray(),
+            "licenses/README.md" to "Attribution inventory".toByteArray(),
             "licenses/HM-API-LICENSE" to "Apache".toByteArray(),
             "sparkling-mutuals.mixins.json" to JsonOutput.toJson(mapOf("required" to true,
                 "package" to "net.johnceo.sparklingmutuals.mixin", "client" to listOf("SafariCapsuleMixin"))).toByteArray(),
@@ -37,7 +39,7 @@ class DistributionVerifierTest {
                 "depends" to mapOf("minecraft" to "~${target.minecraft}", "java" to ">=25"))).toByteArray()))
         )
         val metadata = mutableMapOf<String, Any>("schemaVersion" to 1, "id" to "sparkling-mutuals", "version" to "3.3.0",
-            "environment" to "client", "icon" to "assets/sparkling-mutuals/icon.png",
+            "license" to "LGPL-2.1-only", "environment" to "client", "icon" to "assets/sparkling-mutuals/icon.png",
             "custom" to mapOf("sparkling-mutuals:edition" to edition.id),
             "entrypoints" to mapOf("main" to listOf(mapOf("value" to "net.johnceo.sparklingmutuals.SparklingMutuals", "adapter" to "kotlin"))),
             "mixins" to listOf("sparkling-mutuals.mixins.json"), "jars" to listOf(mapOf("file" to hmName)),
@@ -96,6 +98,13 @@ class DistributionVerifierTest {
             assertEquals(MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(verified.path)).joinToString("") { "%02x".format(it) }, verified.sha256)
         }
     }
+    @Test fun cc0MetadataOrWrongPackagedLicenseCannotPassVerification() {
+        val target = targets.first()
+        val oldMetadata = jar(target) { metadata, _ -> metadata["license"] = "CC0-1.0" }
+        assertThrows(IllegalArgumentException::class.java) { verifyJar(oldMetadata, target, "3.3.0") }
+        val wrongText = jar(target) { _, entries -> entries["LICENSE_sparkling-mutuals"] = "CC0".toByteArray() }
+        assertThrows(IllegalArgumentException::class.java) { verifyJar(wrongText, target, "3.3.0") }
+    }
     @Test fun wrongInternalMinecraftFailsDespiteCorrectFilename() {
         val p = jar(targets[2]) { m, _ -> m["depends"] = mapOf("minecraft" to "26.2", "java" to ">=25", "fabricloader" to ">=0.19.5") }
         assertThrows(IllegalArgumentException::class.java) { verifyJar(p, targets[2], "3.3.0") }
@@ -107,7 +116,7 @@ class DistributionVerifierTest {
     }
     @Test fun wrongVersionAndMissingRuntimeResourcesAreRejected() {
         val missing = listOf("net/johnceo/sparklingmutuals/SparklingMutuals.class", "assets/sparkling-mutuals/icon.png",
-            "LICENSE_sparkling-mutuals", "licenses/HM-API-LICENSE", "sparkling-mutuals.mixins.json",
+            "LICENSE_sparkling-mutuals", "licenses/HM-API-LICENSE", "licenses/SkyHanni-LGPL-2.1.txt", "licenses/README.md", "sparkling-mutuals.mixins.json",
             "net/johnceo/sparklingmutuals/mixin/SafariCapsuleMixin.class")
         for (entry in missing) {
             val p = jar(targets[0]) { _, e -> e.remove(entry) }

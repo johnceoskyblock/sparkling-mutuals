@@ -25,6 +25,7 @@ Start with [installation and features](../README.md), then use this index for ga
 | History | [History and imports](HISTORY_IMPORT.md), [achievement requirements and dex tiers](ACHIEVEMENTS.md), [credited party streaks](SINCE_COMMAND.md) |
 | Capsule aiming guide | [Capture projections](CAPTURE_PROJECTIONS.md) |
 | Development | [Edition layout](EDITION_CONSOLIDATION_HANDOFF.md), [build matrix](MULTI_VERSION_BUILDS.md), [source synchronization](SOURCE_SYNC.md) |
+| License and publication | [Component licenses and asset attribution](../licenses/README.md), [Standard Modrinth listing and moderation notes](MODRINTH_DRAFT.md) |
 | Push and release automation | [PowerShell shipping command and setup](SHIPPING.md) |
 | Validation | [Manual scenarios](IMPLEMENTATION_TEST_CHECKLIST.md), [October 2026 audit baseline](IMPLEMENTATION_AUDIT.md) |
 | Upcoming release | [NEXT.md](releases/NEXT.md) |

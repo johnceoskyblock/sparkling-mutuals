@@ -3,6 +3,7 @@
 #
 # Linux start script should use lf
 /gradlew        text eol=lf
+/.gitignore     text eol=lf
 *.kt            text eol=lf
 *.md            text eol=lf
 *.jsonl         text eol=lf

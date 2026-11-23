@@ -50,3 +50,34 @@ versions/*/run/
 
 # Python workflow sender tests
 __pycache__/
+
+# Local authentication and environment secrets
+/.devAuth/
+.env
+.env.*
+!.env.example
+!.env.sample
+.dev.vars
+.dev.vars.*
+*.pem
+
+# Private agent notes, handoffs and generated exports (maintained docs stay tracked)
+/.codex/
+/local/
+/scratch/
+/tmp/
+/temp/
+/handoffs/
+/artifacts/
+/exports/
+/SESSION_NOTES*.md
+/HANDOFF*.md
+/AGENT_HANDOFF*.md
+/PLAN.md
+/PLAN.local*.md
+/TODO.local*.md
+
+# Tool caches
+node_modules/
+.pytest_cache/
+*.pyc
