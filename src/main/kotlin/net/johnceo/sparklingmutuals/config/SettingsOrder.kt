@@ -36,9 +36,12 @@ internal object SettingsOrder {
     )
 
     fun guide(field: String): String? = when(field) {
-        "modWideCritters" -> "Choose the critters your current mode can highlight. Turning one off removes it from mode-based ESP."
-        "profitableCritters" -> "Choose which critters can use profitable ESP. Enable Profitable critter ESP in the mode you use."
-        "alwaysOnCritters" -> "Highlight these critters even when your mode does not need them. Global ESP visibility still applies."
+        "modWideCritters" -> if (SafariSettings.standardEdition) "Choose which visible critters your current mode can highlight."
+            else "Choose the critters your current mode can highlight. Turning one off removes it from mode-based ESP."
+        "profitableCritters" -> if (SafariSettings.standardEdition) "Choose which visible critters the profitable highlights setting can show."
+            else "Choose which critters can use profitable ESP. Enable Profitable critter ESP in the mode you use."
+        "alwaysOnCritters" -> if (SafariSettings.standardEdition) "Highlight these critters whenever you can see them, even after your mode is done with them."
+            else "Highlight these critters even when your mode does not need them. Global ESP visibility still applies."
         "alwaysOnFloorDrops" -> "Highlight these floor drops even after their objective is complete. Global ESP visibility still applies."
         else -> null
     }

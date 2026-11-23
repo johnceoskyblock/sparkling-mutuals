@@ -13,12 +13,12 @@ class NativeSettingsTest {
         assertSame(settings.customization.huds.progress,settings.tracking.progressHud.appearance)
         assertSame(settings.customization.huds.objectives,settings.tracking.objectivesHud.appearance)
         assertSame(settings.customization.huds.doomThrow,settings.safari.capture.doomAppearance)
-        assertEquals(18,catalog.pages.size)
+        assertEquals(17,catalog.pages.size)
         assertNotNull(catalog.pages.firstOrNull {it.name=="ESP General"})
         assertNotNull(catalog.pages.firstOrNull { it.name=="Mode-wide Critter Toggles" })
         assertNotNull(catalog.pages.firstOrNull { it.name=="Profitable Critter Toggles" })
         assertNotNull(catalog.pages.firstOrNull { it.name=="Always On Toggle" })
-        assertNotNull(catalog.pages.firstOrNull { it.name=="Floor Drop Always On Toggle" })
+        assertNull(catalog.pages.firstOrNull { it.name=="Floor Drop Always On Toggle" })
         fun visit(rows: List<SettingsCatalog.Row>) {
             rows.forEach { row ->
                 if(row.group) { assertTrue(row.children.isNotEmpty(),row.path);visit(row.children) }

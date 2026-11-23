@@ -1,6 +1,8 @@
 package net.johnceo.sparklingmutuals.safari.shots.preview.contacts
 
 import net.johnceo.sparklingmutuals.safari.SafariAssist
+import net.johnceo.sparklingmutuals.safari.SafariPreviewVisibility
+import net.johnceo.sparklingmutuals.config.SafariSettings
 import net.johnceo.sparklingmutuals.safari.esp.*
 import net.johnceo.sparklingmutuals.safari.shots.*
 import net.minecraft.client.Minecraft
@@ -130,13 +132,16 @@ object CapsuleContactScene {
         if(System.identityHashCode(entity)!=d.generation || entity.isRemoved || entity is Player ||
             client.player?.distanceToSqr(entity)?.let{it>4096}!=false) return null
         val descriptor=SafariEsp.describe(entity)
-        if(SafariEsp.isRockmiteMound(entity,client)) {
+        val mound = SafariEsp.isRockmiteMound(entity, client)
+        val part = entity is ArmorStand && descriptor.texture == ShywormContactParts.BODY_TEXTURE
+        val species = if (mound) "Rockmite" else if (part) "Shyworm" else
+            SafariEspRules.identify(descriptor)?.name ?: return null
+        if (SafariSettings.standardEdition && !SafariPreviewVisibility.entity(client, entity)) return null
+        if (mound) {
             val surface=(entity as? Display.ItemDisplay)?.let{MoundContactSurface.inspect(client,it)}
             if(surface==null) { unsupportedSurface=true;return null }
             return ContactTarget(d.key,d.generation,"Rockmite",surface.bounds(),"mound_surface_v1",surface=surface)
         }
-        val part=entity is ArmorStand && descriptor.texture==ShywormContactParts.BODY_TEXTURE
-        val species=if(part) "Shyworm" else SafariEspRules.identify(descriptor)?.name ?: return null
         if(part) {
             // This observed geometry is only supported for ordinary, unposed marker head-items.
             val stand=entity
@@ -165,7 +170,13 @@ object CapsuleContactScene {
         // A changed off-path part/head can make an otherwise unchanged path ambiguous.
         // Rebuild after the next bounded tick refresh rather than doing extra render-thread inspections.
         val support=if(wormAssociationDirty || bodyDiscoveryPending || metadataChecks.size>0) emptyMap() else partSupport
-        val targets=discovered.filter{!it.bodyPart || it.key in support}
+        val targets=discovered.filter { target ->
+            (!target.bodyPart || target.key in support) && (!SafariSettings.standardEdition ||
+                (support[target.key] ?: listOf(target)).all { dependency ->
+                    val entity = dependency.key.toIntOrNull()?.let { client.level?.getEntity(it) }
+                    entity != null && SafariPreviewVisibility.entity(client, entity)
+                })
+        }
         val omittedBody=discovered.any{it.bodyPart && it.key !in support}
         var coverage=if(unsupported || omittedBody || unsupportedSurface) ContactCoverage(false,cachedCoverage.reasons+"unsupported_proxy") else cachedCoverage
         val curve=ContactCurveSampler.sample(eye,aim,pitch)

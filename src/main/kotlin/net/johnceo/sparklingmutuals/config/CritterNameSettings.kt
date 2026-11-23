@@ -5,8 +5,11 @@ import net.johnceo.sparklingmutuals.safari.ui.CritterNames
 
 class CustomizationGuide(rename: Boolean) {
     @JvmField @StandaloneDescription @ConfigOption(name="",desc="") val guide=false
-    val description=if(rename) "Set the name shown in HUDs, nametags, Hypixel messages and Hunting Box tooltips. Names are visual only. Nameplates use these names automatically."
-        else "Choose server nametags, ESP marker titles, both or neither. Marker titles automatically use the names set in Critter Names. Pity tracks identified catch attempts for each critter."
+    val description = when {
+        !rename -> "Choose server nametags, ESP marker titles, both or neither. Marker titles automatically use the names set in Critter Names. Pity tracks identified catch attempts for each critter."
+        SafariSettings.standardEdition -> "Set the name shown in HUDs, local chat and Hunting Box tooltips."
+        else -> "Set the name shown in HUDs, nametags, Hypixel messages and Hunting Box tooltips. Names are visual only. Nameplates use these names automatically."
+    }
 }
 
 class CritterNameEntry(val canonical: String) {

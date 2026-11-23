@@ -1,6 +1,5 @@
 kotlin/net/johnceo/sparklingmutuals/alerts/SparkleAutoParty.kt
 kotlin/net/johnceo/sparklingmutuals/alerts/WarpListRefresh.kt
-kotlin/net/johnceo/sparklingmutuals/alerts/WarpListScreen.kt
 kotlin/net/johnceo/sparklingmutuals/commands/AlertCommand.kt
 kotlin/net/johnceo/sparklingmutuals/mixin/CjsEntryFocusMixin.kt
 kotlin/net/johnceo/sparklingmutuals/mixin/CjsEntryInputMixin.kt
@@ -18,3 +17,7 @@ kotlin/net/johnceo/sparklingmutuals/safari/automation/entry/CjsSafariEntry.kt
 kotlin/net/johnceo/sparklingmutuals/safari/automation/entry/CjsWalkingKeys.kt
 kotlin/net/johnceo/sparklingmutuals/safari/automation/GemzieAutoSelect.kt
 kotlin/net/johnceo/sparklingmutuals/safari/hideyho/HideyhoQuest.kt
+kotlin/net/johnceo/sparklingmutuals/mixin/CritterTextDisplayMixin.kt
+kotlin/net/johnceo/sparklingmutuals/mixin/SafariShinyMixin.kt
+kotlin/net/johnceo/sparklingmutuals/safari/esp/TeammateEsp.kt
+kotlin/net/johnceo/sparklingmutuals/safari/esp/DuplicoGlow.kt

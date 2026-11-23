@@ -4,6 +4,12 @@ import java.lang.reflect.Field
 
 /** Reflect only explicit UI metadata; properties and tracking objects remain the owners of behavior. */
 class SettingsCatalog(settings: SafariSettings) {
+    internal val highlightSection = if (SafariSettings.standardEdition) "Highlight Visible" else "ESP"
+    private val espWord = Regex("\\bESP\\b", RegexOption.IGNORE_CASE)
+    private fun displayText(value: String) = if (SafariSettings.standardEdition)
+        espWord.replace(value, "highlights") else value
+    private fun displayRow(row: Row): Row = row.copy(name = displayText(row.name), description = displayText(row.description),
+        path = displayText(row.path), children = row.children.map(::displayRow))
     data class Page(val name: String, val rows: List<Row>)
     data class Row(val owner: Any, val field: Field, val name: String, val description: String,
                    val path: String, val children: List<Row> = emptyList(),val navigationName: String=field.name,val groupOverride: Boolean=false) {
@@ -29,7 +35,8 @@ class SettingsCatalog(settings: SafariSettings) {
                 val owner=SettingsPageGuide()
                 listOf(Row(owner,SettingsPageGuide::class.java.getField("guide"),"",description,meta.name+" / Guide"))
             }.orEmpty()
-            Page(meta.name,guide+rows(field.get(settings),meta.name))
+            val entries=guide+rows(field.get(settings),meta.name)
+            Page(meta.name,if (SafariSettings.standardEdition) entries.map(::displayRow) else entries)
         }
     }
     private val locations=java.util.IdentityHashMap<Row,String>().apply {
@@ -44,22 +51,37 @@ class SettingsCatalog(settings: SafariSettings) {
         } }
         pages.forEach { page ->
             if(page.name=="ESP")page.rows.forEach {row ->
-                val section="ESP → Customization → "+when(row.field.name) {"names"->"Critter Names";"nameplates"->"Nameplates";"biomeColors","critterColors"->"Colors";else->"Other ESP"}
+                val section="$highlightSection → Customization → "+when(row.field.name) {"names"->"Critter Names";"nameplates"->"Nameplates";"biomeColors","critterColors"->"Colors";else->displayText("Other ESP")}
                 if(row.field.name in setOf("names","nameplates")) {put(row,section);collect(row.children,section)}
                 else collect(listOf(row),section)
-            } else collect(page.rows,routes[page.name] ?: "ESP → ${page.name}")
+            } else collect(page.rows,(routes[page.name] ?: "ESP → ${page.name}").let {
+                if (it.startsWith("ESP →")) highlightSection + it.removePrefix("ESP") else it
+            })
         }
     }
     fun location(row: Row): String=locations.getValue(row)
-    val customizationTabs=listOf("Critter Names","Nameplates","Colors","Other ESP")
+    val customizationTabs = buildList {
+        add("Critter Names")
+        if (!SafariSettings.standardEdition) add("Nameplates")
+        add("Colors")
+        add(displayText("Other ESP"))
+    }
+    internal fun customizationTabFor(field: String): Int = when (field) {
+        "names" -> customizationTabs.indexOf("Critter Names")
+        "nameplates" -> customizationTabs.indexOf("Nameplates")
+        "biomeColors", "critterColors" -> customizationTabs.indexOf("Colors")
+        else -> customizationTabs.lastIndex
+    }.coerceAtLeast(0)
+
     fun customizationRows(tab: Int): List<Row> {
         val roots=pages.single {it.name=="ESP"}.rows
-        val fields=when(tab) {0->setOf("names");1->setOf("nameplates");2->setOf("biomeColors","critterColors");else->setOf("teammates","floorDrops","waypointColors","labels")}
-        val selected=roots.filter {it.field.name in fields}
-        return if(tab in 0..1) {
-            val guide=CustomizationGuide(tab==0)
+        val name = customizationTabs.getOrNull(tab) ?: return emptyList()
+        val selected = roots.filter { customizationTabFor(it.field.name) == tab }
+        return if (name == "Critter Names" || name == "Nameplates") {
+            val guide=CustomizationGuide(name == "Critter Names")
             val field=CustomizationGuide::class.java.getField("guide")
-            listOf(Row(guide,field,if(tab==0) "Rename critters" else "ESP nameplates",guide.description,"ESP / Guide"))+
+            listOf(Row(guide,field,if (name == "Critter Names") "Rename critters" else "ESP nameplates",
+                displayText(guide.description), "$highlightSection / Guide"))+
                 selected.flatMap {it.children}
         } else selected
     }
@@ -116,19 +138,6 @@ class SettingsCatalog(settings: SafariSettings) {
     companion object {
         private fun fields(type: Class<*>): List<Field> =
             (type.superclass?.takeUnless { it==Any::class.java }?.let(::fields) ?: emptyList())+type.declaredFields
-        private fun floorRows(owner: FloorDropEspSettings,path: String): List<Row> {
-            val order=listOf("seeds","worm","berry","lime","purple","orange","icebreaker","incense","coin","generic")
-            return order.map {key ->
-                val type=net.johnceo.sparklingmutuals.safari.resources.FloorDropType.valueOf(key.uppercase())
-                val color=owner.floorColors.javaClass.getDeclaredField(key).apply {isAccessible=true}
-                val scale=owner.floorTextSizes.javaClass.getDeclaredField(key).apply {isAccessible=true}
-                val itemPath=path+" / "+type.label
-                Row(owner.floorColors,color,type.label,"",itemPath,listOf(
-                    Row(owner.floorColors,color,"Color","",itemPath+" / Color",navigationName="color"),
-                    Row(owner.floorTextSizes,scale,"Text size","1 = original size.",itemPath+" / Text size",navigationName="textScale")
-                ),navigationName=key,groupOverride=true)
-            }
-        }
         private fun rows(owner: Any,path: String): List<Row> {
             if (owner is BiomeObjectiveToggles) {
                 val field = BiomeObjectiveToggle::class.java.getField("enabled")
@@ -139,9 +148,10 @@ class SettingsCatalog(settings: SafariSettings) {
                 val itemPath = path+" / "+entry.canonical
                 Row(entry,field,entry.canonical,"Blank restores the original name.",itemPath,navigationName=entry.canonical)
             }
-            if(owner is FloorDropEspSettings)return floorRows(owner,path)
+            if(owner is FloorDropEspSettings)return owner.rows(path)
             val result=fields(owner.javaClass).mapNotNull { field ->
                 if(owner is SafariSettings.SafariTeammateSettings && field.name in setOf("color","textScale"))return@mapNotNull null
+                if (SafariSettings.standardEdition && owner is ScrappyAppearanceSettings && field.name == "textScale") return@mapNotNull null
                 if(owner is PanelAppearanceSettings && field.name=="expansion" && !owner.supportsExpansion)return@mapNotNull null
                 field.getAnnotation(ConfigOption::class.java)?.let { meta ->
                     field.isAccessible=true
@@ -155,7 +165,7 @@ class SettingsCatalog(settings: SafariSettings) {
                         if(grouped) rows(value!!,path+" / "+meta.name) else emptyList())
                 }
             }
-            if(owner is EspGeneralSettings) {
+            if(owner is EspGeneralSettings && !SafariSettings.standardEdition) {
                 val reward=owner.drops.javaClass.getDeclaredField("rewardDrops").apply {isAccessible=true}
                 val meta=reward.getAnnotation(ConfigOption::class.java)
                 return SettingsOrder.rows(owner,result+Row(owner.drops,reward,meta.name,meta.desc,path+" / "+meta.name))

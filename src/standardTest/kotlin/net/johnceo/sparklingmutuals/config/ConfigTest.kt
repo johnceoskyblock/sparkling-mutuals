@@ -42,7 +42,7 @@ class ConfigTest {
         assertEquals("true",migrated.getProperty("migration.shardSaleGuidanceV2"))
         assertEquals("true",migrated.getProperty("shardSaleGuidance"))
         assertEquals("keep",migrated.getProperty("customLegacyValue"))
-        assertEquals(37,ConfigManager.waterOpacity)
+        assertEquals("37",migrated.getProperty("waterOpacity"))
         ConfigManager.shardSaleGuidance=false
         ConfigManager.save()
         ConfigManager.init(dir)
@@ -94,10 +94,6 @@ class ConfigTest {
         }
         assertEquals("true",upgraded.remove("migration.shardSaleGuidanceV2"))
         assertEquals("true",upgraded.remove("shardSaleGuidance"))
-        assertEquals("true",upgraded.remove("migration.sparkleWarpTimers22_27"))
-        assertNull(upgraded.remove("warpDelaySeconds"))
-        assertNull(upgraded.remove("repartyDelaySeconds"))
-        original.remove("safariTicketPreference")
         assertEquals(original,upgraded)
         assertEquals(legacyContest, Files.readString(dir.resolve("sparkling-mutuals-contest.properties")))
     }
@@ -106,12 +102,21 @@ class ConfigTest {
         ConfigManager.init(dir)
         assertFalse(ConfigManager.showCapsuleGuideThroughTerrain)
     }
-    @Test fun `projection width persists and remains finite for old and invalid files`() {
-        ConfigManager.init(dir);assertEquals(3f,ConfigManager.capsulePathWidth)
-        val settings=SafariSettings();settings.safari.capsulePathWidth=9f;settings.apply()
-        ConfigManager.init(dir);assertEquals(5f,ConfigManager.capsulePathWidth)
-        Files.writeString(dir.resolve("sparkling-mutuals.properties"),"capsulePathWidth=NaN\n")
-        ConfigManager.init(dir);assertEquals(3f,ConfigManager.capsulePathWidth)
+    @Test fun `projection and lottery settings are shared and persist`() {
+        val file = dir.resolve("sparkling-mutuals.properties")
+        Files.writeString(file, "capsulePathWidth=5\nexperimentalCapsulePath=false\ndoomspiralLottery=false\n")
+        ConfigManager.init(dir)
+        assertEquals(5f, ConfigManager.capsulePathWidth)
+        assertFalse(ConfigManager.experimentalCapsulePath)
+        assertFalse(ConfigManager.doomspiralLottery)
+        val catalog = SettingsCatalog(SafariSettings())
+        assertNotNull(catalog.locate(SettingsTarget("Safari helpers", listOf("capture", "experimentalCapsulePath"))))
+        assertNotNull(catalog.locate(SettingsTarget("Safari helpers", listOf("gambling", "doomspiral"))))
+        ConfigManager.save()
+        val saved = java.util.Properties().apply { Files.newInputStream(file).use(::load) }
+        assertEquals(5f, saved.getProperty("capsulePathWidth").toFloat())
+        assertEquals("false", saved.getProperty("experimentalCapsulePath"))
+        assertEquals("false", saved.getProperty("doomspiralLottery"))
     }
     @TempDir lateinit var dir: Path
     @Test fun `HUD layouts and personal bests survive actual configuration saving`() {

@@ -17,7 +17,7 @@ internal object FullUpdateManifest {
         val row = manifest.getAsJsonArray("files").map { it.asJsonObject }.filter {
             it.get("edition").asString == "full" && it.get("minecraft").asString == minecraft
         }.singleOrNull() ?: error("Expected one Full artifact for Minecraft $minecraft")
-        require(row.get("name").asString == "sparkling-mutuals-$version+mc$minecraft.jar") { "Wrong manifest filename" }
+        require(row.get("name").asString == "sparkling-mutuals-$version-full+mc$minecraft.jar") { "Wrong manifest filename" }
         val size = row.getAsJsonPrimitive("size")
         require(size.isNumber && size.asString.matches(Regex("[0-9]+"))) { "Invalid artifact size" }
         return UpdateInstall.Artifact(version, size.asLong, row.get("sha256").asString)

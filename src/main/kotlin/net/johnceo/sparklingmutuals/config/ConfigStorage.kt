@@ -3,6 +3,7 @@ package net.johnceo.sparklingmutuals.config
 import java.nio.file.FileAlreadyExistsException
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.StandardCopyOption
 import net.fabricmc.loader.api.FabricLoader
 
 /** Migrate before opening any store so a partial move never falls through to fresh defaults. */
@@ -15,7 +16,7 @@ internal object ConfigStorage {
         "sparkling-mutuals-pbs.properties", "sparkling-mutuals-honeyhives.properties",
         "Sparkling Mutual's PBs.properties"
     ) + setOf("runs", "sparklings", "achievements", "playtime", "sale-watches", "box-guidance",
-        "box-total", "shard-history").map { "sparkling-mutuals-$it.json" }
+        "box-total", "shard-history", "ubiks-cube").map { "sparkling-mutuals-$it.json" }
     private val locks = setOf("sale-watches", "box-guidance", "box-total", "shard-history")
         .map { "sparkling-mutuals-$it.json.lock" }.toSet()
     private const val retiredCache = "sparkling-mutuals-market-prices.json"
@@ -39,7 +40,28 @@ internal object ConfigStorage {
             }
         }
         Files.deleteIfExists(archive.resolve(retiredCache))
+        importStandardSaves(root.resolve("sparkling-mutuals-legit"), target)
         return target
+    }
+
+    private fun importStandardSaves(source: Path, target: Path) {
+        val marker = target.resolve("backups").resolve(".standard-imported")
+        if (!Files.isDirectory(source) || Files.exists(marker)) return
+        for (name in active) {
+            val original = source.resolve(name)
+            val destination = target.resolve(name)
+            if (!Files.isRegularFile(original) || Files.exists(destination)) continue
+            val temporary = Files.createTempFile(target, ".standard-import-", ".tmp")
+            try {
+                Files.copy(original, temporary, StandardCopyOption.REPLACE_EXISTING)
+                try { Files.move(temporary, destination) }
+                catch (_: FileAlreadyExistsException) { /* An existing shared save takes precedence. */ }
+            } finally {
+                Files.deleteIfExists(temporary)
+            }
+        }
+        Files.createDirectories(marker.parent)
+        Files.writeString(marker, "")
     }
 
     private fun archive(source: Path, directory: Path) {

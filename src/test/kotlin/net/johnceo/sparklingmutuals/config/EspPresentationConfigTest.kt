@@ -1,6 +1,7 @@
 package net.johnceo.sparklingmutuals.config
 
 import net.johnceo.sparklingmutuals.safari.esp.SafariEspRules
+import net.johnceo.sparklingmutuals.safari.resources.FloorDropType
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -16,28 +17,48 @@ class EspPresentationConfigTest {
         val catalog=SettingsCatalog(settings)
         fun control(page: String,vararg fields: String)=catalog.locate(SettingsTarget(page,fields.toList()))!!.second.last()
         assertNotNull(control("ESP General","biomes"))
-        assertNotNull(control("ESP General","floorVisibility"))
-        control("ESP General","rewardDrops").write(true)
-        val color=control("ESP","floorDrops","coin","color")
-        val scale=control("ESP","floorDrops","coin","textScale")
-        color.write("0:255:12:34:56");scale.write(3f)
+        if (SafariSettings.standardEdition) {
+            assertNull(catalog.locate(SettingsTarget("ESP General", listOf("floorVisibility"))))
+            assertNull(catalog.locate(SettingsTarget("ESP General", listOf("rewardDrops"))))
+            assertEquals(listOf("generic"), control("ESP", "floorDrops").children.map { it.navigationName })
+        } else {
+            assertNotNull(control("ESP General","floorVisibility"))
+            control("ESP General","rewardDrops").write(true)
+        }
+        val floorType = if (SafariSettings.standardEdition) FloorDropType.GENERIC else FloorDropType.COIN
+        val color = if (SafariSettings.standardEdition) control("ESP", "floorDrops", "generic")
+            else control("ESP", "floorDrops", "coin", "color")
+        color.write("0:255:12:34:56")
+        if (!SafariSettings.standardEdition) control("ESP","floorDrops","coin","textScale").write(3f)
         val critter=control("ESP","critterColors","forest","foxtrot")
         assertFalse(critter.group)
         critter.write("0:255:65:43:21")
         settings.apply();init()
-        assertTrue(SafariEspConfig.rewardDrops)
-        assertEquals("0:255:12:34:56",SafariEspConfig.dropColor(net.johnceo.sparklingmutuals.safari.resources.FloorDropType.COIN))
-        assertEquals(3f,SafariEspConfig.dropTextScale(net.johnceo.sparklingmutuals.safari.resources.FloorDropType.COIN))
+        if (!SafariSettings.standardEdition) assertTrue(SafariEspConfig.rewardDrops)
+        assertEquals("0:255:12:34:56",SafariEspConfig.dropColor(floorType))
+        if (!SafariSettings.standardEdition) assertEquals(3f,SafariEspConfig.dropTextScale(floorType))
         assertEquals("0:255:65:43:21",SafariEspConfig.mobs.getValue("Foxtrot").color)
     }
 
     @Test fun `glow and boxes are independent and the new General tab saves their choices`() {
         init()
-        assertTrue(SafariEspConfig.critterGlow)
-        assertFalse(SafariEspConfig.critterBoxes)
         val settings=SafariSettings()
-        assertNotNull(SettingsCatalog(settings).locate(SettingsTarget("ESP General",listOf("glow"))))
-        settings.espGeneral.glow=false;settings.espGeneral.boxes=true;settings.apply()
+        val catalog = SettingsCatalog(settings)
+        val glow = catalog.locate(SettingsTarget("ESP General", listOf("glow")))?.second?.last()
+        val boxes = catalog.locate(SettingsTarget("ESP General", listOf("boxes")))?.second?.last()
+        assertTrue(SafariEspConfig.critterGlow)
+        if (SafariSettings.standardEdition) {
+            assertNull(boxes)
+            glow!!.write(false)
+            settings.apply()
+            init()
+            assertFalse(SafariEspConfig.critterGlow)
+            return
+        }
+        assertFalse(SafariEspConfig.critterBoxes)
+        glow!!.write(false)
+        boxes!!.write(true)
+        settings.apply()
         init()
         assertFalse(SafariEspConfig.critterGlow)
         assertTrue(SafariEspConfig.critterBoxes)

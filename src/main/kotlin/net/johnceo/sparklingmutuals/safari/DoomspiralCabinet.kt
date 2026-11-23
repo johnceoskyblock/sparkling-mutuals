@@ -5,7 +5,7 @@ import kotlin.math.exp
 
 /** Pure presentation state. The lottery owns evidence, cancellation and the server clock. */
 internal object DoomspiralCabinet {
-    private const val REVEAL_TICKS = 25
+    const val REVEAL_TICKS = 25
     private const val REEL_STOP_TICK = DOOMSPIRAL_CAPTURE_TICKS - REVEAL_TICKS
 
     fun scale(width: Int, height: Int): Float =

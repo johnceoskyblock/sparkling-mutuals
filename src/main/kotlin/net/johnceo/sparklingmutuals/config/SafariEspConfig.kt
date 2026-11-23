@@ -112,33 +112,39 @@ object SafariEspConfig {
     } ?: fallback
     fun rgb(color: String) = SettingsColor.argb(color)
     private fun key(name: String) = name.lowercase().replace(' ', '_')
-    fun load(properties: Properties) {
-        CritterNameplates.load(properties)
-        critterGlow=properties.getProperty("esp.critterGlow")?.toBooleanStrictOrNull() ?: true
-        critterBoxes=properties.getProperty("esp.critterBoxes")?.toBooleanStrictOrNull() ?: false
+    fun load(properties: Properties, includeFullPresentation: Boolean = true) {
+        critterGlow = properties.getProperty("esp.critterGlow")?.toBooleanStrictOrNull() ?: true
+        if (includeFullPresentation) {
+            CritterNameplates.load(properties)
+            critterBoxes=properties.getProperty("esp.critterBoxes")?.toBooleanStrictOrNull() ?: false
+        }
         biomeCritterColors=properties.getProperty("esp.biomeCritterColors")?.toBooleanStrictOrNull() ?: false
         biomePalette.forEach {(id,color)->
             biomeColors[id]=validColor(properties.getProperty("esp.biomeColor.$id"),defaultColor(color))
             biomeColorEnabled[id]=properties.getProperty("esp.biomeColor.$id.enabled")?.toBooleanStrictOrNull() ?: true
         }
-        floorAlwaysOnToggles.keys.forEach { type ->
-            floorAlwaysOnToggles[type] = properties.getProperty("esp.floor.${type.name.lowercase()}.alwaysOn")
-                ?.toBooleanStrictOrNull() ?: defaultFloorAlwaysOn(type)
-        }
-        rewardDrops = properties.getProperty("esp.floor.rewards.enabled")?.toBooleanStrictOrNull() ?: false
-        floorOnlyInBiome.keys.forEach { type ->
-            floorOnlyInBiome[type] = properties.getProperty("esp.floor.${type.name.lowercase()}.onlyInBiome")
-                ?.toBooleanStrictOrNull() ?: (type == FloorDropType.GENERIC)
+        if (includeFullPresentation) {
+            floorAlwaysOnToggles.keys.forEach { type ->
+                floorAlwaysOnToggles[type] = properties.getProperty("esp.floor.${type.name.lowercase()}.alwaysOn")
+                    ?.toBooleanStrictOrNull() ?: defaultFloorAlwaysOn(type)
+            }
+            rewardDrops = properties.getProperty("esp.floor.rewards.enabled")?.toBooleanStrictOrNull() ?: false
+            floorOnlyInBiome.keys.forEach { type ->
+                floorOnlyInBiome[type] = properties.getProperty("esp.floor.${type.name.lowercase()}.onlyInBiome")
+                    ?.toBooleanStrictOrNull() ?: (type == FloorDropType.GENERIC)
+            }
         }
         textScale = properties.getProperty("esp.textScale")?.toFloatOrNull() ?: DEFAULT_TEXT_SCALE
-        scrappyTextScale = properties.getProperty("esp.scrappy.textScale")?.toFloatOrNull() ?: DEFAULT_TEXT_SCALE
+        if (includeFullPresentation) scrappyTextScale = properties.getProperty("esp.scrappy.textScale")?.toFloatOrNull() ?: DEFAULT_TEXT_SCALE
         scrappyFoodColors.keys.forEach { food ->
             scrappyFoodColors[food] = validColor(properties.getProperty("esp.scrappy.${food.name.lowercase()}.color"), defaultColor(food.defaultRgb))
         }
-        teammateTextScale = properties.getProperty("esp.teammate.textScale")?.toFloatOrNull() ?: textScale
-        teammateColor = validColor(properties.getProperty("esp.teammate.color"), defaultColor(0xFF55FF55.toInt()))
-        floorTextScales.keys.forEach { type ->
-            floorTextScales[type] = validTextScale(properties.getProperty("esp.floor.${type.name.lowercase()}.textScale")?.toFloatOrNull() ?: textScale)
+        if (includeFullPresentation) {
+            teammateTextScale = properties.getProperty("esp.teammate.textScale")?.toFloatOrNull() ?: textScale
+            teammateColor = validColor(properties.getProperty("esp.teammate.color"), defaultColor(0xFF55FF55.toInt()))
+            floorTextScales.keys.forEach { type ->
+                floorTextScales[type] = validTextScale(properties.getProperty("esp.floor.${type.name.lowercase()}.textScale")?.toFloatOrNull() ?: textScale)
+            }
         }
         groups.forEach { (name, group) ->
             group.enabled = properties.getProperty("esp.$name.enabled")?.toBooleanStrictOrNull() ?: true
@@ -159,27 +165,33 @@ object SafariEspConfig {
         rockmiteMoundColor = validColor(properties.getProperty("esp.rockmite.moundColor"),
             properties.getProperty("esp.rockmite.color")?.let { mobs.getValue("Rockmite").color } ?: defaultColor(0xFFFFFFFF.toInt()))
     }
-    fun save(properties: Properties) {
-        CritterNameplates.save(properties)
-        properties.setProperty("esp.critterGlow",critterGlow.toString())
-        properties.setProperty("esp.critterBoxes",critterBoxes.toString())
+    fun save(properties: Properties, includeFullPresentation: Boolean = true) {
+        properties.setProperty("esp.critterGlow", critterGlow.toString())
+        if (includeFullPresentation) {
+            CritterNameplates.save(properties)
+            properties.setProperty("esp.critterBoxes",critterBoxes.toString())
+        }
         properties.setProperty("esp.biomeCritterColors",biomeCritterColors.toString())
         biomeColors.forEach {(id,color)->properties.setProperty("esp.biomeColor.$id",color)}
         biomeColorEnabled.forEach {(id,on)->properties.setProperty("esp.biomeColor.$id.enabled",on.toString())}
-        floorAlwaysOnToggles.forEach { (type, value) ->
-            properties.setProperty("esp.floor.${type.name.lowercase()}.alwaysOn", value.toString())
+        if (includeFullPresentation) {
+            floorAlwaysOnToggles.forEach { (type, value) ->
+                properties.setProperty("esp.floor.${type.name.lowercase()}.alwaysOn", value.toString())
+            }
+            properties.setProperty("esp.floor.rewards.enabled", rewardDrops.toString())
+            floorOnlyInBiome.forEach { (type, value) ->
+                properties.setProperty("esp.floor.${type.name.lowercase()}.onlyInBiome", value.toString())
+            }
         }
-        properties.setProperty("esp.floor.rewards.enabled", rewardDrops.toString())
-        floorOnlyInBiome.forEach { (type, value) ->
-            properties.setProperty("esp.floor.${type.name.lowercase()}.onlyInBiome", value.toString())
-        }
-        properties.setProperty("esp.scrappy.textScale", scrappyTextScale.toString())
+        if (includeFullPresentation) properties.setProperty("esp.scrappy.textScale", scrappyTextScale.toString())
         scrappyFoodColors.forEach { (food,color) -> properties.setProperty("esp.scrappy.${food.name.lowercase()}.color",color) }
         properties.setProperty("esp.textScale", textScale.toString())
-        properties.setProperty("esp.teammate.textScale", teammateTextScale.toString())
-        properties.setProperty("esp.teammate.color", teammateColor)
-        floorTextScales.forEach { (type, _) ->
-            properties.setProperty("esp.floor.${type.name.lowercase()}.textScale", dropTextScale(type).toString())
+        if (includeFullPresentation) {
+            properties.setProperty("esp.teammate.textScale", teammateTextScale.toString())
+            properties.setProperty("esp.teammate.color", teammateColor)
+            floorTextScales.forEach { (type, _) ->
+                properties.setProperty("esp.floor.${type.name.lowercase()}.textScale", dropTextScale(type).toString())
+            }
         }
         groups.forEach { (name, group) ->
             properties.setProperty("esp.$name.enabled", group.enabled.toString())
@@ -193,7 +205,10 @@ object SafariEspConfig {
             properties.setProperty("esp.${key(name)}.color", mob.color)
         }
         properties.setProperty("esp.floor.color", floorColor)
-        floorColors.forEach { (type, color) -> properties.setProperty("esp.floor.${type.name.lowercase()}.color", color) }
+        floorColors.forEach { (type, color) ->
+            if (includeFullPresentation || type == FloorDropType.GENERIC)
+                properties.setProperty("esp.floor.${type.name.lowercase()}.color", color)
+        }
         properties.setProperty("esp.rockmite.moundEnabled", rockmiteMoundEnabled.toString())
         properties.setProperty("esp.rockmite.moundColor", rockmiteMoundColor)
     }

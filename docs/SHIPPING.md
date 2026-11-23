@@ -8,6 +8,8 @@ Ship from `johnceoskyblock/sparkling-mutuals`. Use one PR into protected `master
 
 This repository uses `release_artifact_layout=editions`. The release workflow builds and verifies all nine combinations. GitHub receives the six Full and Full No Auto Update JARs and `build-manifest.json`. Standard JARs are available in the Actions run for testing. Enable public Standard publication after the Modrinth review.
 
+The plain JAR filename identifies Standard. GitHub releases use `-full` and `-full-no-auto-update` before the `+mc` suffix. Use the first explicitly named Full JAR for manual upgrades from builds whose update checker expects the old filename.
+
 Full keeps update checks and adds a **Download Update** button plus an **Auto Update** toggle (off by default) in the update screen. Downloads must match the release manifest's SHA-256 and the JAR's mod ID, Full edition, version, and exact Minecraft target. Installation waits for the game to exit, preserves the last working JAR outside the mods folder, and supports retry after a failed installation. Standard and Full No Auto Update exclude the downloader and installer classes and controls.
 
 Windows CI also tests restart installation while the running JAR is locked. A live Minecraft smoke test is still recommended before release. Standard publication remains pending Modrinth review; no Modrinth upload job is enabled.

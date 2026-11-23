@@ -19,6 +19,7 @@ import net.minecraft.resources.Identifier
 
 /** Settings view model; the existing properties files remain the saved configuration. */
 class SafariSettings {
+    internal companion object { const val standardEdition = false }
     @JvmField @Category(name = "General", desc = "") val general = General()
     @JvmField @Category(name = "Modes", desc = "") val modes = Modes()
     @JvmField @Category(name = "Party Interactions", desc = "") val party = Party()

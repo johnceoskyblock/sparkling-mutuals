@@ -146,20 +146,13 @@ object SafariAssist {
     @JvmStatic fun hidePaintings() = ConfigManager.hideHauntedPaintings && inHaunted && visualsActive()
     @JvmStatic fun isHighlighted(id: Int): Boolean {
         val client = Minecraft.getInstance()
-        val player = client.player ?: return false
+        if (client.player == null) return false
         return !ConfigManager.hideCritterEsp() && ConfigManager.shinyDetection && visualsActive(client) && shinies.any {
-            net.johnceo.sparklingmutuals.safari.visibility.LocalVisibility.sighting(it.body,it.label,client) && (it.body.id == id || it.label.id == id) &&
-                net.johnceo.sparklingmutuals.config.SafariEspConfig.modWideEnabled(it.name)
+            (it.body.id == id || it.label.id == id) &&
+                net.johnceo.sparklingmutuals.config.SafariEspConfig.modWideEnabled(it.name) &&
+                net.johnceo.sparklingmutuals.safari.visibility.LocalVisibility.sighting(it.body,it.label,client)
         }
     }
-
-    @JvmStatic fun isGlowHighlighted(id: Int)=isHighlighted(id) && shinies.none {
-        (it.body.id == id || it.label.id == id) &&
-            (it.name == "Duplico" || it.name == "Shyworm" && it.body.y <= 2.0)
-    }
-    internal fun sparklingDuplicoBodies(): List<Entity> = shinies.filter {
-        it.name == "Duplico" && isHighlighted(it.body.id)
-    }.distinctBy {it.body.id}.map {it.body}
 
     fun nearbyPanel(preview: Boolean = false): HudPanel? {
         val client = Minecraft.getInstance()

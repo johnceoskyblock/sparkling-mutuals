@@ -10,10 +10,17 @@ class CustomizationClarityTest {
     @Test fun sharedNameplatesHaveNoPerCritterTemplates() {
         ConfigManager.init(dir)
         val catalog=SettingsCatalog(SafariSettings())
-        assertEquals(listOf("Critter Names","Nameplates","Colors","Other ESP"),catalog.customizationTabs)
+        val tabs = if (SafariSettings.standardEdition) listOf("Critter Names", "Colors", "Other highlights")
+            else listOf("Critter Names", "Nameplates", "Colors", "Other ESP")
+        assertEquals(tabs,catalog.customizationTabs)
         val names=catalog.customizationRows(0)
         assertEquals(37,names.drop(1).sumOf {it.children.size})
         assertTrue(names.drop(1).flatMap {it.children}.all {!it.group && it.read() is String})
+        if (SafariSettings.standardEdition) {
+            assertTrue(catalog.search("nameplate").isEmpty())
+            assertTrue(catalog.search("teammate").isEmpty())
+            return
+        }
         val plates=catalog.customizationRows(1)
         assertTrue(plates.first().description.contains("Critter Names"))
         assertEquals(setOf("enabled","display","distance","pity","eagle","colors","critters"),plates.drop(1).map {it.field.name}.toSet())

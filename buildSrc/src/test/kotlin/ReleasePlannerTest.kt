@@ -33,5 +33,5 @@ class ReleasePlannerTest {
 }
 
 internal fun releaseFiles(): List<VerifiedJar> = listOf("26.1.2","26.2","26.3").map {
-    VerifiedJar(Path.of("sparkling-mutuals-3.3.0+mc$it.jar"), it, "3.3.0", 123, "a".repeat(64))
+    VerifiedJar(Path.of(Edition.FULL.jarName("3.3.0", it)), it, "3.3.0", 123, "a".repeat(64))
 }

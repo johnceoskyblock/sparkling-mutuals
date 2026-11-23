@@ -117,12 +117,16 @@ if (edition != Edition.FULL) {
 }
 if (edition == Edition.STANDARD) {
     val standardResources = editionSource.resolve("resources")
+    val excludedJava = editionSource.resolve("exclude.txt").readLines()
+        .filter { it.startsWith("java/") }.map { it.removePrefix("java/") }
     sourceSets.main {
         resources.exclude { standardResources.resolve(it.path).isFile }
+        java.exclude(excludedJava)
     }
     tasks.processResources { from(standardResources) }
     tasks.named<Jar>("sourcesJar") {
         eachFile {
+            if (path in excludedJava) exclude()
             if (standardResources.resolve(path).isFile && !file.toPath().startsWith(standardResources.toPath())) exclude()
         }
         from(standardResources)

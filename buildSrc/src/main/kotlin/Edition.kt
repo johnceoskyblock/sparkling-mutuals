@@ -1,8 +1,8 @@
 package buildlogic
 
 enum class Edition(val id: String, private val suffix: String, val sourceDirectory: String) {
-    STANDARD("standard", "-standard", "standard"),
-    FULL("full", "", "main"),
+    STANDARD("standard", "", "standard"),
+    FULL("full", "-full", "main"),
     FULL_NO_AUTO_UPDATE("full-no-auto-update", "-full-no-auto-update", "main");
 
     fun jarName(version: String, minecraft: String) = "sparkling-mutuals-$version$suffix+mc$minecraft.jar"

@@ -4,10 +4,10 @@ Consolidate Sparkling Mutuals into `johnceoskyblock/sparkling-mutuals`. Use the 
 
 ## Build three editions
 
-The local consolidation retains three Stonecutter targets with edition source overlays, the existing Full filenames, and the manual release rehearsal. PR #138's Full downloader and restart installer have been adapted to this layout, with updater classes and controls excluded from both other editions. Automatic downloads default to off. Windows CI covers restart installation with the running JAR locked. Standard publication and retirement of the legit fork remain pending Modrinth review and migration verification; no Modrinth publishing job is enabled.
+The local consolidation retains three Stonecutter targets with edition source overlays and the manual release rehearsal. PR #138's Full downloader and restart installer use the explicit Full filename, with updater classes and controls excluded from both other editions. Automatic downloads default to off. Windows CI covers restart installation with the running JAR locked. Standard publication and retirement of the legit fork remain pending Modrinth review and migration verification.
 
 - **Standard** is the default build and the only edition published to Modrinth. Keep the fork’s line-of-sight ESP and sparkling detection. Compile out gameplay automation, through-terrain ESP, and hidden sparkling alerts, including their hooks, commands, mixins, and settings. Use Modrinth’s normal update flow for Standard.
-- **Full** ships on GitHub with the original features and configs. Add an **Auto Update** toggle and a **Download Update** button in the existing update screen. When Auto Update is enabled, download the compatible Full JAR in the background and show **Ready to install on restart**. Keep the existing Full filename so current installs can still find their edition.
+- **Full** ships on GitHub with the original features and configs. The update screen offers **Auto Update** and **Download Update**. A staged Full download displays **Ready to install on restart**.
 - **Full No Auto Update** ships on GitHub with the same gameplay features as Full. Build it without automatic update checks or the in-game downloader and installer.
 
 ## Implement the Full updater
@@ -22,8 +22,9 @@ Keep the original GitHub settings, `master` ruleset, required `build` check, Jav
 
 Set `release_artifact_layout=editions` in `gradle.properties` when the tag workflow can publish the following GitHub assets for a single release version.
 
-- Full keeps `sparkling-mutuals-<version>+mc<minecraft>.jar`.
+- Standard uses `sparkling-mutuals-<version>+mc<minecraft>.jar`.
+- Full uses `sparkling-mutuals-<version>-full+mc<minecraft>.jar`.
 - Full No Auto Update uses `sparkling-mutuals-<version>-full-no-auto-update+mc<minecraft>.jar`.
 - Publish `build-manifest.json` from the verified build for the six GitHub JARs. Reuse the existing schema with `version` and `files`, where each JAR lists `name`, `minecraft`, `size` in bytes, and `sha256`.
 
-Preserve the legit fork’s Standard config namespace and the original Full config. Test upgrades from both existing editions, including an interrupted download and a mismatched JAR. Once Standard is live and the consolidated release is verified, archive the legit fork with a migration notice.
+Use `config/sparkling-mutuals` for all editions. Import missing saves from the old Standard folder once and keep existing shared files when both folders have a copy. Standard preserves Full-only values during saves and resets. Test upgrades from both existing editions, including an interrupted download and a mismatched JAR. Once Standard is live and the consolidated release is verified, archive the legit fork with a migration notice.

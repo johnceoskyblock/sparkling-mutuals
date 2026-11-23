@@ -62,8 +62,11 @@ class ReleaseUpdateChecker(
                     val url = asset.get("browser_download_url")?.takeUnless { it.isJsonNull }?.asString ?: return null
                     return URI.create(expected).takeIf { expected == url.replace("%2B", "+", ignoreCase = true) }
                 }
-                val name = "sparkling-mutuals-$version+mc$minecraft.jar"
-                if (candidates(name).size != 1) return@mapNotNull null
+                val name = "sparkling-mutuals-$version-full+mc$minecraft.jar"
+                val fullAssets = candidates(name)
+                if (fullAssets.size > 1) return@mapNotNull null
+                if (fullAssets.isEmpty() && (candidates("build-manifest.json").isNotEmpty() ||
+                        candidates("sparkling-mutuals-$version+mc$minecraft.jar").size != 1)) return@mapNotNull null
                 Release(tag, row.get("name")?.takeUnless { it.isJsonNull }?.asString.orEmpty(),
                     row.get("body")?.takeUnless { it.isJsonNull }?.asString.orEmpty(),
                     trustedUrl(name), trustedUrl("build-manifest.json"))

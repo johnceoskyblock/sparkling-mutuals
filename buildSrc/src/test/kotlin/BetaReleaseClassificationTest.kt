@@ -24,7 +24,7 @@ class BetaReleaseClassificationTest {
         return JsonSlurper().parseText(complete.get(5, TimeUnit.SECONDS)) as Map<*, *>
     }
     private fun files(version: String) = releaseFiles().map { it.copy(modVersion=version,
-        path=Path.of("sparkling-mutuals-$version+mc${it.minecraft}.jar")) }
+        path=Path.of(Edition.FULL.jarName(version, it.minecraft))) }
     private fun existing(version: String, draft: Boolean, prerelease: Boolean?): ExistingRelease {
         val api = GitHubReleaseApi(sha, ReleaseTransport { method, url, _, _, _ ->
             require(method == "GET")
