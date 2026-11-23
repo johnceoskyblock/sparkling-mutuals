@@ -18,8 +18,10 @@
 
 ## Features
 
+The features below are available in **Standard**, the default edition of Sparkling Mutuals.
+
 <details>
-<summary><strong>Safari tracking and party coordination · all editions</strong></summary>
+<summary><strong>Safari tracking and party coordination</strong></summary>
 
 - Unique, Full Clear, and Sparkle modes with progress, objectives, capture counts, and missing critters. Unique and Full Clear also have a biome splits HUD.
 - Party sync for biome objectives, confirmed progress, and Hotspot assignments with compatible SafariUtils clients. [Party sync](docs/PARTY_SYNC.md)
@@ -29,7 +31,7 @@
 </details>
 
 <details>
-<summary><strong>Safari and SkyBlock helpers · all editions</strong></summary>
+<summary><strong>Safari and SkyBlock helpers</strong></summary>
 
 - Miria contest progress, Torrhus Honeyhive refill beacons, and known Snoozle wall waypoints.
 - Capsule trajectory previews and the Doomspiral Lottery.
@@ -39,23 +41,14 @@
 </details>
 
 <details>
-<summary><strong>Standard</strong></summary>
+<summary><strong>Highlights and interaction shortcuts</strong></summary>
 
-- Line-of-sight critter highlights with separate glow and box controls under **Highlights → General**, one Scrappy color, and generic floor-drop tiles.
+- Visible critter highlights with separate glow and box controls under **Highlights → General**, customizable colors, and generic floor-drop tiles.
 - Sparkling alerts and Doomspiral Lottery results based on what you can see.
 - **Accept Hideyho Quest** keybind setup at startup and a **Party member kicked** banner for kick reports in party chat.
 
 </details>
 
-<details>
-<summary><strong>Full and Full No Auto Update</strong></summary>
-
-- Through-terrain critter highlights, named floor drops, teammate highlights, custom nameplates, and catch pity.
-- Sparkling alerts from compatible party clients in the same Safari instance.
-- Sparkle Warping with the Warp List, auto-party, reparty, and warp timers, plus leech invites.
-- Sparkling Auto-entry, ticket selection, entry guards, and capture helpers.
-
-</details>
 
 ---
 
@@ -68,7 +61,6 @@
 - `/unique`, `/fc`, and `/sparkle` choose the run mode. `/hotspot` toggles biome assignments.
 - `/sparkling [IGN|party]` looks up sparkling collections and capture counts. `/captures` shows captures during your current run.
 - `/sm history`, `/sm bests`, `/sm sparklings`, `/sm stats`, and `/sm profits` open history tabs. `/newsession` starts a new profit session.
-- **Both Full editions** also offer `/warping`, `/start`, `/warpingdelay`, `/autoparty`, `/duo`, and `/leech`.
 
 </details>
 
@@ -98,7 +90,7 @@
 | **Full** | `sparkling-mutuals-<version>-full+mc<minecraft>.jar` | `./gradlew buildAllTargets -Pedition=full` |
 | **Full No Auto Update** | `sparkling-mutuals-<version>-full-no-auto-update+mc<minecraft>.jar` | `./gradlew buildAllTargets -Pedition=full-no-auto-update` |
 
-**Full** offers **Download Update** and opt-in **Auto Update** in `/sm`. Verified updates install after Minecraft closes. **Standard** and **Full No Auto Update** use manual downloads. Standard’s Modrinth publication is pending.
+**Standard** is the default edition described above. **Full** is the extended version of the mod, with **Download Update** and opt-in **Auto Update** in `/sm`. Verified updates install after Minecraft closes. **Full No Auto Update** has the same features as Full and uses manual downloads, as does Standard. Standard’s Modrinth publication is pending.
 
 All editions share settings, HUD layouts, and Safari records within the same Minecraft instance at `config/sparkling-mutuals`. Edition-specific preferences are saved for when you switch back.
 
@@ -117,14 +109,14 @@ Use Java 25 to build and replace `./gradlew` with `./gradlew.bat` on Windows. Ve
 
 ## Credits
 
-- **JohnKuudra** contributed Standard’s line-of-sight restrictions and gameplay changes. [Standard source](https://github.com/1tsethan/sparkling-mutuals/commit/b297adf)
-- **SafariUtils** by Serkosea, built on MrCloudy2’s CritterMod. Adapted the settings and Warp List layouts, HUD snapping and icons, Biome Objectives and contest HUDs, encounter banners, catch effects, nameplates and pity tracking, chat filtering, and parts of waypoint, floor-drop, birdfeeder, Scrappy, and Hideyho tracking. Its shared party-sync protocol enables cross-mod coordination. [Repository](https://github.com/Serkosea/safariutils) · [Party-sync notice](licenses/SafariUtils-PartySync-NOTICE.txt)
+- **JohnKuudra** contributed Standard’s visible highlights and gameplay improvements. [Standard source](https://github.com/1tsethan/sparkling-mutuals/commit/b297adf)
+- **SafariUtils** by Serkosea, built on MrCloudy2’s CritterMod. Adapted settings layouts, HUD snapping and icons, Biome Objectives and contest HUDs, encounter banners, catch effects, chat filtering, and parts of waypoint, floor-drop, birdfeeder, Scrappy, and Hideyho tracking. Its shared party-sync protocol enables cross-mod coordination. [Repository](https://github.com/Serkosea/safariutils) · [Party-sync notice](licenses/SafariUtils-PartySync-NOTICE.txt)
 - **CritterMod** by MrCloudy2. Adapted the critter roster and catch quotas, the Safari area lookup, progress HUD layout, Sparkling announcement behavior, and parts of Rockmite mound and Snoozle wall tracking. [Repository](https://github.com/MrCloudy2/critterMod)
 - **ShinyHunter** provided the basis for the `/sparkling` profile card and biome capture stats, Hideyho quest button matching, and hiding Safari paintings. [Repository](https://github.com/javabetter/ShinyHunter)
-- **Nebulune** provided critter model identification, palette and box offsets for Safari ESP, and click timing for the Rockmite mound helper. [Repository](https://github.com/Gaeritag/Nebulune)
+- **Nebulune** provided critter model identification and palette and box offsets for Safari highlights. [Repository](https://github.com/Gaeritag/Nebulune)
 - **SkyHanni** provided the basis for skill overflow tooltips and level-up messages, capsule hiding, the Phantomleaf Solver, and the Ubik's Cube cooldown timer. The Safari area data also traces back to SkyHanni. [Repository](https://github.com/SkyHanniStudios/SkyHanni)
 - **SkyOcean** and its Vanguard Gambling feature inspired the Doomspiral Lottery and informed the original reel animation. [Repository](https://github.com/meowdding/SkyOcean)
-- **NoammAddons** informed the Doomspiral throw timer’s server tick clock, the Safari entry cooldown HUD, and teammate ESP. [Repository](https://github.com/Noamm9/NoammAddons)
+- **NoammAddons** informed the Doomspiral throw timer’s server tick clock and the Safari entry cooldown HUD. [Repository](https://github.com/Noamm9/NoammAddons)
 - **Phantom Addons** inspired the edition and download layout. [Repository](https://github.com/PhantomOrigin/Phantom-Addons)
 
 See [third-party licenses and notices](licenses/) for attribution and license terms.
