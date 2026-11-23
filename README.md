@@ -12,7 +12,7 @@ A Fabric client mod for Hypixel SkyBlock’s Critter Safari. Track runs, coordin
 
 | Edition | Features and updates | JAR filename |
 | --- | --- | --- |
-| **Standard** | Shared Safari features with visible critter outlines, generic floor-drop highlights, and local sparkling alerts. Includes capsule trajectory previews and the Doomspiral lottery with a locally visible result. Modrinth publication is pending. [Test builds](https://github.com/johnceoskyblock/sparkling-mutuals/actions/workflows/build.yml) | `sparkling-mutuals-<version>+mc<minecraft>.jar` |
+| **Standard** | Shared Safari features with visible critter outlines, generic floor-drop highlights, and local sparkling alerts. Includes capsule trajectory previews and the Doomspiral lottery with a locally visible result. Modrinth publication is pending. [GitHub Releases](https://github.com/johnceoskyblock/sparkling-mutuals/releases/latest) | `sparkling-mutuals-<version>+mc<minecraft>.jar` |
 | **Full** | Adds through-terrain highlights, remote sparkling alerts, and gameplay automation. Supports in-game update downloads. [GitHub Releases](https://github.com/johnceoskyblock/sparkling-mutuals/releases/latest) | `sparkling-mutuals-<version>-full+mc<minecraft>.jar` |
 | **Full No Auto Update** | Same gameplay features as Full, with manual updates. [GitHub Releases](https://github.com/johnceoskyblock/sparkling-mutuals/releases/latest) | `sparkling-mutuals-<version>-full-no-auto-update+mc<minecraft>.jar` |
 

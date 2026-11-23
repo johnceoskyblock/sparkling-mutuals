@@ -6,13 +6,13 @@ Run `scripts/Ship.ps1` in PowerShell 7 to handle the mechanical Git/GitHub steps
 
 Ship from `johnceoskyblock/sparkling-mutuals`. Use one PR into protected `master` and one version tag per release. Keep the legit fork available as a migration reference while the edition source sets and release workflow are under development. [Edition consolidation handoff](EDITION_CONSOLIDATION_HANDOFF.md)
 
-This repository uses `release_artifact_layout=editions`. The release workflow builds and verifies all nine combinations. GitHub receives the six Full and Full No Auto Update JARs and `build-manifest.json`. Standard JARs are available in the Actions run for testing. Enable public Standard publication after the Modrinth review.
+This repository uses `release_artifact_layout=editions`. The release workflow builds and verifies all nine combinations. GitHub receives all nine Standard, Full, and Full No Auto Update JARs and `build-manifest.json`. Standard uses the plain filename; Full uses `-full` and Full No Auto Update uses `-full-no-auto-update`. Modrinth publication remains pending review.
 
 The plain JAR filename identifies Standard. GitHub releases use `-full` and `-full-no-auto-update` before the `+mc` suffix. Use the first explicitly named Full JAR for manual upgrades from builds whose update checker expects the old filename.
 
 Full keeps update checks and adds a **Download Update** button plus an **Auto Update** toggle (off by default) in the update screen. Downloads must match the release manifest's SHA-256 and the JAR's mod ID, Full edition, version, and exact Minecraft target. Installation waits for the game to exit, preserves the last working JAR outside the mods folder, and supports retry after a failed installation. Standard and Full No Auto Update exclude the downloader and installer classes and controls.
 
-Windows CI also tests restart installation while the running JAR is locked. A live Minecraft smoke test is still recommended before release. Standard publication remains pending Modrinth review; no Modrinth upload job is enabled.
+Windows CI also tests restart installation while the running JAR is locked. A live Minecraft smoke test is still recommended before release. Standard publication on Modrinth remains pending review; no Modrinth upload job is enabled.
 
 ## Rehearse a release
 

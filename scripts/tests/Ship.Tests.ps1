@@ -41,7 +41,7 @@ function New-Fixture {
     } finally { Pop-Location }
     $global:ShipMock = @{ Work=$work; Bare=$bare; Initial=$head; Calls=0; Merges=0; FailBuild=$false;
         Merged=$null; Release=$null; ReleaseTag=$null; BadAssets=$false; DirtyDuringBuild=$false;
-        StaleMetadataReads=0; MetadataReads=0; Editions=$false; Manifest=$null; BadManifest=$false }
+        StaleMetadataReads=0; MetadataReads=0; StaleTagMetadataReads=0; TagReads=0; TagReleaseOverride=$null; Editions=$false; Manifest=$null; BadManifest=$false }
     return $work
 }
 
@@ -92,6 +92,9 @@ function global:gh {
             $baseUrl = "https://github.com/johnceoskyblock/sparkling-mutuals/releases/download/$($r.tag_name)"
             $hash = 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad'
             $jars = @(foreach ($minecraft in @('26.1.2','26.2','26.3')) {
+                if ($s.Editions) {
+                    @{name="sparkling-mutuals-$version+mc$minecraft.jar"; minecraft=$minecraft; size=3; sha256=$hash}
+                }
                 $suffix = if ($s.Editions) { '-full' } else { '' }
                 @{name="sparkling-mutuals-$version$suffix+mc$minecraft.jar"; minecraft=$minecraft; size=3; sha256=$hash}
                 if ($s.Editions) {
@@ -126,7 +129,18 @@ function global:gh {
             }
             return $s.Release | ConvertTo-Json -Depth 8 -Compress
         }
-        if ($route -match '/releases/(tags/[^/]+|latest)$') { return $s.Release | ConvertTo-Json -Depth 8 -Compress }
+        if ($route -match '/releases/tags/[^/]+$') {
+            $s.TagReads++
+            if ($s.TagReleaseOverride) { return $s.TagReleaseOverride | ConvertTo-Json -Depth 8 -Compress }
+            if ($s.StaleTagMetadataReads -gt 0) {
+                $s.StaleTagMetadataReads--
+                $stale = $s.Release.Clone()
+                $stale.body = 'Stale release notes'
+                return $stale | ConvertTo-Json -Depth 8 -Compress
+            }
+            return $s.Release | ConvertTo-Json -Depth 8 -Compress
+        }
+        if ($route -match '/releases/latest$') { return $s.Release | ConvertTo-Json -Depth 8 -Compress }
     }
     throw "Unexpected mock gh command: $($a -join ' ')"
 }
@@ -155,8 +169,19 @@ try {
         $api = 'repos/johnceoskyblock/sparkling-mutuals'
         $global:ShipMock.Release = @{id=10;tag_name='v4.3.10';name='v4.3.10';draft=$false;prerelease=$false;body="Feature notes`r`n"}
         $global:ShipMock.StaleMetadataReads = 2
+        $global:ShipMock.StaleTagMetadataReads = 2
         $release = Wait-ShipReleaseMetadata 'v4.3.10' 10 'v4.3.10' "Feature notes`n" -DelaySeconds 0
         Assert ($release.id -eq 10 -and $global:ShipMock.MetadataReads -eq 3) 'Stale reads were not retried correctly'
+    }
+    Test 'Fresh tag metadata recovers a stale ID endpoint without republishing' {
+        $null = New-Fixture
+        $api = 'repos/johnceoskyblock/sparkling-mutuals'
+        $global:ShipMock.Release = @{id=10;tag_name='v4.3.10';name='v4.3.10';draft=$false;prerelease=$false;body='Expected notes'}
+        $global:ShipMock.StaleMetadataReads = 5
+        $release = Wait-ShipReleaseMetadata 'v4.3.10' 10 'v4.3.10' 'Expected notes' -DelaySeconds 0
+        Assert ($release.id -eq 10 -and $global:ShipMock.MetadataReads -eq 1 -and $global:ShipMock.TagReads -eq 1) 'Tag fallback did not recover metadata'
+        $global:ShipMock.TagReleaseOverride = @{id=11;tag_name='v4.3.10';name='v4.3.10';draft=$false;prerelease=$false;body='Expected notes'}
+        Expect-Failure { Wait-ShipReleaseMetadata 'v4.3.10' 10 'v4.3.10' 'Expected notes' -DelaySeconds 0 } 'identity/publication changed'
     }
     Test 'Metadata verification fails after its bounded retries for genuinely different notes' {
         $null = New-Fixture
@@ -262,13 +287,18 @@ try {
         $notes = Join-Path $fixtures 'notes.txt'
         Expect-Failure { & $ship -RepositoryPath $work -Message 'Bad release' -Version 4.3.10 -NotesFile $notes } 'exactly the three expected'
     }
-    Test 'Consolidated release verifies six JARs and manifest at the merged tag' {
+    Test 'Consolidated release verifies nine JARs and manifest at the merged tag' {
         $work = New-Fixture
         $global:ShipMock.Editions = $true
         Add-Content -LiteralPath (Join-Path $work 'gradle.properties') -Value 'release_artifact_layout=editions'
         $notes = Join-Path $fixtures 'notes.txt'
         & $ship -RepositoryPath $work -Message 'Consolidated release' -Version 4.3.10 -NotesFile $notes
-        Assert ($global:ShipMock.Release.assets.Count -eq 7) 'Wrong number of public assets'
+        Assert ($global:ShipMock.Release.assets.Count -eq 10) 'Wrong number of public assets'
+        $assets = @($global:ShipMock.Release.assets)
+        $standard = @($assets | Where-Object name -match '^sparkling-mutuals-4\.3\.10\+mc')
+        Assert ($standard.Count -eq 3) 'Standard JARs were not included'
+        Expect-Failure { Assert-ShipAssets @($assets | Where-Object { $_.name -ne $standard[0].name }) '4.3.10' 'editions' } 'exactly the nine expected'
+        Expect-Failure { Assert-ShipAssets @($assets + $standard[0]) '4.3.10' 'editions' } 'exactly the nine expected'
         Assert ((Invoke-ShipNative git @('--git-dir',$global:ShipMock.Bare,'rev-parse','v4.3.10')) -eq $global:ShipMock.Merged) 'Tagged unmerged commit'
     }
     Test 'Consolidated release rejects a published manifest with the wrong JAR hash' {

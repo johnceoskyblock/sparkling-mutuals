@@ -19,7 +19,7 @@ fun planRelease(tag: String, modVersion: String, files: List<VerifiedAsset>, exi
     require(tag == "v$modVersion") { "Tag must match the internal mod version" }
     val jars = files.filterIsInstance<VerifiedJar>()
     val manifests = files.filterIsInstance<VerifiedManifest>()
-    val editionMatrix = if (manifests.isEmpty()) setOf(Edition.FULL) else setOf(Edition.FULL, Edition.FULL_NO_AUTO_UPDATE)
+    val editionMatrix = if (manifests.isEmpty()) setOf(Edition.FULL) else Edition.entries.toSet()
     val expected = editionMatrix.flatMap { edition -> minecraftTargets.map { edition to it } }.toSet()
     require(jars.size == expected.size && jars.map { it.edition to it.minecraft }.toSet() == expected &&
         manifests.size <= 1 && jars.size + manifests.size == files.size) { "Publication requires the complete verified GitHub distribution" }

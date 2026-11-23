@@ -60,7 +60,7 @@ try {
     Invoke-ShipNative git @('status','--short') | Out-Host
     Write-Host 'Plan: commit ALL tracked/untracked local changes, rebase on the remote branch and master, push, create/update PR, wait for CI, merge.'
     if ($Version) {
-        $githubAssets = if ($layout -eq 'editions') { 'six verified GitHub JARs and their manifest' } else { 'three verified GitHub JARs' }
+        $githubAssets = if ($layout -eq 'editions') { 'nine verified GitHub JARs and their manifest' } else { 'three verified GitHub JARs' }
         Write-Host "Then publish v$Version with $githubAssets and your notes."
     }
     else { Write-Host 'No release or tag will be created.' }
