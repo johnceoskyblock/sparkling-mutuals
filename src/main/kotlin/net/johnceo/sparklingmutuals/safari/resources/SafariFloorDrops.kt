@@ -23,10 +23,10 @@ class FloorDropState {
     fun needed(type: FloorDropType, mode: SafariMode, party: PartySparklingState, profitableGimmiegold: Boolean = false): Boolean = when (type) {
         FloorDropType.LIME, FloorDropType.PURPLE, FloorDropType.ORANGE -> amount(type) == 0
         FloorDropType.ICEBREAKER -> mode == SafariMode.FULL_CLEAR && amount(type) == 0
-        FloorDropType.COIN -> mode != SafariMode.SPARKLING || BiomeObjectiveConfig.needs("Gimmiegold", party) || profitableGimmiegold
+        FloorDropType.COIN -> mode != SafariMode.SPARKLING || party.needs("Gimmiegold") || profitableGimmiegold
         FloorDropType.INCENSE -> (acquired[type] ?: 0) < 4 && (inventoryPeak[type] ?: 0) < 4 &&
-            if (mode == SafariMode.SPARKLING) BiomeObjectiveConfig.needs("Doomspiral", party)
-            else BiomeObjectiveConfig.needs("Gimmiegold", party) || amount(type) < 4
+            if (mode == SafariMode.SPARKLING) party.needs("Doomspiral")
+            else BiomeObjectiveConfig.needs("Gimmiegold", party, mode) || amount(type) < 4
         FloorDropType.WORM, FloorDropType.BERRY, FloorDropType.SEEDS -> true
         FloorDropType.GENERIC -> false
     }
@@ -103,10 +103,10 @@ class FloorDropState {
         fun caught(name: String) = (run?.count(name) ?: 0) > 0
         val fullClear = mode == SafariMode.FULL_CLEAR
         return when (biome) {
-            SafariBiome.CAVERN -> (fullClear || BiomeObjectiveConfig.needs("Gemzie", party) || mode == SafariMode.UNIQUE && !caught("Gemzie")) &&
+            SafariBiome.CAVERN -> (fullClear || BiomeObjectiveConfig.needs("Gemzie", party, mode) || mode == SafariMode.UNIQUE && !caught("Gemzie")) &&
                 listOf(FloorDropType.LIME, FloorDropType.PURPLE, FloorDropType.ORANGE).any { needed(it, mode, party) }
             SafariBiome.FOREST -> configured && (fullClear || listOf("Bluebird", "Parakeet", "Macaw").any {
-                BiomeObjectiveConfig.needs(it, party) || mode == SafariMode.UNIQUE && !caught(it)
+                BiomeObjectiveConfig.needs(it, party, mode) || mode == SafariMode.UNIQUE && !caught(it)
             })
             SafariBiome.HAUNTED -> configured && (needed(FloorDropType.COIN, mode, party, profitableGimmiegold) || needed(FloorDropType.INCENSE, mode, party))
             SafariBiome.ICY -> fullClear && needed(FloorDropType.ICEBREAKER, mode, party)

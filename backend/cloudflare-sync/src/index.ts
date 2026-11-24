@@ -4,7 +4,7 @@ import {issueToken,verifyToken} from './auth';
 import {Allocation} from './allocator';
 import {RouteRoom,request as routeRequest,route} from './routing';
 import {Attachment,Room,attachment,mergeEvidence} from './room';
-import {check,identity,object,text,uuid} from './protocol';
+import {Biome,check,identity,object,text,uuid} from './protocol';
 export interface Env {COORDINATOR:DurableObjectNamespace<Coordinator>;SIGNING_SECRET:string;BACKUP_ENABLED:string;SYNC_MIN_PROTOCOL?:string}
 const json=(v:unknown,status=200)=>Response.json(v,{status,headers:{'Cache-Control':'no-store'}});
 function transportVersion(request:Request){
@@ -23,6 +23,7 @@ export class Coordinator extends DurableObject<Env> {
   ctx.storage.sql.exec('CREATE INDEX IF NOT EXISTS rooms_lobby ON rooms(lobby)');
   ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS budgets (id TEXT PRIMARY KEY, expires INTEGER NOT NULL, count INTEGER NOT NULL)');
   ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS backup_fairness (roster TEXT PRIMARY KEY, updated INTEGER NOT NULL, counts TEXT NOT NULL)');
+  ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS hotspot_preferences (roster TEXT NOT NULL, player TEXT NOT NULL, updated INTEGER NOT NULL, ranking TEXT NOT NULL, PRIMARY KEY(roster,player))');
  }
  private budget(id:string,limit:number,window:number,now:number){
   const expires=Math.floor(now/window)*window+window,key=id+':'+expires;
@@ -32,6 +33,15 @@ export class Coordinator extends DurableObject<Env> {
   this.ctx.storage.sql.exec('INSERT INTO budgets(id,expires,count) VALUES(?,?,?) ON CONFLICT(id) DO UPDATE SET count=excluded.count',key,expires,old+1);return true;
  }
  private load(id:string){const row=this.ctx.storage.sql.exec<{routing:string;allocation:string}>('SELECT routing,allocation FROM rooms WHERE id=?',id).toArray()[0];return row?{routing:JSON.parse(row.routing) as RouteRoom,allocation:Allocation.restore(JSON.parse(row.allocation))}:null;}
+ private cachedPreferences(roster:string[],now:number):Record<string,Biome[]>{
+  const rows=this.ctx.storage.sql.exec<{player:string;ranking:string}>('SELECT player,ranking FROM hotspot_preferences WHERE roster=? AND updated>?',roster.join(','),now-30*86400000);
+  return Object.fromEntries([...rows].map(row=>[row.player,JSON.parse(row.ranking) as Biome[]]));
+ }
+ private savePreference(roster:string[],player:string,ranking:Biome[],now:number){
+  this.ctx.storage.sql.exec('INSERT INTO hotspot_preferences(roster,player,updated,ranking) VALUES(?,?,?,?) ON CONFLICT(roster,player) DO UPDATE SET updated=excluded.updated,ranking=excluded.ranking',roster.join(','),player,now,JSON.stringify(ranking));
+  this.ctx.storage.sql.exec('DELETE FROM hotspot_preferences WHERE updated<=?',now-30*86400000);
+  this.ctx.storage.sql.exec('DELETE FROM hotspot_preferences WHERE rowid IN (SELECT rowid FROM hotspot_preferences ORDER BY updated DESC LIMIT -1 OFFSET 1024)');
+ }
  private save(r:RouteRoom,a:Allocation){this.ctx.storage.sql.exec('INSERT INTO rooms(id,lobby,renewed,routing,allocation) VALUES(?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET renewed=excluded.renewed,routing=excluded.routing,allocation=excluded.allocation',r.generation,r.lobby,r.renewed,JSON.stringify(r),JSON.stringify(a));
   const group=r.roster.join(','),counts=JSON.stringify(a.backupWins),old=this.ctx.storage.sql.exec<{counts:string}>('SELECT counts FROM backup_fairness WHERE roster=?',group).toArray()[0];
   if(Object.keys(a.backupWins).length&&old?.counts!==counts){this.ctx.storage.sql.exec('DELETE FROM backup_fairness WHERE updated<?',Date.now()-30*86400000);this.ctx.storage.sql.exec('INSERT INTO backup_fairness(roster,updated,counts) VALUES(?,?,?) ON CONFLICT(roster) DO UPDATE SET updated=excluded.updated,counts=excluded.counts',group,Date.now(),counts);this.ctx.storage.sql.exec('DELETE FROM backup_fairness WHERE roster IN (SELECT roster FROM backup_fairness ORDER BY updated DESC LIMIT -1 OFFSET 256)');}
@@ -114,8 +124,10 @@ export class Coordinator extends DurableObject<Env> {
      result.room.carry=carry;
     }
     const priorWins=this.ctx.storage.sql.exec<{counts:string}>('SELECT counts FROM backup_fairness WHERE roster=? AND updated>?',result.room.roster.join(','),now-30*86400000).toArray()[0];
-    let a=old&&old.r.generation===result.generation?Allocation.restore(JSON.parse(old.row.allocation)):new Allocation(result.room.roster,priorWins?JSON.parse(priorWins.counts):{});
+    const continuing=old&&old.r.generation===result.generation;
+    const a=continuing?Allocation.restore(JSON.parse(old.row.allocation)):new Allocation(result.room.roster,priorWins?JSON.parse(priorWins.counts):{});
     if(old&&old.r.generation!==result.generation)this.ctx.storage.sql.exec('DELETE FROM rooms WHERE id=?',old.r.generation);
+    if(!continuing||a.roster.join()!==result.room.roster.join())a.preferences=this.cachedPreferences(result.room.roster,now);
     if(a.roster.join()!==result.room.roster.join()){a.roster=result.room.roster;a.fairness={};a.backupWins={};a.seeded=null;}
     this.ctx.storage.sql.exec('DELETE FROM rooms WHERE renewed<=?',now-600000);
     check(q,this.ctx.storage.sql.exec<{n:number}>('SELECT count(*) AS n FROM rooms').one().n<128||!!old);
@@ -153,10 +165,14 @@ export class Coordinator extends DurableObject<Env> {
     const retained=priorRoom?.sessions.find(peer=>peer.self===self&&peer.nonce===nonce);
     if(s.protocol&&retained)s.snapshots=retained.snapshots;
     s.union=inheritedUnion;s.evidence=structuredClone(inheritedEvidence);server.serializeAttachment(s);
-    server.send(JSON.stringify({type:'welcome',self,roster:i.roster,features:['hotspots-v1','biome-reports-v1','room-sparklings-v1','failover-bootstrap-v1',
+    const cachedPreference=this.cachedPreferences(i.roster,now)[self];
+    server.send(JSON.stringify({type:'welcome',self,roster:i.roster,features:['hotspots-v1','biome-reports-v1','room-sparklings-v1','failover-bootstrap-v1','hotspot-preferences-v1',
      ...(s.protocol?['run-reconciliation-v1','critter-completion-v1']:[]),
-     ...(s.protocol?.efficient?['efficient-transport-v1']:[])],connectionId:s.protocol?.connectionId}));
-    const room=this.room(gen)!;this.persist(room);this.deliver(room,[{type:'reconciling'}]);if(!s.protocol)for(const frame of room.replay(s))server.send(JSON.stringify(frame));
+     ...(s.protocol?.efficient?['efficient-transport-v1']:[])],connectionId:s.protocol?.connectionId,hotspotPreference:cachedPreference}));
+    const room=this.room(gen)!;
+    room.allocation.noteAssignmentClient(self);
+    if(cachedPreference)room.allocation.setPreference(self,cachedPreference);
+    this.persist(room);this.deliver(room,[{type:'reconciling'}]);if(!s.protocol)for(const frame of room.replay(s))server.send(JSON.stringify(frame));
     await this.schedule();return new Response(null,{status:101,webSocket:client});
    }
    return json({error:'not found'},404);
@@ -202,7 +218,11 @@ export class Coordinator extends DurableObject<Env> {
      return JSON.stringify(child);
     });
    }
+   const previousPreference=room!.allocation.preferences[s.self];
    const results=messages.map((raw,index)=>room!.receive(current,raw,now,index===0));
+   const nextPreference=room!.allocation.preferences[s.self];
+   if(nextPreference&&JSON.stringify(previousPreference)!==JSON.stringify(nextPreference))
+    this.savePreference(s.roster,s.self,nextPreference,now);
    this.persist(room!);
    this.deliverReconciliation(ws,room!,current,results.flatMap(result=>result.private),now);
    const outgoing=results.flatMap(result=>result.broadcast);

@@ -2,6 +2,7 @@ package net.johnceo.sparklingmutuals.sync
 
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
+import net.johnceo.sparklingmutuals.safari.SafariBiome
 import java.net.URI
 import java.net.http.*
 import java.nio.ByteBuffer
@@ -77,6 +78,8 @@ internal class PartySyncTransport(
     private var context: Context?=null
     @Volatile var ready=false; private set
     var hotspotCapability=false; private set
+    var hotspotPreferencesCapability=false; private set
+    var cachedHotspotPreference: List<SafariBiome>?=null; private set
     var biomeCapability=false; private set
     var critterCapability=false; private set
     var runCapability=false; private set
@@ -190,6 +193,8 @@ internal class PartySyncTransport(
                     renewAt=openedAt+485_000
                     mapping=map; welcomed=true; ready=!runCapability; failures=0
                     hotspotCapability="hotspots-v1" in features; biomeCapability="biome-reports-v1" in features
+                    hotspotPreferencesCapability=hotspotCapability && PartySyncProtocol.HOTSPOT_PREFERENCES in features
+                    cachedHotspotPreference=if(hotspotPreferencesCapability) PartySyncProtocol.hotspotPreference(root.get("hotspotPreference")) else null
                     critterCapability="critter-completion-v1" in features
                     roomSparklings="room-sparklings-v1" in features
                     logger.info("Party sync room ready: members={} hotspots={} biomeReports={}",map.size,hotspotCapability,biomeCapability)
@@ -391,6 +396,7 @@ internal class PartySyncTransport(
             PartySyncProtocol.envelope(leaveSequence,"H",if(runCapability)
                 visit.operation("{\"version\":1,\"action\":\"leave\"}") else "{\"version\":1,\"action\":\"leave\"}") else null
         generation++; ready=false; welcomed=false; connecting=false; hotspotCapability=false; biomeCapability=false; critterCapability=false; runCapability=false; roomSparklings=false; socket=null
+        hotspotPreferencesCapability=false; cachedHotspotPreference=null
         visit.disconnected(); replay.clear(); clearEfficient()
         incoming.clear(); mapping=emptyMap(); sent.clear(); context=null
         if(old!=null) pending.handle { _,_ -> null }.thenCompose {

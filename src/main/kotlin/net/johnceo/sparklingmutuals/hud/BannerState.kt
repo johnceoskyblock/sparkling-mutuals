@@ -36,7 +36,7 @@ enum class BannerKind(val label: String,val text: String,val rgb: Int=0x55FF55,v
     WARP("Warping now","Warping Now",0xFF5555,9,priority=30),
     PARTY_KICKED("Party member kicked","Safari kick reported by <PLAYER>",0xFF5555,sound=30);
     val availableInEdition get()=when(this) {
-        WARP -> !net.johnceo.sparklingmutuals.config.SafariSettings.standardEdition
+        WARP, HIDEYHO_LOCATION -> !net.johnceo.sparklingmutuals.config.SafariSettings.standardEdition
         PARTY_KICKED -> net.johnceo.sparklingmutuals.config.SafariSettings.standardEdition
         else -> true
     }

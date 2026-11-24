@@ -60,55 +60,56 @@ class HotspotRunHistoryTest {
             RunRecord(partyMembers = mapOf("local" to "Local"), hotspotRun = true, fullPartyPresent = true, rewardSummarySeen = true),
             legacy,
         ))
-        assertTrue(data.observeHotspotRoster(party.keys, 100))
         val restored = gson.fromJson(gson.toJson(data), RunHistory.Data::class.java)
-        assertFalse(restored.observeHotspotRoster(party.keys, 200))
-        assertEquals(2, restored.hotspotRunsFor(party.keys))
+        assertEquals(2, HistoryQueries.consecutiveHotspotRuns(restored.runs, party.keys))
     }
 
     @Test fun `another party breaks the historical streak even when its run had hotspot off`() {
-        val history = RunHistory.Data(runs = mutableListOf(
+        val runs = listOf(
             completed(50),
             completed(40).apply { hotspotRun = false },
             completed(30),
             completed(20, otherParty).apply { hotspotRun = false },
             completed(10),
-        ))
-        history.observeHotspotRoster(party.keys, 60)
-        assertEquals(2, history.hotspotRunsFor(party.keys))
+        )
+        assertEquals(2, HistoryQueries.consecutiveHotspotRuns(runs, party.keys))
+        assertEquals(1, HistoryQueries.consecutiveHotspotRuns(runs, otherParty.keys, liveStart = 60))
     }
 
-    @Test fun `a roster change with no intervening runs resets the count after reconnect`() {
+    @Test fun `a roster change between runs does not reset the count for the reformed party`() {
+        val fullParty = party + mapOf("third" to "Third", "fourth" to "Fourth")
+        val runs = listOf(completed(20, fullParty), completed(10, fullParty))
+        assertEquals(2, HistoryQueries.consecutiveHotspotRuns(runs, fullParty.keys))
+        assertEquals(0, HistoryQueries.consecutiveHotspotRuns(runs, party.keys))
+        assertEquals(3, HistoryQueries.consecutiveHotspotRuns(runs, fullParty.keys, liveStart = 80))
+    }
+
+    @Test fun `old roster reset metadata does not cut off the restored history`() {
         val gson = Gson()
-        val history = RunHistory.Data(runs = mutableListOf(completed(10)))
-        history.observeHotspotRoster(party.keys, 20)
-        assertEquals(1, history.hotspotRunsFor(party.keys))
-        history.observeHotspotRoster(otherParty.keys, 30)
-        assertEquals(0, history.hotspotRunsFor(otherParty.keys))
-        history.observeHotspotRoster(party.keys, 40)
-        history.runs.add(0, completed(50))
-        val restored = gson.fromJson(gson.toJson(history), RunHistory.Data::class.java)
-        assertFalse(restored.observeHotspotRoster(party.keys, 60))
-        assertEquals(1, restored.hotspotRunsFor(party.keys))
+        val json = gson.toJsonTree(RunHistory.Data(runs = mutableListOf(completed(50), completed(10)))).asJsonObject
+        json.add("hotspotPartyRoster", gson.toJsonTree(party.keys))
+        json.addProperty("hotspotPartySince", 40)
+        val restored = gson.fromJson(json, RunHistory.Data::class.java)
+        assertEquals(2, HistoryQueries.consecutiveHotspotRuns(restored.runs, party.keys))
     }
 
-    @Test fun `a member change resets the streak even if the roster refresh returns the original party`() {
-        val history = RunHistory.Data(runs = mutableListOf(completed(10)))
-        history.observeHotspotRoster(party.keys, 20)
-        history.breakHotspotStreak(30)
-        assertTrue(history.observeHotspotRoster(party.keys, 40))
-        assertEquals(0, history.hotspotRunsFor(party.keys))
-        history.runs.add(0, completed(35))
-        assertEquals(1, history.hotspotRunsFor(party.keys), "A delayed roster refresh must not reset the streak twice")
+    @Test fun `the live run is included once before and after it is saved`() {
+        val oldRun = completed(10)
+        val current = completed(20)
+        assertEquals(1, HistoryQueries.consecutiveHotspotRuns(listOf(oldRun), party.keys))
+        assertEquals(2, HistoryQueries.consecutiveHotspotRuns(listOf(oldRun), party.keys, liveStart = current.start))
+        assertEquals(2, HistoryQueries.consecutiveHotspotRuns(listOf(current, oldRun), party.keys, liveStart = current.start))
+        assertEquals(2, HistoryQueries.consecutiveHotspotRuns(listOf(current, oldRun), party.keys))
+        assertEquals(0, HistoryQueries.consecutiveHotspotRuns(emptyList(), setOf("local"), liveStart = current.start))
     }
 
     @Test fun `a late reward summary makes the saved party run count only once`() {
         val run = RunRecord(partyMembers = party, hotspotRun = true, fullPartyPresent = true)
         val tally = RunTally()
-        assertEquals(0, HistoryQueries.consecutiveHotspotRuns(listOf(run), party.keys, 0))
+        assertEquals(0, HistoryQueries.consecutiveHotspotRuns(listOf(run), party.keys))
         assertTrue(tally.summaryLine(SAFARI_REWARD_SUMMARY))
         assertTrue(RunHistory.applySummary(run, tally))
         assertFalse(RunHistory.applySummary(run, tally))
-        assertEquals(1, HistoryQueries.consecutiveHotspotRuns(listOf(run), party.keys, 0))
+        assertEquals(1, HistoryQueries.consecutiveHotspotRuns(listOf(run), party.keys))
     }
 }

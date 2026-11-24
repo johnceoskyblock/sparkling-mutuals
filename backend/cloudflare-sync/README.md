@@ -34,7 +34,9 @@ Backup WebSockets additionally require `X-SM-Generation` and `X-SM-Visit`. Welco
 
 Transport 3 adds `efficient-transport-v1`, bounded routine batches, revision-based completion refresh and authenticated socket renewal. Legacy peers still receive ordinary state frames. The optional `SYNC_MIN_PROTOCOL` upgrade cutoff defaults to 1. Set it to 3 only after clients have migrated; rejected main upgrades return 426 before reaching the coordinator.
 
-Ordinary A/N/U/S/B/H wire formats and upstream hotspot allocation rules remain unchanged. Room positives are released atomically only after reconciliation; assignments never move, conflicts freeze new decisions, and leaders acknowledge instructions after actual game-chat submission. This is bounded observational sharing, not an authoritative capture ledger or permanent run database.
+The main socket advertises `hotspot-preferences-v1`. It stores preferences from authenticated `H` hellos by sender and exact roster. The next welcome echoes the sender’s saved order, including in a different Safari lobby. The cache retains up to 1,024 player-roster entries for 30 days. [Hotspot preference fields and tie-break rules](../../docs/PARTY_SYNC_HOTSPOT_PREFERENCES.md)
+
+Room positives are released atomically only after reconciliation. Assignments stay locked, conflicts freeze new decisions, and leaders acknowledge instructions after game-chat submission.
 
 ## Completion-only primary channel
 

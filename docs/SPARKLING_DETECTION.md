@@ -15,6 +15,8 @@ The Full builds can show a single **Critter Unknown** alert from eligible wax-on
 
 The settings for sparkling alerts, nearby sightings, and party announcements are independent. Eligible party announcements name the critter and location. Alerts use the shared alert queue, and the encounter resets on a new run. Confirmed captures clear stale sightings and queued notices.
 
+**Include sparkling catch count** sends the species total from your saved party catch history. A confirmed first discovery also says `NEW!`.
+
 Sightings do not add capture requirements. Confirmed sparkling catches are evaluated separately from ordinary checks, source completion, and personal bests. [Safari modes and completion](../SAFARI_LOGIC.md) · [Party sync](PARTY_SYNC.md)
 
 ## Source and skin provenance

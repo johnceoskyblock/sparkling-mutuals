@@ -47,7 +47,7 @@ We maintain three editions in one public source repository. Only Standard is pro
 | Hidden/remote sparkling alerts | Excluded; local visibility is required | Included | Included |
 | Sparkle Warping, Warp List, automatic invites and timed warps | Excluded | Included | Included |
 | Automatic ticket/capture input and auto-entry | Excluded | Included | Included |
-| Custom release checks, update downloads, restart installer and update controls | Excluded from packaged classes and controls | Included; automatic downloads default off | Excluded from packaged classes and controls |
+| Custom release checks, update downloads, restart installer and update controls | Excluded from packaged classes and controls | Included with configurable automatic downloads | Excluded from packaged classes and controls |
 | Fixed Snoozle wall/hive markers and optional capsule trajectory through terrain | Included and disclosed for review | Included | Included |
 
 ### How exclusions are implemented

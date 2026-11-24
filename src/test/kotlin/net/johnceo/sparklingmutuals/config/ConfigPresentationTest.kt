@@ -51,9 +51,11 @@ class ConfigPresentationTest {
     @Test fun bannerTemplateHelpOnlyAppearsWhereThePlaceholderWorks() {
         ConfigManager.init(dir)
         val catalog=SettingsCatalog(SafariSettings())
-        fun text(vararg fields: String)=catalog.locate(SettingsTarget("Banner",fields.toList()+"text"))!!.second.last()
-        assertTrue(text("encounters","hideyho").description.contains("<LOCATION>"))
-        assertTrue(text("safari","biome").description.contains("<BIOME>"))
-        assertEquals("",text("safari","complete").description)
+        fun text(vararg fields: String)=catalog.locate(SettingsTarget("Banner",fields.toList()+"text"))?.second?.last()?.description
+        val hideyho = text("encounters", "hideyho")
+        if (SafariSettings.standardEdition) assertNull(hideyho)
+        else assertTrue(hideyho!!.contains("<LOCATION>"))
+        assertTrue(text("safari","biome")!!.contains("<BIOME>"))
+        assertEquals("",text("safari","complete"))
     }
 }

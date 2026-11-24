@@ -36,6 +36,9 @@ object SparkleAutoParty {
             })
         }
         ClientReceiveMessageEvents.GAME.register { message, overlay ->
+            if (!overlay) Minecraft.getInstance().execute {
+                AlertManager.observeTravel(Minecraft.getInstance(), message.string, joined)
+            }
             if (!overlay && net.johnceo.sparklingmutuals.safari.automation.SafariDowntime.partyWarpMessage(message.string))
                 Minecraft.getInstance().execute { stop() }
             if (!overlay) SafariMessages.lines(message.string).forEach { line ->
@@ -80,7 +83,8 @@ object SparkleAutoParty {
         if (!ConfigManager.warpAlertsEnabled || !SafariAssist.inSafari || client.level !== level ||
             client.connection !== connection || SafariTracking.ledger.current !== run ||
             SafariTracking.ledger.current?.endedAt != null) { stop(); return }
-        if (now >= invitations.deadline) { stop(); return }
+        // Keep joined names available for travel notices while the armed warp is settling.
+        if (now >= invitations.deadline) { invitations.stop(); return }
         if (SparkleWarping.preparingParty) return
         if (!PartyManager.hasInfo) { PartyManager.requestPartyInfo(); return }
         val player = client.player ?: return

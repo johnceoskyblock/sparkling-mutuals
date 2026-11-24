@@ -22,5 +22,11 @@ export function numbers(kind:string,payload:unknown):number[]{
 export const BIOMES=['FOREST','CAVERN','ICY','HAUNTED'] as const;
 export type Biome=typeof BIOMES[number];
 export function biome(v:unknown):Biome{check(v,BIOMES.includes(v as Biome));return v as Biome;}
+export const DEFAULT_HOTSPOT_PREFERENCE: readonly Biome[] = ['ICY','FOREST','HAUNTED','CAVERN'];
+export function hotspotPreference(value:unknown):Biome[]|null{
+ if(!Array.isArray(value)||value.length!==BIOMES.length||
+    !value.every(b=>BIOMES.includes(b as Biome))||new Set(value).size!==BIOMES.length)return null;
+ return [...value] as Biome[];
+}
 export const CODES=['fd','cd','id','hd'];
 export function locks(v:unknown,roster:string[]):Record<string,Biome>{const o=object(v),out:Record<string,Biome>={};for(const [id,b] of Object.entries(o)){check(id,roster.includes(uuid(id)));out[id]=biome(b);}check(v,new Set(Object.values(out)).size===Object.keys(out).length);return out;}

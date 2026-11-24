@@ -1,5 +1,6 @@
 package net.johnceo.sparklingmutuals.safari.completion
 
+import net.johnceo.sparklingmutuals.config.WithOptionalSparklingChecks
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.safari.PartySparklingState
 import net.johnceo.sparklingmutuals.safari.SafariBiome
@@ -140,6 +141,7 @@ class UniqueAbsentCritterTest {
             assertFalse(run.uniqueUnavailable(absent), "a later sighting revokes zero-spawn proof")
         }
     }
+    @WithOptionalSparklingChecks
     @Test fun `party fd cannot complete Unique Forest without catches`() {
         val run = SafariRun(0); val state = party()
         run.visitBiome(SafariBiome.CAVERN)
@@ -150,6 +152,7 @@ class UniqueAbsentCritterTest {
         assertEquals(0, run.count("Macaw")); assertEquals(0, run.personalCount("Macaw"))
         assertFalse(run.uniqueComplete("Macaw", state, localOnly = true))
     }
+    @WithOptionalSparklingChecks
     @Test fun `caught Unique entities hide with profitable highlighting disabled while structure helpers stay`() {
         val run = SafariRun(0); val state = party()
         for (critter in SafariRoster.all) {

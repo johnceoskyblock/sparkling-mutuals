@@ -1,5 +1,8 @@
 package net.johnceo.sparklingmutuals.commands
 
+import java.util.Properties
+import net.johnceo.sparklingmutuals.config.BiomeObjectiveConfig
+import net.johnceo.sparklingmutuals.config.WithOptionalSparklingChecks
 import net.johnceo.sparklingmutuals.safari.PartySparklingState
 import net.johnceo.sparklingmutuals.safari.SafariBiome
 import net.johnceo.sparklingmutuals.safari.SafariRoster
@@ -8,6 +11,7 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class SparklingRatesTest {
+    @WithOptionalSparklingChecks
     @Test fun `Unique includes full Gemzie and bird checks plus two shared Gazers and Gimmiegolds`() {
         val shared = SparklingRates.estimate(party(), mode = SafariMode.UNIQUE)
         assertEquals(SafariBiome.entries, shared.biomes)
@@ -27,6 +31,25 @@ class SparklingRatesTest {
             assertEquals(CritterSpawnAverages.lazyParty[bird], needed.manual[bird])
         assertTrue(needed.checkedPerRun > shared.checkedPerRun)
         assertTrue(SparklingRates.breakdown(shared).startsWith("Mode: Unique"))
+    }
+    @Test fun `Unique rates count one for disabled manual checks and always include every Gemzie`() {
+        val before = Properties().also(BiomeObjectiveConfig::save)
+        try {
+            BiomeObjectiveConfig.load(Properties().apply { setProperty("objectives.checks.rockmite", "true") })
+            val needsAll = party(*all.toTypedArray())
+            val unique = SparklingRates.estimate(needsAll, mode = SafariMode.UNIQUE)
+            val average = CritterSpawnAverages.lazyParty
+            unique.manual.forEach { (name, count) ->
+                assertEquals(if (name in setOf("Gemzie", "Rockmite")) average.getValue(name) else 1.0, count, name)
+            }
+            assertEquals(average["Troodon"], unique.boat["Troodon"])
+            assertEquals(average["Scrappy"], unique.passive["Scrappy"])
+            val sparkling = SparklingRates.estimate(needsAll, mode = SafariMode.SPARKLING)
+            assertEquals(average["Gazer"], sparkling.manual["Gazer"])
+            assertEquals(average["Macaw"], sparkling.manual["Macaw"])
+        } finally {
+            BiomeObjectiveConfig.load(before)
+        }
     }
     @Test fun `Full Clear uses all full party spawns without discovery data or double counting boat species`() {
         val result = SparklingRates.estimate(PartySparklingState(), mode = SafariMode.FULL_CLEAR)

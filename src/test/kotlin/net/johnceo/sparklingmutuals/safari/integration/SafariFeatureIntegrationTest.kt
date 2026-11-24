@@ -1,5 +1,6 @@
 package net.johnceo.sparklingmutuals.safari.integration
 
+import net.johnceo.sparklingmutuals.config.WithOptionalSparklingChecks
 import net.johnceo.sparklingmutuals.config.Accordion
 import net.johnceo.sparklingmutuals.config.Category
 import net.johnceo.sparklingmutuals.config.ConfigEditorBoolean
@@ -110,6 +111,7 @@ class SafariFeatureIntegrationTest {
         assertFalse(ConfigManager.achievementsToParty)
     }
 
+    @WithOptionalSparklingChecks
     @Test fun `fixed counters explicitly distinguish caught totals from currently checked population`() {
         for ((name, total) in mapOf("Scrappy" to 3, "Gemzie" to 3, "Troodon" to 3, "Gazer" to 4)) {
             val run = SafariRun(0)
@@ -182,6 +184,7 @@ class SafariFeatureIntegrationTest {
         assertTrue(state.needed(FloorDropType.INCENSE, SafariMode.SPARKLING, party("Doomspiral")))
     }
 
+    @WithOptionalSparklingChecks
     @Test fun `remaining Haunted drops block Gimmiegold checks despite the minimum captured population`() {
         val run = SafariRun(0)
         (1..3).forEach { run.gimmiegoldCheck.floor(it, true) }

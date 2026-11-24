@@ -25,7 +25,7 @@ Every ten client ticks, the tracker uses the computer's local clock: twenty-minu
 
 When the Full contest guard is enabled, the leader announces `New Contest Started!` when a different window is observed in its first ten seconds, with a loaded player/world, SkyBlock detection, a known party with teammates, and a confirmed local Party Leader role. The first observation establishes a baseline.
 
-The guard waits for the other players on the roster at announcement time. The 30-second timer starts in Torrhus while the local player is leader. After an unrecognized return from an active Safari, it waits until a teammate is on the same server. It sends one reminder naming up to three teammates still waiting. Shift-clicking a Safari entry interaction clears this guard for the current contest. Each verified party member clears their own hold with readiness or ticket chat. Departures remove that member from the wait. The legacy manual downtime flow below is separate.
+The guard waits for the other players on the roster at announcement time. Shift-clicking a Safari entry interaction clears this guard for the current contest. Each verified party member clears their own hold with readiness or ticket chat. Departures remove that member from the wait. The legacy manual downtime flow below is separate.
 
 ### Requests and readiness
 
@@ -47,7 +47,7 @@ With an outstanding contest request, queue `[Reminder] Everyone get your ticket!
 
 ## Chat volume
 
-The automatic contest guard sends one start message and at most one follow-up. Manual contest requests retain their separate Torrhus reminder. Routine local bookkeeping notices have been removed. Contest warnings retain their existing title/sound controls; the automatic warning chat line is also removed. No new API requests are introduced.
+The automatic contest guard sends one start message. Manual contest requests have a separate Torrhus reminder. Contest warnings use the configured title and sound.
 
 ## Lifecycle and persistence
 

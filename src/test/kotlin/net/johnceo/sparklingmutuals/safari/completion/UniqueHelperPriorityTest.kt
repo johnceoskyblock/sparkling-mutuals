@@ -1,5 +1,6 @@
 package net.johnceo.sparklingmutuals.safari.completion
 
+import net.johnceo.sparklingmutuals.config.WithOptionalSparklingChecks
 import net.johnceo.sparklingmutuals.safari.PartySparklingState
 import net.johnceo.sparklingmutuals.safari.SafariBiome
 import net.johnceo.sparklingmutuals.safari.SafariCatch
@@ -63,6 +64,7 @@ class UniqueHelperPriorityTest {
         assertTrue(state.enabledForMode(SafariBiome.HAUNTED, SafariMode.UNIQUE, true, run, needsCoin))
         assertTrue(state.enabledForMode(SafariBiome.HAUNTED, SafariMode.UNIQUE, true, run, all))
     }
+    @WithOptionalSparklingChecks
     @Test fun `structure helpers prioritize first catch then remaining party checks`() {
         for (name in SafariHelperRules.species) {
             val run = SafariRun(0); val needs = party(name); val all = party()

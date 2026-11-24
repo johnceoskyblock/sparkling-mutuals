@@ -21,6 +21,8 @@ class SafariEntryEvidence {
         private set
     var hotspot: SafariBiome? = null
         private set
+    val admitted get() = admission != null || hotspot != null
+
     fun chat(text: String) {
         val item = Regex("^HEAD START! You started with a (.+)!$").matchEntire(text)?.groupValues?.get(1)
         if (item != null) headStart = FloorDropType.entries.firstOrNull { it.label == item }

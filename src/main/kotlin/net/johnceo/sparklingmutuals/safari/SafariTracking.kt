@@ -169,8 +169,7 @@ object SafariTracking {
         if (SafariIsland.onIsland && !SafariAssist.departing) {
             val self = player.uuid.toString()
             run.runParty.observeHotspot(ConfigManager.hotspotAnnouncer)
-            val admitted = run.entry.hotspot != null || run.entry.admission != null
-            run.runParty.observeRoster(PartyManager.withLocal(self), admitted) {
+            run.runParty.observeRoster(PartyManager.withLocal(self), run.entry.admitted) {
                 connection.onlinePlayers.associateTo(mutableMapOf(self to player.name.string)) {
                     it.profile.id.toString() to it.profile.name
                 }

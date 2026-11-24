@@ -1,5 +1,6 @@
 package net.johnceo.sparklingmutuals.safari.completion
 
+import net.johnceo.sparklingmutuals.config.WithOptionalSparklingChecks
 import net.johnceo.sparklingmutuals.safari.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -25,6 +26,7 @@ class RemoteReportTrustTest {
         }
     }
 
+    @WithOptionalSparklingChecks
     @Test fun `leaving a visited biome permits remote Unique trust while reentry restores local checking`() {
         val run = SafariRun(0); val party = party()
         run.visitBiome(SafariBiome.HAUNTED)

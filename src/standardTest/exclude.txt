@@ -18,3 +18,4 @@ kotlin/net/johnceo/sparklingmutuals/safari/automation/entry/CjsPhysicalInputTest
 kotlin/net/johnceo/sparklingmutuals/safari/automation/entry/CjsWalkingKeysTest.kt
 kotlin/net/johnceo/sparklingmutuals/safari/automation/entry/CjsWebsocketSessionTest.kt
 kotlin/net/johnceo/sparklingmutuals/safari/esp/CritterModelGlowTest.kt
+kotlin/net/johnceo/sparklingmutuals/safari/hideyho/HideyhoSpotterTest.kt

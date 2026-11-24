@@ -1,5 +1,6 @@
 package net.johnceo.sparklingmutuals.sync
 
+import net.johnceo.sparklingmutuals.config.WithOptionalSparklingChecks
 import com.google.gson.JsonParser
 import net.johnceo.sparklingmutuals.safari.*
 import net.johnceo.sparklingmutuals.safari.completion.SharedCritterProgress
@@ -71,6 +72,7 @@ class CritterProgressSyncTest {
         assertNull(CritterProgressProtocol.decode(payload))
         assertNotNull(CritterProgressProtocol.decode(CritterProgressProtocol.encode(SafariRun(0),party())))
     }
+    @WithOptionalSparklingChecks
     @Test fun `local unique catches combine with peer render checks in the current biome`() {
         val run = SafariRun(0)
         val party = party("Snoozle")
@@ -117,6 +119,7 @@ class CritterProgressSyncTest {
         now += 5000; assertFalse(shared.complete("Scrappy", SafariMode.SPARKLING))
         assertFalse(shared.replace("b", 2, mapOf("Scrappy" to done)), "expired old sequence cannot revive")
     }
+    @WithOptionalSparklingChecks
     @Test fun `positive local sources and live remainders override peer completion`() {
         val run = SafariRun(0); val party = party("Rockmite", "Snoozle")
         run.sharedCritters.replace("peer", 1, mapOf("Rockmite" to done, "Snoozle" to done, "Scrappy" to done))
@@ -167,6 +170,7 @@ class CritterProgressSyncTest {
         val proof = CritterProgressProtocol.decode(CritterProgressProtocol.encode(run, party("Wumpa")))!!.getValue("Wumpa")
         assertFalse(proof.checked); assertFalse(proof.unique); assertFalse(proof.fullClear); assertEquals(0, proof.captures)
     }
+    @WithOptionalSparklingChecks
     @Test fun `a peer first catch does not waive receivers needed source checks`() {
         val run = SafariRun(0)
         run.sharedCritters.replace("peer", 1, listOf("Rockmite", "Snoozle", "Honeybug").associateWith { done.copy(checked = false) })

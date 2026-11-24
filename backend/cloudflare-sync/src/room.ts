@@ -90,15 +90,17 @@ export class Room {
        member.protocolVisit=visit;
        s.protocol.visitId=visit;
        s.protocol.completion=h.capabilities.includes('critter-completion-v1');
-       if(!s.protocol.ready){
+      }
+      // Preferences belong to the authenticated sender and party, independent of run reconciliation.
+      if(h.hotspotPreference!==undefined)this.allocation.setPreference(s.self,h.hotspotPreference);
+      if(s.protocol&&!s.protocol.ready){
         const resumed=h.resumeRunId===this.allocation.run;
         const reconciled=this.replayReady&&(resumed||h.resumeRunId===null);
-        privateFrames.push({type:'reconcile',version:1,connectionId:s.protocol.connectionId,visitId:visit,
+        privateFrames.push({type:'reconcile',version:1,connectionId:s.protocol.connectionId,visitId:s.protocol.visitId,
          status:reconciled?(resumed?'resumed':'joined'):'pending',runId:reconciled?this.allocation.run:null,
          ...(!reconciled&&s.protocol.efficient?{retryAfterMillis:4000}:{})});
         if(reconciled)s.protocol.ready=true;
         else if(!resumed&&h.resumeRunId!==null)break;
-       }
       }
       this.allocation.hello(s.self,h,now);break;
      }

@@ -6,7 +6,7 @@ Sparkling Mutuals ships Standard, Full, and Full No Auto Update from one reposit
 
 - `src/main` and `src/test` contain shared tracking, modes, sync, HUDs, and history, including the default Full implementations.
 - `src/standard` and `src/standardTest` contain Standard-specific behavior, exclusions, resources, and tests. Standard shows visible critters and local sparkling detections, with generic floor-drop highlights. Fixed Snoozle waypoints, known Torrhus Honeyhive markers, and the optional through-terrain capsule path remain available.
-- `src/noUpdates` and `src/noUpdatesTest` cover Standard and Full No Auto Update. Full uses the verified downloader and restart installer, with automatic downloads off by default.
+- `src/noUpdates` and `src/noUpdatesTest` cover Standard and Full No Auto Update. Full uses the verified downloader and restart installer, with automatic downloads controlled in the update screen.
 
 ## Switching builds
 

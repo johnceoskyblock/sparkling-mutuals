@@ -25,9 +25,10 @@ object HotspotHud {
             preview -> listOf(entries.first().copy(name=client.player?.name?.string ?: "You"))
             else -> entries.filter { it.name.equals(client.player?.name?.string,true) }
         }
-        val completedRuns = if (preview) 3 else client.player?.uuid?.toString()
-            ?.let(PartyManager::withLocal)?.let(RunHistory::hotspotRunsFor) ?: 0
-        return HotspotGridPanel(players,net.johnceo.sparklingmutuals.alerts.WarpListRanks.colors(client),width,completedRuns)
+        val runCount = if (preview) 3 else RunHistory.hotspotRunsFor(
+            client.player?.uuid?.toString()?.let(PartyManager::withLocal), SafariTracking.ledger.current
+        )
+        return HotspotGridPanel(players,net.johnceo.sparklingmutuals.alerts.WarpListRanks.colors(client),width,runCount)
     }
     fun render(g: GuiGraphicsExtractor) {
         val client=Minecraft.getInstance()

@@ -5,6 +5,7 @@ import java.util.Properties
 
 data class BannerPreference(val enabled: Boolean,val playback: Int,val text: String,val color: String,val duration: Float,val sound: Int,val volume: Int=85,val pitch: Float=1.2f)
 object BannerConfig {
+    internal const val HIDEYHO_MIGRATION = "migration.hideyhoLocationBannerOn"
     private fun prefix(kind: BannerKind) = if (kind == BannerKind.PARTY_KICKED) "standard.banner.party_kicked."
         else "banner.${kind.name.lowercase()}."
     val options=BannerKind.entries.associateWith { defaults(it) }.toMutableMap()
@@ -14,6 +15,14 @@ object BannerConfig {
     var thickness=1;var font=0;var shadow=false;var topBar=0;var bottomBar=1
     var biomeBorders=false;var localEncounters=true
     fun appearanceSnapshot()=listOf(background,color,gradient,tint,border,thickness,font,shadow,topBar,bottomBar,biomeBorders,localEncounters)
+
+    internal fun migrateHideyhoBanner(properties: Properties): Boolean {
+        if (!BannerKind.HIDEYHO_LOCATION.availableInEdition || properties.getProperty(HIDEYHO_MIGRATION) == "true") return false
+        properties.setProperty(prefix(BannerKind.HIDEYHO_LOCATION) + "enabled", "true")
+        properties.setProperty(HIDEYHO_MIGRATION, "true")
+        return true
+    }
+
     fun load(p: Properties) {
         fun bool(key: String,default: Boolean)=p.getProperty("banner.$key")?.toBooleanStrictOrNull() ?: default
         fun int(key: String,default: Int,min: Int,max: Int)=p.getProperty("banner.$key")?.toIntOrNull()?.coerceIn(min,max) ?: default

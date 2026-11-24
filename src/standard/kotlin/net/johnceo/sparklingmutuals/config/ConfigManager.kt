@@ -124,7 +124,6 @@ object ConfigManager {
         set(@Suppress("UNUSED_PARAMETER") value) {}
     var safariTicketPreference = 0
     var profitsTicketMode = 0
-    var hideyhoInsideOutside = true
     var hideHauntedPaintings: Boolean
         get() = false
         set(@Suppress("UNUSED_PARAMETER") value) {}
@@ -231,7 +230,8 @@ object ConfigManager {
         "highlightTeammates", "showTeammateNames", "esp.critterBoxes", "esp.scrappy.textScale",
         "autoClicker", "autoJoinSkyBlock", "autoParty", "autoPartyOnlineOnly", "autoReconnectHypixel", "autoSelectSafariTicket",
         "candleHitbox", "clearWater", "gemzieGemAutoSelect", "esp.floor.rewards.enabled",
-        "hideHauntedPaintings", "hideyhoAutoAccept", "holdManagerOnKick", "leechMode", "leechWhitelist", "phantomleafSolver",
+        "hideHauntedPaintings", "hideyhoAutoAccept", "hideyhoInsideOutside", BannerConfig.HIDEYHO_MIGRATION,
+        "holdManagerOnKick", "leechMode", "leechWhitelist", "phantomleafSolver",
         "repartyDelaySeconds", "safariEntryAutoEnter", "safariTicketPreference", "sparkleWarpMode",
         "warpAlertsEnabled", "warpDelaySeconds", "warpDuo", "warpListRefresh", "waterOpacity", "migration.sparkleWarpTimers22_27"
     )
@@ -246,7 +246,8 @@ object ConfigManager {
             if (key in fullOnlySettings || key.startsWith("waterOpacity.") || key.startsWith("esp.nameplate.") ||
                 key.startsWith("esp.nameplates.") || key.startsWith("esp.teammate.") || floorAppearance ||
                 scrappyColor || critterBiomeLimit || key.startsWith("warpList.") || key.startsWith("banner.warp.") ||
-                key.startsWith("hud.warp.") || key.startsWith("appearance.warp.")) {
+                key.startsWith("hud.warp.") || key.startsWith("appearance.warp.") ||
+                key.startsWith("banner.hideyho_location.") || key.startsWith("banner.hideyho.")) {
                 output.setProperty(key, saved.getProperty(key))
             }
         }
@@ -259,7 +260,7 @@ object ConfigManager {
     private val flags = mapOf(::safariEntryCooldown to true, ::hudSnapping to true, ::doomspiralThrowTimer to true, ::doomspiralLottery to true, ::autoParty to false, ::autoPartyOnlineOnly to false, ::autoBiomeReports to true, ::uniqueHideCritterEsp to false, ::uniqueHideFloorDropEsp to false,
         ::fullClearHideCritterEsp to false, ::fullClearHideFloorDropEsp to false, ::allScannableCritterChecks to false,
         ::sparklingHideCritterEsp to false, ::sparklingHideFloorDropEsp to false, ::announceStartingItems to false, ::hotspotAnnouncer to false, ::uniqueHotspotAnnouncer to false, ::fullClearHotspotAnnouncer to false, ::sparklingHotspotAnnouncer to false, ::partyCommandsEnabled to true, ::useCloudApi to true, ::fullClearMode to false, ::sparklingMode to false, ::sparklingProfitableShardEsp to true, ::profitableShardEsp to true, ::timesaveOnly to true, ::warpAlertsEnabled to false,
-        ::hideyhoAutoAccept to true, ::autoSelectSafariTicket to true, ::safariEntryAutoEnter to false, ::hideyhoInsideOutside to true, ::hideHauntedPaintings to true, ::shinyDetection to true,
+        ::hideyhoAutoAccept to true, ::autoSelectSafariTicket to true, ::safariEntryAutoEnter to false, ::hideHauntedPaintings to true, ::shinyDetection to true,
         ::critterEspEnabled to true, ::floorDropEspEnabled to true, ::customCritterNames to true, ::hotspotHudEnabled to true, ::progressHud to true, ::progressTracks to true, ::splitsHud to true, ::splitsShowSession to true, ::progressProfit to true, ::progressHotspot to true, ::hotspotShowAllPlayers to true, ::countUniqueOnly to false, ::profitableChecklist to true, ::lakeClearAlert to true, ::missingPanel to true, ::biomeObjectives to true,
         ::objectiveCaptureReminder to true, ::objectiveShinyReminder to true,
         ::doomSoloPbChat to true, ::doomDuoPbChat to true, ::doomObservedSoloPbChat to true, ::doomObservedDuoPbChat to true,
@@ -293,15 +294,17 @@ object ConfigManager {
             properties.setProperty("shardSaleGuidance", "true")
             properties.setProperty("migration.shardSaleGuidanceV2", "true")
         }
+        val resetOptionalChecks = BiomeObjectiveConfig.migrateOptionalChecks(properties)
         personalBestConfig = PersonalBestConfig(configPath)
         personalBestConfig.load(properties, personalBests)
         loadSettings(properties)
-        if (introduceShardGuidance || versionChanged) {
+        if (introduceShardGuidance || resetOptionalChecks || versionChanged) {
             PersonalBestConfig.write(configPath, properties, "Sparkling Mutuals configuration")
         }
     }
 
     private fun loadSettings(properties: Properties) {
+        HotspotPreferences.load(properties)
         progressRows = (listOf(null) + SafariBiome.entries).associateWith { biome ->
             ProgressRowDisplay.entries.firstOrNull { it.name == properties.getProperty(progressRowKey(biome)) }
                 ?: ProgressRowDisplay.BAR_AND_COUNT
@@ -351,6 +354,7 @@ object ConfigManager {
             setProperty("runCoinsInstaSell", runCoinsInstaSell.toString())
             setProperty("hotspotAnnouncer", hotspotAnnouncer.toString())
             setProperty("migration.shardSaleGuidanceV2", "true")
+            setProperty(BiomeObjectiveConfig.OPTIONAL_CHECKS_MIGRATION, "true")
             preserveFullSettings(previous, this)
         }
         PersonalBestConfig.write(configPath, defaults, "Sparkling Mutuals configuration")
@@ -384,6 +388,7 @@ object ConfigManager {
 
     internal fun saveSettings() {
         readSavedSettings().apply {
+            HotspotPreferences.save(this)
             remove("allowUncalibratedCapsuleEstimates")
             installedVersionHistory.save(this)
             setProperty("apiKey", apiKey)

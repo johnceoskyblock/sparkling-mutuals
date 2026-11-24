@@ -1,5 +1,6 @@
 package net.johnceo.sparklingmutuals.commands
 
+import net.johnceo.sparklingmutuals.config.WithOptionalSparklingChecks
 import net.johnceo.sparklingmutuals.safari.SafariBiome
 import net.johnceo.sparklingmutuals.safari.SafariLedger
 import org.junit.jupiter.api.Assertions.*
@@ -50,6 +51,7 @@ class MissingRunCommandTest {
         assertTrue("Honeybug: 4" in left(SafariBiome.FOREST))
         assertTrue(left(SafariBiome.CAVERN).containsAll(listOf("Mounds: 2", "Snoozle Walls: 3")))
     }
+    @WithOptionalSparklingChecks
     @Test fun `unique list and only known needed source counters appear in replies`() {
         val run = net.johnceo.sparklingmutuals.safari.SafariRun(0)
         run.record(net.johnceo.sparklingmutuals.safari.SafariCatch.parse("CAPTURE! You caught a Honeybug!")!!)

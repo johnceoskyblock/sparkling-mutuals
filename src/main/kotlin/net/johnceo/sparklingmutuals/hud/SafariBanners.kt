@@ -90,12 +90,8 @@ object SafariBanners {
         if(PartyManager.hasInfo && roster!=null && roster.size>1 && roster.all { id -> client.connection?.onlinePlayers?.any { it.profile.id.toString()==id }==true })
             once("full-party",BannerKind.FULL_PARTY)
         val party=SafariSparklingMode.state
-        if(biome!=null && (SafariFullClear.mode!=SafariMode.SPARKLING || party.ready)) {
-            val targets=biome.critters.filter { SafariFullClear.mode!=SafariMode.SPARKLING ||
-                net.johnceo.sparklingmutuals.config.BiomeObjectiveConfig.needs(it.name, party) }
-            if(targets.isNotEmpty() && current.completed(SafariFullClear.mode,targets,party,localOnly=true)==targets.size)
-                once("biome:$biome",BannerKind.BIOME_DONE,biome)
-        }
+        if (biome != null && current.completion.reportReady(current, biome, SafariFullClear.mode, party))
+            once("biome:$biome", BannerKind.BIOME_DONE, biome)
         val currentFeeder=current.birds.feederCount
         if(previousBiome==SafariBiome.FOREST && biome==SafariBiome.FOREST && feeder>0 && currentFeeder==0)
             encounter(BannerKind.FEEDER_EMPTY,SafariBiome.FOREST)

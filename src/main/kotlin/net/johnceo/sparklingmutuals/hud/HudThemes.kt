@@ -15,7 +15,7 @@ object HudThemes {
             val run=SafariTracking.run
             val party=SafariSparklingMode.state
             val targets=biome.critters.filter { SafariFullClear.mode!=SafariMode.SPARKLING ||
-                net.johnceo.sparklingmutuals.config.BiomeObjectiveConfig.needs(it.name, party) }
+                party.needs(it.name) }
             if((SafariFullClear.mode!=SafariMode.SPARKLING || party.ready) && run?.completed(SafariFullClear.mode,targets,party)==targets.size) return 0xFF55FF55.toInt()
         }
         return biome.color

@@ -90,7 +90,7 @@ The features below are available in **Standard**, the default edition of Sparkli
 | **Full** | `sparkling-mutuals-<version>-full+mc<minecraft>.jar` | `./gradlew buildAllTargets -Pedition=full` |
 | **Full No Auto Update** | `sparkling-mutuals-<version>-full-no-auto-update+mc<minecraft>.jar` | `./gradlew buildAllTargets -Pedition=full-no-auto-update` |
 
-**Standard** is the default edition described above. **Full** is the extended version of the mod, with **Download Update** and opt-in **Auto Update** in `/sm`. Verified updates install after Minecraft closes. **Full No Auto Update** has the same gameplay features as Full and uses manual downloads, as does Standard. Standard’s Modrinth publication is pending.
+**Standard** is the default edition described above. **Full** is the extended version of the mod, with **Download Update** and a configurable **Auto Update** toggle in `/sm`. Verified updates install after Minecraft closes. **Full No Auto Update** has the same gameplay features as Full and uses manual downloads, as does Standard. Standard’s Modrinth publication is pending.
 
 All editions share settings, HUD layouts, and Safari records within the same Minecraft instance at `config/sparkling-mutuals`. Edition-specific preferences are saved for when you switch back.
 

@@ -1,12 +1,13 @@
 package net.johnceo.sparklingmutuals.history
 
-/** Party catch numbers. Existing history is the only source; never fetch on catch. */
+/** Per-species totals from saved party catch history. */
 object SparklingCatchCount {
     fun number(entry: SparklingEntry, history: List<SparklingEntry>) = history.count {
         it.at <= entry.at && it.critter.equals(entry.critter,true)
     }
     fun text(entry: SparklingEntry, history: List<SparklingEntry>): String {
-        val suffix=if(entry.unique) "NEW!" else "#${number(entry,history).coerceAtLeast(1)}"
-        return "Sparkling ${entry.critter} caught! $suffix"
+        val total = number(entry, history).coerceAtLeast(1)
+        val newTag = if (entry.unique) " (NEW!)" else ""
+        return "Sparkling ${entry.critter} caught! #$total$newTag"
     }
 }

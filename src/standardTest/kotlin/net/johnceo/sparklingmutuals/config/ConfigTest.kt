@@ -93,6 +93,7 @@ class ConfigTest {
         }
         assertEquals("true",upgraded.remove("migration.shardSaleGuidanceV2"))
         assertEquals("true",upgraded.remove("shardSaleGuidance"))
+        assertEquals("true",upgraded.remove(BiomeObjectiveConfig.OPTIONAL_CHECKS_MIGRATION))
         assertEquals(original,upgraded)
         assertEquals(legacyContest, Files.readString(dir.resolve("sparkling-mutuals-contest.properties")))
     }

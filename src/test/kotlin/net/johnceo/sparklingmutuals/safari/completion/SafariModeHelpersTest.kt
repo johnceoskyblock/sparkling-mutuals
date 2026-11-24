@@ -1,5 +1,6 @@
 package net.johnceo.sparklingmutuals.safari.completion
 
+import net.johnceo.sparklingmutuals.config.WithOptionalSparklingChecks
 import java.nio.file.Path
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.safari.PartySparklingState
@@ -20,6 +21,7 @@ class SafariModeHelpersTest {
     private fun party(discoveries: Set<String>) = PartySparklingState().apply {
         select(setOf("one", "two")); accept(setOf("one", "two"), mapOf("one" to discoveries, "two" to discoveries))
     }
+    @WithOptionalSparklingChecks
     @Test fun `unique structure checks survive captures while any party member needs a sparkling`() {
         val state = party(emptySet())
         for (name in listOf("Honeybug", "Rockmite", "Snoozle")) {
@@ -36,6 +38,7 @@ class SafariModeHelpersTest {
         assertFalse(SafariEspRules.neededForRun("Rockmite", true, caught("Rockmite"), false, false, state))
         assertFalse(SafariEspRules.neededForRun("Rockmite", false, caught("Rockmite"), false, false, state))
     }
+    @WithOptionalSparklingChecks
     @Test fun `unknown or partial discoveries cannot disable unique shiny checks`() {
         val state = PartySparklingState().apply { select(setOf("one", "two")) }
         assertFalse(state.accept(setOf("one", "two"), mapOf("one" to setOf("HONEYBUG"))))

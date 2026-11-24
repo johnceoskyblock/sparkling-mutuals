@@ -1,9 +1,6 @@
 package net.johnceo.sparklingmutuals.alerts
 
-import java.util.concurrent.Executors
-import java.util.concurrent.ScheduledExecutorService
-import java.util.concurrent.ScheduledFuture
-import java.util.concurrent.TimeUnit
+import net.johnceo.sparklingmutuals.JoinWelcomeState
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.hud.SafariHud
 import net.johnceo.sparklingmutuals.hud.SmallAlerts
@@ -12,18 +9,18 @@ import net.johnceo.sparklingmutuals.safari.SafariIsland
 import net.johnceo.sparklingmutuals.safari.SafariRun
 import net.johnceo.sparklingmutuals.safari.SafariTracking
 import net.johnceo.sparklingmutuals.party.PartyManager
+import net.johnceo.sparklingmutuals.safari.automation.SafariPartyInput
 import net.minecraft.client.Minecraft
+import net.minecraft.client.multiplayer.ClientLevel
+import net.minecraft.client.multiplayer.ClientPacketListener
 
 object AlertManager {
 
-    private val scheduler: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor {
-        Thread(it, "Sparkling Mutuals warp reminder").apply { isDaemon = true }
-    }
-
-    private var pendingAlert: ScheduledFuture<*>? = null
+    private data class PendingWarp(val run: SafariRun, val connection: ClientPacketListener,
+        val level: ClientLevel, val token: Long, val deadline: Long)
+    private var pendingWarp: PendingWarp? = null
     private val expiry = WarpAlertTimer()
     private var armedRun: SafariRun? = null
-    private var retimingRun: SafariRun? = null
 
     fun toggleAlert(): Boolean {
         val enabled = !ConfigManager.warpAlertsEnabled
@@ -37,14 +34,8 @@ object AlertManager {
         val warp=warpSeconds.coerceIn(1,86400)
         val reparty=ConfigManager.validRepartyDelay(repartySeconds,warp)
         if(warp==ConfigManager.warpDelaySeconds && reparty==ConfigManager.repartyDelaySeconds)return
-        val warpChanged=warp!=ConfigManager.warpDelaySeconds
         ConfigManager.warpDelaySeconds=warp;ConfigManager.repartyDelaySeconds=reparty
         ConfigManager.saveSettings()
-        if(!warpChanged)return // The Auto-party cutoff reads its timer live; keep the armed warp.
-        val previous=armedRun.takeIf {pendingAlert!=null}
-        cancelPendingAlert()
-        retimingRun=previous
-        armedRun=null // Re-arm against the same run clock if a slider changes during a run.
     }
     /** Explicit restart works even when the master toggle is already enabled. */
     fun startCycle() {
@@ -55,44 +46,65 @@ object AlertManager {
     }
 
     fun tick(client: Minecraft) {
-        val run = SafariTracking.ledger.current ?: return
+        val now = System.currentTimeMillis()
+        val current = SafariTracking.ledger.current
+        pendingWarp?.let { pending ->
+            val run = pending.run
+            if (current !== run || client.connection !== pending.connection || client.level !== pending.level ||
+                client.player == null || !isEnabled() || ConfigManager.leechMode || !SafariIsland.onIsland ||
+                !SafariAssist.inSafari || SafariAssist.departing || run.endedAt != null) {
+                cancelPendingAlert()
+            } else {
+                val deadline = SparkleWarpPolicy.warpDeadline(run.startedAt, getDelay())
+                val windowEnd = run.startedAt + SparkleWarpPolicy.WARP_WINDOW_MILLIS
+                if ((deadline < windowEnd && now >= windowEnd) || (deadline != pending.deadline && now >= deadline)) {
+                    cancelPendingAlert()
+                } else if (deadline != pending.deadline) {
+                    pendingWarp = pending.copy(deadline = deadline)
+                    SparkleAutoParty.start(client, deadline, run.startedAt)
+                } else if (now >= expiry.dueAt(deadline, run.startedAt) &&
+                    AutomatedCommands.tryWarp(pending.connection) { expiry.consume(pending.token, true, run) }) {
+                    pendingWarp = null
+                    SparkleAutoParty.stop()
+                    SmallAlerts.show(SafariHud.WARP)
+                }
+                return
+            }
+        }
+        val run = current ?: return
         if (!isEnabled() || !SafariIsland.onIsland || !SafariAssist.inSafari || SafariAssist.departing ||
             run === armedRun || SparkleWarping.preparingParty) return
         val connection = client.connection ?: return
         val level = client.level ?: return
         val deadline = SparkleWarpPolicy.warpDeadline(run.startedAt, getDelay())
-        if (System.currentTimeMillis() >= deadline) return
+        if (now >= deadline) return
         if (!PartyManager.hasInfo) { PartyManager.requestPartyInfo(); return }
         val leader=SparkleWarping.canLead(client)
-        if (!leader || (run !== retimingRun && !SparkleWarpPolicy.canStart(leader, PartyManager.getMembers().size))) return
-        cancelPendingAlert()
+        if (!SparkleWarpPolicy.canStart(leader, PartyManager.getMembers().size)) return
         armedRun = run
         val scheduledGeneration = expiry.arm(run)
         SparkleWarping.beginRun()
         SparkleAutoParty.start(client, deadline, run.startedAt)
-        pendingAlert = scheduler.schedule({
-            client.execute {
-                val current = SafariTracking.ledger.current
-                val active = client.connection === connection && client.level === level && client.player != null &&
-                    isEnabled() && !ConfigManager.leechMode && SafariIsland.onIsland &&
-                    SafariAssist.inSafari && !SafariAssist.departing && run.endedAt == null
-                // The roster authorizes arming. Hypixel handles party permissions when the command is sent.
-                if (expiry.consume(scheduledGeneration, active, current)) {
-                    pendingAlert = null
-                    SparkleAutoParty.stop()
-                    net.johnceo.sparklingmutuals.alerts.AutomatedCommands.send(connection,"p warp")
-                    SmallAlerts.show(SafariHud.WARP)
-                }
-            }
-        }, (deadline - System.currentTimeMillis()).coerceAtLeast(0), TimeUnit.MILLISECONDS)
+        pendingWarp = PendingWarp(run, connection, level, scheduledGeneration, deadline)
+    }
+
+    internal fun observeTravel(client: Minecraft, raw: String, joined: Set<String>) {
+        val pending = pendingWarp ?: return
+        if (client.connection !== pending.connection || client.level !== pending.level ||
+            SafariTracking.ledger.current !== pending.run || !JoinWelcomeState.hypixel(client.currentServer?.ip)) return
+        val name = SparkleWarpPolicy.travelingPlayer(raw) ?: return
+        val player = client.player ?: return
+        if (name.equals(player.name.string, true)) return
+        val members = PartyManager.getMembers()
+        if (name.lowercase() in joined || members.any { name.equals(SafariPartyInput.nameOf(it), true) } ||
+            pending.connection.onlinePlayers.any { it.profile.id.toString() in members && name.equals(it.profile.name, true) })
+            expiry.traveled(pending.token, System.currentTimeMillis())
     }
 
     fun cancelPendingAlert() {
-        retimingRun=null
         expiry.cancel()
         SparkleAutoParty.stop()
-        pendingAlert?.cancel(false)
-        pendingAlert = null
+        pendingWarp = null
         SmallAlerts.clear(SafariHud.WARP)
     }
 

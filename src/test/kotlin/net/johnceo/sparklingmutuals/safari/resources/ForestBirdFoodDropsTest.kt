@@ -1,5 +1,6 @@
 package net.johnceo.sparklingmutuals.safari.resources
 
+import net.johnceo.sparklingmutuals.config.WithOptionalSparklingChecks
 import net.johnceo.sparklingmutuals.safari.*
 import net.johnceo.sparklingmutuals.safari.esp.EspDrop
 import org.junit.jupiter.api.Assertions.*
@@ -23,6 +24,7 @@ class ForestBirdFoodDropsTest {
         assertEquals(1, ForestBirdFoodDrops.remaining(listOf(EspDrop(201, 1, 51, 41)), listOf(worm)), "IDs bind boundary-straddling members")
     }
 
+    @WithOptionalSparklingChecks
     @Test fun `logged nine pickups and ten captures complete all modes despite eight generic rewards`() {
         val predictor = FloorDropPredictor()
         fun displays(slots: IntRange) = slots.flatMap { slot ->

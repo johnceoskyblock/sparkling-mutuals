@@ -1,5 +1,6 @@
 package net.johnceo.sparklingmutuals.safari.completion
 
+import net.johnceo.sparklingmutuals.config.WithOptionalSparklingChecks
 import java.util.UUID
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.safari.*
@@ -59,6 +60,7 @@ class UniquePartyReportTest {
             assertEquals(9, run.completed(SafariMode.UNIQUE, SafariBiome.CAVERN.critters, state))
         }
     }
+    @WithOptionalSparklingChecks
     @Test fun `loaded Cavern sources can reopen and complete checks while standing in Forest`() {
         val run = SafariRun(0); val state = party()
         run.visitBiome(SafariBiome.FOREST)
@@ -117,6 +119,7 @@ class UniquePartyReportTest {
             assertTrue(biome.critters.all { run.count(it.name) == 1 && run.personalCount(it.name) == 0 })
         }
     }
+    @WithOptionalSparklingChecks
     @Test fun `entering Haunted reopens needed local checks while other biomes keep their own rules`() = net.johnceo.sparklingmutuals.config.withStartingItems {
         val state = party()
         for (biome in listOf(SafariBiome.FOREST, SafariBiome.ICY, SafariBiome.HAUNTED)) {
@@ -137,6 +140,7 @@ class UniquePartyReportTest {
             } else assertNull(run.completion.announcement(run, biome, SafariMode.UNIQUE, state), "Incomplete local checks cannot announce")
         }
     }
+    @WithOptionalSparklingChecks
     @Test fun `intact Cavern sources only contradict needed shiny checks after first captures`() {
         ConfigManager.fullClearMode = false; ConfigManager.sparklingMode = false
         val run = SafariRun(0); caught(run, SafariBiome.CAVERN); report(run, SafariBiome.CAVERN)

@@ -10,9 +10,14 @@ class CommandSpacing<T> {
     private var last: Long?=null
     fun add(value: T) { pending.addLast(value) }
     fun next(now: Long): T? {
-        if(pending.isEmpty() || last?.let { now-it<500 }==true) return null
-        last=now
+        if (pending.isEmpty() || !reserve(now)) return null
         return pending.removeFirst()
+    }
+    fun reserveIfEmpty(now: Long) = pending.isEmpty() && reserve(now)
+    private fun reserve(now: Long): Boolean {
+        if (last?.let { now - it < 500 } == true) return false
+        last = now
+        return true
     }
     fun clear() { pending.clear();last=null }
 }
@@ -23,6 +28,12 @@ object AutomatedCommands {
     fun send(connection: ClientPacketListener,command: String) {
         queue.add(Pending(connection,command,System.nanoTime()/1_000_000+5000,SafariTracking.ledger.current))
         tick(Minecraft.getInstance())
+    }
+    // Retain the warp on the run timer until it can actually send, so travel can still postpone it.
+    internal fun tryWarp(connection: ClientPacketListener, ready: () -> Boolean): Boolean {
+        if (!queue.reserveIfEmpty(System.nanoTime() / 1_000_000) || !ready()) return false
+        connection.sendCommand("p warp")
+        return true
     }
     fun tick(client: Minecraft) {
         if(client.connection==null) { reset();return }

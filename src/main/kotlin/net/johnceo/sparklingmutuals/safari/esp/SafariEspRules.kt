@@ -63,14 +63,14 @@ object SafariEspRules {
         if (fullClear) true
         else if (!BiomeObjectiveConfig.allowsEsp(species, SafariMode.UNIQUE, run)) false
         else if (profitableEsp(species, profitable)) true
-        else if (species == "Rockmite" && mound) (run?.captureProgress(species) ?: 0) == 0 || party?.let { BiomeObjectiveConfig.needs(species, it) } == true
+        else if (species == "Rockmite" && mound) (run?.captureProgress(species) ?: 0) == 0 ||
+            party?.let { BiomeObjectiveConfig.needs(species, it, SafariMode.UNIQUE) } == true
         else (run?.captureProgress(species) ?: 0) == 0 && run?.uniqueUnavailable(species) != true && run?.sharedCritterComplete(species, net.johnceo.sparklingmutuals.safari.SafariMode.UNIQUE) != true
     @Suppress("UNUSED_PARAMETER")
     fun neededForSparkling(species: String, mound: Boolean, party: PartySparklingState, profitable: Boolean,
         run: SafariRun? = null, uuid: java.util.UUID? = null, now: Long = System.currentTimeMillis()): Boolean {
         if (run?.sparklingChecks?.wumpaPrerequisite(species, party) == true && run.captureProgress("Wumpa") == 0 &&
             run.captureProgress(species) == 0) return true
-        if (!BiomeObjectiveConfig.check(species)) return false
         if (net.johnceo.sparklingmutuals.safari.completion.ScannableCritterChecks.pending(species,run,party)) return true
         if (profitableEsp(species, profitable)) return true
         if (species == "Honeybug" || species == "Rockmite" && !mound) return false

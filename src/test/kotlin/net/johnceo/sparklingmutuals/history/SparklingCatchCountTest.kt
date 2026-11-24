@@ -8,15 +8,16 @@ import java.nio.file.Path
 
 class SparklingCatchCountTest {
     @TempDir lateinit var dir: Path
-    @Test fun `duplicate number includes earlier party and imported catches but no other species or future catches`() {
+    @Test fun `species total includes the first catch, party catches and imports`() {
         val current=SparklingEntry(3000,"Me","Foxtrot")
-        val history=listOf(SparklingEntry(1000,"Friend","Foxtrot"),SparklingEntry(2000,"Other","foxtrot"),
+        val history=listOf(SparklingEntry(1000,"Friend","Foxtrot", logFile = "logs/older.log", logLine = 1),
+            SparklingEntry(2000,"Other","foxtrot"),
             SparklingEntry(2500,"Me","Polaris"),current,SparklingEntry(4000,"Me","Foxtrot"))
         assertEquals("Sparkling Foxtrot caught! #3",SparklingCatchCount.text(current,history))
     }
     @Test fun `only confirmed unique catches say NEW and missing earlier history does not claim uniqueness`() {
         val first=SparklingEntry(1000,"Friend","Polaris").apply { unique=true }
-        assertEquals("Sparkling Polaris caught! NEW!",SparklingCatchCount.text(first,listOf(first)))
+        assertEquals("Sparkling Polaris caught! #1 (NEW!)",SparklingCatchCount.text(first,listOf(first)))
         first.unique=false
         assertEquals("Sparkling Polaris caught! #1",SparklingCatchCount.text(first,listOf(first)))
     }

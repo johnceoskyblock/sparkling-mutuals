@@ -1,6 +1,8 @@
 package net.johnceo.sparklingmutuals.contest
 
 import net.johnceo.sparklingmutuals.alerts.AlertManager
+import net.johnceo.sparklingmutuals.alerts.CommandSpacing
+import net.johnceo.sparklingmutuals.alerts.SparkleWarpPolicy
 import net.johnceo.sparklingmutuals.alerts.WarpAlertTimer
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -55,6 +57,44 @@ class ContestTicketAndAutoWarpTest {
         assertFalse(timer.consume(second, false))
         assertFalse(timer.consume(second, true))
         assertTrue(timer.consume(timer.arm(), true))
+    }
+    @Test fun `warp waits for the latest travel with room for the Safari entry deadline`() {
+        val timer = WarpAlertTimer()
+        val startedAt = 1_000L
+        val normalDue = SparkleWarpPolicy.warpDeadline(startedAt, 27)
+        val token = timer.arm()
+        assertEquals(28_000L, timer.dueAt(normalDue, startedAt))
+        timer.traveled(token, 24_000L)
+        assertEquals(28_000L, timer.dueAt(normalDue, startedAt))
+        timer.traveled(token, 27_000L)
+        assertEquals(29_000L, timer.dueAt(normalDue, startedAt))
+        timer.traveled(token, 28_000L)
+        assertEquals(30_000L, timer.dueAt(normalDue, startedAt))
+        timer.traveled(token, 30_000L)
+        assertEquals(30_750L, timer.dueAt(normalDue, startedAt))
+        assertEquals(31_000L, timer.dueAt(SparkleWarpPolicy.warpDeadline(startedAt, 30), startedAt))
+        timer.arm()
+        timer.traveled(token, 30_000L)
+        assertEquals(28_000L, timer.dueAt(normalDue, startedAt))
+    }
+    @Test fun `travel delay only recognizes Hypixel server notices`() {
+        val notice = "» _cj is traveling to Torrhus Canyon FOLLOW"
+        assertEquals("_cj", SparkleWarpPolicy.travelingPlayer(" §9§l» §b_cj §eis traveling to §aTorrhus Canyon §e§lFOLLOW"))
+        assertEquals("Stuffy", SparkleWarpPolicy.travelingPlayer("» [MVP++] Stuffy is traveling to Moonglade Marsh FOLLOW"))
+        assertNull(SparkleWarpPolicy.travelingPlayer("Party > _cj: $notice"))
+        assertNull(SparkleWarpPolicy.travelingPlayer("From [MVP+] _cj: $notice"))
+        assertNull(SparkleWarpPolicy.travelingPlayer(notice.removeSuffix(" FOLLOW")))
+    }
+    @Test fun `warp can only send immediately when the shared command slot is free`() {
+        val commands = CommandSpacing<String>()
+        commands.add("invite")
+        assertFalse(commands.reserveIfEmpty(0L))
+        assertEquals("invite", commands.next(0L))
+        assertFalse(commands.reserveIfEmpty(499L))
+        assertTrue(commands.reserveIfEmpty(500L))
+        commands.add("chat")
+        assertNull(commands.next(999L))
+        assertEquals("chat", commands.next(1_000L))
     }
     @Test fun `warp and reparty use the HUD clock even when the run is discovered late`() {
         val ledger = net.johnceo.sparklingmutuals.safari.SafariLedger()

@@ -1,5 +1,6 @@
 package net.johnceo.sparklingmutuals.safari.completion
 
+import net.johnceo.sparklingmutuals.config.WithOptionalSparklingChecks
 import java.nio.file.Path
 import java.util.UUID
 import net.johnceo.sparklingmutuals.config.ConfigManager
@@ -25,6 +26,7 @@ class UniqueHauntedChecksTest {
     private fun footer(run: SafariRun, state: PartySparklingState, label: String) =
         SafariPanels.objectives(run, SafariBiome.HAUNTED, true, 0, party = state).rows.singleOrNull { it.label == label }
 
+    @WithOptionalSparklingChecks
     @Test fun `Haunted catches leave the checklist but needed discoveries keep progress and reports pending`() {
         val state = party("Gazer", "Gimmiegold")
         val run = SafariRun(0).apply { visitBiome(SafariBiome.HAUNTED) }
@@ -43,6 +45,7 @@ class UniqueHauntedChecksTest {
         assertFalse(complete(run, "Gimmiegold", state))
     }
 
+    @WithOptionalSparklingChecks
     @Test fun `Gazer footer counts retained distinct checks and clears only after four checks`() {
         val state = party("Gazer")
         val run = SafariRun(0).apply { visitBiome(SafariBiome.HAUNTED) }
@@ -59,6 +62,7 @@ class UniqueHauntedChecksTest {
         assertTrue(complete(run, "Gazer", state), "unloading must retain qualified checks")
     }
 
+    @WithOptionalSparklingChecks
     @Test fun `coin footer counts local floor and held coins separately from party population demand`() {
         val state = party("Gimmiegold")
         val run = SafariRun(0).apply { visitBiome(SafariBiome.HAUNTED); localPlayer("Me") }
@@ -112,6 +116,7 @@ class UniqueHauntedChecksTest {
         assertFalse(complete(SafariRun(1), "Gazer", party("Gazer")))
     }
 
+    @WithOptionalSparklingChecks
     @Test fun `Haunted checking footers appear only for needed discoveries in Unique and Sparkling`() {
         val state = party("Gazer", "Gimmiegold")
         val run = SafariRun(0).apply { visitBiome(SafariBiome.HAUNTED) }
@@ -130,6 +135,7 @@ class UniqueHauntedChecksTest {
         }
     }
 
+    @WithOptionalSparklingChecks
     @Test fun `Unique Rockmite catch hides silverfish but retains mounds only for needed discoveries`() {
         for (state in listOf(party(), party("Rockmite"))) {
             val run = SafariRun(0)

@@ -1,5 +1,7 @@
 package net.johnceo.sparklingmutuals.safari.integration
 
+import net.johnceo.sparklingmutuals.config.WithOptionalSparklingChecks
+import net.johnceo.sparklingmutuals.config.initWithOptionalSparklingChecks
 import java.nio.file.Path
 import java.util.UUID
 import net.johnceo.sparklingmutuals.config.ConfigManager
@@ -72,6 +74,7 @@ class HauntedDropAndPanelFixTest {
         state.reset()
         assertTrue(state.needed(FloorDropType.COIN, SafariMode.UNIQUE, party()))
     }
+    @WithOptionalSparklingChecks
     @Test fun `four actual incense pickups hide incense in all modes even when Gimmiegold is missing`() {
         for (mode in SafariMode.entries) {
             val state = FloorDropState(); val missing = party("Gimmiegold", "Doomspiral")
@@ -129,8 +132,9 @@ class HauntedDropAndPanelFixTest {
         run.sparklingChecks.inventory(listOf("Shining Coin" to 1))
         assertFalse(run.captureComplete("Gimmiegold"))
     }
+    @WithOptionalSparklingChecks
     @Test fun `every missing panel lists plain colored species with only applicable gray counters`() {
-        ConfigManager.init(dir)
+        initWithOptionalSparklingChecks(dir)
         for (mode in SafariMode.entries) {
             ConfigManager.fullClearMode = mode == SafariMode.FULL_CLEAR
             ConfigManager.sparklingMode = mode == SafariMode.SPARKLING
@@ -153,8 +157,9 @@ class HauntedDropAndPanelFixTest {
             }
         }
     }
+    @WithOptionalSparklingChecks
     @Test fun `Unique Gazer row disappears after its first catch despite unfinished Sparkling checks`() {
-        ConfigManager.init(dir)
+        initWithOptionalSparklingChecks(dir)
         val run = SafariRun(0)
         run.record(SafariCatch(SafariRoster.named("Gazer")!!))
         run.sparklingChecks.scan(SafariBiome.HAUNTED, -4.0, -64.0, listOf("Gazer" to UUID.randomUUID()))

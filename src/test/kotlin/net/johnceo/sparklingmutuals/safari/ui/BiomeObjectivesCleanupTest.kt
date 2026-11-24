@@ -69,4 +69,31 @@ class BiomeObjectivesCleanupTest {
         birds.floor(1); birds.floorTypes(mapOf("Bag of Seeds" to 0, "Wriggleworm" to 1, "Yogi Berry" to 0))
         assertEquals(1, birds.remaining("Wriggleworm"))
     }
+
+    @Test fun `remote Forest and Haunted progress ignores opted-out starting supplies across inventory samples`() {
+        ConfigManager.init(dir)
+        ConfigManager.announceStartingItems = false
+        ConfigManager.fullClearMode = false
+        ConfigManager.sparklingMode = true
+        val party = PartySparklingState().apply {
+            val owned = SafariRoster.all.map { it.name }.toSet() - setOf("Bluebird", "Gimmiegold")
+            select(setOf("me"))
+            accept(setOf("me"), mapOf("me" to owned))
+        }
+        val supplies = listOf("Wriggleworm" to 1, "Shining Coin" to 1)
+        val run = SafariRun(0).apply {
+            inventoryEvidence(supplies, 0)
+            visitBiome(SafariBiome.CAVERN, 35_000)
+            partyFullClear("Party > Clearer: fd")
+            partyFullClear("Party > Clearer: hd")
+        }
+        fun progress(now: Long) = SafariPanels.progress(run, false, now, party).rows
+            .filter { it.label in setOf("Forest", "Haunted") }.map { it.value }
+        for (now in listOf(35_050L, 35_500L, 36_000L)) {
+            run.inventoryEvidence(supplies, now)
+            assertEquals(listOf("1/1", "1/1"), progress(now))
+        }
+        run.inventoryEvidence(supplies.map { (item, _) -> item to 2 }, 36_500)
+        assertEquals(listOf("0/1", "0/1"), progress(36_500))
+    }
 }

@@ -1,5 +1,7 @@
 package net.johnceo.sparklingmutuals.safari.completion
 
+import net.johnceo.sparklingmutuals.config.WithOptionalSparklingChecks
+import net.johnceo.sparklingmutuals.config.initWithOptionalSparklingChecks
 import java.nio.file.Path
 import java.util.UUID
 import net.johnceo.sparklingmutuals.config.ConfigManager
@@ -74,8 +76,9 @@ class GazerRetainedChecksTest {
         assertEquals(4, run.sparklingChecks.checkCount("Gazer"))
         assertTrue(run.uniqueComplete("Gazer", party()))
     }
+    @WithOptionalSparklingChecks
     @Test fun `earlier shared catches combine with later distinct sightings and Full Clear stays capture based`() {
-        ConfigManager.init(dir)
+        initWithOptionalSparklingChecks(dir)
         val run = SafariRun(0)
         repeat(2) { run.record(SafariCatch(SafariRoster.named("Gazer")!!, false)) }
         scan(run, UUID.randomUUID()); scan(run, UUID.randomUUID()); scan(run)

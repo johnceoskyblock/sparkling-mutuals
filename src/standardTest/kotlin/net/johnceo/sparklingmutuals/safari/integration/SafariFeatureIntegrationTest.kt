@@ -1,5 +1,6 @@
 package net.johnceo.sparklingmutuals.safari.integration
 
+import net.johnceo.sparklingmutuals.config.WithOptionalSparklingChecks
 import net.johnceo.sparklingmutuals.config.Accordion
 import net.johnceo.sparklingmutuals.config.Category
 import net.johnceo.sparklingmutuals.config.ConfigEditorBoolean
@@ -17,8 +18,6 @@ import net.johnceo.sparklingmutuals.safari.SafariCatch
 import net.johnceo.sparklingmutuals.safari.SafariMode
 import net.johnceo.sparklingmutuals.safari.SafariRoster
 import net.johnceo.sparklingmutuals.safari.SafariRun
-import net.johnceo.sparklingmutuals.safari.hideyho.HideyhoHiding
-import net.johnceo.sparklingmutuals.safari.hideyho.HideyhoLocationWatch
 import net.johnceo.sparklingmutuals.safari.resources.FloorDropState
 import net.johnceo.sparklingmutuals.safari.resources.FloorDropType
 import net.johnceo.sparklingmutuals.safari.resources.SafariResources
@@ -110,6 +109,7 @@ class SafariFeatureIntegrationTest {
         assertFalse(ConfigManager.achievementsToParty)
     }
 
+    @WithOptionalSparklingChecks
     @Test fun `fixed counters explicitly distinguish caught totals from currently checked population`() {
         for ((name, total) in mapOf("Scrappy" to 3, "Gemzie" to 3, "Troodon" to 3, "Gazer" to 4)) {
             val run = SafariRun(0)
@@ -182,6 +182,7 @@ class SafariFeatureIntegrationTest {
         assertTrue(state.needed(FloorDropType.INCENSE, SafariMode.SPARKLING, party("Doomspiral")))
     }
 
+    @WithOptionalSparklingChecks
     @Test fun `remaining Haunted drops block Gimmiegold checks despite the minimum captured population`() {
         val run = SafariRun(0)
         (1..3).forEach { run.gimmiegoldCheck.floor(it, true) }
@@ -203,29 +204,6 @@ class SafariFeatureIntegrationTest {
         assertTrue(run.uniqueComplete("Gimmiegold", party("Gimmiegold")))
     }
 
-    @Test fun `Hideyho watch is Haunted-only and travel pauses pending dialogue`() {
-        val watch = HideyhoLocationWatch()
-        val before = HideyhoHiding.Spot(-4, 68, -64)
-        val after = HideyhoHiding.Spot(37, 70, -14)
-        for (biome in listOf(null, SafariBiome.FOREST, SafariBiome.CAVERN, SafariBiome.ICY)) {
-            assertFalse(watch.context(true, biome))
-            watch.chat("[MOB] Hideyho: No peeking!", 1000, before)
-            assertFalse(watch.armed)
-            assertNull(watch.settled(after, 2000))
-        }
-        assertTrue(watch.context(true, SafariBiome.HAUNTED))
-        watch.chat("[MOB] Hideyho: No peeking!", 3000, before)
-        assertTrue(watch.armed)
-        assertNull(watch.settled(before, 4000))
-        assertFalse(watch.context(true, SafariBiome.FOREST))
-        assertTrue(watch.armed)
-        assertNull(watch.settled(after, 5000))
-        assertTrue(watch.context(true, SafariBiome.HAUNTED))
-        assertEquals(after, watch.settled(after, 6000)) // The hiding location is announced on returning to Haunted.
-        assertNull(watch.settled(after, 7000))
-        assertFalse(watch.context(false, SafariBiome.HAUNTED))
-        assertNull(watch.settled(before, 8000))
-    }
 
     @Test fun `automatic resource title and party notice share discovery destination and use gates`() {
         val resources = SafariResources()
@@ -255,23 +233,6 @@ class SafariFeatureIntegrationTest {
         assertTrue(resources.notices("Local", SafariBiome.CAVERN, missing).isEmpty())
         resources.inventory(emptyList(), false)
         notices.forEach { assertFalse(resources.noticeStillRelevant(it, SafariBiome.CAVERN, missing)) }
-    }
-    @Test fun `Hideyho inside outside watch is disabled in Sparkling and mode switches cancel pending alerts`() {
-        val before = HideyhoHiding.Spot(-4, 68, -64)
-        val after = HideyhoHiding.Spot(37, 70, -14)
-        val watch = HideyhoLocationWatch()
-        for (mode in listOf(SafariMode.UNIQUE, SafariMode.FULL_CLEAR)) {
-            assertTrue(watch.context(true, SafariBiome.HAUNTED, mode))
-            watch.chat("[MOB] Hideyho: No peeking!", 1000, before)
-            assertTrue(watch.armed)
-            assertFalse(watch.context(true, SafariBiome.HAUNTED, SafariMode.SPARKLING))
-            assertFalse(watch.armed)
-            watch.chat("[MOB] Hideyho: No peeking!", 2000, before)
-            assertNull(watch.settled(after, 3000))
-            assertTrue(watch.context(true, SafariBiome.HAUNTED, mode))
-            assertEquals(after, watch.settled(after, 4000))
-            watch.reset()
-        }
     }
 
 }
