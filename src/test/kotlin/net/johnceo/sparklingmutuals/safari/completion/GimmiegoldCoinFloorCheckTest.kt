@@ -1,6 +1,7 @@
 package net.johnceo.sparklingmutuals.safari.completion
 
 import java.util.UUID
+import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.safari.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -85,28 +86,51 @@ class GimmiegoldCoinFloorCheckTest {
         assertTrue(run.sparklingComplete("Gimmiegold", party()))
     }
     @Test fun `outside hd trusts Sparkling checks but cannot invent Unique or Full Clear catches`() {
-        val run = SafariRun(0)
-        run.visitBiome(SafariBiome.FOREST)
-        (1..5).forEach { run.gimmiegoldCheck.floor(it, true) }
-        run.inventoryEvidence(listOf("Shining Coin" to 1), 0)
-        run.partyFullClear("Party > Friend: hd")
-        assertFalse(run.sparklingComplete("Gimmiegold", party()), "a held starting coin still needs using")
-        run.inventoryEvidence(emptyList(), 1000)
-        assertTrue(run.sparklingComplete("Gimmiegold", party()))
-        assertFalse(run.uniqueComplete("Gimmiegold", party()))
-        assertFalse(run.fullClearComplete("Gimmiegold"))
-        run.record(SafariCatch(SafariRoster.named("Gimmiegold")!!, false))
-        assertTrue(run.uniqueComplete("Gimmiegold", party()))
-        assertFalse(run.fullClearComplete("Gimmiegold"))
-        run.visitBiome(SafariBiome.HAUNTED)
-        assertFalse(run.sparklingComplete("Gimmiegold", party()), "inside Haunted must revalidate the floor requirements")
-        run.partyFullClear("Party > Friend: hd")
-        assertFalse(run.sparklingComplete("Gimmiegold", party()), "a report received inside cannot waive local sources")
-        run.visitBiome(SafariBiome.FOREST)
-        run.partyFullClear("Party > Friend: hd")
-        assertTrue(run.sparklingComplete("Gimmiegold", party()))
-        run.observeSparkling(UUID.randomUUID(), "Gimmiegold")
-        assertTrue(run.sparklingComplete("Gimmiegold", party()), "detected entities cannot override trusted completion")
+        val previous = ConfigManager.announceStartingItems
+        ConfigManager.announceStartingItems = true
+        try {
+            val run = SafariRun(0)
+            run.visitBiome(SafariBiome.FOREST)
+            (1..5).forEach { run.gimmiegoldCheck.floor(it, true) }
+            run.inventoryEvidence(listOf("Shining Coin" to 1), 0)
+            run.partyFullClear("Party > Friend: hd")
+            assertFalse(run.sparklingComplete("Gimmiegold", party()), "a held starting coin still needs using")
+            run.inventoryEvidence(emptyList(), 1000)
+            assertTrue(run.sparklingComplete("Gimmiegold", party()))
+            assertFalse(run.uniqueComplete("Gimmiegold", party()))
+            assertFalse(run.fullClearComplete("Gimmiegold"))
+            run.record(SafariCatch(SafariRoster.named("Gimmiegold")!!, false))
+            assertTrue(run.uniqueComplete("Gimmiegold", party()))
+            assertFalse(run.fullClearComplete("Gimmiegold"))
+            run.visitBiome(SafariBiome.HAUNTED)
+            assertFalse(run.sparklingComplete("Gimmiegold", party()), "inside Haunted must revalidate the floor requirements")
+            run.partyFullClear("Party > Friend: hd")
+            assertFalse(run.sparklingComplete("Gimmiegold", party()), "a report received inside cannot waive local sources")
+            run.visitBiome(SafariBiome.FOREST)
+            run.partyFullClear("Party > Friend: hd")
+            assertTrue(run.sparklingComplete("Gimmiegold", party()))
+            run.observeSparkling(UUID.randomUUID(), "Gimmiegold")
+            assertTrue(run.sparklingComplete("Gimmiegold", party()), "detected entities cannot override trusted completion")
+        } finally {
+            ConfigManager.announceStartingItems = previous
+        }
+    }
+
+    @Test fun `outside hd ignores starting coins when starting item coordination is disabled`() {
+        val previous = ConfigManager.announceStartingItems
+        ConfigManager.announceStartingItems = false
+        try {
+            val run = SafariRun(0)
+            run.visitBiome(SafariBiome.FOREST)
+            (1..5).forEach { run.gimmiegoldCheck.floor(it, true) }
+            run.inventoryEvidence(listOf("Shining Coin" to 1), 0)
+            run.partyFullClear("Party > Friend: hd")
+            assertTrue(run.sparklingComplete("Gimmiegold", party()), "uncoordinated starting coins must not reopen an outside report")
+            assertFalse(run.uniqueComplete("Gimmiegold", party()), "ignoring a starting coin cannot invent a capture")
+            assertFalse(run.fullClearComplete("Gimmiegold"))
+        } finally {
+            ConfigManager.announceStartingItems = previous
+        }
     }
 
     @Test fun `outside report keeps the floor-derived Full Clear minimum while Unique needs one catch`() {
