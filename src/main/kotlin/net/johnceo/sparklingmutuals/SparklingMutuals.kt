@@ -97,7 +97,6 @@ object SparklingMutuals : ModInitializer {
         PlaytimeReader.register()
         BeeNests.register()
         HoneyHives.register()
-        ContestTracker.register()
         PhantomleafSolver.register()
         net.johnceo.sparklingmutuals.skyblock.SkillOverflow.register()
         net.johnceo.sparklingmutuals.skyblock.UbiksCubeTimer.register()

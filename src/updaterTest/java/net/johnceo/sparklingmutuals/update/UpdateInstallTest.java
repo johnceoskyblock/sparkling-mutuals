@@ -24,6 +24,14 @@ import static org.junit.jupiter.api.Assertions.*;
 class UpdateInstallTest {
     @TempDir Path instance;
 
+    @Test void enablesAutoUpdateOnceAndHonorsSubsequentOptOut() throws Exception {
+        var install = fixture().install;
+        install.saveAutoUpdate(false);
+        assertTrue(install.autoUpdate());
+        install.saveAutoUpdate(false);
+        assertFalse(install.autoUpdate());
+    }
+
     @Test void interruptedOrOversizedStagingDoesNotPublishAnUpdate() throws Exception {
         var fixture = fixture();
         var next = jar("sparkling-mutuals", "full", "1.1.0", "26.3");

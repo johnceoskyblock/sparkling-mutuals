@@ -1,5 +1,7 @@
 package net.johnceo.sparklingmutuals.safari.ui
 
+import net.johnceo.sparklingmutuals.config.WithOptionalSparklingChecks
+import net.johnceo.sparklingmutuals.config.initWithOptionalSparklingChecks
 import net.johnceo.sparklingmutuals.safari.resources.renderBird
 import net.johnceo.sparklingmutuals.safari.resources.scanRenderedBirds
 
@@ -146,8 +148,9 @@ class SafariPanelSeparationTest {
         for(label in listOf("Snoozle walls","Mounds","Coins left to use","Gazers left"))
             assertNotNull(net.johnceo.sparklingmutuals.hud.UiIcons.forLabel(label),label)
     }
+    @WithOptionalSparklingChecks
     @Test fun `Unique missing panel removes ordinary species after its first catch`() {
-        ConfigManager.init(dir)
+        initWithOptionalSparklingChecks(dir)
         val run = SafariRun(0)
         for (name in listOf("Scrappy", "Gemzie", "Troodon", "Gazer")) {
             val critter = SafariRoster.named(name)!!
@@ -157,8 +160,9 @@ class SafariPanelSeparationTest {
             assertEquals(0, SafariPanels.missingCritters(run, critter.biome).count { it.name == name })
         }
     }
+    @WithOptionalSparklingChecks
     @Test fun `Unique captured birds and source critters leave checklist before source progress completes`() {
-        ConfigManager.init(dir)
+        initWithOptionalSparklingChecks(dir)
         val run = SafariRun(0)
         val party = net.johnceo.sparklingmutuals.safari.PartySparklingState()
         for (name in listOf("Bluebird", "Parakeet", "Macaw", "Rockmite", "Snoozle")) {

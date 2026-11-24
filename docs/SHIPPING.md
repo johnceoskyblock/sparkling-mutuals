@@ -10,7 +10,7 @@ This repository uses `release_artifact_layout=editions`. The release workflow bu
 
 The plain JAR filename identifies Standard. GitHub releases use `-full` and `-full-no-auto-update` before the `+mc` suffix. Use the first explicitly named Full JAR for manual upgrades from builds whose update checker expects the old filename.
 
-Full keeps update checks and adds a **Download Update** button plus an **Auto Update** toggle (off by default) in the update screen. Downloads must match the release manifest's SHA-256 and the JAR's mod ID, Full edition, version, and exact Minecraft target. Installation waits for the game to exit, preserves the last working JAR outside the mods folder, and supports retry after a failed installation. Standard and Full No Auto Update exclude the downloader and installer classes and controls.
+Full keeps update checks and adds a **Download Update** button plus an **Auto Update** toggle in the update screen. Version 4.4.5 enables Auto Update once and saves subsequent choices. Downloads must match the release manifest's SHA-256 and the JAR's mod ID, Full edition, version, and exact Minecraft target. Installation waits for the game to exit, preserves the last working JAR outside the mods folder, and supports retry after a failed installation. Standard and Full No Auto Update exclude the downloader and installer classes and controls.
 
 Windows CI also tests restart installation while the running JAR is locked. A live Minecraft smoke test is still recommended before release. Standard publication on Modrinth remains pending review; no Modrinth upload job is enabled.
 

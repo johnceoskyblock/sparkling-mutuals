@@ -1,5 +1,6 @@
 package net.johnceo.sparklingmutuals.safari.structures
 
+import net.johnceo.sparklingmutuals.config.WithOptionalSparklingChecks
 import java.util.UUID
 import net.johnceo.sparklingmutuals.safari.*
 import net.johnceo.sparklingmutuals.safari.completion.SafariHelperRules
@@ -60,6 +61,7 @@ class HoneybugModeEvidenceTest {
         }
     }
 
+    @WithOptionalSparklingChecks
     @Test fun `needed nest highlights outlive the Unique catch until captures plus live bees resolve sources`() {
         for (needs in listOf(false, true)) for (mode in SafariMode.entries) {
             val run = SafariRun(0)
@@ -80,6 +82,7 @@ class HoneybugModeEvidenceTest {
         }
     }
 
+    @WithOptionalSparklingChecks
     @Test fun `Forest report applies outside while current Forest requires local nest proof`() {
         for (mode in SafariMode.entries) {
             val run = SafariRun(0)
@@ -103,6 +106,7 @@ class HoneybugModeEvidenceTest {
         }
     }
 
+    @WithOptionalSparklingChecks
     @Test fun `own completed nest survey resolves helpers without having to render released bees`() {
         val run = SafariRun(0)
         run.visitBiome(SafariBiome.FOREST)
@@ -137,6 +141,7 @@ class HoneybugModeEvidenceTest {
         assertTrue(survey.waypoints(SafariHelperRules.showNests(SafariMode.FULL_CLEAR, run, party(true))).isEmpty())
     }
 
+    @WithOptionalSparklingChecks
     @Test fun `Unique Honeybug missing row clears on one catch while needed Sparkling progress waits for checking`() {
         val run = SafariRun(0)
         run.visitBiome(SafariBiome.CAVERN)

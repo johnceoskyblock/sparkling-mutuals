@@ -3,7 +3,6 @@ package net.johnceo.sparklingmutuals.safari.completion
 import java.util.Locale
 import java.util.UUID
 import net.johnceo.sparklingmutuals.commands.PartyChat
-import net.johnceo.sparklingmutuals.config.BiomeObjectiveConfig
 import net.johnceo.sparklingmutuals.safari.PartySparklingState
 import net.johnceo.sparklingmutuals.safari.SafariBiome
 import net.johnceo.sparklingmutuals.safari.SafariRoster
@@ -116,7 +115,7 @@ class SparklingChecks(private val clock: () -> Long = System::currentTimeMillis)
     fun capture(name: String) { captured.merge(name, 1, Int::plus) }
     fun checked(name: String) = locallyChecked(name) || !requiresCapture(name) && name in partyCompleted
     fun wumpaPrerequisite(name: String, party: PartySparklingState) =
-        SafariRoster.named(name)?.biome == SafariBiome.ICY && BiomeObjectiveConfig.needs("Wumpa", party)
+        SafariRoster.named(name)?.biome == SafariBiome.ICY && party.needs("Wumpa")
     fun scan(biome: SafariBiome, x: Double, z: Double, seen: List<Pair<String, UUID>>,
         nestsChecked: Boolean = false, moundsCleared: Boolean = false, wallsCleared: Boolean = false,
         birdsSpawned: Boolean = false, hauntedDropsRemaining: Int = -1,

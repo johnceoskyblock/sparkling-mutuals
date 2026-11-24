@@ -1,9 +1,12 @@
 package net.johnceo.sparklingmutuals.safari.completion
 
+import java.nio.file.Files
+import java.nio.file.Path
 import java.util.Properties
 import net.johnceo.sparklingmutuals.commands.SafariMissingReply
 import net.johnceo.sparklingmutuals.config.BiomeObjectiveConfig
 import net.johnceo.sparklingmutuals.config.ConfigManager
+import net.johnceo.sparklingmutuals.config.FreshInstallDefaults
 import net.johnceo.sparklingmutuals.config.SafariSettings
 import net.johnceo.sparklingmutuals.config.SettingsCatalog
 import net.johnceo.sparklingmutuals.config.SettingsTarget
@@ -20,6 +23,7 @@ import net.johnceo.sparklingmutuals.safari.ui.SafariPanels
 import net.johnceo.sparklingmutuals.sync.CritterProgressProtocol
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
 
 class BiomeObjectiveChoicesTest {
     private fun party(vararg needed: String) = PartySparklingState().apply {
@@ -31,10 +35,62 @@ class BiomeObjectiveChoicesTest {
 
     private fun withChoices(vararg disabled: String, test: () -> Unit) {
         val old = Properties().also(BiomeObjectiveConfig::save)
-        val choices = Properties().apply { disabled.forEach { setProperty(it, "false") } }
+        val choices = Properties().apply {
+            BiomeObjectiveConfig.optionalSpecies.forEach { setProperty("objectives.checks.${it.lowercase()}", "true") }
+            disabled.forEach { setProperty(it, "false") }
+        }
         try {
             BiomeObjectiveConfig.load(choices)
             test()
+        } finally {
+            BiomeObjectiveConfig.load(old)
+        }
+    }
+
+    @Test fun optionalChecksDefaultOffAndExplicitOptInsSurviveReload() {
+        val old = Properties().also(BiomeObjectiveConfig::save)
+        try {
+            val defaults = FreshInstallDefaults.main()
+            BiomeObjectiveConfig.load(defaults)
+            assertTrue(BiomeObjectiveConfig.optionalSpecies.isNotEmpty())
+            assertTrue(BiomeObjectiveConfig.optionalSpecies.none(BiomeObjectiveConfig::check))
+            assertTrue(BiomeObjectiveConfig.check("Foxtrot"))
+
+            defaults.setProperty("objectives.checks.rockmite", "true")
+            BiomeObjectiveConfig.load(defaults)
+            val saved = Properties().also(BiomeObjectiveConfig::save)
+            BiomeObjectiveConfig.load(saved)
+            assertEquals(listOf("Rockmite"), BiomeObjectiveConfig.optionalSpecies.filter(BiomeObjectiveConfig::check))
+        } finally {
+            BiomeObjectiveConfig.load(old)
+        }
+    }
+
+    @Test fun upgradeTurnsOffEveryOptionalCheckOnce(@TempDir directory: Path) {
+        val old = Properties().also(BiomeObjectiveConfig::save)
+        try {
+            val file = directory.resolve("sparkling-mutuals.properties")
+            val previous = Properties().apply {
+                setProperty("migration.shardSaleGuidanceV2", "true")
+                setProperty("migration.sparkleWarpTimers22_27", "true")
+                setProperty("objectives.rows.mounds", "false")
+                BiomeObjectiveConfig.optionalSpecies.forEach { setProperty("objectives.checks.${it.lowercase()}", "true") }
+            }
+            Files.newOutputStream(file).use { previous.store(it, null) }
+
+            ConfigManager.init(directory)
+            assertTrue(BiomeObjectiveConfig.optionalSpecies.none(BiomeObjectiveConfig::check))
+            val migrated = Properties().also { Files.newInputStream(file).use(it::load) }
+            assertEquals("true", migrated.getProperty(BiomeObjectiveConfig.OPTIONAL_CHECKS_MIGRATION))
+            assertEquals("false", migrated.getProperty("objectives.rows.mounds"))
+
+            val settings = SafariSettings()
+            settings.modes.sparklingChecks.entries.single { it.key == "Rockmite" }.enabled = true
+            assertTrue(BiomeObjectiveConfig.apply(settings.tracking.objectivesHud.rows, settings.modes.sparklingChecks))
+            ConfigManager.saveSettings()
+            ConfigManager.init(directory)
+            ConfigManager.init(directory, "4.4.6")
+            assertEquals(listOf("Rockmite"), BiomeObjectiveConfig.optionalSpecies.filter(BiomeObjectiveConfig::check))
         } finally {
             BiomeObjectiveConfig.load(old)
         }
@@ -53,7 +109,7 @@ class BiomeObjectiveChoicesTest {
             assertTrue(state.needs("Rockmite"))
             assertTrue(SafariEspRules.neededForRun("Rockmite", true, run, false, party = state))
             assertTrue(SafariHelperRules.highlightSource("Rockmite", SafariMode.UNIQUE, run, state))
-            assertFalse(SafariEspRules.neededForSparkling("Rockmite", true, state, false, run))
+            assertTrue(SafariEspRules.neededForSparkling("Rockmite", true, state, false, run))
             assertNull(run.completion.announcement(run, biome, SafariMode.UNIQUE, state))
             assertEquals(listOf("Uniques left to capture: Rockmite"),
                 SafariMissingReply.requirements(run, biome, SafariMode.UNIQUE, state, 3, "0"))
@@ -62,10 +118,12 @@ class BiomeObjectiveChoicesTest {
             assertFalse(SafariEspRules.neededForRun("Rockmite", true, run, false, party = state))
             assertFalse(SafariHelperRules.highlightSource("Rockmite", SafariMode.UNIQUE, run, state))
             assertFalse(run.captureComplete("Rockmite"))
+            assertNull(run.completion.announcement(run, biome, SafariMode.SPARKLING, state))
             assertEquals("cd", run.completion.announcement(run, biome, SafariMode.UNIQUE, state))
             assertEquals(listOf("Uniques left to capture: None"),
                 SafariMissingReply.requirements(run, biome, SafariMode.UNIQUE, state, 3, "0"))
-            assertTrue(SafariMissingReply.requirements(run, biome, SafariMode.SPARKLING, state, 3, "0").isEmpty())
+            assertEquals(listOf("Mounds: 3"),
+                SafariMissingReply.requirements(run, biome, SafariMode.SPARKLING, state, 3, "0"))
             val evidence = CritterProgressProtocol.decode(CritterProgressProtocol.encode(run, state))!!.getValue("Rockmite")
             assertEquals(1, evidence.captures)
             assertFalse(evidence.checked)
@@ -93,6 +151,27 @@ class BiomeObjectiveChoicesTest {
         }
     }
 
+    @Test fun biomeBannerAndReportWaitForTheSameOptionalChecks() = withChoices {
+        val biome = SafariBiome.CAVERN
+        val state = party("Gemzie")
+        val run = SafariRun(0).apply {
+            visitBiome(biome)
+            biome.critters.forEach { record(SafariCatch(it)) }
+            updateCaptureEvidence(biome, emptySet(), allWallsChecked = true)
+        }
+        val mode = SafariMode.UNIQUE
+        assertEquals(biome.critters.size, run.completed(mode, biome.critters, state, localOnly = true))
+        assertFalse(run.completion.reportReady(run, biome, mode, state))
+        assertNull(run.completion.announcement(run, biome, mode, state))
+
+        val settings = SafariSettings()
+        settings.modes.sparklingChecks.entries.single { it.key == "Gemzie" }.enabled = false
+        assertTrue(BiomeObjectiveConfig.apply(settings.tracking.objectivesHud.rows, settings.modes.sparklingChecks))
+        assertTrue(run.completion.reportReady(run, biome, mode, state))
+        assertEquals("cd", run.completion.announcement(run, biome, mode, state))
+        assertFalse(run.completion.reportReady(run, biome, SafariMode.SPARKLING, state))
+    }
+
     @Test fun skippedBirdCheckDoesNotRequireUnusedFoodAfterAllBirdUniques() =
         withChoices("objectives.checks.macaw") {
             val biome = SafariBiome.FOREST
@@ -110,16 +189,16 @@ class BiomeObjectiveChoicesTest {
             assertFalse(run.uniqueComplete("Macaw", state, localOnly = true, respectObjectiveChoices = false))
         }
 
-    @Test fun objectiveControlsRemainAccessibleWithTheHudOffAndSaveIndependently() = withChoices {
+    @Test fun modeChecksRemainAccessibleWithTheHudOffAndSaveIndependently() = withChoices {
         val settings = SafariSettings().apply { tracking.objectivesHud.enabled = false }
         val catalog = SettingsCatalog(settings)
         fun row(section: String, key: String) =
             catalog.locate(SettingsTarget("HUDs", listOf("objectivesHud", section, key)))!!.second.last()
         val moundRow = row("rows", "MOUNDS")
-        val rockmite = row("checks", "Rockmite")
+        val rockmite = catalog.locate(SettingsTarget("Modes", listOf("sparklingChecks", "Rockmite")))!!.second.last()
         assertEquals("Rockmite mounds", moundRow.name)
         rockmite.field.setBoolean(rockmite.owner, false)
-        assertTrue(BiomeObjectiveConfig.apply(settings.tracking.objectivesHud.rows, settings.tracking.objectivesHud.checks))
+        assertTrue(BiomeObjectiveConfig.apply(settings.tracking.objectivesHud.rows, settings.modes.sparklingChecks))
         val props = Properties().also(BiomeObjectiveConfig::save)
         assertEquals("true", props.getProperty("objectives.rows.mounds"))
         assertEquals("false", props.getProperty("objectives.checks.rockmite"))

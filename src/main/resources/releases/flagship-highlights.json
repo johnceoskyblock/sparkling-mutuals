@@ -1,4 +1,17 @@
 {
+  "4.4.5": [
+    {"audience":"shared", "title":"Sparkling Checks Options", "details":"Optional Unique-mode checks turn off once with this update. Enable party-requested checks under Safari → Modes. Biome reports, the Biome complete banner, and /rates follow your choices. Sparkling mode keeps its usual checks."},
+    {"audience":"shared", "title":"Stable Forest and Haunted HUDs", "details":"Fixed flickering progress and objective displays while holding starting bird food or Shining Coins with starting-item announcements off."},
+    {"audience":"shared", "title":"Biome Hotspot Preferences", "details":"Rank the four biomes under Party → Interactions. Supported party sync servers use your ranking in equal-win ties."},
+    {"audience":"shared", "title":"Hotspots run counter", "details":"The HUD counts the current run after you join Safari and keeps counting when the same party resumes after a break."},
+    {"audience":"shared", "title":"Sparkling catch totals", "details":"Party catch announcements show the recorded catch number for that sparkling. A first catch displays #1 (NEW!)."},
+    {"audience":"shared", "title":"Quieter contest chat", "details":"Removed the automatic follow-up listing teammates still waiting to confirm their tickets."},
+    {"audience":"standard", "title":"Standard sightings and highlights", "details":"Sparkling alerts can use visible skins and corroborated particles. Alerts that start stay visible for their full duration. Partially visible critters retain a depth-tested box when whole-model glow is unavailable."},
+    {"audience":"standard", "title":"Hideyho banner removed", "details":"Standard no longer shows the Hideyho inside/outside location banner."},
+    {"audience":"full", "title":"Hideyho location banner", "details":"This update turns the inside/outside banner back on once. You can turn it off under Safari → Banner → Encounter alerts → Hideyho location."},
+    {"audience":"full", "title":"Sparkle Warping transfer delay", "details":"Automatic warps give teammates up to two seconds to finish traveling before the entry window closes. Your Reparty and Warp sliders still set the base timing."},
+    {"audience":"updater", "title":"Auto Update is enabled once", "details":"Full turns on verified automatic downloads the first time you launch this update. You can turn Auto Update off in the update screen, and that choice is saved."}
+  ],
   "4.4.4": [
     {"audience":"shared", "title":"Edition-specific What's New", "details":"See release highlights for your installed edition. Each edition remembers where you left off."},
     {"audience":"standard", "title":"Torrhus Honeyhive markers", "details":"See beacons for ready hives from a distance using known Torrhus locations and saved refill timers."},
@@ -83,7 +96,8 @@
   ],
   "4.1.1": [
     {"audience":"shared", "title":"Profit periods and saved sessions", "details":"Review profit by day, week, or session in history. Use /newsession to file the current session and start another."},
-    {"audience":"shared", "title":"Safari visibility controls", "details":"Keep selected critters highlighted across modes and customize the banner that shows where Hideyho appears."}
+    {"audience":"shared", "title":"Safari visibility controls", "details":"Keep selected critters highlighted across modes."},
+    {"audience":"full", "title":"Hideyho location banner customization", "details":"Customize the banner that shows where Hideyho appears."}
   ],
   "4.1.0": [
     {"audience":"shared", "title":"Shared Safari coordination", "details":"Sparkling Mutuals and SafariUtils can share objective evidence, sparkling sightings, and Hotspot assignments in the same run."},

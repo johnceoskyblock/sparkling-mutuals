@@ -4,9 +4,10 @@ package net.johnceo.sparklingmutuals.config
 internal object SettingsOrder {
     private val fields = mapOf(
         "General" to listOf("edit", "font", "help"),
+        "Modes" to listOf("unique", "fullClear", "sparkling", "sparklingChecks"),
         "Unique" to listOf("profitable", "hideCritters", "hideDrops"),
         "Sparkling" to listOf("allScannable", "profitable", "hideCritters", "hideDrops"),
-        "Party" to listOf("biomeReports", "startingItems", "downtime", "enabled", "pbChat"),
+        "Party" to listOf("hotspotPreferences", "biomeReports", "startingItems", "downtime", "enabled", "pbChat"),
         "Miria" to listOf("enabled", "ticketMode", "announceTicket", "ticketMessage", "autoContestDowntime", "honeyHives"),
         "History" to listOf("open", "instaSell", "importLogs", "achievements", "sound", "toParty"),
         "Warp" to listOf("description", "enabled", "mode", "duo", "reparty", "delay", "reset",
@@ -48,7 +49,7 @@ internal object SettingsOrder {
 
     fun rows(owner: Any, rows: List<SettingsCatalog.Row>): List<SettingsCatalog.Row> {
         val order = fields[owner.javaClass.simpleName] ?: if (owner is SafariSettings.HudOptions)
-            listOf("enabled", "timeFormat", "showSession", "tracks", "profit", "hotspot", "captureReminder", "shinyReminder", "rows", "checks", "bracket", "score", "appearance", "placement")
+            listOf("enabled", "timeFormat", "showSession", "tracks", "profit", "hotspot", "captureReminder", "shinyReminder", "rows", "bracket", "score", "appearance", "placement")
         else return rows
         // Unknown/new fields keep their declared order after the explicitly arranged controls.
         return rows.sortedBy { order.indexOf(it.navigationName).takeIf { index -> index >= 0 } ?: order.size }

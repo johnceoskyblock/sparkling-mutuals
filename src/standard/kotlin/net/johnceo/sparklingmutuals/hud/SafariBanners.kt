@@ -36,8 +36,6 @@ object SafariBanners {
     }
     fun fire(kind: BannerKind,biome: SafariBiome?=null,critter: String?=null,text: String?=null,preview: Boolean=false,location: String?=null,player: String?=null,visible: () -> Boolean = { true }, onStart: () -> Unit = {}) {
         if(!kind.supported) return
-        if(!preview && kind==BannerKind.HIDEYHO_LOCATION &&
-            (!SafariAssist.inSafari || SafariAssist.biome!=SafariBiome.HAUNTED || SafariFullClear.mode==SafariMode.SPARKLING)) return
         if(!preview && kind.encounterBiome?.let { SafariAssist.biome!=it }==true) return
         if(kind==BannerKind.GEMZIE_DONE) { clear(BannerKind.GEMZIE_READY);clear(BannerKind.GEMS) }
         if(kind==BannerKind.WUMPA_DONE) { clear(BannerKind.WUMPA_READY);clear(BannerKind.WUMPA_STARTED) }
@@ -57,8 +55,7 @@ object SafariBanners {
         SafariAlertSequence.queue.submit(this, notice.duration, kind to formatted,
             valid = { Minecraft.getInstance().player != null && (preview ||
                 visible() && BannerConfig.enabled && BannerConfig.options.getValue(kind).enabled &&
-                (contest || SafariTracking.ledger.current === requestRun) &&
-                (kind != BannerKind.HIDEYHO_LOCATION || SafariAssist.inSafari && SafariAssist.biome==SafariBiome.HAUNTED && SafariFullClear.mode != SafariMode.SPARKLING)) },
+                (contest || SafariTracking.ledger.current === requestRun)) },
             finish = { activeBanner = null; activeVisibility = { true } }) {
             onStart()
             activeVisibility = if (preview) ({ true }) else visible
@@ -94,12 +91,8 @@ object SafariBanners {
         if(PartyManager.hasInfo && roster!=null && roster.size>1 && roster.all { id -> client.connection?.onlinePlayers?.any { it.profile.id.toString()==id }==true })
             once("full-party",BannerKind.FULL_PARTY)
         val party=SafariSparklingMode.state
-        if(biome!=null && (SafariFullClear.mode!=SafariMode.SPARKLING || party.ready)) {
-            val targets=biome.critters.filter { SafariFullClear.mode!=SafariMode.SPARKLING ||
-                net.johnceo.sparklingmutuals.config.BiomeObjectiveConfig.needs(it.name, party) }
-            if(targets.isNotEmpty() && current.completed(SafariFullClear.mode,targets,party,localOnly=true)==targets.size)
-                once("biome:$biome",BannerKind.BIOME_DONE,biome)
-        }
+        if (biome != null && current.completion.reportReady(current, biome, SafariFullClear.mode, party))
+            once("biome:$biome", BannerKind.BIOME_DONE, biome)
         val currentFeeder=current.birds.feederCount
         if(previousBiome==SafariBiome.FOREST && biome==SafariBiome.FOREST && feeder>0 && currentFeeder==0)
             encounter(BannerKind.FEEDER_EMPTY,SafariBiome.FOREST)

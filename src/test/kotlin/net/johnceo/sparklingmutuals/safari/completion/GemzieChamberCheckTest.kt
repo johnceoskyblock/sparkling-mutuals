@@ -1,5 +1,7 @@
 package net.johnceo.sparklingmutuals.safari.completion
 
+import net.johnceo.sparklingmutuals.config.WithOptionalSparklingChecks
+import net.johnceo.sparklingmutuals.config.initWithOptionalSparklingChecks
 import java.nio.file.Path
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.safari.*
@@ -16,8 +18,9 @@ class GemzieChamberCheckTest {
         accept(setOf("me"), mapOf("me" to SafariRoster.all.map { it.name }.toSet() - "Gemzie"))
     }
 
+    @WithOptionalSparklingChecks
     @Test fun `chamber opening requires distinct Gemzie checks in both checking modes`() {
-        ConfigManager.init(dir)
+        initWithOptionalSparklingChecks(dir)
         for (mode in listOf(SafariMode.SPARKLING, SafariMode.UNIQUE)) {
             SafariFullClear.select(mode)
             var now = 1000L

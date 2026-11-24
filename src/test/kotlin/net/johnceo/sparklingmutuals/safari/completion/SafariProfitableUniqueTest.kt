@@ -1,5 +1,6 @@
 package net.johnceo.sparklingmutuals.safari.completion
 
+import net.johnceo.sparklingmutuals.config.WithOptionalSparklingChecks
 import java.nio.file.Path
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.config.SafariEspConfig
@@ -16,6 +17,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 
 class SafariProfitableUniqueTest : net.johnceo.sparklingmutuals.safari.esp.ProfitableEspPriceFixture() {
+    @WithOptionalSparklingChecks
     @Test fun `Rockmite and Snoozle both remain eligible for profitable ESP after unique captures`() {
         val quote = net.johnceo.sparklingmutuals.history.BazaarPrices
         prices(listOf("Rockmite", "Snoozle").associate { quote.shardId(it) to doubleArrayOf(100000.0, 100000.0) })
@@ -46,6 +48,7 @@ class SafariProfitableUniqueTest : net.johnceo.sparklingmutuals.safari.esp.Profi
         }
         assertSame(firstClass, ranking.cachedTop())
     }
+    @WithOptionalSparklingChecks
     @Test fun `ESP matches the command top ten and refreshes for prices and sell preference without a fetch`() {
         val ranking = net.johnceo.sparklingmutuals.commands.ProfitableCritters
         val quote = net.johnceo.sparklingmutuals.history.BazaarPrices
@@ -77,6 +80,7 @@ class SafariProfitableUniqueTest : net.johnceo.sparklingmutuals.safari.esp.Profi
         assertFalse(SafariEspRules.profitableEsp("Wumpa", true))
     }
     @TempDir lateinit var dir: Path
+    @WithOptionalSparklingChecks
     @Test fun `Unique profitable toggle keeps only the top ten profitable species after first capture`() {
         val profitable = net.johnceo.sparklingmutuals.safari.esp.ProfitableEspPriceFixture.profitable
         for (critter in SafariRoster.all) {

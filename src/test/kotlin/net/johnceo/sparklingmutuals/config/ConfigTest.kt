@@ -161,6 +161,9 @@ class ConfigTest {
         assertEquals("true",upgraded.remove("migration.sparkleWarpTimers22_27"))
         assertEquals("27",upgraded.remove("warpDelaySeconds"))
         assertEquals("22",upgraded.remove("repartyDelaySeconds"))
+        assertEquals("true",upgraded.remove(BiomeObjectiveConfig.OPTIONAL_CHECKS_MIGRATION))
+        assertEquals("true",upgraded.remove(BannerConfig.HIDEYHO_MIGRATION))
+        assertEquals("true",upgraded.remove("banner.hideyho_location.enabled"))
         assertEquals(original,upgraded)
         assertEquals(legacyContest, Files.readString(dir.resolve("sparkling-mutuals-contest.properties")))
     }

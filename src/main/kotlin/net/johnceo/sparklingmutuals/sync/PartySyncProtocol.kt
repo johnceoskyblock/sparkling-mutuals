@@ -1,10 +1,12 @@
 package net.johnceo.sparklingmutuals.sync
 
 import com.google.gson.*
+import net.johnceo.sparklingmutuals.config.HotspotPreferences
 import net.johnceo.sparklingmutuals.safari.SafariBiome
 
 /** SafariUtils aggregate v2/v3 and hotspots-v1. */
 internal object PartySyncProtocol {
+    const val HOTSPOT_PREFERENCES = "hotspot-preferences-v1"
     const val AGGREGATE_VERSION = 3
     const val AGGREGATE_SIZE = 39
     const val HELD_COINS = 38
@@ -60,6 +62,11 @@ internal object PartySyncProtocol {
         }.toString().also { require(it.toByteArray(Charsets.UTF_8).size <= 4096) }
     }
     fun biome(raw: String?) = SafariBiome.entries.firstOrNull { it.name == raw }
+    fun hotspotPreference(value: JsonElement?): List<SafariBiome>? {
+        val entries = value?.takeIf { it.isJsonArray }?.asJsonArray ?: return null
+        if (entries.size() != SafariBiome.entries.size) return null
+        return HotspotPreferences.parse(entries.map { text(it, 7) ?: return null })
+    }
     val codes = mapOf("fd" to SafariBiome.FOREST,"cd" to SafariBiome.CAVERN,"id" to SafariBiome.ICY,"hd" to SafariBiome.HAUNTED)
     val species = listOf("Cavernfish","Flitter","Shyworm","Driftling","Chuckwalla","Rockmite","Scrappy","Snoozle","Gemzie",
         "Strongarm","Tepid","Polaris","Shuddersquid","Billygoat","Mantis Shrimp","Nozzlenose","Troodon","Wumpa",

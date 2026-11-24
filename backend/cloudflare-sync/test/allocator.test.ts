@@ -7,8 +7,34 @@ it('waits for all roster reports or thirty seconds without restarting the window
  x.report(a,'FOREST',0);x.report(b,'FOREST',500);expect(x.due).toBe(30000);
  x.report(c,'CAVERN',1000);expect(x.due).toBe(30000);x.report(c,'ICY',1500);expect(x.due).toBe(30000);
  expect(x.allocate(2999)).toBe(false);x.report(d,'HAUNTED',3000);expect(x.allocate(3000)).toBe(true);
- expect(new Set(Object.values(x.locks)).size).toBe(4);expect(x.locks[a]).toBe('FOREST');expect(x.fairness[a]).toBe(1);
+ expect(new Set(Object.values(x.locks)).size).toBe(4);expect(x.locks[b]).toBe('FOREST');expect(x.fairness[b]).toBe(1);
  const before={...x.locks};x.report(d,'FOREST',3500);x.allocate(4000);expect(x.locks).toEqual(before);
+});
+it('ranks duplicate claims by wins, authenticated client, biome preference, then higher UUID',()=>{
+ const rankForestFirst=['FOREST','ICY','HAUNTED','CAVERN'];
+ const rankForestLast=['ICY','CAVERN','HAUNTED','FOREST'];
+ function round(wins:Record<string,number>={}, second=rankForestLast){
+  const x=new Allocation([a,b,c],wins);
+  // Cached settings from a past visit do not prove that c is using a mod today.
+  x.setPreference(c,rankForestFirst);
+  x.hello(a,{display:false,ticketed:true,leader:true,present:[b,c],locked:{}},0);
+  x.hello(b,{display:true,ticketed:true,leader:false,present:[],locked:{}},0);
+  x.setPreference(a,rankForestFirst);
+  x.setPreference(b,second);
+  x.disconnect(a);
+  for(const id of [a,b,c])x.report(id,'FOREST',100);
+  x.allocate(100);
+  return x;
+ }
+ expect(round().locks[a]).toBe('FOREST');
+ expect(round({},rankForestFirst).locks[b]).toBe('FOREST');
+ expect(round({[a]:2,[b]:1}).locks[c]).toBe('FOREST');
+ const updated=round();
+ expect(updated.setPreference(a,['ICY','ICY','HAUNTED','FOREST'])).toBe(false);
+ expect(Allocation.restore(updated.toJSON()).preferences[a]).toEqual(rankForestFirst);
+ updated.setPreference(a,rankForestLast);
+ expect(updated.allocate(101)).toBe(false);
+ expect(updated.locks[a]).toBe('FOREST');
 });
 it('imports locks without wins, freezes contradictions and gates allocation on reconciliation',()=>{
  const x=new Allocation([a,b]);x.importLocks({[a]:'ICY'});expect(x.fairness[a]??0).toBe(0);

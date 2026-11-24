@@ -1,5 +1,6 @@
 package net.johnceo.sparklingmutuals.safari.integration
 
+import net.johnceo.sparklingmutuals.config.WithOptionalSparklingChecks
 import net.johnceo.sparklingmutuals.safari.resources.renderBird
 import net.johnceo.sparklingmutuals.safari.resources.scanRenderedBirds
 
@@ -70,6 +71,7 @@ class DocumentedSafariRulesTest {
         assertTrue(s.needed(FloorDropType.ORANGE, SafariMode.FULL_CLEAR, party()))
     }
 
+    @WithOptionalSparklingChecks
     @Test fun `haunted retains needed coins but caps owned discovery coins and incense separately`() {
         val s = FloorDropState()
         s.inventory(listOf("Soothing Incense" to 1))

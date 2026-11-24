@@ -619,13 +619,12 @@ object SafariEsp {
             .toSet()
     }
 
-    internal fun hideyhoPosition(visibleOnly: Boolean = false): Vec3? {
+    internal fun hideyhoPosition(): Vec3? {
         val client = Minecraft.getInstance()
         if (!SafariAssist.visualsActive(client) || level !== client.level || client.player == null) return null
-        return targets.firstOrNull {
-            it.species == "Hideyho" && drawable(it, client) && (!visibleOnly || LocalVisibility.entity(it.entity, client))
-        }?.entity?.position()
+        return targets.firstOrNull { it.species == "Hideyho" && drawable(it, client) }?.entity?.position()
     }
+
     fun observations(): SafariEspObservations {
         val client = Minecraft.getInstance()
         if (!SafariAssist.inSafari || client.level == null || client.level !== level) return SafariEspObservations(emptyList(), emptyList())
@@ -688,7 +687,7 @@ object SafariEsp {
         val run = SafariTracking.ledger.current
         val party = SafariSparklingMode.state
         val mode = net.johnceo.sparklingmutuals.safari.completion.SafariFullClear.mode
-        val forceIcy = mob.biome == SafariBiome.ICY && BiomeObjectiveConfig.needs("Wumpa", party) &&
+        val forceIcy = mob.biome == SafariBiome.ICY && BiomeObjectiveConfig.needs("Wumpa", party, mode) &&
             (run?.count("Wumpa") ?: 0) == 0 && (run?.count(mob.name) ?: 0) == 0
         if (!BiomeObjectiveConfig.allowsEsp(mob.name, mode, run) && !(mode == SafariMode.SPARKLING && forceIcy))
             return "Optional sparkling check disabled"

@@ -20,7 +20,7 @@ The **Unique sparkling catch alert** uses server-confirmed sparkling catch evide
 
 ## Update status
 
-Each edition has a **What’s New** button that reads the bundled catalog and displays entries for the current edition. Acknowledgement is stored independently per edition. Full also offers an update-status screen with a verified **Download Update** action and opt-in **Auto Update**, which installs after Minecraft closes. [Editions](../README.md#installation)
+Each edition has a **What’s New** button that reads the bundled catalog and displays entries for the current edition. Acknowledgement is stored independently per edition. Full also offers an update-status screen with a verified **Download Update** action and adjustable **Auto Update**. Installation happens after Minecraft closes. [Editions](../README.md#installation)
 
 The settings workspace, icons, and catch celebrations draw on SafariUtils. [MIT attribution](../licenses/SafariUtils-MIT.txt)
 

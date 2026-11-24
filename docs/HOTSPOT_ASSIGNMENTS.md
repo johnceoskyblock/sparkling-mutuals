@@ -8,7 +8,11 @@ Announce the actual hotspot immediately after the server Hotspot message using `
 
 Only reports from verified current party members participate. During the first thirty seconds of the local run, manual party messages can contain surrounding text or the copied server hotspot line. Forest, fprest, for, f; Cavern, cav, c; Icy, ice, i; Haunted, haunt, haunte, hvant, h are supported. Single-letter aliases must be the entire message. A message naming multiple biomes is ambiguous and rejected. Assignment instructions are excluded. Coordinated mod reports remain supported outside this manual window.
 
-The local mixed-party fallback assigns immediately once every roster member has reported; otherwise it waits up to thirty seconds from the first report. A sole claimant gets their hotspot; duplicate claims favor fewer pre-run hotspot wins, then a shared UUID hash. Displaced players receive unused biomes in Forest, Cavern, Icy, Haunted order.
+**Party → Interactions → Biome Hotspot Preferences** opens a four-row editor. Use the arrows to move a biome up or down, then save. The default order is Icy, Forest, Haunted, Cavern.
+
+A sole claimant gets their hotspot. With a supporting WebSocket server, duplicate claims favor fewer pre-run wins, then assignment clients over manual reporters, then the higher preference for that hotspot, then the higher UUID. Saved changes are used for the next unlocked assignment. [Preference sync contract](PARTY_SYNC_HOTSPOT_PREFERENCES.md)
+
+The local mixed-party fallback assigns immediately once every roster member has reported, or thirty seconds after the first report. It uses wins, known mod reports, and UUIDs for ties because private preference orders are unavailable in party chat. Displaced players receive unused biomes in Forest, Cavern, Icy, Haunted order.
 
 The WebSocket supplies assignments to connected clients. Only the current leader sends individual assignment instructions for backend-designated recipients, with sent-ID deduplication and acknowledgments. A manual biome message alone never creates a second instruction path for a WebSocket user. During chat fallback, the leader instructs uncoordinated reporters individually. Fairness tallies remain internal to assignment logic. Solo players keep their actual hotspot. No API requests are added. Incoming legacy wins and map messages remain readable for older-client compatibility.
 
@@ -36,4 +40,6 @@ Unassigned reports retry every two seconds through the existing serialized, rate
 
 HUDs → Hotspot GUI → Show all players defaults on. Turning it off displays only the local player's card, including in the HUD editor preview. This filters the display without changing shared assignments or fairness counts.
 
-`/hotspot` controls assigning. **HUDs → HUDs → Hotspot GUI** has the display and appearance settings. Right-click the HUD in `/sm gui` to reach the same controls. Fresh installs place it in the bottom-right corner. The default shows party members with their actual hotspot (H), assignment (A), and win count. The display can show just your own card instead. Known Hypixel rank colors come from observed names and use no additional profile requests. The run count tracks consecutive completed runs for the current party. The backend remains the allocation and fairness authority.
+`/hotspot` controls assigning. **HUDs → HUDs → Hotspot GUI** has the display and appearance settings. Right-click the HUD in `/sm gui` to reach the same controls. Fresh installs place it in the bottom-right corner. The default shows party members with their actual hotspot (H), assignment (A), and win count. The display can show just your own card instead. Known Hypixel rank colors come from observed names and use no additional profile requests.
+
+The run count includes the current run after Safari admission and consecutive completed Hotspot runs with the same roster. If teammates leave and rejoin between runs, the streak continues once the same party runs again. A recorded Safari with a different roster breaks the streak. The backend still determines assignments and wins.

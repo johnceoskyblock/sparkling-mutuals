@@ -6,6 +6,7 @@ enum class SparkleWarpMode { SOLO, DUO }
 object SparkleWarpPolicy {
     const val DEFAULT_REPARTY_SECONDS = 22
     const val DEFAULT_DELAY_SECONDS = 27
+    const val WARP_WINDOW_MILLIS = 30_000L
     const val PARTY_SIZE = 4
     fun canStart(leader: Boolean, members: Int) = leader && members in 0 until PARTY_SIZE
     fun returningPhase(startedAt: Long, now: Long, repartySeconds: Int = DEFAULT_REPARTY_SECONDS) = now-startedAt >= repartySeconds * 1000L
@@ -36,7 +37,10 @@ object SparkleWarpPolicy {
     }
     fun inviter(raw: String): String? = net.johnceo.sparklingmutuals.safari.SafariMessages.lines(raw)
         .firstNotNullOfOrNull { invite.matchEntire(it.trim())?.groupValues?.get(1) }
+    fun travelingPlayer(raw: String): String? = net.johnceo.sparklingmutuals.safari.SafariMessages.lines(raw)
+        .firstNotNullOfOrNull { travel.matchEntire(it)?.groupValues?.get(1) }
     private val invite=Regex("^(?:\\[[^]\\r\\n]+]\\s*)*([A-Za-z0-9_]{1,16}) has invited you to join their party!$")
+    private val travel = Regex("^»\\s+(?:\\[[^]\\r\\n]+]\\s*)*([A-Za-z0-9_]{1,16}) is traveling to .+ FOLLOW$")
 }
 
 /** Names from a server party list, validated against the confirmed roster size and local leader. */

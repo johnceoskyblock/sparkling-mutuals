@@ -28,14 +28,14 @@ class HotspotGrid(val width: Int,count: Int) {
 }
 
 class HotspotGridPanel(private val players: List<SafariPartySync.HotspotRow>,private val rankColors: Map<String,Int>,
-    width: Int,private val completedRuns: Int,private val grid: HotspotGrid=HotspotGrid(width,players.size)):
+    width: Int,private val runCount: Int,private val grid: HotspotGrid=HotspotGrid(width,players.size)):
     HudPanel("Hotspots",rows=emptyList(),titleIcon=null,widthOverride=width,heightOverride=grid.height) {
     override fun drawMeasured(graphics: GuiGraphicsExtractor,x: Int,y: Int,scale: Float,style: PanelStyle,borderOverride: Int?,metrics: DrawMetrics) {
         val font=metrics.font
         graphics.pose().pushMatrix();graphics.pose().translate(x.toFloat(),y.toFloat());graphics.pose().scale(scale,scale)
         style.draw(graphics,grid.width,grid.height,borderOverride)
-        val runsLabel = if (completedRuns == 1) "run" else "runs"
-        HudHeader.draw(graphics,style,title,HudRow.GOLD,grid.width,suffix=" · $completedRuns $runsLabel")
+        val runsLabel = if (runCount == 1) "run" else "runs"
+        HudHeader.draw(graphics,style,title,HudRow.GOLD,grid.width,suffix=" · $runCount $runsLabel")
         if(players.isEmpty()) graphics.text(font,"Waiting for party…",6,20,style.labels.resolve(HudRow.GRAY),HudFonts.shadow)
         for (i in 0 until minOf(players.size, 4)) {
             val player = players[i]

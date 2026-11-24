@@ -5,6 +5,7 @@ import java.nio.file.Path
 import java.util.Properties
 import java.util.zip.GZIPOutputStream
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -79,6 +80,22 @@ class InstalledVersionHistoryTest {
         val fullOnly = InstalledVersionHistory(installed = "3.4.0")
         assertNull(ReleaseHighlights.pending(fullOnly, track = ReleaseTrack.STANDARD))
         assertTrue(ReleaseHighlights.pending(fullOnly, track = ReleaseTrack.FULL) != null)
+    }
+
+    @Test fun `next release shows optional checks and the right edition changes`() {
+        val history = InstalledVersionHistory(installed = "4.4.5", previous = "4.4.4")
+        fun titles(track: ReleaseTrack) = ReleaseHighlights.pending(history, track = track)!!
+            .releases.single().features.map { it.title }
+        val standard = titles(ReleaseTrack.STANDARD)
+        val full = titles(ReleaseTrack.FULL)
+        val fullNoAutoUpdate = titles(ReleaseTrack.FULL_NO_AUTO_UPDATE)
+        assertTrue(listOf(standard, full, fullNoAutoUpdate).all { it.first() == "Sparkling Checks Options" })
+        assertTrue("Hideyho banner removed" in standard)
+        assertTrue("Hideyho location banner" in full && "Hideyho location banner" in fullNoAutoUpdate)
+        assertFalse("Hideyho location banner" in standard)
+        assertEquals(full.filterNot { it == "Auto Update is enabled once" }, fullNoAutoUpdate)
+        assertTrue("Auto Update is enabled once" in full)
+        assertFalse("Auto Update is enabled once" in standard)
     }
 
     @Test fun `saving and resetting keep another edition's settings and version history`() {

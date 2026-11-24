@@ -16,7 +16,7 @@ Open `/sm` for settings and `/sm gui` to move or resize HUDs. The main and conte
 | Capsule trajectory preview | On. Width defaults to 3, with a range of 1–5. The option to show the path through terrain defaults on. |
 | Sparkle Warping | Both Full editions only. Warping and leeching default off. Reparty defaults to 22 seconds and warp defaults to 27 seconds. |
 | Shard sale guidance | On. Adjust it separately from the Hunting Box value HUD. |
-| In-game update downloads | Full only. Automatic downloads default off. |
+| In-game update downloads | Full only. 4.4.5 enables Auto Update once. Players can turn it off in the update screen. |
 
 Standard’s box setting and Scrappy color have their own saved values. Full’s biome limits and Warp List stay available when switching back. **Accept Hideyho Quest** uses Minecraft’s keybinding settings and offers setup at startup in Standard when unbound. It can also be set under **Safari → Helpers → Capture tools**.
 
@@ -26,7 +26,7 @@ Fresh Safari HUDs use a black background with 20% transparency and borders off. 
 
 **HUDs → Overview → HUD font customization** contains the resource pack font, text shadow, and pixel-aligned scaling controls. Resource pack fonts and shadows default on. Pixel-aligned scaling defaults off. Transparency runs from 0% solid to 100% invisible.
 
-The progress HUD can show a run timer without progress rows. **Biome Objectives** has individual display rows and optional sparkling-check controls. Optional checks can affect completion requirements. [Safari logic](../SAFARI_LOGIC.md) · [Settings navigation](NATIVE_UI.md)
+The progress HUD can show a run timer without progress rows. **Biome Objectives** has individual display controls. **Safari → Modes → Sparkling Checks Options** defaults all optional checks off in every edition. The update that moves these controls resets them to off once and saves subsequent choices. In Unique mode, enable the checks your party asks for and focus on catching one of each critter for faster runs. Automatic biome reports (`fd`, `hd`, `cd`) follow your selected checks. Sparkling mode uses the party's discovery requirements. [Safari logic](../SAFARI_LOGIC.md) · [Settings navigation](NATIVE_UI.md)
 
 ## Lifecycle and persistence
 

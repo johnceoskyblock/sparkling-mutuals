@@ -30,7 +30,7 @@ Detected Sparkling identities impose **no additional capture gate in any mode**.
 
 ### Reports and run-complete alerts
 
-Biome reports use local evidence and the current mode’s requirements. Sparkling also requires ready party discoveries. Forest needs qualified local bird spawning and source evidence when birds are required. Confirmed Forest or Haunted evidence can finish a pending report after the player leaves the biome. A teammate’s unused starting items do not hold up the local report. [Forest reporting](docs/BIRD_COMPLETION.md#sending-fd)
+Biome reports use local evidence and the current mode’s requirements. Unique mode skips optional checks that are off in **Safari → Modes → Sparkling Checks Options** and still requires its unique captures. Sparkling mode uses ready party discoveries and its usual check requirements. Forest needs qualified local bird spawning and source evidence when birds are required. Confirmed Forest or Haunted evidence can finish a pending report after the player leaves the biome. A teammate’s unused starting items do not hold up the local report. [Forest reporting](docs/BIRD_COMPLETION.md#sending-fd)
 
 Queued reports are rechecked against current mode and local requirements before sending. Eligible clients share a local clear through party sync. **Announce biome completion** also enables party chat codes when permitted, with duplicate reports suppressed. Unique Icy shares completion without an automatic `id` message. Starting-item reminders and party announcements follow the separate starting-items setting. [Shared party sync](docs/PARTY_SYNC.md) · [Starting item timing](docs/critters/FLOOR_DROPS.md#early-starting-foodcoin-reports)
 

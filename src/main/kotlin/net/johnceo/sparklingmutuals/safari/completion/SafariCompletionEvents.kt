@@ -34,22 +34,24 @@ class SafariCompletionEvents(private val clock: () -> Long = System::currentTime
                 (run.birdFoodCheck.pendingSpawns>0 || run.birds.feederCount>0 || run.birdSpawnsComplete(localOnly=true))
         else run.count("Hideyho")>0 || hideyhoDialogueAt?.let { clock()-it in 0..30_000 }==true
         if(!pending || !run.hasCaptureEvidence(biome) || mode==SafariMode.SPARKLING && !party.ready) return
-        val others=biome.critters.filter { it.name !in special && (mode!=SafariMode.SPARKLING || BiomeObjectiveConfig.needs(it.name, party)) }
+        val others=biome.critters.filter { it.name !in special && (mode!=SafariMode.SPARKLING || party.needs(it.name)) }
         if(run.completed(mode,others,party,localOnly=true)!=others.size ||
-            mode==SafariMode.UNIQUE && others.any { BiomeObjectiveConfig.needs(it.name, party) && !run.sparklingComplete(it.name,party,true) }) return
+            mode==SafariMode.UNIQUE && others.any { BiomeObjectiveConfig.needs(it.name, party, mode) && !run.sparklingComplete(it.name,party,true) }) return
         // A full feeder batch can take longer than a short travel grace; retain its actual source proof.
-        departures[biome]=Departure(mode,biome.critters.filter { BiomeObjectiveConfig.needs(it.name, party) }.map { it.name }.toSet(),
+        departures[biome]=Departure(mode,biome.critters.filter { BiomeObjectiveConfig.needs(it.name, party, mode) }.map { it.name }.toSet(),
             if(biome==SafariBiome.FOREST) Long.MAX_VALUE else clock()+30_000)
     }
     private fun departureComplete(run: SafariRun,biome: SafariBiome,mode: SafariMode,party: PartySparklingState): Boolean {
         val saved=departures[biome] ?: return false
         if(!pendingDeparture(biome) || saved.mode!=mode ||
-            saved.needed!=biome.critters.filter { BiomeObjectiveConfig.needs(it.name, party) }.map { it.name }.toSet() ||
-            biome.critters.any { (mode == SafariMode.FULL_CLEAR || BiomeObjectiveConfig.check(it.name)) && run.sparklePending(it.name) }) return false
+            saved.needed!=biome.critters.filter { BiomeObjectiveConfig.needs(it.name, party, mode) }.map { it.name }.toSet() ||
+            run.uncaughtSparkling(biome, mode)) return false
         if(biome==SafariBiome.HAUNTED) return run.count("Hideyho")>0
         val birds=biome.critters.filter { it.name in setOf("Bluebird","Parakeet","Macaw") &&
-            (mode!=SafariMode.SPARKLING || BiomeObjectiveConfig.needs(it.name, party)) }
-        return run.birdSpawnsComplete(localOnly=true) && run.completed(mode,birds,party,localOnly=true)==birds.size
+            (mode!=SafariMode.SPARKLING || party.needs(it.name)) }
+        val sourcesComplete = if (mode == SafariMode.UNIQUE) run.canReportBiome(biome, party, mode)
+            else run.birdSpawnsComplete(localOnly = true)
+        return sourcesComplete && run.completed(mode,birds,party,localOnly=true)==birds.size
     }
     private val announced = mutableMapOf<SafariBiome, SafariMode?>()
     private val pending = mutableSetOf<SafariBiome>()
@@ -66,12 +68,14 @@ class SafariCompletionEvents(private val clock: () -> Long = System::currentTime
                 return biome.critters.all { run.captureComplete(it.name) }
             return departureComplete(run,biome,mode,party)
         }
-        val targets = biome.critters.filter { mode != SafariMode.SPARKLING || BiomeObjectiveConfig.needs(it.name, party) }
+        val targets = biome.critters.filter { mode != SafariMode.SPARKLING || party.needs(it.name) }
         return run.completed(mode, targets, party, localOnly = true) == targets.size &&
             (mode != SafariMode.UNIQUE || allNeededChecked(run, biome, party, localOnly = true))
     }
     fun allNeededChecked(run: SafariRun, biome: SafariBiome, party: PartySparklingState, localOnly: Boolean = false) =
-        party.ready && biome.critters.none { BiomeObjectiveConfig.needs(it.name, party) && !run.sparklingComplete(it.name, party, localOnly) }
+        party.ready && biome.critters.none {
+            BiomeObjectiveConfig.needs(it.name, party, SafariMode.UNIQUE) && !run.sparklingComplete(it.name, party, localOnly)
+        }
 
     /** Completion feedback belongs to each client even when a peer sent the shared biome report first. */
     fun armSharedClearReminder(run: SafariRun, biome: SafariBiome, mode: SafariMode, party: PartySparklingState, now: Long) {
@@ -80,14 +84,14 @@ class SafariCompletionEvents(private val clock: () -> Long = System::currentTime
     }
     fun chatReportAllowed(biome: SafariBiome, mode: SafariMode) =
         biome != SafariBiome.ICY || mode != SafariMode.UNIQUE
+
+    fun reportReady(run: SafariRun, biome: SafariBiome, mode: SafariMode, party: PartySparklingState): Boolean =
+        (mode != SafariMode.SPARKLING || biome.critters.any { party.needs(it.name) }) &&
+            run.canReportBiome(biome, party, mode) && locallyComplete(run, biome, mode, party)
+
     fun announcement(run: SafariRun, biome: SafariBiome, mode: SafariMode, party: PartySparklingState, enabled: Boolean = true): String? {
         rememberDeparture(run,biome,mode,party)
-        if (!enabled || mode == SafariMode.SPARKLING && biome.critters.none { party.needs(it.name) }) {
-            pending.remove(biome)
-            return null
-        }
-        if (!run.canReportBiome(biome, party, mode)) { pending.remove(biome); return null }
-        if (!locallyComplete(run, biome, mode, party)) {
+        if (!enabled || !reportReady(run, biome, mode, party)) {
             pending.remove(biome)
             return null
         }
@@ -101,7 +105,7 @@ class SafariCompletionEvents(private val clock: () -> Long = System::currentTime
     fun locallyReported(biome: SafariBiome, mode: SafariMode) = announced[biome] == mode
     fun alert(run: SafariRun, mode: SafariMode, party: PartySparklingState, enabled: Boolean): Boolean {
         if (!enabled || alerted || mode == SafariMode.SPARKLING && !party.ready) return false
-        val targets = SafariRoster.all.filter { mode != SafariMode.SPARKLING || BiomeObjectiveConfig.needs(it.name, party) }
+        val targets = SafariRoster.all.filter { mode != SafariMode.SPARKLING || party.needs(it.name) }
         if (targets.isEmpty() || SafariBiome.entries.any { !run.biomeComplete(mode,it,party) }) return false
         alerted = true
         return true

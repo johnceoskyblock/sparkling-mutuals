@@ -4,6 +4,13 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class HotspotAssignmentsTest {
+    @Test fun `fallback favors mod users for equal wins and compares UUIDs in descending order`() {
+        val reports = mapOf("mod" to SafariBiome.ICY, "manual" to SafariBiome.ICY)
+        val ids = mapOf("mod" to "10000000-0000-0000-0000-000000000001", "manual" to "f0000000000000000000000000000002")
+        assertEquals(SafariBiome.ICY, HotspotAssignments.allocate(reports, ids, clients = setOf("mod"))["mod"])
+        assertEquals(SafariBiome.ICY, HotspotAssignments.allocate(reports, ids, mapOf("mod" to 1), setOf("mod"))["manual"])
+        assertEquals(SafariBiome.ICY, HotspotAssignments.allocate(reports, ids, clients = reports.keys)["manual"])
+    }
     @Test fun `allocation is independent of report order and gives each member a different biome`() {
         for(a in SafariBiome.entries) for(b in SafariBiome.entries) for(c in SafariBiome.entries) for(d in SafariBiome.entries) {
             val reports=linkedMapOf("a" to a,"b" to b,"c" to c,"d" to d)

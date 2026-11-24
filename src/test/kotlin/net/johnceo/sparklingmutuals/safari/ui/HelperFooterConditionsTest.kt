@@ -1,5 +1,7 @@
 package net.johnceo.sparklingmutuals.safari.ui
 
+import net.johnceo.sparklingmutuals.config.WithOptionalSparklingChecks
+import net.johnceo.sparklingmutuals.config.initWithOptionalSparklingChecks
 import java.nio.file.Path
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.safari.PartySparklingState
@@ -28,8 +30,9 @@ class HelperFooterConditionsTest {
                 WallSummary(List(5) { WallState.INTACT }), state).rows
         }.map { it.label }.toSet()
     }
+    @WithOptionalSparklingChecks
     @Test fun `source footers follow each modes first catch and missing discovery rules independently`() {
-        ConfigManager.init(dir)
+        initWithOptionalSparklingChecks(dir)
         val helpers = mapOf("Honeybug" to "Bee nests", "Snoozle" to "Snoozle walls", "Rockmite" to "Mounds")
         val run = SafariRun(0)
         assertTrue(labels(run, SafariMode.UNIQUE, party()).containsAll(helpers.values))

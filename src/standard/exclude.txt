@@ -26,6 +26,7 @@ kotlin/net/johnceo/sparklingmutuals/safari/automation/entry/CjsSafariEntry.kt
 kotlin/net/johnceo/sparklingmutuals/safari/automation/entry/CjsWalkingKeys.kt
 kotlin/net/johnceo/sparklingmutuals/safari/automation/GemzieAutoSelect.kt
 kotlin/net/johnceo/sparklingmutuals/safari/hideyho/HideyhoQuest.kt
+kotlin/net/johnceo/sparklingmutuals/safari/hideyho/HideyhoSpotter.kt
 kotlin/net/johnceo/sparklingmutuals/mixin/CritterTextDisplayMixin.kt
 kotlin/net/johnceo/sparklingmutuals/mixin/SafariShinyMixin.kt
 kotlin/net/johnceo/sparklingmutuals/safari/esp/TeammateEsp.kt

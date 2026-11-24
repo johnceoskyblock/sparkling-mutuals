@@ -27,26 +27,35 @@ internal enum class BiomeObjectiveRow(val label: String, val description: String
 }
 
 internal object BiomeObjectiveConfig {
+    const val OPTIONAL_CHECKS_MIGRATION = "migration.optionalSparklingChecksOff"
     val optionalSpecies = SafariRoster.all.map { it.name }
         .filter { SafariLookup.isManualCheck(it) || it in setOf("Scrappy", "Troodon", "Hideyho") }
     private val birdChecks = optionalSpecies.filter(SafariLookup::isBird)
     private val hiddenRows = mutableSetOf<BiomeObjectiveRow>()
-    private val skipped = mutableSetOf<String>()
+    private val skipped = optionalSpecies.toMutableSet()
     fun show(row: BiomeObjectiveRow) = row !in hiddenRows
     fun check(name: String) = name !in skipped
-    fun needs(name: String, party: PartySparklingState) = check(name) && party.needs(name)
+    fun needs(name: String, party: PartySparklingState, mode: SafariMode) =
+        (mode != SafariMode.UNIQUE || check(name)) && party.needs(name)
     fun birdsRelaxed() = birdChecks.any { !check(it) }
 
     /** An opted-out objective still highlights its source and critter when a capture is required. */
     fun allowsEsp(name: String, mode: SafariMode, run: SafariRun?): Boolean =
-        check(name) || mode == SafariMode.FULL_CLEAR ||
-            mode == SafariMode.UNIQUE && ((run?.captureProgress(name) ?: 0) == 0 && run?.uniqueUnavailable(name) != true)
+        mode != SafariMode.UNIQUE || check(name) ||
+            ((run?.captureProgress(name) ?: 0) == 0 && run?.uniqueUnavailable(name) != true)
+
+    fun migrateOptionalChecks(properties: Properties): Boolean {
+        if (properties.getProperty(OPTIONAL_CHECKS_MIGRATION) == "true") return false
+        optionalSpecies.forEach { properties.remove(checkKey(it)) }
+        properties.setProperty(OPTIONAL_CHECKS_MIGRATION, "true")
+        return true
+    }
 
     fun load(properties: Properties) {
         hiddenRows.clear()
         hiddenRows.addAll(BiomeObjectiveRow.entries.filter { properties.getProperty(rowKey(it)) == "false" })
         skipped.clear()
-        skipped.addAll(optionalSpecies.filter { properties.getProperty(checkKey(it)) == "false" })
+        skipped.addAll(optionalSpecies.filter { properties.getProperty(checkKey(it)) != "true" })
     }
     fun save(properties: Properties) {
         for (row in BiomeObjectiveRow.entries) properties.setProperty(rowKey(row), show(row).toString())

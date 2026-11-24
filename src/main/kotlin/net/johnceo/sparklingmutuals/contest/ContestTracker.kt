@@ -10,7 +10,6 @@ import net.johnceo.sparklingmutuals.config.ContestConfig
 import net.johnceo.sparklingmutuals.hud.SkyblockSidebar
 import net.johnceo.sparklingmutuals.party.PartyManager
 import net.johnceo.sparklingmutuals.safari.SafariEntryPresence
-import net.johnceo.sparklingmutuals.safari.automation.SafariPartyInput
 import net.johnceo.sparklingmutuals.safari.automation.SafariDowntime
 import net.minecraft.client.Minecraft
 import net.minecraft.client.resources.sounds.SimpleSoundInstance
@@ -34,31 +33,12 @@ object ContestTracker {
     private val downtime = ContestDowntimeState()
     private val waiting = linkedSetOf<String>()
     private var contestStartedAt = 0L
-    private var reminderAt: Long? = null
-    private var reminded = false
-    private var bypassedWindow = -1L
-    private var returnedFromSafari = false
-    private var voluntaryReturnAt = 0L
-
-    private fun inTorrhus(client: Minecraft) =
-        SkyblockSidebar.areaName(client) in setOf("Torrhus Canyon", "Torrhus Springs", "Critter Safari Entrance") ||
-            net.johnceo.sparklingmutuals.safari.SafariIsland.currentMode.equals("foraging_3", true)
-
-    fun register() {
-        net.fabricmc.fabric.api.client.message.v1.ClientSendMessageEvents.COMMAND.register { command ->
-            if (net.johnceo.sparklingmutuals.safari.SafariIsland.onIsland &&
-                command.trim().lowercase() in setOf("warp torrhus", "warp canyon", "warp torrhus_canyon"))
-                voluntaryReturnAt = System.currentTimeMillis()
-        }
-    }
 
     fun bypassPartyContest() {
-        if (contestWaiting().isEmpty()) return
-        bypassedWindow = windowKey
-        clearPartyContest()
+        if (contestWaiting().isNotEmpty()) clearPartyContest()
     }
 
-    fun clearPartyContest() { waiting.clear(); reminderAt = null }
+    fun clearPartyContest() { waiting.clear() }
     fun confirmPartyTicket(id: String, receivedAt: Long) {
         if (receivedAt >= contestStartedAt) waiting.remove(id)
     }
@@ -112,11 +92,6 @@ object ContestTracker {
     fun onClientTick(client: Minecraft) {
         if (client.player == null || client.level == null) return
 
-        val now = System.currentTimeMillis()
-        if (net.johnceo.sparklingmutuals.safari.automation.SafariManagerGuard.activeRun(client)) {
-            returnedFromSafari = true
-            reminderAt = null
-        }
         if (++tickCounter < 10) return
         tickCounter = 0
 
@@ -134,35 +109,14 @@ object ContestTracker {
         if (downtime.poll(windowKey, secondsIntoWindow, ContestConfig.autoContestDowntime,
                 skyblock, others.isNotEmpty(), leader)) {
             waiting.addAll(others)
-            contestStartedAt = now
-            reminded = false
+            contestStartedAt = System.currentTimeMillis()
             PartyManager.sendPartyChat(client, "New Contest Started!")
-        }
-        val canyon = skyblock && !net.johnceo.sparklingmutuals.safari.SafariIsland.onIsland && inTorrhus(client)
-        if (canyon && returnedFromSafari && (now - voluntaryReturnAt in 0..15_000 ||
-            client.connection?.listedOnlinePlayers?.any {
-                SafariEntryPresence.normalize(it.profile.id.toString()) in others
-            } == true)) {
-            returnedFromSafari = false
-            voluntaryReturnAt = 0L
-        }
-        if (!canyon) reminderAt = null
-        if (leader && canyon && !returnedFromSafari && waiting.isNotEmpty() && !reminded &&
-            bypassedWindow != windowKey) {
-            val deadline = reminderAt ?: (now + 30_000).also { reminderAt = it }
-            if (now >= deadline) remindWaiting(client)
         }
         if (skyblock) {
             readSidebar(client)
             announceTicket(client)
         }
         if (ContestConfig.trackContest) maybeWarn(client)
-    }
-
-    private fun remindWaiting(client: Minecraft) {
-        val names = waiting.take(3).map { SafariPartyInput.nameOf(it) ?: return }
-        reminded = PartyManager.sendPartyChat(client,
-            "${names.joinToString(", ")}, still waiting on ticket earned confirmation message (Send message containing \"r\" or \"ticket\").")
     }
 
     /** The contest window a time of day falls in. */

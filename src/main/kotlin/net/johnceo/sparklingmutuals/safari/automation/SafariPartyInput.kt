@@ -61,6 +61,7 @@ object SafariPartyInput {
         val chat = PartyChat.parse(text) ?: return
         // Reports only suppress duplicate announcements; they never release a readiness or kick hold.
         SafariDowntime.observeAnnouncement(chat.body)
+        // Older clients include "ticket" in their reminder, which would be mistaken for a confirmation.
         if (chat.body.contains(", still waiting on ticket earned confirmation message", true)) return
         val contest = ContestTracker.contestWaiting().isNotEmpty() && confirmsTicket(chat.body)
         val downtime = contest || ConfigManager.downtimeCommand &&

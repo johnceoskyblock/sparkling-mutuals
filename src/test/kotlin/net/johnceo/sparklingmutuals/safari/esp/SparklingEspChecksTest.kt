@@ -1,5 +1,7 @@
 package net.johnceo.sparklingmutuals.safari.esp
 
+import net.johnceo.sparklingmutuals.config.WithOptionalSparklingChecks
+import net.johnceo.sparklingmutuals.config.initWithOptionalSparklingChecks
 import java.nio.file.Path
 import java.util.UUID
 import net.johnceo.sparklingmutuals.config.ConfigManager
@@ -14,8 +16,9 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 
 class SparklingEspChecksTest : net.johnceo.sparklingmutuals.safari.esp.ProfitableEspPriceFixture() {
+    @WithOptionalSparklingChecks
     @Test fun `profitable cavern sources stay highlighted after unique catches without adding mode objectives`() {
-        ConfigManager.init(dir)
+        initWithOptionalSparklingChecks(dir)
         val quote=net.johnceo.sparklingmutuals.history.BazaarPrices
         prices(listOf("Rockmite","Snoozle").associate { quote.shardId(it) to doubleArrayOf(1000.0,1000.0) })
         val run=SafariRun(0)

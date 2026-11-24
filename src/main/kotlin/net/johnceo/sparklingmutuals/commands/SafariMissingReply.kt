@@ -56,7 +56,7 @@ object SafariMissingReply {
             result.add("Uniques left to capture: ${left.joinToString(", ").ifEmpty { "None" }}")
         }
         if (!party.ready) return result
-        fun needs(name: String) = BiomeObjectiveConfig.needs(name, party) && !run.sparklingComplete(name,party)
+        fun needs(name: String) = BiomeObjectiveConfig.needs(name, party, mode) && !run.sparklingComplete(name,party)
         when(biome) {
             SafariBiome.CAVERN -> {
                 if(needs("Rockmite") && mounds > 0) result.add("Mounds: $mounds")

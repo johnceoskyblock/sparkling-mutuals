@@ -2,7 +2,7 @@ package net.johnceo.sparklingmutuals.safari
 
 import net.johnceo.sparklingmutuals.commands.PartyChat
 
-/** Collect one reporting window, favor fewer prior hotspot wins, then use a shared UUID tie-break. */
+/** Chat fallback for a reporting window when the assignment service is unavailable. */
 class HotspotAssignments(private val wins: MutableMap<String,Int> = mutableMapOf()) {
     private var firstReportAt: Long? = null
     private val reports=linkedMapOf<String,SafariBiome>()
@@ -80,12 +80,17 @@ class HotspotAssignments(private val wins: MutableMap<String,Int> = mutableMapOf
                 if(first!=null && now-first>=250) {
                     val free=SafariBiome.entries.filter { it !in locked.values }.toMutableSet()
                     val added=linkedMapOf<String,SafariBiome>()
-                    val ranked=arrivals.keys.sortedWith(compareBy<String> { preRunWins?.get(it) ?: wins[it] ?: 0 }
+                    val priorWins = preRunWins ?: wins
+                    val claims = claimOrder(priorWins, coordinated, uuids)
+                    free.toList().forEach { biome ->
+                        arrivals.keys.filter { arrivals[it] == biome }.minWithOrNull(claims)?.let { member ->
+                            added[member] = biome
+                            free.remove(biome)
+                        }
+                    }
+                    val ranked=arrivals.keys.filter { it !in added }.sortedWith(compareBy<String> { priorWins[it] ?: 0 }
                         .thenBy { identity(it,uuids).hashCode() }.thenBy { identity(it,uuids) })
-                    ranked.forEach { member -> arrivals[member]?.takeIf { it in free }?.let {
-                        added[member]=it;free.remove(it)
-                    } }
-                    ranked.filter { it !in added }.zip(free).forEach { (member,biome) -> added[member]=biome }
+                    ranked.zip(free).forEach { (member,biome) -> added[member]=biome }
                     if(added.isNotEmpty()) finish(locked+added)
                 }
             }
@@ -102,7 +107,7 @@ class HotspotAssignments(private val wins: MutableMap<String,Int> = mutableMapOf
         val ordered=reports.filterKeys { it in expected }.toMutableMap()
         ordered.putIfAbsent(name,actual)
         // A roster entry alone does not prove admission. The chat fallback only knows reporters.
-        val resultMap=allocate(ordered,uuids,wins)
+        val resultMap=allocate(ordered,uuids,wins,coordinated)
         snapshot(expected)
         finish(resultMap)
         return finalAssignment
@@ -164,19 +169,22 @@ class HotspotAssignments(private val wins: MutableMap<String,Int> = mutableMapOf
         fun manualReportWindow(startedAt: Long?, now: Long) =
             startedAt != null && now - startedAt in 0L..30_000L
         private fun identity(name: String,uuids: Map<String,String>)=uuids[name.lowercase()]?.replace("-","")?.lowercase() ?: name.lowercase()
-        fun allocate(reports: Map<String,SafariBiome>, uuids: Map<String,String> = emptyMap(), wins: Map<String,Int> = emptyMap()): Map<String,SafariBiome> {
+        private fun claimOrder(wins: Map<String,Int>, clients: Set<String>, uuids: Map<String,String>) =
+            compareBy<String>({ wins[it] ?: 0 }, { it !in clients }).thenByDescending { identity(it,uuids) }
+
+        fun allocate(reports: Map<String,SafariBiome>, uuids: Map<String,String> = emptyMap(),
+            wins: Map<String,Int> = emptyMap(), clients: Set<String> = emptySet()): Map<String,SafariBiome> {
             val assigned=linkedMapOf<String,SafariBiome>()
             val used=mutableSetOf<SafariBiome>()
             val duplicates=mutableListOf<String>()
-            fun identity(name: String)=uuids[name.lowercase()]?.replace("-","")?.lowercase() ?: name.lowercase()
+            val claims = claimOrder(wins, clients, uuids)
             reports.entries.groupBy { it.value }.toSortedMap(compareBy { it.ordinal }).forEach { (biome,group) ->
-                val ranked=group.map { it.key }.sortedWith(compareBy<String> { wins[it] ?: 0 }
-                    .thenBy { identity(it).hashCode() }.thenBy(::identity))
+                val ranked=group.map { it.key }.sortedWith(claims)
                 assigned[ranked.first()]=biome
                 used.add(biome)
                 duplicates.addAll(ranked.drop(1))
             }
-            val ranked=duplicates.sortedWith(compareBy<String> { identity(it).hashCode() }.thenBy(::identity))
+            val ranked=duplicates.sortedWith(compareBy<String> { identity(it,uuids).hashCode() }.thenBy { identity(it,uuids) })
             val free=SafariBiome.entries.filter { it !in used }
             ranked.zip(free).forEach { (name,biome) -> assigned[name]=biome }
             return assigned

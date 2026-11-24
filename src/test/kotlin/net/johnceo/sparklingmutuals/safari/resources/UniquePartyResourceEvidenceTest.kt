@@ -1,5 +1,6 @@
 package net.johnceo.sparklingmutuals.safari.resources
 
+import net.johnceo.sparklingmutuals.config.WithOptionalSparklingChecks
 import net.johnceo.sparklingmutuals.safari.resources.renderBird
 import net.johnceo.sparklingmutuals.safari.resources.scanRenderedBirds
 
@@ -62,6 +63,7 @@ class UniquePartyResourceEvidenceTest {
         run.visitBiome(SafariBiome.CAVERN)
         assertEquals(0, SafariBiome.CAVERN.critters.count { run.uniqueComplete(it.name, state) })
     }
+    @WithOptionalSparklingChecks
     @Test fun `owned bird discoveries do not waive Unique spawning requirements`() {
         val run = forest(); val state = party()
         assertEquals(6, run.completed(SafariMode.UNIQUE, SafariBiome.FOREST.critters, state))
@@ -86,6 +88,7 @@ class UniquePartyResourceEvidenceTest {
         run.sparklingChecks.scan(SafariBiome.FOREST, 3.0, 47.0, emptyList(), birdsSpawned = run.birds.sparklingSpawned)
         assertEquals("fd", run.completion.announcement(run, SafariBiome.FOREST, SafariMode.UNIQUE, state))
     }
+    @WithOptionalSparklingChecks
     @Test fun `incoming party fd supplies Unique checking after all species have shared catches`() = net.johnceo.sparklingmutuals.config.withStartingItems {
         ConfigManager.fullClearMode = false; ConfigManager.sparklingMode = false
         val run = forest(); val state = party("Bluebird", "Parakeet", "Macaw")

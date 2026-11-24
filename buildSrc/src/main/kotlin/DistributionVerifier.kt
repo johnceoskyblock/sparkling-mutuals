@@ -204,9 +204,10 @@ private fun verifyEditionContents(edition: Edition, names: List<String>) {
             "mixin/SafariAttackKeyAccessor", "mixin/SafariAutoClickerMixin", "mixin/SafariCandleMixin", "mixin/SafariTicketScreenMixin")
         require(names.none { name -> forbidden.any { name.startsWith(prefix + it) } }) { "Full gameplay automation found in Standard" }
         val fullRenderers = listOf("safari/esp/TeammateEsp", "safari/esp/DuplicoGlow",
+            "safari/hideyho/HideyhoSpotter", "safari/hideyho/HideyhoLocationWatch", "safari/hideyho/HideyhoHiding",
             "mixin/CritterTextDisplayMixin", "mixin/SafariShinyMixin")
         require(names.none { it.removePrefix(prefix).removeSuffix(".class").substringBefore('$') in fullRenderers }) {
-            "Full nameplate, unrestricted glow or teammate renderer found in Standard"
+            "Full-only visual feature found in Standard"
         }
     }
 }

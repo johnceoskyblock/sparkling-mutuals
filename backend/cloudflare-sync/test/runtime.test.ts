@@ -4,9 +4,32 @@ import type {Env,Coordinator} from '../src/index';
 const a='1'.repeat(32),b='2'.repeat(32);
 afterEach(()=>reset());
 async function auth(id:string){const r=await SELF.fetch('https://backup.test/v1/auth/uuid/session',{method:'POST',body:JSON.stringify({uuid:id})});expect(r.status).toBe(200);return (await r.json() as any).token;}
-async function routing(id:string,token:string,unusableMs=30000){const r=await SELF.fetch('https://backup.test/v1/route',{method:'POST',headers:{Authorization:`Bearer ${token}`},body:JSON.stringify({version:1,lobby:'m123',self:id,roster:[a,b],nonce:id,action:'check',unusableMs})});expect(r.status).toBe(200);return r.json() as Promise<any>;}
-async function socket(id:string,token:string,gen:string,roster=[a,b],transport=1){const r=await SELF.fetch('https://backup.test/v1/sync',{headers:{Upgrade:'websocket',Authorization:`Bearer ${token}`,'X-SafariUtils-Lobby':'m123','X-SafariUtils-Player':id,'X-SafariUtils-Roster':roster.join(','),'X-SM-Generation':gen,'X-SM-Visit':id,...(transport>1?{'X-SafariUtils-Sync-Protocol':String(transport)}:{})}});expect(r.status).toBe(101);const ws=r.webSocket!;ws.accept();const frames:any[]=[];ws.addEventListener('message',e=>{frames.push(JSON.parse(e.data as string));});return {ws,frames};}
+async function routing(id:string,token:string,unusableMs=30000,lobby='m123'){const r=await SELF.fetch('https://backup.test/v1/route',{method:'POST',headers:{Authorization:`Bearer ${token}`},body:JSON.stringify({version:1,lobby,self:id,roster:[a,b],nonce:id,action:'check',unusableMs})});expect(r.status).toBe(200);return r.json() as Promise<any>;}
+async function socket(id:string,token:string,gen:string,roster=[a,b],transport=1,lobby='m123'){const r=await SELF.fetch('https://backup.test/v1/sync',{headers:{Upgrade:'websocket',Authorization:`Bearer ${token}`,'X-SafariUtils-Lobby':lobby,'X-SafariUtils-Player':id,'X-SafariUtils-Roster':roster.join(','),'X-SM-Generation':gen,'X-SM-Visit':id,...(transport>1?{'X-SafariUtils-Sync-Protocol':String(transport)}:{})}});expect(r.status).toBe(101);const ws=r.webSocket!;ws.accept();const frames:any[]=[];ws.addEventListener('message',e=>{frames.push(JSON.parse(e.data as string));});return {ws,frames};}
 async function flush(){await new Promise(resolve=>setTimeout(resolve,30));}
+it('welcomes a player with only their cached hotspot order across Safari lobbies',async()=>{
+ const ta=await auth(a),tb=await auth(b),first=await routing(a,ta);
+ const x=await socket(a,ta,first.generation);
+ const order=['HAUNTED','CAVERN','ICY','FOREST'];
+ const send=(sequence:number,kind:string,payload:object)=>x.ws.send(JSON.stringify({sequence,kind,payload:JSON.stringify({version:1,...payload})}));
+ const hello={action:'hello',display:true,ticketed:false,leader:true,present:[a],locked:{}};
+ send(1,'F',{action:'begin'});send(2,'F',{action:'done'});
+ send(3,'H',{...hello,hotspotPreference:order});
+ send(4,'H',{...hello,hotspotPreference:['ICY','ICY','FOREST','CAVERN']});
+ const ns=(env as unknown as Env).COORDINATOR,stub=ns.get(ns.idFromName('coordinator-v1'));
+ const cached=()=>runInDurableObject(stub,(_instance:any,state)=>
+  state.storage.sql.exec<{player:string;ranking:string}>('SELECT player,ranking FROM hotspot_preferences').toArray());
+ await expect.poll(cached,{timeout:2000,interval:10}).toEqual([{player:a,ranking:JSON.stringify(order)}]);
+ const next=await routing(a,ta,30000,'m987');await routing(b,tb,0,'m987');
+ expect(next.generation).not.toBe(first.generation);
+ const y=await socket(a,ta,next.generation,[a,b],1,'m987');
+ const z=await socket(b,tb,next.generation,[a,b],1,'m987');
+ await expect.poll(()=>y.frames[0]?.hotspotPreference,{timeout:2000,interval:10}).toEqual(order);
+ await expect.poll(()=>z.frames[0]?.type,{timeout:2000,interval:10}).toBe('welcome');
+ expect(y.frames[0].features).toContain('hotspot-preferences-v1');
+ expect(z.frames[0]).not.toHaveProperty('hotspotPreference');
+ x.ws.close();y.ws.close();z.ws.close();
+});
 async function completionSocket(id:string,token:string,gen:string){
  const r=await SELF.fetch('https://backup.test/v1/completion-sync',{headers:{Upgrade:'websocket',Authorization:`Bearer ${token}`,'X-SafariUtils-Lobby':'m123','X-SafariUtils-Player':id,'X-SafariUtils-Roster':[a,b].join(','),'X-SM-Generation':gen,'X-SM-Visit':id}});
  expect(r.status).toBe(101);const ws=r.webSocket!;ws.accept();const frames:any[]=[];ws.addEventListener('message',e=>{frames.push(JSON.parse(e.data as string));});return {ws,frames};

@@ -8,3 +8,8 @@ class SafariBannerOptions {
     @JvmField @ConfigOption(name="Run complete",desc="") @Accordion val complete=BannerOption(BannerKind.RUN_COMPLETE)
     @JvmField @ConfigOption(name="Warping now",desc="") @Accordion val warp=BannerOption(BannerKind.WARP)
 }
+
+class EncountersBanners : CommonEncounterBanners() {
+    @JvmField @ConfigOption(name = "Hideyho location", desc = "Announce inside or outside while you are in Haunted. Unique and Full Clear modes only.")
+    @Accordion val hideyho = BannerOption(BannerKind.HIDEYHO_LOCATION)
+}

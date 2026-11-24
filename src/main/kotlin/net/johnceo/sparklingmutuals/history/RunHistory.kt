@@ -18,28 +18,9 @@ import net.minecraft.client.Minecraft
 object RunHistory {
     class Data(var nextNumber: Int = 1, var runs: MutableList<RunRecord> = mutableListOf(),
                var sessionStarts: List<Long> = emptyList(),
-               private var hotspotPartyRoster: Set<String>? = null, private var hotspotPartySince: Long = 0,
-               var pricedInstaSell: Boolean? = null) {
-        internal fun observeHotspotRoster(roster: Set<String>, now: Long): Boolean {
-            if (hotspotPartyRoster == roster) return false
-            if (hotspotPartyRoster != null) breakHotspotStreak(now)
-            hotspotPartyRoster = roster
-            return true
-        }
-
-        internal fun breakHotspotStreak(now: Long): Boolean {
-            val changed = hotspotPartyRoster != null || now > hotspotPartySince
-            hotspotPartyRoster = null
-            hotspotPartySince = maxOf(hotspotPartySince, now)
-            return changed
-        }
-
-        internal fun hotspotRunsFor(roster: Set<String>): Int =
-            if (roster == hotspotPartyRoster) HistoryQueries.consecutiveHotspotRuns(runs, roster, hotspotPartySince) else 0
-    }
+               var pricedInstaSell: Boolean? = null)
     private var data = Data()
-    private var hotspotRunCount: Pair<Set<String>, Int>? = null
-    private var hotspotRosterRevision = Long.MIN_VALUE
+    private var hotspotRunCount: Pair<Pair<Set<String>, Long?>, Int>? = null
     private var cachedSessionStats: SafariSessionStats? = null
     private val session = LiveHistorySession()
     private val tally get() = session.tally
@@ -57,13 +38,13 @@ object RunHistory {
         ProfitPeriods.currentRuns(runs, SafariProfitPeriod.SESSION, sessionStarts.lastOrNull(), System.currentTimeMillis())
     ).also { cachedSessionStats = it }
     internal val priceChangePending get() = data.pricedInstaSell?.let { it != ConfigManager.runCoinsInstaSell } == true
-    internal fun hotspotRunsFor(roster: Set<String>): Int {
-        hotspotRunCount?.takeIf { it.first == roster }?.let { return it.second }
-        return data.hotspotRunsFor(roster).also { hotspotRunCount = roster to it }
-    }
-
-    internal fun hotspotPartyMembershipChanged() {
-        if (data.breakHotspotStreak(System.currentTimeMillis())) save()
+    internal fun hotspotRunsFor(roster: Set<String>?, run: SafariRun?): Int {
+        val runParty = run?.runParty?.takeIf { it.presentTogether }?.members?.keys
+        val party = runParty ?: roster ?: return 0
+        val liveStart = run?.takeIf { it.runParty.hotspotUsed && it.entry.admitted && !it.historyExcluded }?.startedAt
+        val key = party to liveStart
+        hotspotRunCount?.takeIf { it.first == key }?.let { return it.second }
+        return HistoryQueries.consecutiveHotspotRuns(data.runs, party, liveStart).also { hotspotRunCount = key to it }
     }
 
     fun newSession(now: Long = System.currentTimeMillis()): Result<Unit> {
@@ -124,12 +105,6 @@ object RunHistory {
     fun onTicket() { if (HistoryServerPolicy.allows()) session.onTicket(SafariTracking.ledger.current) }
 
     fun tick(client: Minecraft) {
-        if (PartyManager.revision != hotspotRosterRevision) {
-            client.player?.uuid?.toString()?.let(PartyManager::withLocal)?.let { roster ->
-                hotspotRosterRevision = PartyManager.revision
-                if (data.observeHotspotRoster(roster, System.currentTimeMillis())) save()
-            }
-        }
         HistoryServerPolicy.allows(client)
         session.sync(SafariTracking.ledger.current) { finish(it, client) }
         val current = session.active ?: return

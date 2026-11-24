@@ -95,6 +95,9 @@ class SafariSettings {
         @JvmField @ConfigOption(name = "Unique mode", desc = "") @Accordion val unique = Unique()
         @JvmField @ConfigOption(name = "Full clear mode", desc = "") @Accordion val fullClear = FullClear()
         @JvmField @ConfigOption(name = "Sparkling mode", desc = "") @Accordion val sparkling = Sparkling()
+        @JvmField @ConfigOption(name = "Sparkling Checks Options", desc =
+            "In Unique mode, enable checks for critters your party asks you to check for sparkling. For faster runs, leave the other checks off and catch one of each critter. Automatic biome reports (fd, hd, cd) follow your selected checks.") @Accordion
+        val sparklingChecks = BiomeObjectiveToggles.checks()
     }
 
     class FullClear {
@@ -122,6 +125,12 @@ class SafariSettings {
         @ConfigEditorBoolean var profitable = ConfigManager.profitableShardEsp
     }
     class Party {
+        @JvmField @ConfigOption(name = "Biome Hotspot Preferences", desc = "Rank the biomes to break ties between players with the same hotspot and win count.")
+        @ConfigEditorButton(buttonText = "Edit priorities")
+        val hotspotPreferences = Runnable {
+            val client = Minecraft.getInstance()
+            (client.smScreen as? SafariConfigScreen)?.let { client.smSetScreen(HotspotPreferencesScreen(it)) }
+        }
         @JvmField @ConfigOption(name = "Announce biome completion", desc = "Send fd, cd, id or hd in party chat when a biome is complete. Completion still syncs when this is off.")
         @ConfigEditorBoolean var biomeReports = ConfigManager.autoBiomeReports
         @JvmField @ConfigOption(name = "Announce starting quest items", desc = "Tell the party which quest items you started with and remind you to use them.")
@@ -372,7 +381,7 @@ class SafariSettings {
         @ConfigEditorBoolean var darkness = ConfigManager.removeDarkness
     }
     class Alerts {
-        @JvmField @ConfigOption(name = "Include sparkling catch count", desc = "Add the catch count to your sparkling party message.")
+        @JvmField @ConfigOption(name = "Include sparkling catch count", desc = "Show the total recorded catches of that sparkling critter in party chat.")
         @ConfigEditorBoolean var catchCount = ConfigManager.sparklingCatchCount
         @JvmField @ConfigOption(name = "Unique sparkling catch alert", desc = "Celebrate when you catch a sparkling type you did not already have.")
         @ConfigEditorBoolean var caught = ConfigManager.specialCatchAlert
@@ -447,8 +456,6 @@ class SafariSettings {
         @JvmField @ConfigOption(name = "Show sparkling-check reminder", desc = "Show a reminder while sparkling checks are still needed.") @ConfigEditorBoolean var shinyReminder=ConfigManager.objectiveShinyReminder
         @JvmField @ConfigOption(name = "HUD rows", desc = "Choose what appears on this HUD.") @Accordion
         val rows = BiomeObjectiveToggles.rows()
-        @JvmField @ConfigOption(name = "Optional sparkling checks", desc = "Skip these checks in Unique and Sparkle mode. Required captures still count.") @Accordion
-        val checks = BiomeObjectiveToggles.checks()
     }
     class ProgressRows {
         @JvmField @ConfigOption(name = "Overall progress", desc = "")
@@ -617,7 +624,7 @@ class SafariSettings {
         val pathWidth = ConfigManager.validCapsulePathWidth(safari.capsulePathWidth)
         val alwaysOnCrittersChanged = alwaysOnCritters.apply(SafariEspConfig.alwaysOnToggles)
         val chatTogglesChanged = safari.visibility.chatToggles.apply()
-        val objectivesChanged = BiomeObjectiveConfig.apply(tracking.objectivesHud.rows, tracking.objectivesHud.checks)
+        val objectivesChanged = BiomeObjectiveConfig.apply(tracking.objectivesHud.rows, modes.sparklingChecks)
         val splitTimeFormat = SplitTimeFormat.entries.getOrElse(tracking.splitsHud.timeFormat) { SplitTimeFormat.MILLISECONDS }
         val progressRows = tracking.progressHud.rows.values()
         val generalChanged = ConfigManager.progressRows != progressRows || espChanged || highlightStyleChanged || modWideCrittersChanged || profitableCrittersChanged || alwaysOnCrittersChanged || chatTogglesChanged || objectivesChanged ||

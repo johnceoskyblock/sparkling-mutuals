@@ -21,14 +21,12 @@ class BannerSettings {
         BannerConfig.enabled=enabled
         javaClass.declaredFields.filter { it.isAnnotationPresent(Accordion::class.java) && it.name!="appearance" }.forEach { field ->
             val group=field.get(this)
-            group.javaClass.declaredFields.filter { it.type==BannerOption::class.java }.forEach { changed=(it.get(group) as BannerOption).apply() || changed }
+            group.javaClass.fields.filter { it.type==BannerOption::class.java }.forEach { changed=(it.get(group) as BannerOption).apply() || changed }
         }
         return changed
     }
 }
-class EncountersBanners {
-    @JvmField @ConfigOption(name = "Hideyho location", desc = "Announce inside or outside while you are in Haunted. Unique and Full Clear modes only.")
-    @Accordion val hideyho=BannerOption(BannerKind.HIDEYHO_LOCATION)
+open class CommonEncounterBanners {
     @JvmField @ConfigOption(name="All bird food collected",desc="") @Accordion val food=BannerOption(BannerKind.BIRD_FOOD)
     @JvmField @ConfigOption(name = "Bird feeder empty", desc = "") @Accordion val feeder=BannerOption(BannerKind.FEEDER_EMPTY)
     @JvmField @ConfigOption(name="All gems ready",desc="") @Accordion val gems=BannerOption(BannerKind.GEMS)

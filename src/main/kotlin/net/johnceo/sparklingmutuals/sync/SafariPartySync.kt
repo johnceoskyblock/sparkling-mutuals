@@ -1,9 +1,11 @@
 package net.johnceo.sparklingmutuals.sync
 
+import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import net.johnceo.sparklingmutuals.debug.SafariDeveloper
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents
 import net.johnceo.sparklingmutuals.config.ConfigManager
+import net.johnceo.sparklingmutuals.config.HotspotPreferences
 import net.johnceo.sparklingmutuals.config.BiomeObjectiveConfig
 import net.johnceo.sparklingmutuals.hud.HotspotAssignmentAlert
 import net.johnceo.sparklingmutuals.party.PartyManager
@@ -44,6 +46,7 @@ object SafariPartySync {
     private var sampleAt=0L
     private var helloAt=0L
     private var lastHello=""
+    private var lastHotspotPreference: List<SafariBiome>? = null
     private var hotspotRetryAt=0L
     private val local=IntArray(PartySyncProtocol.AGGREGATE_SIZE).apply {
         this[17] = -1
@@ -89,6 +92,7 @@ object SafariPartySync {
             if(transport.runCapability) state?.invalidateInventory()
             state?.acknowledgedReports?.clear()
             lastHello=""; helloAt=0
+            lastHotspotPreference=transport.cachedHotspotPreference
             bootstrapQueue.clear()
             if(transport.backup)state?.let { current ->
                 current.localBootstrap(local,localNests,localSparkling)
@@ -202,8 +206,14 @@ object SafariPartySync {
             })
         if(transport.coordinationAvailable && transport.hotspotCapability && transport.biomeCapability && matchingParty) {
             val hello=hello(client,current)
-            if(hello!=lastHello || transport.retryHello(now,helloAt)) {
-                if(send("H",hello)) { lastHello=hello;helloAt=now }
+            val preference=HotspotPreferences.order.takeIf { transport.hotspotPreferencesCapability && it != lastHotspotPreference }
+            val fingerprint=hello.toString()
+            if(fingerprint!=lastHello || preference!=null || transport.retryHello(now,helloAt)) {
+                preference?.let { order -> hello.add("hotspotPreference",JsonArray().apply { order.forEach { add(it.name) } }) }
+                if(send("H",hello.toString())) {
+                    lastHello=fingerprint;helloAt=now
+                    if(preference!=null) lastHotspotPreference=preference
+                }
             }
             if(lastHello.isNotEmpty()) {
                 if (now >= hotspotRetryAt && !current.conflict) {
@@ -347,7 +357,7 @@ object SafariPartySync {
             report(it,parsed.biome)
         }
     }
-    private fun hello(client: Minecraft,current: PartySyncState): String = JsonObject().apply {
+    private fun hello(client: Minecraft,current: PartySyncState): JsonObject = JsonObject().apply {
         addProperty("version",1);addProperty("action","hello");addProperty("display",ConfigManager.hotspotAnnouncer)
         addProperty("ticketed",ticketed)
         addProperty("leader",PartyManager.isLeader(client.player!!.uuid.toString()))
@@ -358,7 +368,7 @@ object SafariPartySync {
             ?.sorted()?.forEach(present::add)
         add("present",present)
         add("locked",JsonObject().apply { current.locks.forEach { (id,biome) -> addProperty(id,biome.name) } })
-    }.toString()
+    }
     private fun sendH(action: String,body: JsonObject.()->Unit={}) = send("H",JsonObject().apply {
         addProperty("version",1);addProperty("action",action);body()
     }.toString())
@@ -748,11 +758,11 @@ object SafariPartySync {
     }
 
     internal fun objectiveSupplies(run: SafariRun?, biome: SafariBiome,
-        party: net.johnceo.sparklingmutuals.safari.PartySparklingState): List<Pair<String, Map<FloorDropType, Int>>> {
+        party: PartySparklingState, mode: SafariMode): List<Pair<String, Map<FloorDropType, Int>>> {
         if (biome == SafariBiome.FOREST) {
             val current = state ?: return emptyList()
             if (run == null || run !== SafariTracking.ledger.current || !transport.ready ||
-                !party.ready || listOf("Bluebird", "Parakeet", "Macaw").none { BiomeObjectiveConfig.needs(it, party) }) return emptyList()
+                !party.ready || listOf("Bluebird", "Parakeet", "Macaw").none { BiomeObjectiveConfig.needs(it, party, mode) }) return emptyList()
             val client = Minecraft.getInstance()
             return current.roster.filter { it in lastRoster }.mapNotNull { id ->
                 val items = startingFoodSlots.keys.associateWith { food ->

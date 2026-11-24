@@ -88,13 +88,22 @@ public final class UpdateInstall {
     }
 
     public boolean autoUpdate() throws IOException {
-        return "true".equals(readProperties(updates.resolve("preferences.properties")).getProperty("autoUpdate"));
+        var path = updates.resolve("preferences.properties");
+        Properties properties = readProperties(path);
+        String migration = "migration.autoUpdateOn445";
+        if (!"true".equals(properties.getProperty(migration))) {
+            properties.setProperty("autoUpdate", "true");
+            properties.setProperty(migration, "true");
+            writeProperties(path, properties);
+        }
+        return "true".equals(properties.getProperty("autoUpdate"));
     }
 
     public void saveAutoUpdate(boolean enabled) throws IOException {
-        Properties properties = new Properties();
+        var path = updates.resolve("preferences.properties");
+        Properties properties = readProperties(path);
         properties.setProperty("autoUpdate", Boolean.toString(enabled));
-        writeProperties(updates.resolve("preferences.properties"), properties);
+        writeProperties(path, properties);
     }
 
     public Status status() throws IOException {

@@ -1,5 +1,6 @@
 package net.johnceo.sparklingmutuals.safari.ui
 
+import net.johnceo.sparklingmutuals.config.WithOptionalSparklingChecks
 import java.util.UUID
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.safari.PartySparklingState
@@ -12,6 +13,7 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class NestCounterPanelTest {
+    @WithOptionalSparklingChecks
     @Test fun `mid-run bee population resolves the counter only while site coverage is known`() {
         val run = SafariRun(0).apply {
             visitBiome(SafariBiome.FOREST)

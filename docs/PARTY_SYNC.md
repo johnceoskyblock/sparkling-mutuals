@@ -13,13 +13,15 @@ Shared Safari sync is always active for eligible Safari parties; there is no con
 
 Per-critter completion on the Mutuals completion channel feeds the mode HUDs. Unique combines capture proof with shared checks for needed Sparkling variants. Sparkle consumes shared render checks, and Full Clear consumes shared capture and render completion. Positive local evidence of unfinished sources or remaining captures can contradict a peer result. Shared proof stays separate from local report and PB evidence.
 
-Teammate starting food and Shining Coins remain available as shared inventory information, but never block this client's mode completion or biome reporting. Local starting items still follow this client's announcement preference. Backend biome reports, valid manual reports, and completed local or shared mode requirements update the Progress HUD's biome icon.
+Teammate starting food and Shining Coins remain available as shared inventory information, but never block this client's mode completion or biome reporting. Local objectives and progress use the same filtered inventory. With starting-item announcements off, unused starting coins are excluded. Starting bird food still counts locally when the player first enters Forest within 30 seconds. Backend biome reports, valid manual reports, and completed local or shared mode requirements update the Progress HUD's biome icon.
 
 Public encounter chat is processed immediately by the existing trackers. Its aggregate-only changes upload as `catchUpOnly`; inventory, feeder or private/world observations in the same batch take live-delivery precedence. Reconnect publishes a live snapshot. Received terminal encounter flags update objectives, not capture totals.
 
 ## Hotspot authority and fallback
 
 The backend owns allocation and fairness when `hotspots-v1` and `biome-reports-v1` are advertised. Clients send confirmed presence and actual reports; party membership alone does not establish attendance. The backend's validated final assignment is displayed directly. The verified current party leader also derives chat instructions from finalized assignments after a two-second grace period, without requiring backend notifications. Accepted peer sync messages and coordinated SM/SU hotspot reports identify known assignment clients; roster mapping alone does not. Known clients remain recognized through reconnects within the visit. Instructions are deduplicated per recipient and biome. Backend notification IDs are acknowledged only after actual chat submission.
+
+Servers that advertise `hotspot-preferences-v1` accept a saved biome preference order in the existing hello. [Hotspot preferences protocol](PARTY_SYNC_HOTSPOT_PREFERENCES.md)
 
 Wait up to seven seconds for initial backend authority. If unavailable, retain the existing leader-owned chat allocation. Finalized chat choices are imported as locks on backend recovery. No displayed assignment may move. A backend-owned visit retains its results and reconnects through outages instead of starting a competing chat allocation. Conflicts freeze new automatic assignments/instructions.
 

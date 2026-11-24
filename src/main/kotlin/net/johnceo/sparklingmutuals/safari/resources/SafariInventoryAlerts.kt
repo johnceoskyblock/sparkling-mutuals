@@ -74,13 +74,12 @@ object SafariInventoryAlerts {
             run.deathLoss(losses)
         }
         run?.gems?.inventory(stacks.map { SafariRules.strip(it.first).trim() to it.second })
-        SafariTracking.ledger.current?.inventoryEvidence(stacks)
+        run?.inventoryEvidence(stacks)
         if (++ticks < 10) return
         ticks = 0
-        SafariFloorDrops.state.inventory(stacks, SafariTracking.ledger.current?.inStartingInventoryWindow(System.currentTimeMillis()) == true)
-        val birds = SafariTracking.ledger.current?.birds
-        birds?.inventory(stacks)
-        SafariTracking.ledger.current?.sparklingChecks?.inventory(stacks)
+        SafariFloorDrops.state.inventory(stacks, run?.inStartingInventoryWindow(System.currentTimeMillis()) == true)
+        // Read the filtered objective inventory that inventoryEvidence already applied this tick.
+        val birds = run?.birds
         val notices=readiness.poll(SafariAssist.biome,mapOf(
             InventoryAlert.GEMS to (run?.gems?.ready==true && run.gems.opened.not()),
             InventoryAlert.BIRD_FOOD to (birds?.foodsComplete==true),

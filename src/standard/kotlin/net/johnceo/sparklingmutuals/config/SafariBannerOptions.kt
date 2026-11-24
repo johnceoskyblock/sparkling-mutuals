@@ -9,3 +9,5 @@ class SafariBannerOptions {
     @JvmField @ConfigOption(name = "Party member kicked", desc = "Alert when a teammate reports a kick in party chat during Safari.")
     @Accordion val partyKicked = BannerOption(BannerKind.PARTY_KICKED)
 }
+
+class EncountersBanners : CommonEncounterBanners()

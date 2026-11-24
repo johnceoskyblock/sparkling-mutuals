@@ -15,7 +15,7 @@
 
 ## What makes this critter different
 
-- The inside/outside banner works only in Haunted, in Unique/Full Clear, with its setting enabled. It announces the starting location once and the settled hiding location once. The initial "you found me" greeting does not end the quest watch. Leaving Haunted pauses observation and retains a pending hiding-location check for returning; disabling the feature or switching to Sparkle cancels it. Queued/active banners are invalid outside Haunted. Capture tracking stays independent.
+- In Full and Full No Auto Update, the inside/outside banner works in Haunted during Unique and Full Clear when enabled. It announces the starting location once and the settled hiding location once. The initial "you found me" greeting does not end the quest watch. Leaving Haunted pauses observation and retains a pending hiding-location check for returning. Disabling the feature or switching to Sparkling cancels it. Queued or active banners are invalid outside Haunted. Capture tracking stays independent.
 
 ## Spawn prerequisites
 

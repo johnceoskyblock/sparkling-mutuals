@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Path
+import java.nio.file.Files
 import java.util.Properties
 
 class SafariBannerTest {
@@ -105,5 +106,31 @@ class SafariBannerTest {
         assertSame(settings.customization.alert,settings.safari.alerts.appearance)
         settings.banner.encounters.food.enabled=false;settings.apply();ConfigManager.init(dir)
         assertFalse(BannerConfig.options.getValue(BannerKind.BIRD_FOOD).enabled)
+    }
+    @Test fun `Hideyho location is restored once in Full and preserved by Standard settings`() {
+        val path = dir.resolve("sparkling-mutuals.properties")
+        val enabled = "banner.hideyho_location.enabled"
+        Files.writeString(path, "$enabled=false\nbanner.hideyho_location.text=Custom <LOCATION>\n")
+        ContestConfig.init(dir)
+        ConfigManager.init(dir, "4.4.5")
+        val settings = SafariSettings()
+        val row = SettingsCatalog(settings).locate(SettingsTarget("Banner", listOf("encounters", "hideyho", "enabled")))?.second?.last()
+        if (SafariSettings.standardEdition) {
+            assertNull(row)
+            assertFalse(BannerKind.HIDEYHO_LOCATION.supported)
+            ConfigManager.saveSettings()
+            ConfigManager.resetSettings()
+        } else {
+            assertEquals(true, row?.read())
+            row!!.write(false)
+            assertTrue(settings.banner.apply())
+            ConfigManager.saveSettings()
+            ConfigManager.init(dir, "4.4.5")
+            assertFalse(BannerConfig.options.getValue(BannerKind.HIDEYHO_LOCATION).enabled)
+        }
+        val saved = Properties().apply { Files.newInputStream(path).use(::load) }
+        assertEquals("false", saved.getProperty(enabled))
+        assertEquals("Custom <LOCATION>", saved.getProperty("banner.hideyho_location.text"))
+        assertEquals(if (SafariSettings.standardEdition) null else "true", saved.getProperty(BannerConfig.HIDEYHO_MIGRATION))
     }
 }

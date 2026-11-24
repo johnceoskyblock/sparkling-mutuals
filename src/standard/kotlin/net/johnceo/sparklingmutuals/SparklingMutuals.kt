@@ -37,7 +37,6 @@ import net.johnceo.sparklingmutuals.safari.SafariTracking
 import net.johnceo.sparklingmutuals.safari.automation.SafariDowntime
 import net.johnceo.sparklingmutuals.safari.completion.SafariBiomeClearTracking
 import net.johnceo.sparklingmutuals.safari.esp.SafariEsp
-import net.johnceo.sparklingmutuals.safari.hideyho.HideyhoSpotter
 import net.johnceo.sparklingmutuals.safari.resources.SafariInventoryAlerts
 import net.johnceo.sparklingmutuals.safari.sparkling.SparklingEncounters
 import net.johnceo.sparklingmutuals.safari.structures.BeeNests
@@ -77,7 +76,6 @@ object SparklingMutuals : ModInitializer {
         CapsulePreview.register()
         net.johnceo.sparklingmutuals.safari.SafariEntryCooldown.register()
         PartyManager.init()
-        HideyhoSpotter.register()
         net.johnceo.sparklingmutuals.safari.StandardSafariKeys.register()
         SafariTracking.register()
         net.johnceo.sparklingmutuals.hud.HotspotAssignmentAlert.register()
@@ -88,7 +86,6 @@ object SparklingMutuals : ModInitializer {
         PlaytimeReader.register()
         BeeNests.register()
         HoneyHives.register()
-        ContestTracker.register()
 
         net.johnceo.sparklingmutuals.skyblock.SkillOverflow.register()
         net.johnceo.sparklingmutuals.skyblock.UbiksCubeTimer.register()
@@ -156,7 +153,6 @@ object SparklingMutuals : ModInitializer {
         CapsulePreview.tick(client)
         DoomspiralLottery.tick(client)
         if (!DoomspiralLottery.active) net.johnceo.sparklingmutuals.hud.SafariAlertSequence.tick()
-        HideyhoSpotter.onClientTick(client)
         net.johnceo.sparklingmutuals.safari.automation.SafariPartyInput.tick(client)
         SafariDowntime.onClientTick(client)
     }
@@ -184,7 +180,6 @@ object SparklingMutuals : ModInitializer {
         SafariSparklingMode.reset()
         net.johnceo.sparklingmutuals.hud.HotspotAssignmentAlert.reset()
         SafariAssist.reset()
-        HideyhoSpotter.reset()
         SafariTracking.finish()
         SafariEsp.reset()
         SafariDowntime.transfer()

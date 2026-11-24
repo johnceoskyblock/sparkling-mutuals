@@ -40,15 +40,6 @@ class LocalVisibilityPolicyTest {
         queue.tick(2)
         assertFalse(queue.busy)
     }
-    @Test fun `Hideyho sighting is committed only when its banner starts`() {
-        val watch = net.johnceo.sparklingmutuals.safari.hideyho.HideyhoLocationWatch()
-        watch.context(true, net.johnceo.sparklingmutuals.safari.SafariBiome.HAUNTED)
-        val spot = net.johnceo.sparklingmutuals.safari.hideyho.HideyhoHiding.SPOTS.first()
-        assertEquals(spot, watch.settled(spot, 0, commit = false))
-        assertEquals(spot, watch.settled(spot, 100, commit = false))
-        assertEquals(spot, watch.settled(spot, 200))
-        assertNull(watch.settled(spot, 300))
-    }
     @Test fun `remote sightings do not consume first local discovery`() {
         val gate = VisibleDiscoveryMemory()
         assertFalse(gate.first("critter", false))

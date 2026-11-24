@@ -230,15 +230,18 @@ object ConfigManager {
             properties.setProperty("repartyDelaySeconds","22")
             properties.setProperty("migration.sparkleWarpTimers22_27","true")
         }
+        val resetOptionalChecks = BiomeObjectiveConfig.migrateOptionalChecks(properties)
+        val enableHideyhoBanner = BannerConfig.migrateHideyhoBanner(properties)
         personalBestConfig = PersonalBestConfig(configPath)
         personalBestConfig.load(properties, personalBests)
         loadSettings(properties)
-        if (introduceShardGuidance || updateWarpTimings || versionChanged) {
+        if (introduceShardGuidance || updateWarpTimings || resetOptionalChecks || enableHideyhoBanner || versionChanged) {
             PersonalBestConfig.write(configPath, properties, "Sparkling Mutuals configuration")
         }
     }
 
     private fun loadSettings(properties: Properties) {
+        HotspotPreferences.load(properties)
         progressRows = (listOf(null) + SafariBiome.entries).associateWith { biome ->
             ProgressRowDisplay.entries.firstOrNull { it.name == properties.getProperty(progressRowKey(biome)) }
                 ?: ProgressRowDisplay.BAR_AND_COUNT
@@ -302,6 +305,8 @@ object ConfigManager {
             setProperty("hotspotAnnouncer", hotspotAnnouncer.toString())
             setProperty("migration.shardSaleGuidanceV2", "true")
             setProperty("migration.sparkleWarpTimers22_27", "true")
+            setProperty(BiomeObjectiveConfig.OPTIONAL_CHECKS_MIGRATION, "true")
+            setProperty(BannerConfig.HIDEYHO_MIGRATION, "true")
         }
         PersonalBestConfig.write(configPath, defaults, "Sparkling Mutuals configuration")
         try {
@@ -335,6 +340,7 @@ object ConfigManager {
 
     internal fun saveSettings() {
         readSavedSettings().apply {
+            HotspotPreferences.save(this)
             remove("allowUncalibratedCapsuleEstimates")
             remove("safariEntryDryRun")
             remove("safariEntryApproach")

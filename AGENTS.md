@@ -7,7 +7,7 @@ Use `johnceoskyblock/sparkling-mutuals` for every edition. Read the relevant fea
 | Edition | Gradle property | JAR suffix before `+mc` | Behavior |
 | --- | --- | --- | --- |
 | Standard | `-Pedition=standard` (default) | None | Line-of-sight highlights and local sparkling alerts. Manual updates. |
-| Full | `-Pedition=full` | `-full` | Full gameplay features with verified update downloads. Automatic downloads default off. |
+| Full | `-Pedition=full` | `-full` | Full gameplay features with verified update downloads and a configurable Auto Update toggle. |
 | Full No Auto Update | `-Pedition=full-no-auto-update` | `-full-no-auto-update` | Full gameplay features with manual updates. |
 
 - Put tracking, modes, party sync, HUDs and history in `src/main` and shared tests in `src/test`. Use `src/standard` and `src/standardTest` for Standard replacements and exclusions. `src/noUpdates` and `src/noUpdatesTest` cover both editions without the updater. Keep the installer and its tests in `src/updater` and `src/updaterTest`.
