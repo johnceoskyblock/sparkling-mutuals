@@ -226,6 +226,10 @@ internal class PartySyncState(val self: String, roster: Set<String>) {
         }
         locks.putAll(next); return true
     }
+    /** Only the transport's accepted same-visit expansion may replace authoritative run identity. */
+    fun expandedRun(run: String) {
+        serverRun=run; revision=-1; notifications=emptyList(); acknowledgedReports.clear()
+    }
     val acknowledgedReports = mutableMapOf<String,SafariBiome>()
     fun hotspots(payload: JsonObject): Boolean = runCatching {
         if(PartySyncProtocol.integer(payload.get("version"),1,1)==null) return false

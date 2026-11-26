@@ -87,3 +87,19 @@ Each client sends a replaceable snapshot of all 37 species in the existing `S` s
 Changed snapshots are sampled every 500ms; unchanged evidence renews every ten seconds. Latest false flags replace earlier true flags. Evidence expires after 45 seconds, with server-supplied age deducted on reconnect replay. Exact visit/roster changes, disconnection or a new run clear received progress. Multiple players' counts use the maximum, never a sum of possibly overlapping UUID sightings or catches. Partial disjoint cohorts are deliberately not combined into a completed check.
 
 Mode progress, missing lists, fixed counters, capture status icons and the `!m` response use this evidence. Live local source contradictions and remaining Full Clear critters still take priority. Local source/capture checklists, local-only biome announcements, personal counts, PB eligibility and saved history splits exclude the new evidence. It cannot create captures, rewards or permanent history and is never echoed as new local proof. Completed run alerts may use shared presentation progress.
+
+## Optional v3 roster and visit extensions
+
+When the provider advertises `roster-expand-v1`, a confirmed strictly growing roster (same lobby, self and visit; maximum four UUIDs) expands on the open socket after flushing routine frames and completing renewal. The client pauses state sends, invalidates the old tag map/completion baseline and waits up to twelve seconds for a new welcome and ordered replay. Wire sequences, local observations, catches, locks and notification receipts survive. A rejected/unsupported/timed-out expansion uses normal reconnection; changed/replaced membership or lobby never uses expansion.
+
+`visit-ended-v1` adds `visitEnded:true` only to the sequenced leave for a confirmed departure, after flushing queued frames. A disconnect, temporary missing player/world, renewal or roster expansion does not claim that the visit ended.
+
+With `hotspot-preferences-v1`, welcome supplies the party-scoped saved order. **Party > Interactions > Biome Hotspot Preferences** ranks the four biomes. The existing saved preference controls hello publication. Hello sends a selected different order and known initial bird-food/coin grants, including known zero. Floor pickups, consumption and death losses do not change the initial grant. Backend assignments remain authoritative and locked assignments never reopen.
+
+Retry-After remains honored. Recognised admission/coordination failure reasons are retained in developer status without exposing headers, tokens or response bodies. The extensions require no new endpoint, transport version, credentials or deployment. Providers lacking these feature flags retain their current behavior.
+
+Reference: user-supplied Party Sync v3 Roster and Visit Reference.zip, PARTY_SYNC_V3_ROSTER_AND_VISIT.md, 26 November 2026. Local protocol tests do not certify live mixed-mod gameplay.
+
+## Strictly idle backup while primary is active
+
+The mod sends no backup authentication, routing registration/check/leave, or separate completion traffic while the primary is usable. It waits for thirty continuous seconds of primary unavailability before contacting the backup routing service. Recovery invalidates pending backup decisions and prevents a delayed response from switching a recovered client. Once a backup visit is actually adopted, its existing renewal/routing continuity remains active; the client does not simultaneously keep a primary socket active for that visit. An old primary lacking negotiated completion support gets no separate backup completion connection. Existing users need this client update; deploying the Worker alone does not remove old-client traffic.

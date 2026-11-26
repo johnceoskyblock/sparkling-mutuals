@@ -194,7 +194,7 @@ it('transport 3 batches ordinary relays, refreshes the full revision, and renews
  });
  const send=(ws:WebSocket,message:object)=>ws.send(JSON.stringify(message));
  const hello=(visitId:string,sequence=3)=>frame(sequence,'H',{action:'hello',visitId,resumeRunId:null,
-  capabilities:['run-reconciliation-v1','critter-completion-v1'],ticketed:true,display:true,leader:false,present:[a,b],locked:{}});
+  capabilities:['run-reconciliation-v1','critter-completion-v1'],ticketed:true,display:true,leader:false,present:[a,b],locked:{},hotspotPreference:['HAUNTED','FOREST','ICY','CAVERN']});
  const until=(fn:()=>unknown)=>expect.poll(fn,{timeout:3000,interval:10}).toBeTruthy();
  for(const ws of [x.ws,y.ws]){
   send(ws,frame(1,'F',{action:'begin'}));send(ws,frame(2,'F',{action:'done'}));
@@ -205,6 +205,10 @@ it('transport 3 batches ordinary relays, refreshes the full revision, and renews
  if(!y.frames.some(f=>f.type==='replay-complete'))send(y.ws,hello(vb,4));
  await until(()=>x.frames.some(f=>f.type==='replay-complete')&&y.frames.some(f=>f.type==='replay-complete'));
  expect(x.frames[0].features).toContain('efficient-transport-v1');
+ expect(x.frames[0].features).toContain('visit-ended-v1');
+ expect(x.frames[0].features).toContain('hotspot-preferences-v1');
+
+
  expect(y.frames[0].features).not.toContain('efficient-transport-v1');
  const runId=x.frames.find(f=>f.type==='replay-complete').runId;
  const rows=Array.from({length:37},()=>[1,2,3]);
@@ -220,5 +224,34 @@ it('transport 3 batches ordinary relays, refreshes the full revision, and renews
  send(x.ws,{type:'renew',token:ta});
  await until(()=>x.frames.some(f=>f.type==='renewed'));
  expect(x.frames.find(f=>f.type==='renewed').expiresInMillis).toBeLessThanOrEqual(600000);
- x.ws.close();y.ws.close();
+ const original=x.frames[0].connectionId;
+ expect(x.frames[0].features).toContain('roster-expand-v1');
+ send(x.ws,{type:'expand',connectionId:original,visitId:va,runId,roster:[a,b,'3'.repeat(32)]});
+ await until(()=>x.frames.filter(f=>f.type==='welcome').length===2);
+ const expanded=x.frames.filter(f=>f.type==='welcome')[1];
+ expect(expanded.connectionId).not.toBe(original);expect(expanded.roster).toEqual([a,b,'3'.repeat(32)]);
+ const ns=(env as unknown as Env).COORDINATOR,stub=ns.get(ns.idFromName('coordinator-v1'));
+ await runInDurableObject(stub,(instance:any,state)=>{
+  const active=state.getWebSockets().map(w=>w.deserializeAttachment() as any).find(v=>v.self===a);
+  expect(active.sequence).toBe(8);expect(active.protocol.visitId).toBe(va);expect(active.protocol.ready).toBe(false);
+  const preference=state.storage.sql.exec<{value:string}>('SELECT ranking AS value FROM hotspot_preferences WHERE roster=? AND player=?',[a,b].join(','),a).one();
+  expect(JSON.parse(preference.value)).toEqual(['HAUNTED','FOREST','ICY','CAVERN']);
+ });
+
+
+ const c='3'.repeat(32),tc=await auth(c);
+ for(const [id,token]of [[b,tb],[c,tc]]){
+  const r=await SELF.fetch('https://backup.test/v1/route',{method:'POST',headers:{Authorization:`Bearer ${token}`},body:JSON.stringify({version:1,lobby:'m123',self:id,roster:[a,b,c],nonce:id,action:'check',unusableMs:30000,confirmedExpansion:true})});expect(r.status).toBe(200);
+ }
+ const newer=await socket(b,tb,generation,[a,b,c],3),guest=await socket(c,tc,generation,[a,b,c],3);
+ const hello3=(visitId:string,sequence:number)=>frame(sequence,'H',{action:'hello',visitId,resumeRunId:runId,capabilities:['run-reconciliation-v1','critter-completion-v1'],ticketed:true,display:true,leader:false,present:[a,b,c],locked:{}});
+ send(x.ws,frame(9,'F',{action:'begin'}));send(x.ws,frame(10,'F',{action:'done'}));send(x.ws,hello3(va,11));
+ for(const [ws,visitId]of [[newer.ws,vb],[guest.ws,crypto.randomUUID()]] as const){send(ws,frame(1,'F',{action:'begin'}));send(ws,frame(2,'F',{action:'done'}));send(ws,hello3(visitId,3));}
+ await flush();send(x.ws,hello3(va,12));
+ await until(()=>x.frames.some(f=>f.type==='replay-complete'&&f.connectionId===expanded.connectionId));
+ send(x.ws,frame(13,'H',{action:'leave',visitId:va,runId,visitEnded:true}));
+ await until(()=>runInDurableObject(stub,(_i:any,state)=>{
+  const row=state.storage.sql.exec<{routing:string}>('SELECT routing FROM rooms WHERE id=?',generation).one();return JSON.parse(row.routing).members[a].retired;
+ }));
+ x.ws.close();y.ws.close();newer.ws.close();guest.ws.close();
 });

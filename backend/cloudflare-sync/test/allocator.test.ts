@@ -72,3 +72,12 @@ it('tab presence alone never admits or assigns a player',()=>{
  expect(x.allocate(90000)).toBe(false);expect(x.allocate(90001)).toBe(true);
  expect(x.locks).toEqual({[a]:'FOREST'});
 });
+
+it('uses grants and preferences only after fairness and preserves finalized locks',()=>{
+ const x=new Allocation([a,b]);
+ for(const id of [a,b])x.hello(id,{display:true,ticketed:true,leader:id===a,present:[a,b],locked:{},
+ hotspotPreference:['FOREST','ICY','HAUNTED','CAVERN'],startingItems:{birdFood:id===b?3:0,shiningCoins:0}},0);
+ x.report(a,'FOREST',0);x.report(b,'FOREST',0);x.allocate(0);expect(x.locks[b]).toBe('FOREST');
+ const before={...x.locks};x.hello(a,{display:true,ticketed:true,leader:true,present:[a,b],locked:{},startingItems:{birdFood:9}},10);
+ x.allocate(30000);expect(x.locks).toEqual(before);
+});

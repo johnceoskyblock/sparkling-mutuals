@@ -158,6 +158,47 @@ class PartySyncTransportEntryTest {
             } finally { transport.close(false) }
         }
     }
+    @Test fun `expanded roster replays on one socket and explicit departure is terminal`() {
+        Fixture().use { server ->
+            val t=PartySyncTransport(server.auth,server.ws)
+            val one=PartySyncTransport.Context("m88A",self,listOf(self))
+            val two=one.copy(roster=listOf(self,peer))
+            val c1="10000000-0000-0000-0000-000000000001"
+            val c2="10000000-0000-0000-0000-000000000002"
+            val run="20000000-0000-0000-0000-000000000001"
+            val nextRun="20000000-0000-0000-0000-000000000002"
+            fun welcome(c:String,roster:String)="""{"type":"welcome","self":"s","roster":$roster,"connectionId":"$c","features":["run-reconciliation-v1","efficient-transport-v1","roster-expand-v1","visit-ended-v1","hotspots-v1"]}"""
+            fun boundary(type:String,c:String,r:String)="""{"type":"$type","version":1,"connectionId":"$c","visitId":"${t.activeVisitId}","runId":"$r","status":"joined"}"""
+            try {
+                t.tick(one,System.currentTimeMillis())
+                val socket=server.connections.poll(5,TimeUnit.SECONDS) ?: error("No upgrade")
+                server.send(socket,welcome(c1,"[\"s\"]")); await { t.drainIncoming();t.coordinationAvailable }
+                server.send(socket,boundary("reconcile",c1,run));server.send(socket,boundary("replay-complete",c1,run))
+                await {t.drainIncoming().ready}
+                assertTrue(t.send(1,"N","1"))
+                t.tick(two,System.currentTimeMillis())
+                val batch=com.google.gson.JsonParser.parseString(server.read(socket)).asJsonObject
+                assertEquals("batch",batch["type"].asString)
+                val expand=com.google.gson.JsonParser.parseString(server.read(socket)).asJsonObject
+                assertEquals("expand",expand["type"].asString)
+                assertEquals(c1,expand["connectionId"].asString)
+                assertEquals(2,expand["roster"].asJsonArray.size())
+                assertFalse(t.ready);assertFalse(t.canSend("H"));assertFalse(t.canSend("S"))
+                server.send(socket,welcome(c2,"[\"s\",\"p\"]"));await {t.drainIncoming();t.coordinationAvailable}
+                assertTrue(t.send(2,"H","""{"version":1,"action":"hello"}"""))
+                val hello=com.google.gson.JsonParser.parseString(server.read(socket)).asJsonObject
+                assertEquals(run,com.google.gson.JsonParser.parseString(hello["payload"].asString).asJsonObject["resumeRunId"].asString)
+                server.send(socket,boundary("reconcile",c1,run)) // stale logical connection
+                server.send(socket,boundary("reconcile",c2,nextRun));server.send(socket,boundary("replay-complete",c2,nextRun))
+                await {t.drainIncoming().ready}
+                assertEquals(nextRun,t.acceptedRunId)
+                assertTrue(server.connections.isEmpty(),"expansion must not admit another socket")
+                t.close(true,3,true)
+                val leave=com.google.gson.JsonParser.parseString(server.read(socket)).asJsonObject
+                assertTrue(com.google.gson.JsonParser.parseString(leave["payload"].asString).asJsonObject["visitEnded"].asBoolean)
+            } finally {t.close(false)}
+        }
+    }
     private fun await(condition: () -> Boolean) {
         val end=System.nanoTime()+TimeUnit.SECONDS.toNanos(5)
         while(!condition()) { check(System.nanoTime()<end) { "Timed out awaiting local transport" };LockSupport.parkNanos(1_000_000) }

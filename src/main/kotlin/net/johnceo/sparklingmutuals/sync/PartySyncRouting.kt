@@ -32,7 +32,7 @@ internal class PartySyncRoutePolicy(val nonce: String) {
     }
 }
 
-/** Only route identity/provider status is sent while primary works; callbacks never touch game state. */
+/** Backup HTTP is entirely idle until sustained primary failure; callbacks never touch game state. */
 internal class PartySyncRouting(private val origin: URI?=configuredOrigin()) {
     companion object {
         // Authenticated TLS/WebSocket and reconciliation smoke verified on the deployed Free service.
@@ -47,6 +47,8 @@ internal class PartySyncRouting(private val origin: URI?=configuredOrigin()) {
     @Volatile private var revision=0L
     private var context: PartySyncTransport.Context?=null
     var policy=PartySyncRoutePolicy(UUID.randomUUID().toString()); private set
+    @Volatile private var enabled=false
+    private var pendingRequest: CompletableFuture<*>?=null
     private var nextAt=0L
     @Volatile private var busy=false
     @Volatile private var token=""
@@ -60,6 +62,13 @@ internal class PartySyncRouting(private val origin: URI?=configuredOrigin()) {
     fun tick(next: PartySyncTransport.Context,now: Long,usable: Boolean,eligible: Boolean): Boolean {
         policy.observe(usable,now)
         if(context!=next){revision++;context=next;busy=false;results.clear();nextAt=0}
+        val permitted=eligible && (policy.provider=="backup" || !usable && policy.unusableMillis(now)>=30_000)
+        if(!permitted) {
+            if(enabled || busy || results.isNotEmpty()) {revision++;results.clear();busy=false;pendingRequest?.cancel(true);pendingRequest=null}
+            enabled=false
+            return false
+        }
+        enabled=true
         var changed=false
         repeat(2) {
             val result=results.poll() ?: return@repeat
@@ -77,7 +86,7 @@ internal class PartySyncRouting(private val origin: URI?=configuredOrigin()) {
         if(origin!=null && eligible && next.roster.size>1 && !busy && now>=nextAt){
             nextAt=now+30_000+ThreadLocalRandom.current().nextLong(0,3001);busy=true
             val attempt=revision
-            request(next,"check",policy.unusableMillis(now)).whenComplete { response,error ->
+            pendingRequest=request(next,"check",policy.unusableMillis(now)).whenComplete { response,error ->
                 val retry=(error as? CompletionException)?.cause as? Retry
                 if(attempt==revision)results.offer(Result(attempt,next,response, retry?.delay ?: 0))
             }
@@ -106,7 +115,9 @@ internal class PartySyncRouting(private val origin: URI?=configuredOrigin()) {
                 val seconds=PartySyncProtocol.integer(o.get("expiresInSeconds"),120,86400) ?: error("Invalid session")
                 token=t;tokenOwner=next.self;tokenUntil=System.currentTimeMillis()+seconds*1000;t
             }
-        return auth.thenCompose { bearer ->http.sendAsync(HttpRequest.newBuilder(origin.resolve("/v1/route")).timeout(Duration.ofSeconds(10))
+        return auth.thenCompose { bearer ->
+            if(!enabled) return@thenCompose CompletableFuture.failedFuture(java.util.concurrent.CancellationException())
+            http.sendAsync(HttpRequest.newBuilder(origin.resolve("/v1/route")).timeout(Duration.ofSeconds(10))
             .header("Content-Type","application/json").header("Authorization","Bearer $bearer").POST(HttpRequest.BodyPublishers.ofString(body)).build(),HttpResponse.BodyHandlers.ofString()) }
             .thenApply { r ->
                 if(r.statusCode()==401){token="";tokenUntil=0}
@@ -122,7 +133,8 @@ internal class PartySyncRouting(private val origin: URI?=configuredOrigin()) {
         return maxOf(30_000,delay)
     }
     fun reset() {
-        context?.let { if(origin!=null)request(it,"leave",0).exceptionally { null } }
+        context?.let { if(enabled && policy.provider=="backup" && policy.generation!=null && origin!=null)request(it,"leave",0).exceptionally { null } }
+        enabled=false;pendingRequest?.cancel(true);pendingRequest=null
         revision++;context=null;results.clear();busy=false;nextAt=0
         policy=PartySyncRoutePolicy(UUID.randomUUID().toString())
     }

@@ -8,8 +8,8 @@ export class Allocation {
  run=crypto.randomUUID();revision=0;locks:Record<string,Biome>={};fairness:Record<string,number>={};conflict=false;initialDone=false;due:number|null=null;
  reports:Record<string,Biome>={};firstReport:number|null=null;thirdReport:number|null=null;leader:string|null=null;
  members:Record<string,Member>={};assignedAt:Record<string,number>={};acknowledged:string[]=[];instructed:Record<string,Biome>={};seeded:Fairness|null=null;
+ preferences:Record<string,Biome[]>={};grants:Record<string,Record<string,number>>={};
  backupWins:Record<string,number>={};
- preferences:Record<string,Biome[]>={};
  constructor(public roster:string[],backupWins:Record<string,number>={}){this.backupWins={...backupWins};this.fairness={...backupWins};}
  static restore(value:unknown):Allocation{const v=value as Allocation;return Object.assign(new Allocation(v.roster),v);}
  toJSON(){return {...this};}
@@ -46,6 +46,8 @@ export class Allocation {
  hello(id:string,input:unknown,now:number){
   const h=object(input);check(h,typeof h.display==='boolean'&&typeof h.leader==='boolean'&&(h.ticketed===undefined||typeof h.ticketed==='boolean'));
   check(h,Array.isArray(h.present)&&h.present.length<=4);const present=(h.present as unknown[]).map(uuid);check(h,present.every(p=>this.roster.includes(p)));
+  if(h.hotspotPreference!==undefined){check(h,Array.isArray(h.hotspotPreference)&&h.hotspotPreference.length===4&&new Set(h.hotspotPreference).size===4&&(h.hotspotPreference as unknown[]).every(v=>BIOMES.includes(v as Biome)));this.preferences??={};this.preferences[id]=h.hotspotPreference as Biome[];}
+  if(h.startingItems!==undefined){const grants=object(h.startingItems);this.grants??={};this.grants[id]??={};for(const key of ['birdFood','shiningCoins'])if(grants[key]!==undefined)this.grants[id][key]=integer(grants[key],0,256);}
   this.importLocks(parseLocks(h.locked,this.roster));
   for(const p of [id,...present]){check(p,this.roster.includes(p));this.members[p]??={present:true,ticketed:!!this.reports[p],display:false,displayed:false,left:false,connected:false};if(!this.members[p].left)this.members[p].present=true;}
   const m=this.members[id];if(m.left)return;
@@ -72,9 +74,15 @@ export class Allocation {
  allocate(now:number,ready=true):boolean{
   if(!ready||this.conflict||this.due===null||now<this.due)return false;
   const pending=this.eligible().filter(id=>!this.locks[id]);const available=BIOMES.filter(b=>!Object.values(this.locks).includes(b));
-  for(const b of available){const candidates=pending.filter(id=>this.reports[id]===b).sort((a,c)=>
-   (this.fairness[a]??0)-(this.fairness[c]??0)||this.claimRank(a,b)-this.claimRank(c,b)||(a===c?0:a>c?-1:1));
-   if(candidates.length){const id=candidates[0];this.locks[id]=b;this.fairness[id]=(this.fairness[id]??0)+1;this.backupWins[id]=(this.backupWins[id]??0)+1;}}
+  for(const b of available){const candidates=pending.filter(id=>this.reports[id]===b).sort((a,b)=>(this.fairness[a]??0)-(this.fairness[b]??0)||order(a,b));
+   if(candidates.length){
+    const min=this.fairness[candidates[0]]??0;const tied=candidates.filter(id=>(this.fairness[id]??0)===min);
+    const clients=tied.filter(id=>(this.members[id]?.assignmentClient||this.members[id]?.connected)),contenders=clients.length?clients:tied;
+    const key=b==='FOREST'?'birdFood':b==='HAUNTED'?'shiningCoins':null;
+    const useGrant=clients.length>0&&key!==null&&clients.every(id=>this.grants?.[id]?.[key!]!==undefined);
+    contenders.sort((a,c)=>(useGrant?this.grants[c][key!]-this.grants[a][key!]:0)||
+     (clients.length?((this.preferences?.[a]??['ICY','FOREST','HAUNTED','CAVERN']).indexOf(b)-(this.preferences?.[c]??['ICY','FOREST','HAUNTED','CAVERN']).indexOf(b)):0)||(a===c?0:a>c?-1:1));
+    const id=contenders[0];this.locks[id]=b;this.fairness[id]=(this.fairness[id]??0)+1;this.backupWins[id]=(this.backupWins[id]??0)+1;}}
   const rest=pending.filter(id=>!this.locks[id]).sort(order),free=BIOMES.filter(b=>!Object.values(this.locks).includes(b));
   rest.forEach((id,i)=>{if(free[i])this.locks[id]=free[i];});
   for(const id of pending)if(this.locks[id]){this.assignedAt[id]=now;if(this.members[id].display)this.members[id].displayed=true;}

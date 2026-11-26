@@ -25,6 +25,12 @@ internal class PartySyncTransport(
     private val primaryAuth=authEndpoint
     private val primarySync=syncEndpoint
     private val visit=PartySyncVisit()
+    private var rosterExpansion=false
+    private var visitEndedCapability=false
+    private var expanding=false
+    private var expandedRunAllowed=false
+    var onExpandedRun: (String) -> Unit={}
+    var failureReason: String?=null; private set
     private var welcomed=false
     private val replay=ArrayDeque<Delivery>()
     var efficient=false; private set
@@ -115,7 +121,7 @@ internal class PartySyncTransport(
     }
 
     fun developerSnapshot() = mapOf(
-        "status" to developerStatus(), "generation" to generation, "failures" to failures,
+        "status" to developerStatus(), "failureReason" to failureReason, "generation" to generation, "failures" to failures,
         "retryAtMillis" to retryAt, "incomingQueue" to incoming.size, "outgoingQueue" to queued,
         "hotspotCapability" to hotspotCapability, "biomeCapability" to biomeCapability,
         "critterCapability" to critterCapability, "roomSparklings" to roomSparklings,
@@ -128,7 +134,21 @@ internal class PartySyncTransport(
             next.roster.size !in 1..4 || next.roster.toSet().size!=next.roster.size || next.self !in next.roster ||
             next.roster.any { PartySyncProtocol.compact(it)==null }) { close(false);return }
         if(updateRequired) return
-        if(context!=next) { close(false); context=next; retryAt=0; failures=0 }
+        if(context!=next) {
+            val old=context
+            val growing=old!=null && old.lobby==next.lobby && old.self==next.self &&
+                next.roster.size>old.roster.size && next.roster.containsAll(old.roster)
+            if(growing && rosterExpansion && efficient && ready && renewalStarted!=null) {
+                drainIncoming()
+                renewalStarted?.let { started ->
+                    if(now-started>=20_000) fail(generation)
+                    return
+                }
+            }
+            if(growing && rosterExpansion && efficient && ready && renewalStarted==null && !expanding) {
+                if(!expand(next,now)) { close(false);context=next;retryAt=0 }
+            } else { close(false); context=next; retryAt=0; failures=0 }
+        }
         drainIncoming()
         val current=socket
         if(current!=null) {
@@ -148,6 +168,19 @@ internal class PartySyncTransport(
         }
         if(connecting || now<retryAt) return
         connect(next)
+    }
+    private fun expand(next: Context,now: Long): Boolean {
+        if(!flushBatch()) return false
+        val request=JsonObject().apply {
+            addProperty("type","expand");addProperty("connectionId",visit.connectionId)
+            addProperty("visitId",visit.visitId);addProperty("runId",visit.runId)
+            add("roster",com.google.gson.JsonArray().apply {next.roster.forEach(::add)})
+        }
+        if(!sendText(request.toString()))return false
+        context=next; ready=false; welcomed=false; expanding=true; expandedRunAllowed=true
+        mapping=emptyMap();replay.clear();completionRevision=null;completionPayload=null
+        replayDeadline=now+12_000
+        return true
     }
     data class RoomStatus(val generation: Long, val context: Context?, val ready: Boolean,
         val atomic: Boolean, val drained: Boolean)
@@ -177,6 +210,7 @@ internal class PartySyncTransport(
     }
     @Synchronized private fun dispatch(attempt: Long, root: JsonObject, next: Context) {
         if (attempt != generation) return
+            if(expanding && PartySyncProtocol.text(root.get("type"))!="welcome") return
             when(PartySyncProtocol.text(root.get("type"))) {
                 "welcome" -> {
                     if(welcomed) { fail(attempt); return }
@@ -189,6 +223,10 @@ internal class PartySyncTransport(
                     if (runCapability && !visit.welcome(PartySyncProtocol.text(root.get("connectionId")) ?: "")) {
                         fail(attempt); return
                     }
+                    if(expanding && !runCapability) {fail(attempt);return}
+                    expanding=false
+                    rosterExpansion="roster-expand-v1" in features
+                    visitEndedCapability="visit-ended-v1" in features
                     efficient=runCapability && "efficient-transport-v1" in features
                     renewAt=openedAt+485_000
                     mapping=map; welcomed=true; ready=!runCapability; failures=0
@@ -203,7 +241,12 @@ internal class PartySyncTransport(
                     if (ready) onReady()
                 }
                 "reconcile" -> if (runCapability && welcomed) {
-                    if (visit.reconcile(root)) {
+                    val was=visit.runId
+                    if (visit.reconcile(root,expandedRunAllowed)) {
+                        if(visit.reconciled && expandedRunAllowed) {
+                            expandedRunAllowed=false
+                            if(was!=visit.runId) visit.runId?.let(onExpandedRun)
+                        }
                         ready=false
                         batch.clear()
                         completionRevision=null
@@ -281,7 +324,7 @@ internal class PartySyncTransport(
             val request=HttpRequest.newBuilder(authEndpoint)
                 .timeout(Duration.ofSeconds(10)).header("Content-Type","application/json").POST(HttpRequest.BodyPublishers.ofString(body)).build()
             http.sendAsync(request,HttpResponse.BodyHandlers.ofString()).thenApply { response ->
-                if(response.statusCode()!=200) throw Admission(response.statusCode(),retryDelay(response.headers()))
+                if(response.statusCode()!=200) throw Admission(response.statusCode(),retryDelay(response.headers()),reason(response.statusCode(),response.headers()))
                 if(response.body().length>8192) error("Invalid authentication response")
                 val value=JsonParser.parseString(response.body()).asJsonObject
                 val bearer=PartySyncProtocol.text(value.get("token"),4096)?.takeIf { it.isNotBlank() && '\r' !in it && '\n' !in it } ?: error("Invalid authentication response")
@@ -303,7 +346,15 @@ internal class PartySyncTransport(
             }
         }
     }
-    private class Admission(val status: Int,val delay: Long): RuntimeException()
+    private class Admission(val status: Int,val delay: Long,val reason: String?=null): RuntimeException()
+    private fun reason(status: Int,headers: HttpHeaders): String? {
+        val value=when(status) {
+            429 -> headers.firstValue("x-safari-limit-reason").orElse("")
+            503 -> headers.firstValue("x-safari-error-reason").orElse("")
+            else -> ""
+        }
+        return value.takeIf {it in setOf("burst-sync","sync-reconnect","sync-concurrent","sync-global","sync-room-full","coordination-unavailable")}
+    }
     private fun retryDelay(headers: HttpHeaders): Long {
         val value=headers.firstValue("Retry-After").orElse("")
         return value.toLongOrNull()?.coerceIn(0,3600)?.times(1000) ?: runCatching {
@@ -318,6 +369,7 @@ internal class PartySyncTransport(
         val status=response?.statusCode() ?: (cause as? Admission)?.status
         if(status==426 && response?.headers()?.firstValue("x-safari-sync-update-required")?.orElse("")?.equals("true",true)==true)
             updateRequired=true
+        failureReason=if(response!=null)reason(response.statusCode(),response.headers()) else (cause as? Admission)?.reason
         if(status==401) { token=""; tokenUntil=0 }
         val delay=maxOf((2000L shl minOf(failures++,4)).coerceAtMost(30_000),
             response?.let { retryDelay(it.headers()) } ?: (cause as? Admission)?.delay ?: 0)
@@ -351,6 +403,7 @@ internal class PartySyncTransport(
 
     private fun clearEfficient() {
         efficient=false; renewalStarted=null; helloRetryAt=0
+        rosterExpansion=false;visitEndedCapability=false;expanding=false;expandedRunAllowed=false
         batch.clear(); completionRevision=null; completionPayload=null; replayDeadline=null; resyncRequested=false
     }
     private fun batchText(frames: List<String>) = frames.joinToString(",", "{\"type\":\"batch\",\"frames\":[", "]}")
@@ -389,12 +442,17 @@ internal class PartySyncTransport(
         return next
     }
     /** Explicit exit is serialized after queued updates and before close. Reconnect never sends leave. */
-    @Synchronized fun close(explicit: Boolean,leaveSequence: Long=0) {
+    @Synchronized fun close(explicit: Boolean,leaveSequence: Long=0,confirmedVisitEnd: Boolean=false) {
+        if(explicit && ready) flushBatch()
         val old=socket
         val pending=tail
+        val leavePayload=JsonObject().apply {
+            addProperty("version",1);addProperty("action","leave")
+            if(visitEndedCapability && confirmedVisitEnd)addProperty("visitEnded",true)
+        }.toString()
         val leave=if(explicit && ready && hotspotCapability && leaveSequence>0)
             PartySyncProtocol.envelope(leaveSequence,"H",if(runCapability)
-                visit.operation("{\"version\":1,\"action\":\"leave\"}") else "{\"version\":1,\"action\":\"leave\"}") else null
+                visit.operation(leavePayload) else leavePayload) else null
         generation++; ready=false; welcomed=false; connecting=false; hotspotCapability=false; biomeCapability=false; critterCapability=false; runCapability=false; roomSparklings=false; socket=null
         hotspotPreferencesCapability=false; cachedHotspotPreference=null
         visit.disconnected(); replay.clear(); clearEfficient()
