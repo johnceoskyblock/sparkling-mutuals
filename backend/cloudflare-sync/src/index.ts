@@ -46,6 +46,32 @@ export class Coordinator extends DurableObject<Env> {
   const group=r.roster.join(','),counts=JSON.stringify(a.backupWins),old=this.ctx.storage.sql.exec<{counts:string}>('SELECT counts FROM backup_fairness WHERE roster=?',group).toArray()[0];
   if(Object.keys(a.backupWins).length&&old?.counts!==counts){this.ctx.storage.sql.exec('DELETE FROM backup_fairness WHERE updated<?',Date.now()-30*86400000);this.ctx.storage.sql.exec('INSERT INTO backup_fairness(roster,updated,counts) VALUES(?,?,?) ON CONFLICT(roster) DO UPDATE SET updated=excluded.updated,counts=excluded.counts',group,Date.now(),counts);this.ctx.storage.sql.exec('DELETE FROM backup_fairness WHERE roster IN (SELECT roster FROM backup_fairness ORDER BY updated DESC LIMIT -1 OFFSET 256)');}
  }
+ private welcome(s:Attachment,roster=s.roster){return {type:'welcome',self:s.self,roster,
+  hotspotPreference:this.cachedPreferences(s.roster,Date.now())[s.self],connectionId:s.protocol?.connectionId,
+  features:['hotspots-v1','biome-reports-v1','room-sparklings-v1','failover-bootstrap-v1','hotspot-preferences-v1',
+   ...(s.protocol?['run-reconciliation-v1','critter-completion-v1']:[]),
+   ...(s.protocol?.efficient?['efficient-transport-v1','roster-expand-v1','visit-ended-v1']:[])]};}
+ private expand(ws:WebSocket,s:Attachment,v:Record<string,unknown>,now:number){
+  check(v,s.protocol?.efficient===true&&s.protocol.ready&&s.bootstrap.stage==='done'&&
+   v.connectionId===s.protocol.connectionId&&v.visitId===s.protocol.visitId);
+  const row=this.load(s.room);check(row,!!row&&row.routing.provider==='backup'&&v.runId===row.allocation.run);
+  const next=identity(row!.routing.lobby,s.self,v.roster);
+  check(v,next.roster.length>s.roster.length&&s.roster.every(id=>next.roster.includes(id))&&
+   row!.routing.roster.every(id=>next.roster.includes(id)));
+  const prior=this.sockets(s.room).map(w=>w.deserializeAttachment() as Attachment);
+  const result=route(row!.routing,{version:1,lobby:next.lobby,self:s.self,roster:next.roster,nonce:s.nonce,unusableMs:30000,action:'check',confirmedExpansion:true},now);
+  check(result,result.admitted&&result.generation===s.room);
+  const carry=result.room.carry??{caught:[0,0],evidence:[]};
+  for(const old of prior){for(let i=0;i<2;i++)carry.caught[i]|=old.union[i+2];for(const e of old.evidence)mergeEvidence(carry.evidence,e);}
+  result.room.carry=carry;
+  const allocation=row!.allocation;
+  if(allocation.roster.join()!==next.roster.join()){allocation.roster=next.roster;allocation.fairness={};allocation.backupWins={};allocation.seeded=null;allocation.preferences={};}
+  s.roster=next.roster;s.bootstrap=attachment(s.room,s.self,s.nonce,next.roster,now).bootstrap;
+  s.protocol={...s.protocol!,connectionId:crypto.randomUUID(),ready:false,completion:false};
+  if(result.room.completion)delete result.room.completion[s.self];
+  this.save(result.room,allocation);ws.serializeAttachment(s);
+  ws.send(JSON.stringify(this.welcome(s,v.roster as string[])));
+ }
  private sockets(room:string){return this.ctx.getWebSockets().filter(ws=>{const s=ws.deserializeAttachment() as Attachment;return (s as any)?.channel!=='completion'&&s?.room===room&&s.expires>Date.now();});}
  private room(id:string){const row=this.load(id);if(!row)return null;const sessions=this.sockets(id).map(ws=>ws.deserializeAttachment() as Attachment).filter(s=>s.roster.join()===row.routing.roster.join());return new Room(row.routing,row.allocation,sessions);}
  private persist(room:Room){const old=this.load(room.route.generation);if(!old||JSON.stringify(old.routing)!==JSON.stringify(room.route)||JSON.stringify(old.allocation)!==JSON.stringify(room.allocation))this.save(room.route,room.allocation);for(const ws of this.sockets(room.route.generation)){const old=ws.deserializeAttachment() as Attachment;const next=room.sessions.find(s=>s.self===old.self&&s.nonce===old.nonce);if(next)ws.serializeAttachment(next);}}
@@ -166,9 +192,7 @@ export class Coordinator extends DurableObject<Env> {
     if(s.protocol&&retained)s.snapshots=retained.snapshots;
     s.union=inheritedUnion;s.evidence=structuredClone(inheritedEvidence);server.serializeAttachment(s);
     const cachedPreference=this.cachedPreferences(i.roster,now)[self];
-    server.send(JSON.stringify({type:'welcome',self,roster:i.roster,features:['hotspots-v1','biome-reports-v1','room-sparklings-v1','failover-bootstrap-v1','hotspot-preferences-v1',
-     ...(s.protocol?['run-reconciliation-v1','critter-completion-v1']:[]),
-     ...(s.protocol?.efficient?['efficient-transport-v1']:[])],connectionId:s.protocol?.connectionId,hotspotPreference:cachedPreference}));
+    server.send(JSON.stringify(this.welcome(s)));
     const room=this.room(gen)!;
     room.allocation.noteAssignmentClient(self);
     if(cachedPreference)room.allocation.setPreference(self,cachedPreference);
@@ -188,11 +212,12 @@ export class Coordinator extends DurableObject<Env> {
    check(message,typeof message==='string');
    const s=ws.deserializeAttachment() as Attachment,now=Date.now();
    check(s,s.expires>now&&this.sockets(s.room).includes(ws));
+   const envelope=object(JSON.parse(message));
+   if(envelope.type==='expand') {check(message,new TextEncoder().encode(message).length<=4096);this.expand(ws,s,envelope,now);await this.schedule();return;}
    const room=this.room(s.room);check(room,!!room);
    const member=room!.route.members[s.self];check(s,!!member&&!member.retired&&member.nonce===s.nonce&&room!.route.roster.join()===s.roster.join());
    const current=room!.sessions.find(x=>x.self===s.self&&x.nonce===s.nonce)!;
    check(message,new TextEncoder().encode(message).length<=4096);
-   const envelope=object(JSON.parse(message));
    if(envelope.type==='renew'){
     check(s,s.protocol?.efficient===true&&!!s.protocol.origin);
     const owner=await verifyToken(text(envelope.token,4096),this.env.SIGNING_SECRET,s.protocol!.origin!,now);
@@ -232,7 +257,7 @@ export class Coordinator extends DurableObject<Env> {
    await this.schedule();
   }catch{ws.close(1008,'invalid protocol');}
  }
- async webSocketClose(ws:WebSocket){const s=ws.deserializeAttachment() as Attachment;if((s as any)?.channel==='completion'){await this.schedule();return;}const r=this.room(s.room);if(r&&!this.sockets(s.room).some(other=>other!==ws&&(other.deserializeAttachment() as Attachment).self===s.self)){r.allocation.disconnect(s.self);this.save(r.route,r.allocation);}await this.schedule();}
+ async webSocketClose(ws:WebSocket){const s=ws.deserializeAttachment() as Attachment;if((s as any)?.channel==='completion'){await this.schedule();return;}if(s.visitEnded&&this.load(s.room)?.routing.members[s.self]?.retired){await this.schedule();return;}const r=this.room(s.room);if(r&&!this.sockets(s.room).some(other=>other!==ws&&(other.deserializeAttachment() as Attachment).self===s.self)){r.allocation.disconnect(s.self);this.save(r.route,r.allocation);}await this.schedule();}
  async webSocketError(ws:WebSocket){ws.close(1011,'transport');await this.webSocketClose(ws);}
  async alarm(){const now=Date.now();const visited=new Set<string>();for(const ws of this.ctx.getWebSockets()){
   const s=ws.deserializeAttachment() as Attachment;if(now>=s.expires){ws.close(1000,'renew lease');continue;}if((s as any)?.channel==='completion'){if(!this.validCompletion(s as unknown as CompletionAttachment,now))ws.close(1008,'visit ended');continue;}if(visited.has(s.room))continue;visited.add(s.room);

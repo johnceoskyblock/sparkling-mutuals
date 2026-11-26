@@ -7,7 +7,7 @@ import java.net.URI
 import net.johnceo.sparklingmutuals.safari.*
 import net.johnceo.sparklingmutuals.safari.completion.SharedCritterProgress
 
-/** Uses negotiated shared completion, with the independent completion service as legacy fallback. */
+/** Completion uses the selected main provider. Separate legacy completion requires adopted backup. */
 internal class PartyCritterSync {
     private val transport = PartySyncTransport()
     private var run: SafariRun? = null
@@ -51,8 +51,8 @@ internal class PartyCritterSync {
     fun tick(context: PartySyncTransport.Context, origin: URI?, generation: String?, nonce: String,
         active: SafariRun?, party: PartySparklingState, now: Long, eligible: Boolean,
         useShared: Boolean = false, sharedRunId: String? = null, sharedVisitId: String? = null,
-        sharedRefreshMillis: Long = 10_000, sendShared: (String) -> Boolean = { false }) {
-        if (!eligible || !useShared && (origin == null || generation == null)) { reset(); return }
+        sharedRefreshMillis: Long = 10_000, allowSeparate: Boolean = false, sendShared: (String) -> Boolean = { false }) {
+        if (!eligible || !useShared && (!allowSeparate || origin == null || generation == null)) { reset(); return }
         if (shared != useShared) {
             transport.close(false)
             run?.sharedCritters?.clear()

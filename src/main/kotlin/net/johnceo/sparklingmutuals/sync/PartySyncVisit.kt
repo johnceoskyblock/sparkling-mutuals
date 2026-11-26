@@ -45,7 +45,7 @@ internal class PartySyncVisit {
             PartySyncProtocol.text(root.get("connectionId")) == connectionId && connectionId != null &&
             PartySyncProtocol.text(root.get("visitId")) == visitId
 
-    fun reconcile(root: JsonObject): Boolean {
+    fun reconcile(root: JsonObject, allowExpandedRun: Boolean = false): Boolean {
         if (!matchesConnection(root)) return false
         val nextStatus = PartySyncProtocol.text(root.get("status")) ?: return false
         if (nextStatus == "pending") {
@@ -56,7 +56,7 @@ internal class PartySyncVisit {
         }
         if (nextStatus !in setOf("new", "joined", "resumed")) return false
         val id = PartySyncProtocol.text(root.get("runId"))?.takeIf(::validId) ?: return false
-        if (runId != null && runId != id) return false
+        if (runId != null && runId != id && !allowExpandedRun) return false
         runId = id
         reconciled = true
         replayComplete = false

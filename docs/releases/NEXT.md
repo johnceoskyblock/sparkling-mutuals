@@ -34,3 +34,8 @@ GitHub releases provide all three builds for Minecraft **26.1.2**, **26.2**, and
 | **Standard** | None | Manual downloads |
 | **Full** | `-full` | Verified in-game downloads with a configurable Auto Update toggle |
 | **Full No Auto Update** | `-full-no-auto-update` | Manual downloads |
+### Shared party sync
+- Expand confirmed growing parties on a supporting provider's existing WebSocket, with replay gating and recovery.
+- Mark confirmed visit departures and preserve same-visit state through temporary disconnects.
+- Include initial food/coin grants in hotspot preference allocation; expose recognised admission failure reasons in diagnostics.
+- Keep the backup completely idle while the primary is working; contact it only after sustained primary failure and ignore delayed failover responses after recovery.

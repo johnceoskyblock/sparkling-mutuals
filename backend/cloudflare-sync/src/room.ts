@@ -5,7 +5,7 @@ import {Biome,CODES,check,integer,locks,numbers,object,text,uuid} from './protoc
 export interface Evidence {reporter:string;source:string;nests:number;facts:number[];caught:number[]}
 export interface Snapshot {sequence:number;kind:string;payload:string;catchUpOnly?:boolean}
 export interface Attachment {
- room:string;self:string;nonce:string;roster:string[];expires:number;rate:number[];sequence:number;
+ room:string;self:string;nonce:string;roster:string[];expires:number;rate:number[];sequence:number;visitEnded?:boolean;
  protocol?:{connectionId:string;visitId?:string;ready:boolean;completion:boolean;efficient?:boolean;origin?:string};
  snapshots:Record<string,Snapshot>;union:number[];evidence:Evidence[];
  bootstrap:{stage:'none'|'open'|'done';frames:number;conflict:boolean;facts:Evidence[];locks:Record<string,Biome>;instructed:Record<string,Biome>;fairness:Fairness|null};
@@ -106,7 +106,7 @@ export class Room {
      }
      case 'report':{const player=uuid(h.player);check(h,this.route.roster.includes(player));const b=text(h.biome) as Biome;this.allocation.report(player,b,now);break;}
      case 'ack':this.allocation.ack(s.self,text(h.id,200));break;
-     case 'leave':this.route.members[s.self].retired=true;this.allocation.leave(s.self);leave=true;break;
+     case 'leave':check(h,h.visitEnded===undefined||h.visitEnded===true);s.visitEnded=h.visitEnded===true;this.route.members[s.self].retired=true;this.allocation.leave(s.self);leave=true;break;
      default:check(h,false);
     }
    } else if(kind==='C'){

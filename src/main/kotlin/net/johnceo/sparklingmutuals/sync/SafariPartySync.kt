@@ -120,6 +120,7 @@ object SafariPartySync {
                 sharedSparklings(it)
             }
         }
+        transport.onExpandedRun={ run -> state?.expandedRun(run) }
         transport.onCompletionResync=critterSync::refreshShared
         transport.onMessage=::receive
         ClientReceiveMessageEvents.GAME.register { message,overlay ->
@@ -140,14 +141,15 @@ object SafariPartySync {
         if(transferRevision == SafariIsland.locationRevision || !SafariIsland.onIsland || client.player==null || client.level==null) return
         transferRevision = null
         val server = SafariIsland.serverName?.let(PartySyncProtocol::canonicalLobby) ?: return
-        if(lobby!=null && (!server.equals(lobby,true) || world!==client.level)) reset()
+        if(lobby!=null && !server.equals(lobby,true)) reset(confirmedVisitEnd=true)
+        else if(lobby!=null) world=client.level
         if(lobby==null) { lobby=server;world=client.level;began=System.currentTimeMillis() }
         val wasMatching=matchingParty
         matchingParty=false
         val members=roster(client) ?: return
         val self=PartySyncProtocol.uuid(client.player!!.uuid.toString()) ?: return
         val active=state
-        if(active==null && members.size>1) state=PartySyncState(self,members.toSet())
+        if(active==null && members.isNotEmpty()) state=PartySyncState(self,members.toSet())
         else if(active!=null && members.toSet().containsAll(active.roster) && members.size>active.roster.size) {
             val present=client.connection?.onlinePlayers?.mapNotNull { PartySyncProtocol.uuid(it.profile.id.toString()) }?.toSet().orEmpty()
             if((members.toSet()-active.roster).all { it in present }) {
@@ -162,7 +164,8 @@ object SafariPartySync {
     fun tick(client: Minecraft) {
         now=System.currentTimeMillis()
         if(transferRevision == SafariIsland.locationRevision) return
-        if(!SafariIsland.onIsland || client.level == null || client.connection == null) { if(lobby!=null) reset();return }
+        if(client.level == null || client.connection == null) { transport.close(false);return }
+        if(!SafariIsland.onIsland) { if(lobby!=null) reset(confirmedVisitEnd=true);return }
         initialize(client)
         val current=state ?: return
         val server=lobby ?: return
@@ -192,7 +195,7 @@ object SafariPartySync {
             useShared = transport.coordinationAvailable && transport.runCapability && transport.critterCapability,
             sharedRunId = transport.acceptedRunId, sharedVisitId = transport.activeVisitId,
             sendShared = { transport.completionIdle && transport.sendCompletion(current.nextSequence(),it) },
-            sharedRefreshMillis = if(transport.efficient) 20_000 else 10_000)
+            sharedRefreshMillis = if(transport.efficient) 20_000 else 10_000, allowSeparate = transport.backup)
         while(transport.canSend("F") && bootstrapQueue.isNotEmpty()) {
             if(!transport.send(current.nextSequence(),"F",bootstrapQueue.first()))break
             bootstrapQueue.removeFirst()
@@ -360,6 +363,14 @@ object SafariPartySync {
     private fun hello(client: Minecraft,current: PartySyncState): JsonObject = JsonObject().apply {
         addProperty("version",1);addProperty("action","hello");addProperty("display",ConfigManager.hotspotAnnouncer)
         addProperty("ticketed",ticketed)
+        if(transport.hotspotPreferencesCapability) {
+            val resources=SafariTracking.ledger.current?.resources
+            val items=JsonObject()
+            val food=listOf(FloorDropType.SEEDS,FloorDropType.WORM,FloorDropType.BERRY).map {resources?.initialGrant(it)}
+            if(food.all {it!=null})items.addProperty("birdFood",food.sumOf {it ?: 0})
+            resources?.initialGrant(FloorDropType.COIN)?.let {items.addProperty("shiningCoins",it)}
+            if(items.size()>0)add("startingItems",items)
+        }
         addProperty("leader",PartyManager.isLeader(client.player!!.uuid.toString()))
         val present=com.google.gson.JsonArray()
         // The shared server tab list establishes presence on this Safari island, not party membership alone.
@@ -797,10 +808,10 @@ object SafariPartySync {
             player to snapshot
         }
     }
-    fun reset() {
+    fun reset(confirmedVisitEnd: Boolean=false) {
         critterSync.reset()
         entryDiscoveries.reset()
-        val current=state;transport.close(true,current?.nextSequence() ?: 0)
+        val current=state;transport.close(true,current?.nextSequence() ?: 0,confirmedVisitEnd)
         transport.newVisit()
         routing.reset();transport.usePrimary();bootstrapQueue.clear()
         state=null;lobby=null;world=null;began=0;sampleAt=0;helloAt=0;lastHello="";matchingParty=false
