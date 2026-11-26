@@ -39,3 +39,8 @@ GitHub releases provide all three builds for Minecraft **26.1.2**, **26.2**, and
 - Mark confirmed visit departures and preserve same-visit state through temporary disconnects.
 - Include initial food/coin grants in hotspot preference allocation; expose recognised admission failure reasons in diagnostics.
 - Keep the backup completely idle while the primary is working; contact it only after sustained primary failure and ignore delayed failover responses after recovery.
+
+### Upcoming Full ESP improvements
+- Separate per-critter choices under Critter glow outlines and Critter boxes.
+- Optional always-visible intact Rockmite mounds and remaining Sparkling check ESP after Unique biome completion, both off by default.
+- Box fallback for glow-incompatible target models; locally unpunched Forest nests retain Full Clear markers despite shared completion.

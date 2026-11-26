@@ -683,11 +683,14 @@ object SafariEsp {
         val mode = net.johnceo.sparklingmutuals.safari.completion.SafariFullClear.mode
         val forceIcy = mob.biome == SafariBiome.ICY && BiomeObjectiveConfig.needs("Wumpa", party, mode) &&
             (run?.count("Wumpa") ?: 0) == 0 && (run?.count(mob.name) ?: 0) == 0
-        if (!BiomeObjectiveConfig.allowsEsp(mob.name, mode, run) && !(mode == SafariMode.SPARKLING && forceIcy))
+        if (!BiomeObjectiveConfig.allowsEsp(mob.name, mode, run) && !(mob.name=="Rockmite" && display && SafariEspConfig.moundAlwaysOn) && !(mode == SafariMode.SPARKLING && forceIcy))
             return "Optional sparkling check disabled"
         if (!forceIcy && !live(target, client, forEsp = true)) return "Inactive model or label"
-        val alwaysOn = SafariEspConfig.alwaysOn(mob.name)
-        val needed = alwaysOn || forceIcy || if (ConfigManager.sparklingMode)
+        val alwaysOn = SafariEspConfig.alwaysOn(mob.name) || mob.name=="Rockmite" && display && SafariEspConfig.moundAlwaysOn
+        val remainingCheck = mode==SafariMode.UNIQUE && SafariEspConfig.uniqueRemainingChecks &&
+            run?.biomeComplete(mode,mob.biome,party)==true && BiomeObjectiveConfig.needs(mob.name,party,mode) &&
+            !run.sparklingComplete(mob.name,party)
+        val needed = alwaysOn || remainingCheck || forceIcy || if (ConfigManager.sparklingMode)
             SafariEspRules.neededForSparkling(mob.name, mob.name == "Rockmite" && display,
                 party, ConfigManager.sparklingProfitableShardEsp, run, entity.uuid, now)
         else SafariEspRules.neededForRun(mob.name, display, run, ConfigManager.fullClearMode, ConfigManager.profitableShardEsp, party)
@@ -716,6 +719,7 @@ object SafariEsp {
         val client=Minecraft.getInstance()
         if(!SafariEspConfig.critterGlow || !SafariAssist.visualsActive(client) || client.player==null || client.options.smHideGui)return null
         val target = indexedTarget(entity) ?: return null
+        if(!SafariEspConfig.showCritterGlow(target.species) || target.species=="Gazer")return null
         if(target.species=="Rockmite" && entity is Display.ItemDisplay)return null
         if (target.species == "Shyworm" && (entity.y <= 2.0 || shyworms.hiddenHeight(entity.uuid, entity.y) != null)) return null
         if(!drawable(target,client) || critterEspDecision(target,client,SafariAssist.biome,System.currentTimeMillis())!="Eligible")return null
@@ -840,6 +844,7 @@ object SafariEsp {
                 }
                 val retainedWormHead = mob.name == "Shyworm" && height != null
                 if (SafariEspConfig.showCritterBox(mob.name) || mound ||
+                    SafariEspConfig.showCritterGlow(mob.name) && (e !is net.minecraft.world.entity.LivingEntity || mob.name=="Gazer") ||
                     retainedWormHead && ShywormProjection.showRetainedHead(SafariEspConfig.critterBoxes, SafariEspConfig.critterGlow))
                     frame(projected, if (retainedWormHead && SafariAssist.isHighlighted(e.id))
                         SafariEspConfig.rgb(AppearanceConfig.sparklingColor) else color)

@@ -124,6 +124,8 @@ class SafariSettings {
         @ConfigEditorBoolean var profitable = ConfigManager.sparklingProfitableShardEsp
     }
     class Unique {
+        @JvmField @ConfigOption(name = "Show remaining Sparkling checks after biome completion", desc = "Keep needed check targets highlighted after completing this biome. Respects enabled checks and ESP switches.")
+        @ConfigEditorBoolean var remainingChecks = SafariEspConfig.uniqueRemainingChecks
         @JvmField @ConfigOption(name = "Hide critter ESP", desc = "")
         @ConfigEditorBoolean var hideCritters = ConfigManager.uniqueHideCritterEsp
         @JvmField @ConfigOption(name = "Hide floor-drop ESP", desc = "")
@@ -629,6 +631,7 @@ class SafariSettings {
         return true
     }
     fun saveTextFields() {
+        SafariEspConfig.uniqueRemainingChecks=modes.unique.remainingChecks
         saveDelay(); saveSound(); saveSparklingSound()
         val sound = Identifier.tryParse(safari.alerts.runSound.trim())
         if (sound == null) feedback("Enter a valid Minecraft sound identifier for run completion.")

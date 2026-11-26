@@ -243,7 +243,7 @@ object ConfigManager {
                     key.endsWith(".textScale") || key.endsWith(".color") && key != "esp.floor.generic.color")
             val scrappyColor = key.startsWith("esp.scrappy.") && key.endsWith(".color")
             val critterBiomeLimit = SafariEspConfig.groups.keys.any { it != "floor" && key == "esp.$it.onlyInBiome" }
-            if (key in fullOnlySettings || key.startsWith("waterOpacity.") || key.startsWith("esp.nameplate.") ||
+            if (key == "esp.rockmite.moundAlwaysOn" || key == "esp.unique.remainingChecks" || key.endsWith(".glow") && key.startsWith("esp.") || key.endsWith(".box") && key.startsWith("esp.") || key in fullOnlySettings || key.startsWith("waterOpacity.") || key.startsWith("esp.nameplate.") ||
                 key.startsWith("esp.nameplates.") || key.startsWith("esp.teammate.") || floorAppearance ||
                 scrappyColor || critterBiomeLimit || key.startsWith("warpList.") || key.startsWith("banner.warp.") ||
                 key.startsWith("hud.warp.") || key.startsWith("appearance.warp.") ||
