@@ -131,19 +131,21 @@ object Achievements {
         var uniqueSinceLastRun: Boolean = false, var runsSinceMacaw: Int = 0, var longestRunsWithoutMacaw: Int = 0,
         var lastRunHadOwnSparkling: Boolean = false, var ticketsSinceOwnSparkling: Int = 0,
         var contestsCompleted: Int = 0, var lastContestWindow: Long = -1, var partyStreakVersion: Int = 0,
-        var catalogVersion: Int = 0,var emeraldDyes: Int = 0)
+        var catalogVersion: Int = 0,var emeraldDyes: Int = 0, var emeraldDyeOwner: String? = null)
     private var data = Data()
-    val emeraldDyes: Int get() = data.emeraldDyes
+    val emeraldDyes: Int get() = if (data.emeraldDyeOwner == null || data.emeraldDyeOwner == ConfigManager.historyOwnerUuid) data.emeraldDyes else 0
     private const val CATALOG_VERSION=2
     private var pendingHistoryCheck=true
     private val dyeProofs=DyeDropProofs()
     private var sparklingRevision=-1L
+    private var sparklingOwner = ""
     private var cachedDiscoveries: Set<String> = emptySet()
     private var counts: Map<String,Int> = emptyMap()
     private var duplicates=AchievementRules.Streak(0,0)
     private fun refreshSparklingSummary() {
-        if(sparklingRevision==SparklingLog.revision && cachedDiscoveries==OwnStats.dex) return
-        sparklingRevision=SparklingLog.revision;cachedDiscoveries=OwnStats.dex
+        val owner = ConfigManager.historyOwnerUuid
+        if(sparklingRevision==SparklingLog.revision && cachedDiscoveries==OwnStats.dex && sparklingOwner==owner) return
+        sparklingRevision=SparklingLog.revision;cachedDiscoveries=OwnStats.dex; sparklingOwner=owner
         counts=AchievementRules.dexCounts(SparklingLog.entries,cachedDiscoveries)
         duplicates=AchievementRules.duplicateStreak(SparklingLog.entries)
     }
@@ -255,9 +257,18 @@ object Achievements {
     private fun chat(text: String) {
         if (!ConfigManager.achievements) return
         if ("Emerald Dye" in text && ownDrop(text) && HistoryServerPolicy.allows()) {
+            val owner = HistoryAccountId.selected(Minecraft.getInstance()) ?: return
             val now=System.currentTimeMillis()
-            if(dyeProofs.accept(text,now)) { data.emeraldDyes++;save();checkAll(true) }
+            if(dyeProofs.accept(text,now)) syncEmeraldDyes(owner, emeraldDyes + 1, announce = true)
         }
+    }
+
+    internal fun syncEmeraldDyes(owner: String, count: Int, announce: Boolean = false) {
+        if (data.emeraldDyeOwner == owner && data.emeraldDyes == count) return
+        data.emeraldDyeOwner = owner
+        data.emeraldDyes = count
+        save()
+        checkAll(announce)
     }
     /** Your drop, not a broadcast of someone else's ("WOW! Name found Emerald Dye"). */
     fun ownDrop(text: String, self: String = Minecraft.getInstance()?.player?.name?.string.orEmpty()): Boolean {
@@ -285,6 +296,14 @@ object Achievements {
         if (!data.initialised) return
         unlock("full_house", true)
         speedAchievements(elapsed, true)
+    }
+
+    internal fun onCritterCapture() {
+        if (!data.initialised || !ConfigManager.achievements) return
+        val milestones = definitions.filter { it.measure == Measure.CAUGHT && !isUnlocked(it) }
+        if (milestones.isEmpty()) return
+        val caught = OwnStats.captureProgress()
+        for (achievement in milestones) if (caught >= achievement.goal) unlock(achievement.id, true)
     }
     private fun speedAchievements(elapsed: Long, announce: Boolean) {
         for(id in listOf("speed_3","speed_230","speed_130"))
@@ -319,7 +338,7 @@ object Achievements {
         // Hypixel's bestiary also counts runs and catches from before the mod was installed.
         Measure.RUNS -> maxOf(RunHistory.runs.size.toLong(), OwnStats.runs)
         Measure.HOURS -> PlaytimeReader.safariMillis() / 3_600_000L
-        Measure.CAUGHT -> maxOf(RunHistory.runs.sumOf { (it.caught + it.lootShares).toLong() }, OwnStats.caught)
+        Measure.CAUGHT -> OwnStats.captureProgress()
         Measure.COINS -> RunHistory.runs.sumOf { maxOf(0L, it.coins) }
         Measure.OWN_SPARKLINGS -> ownEntries().size.toLong()
         Measure.UNIQUES -> ownDex().size.toLong()
@@ -328,7 +347,7 @@ object Achievements {
         Measure.RUNS_SINCE_MACAW -> AchievementRules.macawDrought(RunHistory.runs).longest.toLong()
         Measure.DUPLICATES -> { refreshSparklingSummary();duplicates.longest.toLong() }
         Measure.DEX_SETS -> AchievementRules.fullDexCount(sparklingCounts()).toLong()
-        Measure.DYES -> data.emeraldDyes.toLong()
+        Measure.DYES -> emeraldDyes.toLong()
         Measure.DAILY_RUNS -> AchievementRules.mostDailyRuns(RunHistory.runs).toLong()
         Measure.CONTESTS -> data.contestsCompleted.toLong()
     }
@@ -414,7 +433,7 @@ object Achievements {
 
     fun ownEntries(): List<SparklingEntry> {
         val self = Minecraft.getInstance()?.player?.name?.string ?: return emptyList()
-        return SparklingLog.entries.filter { it.player.equals(self, true) }
+        return SparklingLog.entries.filter { SparklingLog.isPersonal(it, self) }
     }
     /** Credited party history supplies per-type counts; cached API discoveries establish a one-catch floor. */
     fun sparklingCounts(): Map<String,Int> { refreshSparklingSummary();return counts }

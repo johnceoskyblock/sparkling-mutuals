@@ -39,7 +39,8 @@ class HistoryBackfillImportTest {
         Files.writeString(dir.resolve("2026-10-10-3.log"), owned.lineSequence().filterNot { "Setting user:" in it }.joinToString("\n"))
         Files.writeString(dir.resolve("2026-10-10-4.log"), owned)
         val result = LogImporter.read(dir, "Local").join()
-        assertEquals(2, result.skippedAccounts)
+        assertEquals(1, result.skippedAccounts)
+        assertEquals(1, result.unresolvedAccounts)
         assertTrue(result.failures.isEmpty())
         assertEquals(1, result.runs.size)
         assertEquals(1, result.runs.single().caught)
@@ -138,8 +139,9 @@ class HistoryBackfillImportTest {
     }
     @Test fun `ANSI formatting fractional time and curly apostrophes are accepted`() {
         val parser = parse(line("13:00:00.123", "\u001B[32m[NPC] Safari Manager: I already saw your ticket, so you’re free to go.\u001B[0m"),
+            line("13:00:01", "HOTSPOT! Your Hunting Hotspot is the Forest Biome!"),
             line("13:00:02,456", "§dSPARKLING! §a[Friend head]Friend caught a SPARKLING Macaw!"), line("13:01:00", "SAFARI REWARD SUMMARY"))
-        assertEquals(1, parser.runs.single().tickets); assertEquals(1, parser.sparklings.single().tickets)
+        assertEquals(0, parser.runs.single().tickets); assertEquals(0, parser.sparklings.single().tickets)
     }
     @Test fun `midnight and different file boundaries retain ticket intervals without merging separate runs`() {
         val parser = LogImporter.Parser("Local")

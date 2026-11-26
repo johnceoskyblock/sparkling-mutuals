@@ -1,4 +1,12 @@
 {
+  "5.0.0": [
+    {"audience":"shared", "title":"Recover Safari history from old logs", "details":"Copy logs from earlier Safari runs into your current instance’s logs folder, then choose Import logs in History. The importer can link midnight rollovers, match former names to your account, and backfill Main runs and sparklings while preserving live records."},
+    {"audience":"shared", "title":"Safari encounter counts", "details":"Stats shows Doomspiral and Wumpa checks. Ask for recorded counts in party chat with !doom, !wumpa, or !gemzie. Opening Vincent’s Dye Guide can sync your personal Emerald Dye total."},
+    {"audience":"shared", "title":"API capture stats and live milestones", "details":"Open Stats to refresh your API capture total and biome breakdown. Capture milestones count new personal catches as you play. Recorded run time and /playtimedetailed are shown separately."},
+    {"audience":"shared", "title":"Sparkling Critterdex", "details":"Open the Critterdex from Sparklings for biome progress and counts for all 37 critters. Choose a dex tier and jump back to any history tab. Start a new session directly from Profit."},
+    {"audience":"shared", "title":"Party sync recovery", "details":"Party sync preserves the current visit through temporary disconnects. Supported providers can add new party members to the existing connection. The backup connects after sustained primary failure."},
+    {"audience":"full", "title":"Per-critter ESP controls", "details":"Set glow outlines and boxes separately for each critter. You can also keep intact Rockmite mounds and remaining Sparkling checks highlighted after completing the relevant objectives."}
+  ],
   "4.4.5": [
     {"audience":"shared", "title":"Sparkling Checks Options", "details":"Optional Unique-mode checks turn off once with this update. Enable party-requested checks under Safari → Modes. Biome reports, the Biome complete banner, and /rates follow your choices. Sparkling mode keeps its usual checks."},
     {"audience":"shared", "title":"Stable Forest and Haunted HUDs", "details":"Fixed flickering progress and objective displays while holding starting bird food or Shining Coins with starting-item announcements off."},

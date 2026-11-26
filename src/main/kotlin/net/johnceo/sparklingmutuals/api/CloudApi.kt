@@ -8,6 +8,8 @@ import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.time.Duration
 
+internal data class ProfileResponse(val body: JsonObject, val fetchedAt: Long)
+
 /**
  * Shiny Hunter's shared API: a Cloudflare Worker that holds a Hypixel key, so lookups work without one of your own.
  * `/profile/<uuid>` returns `/v2/skyblock/profiles` cut down to the selected profile and that one member, in Hypixel's
@@ -27,24 +29,26 @@ object CloudApi {
     /** The Worker only answers known clients. */
     const val AGENT = "Sparkling Mutuals"
     private const val CACHE_MILLIS = 60_000L
-    private data class Cached(val body: JsonObject, val at: Long)
-    private val cache = mutableMapOf<String, Cached>()
+    private val cache = mutableMapOf<String, ProfileResponse>()
     private val client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build()
 
     /** Profiles for a player, as Hypixel would return them for `profiles?uuid=`. */
-    @Synchronized fun profiles(uuid: String): JsonObject {
+    fun profiles(uuid: String): JsonObject = observeProfiles(uuid).body
+
+    @Synchronized internal fun observeProfiles(uuid: String): ProfileResponse {
         val id = uuid.replace("-", "").lowercase()
         val now = System.currentTimeMillis()
-        cache[id]?.takeIf { now - it.at < CACHE_MILLIS }?.let { return it.body }
+        cache[id]?.takeIf { now - it.fetchedAt < CACHE_MILLIS }?.let { return it }
         val response = try {
             client.send(HttpRequest.newBuilder(URI.create("$URL/profile/$id")).timeout(Duration.ofSeconds(10))
                 .header("User-Agent", AGENT).GET().build(), HttpResponse.BodyHandlers.ofString())
         } catch (_: Exception) { throw ApiFailure.unavailable() }
         failure(response.statusCode())?.let { throw it }
         val body = try { JsonParser.parseString(response.body()).asJsonObject } catch (_: Exception) { throw ApiFailure.unavailable() }
-        cache[id] = Cached(body, now)
-        cache.entries.removeIf { now - it.value.at > CACHE_MILLIS }
-        return body
+        val result = ProfileResponse(body, now)
+        cache[id] = result
+        cache.entries.removeIf { now - it.value.fetchedAt > CACHE_MILLIS }
+        return result
     }
     fun failure(status: Int): ApiFailure? = when (status) {
         200 -> null

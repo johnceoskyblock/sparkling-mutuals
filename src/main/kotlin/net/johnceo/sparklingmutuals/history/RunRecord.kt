@@ -62,6 +62,10 @@ class RunRecord(
     var hotspotRun: Boolean? = null,
     var fullPartyPresent: Boolean = false,
     var rewardSummarySeen: Boolean = false,
+    var ownerUuid: String? = null,
+    var importSource: String? = null,
+    /** Milliseconds from the run start for each personal capture. Older records only have the aggregate. */
+    var captureOffsetsMillis: List<Int>? = null,
 ) {
     fun hasSparkling() = sparklings.isNotEmpty()
 }
@@ -79,4 +83,6 @@ class SparklingEntry(
     /** Original log location; optional for older/live entries and revalidated before opening. */
     var logFile: String = "",
     var logLine: Int = 0,
+    var ownerUuid: String? = null,
+    var personal: Boolean? = null,
 )

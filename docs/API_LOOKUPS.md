@@ -32,6 +32,8 @@ The Sparkling-mode worker releases its busy flag before rejecting a result for t
 
 One-shot `/sparkling` card requests keep their existing explicit-command behavior; automatic one-minute retries apply only to maintained background feature state, not past user commands.
 
+Opening **Stats** requests the active local player's profile through the configured provider. It shares any personal lookup already in flight and retains the last successful capture counts if a refresh fails. The cloud client can serve a cached response for up to a minute. A reused response retains its original timestamp for capture milestone tracking.
+
 ## Validation
 
 ### Party-name autocomplete

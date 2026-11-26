@@ -1,6 +1,8 @@
 package net.johnceo.sparklingmutuals.commands
 
 import java.security.MessageDigest
+import net.johnceo.sparklingmutuals.history.SafariEncounter
+import net.johnceo.sparklingmutuals.history.SafariEncounterHistory
 import net.johnceo.sparklingmutuals.history.SafariProfitPeriod
 import net.johnceo.sparklingmutuals.safari.SafariAssist
 import net.johnceo.sparklingmutuals.safari.SafariBiome
@@ -18,12 +20,19 @@ data class PartyChat(val sender: String, val body: String) {
     }
 }
 
-enum class PartyCommandKind { MUTUALS, MISSING, TICKETS, CAPTURES, SPARKLING, DYE, PROFIT, RATES, HELP, PB_DOOM, PB_WUMPA, PB_FOREST, PB_HAUNTED, PB_ICY, PB_CAVERN, MISSING_RUN, SINCE_SPARKLING, SINCE_UNIQUE }
+enum class PartyCommandKind { MUTUALS, MISSING, TICKETS, CAPTURES, SPARKLING, DYE, PROFIT, RATES, DOOM_CHECKS, WUMPA_CHECKS, GEMZIE_CHECKS, HELP, PB_DOOM, PB_WUMPA, PB_FOREST, PB_HAUNTED, PB_ICY, PB_CAVERN, MISSING_RUN, SINCE_SPARKLING, SINCE_UNIQUE }
 
 data class PartyCommand(val kind: PartyCommandKind, val ign: String = "", val duo: Boolean = false, val trackedPlayer: Boolean = false,
     val biome: SafariBiome? = null, val sinceCritter: String? = null, val profitPeriod: SafariProfitPeriod = SafariProfitPeriod.SESSION) {
     val isSince get() = kind == PartyCommandKind.SINCE_SPARKLING || kind == PartyCommandKind.SINCE_UNIQUE
-    val personalResult get() = isSince || kind == PartyCommandKind.DYE || kind == PartyCommandKind.PROFIT || kind == PartyCommandKind.RATES
+    val personalResult get() = isSince || encounter != null || kind == PartyCommandKind.DYE || kind == PartyCommandKind.PROFIT || kind == PartyCommandKind.RATES
+    internal val encounter get() = when (kind) {
+        PartyCommandKind.DOOM_CHECKS -> SafariEncounter.DOOMSPIRAL
+        PartyCommandKind.WUMPA_CHECKS -> SafariEncounter.WUMPA
+        PartyCommandKind.GEMZIE_CHECKS -> SafariEncounter.GEMZIE
+        else -> null
+    }
+    internal fun encounterResult() = encounter?.let { "$ign has checked ${SafariEncounterHistory.count(it)} ${it.label}'s!" }
     val requiresApiKey get() = kind in listOf(PartyCommandKind.MUTUALS, PartyCommandKind.MISSING, PartyCommandKind.TICKETS, PartyCommandKind.CAPTURES, PartyCommandKind.SPARKLING)
     val pbName get() = when (kind) {
         PartyCommandKind.PB_DOOM -> "Doomspiral"
@@ -52,7 +61,8 @@ data class PartyCommand(val kind: PartyCommandKind, val ign: String = "", val du
         PartyCommandKind.CAPTURES -> "Safari Captures for $ign: "
         PartyCommandKind.SPARKLING -> "$ign: "
         PartyCommandKind.DYE -> "$ign: Emerald Dyes: "
-        PartyCommandKind.SINCE_SPARKLING, PartyCommandKind.SINCE_UNIQUE, PartyCommandKind.PROFIT, PartyCommandKind.RATES -> ""
+        PartyCommandKind.SINCE_SPARKLING, PartyCommandKind.SINCE_UNIQUE, PartyCommandKind.PROFIT, PartyCommandKind.RATES,
+        PartyCommandKind.DOOM_CHECKS, PartyCommandKind.WUMPA_CHECKS, PartyCommandKind.GEMZIE_CHECKS -> ""
         PartyCommandKind.HELP -> "Commands: "
         PartyCommandKind.MISSING_RUN -> SafariMissingReply.prefix(biome)
         PartyCommandKind.PB_DOOM -> "Doomspiral PB: "
@@ -86,6 +96,8 @@ data class PartyCommand(val kind: PartyCommandKind, val ign: String = "", val du
             PartyCommandKind.CAPTURES -> SafariCaptureReply.matches(ign, body)
             PartyCommandKind.SPARKLING -> SafariSparklingReply.matchesCaptures(ign, body)
             PartyCommandKind.RATES -> SafariSparklingReply.matchesRates(body)
+            PartyCommandKind.DOOM_CHECKS, PartyCommandKind.WUMPA_CHECKS, PartyCommandKind.GEMZIE_CHECKS ->
+                Regex("^${Regex.escape(ign)} has checked \\d+ ${encounter!!.label}'s!$", RegexOption.IGNORE_CASE).matches(body)
             PartyCommandKind.DYE -> Regex("^Emerald Dyes: \\d+$", RegexOption.IGNORE_CASE).matches(body)
             PartyCommandKind.PROFIT -> body.startsWith(SafariProfitReply.PREFIX + profitPeriod.label + ", ", true)
             PartyCommandKind.SINCE_SPARKLING, PartyCommandKind.SINCE_UNIQUE -> SafariSinceReply.matches(this, body)
@@ -104,6 +116,9 @@ data class PartyCommand(val kind: PartyCommandKind, val ign: String = "", val du
         PartyCommandKind.CAPTURES -> "!captures $ign"
         PartyCommandKind.SPARKLING -> "!sparkling $ign"
         PartyCommandKind.RATES -> "!rates"
+        PartyCommandKind.DOOM_CHECKS -> "!doom"
+        PartyCommandKind.WUMPA_CHECKS -> "!wumpa"
+        PartyCommandKind.GEMZIE_CHECKS -> "!gemzie"
         PartyCommandKind.DYE -> "!dye"
         PartyCommandKind.PROFIT -> "!profit ${profitPeriod.name.lowercase()}"
         PartyCommandKind.SINCE_SPARKLING -> sinceCritter?.let { "!since $it" } ?: "!since"
@@ -133,6 +148,9 @@ data class PartyCommand(val kind: PartyCommandKind, val ign: String = "", val du
                 "!commands" -> PartyCommand(PartyCommandKind.HELP)
                 "!dye" -> PartyCommand(PartyCommandKind.DYE)
                 "!rates" -> PartyCommand(PartyCommandKind.RATES)
+                "!doom", "!dooms" -> PartyCommand(PartyCommandKind.DOOM_CHECKS)
+                "!wumpa", "!wumpas" -> PartyCommand(PartyCommandKind.WUMPA_CHECKS)
+                "!gemzie" -> PartyCommand(PartyCommandKind.GEMZIE_CHECKS)
                 "!pb doom" -> PartyCommand(PartyCommandKind.PB_DOOM)
                 "!pb doom duo" -> PartyCommand(PartyCommandKind.PB_DOOM, duo = true)
                 "!pb wumpa" -> PartyCommand(PartyCommandKind.PB_WUMPA)

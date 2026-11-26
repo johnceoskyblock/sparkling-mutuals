@@ -12,7 +12,7 @@ import net.johnceo.sparklingmutuals.honeyhives.Hive
 
 object HypixelApi {
     private val client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build()
-    private val profileCache=TimedLookupCache<Pair<ApiProvider,String>,JsonObject>()
+    private val profileCache=TimedLookupCache<Pair<ApiProvider,String>,ProfileResponse>()
     private val nameCache=TimedLookupCache<String,String>()
     private val discoveryUpdates=ProfileDiscoveryOverlay<Pair<ApiProvider,String>>()
 
@@ -20,18 +20,22 @@ object HypixelApi {
     val provider get() = ApiProvider.capture()
     val usingCloud get() = provider.cloud
 
-    private fun profiles(uuid: String, fresh: Boolean = false): JsonObject {
+    private fun profiles(uuid: String, fresh: Boolean = false): ProfileResponse {
         val id=uuid.replace("-","").lowercase(java.util.Locale.ROOT)
         val source=provider
         val key=source to id
         val read={
-            val body=if (source.cloud) CloudApi.profiles(id) else get("https://api.hypixel.net/v2/skyblock/profiles?uuid=$id")
+            val response = if (source.cloud) CloudApi.observeProfiles(id) else {
+                val fetchedAt = System.currentTimeMillis()
+                ProfileResponse(get("https://api.hypixel.net/v2/skyblock/profiles?uuid=$id", source.key), fetchedAt)
+            }
+            val body = response.body
             val selected=CloudProfiles.selectedProfileId(body) ?: throw ApiFailure.dataUnavailable()
             SafariProfile.discoveriesFrom(CloudProfiles.member(body,id,selected) ?: throw ApiFailure.dataUnavailable())
-            body
+            response
         }
-        val body=if (fresh) read().also { profileCache.put(key,it) } else profileCache.load(key,read)
-        return discoveryUpdates.apply(key,id,body)
+        val response = if (fresh) read().also { profileCache.put(key,it) } else profileCache.load(key,read)
+        return response.copy(body = discoveryUpdates.apply(key, id, response.body))
     }
     fun clearProfileCache() { profileCache.clear();discoveryUpdates.clear() }
     fun recordSparkling(participants: Set<String>,species: String) {
@@ -39,7 +43,7 @@ object HypixelApi {
         participants.forEach { uuid ->
             val id=uuid.replace("-","").lowercase(java.util.Locale.ROOT)
             val key=source to id
-            val baseline=profileCache.peek(key)?.let { body ->
+            val baseline=profileCache.peek(key)?.body?.let { body ->
                 CloudProfiles.selectedProfileId(body)?.let { CloudProfiles.member(body,id,it) }
             }?.get("safari")?.takeIf { it.isJsonObject }?.asJsonObject?.get("total_captured_sparkling_critters")?.takeIf {
                 it.isJsonPrimitive && it.asJsonPrimitive.isNumber
@@ -49,7 +53,7 @@ object HypixelApi {
     }
 
     fun getCurrentProfileUuid(uuid: String, fresh: Boolean = false): String = data {
-        CloudProfiles.selectedProfileId(profiles(uuid,fresh)) ?: throw ApiFailure.dataUnavailable()
+        CloudProfiles.selectedProfileId(profiles(uuid,fresh).body) ?: throw ApiFailure.dataUnavailable()
     }
 
     fun getSparklingCritters(playerUuid: String, profileUuid: String): Set<String> = data {
@@ -81,25 +85,32 @@ object HypixelApi {
         }
     }
 
-    fun getSafariProfile(playerUuid: String, fresh: Boolean = false): SafariProfile = data {
+    fun getSafariProfile(playerUuid: String, fresh: Boolean = false): SafariProfile =
+        getSafariProfileObservation(playerUuid, fresh).profile
+
+    internal data class SafariObservation(val profile: SafariProfile, val profileId: String, val fetchedAt: Long)
+
+    internal fun getSafariProfileObservation(playerUuid: String, fresh: Boolean): SafariObservation = data {
         val source = provider
         val observation = net.johnceo.sparklingmutuals.commands.SafariLookup.discoveryObservation(playerUuid, source)
-        val body = profiles(playerUuid, fresh)
+        val response = profiles(playerUuid, fresh)
+        val body = response.body
         val profile = CloudProfiles.selectedProfileId(body) ?: throw ApiFailure.dataUnavailable()
-        SafariProfile.from(CloudProfiles.member(body, playerUuid, profile) ?: throw ApiFailure.dataUnavailable()).also {
+        val safari = SafariProfile.from(CloudProfiles.member(body, playerUuid, profile) ?: throw ApiFailure.dataUnavailable()).also {
             if (source == provider && observation != null) net.johnceo.sparklingmutuals.commands.SafariLookup.observeDiscoveries(playerUuid, source, it.discoveries, observation)
         }
+        SafariObservation(safari, profile, response.fetchedAt)
     }
 
     /** Hive id -> when it refills, for hives looted in the last hour on any session. */
     fun getHoneyRefills(playerUuid: String): HoneyRefills = data {
-        val body=profiles(playerUuid,fresh=true)
+        val body=profiles(playerUuid,fresh=true).body
         val profile=CloudProfiles.selectedProfileId(body) ?: throw ApiFailure.dataUnavailable()
         HoneyRefills(profile,HoneyRefills.read(CloudProfiles.member(body,playerUuid,profile) ?: throw ApiFailure.dataUnavailable()))
     }
 
     private fun getMember(playerUuid: String, profileUuid: String): JsonObject = data {
-        CloudProfiles.member(profiles(playerUuid),playerUuid,profileUuid) ?: throw ApiFailure.dataUnavailable()
+        CloudProfiles.member(profiles(playerUuid).body,playerUuid,profileUuid) ?: throw ApiFailure.dataUnavailable()
     }
 
     internal fun onlineStatus(uuid: String, key: String): Boolean? = data {

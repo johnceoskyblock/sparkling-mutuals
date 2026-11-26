@@ -55,6 +55,8 @@ object SafariLookup {
         PartyCommandKind.DYE -> command.dyeResult(net.johnceo.sparklingmutuals.history.Achievements.emeraldDyes)
         PartyCommandKind.PROFIT -> SafariProfitReply.current(command.profitPeriod)
         PartyCommandKind.RATES -> SafariSparklingReply.currentRates()
+        PartyCommandKind.DOOM_CHECKS, PartyCommandKind.WUMPA_CHECKS, PartyCommandKind.GEMZIE_CHECKS ->
+            command.forResponder(localName).encounterResult().orEmpty()
         PartyCommandKind.PB_DOOM -> if (command.trackedPlayer) ConfigManager.personalBests.trackedResponse(command.ign, "Doomspiral", command.duo, localName) else ConfigManager.personalBests.response(localName, "Doomspiral", command.duo)
         PartyCommandKind.PB_WUMPA -> if (command.trackedPlayer) ConfigManager.personalBests.trackedResponse(command.ign, "Wumpa", command.duo, localName) else ConfigManager.personalBests.response(localName, "Wumpa", command.duo)
         PartyCommandKind.PB_FOREST -> if (command.trackedPlayer) ConfigManager.personalBests.trackedResponse(command.ign, "Forest", command.duo) else ConfigManager.personalBests.response(localName, "Forest")

@@ -46,6 +46,8 @@ object PartyCommands {
         history.record(chat.body, senderUuid)
         // Keep actual result bodies; a different result for the same command cannot cancel ours.
         val parsed = PartyCommand.fromChat(text) ?: return
+        if ((parsed.command.encounter != null || parsed.command.kind == PartyCommandKind.DYE) &&
+            net.johnceo.sparklingmutuals.history.HistoryAccountId.selected(Minecraft.getInstance()) == null) return
         val responderCommand = parsed.command.forResponder(Minecraft.getInstance().player?.name?.string ?: return)
         val request = parsed.copy(command = if (responderCommand.kind == PartyCommandKind.MISSING_RUN && responderCommand.biome == null)
             responderCommand.copy(biome = SafariTracking.ledger.current?.biomeAtThirtySeconds ?: return) else responderCommand)
@@ -128,6 +130,7 @@ object PartyCommands {
                     state.request.command.kind == PartyCommandKind.DYE -> state.request.command.dyeResult(net.johnceo.sparklingmutuals.history.Achievements.emeraldDyes)
                     state.request.command.kind == PartyCommandKind.PROFIT -> SafariProfitReply.current(state.request.command.profitPeriod)
                     state.request.command.kind == PartyCommandKind.RATES -> SafariSparklingReply.currentRates()
+                    state.request.command.encounter != null -> state.request.command.encounterResult()
                     else -> null
                 }
                 state.task = executor.submit {

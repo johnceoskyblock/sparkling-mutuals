@@ -52,6 +52,8 @@ object SparklingHistoryMerge {
                 matchedFound += it.found; matchedSaved += it.saved
                 val source = found[it.found]
                 if (source.logFile.isNotBlank()) { it.saved.logFile = source.logFile; it.saved.logLine = source.logLine }
+                if (it.saved.ownerUuid == null) it.saved.ownerUuid = source.ownerUuid
+                if (it.saved.personal == null) it.saved.personal = source.personal
             }
         }
         val added = java.util.Collections.newSetFromMap(java.util.IdentityHashMap<SparklingEntry, Boolean>())

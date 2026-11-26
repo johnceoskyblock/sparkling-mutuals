@@ -228,8 +228,10 @@ class SafariSettings {
     class History {
         @JvmField @ConfigOption(name = "Open history", desc = "")
         @ConfigEditorButton(runnableId = 10, buttonText = "History") var open = false
-        @JvmField @ConfigOption(name = "Import history from logs", desc = "Recover past runs and sparkling catches from Minecraft logs. Existing data is backed up.")
+        @JvmField @ConfigOption(name = "Import history from logs", desc = "Put all logs from your old Safari runs in this Minecraft instance's logs folder, then click Import logs. Recovers missing runs and sparkling catches for your History UUID.")
         @ConfigEditorButton(runnableId = 11, buttonText = "Import logs") var importLogs = false
+        @JvmField @ConfigOption(name = "History UUID", desc = "Track Safari history for this Minecraft account. Defaults to the first account you log in with after updating.") @ConfigEditorText
+        var ownerUuid = ConfigManager.historyOwnerUuid
         @JvmField @ConfigOption(name = "Use instant-sell prices", desc = "Value run profits at instant-sell prices instead of sell-offer prices.")
         @ConfigEditorBoolean var instaSell = ConfigManager.runCoinsInstaSell
         @JvmField @ConfigOption(name = "Achievements", desc = "Track and unlock Safari achievements.")
@@ -536,10 +538,7 @@ class SafariSettings {
             13 -> { apply(); client.smSetScreen(CatchCelebrationPreviewScreen(client.smScreen ?: SafariConfigScreen(this))) }
             14 -> (client.smScreen as? SafariConfigScreen)?.confirmBulkAction(resetDefaults = true)
             15 -> (client.smScreen as? SafariConfigScreen)?.confirmBulkAction(resetDefaults = false)
-            11 -> { apply(); client.execute {
-                client.smSetScreen(null)
-                LogImporter.runImport(LogImporter.defaultLogs())
-            } }
+            11 -> { apply(); client.execute { LogImporter.runImport() } }
         }
     }
     fun isValidRunnable(id: Int) = id in setOf(1,2,3,4,7,8,9,10,11,13,14,15,16)
@@ -555,6 +554,12 @@ class SafariSettings {
         return true
     }
     fun saveTextFields() {
+        val historyUuid = net.johnceo.sparklingmutuals.history.HistoryAccountId.normalize(history.ownerUuid)
+        if (historyUuid != null) ConfigManager.historyOwnerUuid = historyUuid
+        else if (history.ownerUuid.isNotBlank()) {
+            feedback("Enter a valid Minecraft UUID.")
+            history.ownerUuid = ConfigManager.historyOwnerUuid
+        }
         saveSound(); saveSparklingSound()
         val sound = Identifier.tryParse(safari.alerts.runSound.trim())
         if (sound == null) feedback("Enter a valid Minecraft sound identifier for run completion.")
