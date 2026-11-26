@@ -66,6 +66,14 @@ Changing mode selects presentation presets and PB category without clearing run 
 
 Species pages and [source evidence](docs/critters/TRACKING.md#source-evidence-and-retention) detail these exceptions. Source helpers and ordinary ESP are separate presentation decisions.
 
+## Full edition ESP presentation
+
+Full and Full No Auto Update provide independent species switches under **ESP > General > Critter glow outlines** and **Critter boxes**. The parent switches remain required. Glow uses boxes for non-living display models and Gazer so these targets remain visible without highlighting Gazer armor stands. Nameplates remain separately configurable.
+
+**Always show Rockmite mounds** in ESP General keeps intact mound targets and retained mound waypoints visible regardless of mode need; broken mounds stay excluded. **Safari > Modes > Unique > Show remaining Sparkling checks after biome completion** restores still-needed enabled checks. Both options default off and respect the overall ESP and biome controls. They do not change completion, catches or reports.
+
+In Full Clear, known locally unpunched Forest nests retain their markers even if shared completion says Honeybug is complete. Punched/resolved sites remain excluded. Standard retains its existing settings and visibility behavior.
+
 ## Examples
 
 - One Billygoat shared catch completes Unique and removes its row even when its Sparkling is needed. Sparkling separately needs two reconciled checks; Full Clear needs captures and qualified absence.

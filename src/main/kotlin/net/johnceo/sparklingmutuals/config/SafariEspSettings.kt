@@ -251,8 +251,15 @@ class EspGeneralSettings(limits: EspBiomeSettings,val drops: FloorDropEspSetting
     var boxes=SafariEspConfig.critterBoxes
     @JvmField @ConfigOption(name = "Critter visibility by biome", desc = "Choose whether each biome's critters are shown only while you are in that biome.") @Accordion val biomes=limits
     @JvmField @ConfigOption(name = "Floor drops outside your biome", desc = "Enable an item to show its ESP from other biomes.") @Accordion val floorVisibility=drops.visibility
+    @JvmField @ConfigOption(name = "Always show Rockmite mounds", desc = "Keep intact mounds highlighted after mode requirements are satisfied.") @ConfigEditorBoolean
+    var moundAlwaysOn=SafariEspConfig.moundAlwaysOn
+    val glowSpecies=CritterStyleSettings(true)
+    val boxSpecies=CritterStyleSettings(false)
     fun apply(): Boolean {
-        val changed=glow!=SafariEspConfig.critterGlow || boxes!=SafariEspConfig.critterBoxes
+        val speciesChanged=glowSpecies.apply() or boxSpecies.apply()
+        val moundChanged=moundAlwaysOn!=SafariEspConfig.moundAlwaysOn
+        SafariEspConfig.moundAlwaysOn=moundAlwaysOn
+        val changed=speciesChanged || moundChanged || glow!=SafariEspConfig.critterGlow || boxes!=SafariEspConfig.critterBoxes
         SafariEspConfig.critterGlow=glow;SafariEspConfig.critterBoxes=boxes
         return changed
     }
