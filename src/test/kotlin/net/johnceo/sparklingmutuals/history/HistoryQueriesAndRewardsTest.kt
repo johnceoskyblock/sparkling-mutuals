@@ -32,7 +32,7 @@ class HistoryQueriesAndRewardsTest : ProfitableEspPriceFixture() {
         assertEquals(0, HistoryQueries.liveLuck(listOf(RunRecord())).macawRuns)
         assertEquals(0, HistoryQueries.liveLuck(listOf(RunRecord(catches=linkedMapOf("Macaw" to 1)))).macawDrought)
     }
-    @Test fun `37th type time survives later captures long runs and reimport enrichment`() {
+    @Test fun `37th type time survives later captures and imports leave live details alone`() {
         val tally = RunTally()
         val names = net.johnceo.sparklingmutuals.safari.SafariRoster.all.map { it.name }
         names.forEachIndexed { i, name -> tally.line("CAPTURE! You caught a $name and gained 1x $name Shard!", "Me", 1000000L + i * 1000) }
@@ -42,7 +42,8 @@ class HistoryQueriesAndRewardsTest : ProfitableEspPriceFixture() {
         val saved = RunRecord(start=1000000,party=37,length=900000)
         val found = RunRecord(start=1000000,party=37,length=900000,allTypesMillis=36000,imported=true)
         assertEquals(0,HistoryMerge.merge(mutableListOf(saved),listOf(found)))
-        assertEquals(36000L,HistoryQueries.allTypesTime(saved))
+        assertEquals(900000L,HistoryQueries.allTypesTime(saved))
+        assertEquals(-1L,saved.allTypesMillis)
         assertNull(HistoryQueries.allTypesTime(RunRecord(party=36,allTypesMillis=50000)))
         assertNull(HistoryQueries.allTypesTime(RunRecord(party=37)))
         assertEquals(120000L,HistoryQueries.allTypesTime(RunRecord(party=37,length=120000)))
@@ -119,7 +120,7 @@ class HistoryQueriesAndRewardsTest : ProfitableEspPriceFixture() {
         assertFalse(short.scrollable)
         assertEquals(0, short.offsetAt(150.0, 5.0))
     }
-    @Test fun `summary essence enriches a saved run once and repeat imports preserve native profit`() {
+    @Test fun `imports preserve native profit and only live summary updates it`() {
         prices(mapOf(BazaarPrices.SAFARI_ESSENCE to doubleArrayOf(10.0, 20.0)))
         val tally = RunTally()
         tally.line("+999 Safari Essence", "Me")
@@ -130,12 +131,12 @@ class HistoryQueriesAndRewardsTest : ProfitableEspPriceFixture() {
         val saved = mutableListOf(run)
         val found = RunRecord(start = 1000000, imported = true, safariEssence = 350, summaryShards = 88, huntingXp = 239781)
         assertEquals(0, HistoryMerge.merge(saved, listOf(found)))
-        assertTrue(RunHistory.addEssenceValue(run))
-        assertEquals(7100L, run.coins)
-        assertEquals(7000L, run.essenceCoins)
+        assertFalse(RunHistory.addEssenceValue(run))
+        assertEquals(100L, run.coins)
+        assertEquals(-1L, run.essenceCoins)
         assertEquals(0, HistoryMerge.merge(saved, listOf(found)))
         assertFalse(RunHistory.addEssenceValue(run))
-        assertEquals(7100L, run.coins)
+        assertEquals(100L, run.coins)
         tally.line("+400 Safari Essence", "Me")
         assertTrue(RunHistory.applySummary(run, tally))
         assertEquals(8100L, run.coins)

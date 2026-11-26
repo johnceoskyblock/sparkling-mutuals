@@ -13,11 +13,14 @@ import net.johnceo.sparklingmutuals.history.AchievementRules
 import net.johnceo.sparklingmutuals.history.SparklingDexType
 import net.johnceo.sparklingmutuals.history.BazaarPrices
 import net.johnceo.sparklingmutuals.history.PlaytimeReader
+import net.johnceo.sparklingmutuals.history.OwnStats
 import net.johnceo.sparklingmutuals.history.ProfitPeriods
 import net.johnceo.sparklingmutuals.history.ProfitTimeframe
 import net.johnceo.sparklingmutuals.history.ProfitTotals
 import net.johnceo.sparklingmutuals.history.RunHistory
 import net.johnceo.sparklingmutuals.history.RunRecord
+import net.johnceo.sparklingmutuals.history.SafariEncounter
+import net.johnceo.sparklingmutuals.history.SafariEncounterHistory
 import net.johnceo.sparklingmutuals.history.HistoryQueries
 import net.johnceo.sparklingmutuals.history.SparklingLog
 import net.johnceo.sparklingmutuals.safari.SafariBiome
@@ -28,7 +31,6 @@ import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.gui.screens.Screen
 import net.minecraft.client.gui.components.EditBox
 import net.minecraft.client.input.MouseButtonEvent
-import net.minecraft.client.input.KeyEvent
 import net.minecraft.network.chat.Component
 
 /**
@@ -65,11 +67,7 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
     private var profitTimeframe = restored.profitTimeframe
     private var selectedProfitSession: Int? = restored.selectedProfitSession
     private var mineOnly = restored.mineOnly
-    private var dexType=restored.dexType
-    private var dexMenu=false
-    private var dexMenuScroll=0
-    private var dexButton=IntArray(4)
-    private var dexVisible=10
+    private var dexType = restored.dexType
     private var filter = restored.filter
     private var achievementSort = restored.achievementSort
     private var listTop = 0; private var listBottom = 0; private var listRows = 1; private var listSize = 0
@@ -83,8 +81,10 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
     private var scrollHandle: ScrollHandle? = null
     private var draggingScroll: Tab? = null
     private var scrollGrab = 0.0
+    private var requestedStats = false
 
     override fun init() {
+        if (tab == Tab.STATS && !requestedStats) requestStats()
         runSearch = EditBox(font, 0, 0, 180, 16, Component.literal("Search run number")).also {
             it.setMaxLength(20); it.value = runQuery; it.setHint(Component.literal("Jump to run #"))
             it.setResponder { query ->
@@ -103,6 +103,7 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
 
     override fun onClose() { minecraft.smSetScreen(parent) }
     override fun removed() {
+        requestedStats = false
         rememberedNavigation = Navigation(scroll.toMap(), sparklingRunsOnly, runSort, filteredRuns().getOrNull(selectedRun)?.number ?: -1, runQuery,
             profitTimeframe, selectedProfitSession, mineOnly, dexType, critterQuery, filter, achievementSort)
         super.removed()
@@ -112,7 +113,6 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
     override fun extractRenderState(g: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, delta: Float) {
         super.extractRenderState(g, mouseX, mouseY, delta)
         hits.clear()
-        if(tab!=Tab.SPARKLINGS) dexMenu=false
         scrollHandle = null
         if (draggingScroll != tab) draggingScroll = null
         pw = minOf(640, width - 20); ph = minOf(340, height - 50)
@@ -138,7 +138,6 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
         } else if (tab == Tab.SPARKLINGS) {
             critterSearch.x = px + 8; critterSearch.y = py + 22; critterSearch.width = maxOf(60, (pw * .60f).toInt() - 16)
             critterSearch.extractRenderState(g, mouseX, mouseY, delta)
-            if(dexMenu) drawDexMenu(g,mouseX,mouseY)
         }
     }
 
@@ -157,9 +156,19 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
             pose.pushMatrix(); pose.translate(x + tabW / 2f, y + 9f - 4f * scale); pose.scale(scale, scale)
             g.text(font, t.label, -font.width(t.label) / 2, 0, if (on) 0xFF101010.toInt() else TEXT, !on)
             pose.popMatrix()
-            hits += Hit(x, y, tabW, 18) { tab = t }
+            hits += Hit(x, y, tabW, 18) {
+                if (tab != t) {
+                    tab = t
+                    if (t == Tab.STATS) requestStats()
+                }
+            }
             x += tabW + 6
         }
+    }
+
+    private fun requestStats() {
+        requestedStats = true
+        OwnStats.openStats(minecraft)
     }
 
     // ------------------------------------------------------------------ runs
@@ -426,7 +435,7 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
 
     private fun sparklings(g: GuiGraphicsExtractor, mx: Int, my: Int) {
         val self = minecraft.player?.name?.string.orEmpty()
-        val entries = SparklingLog.entries.filter { (!mineOnly || it.player.equals(self, true)) && HistoryQueries.matchesCritter(it, critterQuery) }
+        val entries = SparklingLog.entries.filter { (!mineOnly || SparklingLog.isPersonal(it, self)) && HistoryQueries.matchesCritter(it, critterQuery) }
         val listW = Math.round(pw * .60f)
         g.text(font, "Sparkling History", px + 8, py + 6, PINK)
         "${entries.size} catch${if (entries.size == 1) "" else "es"}".let { g.text(font, it, px + listW - font.width(it), py + 6, MUTED) }
@@ -457,53 +466,33 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
             (entry.tickets?.let { "§e$it" } ?: "§8-").let { g.text(font, it, px + listW - font.width(it), y, TEXT) }
         }
         scrollbar(g, offset, px + listW + 6)
-        // Your dex, by biome, in two columns; shrunk to fit a short window.
-        val dx = px + listW + 16
-        val counts=Achievements.sparklingCounts()
-        val dex = AchievementRules.dex(counts,dexType.required)
-        g.text(font, dexType.label, dx, py + 6, GOLD)
-        val selectorW=(px+pw-10-dx).coerceAtLeast(60)
-        dexButton=intArrayOf(dx,py+22,selectorW,15)
-        button(g,mx,my,dx,py+22,selectorW,cut("","Dex Type: ${dexType.label} ▾",selectorW-8)) { dexMenu=!dexMenu }
-        "${dex.size}/${SafariRoster.all.size}".let { g.text(font, it, px + pw - 10 - font.width(it), py + 6, TEXT) }
-        val biomes = SafariBiome.entries
-        val half = (biomes.size + 1) / 2
-        val needed = IntArray(2).also { n -> biomes.forEachIndexed { b, biome -> n[if (b < half) 0 else 1] += ROW + 1 + 10 * biome.critters.size + 4 } }
-        val s = minOf(1f,((ph-70).coerceAtLeast(1)).toFloat()/needed.max()).coerceAtLeast(.2f)
-        val pose = g.pose()
-        pose.pushMatrix(); pose.translate(dx.toFloat(), (py + 44).toFloat()); pose.scale(s, s)
-        val colW = Math.round((px + pw - 10 - dx) / 2f / s)
-        val colY = intArrayOf(0, 0)
-        biomes.forEachIndexed { b, biome ->
-            val col = if (b < half) 0 else 1
-            val x = col * colW
-            val have = biome.critters.count { it.name in dex }
-            g.text(font, "§l§n${biome.label}§r §7$have/${biome.critters.size}", x, colY[col], biome.color)
-            colY[col] += ROW + 1
-            for (critter in biome.critters) {
-                g.text(font, if (critter.name in dex) colour(critter.name) + critter.name else "§8" + critter.name, x + 4, colY[col], TEXT)
-                tip(g,mx,my,dx+((x+4)*s).toInt(),py+44+(colY[col]*s).toInt(),(font.width(critter.name)*s).toInt().coerceAtLeast(1),(10*s).toInt().coerceAtLeast(1),
-                    critter.name,"${counts[critter.name] ?: 0} credited catches · ${dexType.required} required")
-                colY[col] += 10
-            }
-            colY[col] += 4
-        }
-        pose.popMatrix()
+        dexSummary(g, mx, my, px + listW + 16)
         toggle(g, mx, my, px + 8, py + ph - 20, "Mine only", mineOnly) { mineOnly = !mineOnly; scroll[Tab.SPARKLINGS] = 0 }
     }
 
-    private fun drawDexMenu(g: GuiGraphicsExtractor,mx: Int,my: Int) {
-        hits.clear()
-        val w=maxOf(dexButton[2],150).coerceAtMost(pw-16)
-        val x=(dexButton[0]+dexButton[2]-w).coerceAtLeast(px+8);val y=dexButton[1]+18
-        dexVisible=((py+ph-26-y)/18).coerceIn(1,SparklingDexType.entries.size)
-        dexMenuScroll=dexMenuScroll.coerceIn(0,SparklingDexType.entries.size-dexVisible)
-        g.fill(x-2,y-2,x+w+2,y+dexVisible*18+1,0xFF11141C.toInt())
-        g.outline(x-2,y-2,w+4,dexVisible*18+3,GOLD)
-        SparklingDexType.entries.drop(dexMenuScroll).take(dexVisible).forEachIndexed { i,type ->
-            button(g,mx,my,x,y+i*18,w,"${type.label}  (${type.required}x)") { dexType=type;dexMenu=false }
+    private fun dexSummary(g: GuiGraphicsExtractor, mx: Int, my: Int, x: Int) {
+        val dex = AchievementRules.dex(Achievements.sparklingCounts(), dexType.required)
+        val right = px + pw - 10
+        val w = (right - x).coerceAtLeast(1)
+        val total = "${dex.size}/${SafariRoster.all.size}"
+        g.text(font, cut("", dexType.label, (w - font.width(total) - 6).coerceAtLeast(1)), x, py + 6, PINK)
+        g.text(font, total, right - font.width(total), py + 6, TEXT)
+        button(g, mx, my, x, py + 22, w, cut("", "Open Critterdex", (w - 6).coerceAtLeast(1))) {
+            minecraft.smSetScreen(SparklingDexScreen(dexType) { destination, tier ->
+                dexType = tier
+                tab = destination
+                minecraft.smSetScreen(this)
+            })
         }
-        if(dexVisible<SparklingDexType.entries.size) g.text(font,"↕",x+w-10,y+dexVisible*18-10,GOLD)
+        for ((index, biome) in SafariBiome.entries.withIndex()) {
+            val y = py + 49 + index * 24
+            if (y + 16 >= py + ph - 24) break
+            val have = biome.critters.count { it.name in dex }
+            val caption = "$have/${biome.critters.size}"
+            g.text(font, biome.label, x, y, biome.color)
+            g.text(font, caption, right - font.width(caption), y, MUTED)
+            bar(g, x, y + 12, w, 3, have.toDouble() / biome.critters.size, biome.color)
+        }
     }
 
     // ------------------------------------------------------------------ achievements
@@ -583,8 +572,8 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
         val rows = listOf(
             Triple("Saved runs", "%,d".format(runs.size), "Live and imported runs; excludes runs over 30m."),
             Triple("Recorded run time", hours(played), "Total known time in saved runs."),
-            Triple("Safari playtime", if (PlaytimeReader.minutes > 0) hours(PlaytimeReader.safariMillis()) else "§7open /playtime → Safari",
-                "Safari /playtime plus newer saved runs."),
+            Triple("Safari playtime", PlaytimeReader.menuMillis?.let(::hours) ?: "§7open /playtimedetailed",
+                "The last Safari playtime reported by /playtimedetailed."),
             Triple("Average run (<10m)", HistoryQueries.averageLength(runs)?.let(::clock) ?: "-",
                 "Known run times under 10m, including imports."),
             Triple("37/37 runs", "${runs.count { it.party >= all }}", "Runs with all 37 types caught or loot-shared."),
@@ -597,11 +586,13 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
                 (if (played > 0) " §7· " + BazaarPrices.format(runs.sumOf { maxOf(0L, it.coins) } * 3_600_000L / played) + "/h" else ""),
                 "Your shards, feathers and known essence before fees and ticket costs. Includes loot shares and import estimates."),
             Triple("Tickets used (recorded)", "%,d".format(runs.sumOf { it.tickets }), "Confirmed ticket uses in saved runs. Missing logs may undercount."),
-            Triple("Sparklings (caught / seen)", "${SparklingLog.entries.count { it.player.equals(self, true) }} / ${SparklingLog.entries.size}", "You: personal catches. Seen: all recorded party catches, including imports."),
+            Triple("Sparklings (caught / seen)", "${SparklingLog.entries.count { SparklingLog.isPersonal(it, self) }} / ${SparklingLog.entries.size}", "You: personal catches. Seen: all recorded party catches, including imports."),
             Triple("Sparkling dex", "${Achievements.ownDex().size}/$all", "Your caught types plus cached profile discoveries."),
             Triple("Tickets since last sparkling", "${SparklingLog.ticketsSinceSparkling}", "Ticket uses since the last recorded party sparkling."),
             Triple("Macaws", "${runs.sumOf { it.macaws }}" + (if (runs.isEmpty()) "" else " §7· ${runs.count { it.macaws > 0 } * 100 / runs.size}% of runs"), "Your catches and loot-shared Macaws. Percentage: runs with at least one."),
             Triple("Runs since Macaw", "${Achievements.runsSinceMacaw}", "Runs since a caught or loot-shared Macaw. Includes imports."),
+            Triple("Doomspiral checks", "%,d".format(SafariEncounterHistory.count(SafariEncounter.DOOMSPIRAL)), "Haunted ritual announcements recorded on Main, including imports."),
+            Triple("Wumpa checks", "%,d".format(SafariEncounterHistory.count(SafariEncounter.WUMPA)), "Icy footsteps announcements recorded on Main, including imports."),
             Triple("Contests completed", "${Achievements.contestsCompleted}", "Contests where you met your ticket target."))
         val rowWidth = rows.maxOf { (label, value) -> font.width(label) + font.width(value) + 12 }
         val s = minOf(fit(rows.size * ROW, py + ph - 26 - (py + 22)),
@@ -619,12 +610,13 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
         rows.forEachIndexed { i, row -> tip(g, mx, my, px + 10, py + 22 + (i * ROW * s).toInt(),
             (pw * .50f - 10).toInt(), maxOf(1, (ROW * s).toInt()), row.first, row.third) }
         val bx = px + Math.round(pw * .56f)
-        g.text(font, "Most caught", bx, py + 22, 0xFFDDDDDD.toInt())
+        val chartTop = apiCaptures(g, mx, my, bx, py + 22) + 10
+        g.text(font, "Most caught", bx, chartTop, 0xFFDDDDDD.toInt())
         val top = byCritter.entries.sortedByDescending { it.value }
         val max = top.firstOrNull()?.value ?: 1
         val barX = bx + 76
         val barW = px + pw - 50 - barX
-        var by = py + 35
+        var by = chartTop + 13
         for (entry in top) {
             if (by >= py + ph - 32) break
             g.text(font, colour(entry.key) + entry.key, bx, by, TEXT)
@@ -635,7 +627,29 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
                 "%,d personal catches. Repeats included; no loot shares.".format(entry.value))
             by += 11
         }
-        if (top.isEmpty()) g.text(font, "§7Nothing yet.", bx, by, MUTED)
+        if (top.isEmpty() && by < py + ph - 32) g.text(font, "§7Nothing yet.", bx, by, MUTED)
+    }
+
+    private fun apiCaptures(g: GuiGraphicsExtractor, mx: Int, my: Int, x: Int, y: Int): Int {
+        val snapshot = OwnStats.captures
+        val total = snapshot?.apiTotal?.let { "%,d".format(it) }
+            ?: if (OwnStats.loadingCaptures) "Loading…" else "—"
+        val rows = listOf("API Captures" to total) + SafariBiome.entries.map { biome ->
+            biome.label to (snapshot?.biomes?.get(biome)?.let { "%,d".format(it) } ?: "—")
+        }
+        val width = (px + pw - 12 - x).coerceAtLeast(1)
+        val scale = minOf(1f, width.toFloat() / rows.maxOf { (label, value) -> font.width(label) + font.width(value) + 12 })
+        val right = (width / scale).toInt()
+        val pose = g.pose()
+        pose.pushMatrix(); pose.translate(x.toFloat(), y.toFloat()); pose.scale(scale, scale)
+        rows.forEachIndexed { index, (label, value) ->
+            g.text(font, label, if (index == 0) 0 else 4, index * ROW, if (index == 0) GOLD else MUTED)
+            g.text(font, value, right - font.width(value), index * ROW, TEXT)
+        }
+        pose.popMatrix()
+        tip(g, mx, my, x, y, width, maxOf(1, (ROW * scale).toInt()), "API Captures",
+            "Capture totals from your selected Hypixel profile. Refreshes when you open Stats.")
+        return y + (rows.size * ROW * scale).toInt()
     }
 
     // ------------------------------------------------------------------ profit
@@ -693,16 +707,34 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
             cells.forEachIndexed { c, text -> centred(g, text, px + Math.round(pw * at[c]), y, colours[c]) }
         }
         scrollbar(g, offset, px + pw - 8)
-        val priceWidth = if (pw >= 340) 140 else 108
-        val timeframeWidth = if (pw >= 340) 120 else 102
-        button(g, mx, my, px + 14 + priceWidth, py + ph - 20, timeframeWidth, "Timeframe: ${profitTimeframe.name.lowercase()}") {
+        val available = (pw - 92).coerceAtLeast(3)
+        val priceWidth = minOf(140, available * 35 / 100).coerceAtLeast(1)
+        val timeframeWidth = minOf(120, available * 35 / 100).coerceAtLeast(1)
+        val sessionWidth = minOf(88, (available - priceWidth - timeframeWidth).coerceAtLeast(1))
+        val timeframeLabel = "Timeframe: ${profitTimeframe.name.lowercase()}"
+        val priceLabel = if (ConfigManager.runCoinsInstaSell) "Price: insta-sell" else "Price: sell offer"
+        val footerY = py + ph - 20
+        button(g, mx, my, px + 14 + priceWidth, footerY, timeframeWidth,
+            if (font.width(timeframeLabel) + 6 <= timeframeWidth) timeframeLabel else profitTimeframe.name.lowercase().replaceFirstChar(Char::uppercaseChar)) {
             profitTimeframe = ProfitTimeframe.entries[(profitTimeframe.ordinal + 1) % ProfitTimeframe.entries.size]
             scroll[Tab.PROFIT] = 0
         }
-        button(g, mx, my, px + 8, py + ph - 20, priceWidth, if (ConfigManager.runCoinsInstaSell) "Price: insta-sell" else "Price: sell offer") {
+        button(g, mx, my, px + 8, footerY, priceWidth,
+            if (font.width(priceLabel) + 6 <= priceWidth) priceLabel else priceLabel.substringAfter(": ").replaceFirstChar(Char::uppercaseChar)) {
             ConfigManager.runCoinsInstaSell = !ConfigManager.runCoinsInstaSell; ConfigManager.save()
             RunHistory.reprice()
         }
+        val sessionX = px + 20 + priceWidth + timeframeWidth
+        val newSessionLabel = cut("", "New session", (sessionWidth - 6).coerceAtLeast(1))
+        button(g, mx, my, sessionX, footerY, sessionWidth, newSessionLabel) {
+            val send: (Component) -> Unit = { minecraft.player?.sendSystemMessage(it) }
+            if (RunHistory.startNewSession(send, send) == 1) {
+                profitTimeframe = ProfitTimeframe.SESSION
+                selectedProfitSession = RunHistory.sessionStarts.size
+                scroll[Tab.PROFIT] = 0
+            }
+        }
+        tip(g, mx, my, sessionX, footerY, sessionWidth, 15, "New session", "Save the current profit session and start a new one.")
     }
 
     // ------------------------------------------------------------------ widgets
@@ -774,15 +806,7 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
         return prefix + shown.trimEnd() + "…"
     }
 
-    override fun keyPressed(event: KeyEvent): Boolean {
-        if(dexMenu && event.key()==InputConstants.KEY_ESCAPE) { dexMenu=false;return true }
-        return super.keyPressed(event)
-    }
     override fun mouseClicked(event: MouseButtonEvent, doubleClick: Boolean): Boolean {
-        if(dexMenu) {
-            if(event.button()==InputConstants.MOUSE_BUTTON_LEFT) hits.firstOrNull { it.contains(event.x(),event.y()) }?.let { it.action();return true }
-            dexMenu=false;return true
-        }
         if (event.button() == InputConstants.MOUSE_BUTTON_LEFT) scrollHandle?.takeIf { it.tab == tab &&
             event.x() >= it.x - 4 && event.x() < it.x + 6 && event.y() >= it.track.top && event.y() < it.track.bottom }?.let { handle ->
             val top = handle.track.thumbTop(scroll[tab] ?: 0)
@@ -806,7 +830,6 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
         return super.mouseReleased(event)
     }
     override fun mouseScrolled(mouseX: Double, mouseY: Double, scrollX: Double, scrollY: Double): Boolean {
-        if(dexMenu) { dexMenuScroll=(dexMenuScroll-scrollY.toInt()).coerceIn(0,SparklingDexType.entries.size-dexVisible);return true }
         if (scrollY == 0.0) return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY)
         scroll[tab] = ((scroll[tab] ?: 0) + if (scrollY > 0) -3 else 3).coerceAtLeast(0)
         return true

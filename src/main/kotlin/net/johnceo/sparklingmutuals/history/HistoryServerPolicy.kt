@@ -1,6 +1,7 @@
 package net.johnceo.sparklingmutuals.history
 
 import net.johnceo.sparklingmutuals.hud.SkyblockSidebar
+import net.johnceo.sparklingmutuals.history.importing.HistoryBackfill.Realm
 import net.johnceo.sparklingmutuals.safari.SafariRules
 import net.johnceo.sparklingmutuals.safari.SafariRun
 import net.johnceo.sparklingmutuals.safari.SafariTracking
@@ -25,11 +26,15 @@ object HistoryServerPolicy {
     private var state = HistoryServerState()
     private var connection: Any? = null
     fun alpha(client: Minecraft = Minecraft.getInstance()): Boolean { allows(client); return state.alpha }
+    fun verifiedMain(client: Minecraft): Boolean =
+        Realm.fromHost(client.currentServer?.ip) == Realm.MAIN && !alpha(client)
     fun allows(client: Minecraft = Minecraft.getInstance()): Boolean {
         if (client.connection !== connection) {
             connection = client.connection
             state = HistoryServerState()
         }
-        return state.observe(SkyblockSidebar.lines(client), SafariTracking.ledger.current)
+        val realm = Realm.fromHost(client.currentServer?.ip)
+        val lines = if (realm == Realm.ALPHA) listOf("alpha.hypixel.net") else SkyblockSidebar.lines(client)
+        return state.observe(lines, SafariTracking.ledger.current)
     }
 }

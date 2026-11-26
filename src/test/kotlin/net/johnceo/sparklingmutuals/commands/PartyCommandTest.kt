@@ -105,6 +105,19 @@ class PartyCommandTest {
     }
 
     @Test
+    fun `encounter commands use personal replies and accept the documented aliases`() {
+        val commands = mapOf("doom" to "Doomspiral", "dooms" to "Doomspiral", "wumpa" to "Wumpa",
+            "wumpas" to "Wumpa", "gemzie" to "Gemzie")
+        for ((alias, species) in commands) {
+            val command = PartyCommand.fromChat("Party > Local: !$alias")!!.command.forResponder("Other")
+            assertTrue(command.personalResult)
+            assertFalse(command.requiresApiKey)
+            assertTrue(command.matchesResponse("Other has checked 6 $species's!"))
+            assertFalse(command.matchesResponse("Local has checked 6 $species's!"))
+        }
+    }
+
+    @Test
     fun `lookup errors cannot cancel another clients successful result`() {
         for (kind in listOf(PartyCommandKind.MISSING, PartyCommandKind.TICKETS, PartyCommandKind.MUTUALS)) {
             val command = PartyCommand(kind, "JohnCEO")

@@ -14,6 +14,7 @@ class RunTally {
     var feathers = 0
     var macaws = 0
     var caught = 0
+    val captureTimes = mutableListOf<Long>()
     var lootShares = 0
     val party = linkedSetOf<String>()
     var ownSparklings = 0
@@ -60,7 +61,11 @@ class RunTally {
         val critter = catch.critter.name
         party += critter
         if (party.size == net.johnceo.sparklingmutuals.safari.SafariRoster.all.size && allTypesAt == null && at != null) allTypesAt = at
-        if (catch.personal) { caught++; catches.merge(critter, 1, Int::plus) } else lootShares++
+        if (catch.personal) {
+            caught++
+            catches.merge(critter, 1, Int::plus)
+            if (at != null) captureTimes += at
+        } else lootShares++
         if (critter == "Macaw") macaws++
         if ("Shard" in text) shards.merge(critter, quantity.find(text)?.groupValues?.get(1)?.toInt() ?: 1, Int::plus)
         feather.find(text)?.let { feathers += it.groupValues[1].toIntOrNull() ?: 1 }

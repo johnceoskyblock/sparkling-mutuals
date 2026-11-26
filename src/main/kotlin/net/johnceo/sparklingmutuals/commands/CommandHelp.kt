@@ -8,6 +8,7 @@ object CommandHelp {
     private val party = listOf(
         PartyCommandKind.MUTUALS, PartyCommandKind.MISSING, PartyCommandKind.TICKETS, PartyCommandKind.CAPTURES, PartyCommandKind.SPARKLING, PartyCommandKind.DYE,
         PartyCommandKind.SINCE_SPARKLING, PartyCommandKind.SINCE_UNIQUE, PartyCommandKind.PROFIT, PartyCommandKind.RATES,
+        PartyCommandKind.DOOM_CHECKS, PartyCommandKind.WUMPA_CHECKS, PartyCommandKind.GEMZIE_CHECKS,
         PartyCommandKind.PB_DOOM, PartyCommandKind.PB_WUMPA, PartyCommandKind.PB_FOREST,
         PartyCommandKind.PB_CAVERN, PartyCommandKind.PB_ICY, PartyCommandKind.PB_HAUNTED,
         PartyCommandKind.MISSING_RUN, PartyCommandKind.HELP

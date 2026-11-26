@@ -84,6 +84,7 @@ object SparklingMutuals : ModInitializer {
         TicketCounter.register()
         Achievements.register()
         PlaytimeReader.register()
+        net.johnceo.sparklingmutuals.history.SafariEncounterHistory.register()
         BeeNests.register()
         HoneyHives.register()
 
@@ -138,6 +139,7 @@ object SparklingMutuals : ModInitializer {
         net.johnceo.sparklingmutuals.skyblock.UbiksCubeTimer.tick(client)
         net.johnceo.sparklingmutuals.sync.SafariPartySync.tick(client)
         net.johnceo.sparklingmutuals.hud.HotspotAssignmentAlert.tick(client)
+        net.johnceo.sparklingmutuals.history.HistoryAccountId.tick(client)
         RunHistory.tick(client)
         Achievements.tick(client)
         OwnStats.tick(client)

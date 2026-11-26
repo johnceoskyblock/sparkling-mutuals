@@ -174,6 +174,7 @@ object ConfigManager {
     var achievementSound = true
     var achievementsToParty = false
     var runCoinsInstaSell = false
+    var historyOwnerUuid = ""
     var hideCaptureChat = true
     var hideGroundCapsules = true
     var hideFlyingCapsules = true
@@ -241,6 +242,7 @@ object ConfigManager {
     }
 
     private fun loadSettings(properties: Properties) {
+        historyOwnerUuid = net.johnceo.sparklingmutuals.history.HistoryAccountId.normalize(properties.getProperty("history.ownerUuid", "")).orEmpty()
         HotspotPreferences.load(properties)
         progressRows = (listOf(null) + SafariBiome.entries).associateWith { biome ->
             ProgressRowDisplay.entries.firstOrNull { it.name == properties.getProperty(progressRowKey(biome)) }
@@ -302,6 +304,7 @@ object ConfigManager {
             setProperty("apiKey", apiKey)
             setProperty("profitsTicketMode", profitsTicketMode.toString())
             setProperty("runCoinsInstaSell", runCoinsInstaSell.toString())
+            setProperty("history.ownerUuid", historyOwnerUuid)
             setProperty("hotspotAnnouncer", hotspotAnnouncer.toString())
             setProperty("migration.shardSaleGuidanceV2", "true")
             setProperty("migration.sparkleWarpTimers22_27", "true")
@@ -346,6 +349,7 @@ object ConfigManager {
             remove("safariEntryApproach")
             installedVersionHistory.save(this)
             setProperty("apiKey", apiKey)
+            setProperty("history.ownerUuid", historyOwnerUuid)
             setProperty("runCompleteTitle", runCompleteTitle)
             setProperty("runCompleteSound", runCompleteSound)
             setProperty("runCompleteVolume", runCompleteVolume.coerceIn(0, 100).toString())

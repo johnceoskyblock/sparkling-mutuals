@@ -9,7 +9,7 @@ internal object SettingsOrder {
         "Sparkling" to listOf("allScannable", "profitable", "hideCritters", "hideDrops"),
         "Party" to listOf("hotspotPreferences", "biomeReports", "startingItems", "downtime", "enabled", "pbChat"),
         "Miria" to listOf("enabled", "ticketMode", "announceTicket", "ticketMessage", "autoContestDowntime", "honeyHives"),
-        "History" to listOf("open", "instaSell", "importLogs", "achievements", "sound", "toParty"),
+        "History" to listOf("open", "instaSell", "importLogs", "ownerUuid", "achievements", "sound", "toParty"),
         "Warp" to listOf("description", "enabled", "mode", "duo", "reparty", "delay", "reset",
             "autoParty", "autoPartyOnlineOnly", "list", "refresh", "leech", "whitelist", "autoReconnectHypixel", "autoJoinSkyBlock", "autoEnter"),
         "Safari" to listOf("alerts", "capture", "interactions", "entry", "entryCooldown", "teammates", "visibility", "gambling"),

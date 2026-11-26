@@ -11,6 +11,7 @@ import net.johnceo.sparklingmutuals.config.SettingsTarget
 import net.johnceo.sparklingmutuals.config.UpdateDetailsScreen
 import net.johnceo.sparklingmutuals.contest.ContestGui
 import net.johnceo.sparklingmutuals.history.importing.LogImporter
+import net.johnceo.sparklingmutuals.history.RunHistory
 import net.johnceo.sparklingmutuals.history.ui.HistoryScreen
 import net.johnceo.sparklingmutuals.honeyhives.HoneyHives
 import net.johnceo.sparklingmutuals.safari.SafariMode
@@ -65,10 +66,7 @@ object SparklingCommand {
                 }) }
             }
             dispatcher.register(ClientCommands.literal("newsession").executes { context ->
-                net.johnceo.sparklingmutuals.history.RunHistory.newSession().fold(
-                    { context.source.sendFeedback(LocalChat.component("[SM] Previous session saved. New session started.")); 1 },
-                    { context.source.sendError(LocalChat.component("[SM] Could not save the new session. See latest.log.")); 0 }
-                )
+                RunHistory.startNewSession(context.source::sendFeedback, context.source::sendError)
             })
             dispatcher.register(
                 historyShortcuts
@@ -85,9 +83,8 @@ object SparklingCommand {
                     .then(ClientCommands.literal("history")
                         .then(ClientCommands.literal("import")
                             .then(ClientCommands.argument("folder", com.mojang.brigadier.arguments.StringArgumentType.greedyString()).executes {
-                                LogImporter.runImport(java.nio.file.Path.of(
-                                    com.mojang.brigadier.arguments.StringArgumentType.getString(it, "folder").replace("\"", ""))); 1 })
-                            .executes { LogImporter.runImport(LogImporter.defaultLogs()); 1 })
+                                LogImporter.runImport(com.mojang.brigadier.arguments.StringArgumentType.getString(it, "folder")) })
+                            .executes { LogImporter.runImport() })
                         .executes { open { HistoryScreen(null) } })
                     .then(ClientCommands.literal("debug").executes { context ->
                         SafariEsp.debug(Minecraft.getInstance())

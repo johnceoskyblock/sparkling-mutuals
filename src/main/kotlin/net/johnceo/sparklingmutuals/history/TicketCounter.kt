@@ -10,13 +10,14 @@ import net.minecraft.client.Minecraft
  */
 object TicketCounter {
     private const val MANAGER = "[NPC] Safari Manager: "
-    private val lines = setOf("Looks good to me. Have fun out there!", "I already saw your ticket, so you're free to go.")
+    private const val PAID = "Looks good to me. Have fun out there!"
+    private val lines = setOf(PAID, "I already saw your ticket, so you're free to go.")
     fun isTicket(text: String) = text.startsWith(MANAGER) && text.removePrefix(MANAGER).trim() in lines
 
     fun register() {
         ClientReceiveMessageEvents.GAME.register { message, overlay ->
-            if (!overlay && isTicket(SafariRules.strip(message.string))) Minecraft.getInstance().execute {
-                if (HistoryServerPolicy.allows()) {
+            if (!overlay && SafariRules.strip(message.string) == MANAGER + PAID) Minecraft.getInstance().execute {
+                if (HistoryAccountId.selected(Minecraft.getInstance()) != null && HistoryServerPolicy.allows()) {
                     SparklingLog.onTicket(); RunHistory.onTicket(); Achievements.onTicket()
                 }
             }
