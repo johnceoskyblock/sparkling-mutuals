@@ -14,8 +14,8 @@ Install one JAR that matches your Minecraft version. Older combined releases use
 
 ## Distribution
 
-GitHub releases contain all three editions for each of the three Minecraft versions. Modrinth publication of the verified Standard JARs is pending review. The former fork remains a migration reference. [Build matrix](MULTI_VERSION_BUILDS.md) · [Shipping](SHIPPING.md) · [Modrinth draft](MODRINTH_DRAFT.md)
+GitHub releases contain all three editions for each Minecraft version. The release workflow uploads the verified Standard JARs to Modrinth with a repository Actions secret. The former fork remains a migration reference. [Build matrix](MULTI_VERSION_BUILDS.md) · [Shipping](SHIPPING.md) · [Modrinth draft](MODRINTH_DRAFT.md)
 
 ## Standard submission evidence
 
-The [Modrinth submission draft](MODRINTH_DRAFT.md) separates the Standard listing from Full features and records the source sets, class/mixin exclusions, updater removal and tagged CI evidence for moderators. The [license inventory](../licenses/README.md) covers the LGPL project declaration and preserved upstream terms. Modrinth publication remains pending; do not enable it as part of repository preparation.
+The [Modrinth submission draft](MODRINTH_DRAFT.md) separates the Standard listing from Full features and records the source sets, class and mixin exclusions, updater removal and tagged CI evidence for moderators. The [license inventory](../licenses/README.md) covers the LGPL project declaration and preserved upstream terms. See the [shipping guide](SHIPPING.md) for the token and publication workflow.

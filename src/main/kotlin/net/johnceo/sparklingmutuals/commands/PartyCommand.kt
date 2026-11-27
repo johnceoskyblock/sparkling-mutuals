@@ -32,7 +32,7 @@ data class PartyCommand(val kind: PartyCommandKind, val ign: String = "", val du
         PartyCommandKind.GEMZIE_CHECKS -> SafariEncounter.GEMZIE
         else -> null
     }
-    internal fun encounterResult() = encounter?.let { "$ign has checked ${SafariEncounterHistory.count(it)} ${it.label}'s!" }
+    internal fun encounterResult() = encounter?.let { "$ign has checked ${SafariEncounterHistory.count(it)} ${it.label}s!" }
     val requiresApiKey get() = kind in listOf(PartyCommandKind.MUTUALS, PartyCommandKind.MISSING, PartyCommandKind.TICKETS, PartyCommandKind.CAPTURES, PartyCommandKind.SPARKLING)
     val pbName get() = when (kind) {
         PartyCommandKind.PB_DOOM -> "Doomspiral"
@@ -97,7 +97,7 @@ data class PartyCommand(val kind: PartyCommandKind, val ign: String = "", val du
             PartyCommandKind.SPARKLING -> SafariSparklingReply.matchesCaptures(ign, body)
             PartyCommandKind.RATES -> SafariSparklingReply.matchesRates(body)
             PartyCommandKind.DOOM_CHECKS, PartyCommandKind.WUMPA_CHECKS, PartyCommandKind.GEMZIE_CHECKS ->
-                Regex("^${Regex.escape(ign)} has checked \\d+ ${encounter!!.label}'s!$", RegexOption.IGNORE_CASE).matches(body)
+                Regex("^${Regex.escape(ign)} has checked \\d+ ${encounter!!.label}'?s!$", RegexOption.IGNORE_CASE).matches(body)
             PartyCommandKind.DYE -> Regex("^Emerald Dyes: \\d+$", RegexOption.IGNORE_CASE).matches(body)
             PartyCommandKind.PROFIT -> body.startsWith(SafariProfitReply.PREFIX + profitPeriod.label + ", ", true)
             PartyCommandKind.SINCE_SPARKLING, PartyCommandKind.SINCE_UNIQUE -> SafariSinceReply.matches(this, body)

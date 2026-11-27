@@ -92,6 +92,8 @@ Mode progress, missing lists, fixed counters, capture status icons and the `!m` 
 
 When the provider advertises `roster-expand-v1`, a confirmed strictly growing roster (same lobby, self and visit; maximum four UUIDs) expands on the open socket after flushing routine frames and completing renewal. The client pauses state sends, invalidates the old tag map/completion baseline and waits up to twelve seconds for a new welcome and ordered replay. Wire sequences, local observations, catches, locks and notification receipts survive. A rejected/unsupported/timed-out expansion uses normal reconnection; changed/replaced membership or lobby never uses expansion.
 
+If the socket drops during expansion, the replacement can accept the expanded room’s backend-confirmed run ID. The pending handoff stays scoped to the same lobby, player, visit and confirmed roster until matching replay completes. A confirmed party change, new visit or provider switch discards it.
+
 `visit-ended-v1` adds `visitEnded:true` only to the sequenced leave for a confirmed departure, after flushing queued frames. A disconnect, temporary missing player/world, renewal or roster expansion does not claim that the visit ended.
 
 With `hotspot-preferences-v1`, welcome supplies the party-scoped saved order. **Party > Interactions > Biome Hotspot Preferences** ranks the four biomes. The existing saved preference controls hello publication. Hello sends a selected different order and known initial bird-food/coin grants, including known zero. Floor pickups, consumption and death losses do not change the initial grant. Backend assignments remain authoritative and locked assignments never reopen.

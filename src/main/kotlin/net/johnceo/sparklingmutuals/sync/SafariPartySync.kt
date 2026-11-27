@@ -135,19 +135,21 @@ object SafariPartySync {
     }
     private fun roster(client: Minecraft): List<String>? {
         val self=client.player?.uuid?.toString() ?: return null
-        return PartyManager.withLocal(self)?.map { PartySyncProtocol.uuid(it) ?: return null }?.distinct()?.sorted()?.takeIf { it.size in 1..4 }
+        return PartyManager.withLocal(self)?.map { PartySyncProtocol.uuid(it) ?: return null }?.distinct()?.sorted()
     }
-    private fun initialize(client: Minecraft) {
-        if(transferRevision == SafariIsland.locationRevision || !SafariIsland.onIsland || client.player==null || client.level==null) return
+    private fun initialize(client: Minecraft): PartySyncTransport.Context? {
+        if(transferRevision == SafariIsland.locationRevision || !SafariIsland.onIsland || client.player==null || client.level==null) return null
         transferRevision = null
-        val server = SafariIsland.serverName?.let(PartySyncProtocol::canonicalLobby) ?: return
+        val server = SafariIsland.serverName?.let(PartySyncProtocol::canonicalLobby) ?: return null
         if(lobby!=null && !server.equals(lobby,true)) reset(confirmedVisitEnd=true)
         else if(lobby!=null) world=client.level
         if(lobby==null) { lobby=server;world=client.level;began=System.currentTimeMillis() }
         val wasMatching=matchingParty
         matchingParty=false
-        val members=roster(client) ?: return
-        val self=PartySyncProtocol.uuid(client.player!!.uuid.toString()) ?: return
+        val members=roster(client) ?: return null
+        val self=PartySyncProtocol.uuid(client.player!!.uuid.toString()) ?: return null
+        val confirmed=PartySyncTransport.Context(server,self,members)
+        if(members.size !in 1..4) return confirmed
         val active=state
         if(active==null && members.isNotEmpty()) state=PartySyncState(self,members.toSet())
         else if(active!=null && members.toSet().containsAll(active.roster) && members.size>active.roster.size) {
@@ -160,13 +162,14 @@ object SafariPartySync {
         lastRoster=members.toSet()
         matchingParty=state?.roster==lastRoster
         if(matchingParty && !wasMatching) lastHello=""
+        return confirmed
     }
     fun tick(client: Minecraft) {
         now=System.currentTimeMillis()
         if(transferRevision == SafariIsland.locationRevision) return
         if(client.level == null || client.connection == null) { transport.close(false);return }
         if(!SafariIsland.onIsland) { if(lobby!=null) reset(confirmedVisitEnd=true);return }
-        initialize(client)
+        val confirmed=initialize(client)
         val current=state ?: return
         val server=lobby ?: return
         val run=SafariTracking.ledger.current
@@ -185,7 +188,7 @@ object SafariPartySync {
                 client.player?.sendSystemMessage(net.minecraft.network.chat.Component.literal("[SM] Shared Safari sync switched to backup."))
             }
         }
-        transport.tick(context,now)
+        transport.tick(context,now,confirmed)
         if(transport.updateRequired && !updateNoticeShown) {
             updateNoticeShown=true
             client.player?.sendSystemMessage(net.minecraft.network.chat.Component.literal("[SM] Party sync requires a mod update."))

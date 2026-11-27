@@ -98,6 +98,32 @@ class HistoryArchiveOwnershipTest {
         assertEquals(listOf(SafariEncounter.WUMPA, SafariEncounter.GEMZIE), result.encounters.map { it.encounter })
     }
 
+    @Test fun `verified encounters count without a run or ticket and a chamber adds three checks`() {
+        log("2026-10-12-1.log", client("12:00:00", "[SM History] Account $owner Former"),
+            client("12:00:01", "Connecting to hypixel.net, 25565"),
+            system("12:01:00", SafariEncounter.DOOMSPIRAL.announcement),
+            system("12:02:00", SafariEncounter.WUMPA.announcement),
+            system("12:03:00", SafariEncounter.GEMZIE.announcement),
+            system("12:04:00", SafariEncounter.GEMZIE.announcement),
+            system("12:05:00", "Party > Former: ${SafariEncounter.GEMZIE.announcement}"),
+            client("12:06:00", "Connecting to alpha.hypixel.net, 25565"),
+            system("12:07:00", SafariEncounter.GEMZIE.announcement))
+        val result = LogImporter.read(folder, "Former", ownerUuid = owner).join()
+        assertTrue(result.runs.isEmpty())
+        assertTrue(result.ticketTimes.isEmpty())
+        assertEquals(listOf(SafariEncounter.DOOMSPIRAL, SafariEncounter.WUMPA, SafariEncounter.GEMZIE, SafariEncounter.GEMZIE),
+            result.encounters.map { it.encounter })
+
+        val previousDirectory = HistoryStore.directory
+        HistoryStore.directory = folder.resolve("history")
+        try {
+            assertEquals(8, SafariEncounterHistory.import(owner, result.encounters))
+            assertEquals(0, SafariEncounterHistory.import(owner, result.encounters))
+        } finally {
+            HistoryStore.directory = previousDirectory
+        }
+    }
+
     @Test fun `menu readers pick personal dye total and parse detailed playtime`() {
         assertEquals(4, PlaytimeReader.dyeDrops("§7You've dropped: §64"))
         assertNull(PlaytimeReader.dyeDrops("Global drops: 2,187"))

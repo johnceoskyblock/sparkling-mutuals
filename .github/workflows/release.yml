@@ -30,6 +30,9 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - run: npm run check
       - run: npm test
+      - name: Test Modrinth publication
+        working-directory: .
+        run: node --test scripts/tests/PublishModrinth.test.mjs
   build-logic:
     runs-on: ubuntu-24.04
     steps:
@@ -136,3 +139,27 @@ jobs:
       - run: ./gradlew publishVerifiedRelease -PdistributionDir=incoming
         env:
           GITHUB_TOKEN: ${{ github.token }}
+  publish-modrinth:
+    needs: publish
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') && github.repository == 'johnceoskyblock/sparkling-mutuals'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - uses: actions/download-artifact@v8
+        with:
+          name: verified-release-assets
+          path: incoming
+      - name: Read the published GitHub release notes
+        run: gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --json tagName,isDraft,isPrerelease,body > "$RUNNER_TEMP/modrinth-release.json"
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Publish Standard to Modrinth
+        run: node scripts/PublishModrinth.mjs incoming "$RUNNER_TEMP/modrinth-release.json"
+        env:
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}

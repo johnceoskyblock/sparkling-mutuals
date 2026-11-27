@@ -14,7 +14,7 @@ Lifetime critter capture milestones combine the last API total with newer person
 
 ## Dex Type selector
 
-Choose **Open Critterdex** in **History → Sparklings** to see all 37 critters grouped by biome. Each row shows rarity and credited Sparkling catches. Select a tier from 1× through 10× to check progress from Sparkling dex through Decadex. Total and biome completion counts follow the selected tier. The **Mine only** filter applies to the catch list. Use the popup’s navigation to return to any history tab or press Escape to return to Sparklings.
+Choose **Open Critterdex** in **History → Sparklings** to see all 37 critters grouped by biome. Found Sparklings use rarity colors and undiscovered names appear gray. Select a tier from 1× through 10× to check progress from Sparkling dex through Decadex. Total and biome completion counts follow the selected tier. The **Mine only** filter applies to the catch list. Click **Close** at the bottom right or press Escape to return to Sparklings.
 
 Saved/imported credited party catches supply per-species counts. Existing cached API discoveries establish at least one catch but cannot establish higher per-species multiplicity. No new API request is made for the dropdown or achievements.
 

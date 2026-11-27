@@ -112,8 +112,10 @@ class PartyCommandTest {
             val command = PartyCommand.fromChat("Party > Local: !$alias")!!.command.forResponder("Other")
             assertTrue(command.personalResult)
             assertFalse(command.requiresApiKey)
+            assertTrue(command.encounterResult()!!.endsWith(" ${species}s!"))
+            assertTrue(command.matchesResponse("Other has checked 6 ${species}s!"))
             assertTrue(command.matchesResponse("Other has checked 6 $species's!"))
-            assertFalse(command.matchesResponse("Local has checked 6 $species's!"))
+            assertFalse(command.matchesResponse("Local has checked 6 ${species}s!"))
         }
     }
 
