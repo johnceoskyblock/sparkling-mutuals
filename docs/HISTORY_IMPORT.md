@@ -104,7 +104,7 @@ Opening **Stats** refreshes **API Captures** and the four biome capture totals f
 
 The personal dex combines recorded species and API discoveries. Background profile refresh in SkyBlock runs normally every thirty minutes when the configured provider is enabled.
 
-**Stats** shows recorded Doomspiral and Wumpa checks. Party commands `!doom` and `!dooms`, `!wumpa` and `!wumpas`, and `!gemzie` use the corresponding Main-server encounter announcements from live play and imported logs.
+**Stats** shows recorded Doomspiral and Wumpa checks. The `!doom`, `!dooms`, `!wumpa`, `!wumpas`, and `!gemzie` party commands report checks for the selected **History UUID**. Both live play and imported Main-server logs count the encounter announcements even without a ticket or recorded run. Each Doomspiral and Wumpa announcement adds one check. Each Gemzie chamber opening adds three.
 
 Disabling achievements blocks unlocks/announcements and periodic/contest processing, but history and several event-driven counters continue. Reenabling can catch up history/API-derived awards; it does not reconstruct every missed event. Import reconstructs own-Sparkling and Macaw droughts, not a complete historical unique-event drought. Unknown imported duration can still satisfy speed-award predicates; see [audit D7](IMPLEMENTATION_AUDIT.md#d7).
 

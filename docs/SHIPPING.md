@@ -6,13 +6,13 @@ Run `scripts/Ship.ps1` in PowerShell 7 to handle the mechanical Git/GitHub steps
 
 Ship from `johnceoskyblock/sparkling-mutuals`. Use one PR into protected `master` and one version tag per release. The former Standard fork is a migration reference. [Edition layout](EDITION_CONSOLIDATION_HANDOFF.md)
 
-This repository uses `release_artifact_layout=editions`. The release workflow builds and verifies all nine combinations. GitHub receives all nine Standard, Full, and Full No Auto Update JARs and `build-manifest.json`. Standard uses the plain filename; Full uses `-full` and Full No Auto Update uses `-full-no-auto-update`. Modrinth publication remains pending review.
+This repository uses `release_artifact_layout=editions`. The release workflow verifies all nine combinations and publishes the JARs and `build-manifest.json` to GitHub. It then publishes only the verified, unsuffixed Standard JARs to Modrinth as separate Minecraft versions.
 
 The plain JAR filename identifies Standard. GitHub releases use `-full` and `-full-no-auto-update` before the `+mc` suffix. Use the first explicitly named Full JAR for manual upgrades from builds whose update checker expects the old filename.
 
 Full keeps update checks and adds a **Download Update** button plus an **Auto Update** toggle in the update screen. Version 4.4.5 enables Auto Update once and saves subsequent choices. Downloads must match the release manifest's SHA-256 and the JAR's mod ID, Full edition, version, and exact Minecraft target. Installation waits for the game to exit, preserves the last working JAR outside the mods folder, and supports retry after a failed installation. Standard and Full No Auto Update exclude the downloader and installer classes and controls.
 
-Windows CI also tests restart installation while the running JAR is locked. A live Minecraft smoke test is still recommended before release. Standard publication on Modrinth remains pending review; no Modrinth upload job is enabled.
+Windows CI also tests restart installation while the running JAR is locked. A live Minecraft smoke test is still recommended before release.
 
 ## Rehearse a release
 
@@ -42,6 +42,16 @@ gh auth setup-git --hostname github.com
 ```
 
 Verify PowerShell 7 is available with `pwsh --version` in a newly opened terminal. Codex's bundled PowerShell is private to its environment and does not make `pwsh` available in a regular Command Prompt. Git must also be available. The script uses GitHub CLI's saved authentication, never a token pasted into the script. Normal repository rules, reviews, and required checks apply; it never uses administrator bypasses.
+
+### Modrinth token
+
+Add the Modrinth personal access token as the repository Actions secret **MODRINTH_TOKEN**. Use a token with permission to create versions on Sparkling Mutuals and to read the project and its versions if they are private.
+
+```powershell
+gh secret set MODRINTH_TOKEN --repo johnceoskyblock/sparkling-mutuals
+```
+
+Paste the token into the CLI prompt. You can also add it from **Settings → Secrets and variables → Actions → New repository secret**. The release workflow resolves the existing `sparklingmutuals` project through the authenticated API. [GitHub Actions secrets](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/use-secrets) · [Modrinth API authentication](https://docs.modrinth.com/api/#authentication)
 
 ## Push and merge without a release
 
@@ -79,6 +89,10 @@ Release mode also:
 3. Creates a draft with your notes and tags that verified merged commit.
 4. Lets the tag-triggered Actions build, test, and verify Minecraft **26.1.2, 26.2, and 26.3**, then publish the verified JARs.
 5. Checks the published release identity, latest-release metadata, tag, notes, and title. Downloads the expected GitHub assets and verifies sizes and SHA-256 hashes. For the consolidated layout, it also checks the manifest's version, Minecraft targets, and JAR sizes and hashes against the verified assets.
+
+The tag workflow uploads one Modrinth version per Minecraft target after GitHub publication succeeds. For example, Minecraft 26.3 gets version number `5.1.0+mc26.3` and changelog title `5.1.0 for 26.3`. Each upload declares Fabric API and Fabric Language Kotlin and uses the GitHub release notes with the Full-only and download sections removed. Stable tags use the Release channel and supported beta tags use Beta. A manual workflow rehearsal runs the publisher tests and builds artifacts.
+
+If the Modrinth job fails after GitHub has published, fix the cause and rerun failed jobs on the same Actions run. The job skips matching uploads and reports conflicts with existing files. This workflow applies to future release tags containing the integration.
 
 Stable releases only: `X.Y.Z`. Same-version re-releases, beta releases, deleting old versions, README edits, and conflict resolution remain manual tasks. A new stable version with the expected assets is discoverable by the mod's existing updater. This script does not run a live Minecraft GUI test.
 

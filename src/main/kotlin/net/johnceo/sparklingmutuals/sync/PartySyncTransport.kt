@@ -28,7 +28,7 @@ internal class PartySyncTransport(
     private var rosterExpansion=false
     private var visitEndedCapability=false
     private var expanding=false
-    private var expandedRunAllowed=false
+    private var pendingExpansion: PendingExpansion?=null
     var onExpandedRun: (String) -> Unit={}
     var failureReason: String?=null; private set
     private var welcomed=false
@@ -53,6 +53,7 @@ internal class PartySyncTransport(
     private var visitNonce: String?=null
     @Synchronized fun useBackup(origin: URI,generation: String,nonce: String) {
         require(origin.scheme=="https" && origin.host!=null && generation.isNotBlank() && nonce.isNotBlank())
+        pendingExpansion=null
         close(false);token="";tokenOwner="";tokenUntil=0;retryAt=0;failures=0
         authEndpoint=origin.resolve("/v1/auth/uuid/session")
         syncEndpoint=URI("wss",null,origin.host,origin.port,"/v1/sync",null,null)
@@ -62,6 +63,7 @@ internal class PartySyncTransport(
     /** Independent extension channel; it cannot select main provider or authorize entry. */
     @Synchronized fun useCompletion(origin: URI, generation: String, nonce: String) {
         if(completionOnly && routingGeneration==generation && visitNonce==nonce && authEndpoint==origin.resolve("/v1/auth/uuid/session")) return
+        pendingExpansion=null
         close(false); token=""; tokenOwner=""; tokenUntil=0; retryAt=0; failures=0
         authEndpoint=origin.resolve("/v1/auth/uuid/session")
         syncEndpoint=URI("wss",null,origin.host,origin.port,"/v1/completion-sync",null,null)
@@ -69,10 +71,12 @@ internal class PartySyncTransport(
     }
     @Synchronized fun usePrimary() {
         if(!backup)return
+        pendingExpansion=null
         close(false);token="";tokenOwner="";tokenUntil=0;retryAt=0;failures=0
         authEndpoint=primaryAuth;syncEndpoint=primarySync;routingGeneration=null;visitNonce=null;backup=false
     }
     data class Context(val lobby: String,val self: String,val roster: List<String>)
+    private data class PendingExpansion(val context: Context,val visitId: String)
     private data class Delivery(val generation: Long,val text: String,val receivedAt: Long=System.nanoTime())
     private val logger=LoggerFactory.getLogger("sparkling-mutuals/party-sync")
     private val http=HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build()
@@ -93,7 +97,7 @@ internal class PartySyncTransport(
     val acceptedRunId get()=visit.runId.takeIf { runCapability && visit.reconciled }
     val activeVisitId get()=visit.visitId
     val completionIdle get()=ready && (efficient || queued==0)
-    fun newVisit() { visit.newVisit() }
+    @Synchronized fun newVisit() { pendingExpansion=null; visit.newVisit() }
     @Volatile var roomSparklings=false; private set
     private var mapping=emptyMap<String,String>()
     private var failures=0
@@ -129,7 +133,13 @@ internal class PartySyncTransport(
         "replayComplete" to visit.replayComplete,
         "mappedPlayers" to mapping.toMap(), "lastInboundAtMillis" to lastInboundAt
     )
-    fun tick(next: Context,now: Long) {
+    private fun expansionPending(next: Context) = pendingExpansion?.let {
+        it.context == next && it.visitId == visit.visitId
+    } == true
+
+    @Synchronized fun tick(next: Context,now: Long,confirmed: Context?=next) {
+        // The objective room can retain its old roster after a confirmed party change.
+        if(!expansionPending(next) || confirmed!=null && confirmed!=next) pendingExpansion=null
         if(!next.lobby.matches(Regex("[A-Za-z0-9_-]{1,64}")) || PartySyncProtocol.compact(next.self)==null ||
             next.roster.size !in 1..4 || next.roster.toSet().size!=next.roster.size || next.self !in next.roster ||
             next.roster.any { PartySyncProtocol.compact(it)==null }) { close(false);return }
@@ -138,14 +148,16 @@ internal class PartySyncTransport(
             val old=context
             val growing=old!=null && old.lobby==next.lobby && old.self==next.self &&
                 next.roster.size>old.roster.size && next.roster.containsAll(old.roster)
-            if(growing && rosterExpansion && efficient && ready && renewalStarted!=null) {
-                drainIncoming()
-                renewalStarted?.let { started ->
-                    if(now-started>=20_000) fail(generation)
-                    return
+            if(growing && confirmed==next && rosterExpansion && efficient && ready && !expanding) {
+                // Socket retries must still be able to join the expanded room that a guest reached first.
+                pendingExpansion=PendingExpansion(next,visit.visitId)
+                if(renewalStarted!=null) {
+                    drainIncoming()
+                    renewalStarted?.let { started ->
+                        if(now-started>=20_000) fail(generation)
+                        return
+                    }
                 }
-            }
-            if(growing && rosterExpansion && efficient && ready && renewalStarted==null && !expanding) {
                 if(!expand(next,now)) { close(false);context=next;retryAt=0 }
             } else { close(false); context=next; retryAt=0; failures=0 }
         }
@@ -177,7 +189,7 @@ internal class PartySyncTransport(
             add("roster",com.google.gson.JsonArray().apply {next.roster.forEach(::add)})
         }
         if(!sendText(request.toString()))return false
-        context=next; ready=false; welcomed=false; expanding=true; expandedRunAllowed=true
+        context=next; ready=false; welcomed=false; expanding=true
         mapping=emptyMap();replay.clear();completionRevision=null;completionPayload=null
         replayDeadline=now+12_000
         return true
@@ -223,7 +235,7 @@ internal class PartySyncTransport(
                     if (runCapability && !visit.welcome(PartySyncProtocol.text(root.get("connectionId")) ?: "")) {
                         fail(attempt); return
                     }
-                    if(expanding && !runCapability) {fail(attempt);return}
+                    if((expanding || expansionPending(next)) && !runCapability) {fail(attempt);return}
                     expanding=false
                     rosterExpansion="roster-expand-v1" in features
                     visitEndedCapability="visit-ended-v1" in features
@@ -242,11 +254,9 @@ internal class PartySyncTransport(
                 }
                 "reconcile" -> if (runCapability && welcomed) {
                     val was=visit.runId
-                    if (visit.reconcile(root,expandedRunAllowed)) {
-                        if(visit.reconciled && expandedRunAllowed) {
-                            expandedRunAllowed=false
-                            if(was!=visit.runId) visit.runId?.let(onExpandedRun)
-                        }
+                    val handoff=expansionPending(next)
+                    if (visit.reconcile(root,handoff)) {
+                        if(handoff && visit.reconciled && was!=visit.runId) visit.runId?.let(onExpandedRun)
                         ready=false
                         batch.clear()
                         completionRevision=null
@@ -268,6 +278,7 @@ internal class PartySyncTransport(
                     }
                     replayDeadline=null
                     visit.finishReplay()
+                    if(expansionPending(next)) pendingExpansion=null
                     ready=true
                     onReady()
                 }
@@ -403,7 +414,7 @@ internal class PartySyncTransport(
 
     private fun clearEfficient() {
         efficient=false; renewalStarted=null; helloRetryAt=0
-        rosterExpansion=false;visitEndedCapability=false;expanding=false;expandedRunAllowed=false
+        rosterExpansion=false;visitEndedCapability=false;expanding=false
         batch.clear(); completionRevision=null; completionPayload=null; replayDeadline=null; resyncRequested=false
     }
     private fun batchText(frames: List<String>) = frames.joinToString(",", "{\"type\":\"batch\",\"frames\":[", "]}")
@@ -443,6 +454,7 @@ internal class PartySyncTransport(
     }
     /** Explicit exit is serialized after queued updates and before close. Reconnect never sends leave. */
     @Synchronized fun close(explicit: Boolean,leaveSequence: Long=0,confirmedVisitEnd: Boolean=false) {
+        if(explicit) pendingExpansion=null
         if(explicit && ready) flushBatch()
         val old=socket
         val pending=tail

@@ -478,9 +478,9 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
         g.text(font, cut("", dexType.label, (w - font.width(total) - 6).coerceAtLeast(1)), x, py + 6, PINK)
         g.text(font, total, right - font.width(total), py + 6, TEXT)
         button(g, mx, my, x, py + 22, w, cut("", "Open Critterdex", (w - 6).coerceAtLeast(1))) {
-            minecraft.smSetScreen(SparklingDexScreen(dexType) { destination, tier ->
+            minecraft.smSetScreen(SparklingDexScreen(dexType) { tier ->
                 dexType = tier
-                tab = destination
+                tab = Tab.SPARKLINGS
                 minecraft.smSetScreen(this)
             })
         }

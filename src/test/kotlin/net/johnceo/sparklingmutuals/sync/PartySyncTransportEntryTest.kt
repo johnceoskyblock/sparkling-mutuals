@@ -199,6 +199,93 @@ class PartySyncTransportEntryTest {
             } finally {t.close(false)}
         }
     }
+
+    @Test fun `same visit expansion survives reconnect until its matching replay completes`() =
+        reconnectDuringExpansion(partyChanged=false)
+
+    @Test fun `confirmed membership change revokes pending handoff even if the objective roster is retained`() =
+        reconnectDuringExpansion(partyChanged=true)
+
+    private fun reconnectDuringExpansion(partyChanged: Boolean) {
+        Fixture().use { server ->
+            val transport=PartySyncTransport(server.auth,server.ws)
+            val solo=PartySyncTransport.Context("m88A",self,listOf(self))
+            val party=solo.copy(roster=listOf(self,peer))
+            val originalRun="20000000-0000-0000-0000-000000000001"
+            val expandedRun="20000000-0000-0000-0000-000000000002"
+            val visit=transport.activeVisitId
+            val adopted=mutableListOf<String>()
+            val delivered=mutableListOf<String>()
+            transport.onExpandedRun={ adopted.add(it) }
+            transport.onMessage={ frame,_ -> delivered.add(frame["type"].asString) }
+            transport.onReady={ delivered.add("ready") }
+            fun boundary(type: String, connection: String, run: String) =
+                """{"type":"$type","version":1,"connectionId":"$connection","visitId":"$visit","runId":"$run","status":"joined"}"""
+            fun connect(context: PartySyncTransport.Context, connection: String, roster: String,
+                confirmed: PartySyncTransport.Context?=context): Socket {
+                transport.tick(context,System.currentTimeMillis()+60_000,confirmed)
+                val socket=server.connections.poll(5,TimeUnit.SECONDS) ?: error("No WebSocket upgrade")
+                server.send(socket,"""{"type":"welcome","self":"s","roster":$roster,"connectionId":"$connection","features":["run-reconciliation-v1","efficient-transport-v1","roster-expand-v1","room-sparklings-v1"]}""")
+                await { transport.drainIncoming();transport.coordinationAvailable }
+                return socket
+            }
+            fun drop(socket: Socket) {
+                val generation=transport.roomStatus().generation
+                socket.close()
+                await { transport.roomStatus().generation!=generation }
+                assertFalse(transport.ready)
+            }
+            val c1="10000000-0000-0000-0000-000000000001"
+            val c2="10000000-0000-0000-0000-000000000002"
+            val c3="10000000-0000-0000-0000-000000000003"
+            try {
+                val first=connect(solo,c1,"""["s"]""")
+                server.send(first,boundary("reconcile",c1,originalRun))
+                server.send(first,boundary("replay-complete",c1,originalRun))
+                await { transport.drainIncoming().ready }
+                delivered.clear()
+                transport.tick(party,System.currentTimeMillis())
+                assertTrue(server.read(first).contains("\"type\":\"expand\""))
+                drop(first)
+
+                val second=connect(party,c2,"""["s","p"]""",confirmed=null)
+                assertTrue(transport.send(1,"H","""{"version":1,"action":"hello"}"""))
+                val hello=com.google.gson.JsonParser.parseString(server.read(second)).asJsonObject["payload"].asString
+                assertEquals(originalRun,com.google.gson.JsonParser.parseString(hello).asJsonObject["resumeRunId"].asString)
+                // The old run can be confirmed before another loss. It cannot consume the pending handoff without replay.
+                server.send(second,boundary("reconcile",c2,originalRun))
+                await { transport.drainIncoming();transport.acceptedRunId==originalRun }
+                drop(second)
+
+                val third=connect(party,c3,"""["s","p"]""",confirmed=if(partyChanged) solo else party)
+                val generation=transport.roomStatus().generation
+                server.send(third,boundary("reconcile",c2,originalRun))
+                server.send(third,boundary("reconcile",c3,expandedRun))
+                if(partyChanged) {
+                    await { transport.drainIncoming();transport.roomStatus().generation!=generation }
+                    assertTrue(adopted.isEmpty())
+                    assertFalse(transport.ready)
+                    return
+                }
+                server.send(third,"""{"type":"sparklings","payload":"1,0,0,0","runId":"$expandedRun"}""")
+                server.send(third,"""{"type":"state","sender":"p","sequence":1,"kind":"N","payload":"1","runId":"$expandedRun"}""")
+                server.send(third,boundary("replay-complete",c3,originalRun))
+                await { (transport.developerSnapshot()["incomingQueue"] as Int)>=5 }
+                assertFalse(transport.drainIncoming().ready)
+                assertEquals(expandedRun,transport.acceptedRunId)
+                assertTrue(delivered.isEmpty())
+                assertEquals(listOf(expandedRun),adopted)
+                server.send(third,boundary("replay-complete",c3,expandedRun))
+                await { transport.drainIncoming().ready }
+                assertEquals(listOf("sparklings","state","ready"),delivered)
+
+                server.send(third,boundary("reconcile",c3,originalRun))
+                await { transport.drainIncoming();transport.roomStatus().generation!=generation }
+                assertEquals(listOf(expandedRun),adopted)
+            } finally { transport.close(false) }
+        }
+    }
+
     private fun await(condition: () -> Boolean) {
         val end=System.nanoTime()+TimeUnit.SECONDS.toNanos(5)
         while(!condition()) { check(System.nanoTime()<end) { "Timed out awaiting local transport" };LockSupport.parkNanos(1_000_000) }

@@ -17,15 +17,14 @@ import net.minecraft.network.chat.Component
 
 internal class SparklingDexScreen(
     private var tier: SparklingDexType,
-    private val returnToHistory: (HistoryScreen.Tab, SparklingDexType) -> Unit,
+    private val returnToSparklings: (SparklingDexType) -> Unit,
 ) : Screen(Minecraft.getInstance(), HudFonts.font, Component.literal("Sparkling Critterdex")) {
     private val panelWidth get() = minOf(728, (width - 16).coerceAtLeast(1))
     private val panelHeight get() = minOf(268, (height - 16).coerceAtLeast(1))
     private val left get() = (width - panelWidth) / 2
     private val top get() = (height - panelHeight) / 2
     private val contentWidth get() = (panelWidth - 24).coerceAtLeast(1)
-    private val navigationColumns get() = if (contentWidth < 330) 3 else 6
-    private val navigationTop get() = top + panelHeight - 28 - if (navigationColumns == 3) 21 else 0
+    private val footerTop get() = top + panelHeight - 28
     private var gridOffset = 0
     private var gridTrack: HistoryScrollTrack? = null
 
@@ -41,14 +40,9 @@ internal class SparklingDexScreen(
                 }
             }
         }
-        HistoryScreen.Tab.entries.forEachIndexed { i, tab ->
-            val column = i % navigationColumns
-            val start = contentWidth * column / navigationColumns
-            val end = contentWidth * (column + 1) / navigationColumns
-            val label = if (tab == HistoryScreen.Tab.SPARKLINGS && end - start >= 92) "← Sparklings" else tab.label
-            control(label, "Back to ${tab.label}", left + 12 + start, navigationTop + 21 * (i / navigationColumns),
-                end - start - 3, tab == HistoryScreen.Tab.SPARKLINGS) { returnToHistory(tab, tier) }
-        }
+        val closeWidth = minOf(64, contentWidth)
+        control("Close", "Back to Sparklings", left + 12 + contentWidth - closeWidth, footerTop,
+            closeWidth, primary = true, action = ::onClose)
     }
 
     private fun control(label: String, description: String, x: Int, y: Int, w: Int, primary: Boolean, action: () -> Unit) {
@@ -78,13 +72,13 @@ internal class SparklingDexScreen(
             tooltip(g, mx, my, "$progress meet the selected tier", "$duplicates credited catches beyond the first of each species")
         }
         drawBiomes(g, mx, my, counts, completed)
-        g.fill(left + 12, navigationTop - 6, right, navigationTop - 5, LINE)
+        g.fill(left + 12, footerTop - 6, right, footerTop - 5, LINE)
         super.extractRenderState(g, mx, my, delta)
     }
 
     private fun drawBiomes(g: GuiGraphicsExtractor, mx: Int, my: Int, counts: Map<String, Int>, completed: Set<String>) {
         val y = top + 66
-        val viewportHeight = (navigationTop - 12 - y).coerceAtLeast(1)
+        val viewportHeight = (footerTop - 12 - y).coerceAtLeast(1)
         val gridWidth = (contentWidth - 6).coerceAtLeast(1)
         val columns = if (gridWidth >= 390) 4 else 2
         val rows = BIOMES.size / columns
@@ -123,12 +117,12 @@ internal class SparklingDexScreen(
                 val countLabel = if (count == 0) "—" else "×" + "%,d".format(count)
                 val amountX = bx + columnWidth - 7 - font.width(countLabel)
                 val acquired = critter.name in completed
+                val nameColor = if (count > 0) critter.color else MUTED
                 val hovered = mx >= gridX + (bx + 3) * scale && mx < gridX + (bx + columnWidth - 3) * scale &&
                     my in y until track.bottom && my >= y - gridOffset + rowY * scale && my < y - gridOffset + (rowY + ROW_HEIGHT) * scale
                 if (hovered) g.fill(bx + 3, rowY, bx + columnWidth - 3, rowY + ROW_HEIGHT, 0x22FFFFFF)
-                g.text(font, rarity.take(1), bx + 7, rowY + 2, critter.color)
-                g.text(font, font.plainSubstrByWidth(name, (amountX - bx - 24).coerceAtLeast(1)), bx + 19, rowY + 2,
-                    if (acquired) WHITE else MUTED)
+                g.text(font, rarity.take(1), bx + 7, rowY + 2, nameColor)
+                g.text(font, font.plainSubstrByWidth(name, (amountX - bx - 24).coerceAtLeast(1)), bx + 19, rowY + 2, nameColor)
                 g.text(font, countLabel, amountX, rowY + 2, if (acquired) WHITE else MUTED)
                 if (hovered) tooltip(g, mx, my, "$name · $rarity", "$count credited sparkling catches", "${tier.required} required for ${tier.label}")
             }
@@ -156,7 +150,7 @@ internal class SparklingDexScreen(
     }
 
     override fun isPauseScreen() = false
-    override fun onClose() { returnToHistory(HistoryScreen.Tab.SPARKLINGS, tier) }
+    override fun onClose() { returnToSparklings(tier) }
 
     private companion object {
         val BIOMES = listOf(SafariBiome.CAVERN, SafariBiome.FOREST, SafariBiome.HAUNTED, SafariBiome.ICY)

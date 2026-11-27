@@ -53,7 +53,7 @@ The repository editor target is 26.1.2. Reset it after changing the IDE target. 
 
 The PR build verifies all nine edition and Minecraft combinations. The downloadable Actions artifacts are named `jar-<edition>-mc<minecraft>`. The aggregate `build` check also covers the shipping script, backend tests, build logic, and Windows updater. [Build workflow](../.github/workflows/build.yml)
 
-Use `Ship.ps1` to publish an authorized stable release. A manual run of the `release` workflow verifies the matrix and produces test assets. The tag-triggered workflow publishes the nine JARs and manifest to GitHub. Standard Modrinth publication is pending. [Shipping guide](SHIPPING.md) · [Release workflow](../.github/workflows/release.yml)
+Use `Ship.ps1` to publish an authorized stable release. A manual run of the `release` workflow verifies the matrix and produces test assets. The tag-triggered workflow publishes the nine JARs and manifest to GitHub, then publishes the three Standard JARs to Modrinth. [Shipping guide](SHIPPING.md) · [Release workflow](../.github/workflows/release.yml)
 
 ## Last updated
 
