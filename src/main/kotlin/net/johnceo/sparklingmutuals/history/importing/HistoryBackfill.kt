@@ -39,6 +39,7 @@ internal object HistoryBackfill {
     private val connectionLine = Regex("^Connecting to ([A-Za-z0-9.-]+), [0-9]+$")
     private val ownerLine = Regex("^Setting user: ([A-Za-z0-9_]{1,16})$")
     private val identityLine = Regex("^\\[SM History] Account ([0-9a-fA-F-]{32,36}) ([A-Za-z0-9_]{1,16})$")
+    private val authenticationLine = Regex("^Authenticating to Mojang as ([A-Za-z0-9_]{1,16}) \\(([0-9a-fA-F-]{32,36})\\)$")
     private val ansi = Regex("\u001B\\[[0-9;]*m")
     private val timePrefix = Regex("^\\s*\\[(\\d{1,2}):(\\d{2}):(\\d{2})(?:[.,]\\d+)?]:?")
     private val headers = listOf(timePrefix, Regex("^\\s*\\[[^]\\r\\n]*/(?:INFO|WARN|ERROR|DEBUG|TRACE|FATAL)]:?", RegexOption.IGNORE_CASE),
@@ -89,6 +90,7 @@ internal object HistoryBackfill {
     fun archive(reader: BufferedReader, day: LocalDate, source: String, active: Boolean): Archive {
         val result = mutableListOf<Event>()
         val owners = mutableSetOf<String>(); val identities = mutableMapOf<String, MutableSet<String>>()
+        val authenticated = mutableSetOf<Pair<String, String>>()
         var date = day; var previous: LocalTime? = null; var first = 0L; var last = 0L
         var realm = Realm.UNKNOWN; var started = false; var stopped = false
         reader.lineSequence().forEachIndexed { index, raw ->
@@ -98,7 +100,7 @@ internal object HistoryBackfill {
             last = date.atTime(time).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
             if (first == 0L) first = last
             val text = body(raw)
-            if ("[CHAT]" !in raw) {
+            if (!raw.contains("[CHAT]", ignoreCase = true)) {
                 ownerLine.matchEntire(text)?.groupValues?.get(1)?.let {
                     owners += it; started = true
                 }
@@ -106,6 +108,9 @@ internal object HistoryBackfill {
                     HistoryAccountId.normalize(it.groupValues[1])?.let { uuid ->
                         identities.getOrPut(uuid) { mutableSetOf() } += it.groupValues[2]
                     }
+                }
+                authenticationLine.matchEntire(text)?.destructured?.let { (name, id) ->
+                    HistoryAccountId.normalize(id)?.let { authenticated += it to name }
                 }
                 val host = connectionLine.matchEntire(text)?.groupValues?.get(1)
                 if (host != null || text == "Stopping!") {
@@ -117,6 +122,10 @@ internal object HistoryBackfill {
             if (text.equals("alpha.hypixel.net", true)) realm = Realm.ALPHA
             else if (text.equals("www.hypixel.net", true)) realm = Realm.MAIN
             if (relevant(text)) result += Event(last, text, source, index, realm = realm)
+        }
+        // A login from an account switcher must agree with the client startup name when present.
+        for ((id, name) in authenticated) {
+            if (owners.isEmpty() || owners.any { it.equals(name, true) }) identities.getOrPut(id) { mutableSetOf() } += name
         }
         if (last > 0) result += Event(last, "", source, Int.MAX_VALUE, eof = true, active = active, realm = realm)
         return Archive(result, owners, identities, first, last, started, stopped)

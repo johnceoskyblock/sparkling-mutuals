@@ -591,8 +591,9 @@ class HistoryScreen(private val parent: Screen?, private var tab: Tab = Tab.RUNS
             Triple("Tickets since last sparkling", "${SparklingLog.ticketsSinceSparkling}", "Ticket uses since the last recorded party sparkling."),
             Triple("Macaws", "${runs.sumOf { it.macaws }}" + (if (runs.isEmpty()) "" else " §7· ${runs.count { it.macaws > 0 } * 100 / runs.size}% of runs"), "Your catches and loot-shared Macaws. Percentage: runs with at least one."),
             Triple("Runs since Macaw", "${Achievements.runsSinceMacaw}", "Runs since a caught or loot-shared Macaw. Includes imports."),
-            Triple("Doomspiral checks", "%,d".format(SafariEncounterHistory.count(SafariEncounter.DOOMSPIRAL)), "Haunted ritual announcements recorded on Main, including imports."),
-            Triple("Wumpa checks", "%,d".format(SafariEncounterHistory.count(SafariEncounter.WUMPA)), "Icy footsteps announcements recorded on Main, including imports."),
+            Triple("Doomspiral checks", "%,d".format(SafariEncounterHistory.count(SafariEncounter.DOOMSPIRAL)), "Main-server ritual announcements and encounters confirmed by saved runs."),
+            Triple("Wumpa checks", "%,d".format(SafariEncounterHistory.count(SafariEncounter.WUMPA)), "Main-server footsteps announcements and encounters confirmed by saved runs."),
+            Triple("Gemzie checks", "%,d".format(SafariEncounterHistory.count(SafariEncounter.GEMZIE)), "Three per Main-server chamber opening or encounter confirmed by a saved run."),
             Triple("Contests completed", "${Achievements.contestsCompleted}", "Contests where you met your ticket target."))
         val rowWidth = rows.maxOf { (label, value) -> font.width(label) + font.width(value) + 12 }
         val s = minOf(fit(rows.size * ROW, py + ph - 26 - (py + 22)),
