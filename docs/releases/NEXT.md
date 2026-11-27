@@ -1,8 +1,14 @@
 ## What’s New in 5.0.1
 
+### 5.0.1 re-release
+
+- Reimport logs to recover Doomspiral, Wumpa, and Gemzie checks from older Minecraft names linked to your History UUID.
+- Encounter totals now also count captures, loot shares, and Sparkling catches from saved mod runs when the encounter announcement is missing. Each account gets credit for its own checks, including when two accounts are in the same Safari. Reimporting matching logs keeps each check counted once per account.
+- **Stats** now shows Gemzie checks alongside Doomspiral and Wumpa checks. Each Gemzie chamber opening counts as three.
+
 ### All editions
 
-- Doomspiral, Wumpa, and Gemzie checks count from verified Main-server announcements even without a Safari ticket. Each Gemzie chamber opening counts as three Gemzies, including openings already saved in history.
+- Verified Main-server encounter announcements count even without a Safari ticket.
 - `!doom`, `!wumpa`, and `!gemzie` replies use regular plurals without apostrophes.
 - Fixed party-sync reconnects after a party expansion that could stop Safari progress updates.
 - Critterdex uses rarity colors for found Sparklings and a single **Close** button to return to Sparklings.

@@ -20,8 +20,11 @@ internal enum class SafariEncounter(val label: String, val announcement: String,
 internal object SafariEncounterHistory {
     data class Check(val encounter: SafariEncounter, val at: Long)
     class Data(val accounts: MutableMap<String, MutableList<Check>> = mutableMapOf())
+    private class Totals(val announcements: List<Check>, val runs: List<RunRecord>, val counts: Map<SafariEncounter, Int>)
     private var data = Data()
+    private var cachedTotals: Totals? = null
     private const val FILE = "encounters"
+    private const val TIMESTAMP_TOLERANCE = 2_000L
 
     fun register() {
         data = HistoryStore.load(FILE, Data::class.java, ::Data)
@@ -43,8 +46,30 @@ internal object SafariEncounterHistory {
         }
     }
 
-    fun count(encounter: SafariEncounter): Int =
-        data.accounts[ConfigManager.historyOwnerUuid].orEmpty().count { it.encounter == encounter } * encounter.crittersPerCheck
+    fun count(encounter: SafariEncounter): Int {
+        val announcements = data.accounts[ConfigManager.historyOwnerUuid].orEmpty()
+        val runs = RunHistory.runs
+        val totals = cachedTotals?.takeIf { it.announcements === announcements && it.runs === runs }
+            ?: Totals(announcements, runs, totals(announcements, runs)).also { cachedTotals = it }
+        return totals.counts.getValue(encounter)
+    }
+
+    /** A saved capture or loot share proves an encounter when its announcement was hidden or the log is missing. */
+    internal fun totals(announcements: List<Check>, runs: List<RunRecord>): Map<SafariEncounter, Int> {
+        val liveRuns = runs.filter { !it.imported && it.start > 0 && it.length > 0 }
+        val byEncounter = announcements.groupBy { it.encounter }
+        return SafariEncounter.entries.associateWith { encounter ->
+            val recorded = byEncounter[encounter].orEmpty().map { it.at }.sorted()
+            val recovered = liveRuns.asSequence().filter { run ->
+                (run.catches[encounter.label] ?: 0) > 0 || (run.shards[encounter.label] ?: 0) > 0 ||
+                    run.sparklings.any { it.substringAfter(':') == encounter.label }
+            }.distinctBy { it.start }.count { run ->
+                val index = recorded.binarySearch(run.start - TIMESTAMP_TOLERANCE).let { if (it < 0) -it - 1 else it }
+                index == recorded.size || recorded[index] > run.start + run.length + TIMESTAMP_TOLERANCE
+            }
+            (recorded.size + recovered) * encounter.crittersPerCheck
+        }
+    }
 
     fun import(owner: String, checks: List<Check>): Int {
         HistoryStore.backup(FILE)
@@ -57,7 +82,7 @@ internal object SafariEncounterHistory {
         val merged = (saved + checks).groupBy { it.encounter }.values.flatMap { events ->
             val accepted = mutableListOf<Check>()
             for (event in events.sortedBy { it.at }) {
-                if (accepted.lastOrNull()?.let { event.at - it.at <= 2_000 } != true) accepted += event
+                if (accepted.lastOrNull()?.let { event.at - it.at <= TIMESTAMP_TOLERANCE } != true) accepted += event
             }
             accepted
         }

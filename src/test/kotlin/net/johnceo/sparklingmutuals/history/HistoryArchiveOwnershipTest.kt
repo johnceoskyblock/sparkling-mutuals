@@ -124,6 +124,50 @@ class HistoryArchiveOwnershipTest {
         }
     }
 
+    @Test fun `older Mojang authentication links pre-rename and rollover encounter logs to the UUID`() {
+        log("2026-09-14-1.log.gz", client("23:59:49", "Setting user: Former"),
+            client("23:59:50", "Authenticating to Mojang as Former (11111111-1111-1111-1111-111111111111)"),
+            client("23:59:55", "Connecting to mc.hypixel.net, 25565"),
+            system("23:59:58", SafariEncounter.DOOMSPIRAL.announcement))
+        log("2026-09-15-1.log.gz", system("00:00:05", SafariEncounter.WUMPA.announcement))
+        log("2026-09-15-2.log", client("01:00:00", "Setting user: Former"),
+            client("01:00:02", "Connecting to mc.hypixel.net, 25565"),
+            system("01:00:10", SafariEncounter.GEMZIE.announcement))
+        log("2026-09-14-2.log", client("23:59:50", "Setting user: Another"),
+            client("23:59:51", "Authenticating to Mojang as Another ($other)"),
+            client("23:59:56", "Connecting to mc.hypixel.net, 25565"),
+            system("23:59:59", SafariEncounter.DOOMSPIRAL.announcement),
+            client("23:59:59", "Stopping!"))
+        log("2026-09-15-4.log", client("03:00:00", "Setting user: Unknown"),
+            system("03:00:01", "Authenticating to Mojang as Unknown ($owner)"),
+            client("03:00:02", "Connecting to mc.hypixel.net, 25565"),
+            system("03:00:10", SafariEncounter.DOOMSPIRAL.announcement))
+        val result = LogImporter.read(folder, "Current", ownerUuid = owner).join()
+        assertEquals(listOf(SafariEncounter.DOOMSPIRAL, SafariEncounter.WUMPA, SafariEncounter.GEMZIE),
+            result.encounters.map { it.encounter })
+        assertEquals(1, result.skippedAccounts)
+        assertEquals(1, result.unresolvedAccounts)
+        val otherView = LogImporter.read(folder, "Another", ownerUuid = other).join().encounters.single()
+        assertEquals(SafariEncounter.DOOMSPIRAL, otherView.encounter)
+        assertEquals(1_000L, otherView.at - result.encounters.first().at)
+    }
+
+    @Test fun `live run proof fills missing checks without duplicating announcements or assuming all runs checked`() {
+        val doom = SafariEncounter.DOOMSPIRAL
+        val wumpa = SafariEncounter.WUMPA
+        val gemzie = SafariEncounter.GEMZIE
+        val native = RunRecord(start = 100_000, length = 60_000, catches = mutableMapOf("Doomspiral" to 1),
+            shards = mutableMapOf("Wumpa" to 50), sparklings = mutableListOf("PartyMember:Gemzie"))
+        val imported = RunRecord(start = 200_000, length = 60_000, imported = true, catches = mutableMapOf("Wumpa" to 1))
+        val unrelated = RunRecord(start = 300_000, length = 60_000, tickets = 1)
+        val records = listOf(native, imported, unrelated)
+        val announcements = listOf(SafariEncounterHistory.Check(doom, 120_000), SafariEncounterHistory.Check(doom, 170_000))
+        val expected = mapOf(doom to 2, wumpa to 1, gemzie to 3)
+        assertEquals(expected, SafariEncounterHistory.totals(announcements, records))
+        assertEquals(expected, SafariEncounterHistory.totals(announcements + listOf(
+            SafariEncounterHistory.Check(wumpa, 130_000), SafariEncounterHistory.Check(gemzie, 140_000)), records))
+    }
+
     @Test fun `menu readers pick personal dye total and parse detailed playtime`() {
         assertEquals(4, PlaytimeReader.dyeDrops("§7You've dropped: §64"))
         assertNull(PlaytimeReader.dyeDrops("Global drops: 2,187"))

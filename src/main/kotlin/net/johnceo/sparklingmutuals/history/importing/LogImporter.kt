@@ -273,7 +273,7 @@ object LogImporter {
                         tell("[SM] $self has $personal personal sparkling catches in history and $total on the API.")
                     }
                     client.player?.sendOverlayMessage(Component.literal("§aHistory import complete"))
-                    tell("[SM] Scanned ${result.files} logs. Added §e$runs§r runs, §e$sparks§r sparklings, and §e$checks§r encounter checks. Updated ${RunHistory.lastImportUpdated} imported runs. " +
+                    tell("[SM] Scanned ${result.files} logs. Added §e$runs§r runs and §e$sparks§r sparklings. Recovered §e$checks§r checks from encounter announcements. Updated ${RunHistory.lastImportUpdated} imported runs. " +
                         "Removed $removedRuns invalid or duplicate imported runs and $removedSparks invalid or duplicate catches." +
                         (if (result.skippedAccounts > 0) " Excluded ${result.skippedAccounts} logs from other accounts." else "") +
                         (if (result.unresolvedAccounts + result.unknownServer > 0) " Still unresolved: ${result.unresolvedAccounts} account, ${result.unknownServer} server. Add their companion logs and import again." else "") +
