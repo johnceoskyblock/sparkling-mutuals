@@ -3,6 +3,7 @@ package net.johnceo.sparklingmutuals.safari.esp
 import java.util.UUID
 import net.johnceo.sparklingmutuals.config.BiomeObjectiveConfig
 import net.johnceo.sparklingmutuals.safari.PartySparklingState
+import net.johnceo.sparklingmutuals.safari.SafariAreaMap
 import net.johnceo.sparklingmutuals.safari.SafariBiome
 import net.johnceo.sparklingmutuals.safari.SafariMode
 import net.johnceo.sparklingmutuals.safari.SafariRoster
@@ -163,6 +164,9 @@ object SafariEspRules {
         z >= 0 -> SafariBiome.CAVERN
         else -> SafariBiome.ICY
     }
+    internal fun critterBiomeAt(x: Double, y: Double, z: Double): SafariBiome? =
+        if (SafariAreaMap.isForestCanopy(x, y, z)) SafariBiome.FOREST else biomeAt(x, z)
+
     fun visible(inSafari: Boolean, enabled: Boolean, onlyInBiome: Boolean, player: SafariBiome?, mob: SafariBiome?) =
         inSafari && enabled && mob != null && (!onlyInBiome || player != null && player == mob)
     private class DropGroup(var minimum: EspDrop, var count: Int = 1)

@@ -25,7 +25,7 @@ Servers that advertise `hotspot-preferences-v1` accept a saved biome preference 
 
 Wait up to seven seconds for initial backend authority. If unavailable, retain the existing leader-owned chat allocation. Finalized chat choices are imported as locks on backend recovery. No displayed assignment may move. A backend-owned visit retains its results and reconnects through outages instead of starting a competing chat allocation. Conflicts freeze new automatic assignments/instructions.
 
-With /hotspot enabled, clients still announce their actual hotspot in party chat. Backend coordination continues to own assignment and suppresses the chat fallback allocator. With auto biome reports enabled, local clears queue a party message independently of server self-echoes. The client waits briefly for competing reports before sending. Unique Icy shares completion without a chat code. Normal sparkling announcements and user-requested party commands retain their existing behavior.
+With /hotspot enabled, clients still announce their actual hotspot in party chat. Backend coordination continues to own assignment and suppresses the chat fallback allocator. Accepted reports in the backend snapshot also populate actual hotspots in the HUD for clients that report over WebSocket only. With auto biome reports enabled, local clears queue a party message independently of server self-echoes. The client waits briefly for competing reports before sending. Unique Icy shares completion without a chat code. Normal sparkling announcements and user-requested party commands retain their existing behavior.
 
 ## Sparkling auto entry
 

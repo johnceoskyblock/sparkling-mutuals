@@ -14,20 +14,19 @@ class SafariVisibilityHelpTest {
         val reply = CommandHelp.partyReply(SafariMode.UNIQUE)
         assertTrue(reply.startsWith("[SM] Commands: "))
         assertTrue(reply.contains("!dye"))
-        assertTrue(reply.contains("!captures [IGN]"))
-        assertTrue(reply.contains("!sparkling [IGN]"))
+        assertTrue(reply.contains("(!missing|!tickets|!captures|!sparkling) [IGN]"))
         assertTrue(reply.contains("!rates"))
         assertFalse(reply.contains("Local:"))
-        assertFalse(reply.contains("/"))
-        assertTrue(reply.contains("!pb doom"))
-        assertTrue(reply.contains("!pb haunted"))
+        assertTrue(reply.contains("!pb <doom|wumpa>"))
+        assertTrue(reply.contains("!pb <forest|cavern|icy|haunted>"))
         assertFalse(reply.contains("/sparkling fc"))
         assertFalse(reply.contains("/pb toggle"))
         for (mode in SafariMode.entries) {
             val commands = CommandHelp.partyReply(mode)
             assertTrue(commands.contains("!commands"))
             assertTrue(PartyReplyChunks.split(commands).all { it.length + "/pc ".length <= 256 })
-            assertFalse(commands.contains("/"), "Party help leaked local commands in $mode")
+            assertFalse(Regex("(?:^|\\s)/[a-z]").containsMatchIn(commands), "Party help leaked local commands in $mode")
+            assertEquals(1, commands.split(", ").count { it == "!sparkle <critter> on/off" })
         }
     }
     @Test fun `entrance visibility is limited to the actual named subarea`() {
@@ -52,10 +51,12 @@ class SafariVisibilityHelpTest {
         }
     }
     @Test fun `local help contains only slash commands with brief descriptions`() {
-        val lines = CommandHelp.localLines(SafariMode.UNIQUE).map(SafariRules::strip)
+        val lines = CommandHelp.localLines().map(SafariRules::strip)
         assertTrue(lines.drop(1).all { it.startsWith("/") && !it.contains("!") })
-        for (command in listOf("/sm", "/sm gui", "/captures", "/fc", "/unique", "/warping", "/warpingdelay", "/autoparty", "/apikey")) {
-            assertTrue(lines.any { it.startsWith(command) && it.contains(" — ") }, command)
+        for (command in listOf("/sm", "/sm gui", "/captures", "/fc", "/unique", "/sparkle", "/warping", "/warpingdelay", "/autoparty", "/apikey")) {
+            assertTrue(lines.drop(1).any { command in it.substringBefore(" — ") }, command)
         }
+        assertTrue(lines.any { "/fullclear" in it && "/full clear" in it })
+        assertEquals(1, lines.count { it.startsWith("/sm <history|") })
     }
 }

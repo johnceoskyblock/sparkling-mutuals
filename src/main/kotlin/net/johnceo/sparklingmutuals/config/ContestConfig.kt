@@ -55,10 +55,15 @@ object ContestConfig {
     }
 
     private fun load() {
-        val properties = if (Files.exists(configPath)) Properties().apply { Files.newInputStream(configPath).use(::load) }
-            else FreshInstallDefaults.contest()
-        loadSettings(properties)
+        loadSettings(readSavedSettings())
     }
+
+    internal fun readSavedSettings() = if (Files.exists(configPath))
+        Properties().apply { Files.newInputStream(configPath).use(::load) } else FreshInstallDefaults.contest()
+
+    internal fun backUpSharedSettings(properties: Properties) =
+        PersonalBestConfig.write(configPath.resolveSibling("sparkling-mutuals-contest.before-share.properties"), properties,
+            "Sparkling Mutuals contest settings before import")
 
     internal fun resetSettings() {
         val defaults = FreshInstallDefaults.contest().apply {
@@ -117,7 +122,10 @@ object ContestConfig {
     fun save() {
         Files.createDirectories(configPath.parent)
 
-        Properties().apply {
+        PersonalBestConfig.write(configPath, settingsProperties(), "Sparkling Mutuals contest configuration")
+    }
+
+    internal fun settingsProperties() = Properties().apply {
             setProperty("hudX", hudX.toString())
             setProperty("hudY", hudY.toString())
             setProperty("hudScale", hudScale.toString())
@@ -138,7 +146,10 @@ object ContestConfig {
             setProperty("contestSound", contestSound)
             setProperty("contestSoundVolume", contestSoundVolume.toString())
 
-            PersonalBestConfig.write(configPath, this, "Sparkling Mutuals contest configuration")
-        }
+    }
+
+    internal fun applySharedSettings(properties: Properties) {
+        PersonalBestConfig.write(configPath, properties, "Sparkling Mutuals contest configuration")
+        loadSettings(properties)
     }
 }

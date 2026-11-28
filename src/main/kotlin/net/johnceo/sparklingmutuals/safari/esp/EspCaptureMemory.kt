@@ -15,6 +15,18 @@ internal data class EspPityBody(
 class EspCaptureMemory {
     private data class Attempt(val id: java.util.UUID, val species: String, val at: Long)
     private val pending = mutableListOf<Attempt>()
+    internal data class RecatchPin(val species: String, val position: Vec3, val expiresAt: Long)
+    private val pins = mutableMapOf<UUID, RecatchPin>()
+
+    internal fun recatchPins(now: Long): Collection<RecatchPin> {
+        pins.values.removeIf { now >= it.expiresAt }
+        return pins.values
+    }
+
+    private fun resolvePin(id: UUID, escaped: Boolean, now: Long) {
+        if (!escaped) pins.remove(id)
+        else pins[id]?.let { pins[id] = it.copy(expiresAt = now + 8_000) }
+    }
     private val labelOwners = mutableMapOf<java.util.UUID, Pair<String, java.util.UUID>>()
     /** An unchanged name tag is the strongest evidence for a body replacement. */
     fun bindLabel(id: java.util.UUID, species: String, label: java.util.UUID, liveBodies: Set<java.util.UUID>) {
@@ -37,6 +49,7 @@ class EspCaptureMemory {
         handoffBodies.add(old)
         handoffBodies.add(id)
         pity.remove(old)?.let { pity[id] = it }
+        pins.remove(old)?.let { if (old !in breakouts) pins[id] = it }
         for (index in pending.indices) if (pending[index].id == old) pending[index] = pending[index].copy(id = id)
         recent.entries.forEach { if (it.value.id == old) it.setValue(it.value.copy(id = id)) }
         for (index in input.indices) input[index] = input[index].copy(aim = input[index].aim.mapValues { (_, aim) ->
@@ -97,6 +110,7 @@ class EspCaptureMemory {
                 }
                 Outcome.ESCAPED, Outcome.DODGED -> {
                     pending.removeAll { it.id == body.key }
+                    resolvePin(body.key, attempt.outcome == Outcome.ESCAPED, now)
                     if (attempt.outcome == Outcome.ESCAPED) breakouts[body.key] = Breakout(attempt.species, attempt.at, now)
                 }
                 null -> Unit
@@ -193,6 +207,11 @@ class EspCaptureMemory {
         if (index < 0 || confirmedThrow) pity[id] = pityFor(id) + 1
         if (index < 0) pending.add(Attempt(id, species, launchedAt))
         else pending[index] = Attempt(id, species, launchedAt)
+        if (confirmedThrow) recordPin(id, species, now)
+    }
+    private fun recordPin(id: UUID, species: String, now: Long) {
+        if (!net.johnceo.sparklingmutuals.config.ConfigManager.recatchWaypoint) return
+        seenBodies[id]?.let { pins[id] = RecatchPin(species, it.position, now + 40_000) }
     }
     fun escaped(species: String, now: Long, brokeOut: Boolean = true): java.util.UUID? {
         expire(now)
@@ -206,6 +225,7 @@ class EspCaptureMemory {
         }
         pending.remove(attempt)
         if (brokeOut) breakouts[attempt.id] = Breakout(species, attempt.at, now)
+        resolvePin(attempt.id, brokeOut, now)
         trace("$species escape matched ${attempt.id.toString().take(8)} pity=${pityFor(attempt.id)}")
         return attempt.id
     }
@@ -218,6 +238,7 @@ class EspCaptureMemory {
         val attempt = attempts.last().copy(at = matching.last().at)
         input.removeAll(matching.toSet())
         pity[attempt.id] = pityFor(attempt.id) + 1
+        recordPin(attempt.id, species, now)
         return attempt
     }
     fun caught(species: String, now: Long): java.util.UUID? {
@@ -228,18 +249,20 @@ class EspCaptureMemory {
             return null
         }
         pending.remove(attempt); captured.add(attempt.id)
+        pins.remove(attempt.id)
         recent.entries.removeAll { it.value.id == attempt.id }
         return attempt.id
     }
     fun retire(id: java.util.UUID) {
         captured.add(id)
         breakouts.remove(id)
+        pins.remove(id)
         pending.removeAll { it.id == id }
         recent.entries.removeAll { it.value.id == id }
     }
     fun hidden(id: java.util.UUID) = id in captured
     fun reset() {
         pending.clear(); labelOwners.clear(); pity.clear(); captured.clear(); recent.clear(); input.clear()
-        seenBodies.clear(); handoffBodies.clear(); breakouts.clear(); deferred.clear(); animations.clear(); diagnostics.clear()
+        seenBodies.clear(); handoffBodies.clear(); breakouts.clear(); deferred.clear(); animations.clear(); diagnostics.clear(); pins.clear()
     }
 }

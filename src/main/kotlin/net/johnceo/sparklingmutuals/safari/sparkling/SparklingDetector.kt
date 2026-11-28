@@ -58,7 +58,7 @@ object SparklingDetector {
         }
         skins.forEach { (body, species) ->
             // A real name tag wins if a future skin table no longer agrees with the server label.
-            if (body.id !in matches && SafariRoster.named(species)?.biome == SafariEspRules.biomeAt(body.x, body.z))
+            if (body.id !in matches && SafariRoster.named(species)?.biome == SafariEspRules.critterBiomeAt(body.x, body.y, body.z))
                 matches[body.id] = SparklingDetection(species, body.id, body.id, setOf(body.uuid))
         }
         return matches.values.toList()

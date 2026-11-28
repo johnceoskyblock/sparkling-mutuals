@@ -154,7 +154,7 @@ object SparklingMutuals : ModInitializer {
         net.johnceo.sparklingmutuals.hud.MaxWin.tick(client)
         CapsulePreview.tick(client)
         DoomspiralLottery.tick(client)
-        if (!DoomspiralLottery.active) net.johnceo.sparklingmutuals.hud.SafariAlertSequence.tick()
+        net.johnceo.sparklingmutuals.hud.SafariAlertSequence.tick()
         net.johnceo.sparklingmutuals.safari.automation.SafariPartyInput.tick(client)
         SafariDowntime.onClientTick(client)
     }

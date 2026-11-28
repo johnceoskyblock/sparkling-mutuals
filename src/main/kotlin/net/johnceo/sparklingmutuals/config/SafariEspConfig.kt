@@ -74,13 +74,21 @@ object SafariEspConfig {
     var teammateColor = defaultColor(0xFF55FF55.toInt())
     private var fullPresentation = true
     internal val glowToggles = mobs.keys.associateWith { true }.toMutableMap()
-    internal val boxToggles = mobs.keys.associateWith { true }.toMutableMap()
-    var moundAlwaysOn = false
+    internal val boxToggles = mobs.keys.associateWith { false }.toMutableMap()
     var uniqueRemainingChecks = false
-    fun showCritterGlow(name: String)=critterGlow && (!fullPresentation || glowToggles[name] != false)
-    fun showCritterBox(name: String)=critterBoxes && (!fullPresentation || boxToggles[name] != false)
-    var critterGlow = true
-    var critterBoxes = false
+    internal fun setRemainingChecks(enabled: Boolean): Boolean {
+        if (uniqueRemainingChecks == enabled) return false
+        uniqueRemainingChecks = enabled
+        return true
+    }
+    fun showCritterGlow(name: String) = if (fullPresentation) glowToggles[name] == true else standardCritterGlow
+    fun showCritterBox(name: String) = if (fullPresentation) boxToggles[name] == true else standardCritterBoxes
+    fun styledHighlight(name: String, mound: Boolean = false) =
+        entityEnabled(name, mound) && (showCritterGlow(name) || showCritterBox(name))
+    var standardCritterGlow = true
+    var standardCritterBoxes = false
+    var rockmiteMoundGlow = true
+    val moundModelGlow get() = rockmiteMoundGlow && showCritterGlow("Rockmite")
     var biomeCritterColors = false
     private val biomePalette=mapOf("forest" to 0x55FF55,"cavern" to 0xFFAA00,"icy" to 0x55FFFF,"haunted" to 0xAA55FF)
     val biomeColors=biomePalette.mapValues {defaultColor(it.value)}.toMutableMap()
@@ -121,19 +129,36 @@ object SafariEspConfig {
     } ?: fallback
     fun rgb(color: String) = SettingsColor.argb(color)
     private fun key(name: String) = name.lowercase().replace(' ', '_')
-    private fun critterBoxesKey(includeFullPresentation: Boolean) =
-        if (includeFullPresentation) "esp.critterBoxes" else "standard.esp.critterBoxes"
+    internal const val LEGACY_CRITTER_GLOW = "esp.critterGlow"
+    private const val LEGACY_CRITTER_BOXES = "esp.critterBoxes"
+    private const val STANDARD_CRITTER_GLOW = "standard.esp.critterGlow"
+    private const val STANDARD_CRITTER_BOXES = "standard.esp.critterBoxes"
+
+    /** Preserve the effective Full switches once, then let each species control its own styles. */
+    internal fun migrateCritterStyles(properties: Properties): Boolean {
+        if (!properties.containsKey(LEGACY_CRITTER_GLOW) && !properties.containsKey(LEGACY_CRITTER_BOXES)) return false
+        val glow = properties.remove(LEGACY_CRITTER_GLOW)?.toString()?.toBooleanStrictOrNull() ?: true
+        val boxes = properties.remove(LEGACY_CRITTER_BOXES)?.toString()?.toBooleanStrictOrNull() ?: false
+        properties.putIfAbsent(STANDARD_CRITTER_GLOW, glow.toString())
+        mobs.keys.forEach { name ->
+            val id = "esp.${key(name)}"
+            properties.setProperty("$id.glow", (glow && properties.getProperty("$id.glow") != "false").toString())
+            properties.setProperty("$id.box", (boxes && properties.getProperty("$id.box") != "false").toString())
+        }
+        return true
+    }
 
     fun load(properties: Properties, includeFullPresentation: Boolean = true) {
         fullPresentation = includeFullPresentation
-        moundAlwaysOn = includeFullPresentation && properties.getProperty("esp.rockmite.moundAlwaysOn").toBoolean()
-        uniqueRemainingChecks = includeFullPresentation && properties.getProperty("esp.unique.remainingChecks").toBoolean()
+        uniqueRemainingChecks = properties.getProperty("esp.unique.remainingChecks").toBoolean()
         mobs.keys.forEach { name ->
-            glowToggles[name] = !includeFullPresentation || properties.getProperty("esp.${key(name)}.glow") != "false"
-            boxToggles[name] = !includeFullPresentation || properties.getProperty("esp.${key(name)}.box") != "false"
+            glowToggles[name] = includeFullPresentation && properties.getProperty("esp.${key(name)}.glow") != "false"
+            boxToggles[name] = includeFullPresentation && properties.getProperty("esp.${key(name)}.box") == "true"
         }
-        critterGlow = properties.getProperty("esp.critterGlow")?.toBooleanStrictOrNull() ?: true
-        critterBoxes = properties.getProperty(critterBoxesKey(includeFullPresentation))?.toBooleanStrictOrNull() ?: false
+        standardCritterGlow = properties.getProperty(STANDARD_CRITTER_GLOW, properties.getProperty(LEGACY_CRITTER_GLOW, "true"))
+            .toBooleanStrictOrNull() ?: true
+        standardCritterBoxes = properties.getProperty(STANDARD_CRITTER_BOXES)?.toBooleanStrictOrNull() ?: false
+        rockmiteMoundGlow = properties.getProperty("esp.rockmite.moundGlow")?.toBooleanStrictOrNull() ?: true
         if (includeFullPresentation) CritterNameplates.load(properties)
         biomeCritterColors=properties.getProperty("esp.biomeCritterColors")?.toBooleanStrictOrNull() ?: false
         biomePalette.forEach {(id,color)->
@@ -187,17 +212,19 @@ object SafariEspConfig {
             properties.getProperty("esp.rockmite.color")?.let { mobs.getValue("Rockmite").color } ?: defaultColor(0xFFFFFFFF.toInt()))
     }
     fun save(properties: Properties, includeFullPresentation: Boolean = true) {
+        properties.setProperty("esp.unique.remainingChecks", uniqueRemainingChecks.toString())
         if (includeFullPresentation) {
-            properties.setProperty("esp.rockmite.moundAlwaysOn", moundAlwaysOn.toString())
-            properties.setProperty("esp.unique.remainingChecks", uniqueRemainingChecks.toString())
+            properties.remove("esp.rockmite.moundAlwaysOn")
             mobs.keys.forEach { name ->
-                properties.setProperty("esp.${key(name)}.glow", (glowToggles[name] != false).toString())
-                properties.setProperty("esp.${key(name)}.box", (boxToggles[name] != false).toString())
+                properties.setProperty("esp.${key(name)}.glow", glowToggles.getValue(name).toString())
+                properties.setProperty("esp.${key(name)}.box", boxToggles.getValue(name).toString())
             }
+        } else {
+            properties.setProperty(STANDARD_CRITTER_GLOW, standardCritterGlow.toString())
+            properties.setProperty(STANDARD_CRITTER_BOXES, standardCritterBoxes.toString())
         }
         properties.remove("esp.floor.onlyInBiome")
-        properties.setProperty("esp.critterGlow", critterGlow.toString())
-        properties.setProperty(critterBoxesKey(includeFullPresentation), critterBoxes.toString())
+        properties.setProperty("esp.rockmite.moundGlow", rockmiteMoundGlow.toString())
         if (includeFullPresentation) CritterNameplates.save(properties)
         properties.setProperty("esp.biomeCritterColors",biomeCritterColors.toString())
         biomeColors.forEach {(id,color)->properties.setProperty("esp.biomeColor.$id",color)}

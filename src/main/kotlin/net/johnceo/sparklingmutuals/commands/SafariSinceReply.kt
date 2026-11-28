@@ -1,6 +1,7 @@
 package net.johnceo.sparklingmutuals.commands
 
 import net.johnceo.sparklingmutuals.history.RunHistory
+import net.johnceo.sparklingmutuals.history.Achievements
 import net.johnceo.sparklingmutuals.history.RunRecord
 import net.johnceo.sparklingmutuals.history.SparklingEntry
 import net.johnceo.sparklingmutuals.history.SparklingLog
@@ -30,10 +31,22 @@ object SafariSinceReply {
         val count = validRuns.count { it.start > last.at }
         return "$count run${if (count == 1) "" else "s"} since last $label: ${last.critter} caught by ${last.player}."
     }
+    internal fun formatDye(runs: List<RunRecord>, lastDropAt: Long?): String {
+        if (lastDropAt == null) return "${runs.count { it.start > 0 }} runs tracked; no dated Emerald Dye drop in history."
+        val count = runs.count { it.start > lastDropAt }
+        return "$count run${if (count == 1) "" else "s"} since last Emerald Dye."
+    }
+
     /** Called on the client thread before the async reply pipeline, so histories cannot race an import/save. */
-    fun current(command: PartyCommand) = format(command.ign, command.kind == PartyCommandKind.SINCE_UNIQUE,
+    fun current(command: PartyCommand) = if (command.kind == PartyCommandKind.SINCE_DYE)
+        formatDye(RunHistory.runs, Achievements.lastEmeraldDyeAt)
+    else format(command.ign, command.kind == PartyCommandKind.SINCE_UNIQUE,
         RunHistory.runs, SparklingLog.entries, SafariTracking.ledger.current, command.sinceCritter)
+
+    private val dyeReply = Regex("""^[0-9]+ (?:runs? since last Emerald Dye\.|runs tracked; no dated Emerald Dye drop in history\.)$""",
+        RegexOption.IGNORE_CASE)
     fun matches(command: PartyCommand, body: String): Boolean {
+        if (command.kind == PartyCommandKind.SINCE_DYE) return dyeReply.matches(body)
         val label = label(command.kind == PartyCommandKind.SINCE_UNIQUE)
         val critter = command.sinceCritter
         if (critter != null) {

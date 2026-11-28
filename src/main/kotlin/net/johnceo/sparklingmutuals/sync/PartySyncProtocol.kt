@@ -149,7 +149,11 @@ internal class PartySyncState(val self: String, roster: Set<String>) {
     var serverRun: String? = null; private set
     private var revision = -1L
     val locks = linkedMapOf<String,SafariBiome>()
-    val reports = linkedMapOf<String,SafariBiome>()
+    private val hotspotReports = mutableMapOf<String, SafariBiome>()
+    fun actualHotspot(player: String): SafariBiome? = hotspotReports[player]
+    fun observeHotspot(player: String, biome: SafariBiome) {
+        if (player in roster) hotspotReports.putIfAbsent(player, biome)
+    }
     val hotspotWins = linkedMapOf<String,Int>()
     val sentNotifications = mutableSetOf<String>()
     data class Notification(val id: String,val player: String,val biome: SafariBiome)
@@ -277,7 +281,11 @@ internal class PartySyncState(val self: String, roster: Set<String>) {
             addProperty("run",run);addProperty("revision",rev);add("counts",fair.deepCopy())
         }
         hotspotWins.clear();fair.entrySet().forEach { hotspotWins[it.key]=it.value.asInt }
-        if(acceptedReports!=null) acknowledgedReports.putAll(acceptedReports)
+        if (acceptedReports != null) {
+            acknowledgedReports.putAll(acceptedReports)
+            // Keep confirmed HUD reports for this visit even when transport retry state is cleared.
+            hotspotReports.putAll(acceptedReports)
+        }
         notifications=if(conflict) emptyList() else pending
         true
     }.getOrDefault(false)

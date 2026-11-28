@@ -135,6 +135,9 @@ object ConfigManager {
     var showMoundCount = true
     var showSnooperWalls = true
     var showMoundStats = false
+    var removeIcyFrost = true
+    var recatchWaypoint = false
+    var leftClickGazerBed = true
     var removeDarkness = true
     var clearWater = true
     var waterOpacity = 60
@@ -194,7 +197,8 @@ object ConfigManager {
         ::wumpaSoloPbChat to true, ::wumpaDuoPbChat to true, ::wumpaObservedSoloPbChat to true, ::wumpaObservedDuoPbChat to true,
         ::fullClearPbChat to true, ::uniquePbChat to true, ::partyUniquePbChat to true,
         ::autoReconnectHypixel to false, ::autoJoinSkyBlock to false,
-        ::highlightBeeNests to true, ::removeDarkness to true, ::clearWater to true, ::sparklingAlert to true, ::sparklingCatchCount to true,
+        ::highlightBeeNests to true, ::removeIcyFrost to true, ::recatchWaypoint to false, ::leftClickGazerBed to true,
+        ::removeDarkness to true, ::clearWater to true, ::sparklingAlert to true, ::sparklingCatchCount to true,
         ::sparklingPartyAnnouncer to true, ::catchCountPanel to false, ::autoClicker to true, ::candleHitbox to true, ::holdManagerOnKick to true, ::downtimeCommand to true, ::honeyHives to true, ::huntingBoxValue to true, ::ubiksCubeTimer to false, ::shardSaleGuidance to true, ::skillOverflow to true, ::skillOverflowChat to true, ::skillOverflowNumbers to false, ::estimatedItemValue to true, ::estimatedChestValue to true, ::phantomleafSolver to true, ::achievements to true, ::achievementSound to true, ::achievementsToParty to false, ::runCoinsInstaSell to false,
         ::hideCaptureChat to true, ::hideGroundCapsules to true, ::hideFlyingCapsules to true,
         ::experimentalCapsulePath to true, ::showCapsuleGuideThroughTerrain to true, ::gemzieGemAutoSelect to true,
@@ -206,7 +210,7 @@ object ConfigManager {
     fun validCapsulePathWidth(value: Float?) = value?.takeIf { it.isFinite() }?.coerceIn(1f,5f) ?: 3f
     fun validSparklingSound(value: String?) = value?.trim()?.let(Identifier::tryParse)?.toString() ?: "minecraft:block.amethyst_block.chime"
 
-    private fun readSavedSettings() = Properties().apply {
+    internal fun readSavedSettings() = Properties().apply {
         if (Files.exists(configPath)) Files.newInputStream(configPath).use(::load)
     }
 
@@ -233,10 +237,11 @@ object ConfigManager {
         }
         val resetOptionalChecks = BiomeObjectiveConfig.migrateOptionalChecks(properties)
         val enableHideyhoBanner = BannerConfig.migrateHideyhoBanner(properties)
+        val migratedCritterStyles = SafariEspConfig.migrateCritterStyles(properties)
         personalBestConfig = PersonalBestConfig(configPath)
         personalBestConfig.load(properties, personalBests)
         loadSettings(properties)
-        if (introduceShardGuidance || updateWarpTimings || resetOptionalChecks || enableHideyhoBanner || versionChanged) {
+        if (introduceShardGuidance || updateWarpTimings || resetOptionalChecks || enableHideyhoBanner || migratedCritterStyles || versionChanged) {
             PersonalBestConfig.write(configPath, properties, "Sparkling Mutuals configuration")
         }
     }
@@ -253,7 +258,9 @@ object ConfigManager {
             ?: SplitTimeFormat.MILLISECONDS
         specialCatchAlert = properties.getProperty("specialCatchAlert")?.toBooleanStrictOrNull() ?: true
         alwaysCelebrateSparkling = properties.getProperty("alwaysCelebrateSparkling")?.toBooleanStrictOrNull() ?: false
-        specialCatchStyle = properties.getProperty("specialCatchStyle")?.toIntOrNull()?.coerceIn(0,40) ?: 0
+        specialCatchStyle = properties.getProperty("specialCatchStyle")?.toIntOrNull()
+            ?.coerceIn(0, net.johnceo.sparklingmutuals.ui.SparklingAlertStyle.CUSTOM_INDEX) ?: 0
+        CustomCatchCelebrations.load(properties)
         apiKey = properties.getProperty("apiKey", "")
         sparklingSound = validSparklingSound(properties.getProperty("sparklingSound"))
         runCompleteTitle = properties.getProperty("runCompleteTitle", "Run Complete").take(120).ifBlank { "Run Complete" }
@@ -342,53 +349,65 @@ object ConfigManager {
     }
 
     internal fun saveSettings() {
-        readSavedSettings().apply {
-            HotspotPreferences.save(this)
-            remove("allowUncalibratedCapsuleEstimates")
-            remove("safariEntryDryRun")
-            remove("safariEntryApproach")
-            installedVersionHistory.save(this)
-            setProperty("apiKey", apiKey)
-            setProperty("history.ownerUuid", historyOwnerUuid)
-            setProperty("runCompleteTitle", runCompleteTitle)
-            setProperty("runCompleteSound", runCompleteSound)
-            setProperty("runCompleteVolume", runCompleteVolume.coerceIn(0, 100).toString())
-            setProperty("sparklingSound", validSparklingSound(sparklingSound))
-            setProperty("sparklingSoundVolume", sparklingSoundVolume.coerceIn(0, 100).toString())
-            flags.forEach { (property, _) -> setProperty(property.name, property.get().toString()) }
-            setProperty("migration.shardSaleGuidanceV2", "true")
-            setProperty("migration.sparkleWarpTimers22_27","true")
-            setProperty("warpDelaySeconds", warpDelaySeconds.toString())
-            setProperty("repartyDelaySeconds",validRepartyDelay(repartyDelaySeconds).toString())
-            setProperty("sparkleWarpMode", sparkleWarpMode.toString())
-            setProperty("warpDuo", warpDuo)
-            setProperty("settingsTheme", settingsTheme.toString())
-            setProperty("splitsTimeFormat", splitsTimeFormat.name)
-            progressRows.forEach { (biome, display) -> setProperty(progressRowKey(biome), display.name) }
-            setProperty("specialCatchAlert", specialCatchAlert.toString())
-            setProperty("alwaysCelebrateSparkling", alwaysCelebrateSparkling.toString())
-            setProperty("specialCatchStyle", specialCatchStyle.toString())
-            setProperty("leechMode", leechMode.toString())
-            setProperty("leechWhitelist", leechWhitelist)
-            setProperty("doomspiralEmergenceTicks", doomspiralEmergenceTicks.coerceIn(1, 600).toString())
-            setProperty("doomspiralThrowLeadTicks", doomspiralThrowLeadTicks.coerceIn(0, 40).toString())
-            setProperty("safariTicketPreference", safariTicketPreference.coerceIn(0, 1).toString())
-            setProperty("profitsTicketMode", profitsTicketMode.coerceIn(0, 3).toString())
-            setProperty("showWhere", showWhere.coerceIn(0, 2).toString())
-            setProperty("waterOpacity", waterOpacity.toString())
-            biomeWaterOpacity.forEach { (biome, value) ->
-                setProperty("waterOpacity.${biome.name.lowercase()}", value.toString())
-            }
-            setProperty("capsuleHideDistance", validCapsuleDistance(capsuleHideDistance).toString())
-            setProperty("capsulePathWidth", validCapsulePathWidth(capsulePathWidth).toString())
-            net.johnceo.sparklingmutuals.alerts.WarpList.save(this)
-            SafariHud.save(this)
-            SafariEspConfig.save(this)
-            SafariChatConfig.save(this)
-            BiomeObjectiveConfig.save(this)
-            AppearanceConfig.save(this)
-            BannerConfig.save(this)
-            PersonalBestConfig.write(configPath, this, "Sparkling Mutuals configuration")
-        }
+        PersonalBestConfig.write(configPath, settingsProperties(readSavedSettings()), "Sparkling Mutuals configuration")
     }
+
+    internal fun settingsProperties(base: Properties = Properties()) = base.apply {
+        HotspotPreferences.save(this)
+        remove("allowUncalibratedCapsuleEstimates")
+        remove("safariEntryDryRun")
+        remove("safariEntryApproach")
+        installedVersionHistory.save(this)
+        setProperty("apiKey", apiKey)
+        setProperty("history.ownerUuid", historyOwnerUuid)
+        setProperty("runCompleteTitle", runCompleteTitle)
+        setProperty("runCompleteSound", runCompleteSound)
+        setProperty("runCompleteVolume", runCompleteVolume.coerceIn(0, 100).toString())
+        setProperty("sparklingSound", validSparklingSound(sparklingSound))
+        setProperty("sparklingSoundVolume", sparklingSoundVolume.coerceIn(0, 100).toString())
+        flags.forEach { (property, _) -> setProperty(property.name, property.get().toString()) }
+        setProperty("migration.shardSaleGuidanceV2", "true")
+        setProperty("migration.sparkleWarpTimers22_27","true")
+        setProperty("warpDelaySeconds", warpDelaySeconds.toString())
+        setProperty("repartyDelaySeconds",validRepartyDelay(repartyDelaySeconds).toString())
+        setProperty("sparkleWarpMode", sparkleWarpMode.toString())
+        setProperty("warpDuo", warpDuo)
+        setProperty("settingsTheme", settingsTheme.toString())
+        setProperty("splitsTimeFormat", splitsTimeFormat.name)
+        progressRows.forEach { (biome, display) -> setProperty(progressRowKey(biome), display.name) }
+        setProperty("specialCatchAlert", specialCatchAlert.toString())
+        setProperty("alwaysCelebrateSparkling", alwaysCelebrateSparkling.toString())
+        setProperty("specialCatchStyle", specialCatchStyle.toString())
+        CustomCatchCelebrations.save(this)
+        setProperty("leechMode", leechMode.toString())
+        setProperty("leechWhitelist", leechWhitelist)
+        setProperty("doomspiralEmergenceTicks", doomspiralEmergenceTicks.coerceIn(1, 600).toString())
+        setProperty("doomspiralThrowLeadTicks", doomspiralThrowLeadTicks.coerceIn(0, 40).toString())
+        setProperty("safariTicketPreference", safariTicketPreference.coerceIn(0, 1).toString())
+        setProperty("profitsTicketMode", profitsTicketMode.coerceIn(0, 3).toString())
+        setProperty("showWhere", showWhere.coerceIn(0, 2).toString())
+        setProperty("waterOpacity", waterOpacity.toString())
+        biomeWaterOpacity.forEach { (biome, value) ->
+            setProperty("waterOpacity.${biome.name.lowercase()}", value.toString())
+        }
+        setProperty("capsuleHideDistance", validCapsuleDistance(capsuleHideDistance).toString())
+        setProperty("capsulePathWidth", validCapsulePathWidth(capsulePathWidth).toString())
+        net.johnceo.sparklingmutuals.alerts.WarpList.save(this)
+        SafariHud.save(this)
+        SafariEspConfig.save(this)
+        SafariChatConfig.save(this)
+        BiomeObjectiveConfig.save(this)
+        AppearanceConfig.save(this)
+        BannerConfig.save(this)
+    }
+
+    internal fun applySharedSettings(properties: Properties) {
+        PersonalBestConfig.write(configPath, properties, "Sparkling Mutuals configuration")
+        loadSettings(properties)
+        net.johnceo.sparklingmutuals.alerts.SparkleWarping.configurationChanged()
+    }
+
+    internal fun backUpSharedSettings(properties: Properties) =
+        PersonalBestConfig.write(configPath.resolveSibling("sparkling-mutuals.before-share.properties"), properties,
+            "Sparkling Mutuals settings before import")
 }

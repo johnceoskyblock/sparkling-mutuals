@@ -69,4 +69,18 @@ class BeeNestSurveyTest {
         survey.observe(Triple(20, 88, 33), NestBlock.UNKNOWN)
         assertTrue(survey.allChecked, "unloading cannot erase an already classified hive")
     }
+    @Test fun `post-clear helpers keep only nests without a confirmed punch`() {
+        val survey = BeeNestSurvey()
+        observe(survey, setOf(low, other, high))
+        survey.punch(low)
+        survey.acceptResolved(other)
+        survey.acceptPartyClear()
+        assertTrue(survey.allChecked)
+        assertFalse(survey.individuallyChecked)
+        assertTrue(survey.waypoints(needed = true).isEmpty())
+        assertEquals(listOf(NestWaypoint(high, true)), survey.waypoints(needed = true, ignoreBiomeClear = true))
+        survey.punch(high)
+        assertTrue(survey.individuallyChecked)
+        assertTrue(survey.waypoints(needed = true, ignoreBiomeClear = true).isEmpty())
+    }
 }

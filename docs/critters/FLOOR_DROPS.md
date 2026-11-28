@@ -14,6 +14,8 @@ A marker hidden by selection is not an absent resource. Unknown/partial markers 
 
 ### Visibility outside the current biome
 
+In Full editions, coins follow Gimmiegold’s glow and box switches, incense follows Doomspiral, and all three gems follow Gemzie. Wriggleworms follow Parakeet, Yogi Berries follow Bluebird, and Seeds follow Macaw. A linked marker can show when either style is enabled. Unique keeps uncollected Shining Coins and bird food eligible throughout the biome, subject to the linked switches and the floor-drop visibility settings.
+
 **ESP → Floor drops → Show outside current biome** has a separate switch for Bag of Seeds, Wriggleworm, Yogi Berry, Lime Gem, Purple Gem, Orange Gem, Icebreaker, Soothing Incense, Shining Coin and XP/Essence/Shard. Quest drops default to visible across biomes; reward drops default to current-biome only. The old shared restriction is replaced. Per-type choices persist across mode changes/restarts and do not change mode eligibility, collection cutoffs, tracking, colors or text sizes. Only currently received/loaded drops can be drawn, and reward ESP still needs its separate enable toggle.
 
 ### Starting resources

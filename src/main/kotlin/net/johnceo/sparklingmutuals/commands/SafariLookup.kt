@@ -63,7 +63,7 @@ object SafariLookup {
         PartyCommandKind.PB_HAUNTED -> if (command.trackedPlayer) ConfigManager.personalBests.trackedResponse(command.ign, "Haunted", command.duo) else ConfigManager.personalBests.response(localName, "Haunted")
         PartyCommandKind.PB_ICY -> if (command.trackedPlayer) ConfigManager.personalBests.trackedResponse(command.ign, "Icy", command.duo) else ConfigManager.personalBests.response(localName, "Icy")
         PartyCommandKind.PB_CAVERN -> if (command.trackedPlayer) ConfigManager.personalBests.trackedResponse(command.ign, "Cavern", command.duo) else ConfigManager.personalBests.response(localName, "Cavern")
-        PartyCommandKind.SINCE_SPARKLING, PartyCommandKind.SINCE_UNIQUE -> SafariSinceReply.current(command)
+        PartyCommandKind.SINCE_SPARKLING, PartyCommandKind.SINCE_UNIQUE, PartyCommandKind.SINCE_DYE -> SafariSinceReply.current(command)
         PartyCommandKind.HELP -> CommandHelp.partyReply()
         PartyCommandKind.MISSING_RUN -> SafariMissingReply.current(command.biome)
         PartyCommandKind.MUTUALS -> {

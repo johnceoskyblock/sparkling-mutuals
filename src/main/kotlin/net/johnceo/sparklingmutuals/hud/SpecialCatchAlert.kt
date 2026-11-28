@@ -2,6 +2,9 @@ package net.johnceo.sparklingmutuals.hud
 
 import net.johnceo.sparklingmutuals.compat.*
 import net.johnceo.sparklingmutuals.config.ConfigManager
+import net.johnceo.sparklingmutuals.config.CatchCelebrationPreviewScreen
+import net.johnceo.sparklingmutuals.config.CelebrationRecipe
+import net.johnceo.sparklingmutuals.config.CustomCatchCelebrations
 import net.johnceo.sparklingmutuals.safari.SafariAssist
 import net.johnceo.sparklingmutuals.safari.SafariRoster
 import net.johnceo.sparklingmutuals.safari.SafariTracking
@@ -21,6 +24,8 @@ object SpecialCatchAlert {
     private var lastAt=0L
     private var previewing=false
     private var style=SparklingAlertStyle.preset(0)
+    private var caption = "SPARKLING CAPTURE"
+    private var detail = 2
     private fun now()=System.nanoTime()/1_000_000
     fun caught(player: String,species: String,unique: Boolean) {
         if (!SafariAssist.inSafari || !(ConfigManager.alwaysCelebrateSparkling || unique && ConfigManager.specialCatchAlert)) return
@@ -29,11 +34,11 @@ object SpecialCatchAlert {
         val time=now()
         if(current===run && key==lastCatch && time-lastAt<2000) return
         lastCatch=key;lastAt=time;run=current
-        enqueue(species, false) { SafariTracking.ledger.current === current && SafariAssist.inSafari }
+        enqueue(species, false, null) { SafariTracking.ledger.current === current && SafariAssist.inSafari }
     }
-    fun preview() {
+    internal fun preview(recipe: CelebrationRecipe? = null) {
         closePreview()
-        enqueue("Macaw", true) { Minecraft.getInstance().smScreen is net.johnceo.sparklingmutuals.config.CatchCelebrationPreviewScreen }
+        enqueue("Macaw", true, recipe) { Minecraft.getInstance().smScreen is CatchCelebrationPreviewScreen }
     }
     private var previewAudio = false
     fun closePreview() {
@@ -41,14 +46,17 @@ object SpecialCatchAlert {
         if (previewAudio) CatchCelebrationAudio.stop()
         previewAudio = false
     }
-    private fun enqueue(species: String, preview: Boolean, valid: () -> Boolean) {
-        val selected = SparklingAlertStyle.preset(ConfigManager.specialCatchStyle)
+    private fun enqueue(species: String, preview: Boolean, previewRecipe: CelebrationRecipe?, valid: () -> Boolean) {
+        val recipe = previewRecipe ?: CustomCatchCelebrations.active.takeIf { ConfigManager.specialCatchStyle == SparklingAlertStyle.CUSTOM_INDEX }
+        val selected = recipe?.style() ?: SparklingAlertStyle.preset(ConfigManager.specialCatchStyle)
         SafariAlertSequence.queue.submit(this, selected.displayMillis(), if (preview) "preview" else null,
-            valid = valid, finish = ::finish) { show(species, preview, selected) }
+            valid = valid, finish = ::finish) { show(species, preview, selected, recipe) }
     }
-    private fun show(species: String,preview: Boolean, selected: SparklingAlertStyle) {
+    private fun show(species: String, preview: Boolean, selected: SparklingAlertStyle, recipe: CelebrationRecipe?) {
         subject=species;shownAt=now();previewing=preview
         style=selected
+        caption = recipe?.caption ?: "SPARKLING CAPTURE"
+        detail = recipe?.detail ?: 2
         previewAudio = preview
         CatchCelebrationAudio.start(style)
     }
@@ -67,7 +75,7 @@ object SpecialCatchAlert {
         val washAlpha=if(style.pulse()==0) 22 else (18+style.pulse()*7+(18+style.pulse()*7)*(.5+.5*kotlin.math.sin(age*Math.PI/120))).toInt()
         val hue=(age%cycle).toFloat()/cycle
         g.fill(0,0,w,h,(min(alpha,washAlpha) shl 24) or (java.awt.Color.HSBtoRGB(hue,.72f,1f) and 0xFFFFFF))
-        SparklingCatchEffects.render(g,w,h,alpha,age,ConfigManager.specialCatchStyle)
+        SparklingCatchEffects.render(g,w,h,alpha,age,style,detail)
         fun centered(text: String,desired: Float,y: Float,color: Int,rainbow: Boolean=false) {
             val scale=min(desired,(w-20f)/HudFonts.font.width(text).coerceAtLeast(1))
             g.pose().pushMatrix()
@@ -90,9 +98,9 @@ object SpecialCatchAlert {
         val subjectY=maxOf(h*.517f,titleY+HudFonts.font.lineHeight*titleScale+6)
         centered("SPARKLING!",titleScale,titleY,0xFFD700,true)
         centered(name,3f,subjectY,SafariRoster.color(name))
-        if(style.callout()>0) {
-            centered("SPARKLING CAPTURE",1f,h/7f,-1,true)
-            if(style.callout()>=2) centered("SPARKLING CAPTURE",1f,h-h/7f-9,-1,true)
+        if(style.callout()>0 && caption.isNotBlank()) {
+            centered(caption,1f,h/7f,-1,true)
+            if(style.callout()>=2) centered(caption,1f,h-h/7f-9,-1,true)
         }
     }
     private fun finish() { subject=null;previewing=false }

@@ -7,6 +7,19 @@ import net.johnceo.sparklingmutuals.safari.SafariMode
 import net.johnceo.sparklingmutuals.safari.SafariRoster
 import net.johnceo.sparklingmutuals.safari.SafariRun
 
+open class UniqueRemainingCheckSettings {
+    @JvmField @ConfigOption(name = "Show remaining Sparkling checks after biome completion", desc =
+        "After a biome clears in Unique mode, list the Sparkling checks your party still needs in Biome Objectives.")
+    @ConfigEditorBoolean var remainingChecks = SafariEspConfig.uniqueRemainingChecks
+    private var applied = remainingChecks
+
+    internal fun applyRemainingChecks(): Boolean {
+        if (remainingChecks == applied) remainingChecks = SafariEspConfig.uniqueRemainingChecks
+        applied = remainingChecks
+        return SafariEspConfig.setRemainingChecks(remainingChecks)
+    }
+}
+
 internal enum class BiomeObjectiveRow(val label: String, val description: String = "") {
     COMPLETE("All objectives complete"),
     CONFIRM_CLEAR("Confirm biome clear"),
@@ -35,8 +48,14 @@ internal object BiomeObjectiveConfig {
     private val skipped = optionalSpecies.toMutableSet()
     fun show(row: BiomeObjectiveRow) = row !in hiddenRows
     fun check(name: String) = name !in skipped
+    fun setCheck(name: String, enabled: Boolean): Boolean {
+        if (name !in optionalSpecies) return false
+        return if (enabled) skipped.remove(name) else skipped.add(name)
+    }
     fun needs(name: String, party: PartySparklingState, mode: SafariMode) =
         (mode != SafariMode.UNIQUE || check(name)) && party.needs(name)
+    fun requiresUniqueCheck(name: String, party: PartySparklingState) =
+        name in optionalSpecies && check(name) && party.needs(name)
     fun birdsRelaxed() = birdChecks.any { !check(it) }
 
     /** An opted-out objective still highlights its source and critter when a capture is required. */
@@ -66,7 +85,7 @@ internal object BiomeObjectiveConfig {
 
     fun apply(rows: BiomeObjectiveToggles, checks: BiomeObjectiveToggles): Boolean {
         val nextHidden = BiomeObjectiveRow.entries.filterTo(mutableSetOf()) { !rows.enabled(it.name) }
-        val nextSkipped = optionalSpecies.filterTo(mutableSetOf()) { !checks.enabled(it) }
+        val nextSkipped = checks.entries.filterNot { it.mergeCheck(check(it.key)) }.mapTo(mutableSetOf()) { it.key }
         if (nextHidden == hiddenRows && nextSkipped == skipped) return false
         hiddenRows.clear()
         hiddenRows.addAll(nextHidden)
@@ -78,6 +97,14 @@ internal object BiomeObjectiveConfig {
 
 class BiomeObjectiveToggle internal constructor(val key: String, val label: String, val description: String, enabled: Boolean) {
     @JvmField @ConfigOption(name = "", desc = "") @ConfigEditorBoolean var enabled = enabled
+    private var applied = enabled
+
+    // An unchanged settings screen must pick up party changes instead of restoring its old value.
+    internal fun mergeCheck(current: Boolean): Boolean {
+        if (enabled == applied) enabled = current
+        applied = enabled
+        return enabled
+    }
 }
 
 class BiomeObjectiveToggles internal constructor(internal val entries: List<BiomeObjectiveToggle>) {

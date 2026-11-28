@@ -14,6 +14,7 @@ class BeeNestSurvey {
     fun acceptResolved(pos: Triple<Int,Int,Int>) { if(pos in states) sharedResolved.add(pos) }
     val locallyResolved get() = states.filterValues { it==NestBlock.HIVE }.keys + localPunches
     val remaining get() = states.filterValues { it == NestBlock.NEST }.keys - punched - sharedResolved
+    val physicallyUnconfirmed get() = states.filterValues { it == NestBlock.NEST }.keys - localPunches - sharedResolved
     val unverified get() = (states.filterValues { it == NestBlock.UNKNOWN }.keys - sharedResolved).toSet()
     val nestCount get() = states.values.count { it == NestBlock.NEST }
     fun classification(pos: Triple<Int, Int, Int>) = states[pos] ?: NestBlock.UNKNOWN
@@ -21,12 +22,15 @@ class BeeNestSurvey {
     val resolvedNestCount get() = (punched + sharedResolved.filter { states[it] == NestBlock.NEST }).size
     val allChecked get() = partyCleared || unverified.isEmpty() &&
         (states.values.any { it == NestBlock.NEST } || sharedResolved.size==positions.size) && remaining.isEmpty()
+    val individuallyChecked get() = unverified.isEmpty() &&
+        (states.values.any { it == NestBlock.NEST } || sharedResolved.size==positions.size) && physicallyUnconfirmed.isEmpty()
     /** null means no client block data. Only an inspected nest or hive establishes coverage. */
     fun scan(blockAt: (Triple<Int, Int, Int>) -> NestBlock?) {
         positions.forEach { site -> blockAt(site)?.let { observe(site, it) } }
     }
-    fun waypoints(needed: Boolean): List<NestWaypoint> = if (!needed) emptyList() else
-        remaining.map { NestWaypoint(it, true) } + unverified.map { NestWaypoint(it, false) }
+    fun waypoints(needed: Boolean, ignoreBiomeClear: Boolean = false): List<NestWaypoint> = if (!needed) emptyList() else
+        (if (ignoreBiomeClear) physicallyUnconfirmed else remaining).map { NestWaypoint(it, true) } +
+            unverified.map { NestWaypoint(it, false) }
     fun observe(pos: Triple<Int, Int, Int>, block: NestBlock) {
         // The initial source classification belongs to the run, even after collection or unloading.
         if (pos in states && block != NestBlock.UNKNOWN && states[pos] != NestBlock.NEST) states[pos] = block

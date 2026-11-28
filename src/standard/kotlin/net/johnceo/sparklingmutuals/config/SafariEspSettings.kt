@@ -52,16 +52,20 @@ class EspGeneralSettings(val drops: FloorDropEspSettings) {
     @JvmField @ConfigOption(name = "Critter highlights", desc = "Mark critters and objectives in view.")
     @ConfigEditorBoolean var critterEsp = ConfigManager.critterEspEnabled
     @JvmField @ConfigOption(name = "Glow highlights", desc = "Outline clearly visible critter models that support glow.")
-    @ConfigEditorBoolean var glow = SafariEspConfig.critterGlow
+    @ConfigEditorBoolean var glow = SafariEspConfig.standardCritterGlow
+    @JvmField @ConfigOption(name = "Rockmite mound glow", desc = "Outline visible Rockmite mound models when Glow highlights is on.")
+    @ConfigEditorBoolean var moundGlow = SafariEspConfig.rockmiteMoundGlow
     @JvmField @ConfigOption(name = "Box highlights", desc = "Draw boxes around visible critters.")
-    @ConfigEditorBoolean var boxes = SafariEspConfig.critterBoxes
+    @ConfigEditorBoolean var boxes = SafariEspConfig.standardCritterBoxes
     @JvmField @ConfigOption(name = "Floor drop highlights", desc = "Draw a colored tile at floor drops you can see in your biome.")
     @ConfigEditorBoolean var floorDropEsp = ConfigManager.floorDropEspEnabled
 
     fun apply(): Boolean {
-        val changed = SafariEspConfig.critterGlow != glow || SafariEspConfig.critterBoxes != boxes
-        SafariEspConfig.critterGlow = glow
-        SafariEspConfig.critterBoxes = boxes
+        val changed = SafariEspConfig.standardCritterGlow != glow || SafariEspConfig.standardCritterBoxes != boxes ||
+            SafariEspConfig.rockmiteMoundGlow != moundGlow
+        SafariEspConfig.standardCritterGlow = glow
+        SafariEspConfig.standardCritterBoxes = boxes
+        SafariEspConfig.rockmiteMoundGlow = moundGlow
         return changed
     }
 }

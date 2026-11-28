@@ -16,6 +16,8 @@ import net.fabricmc.loader.api.FabricLoader
 import net.johnceo.sparklingmutuals.LocalChat
 import net.johnceo.sparklingmutuals.compat.smSetScreen
 import net.johnceo.sparklingmutuals.history.Achievements
+import net.johnceo.sparklingmutuals.history.DyeDropProofs
+import net.johnceo.sparklingmutuals.history.EmeraldDyeDrop
 import net.johnceo.sparklingmutuals.history.HistoryStore
 import net.johnceo.sparklingmutuals.history.HistoryAccountId
 import net.johnceo.sparklingmutuals.history.SafariEncounter
@@ -48,7 +50,7 @@ object LogImporter {
         val alphaRuns: List<RunRecord> = emptyList(), val alphaSparklings: List<SparklingEntry> = emptyList(),
         val skippedFiles: List<Failure> = emptyList(), val unresolvedAccounts: Int = 0, val unknownServer: Int = 0,
         val foreignRuns: List<RunRecord> = emptyList(), val foreignSparklings: List<SparklingEntry> = emptyList(),
-        val encounters: List<SafariEncounterHistory.Check> = emptyList())
+        val encounters: List<SafariEncounterHistory.Check> = emptyList(), val lastEmeraldDyeAt: Long? = null)
     private data class LogFile(val path: Path, val day: LocalDate, val order: Int, val modified: Long)
     fun defaultLogs(): Path = FabricLoader.getInstance().gameDir.resolve("logs")
 
@@ -153,6 +155,11 @@ object LogImporter {
             val encounters = selected.sessions.asSequence().flatten().filter { it.main }.mapNotNull { event ->
                 SafariEncounter.parse(event.text)?.let { SafariEncounterHistory.Check(it, event.at) }
             }.distinct().toList()
+            val dyeProofs = DyeDropProofs()
+            val lastDye = selected.sessions.asSequence().flatten().filter {
+                it.main && EmeraldDyeDrop.owned(it.text, it.localName ?: self)
+            }.distinctBy { it.at to it.text }.sortedBy { it.at }
+                .lastOrNull { dyeProofs.accept(it.text, it.at) }?.at
             (selected.foreign + selected.unresolved).forEach { input ->
                 logger.info("History log {}: {} ({})", input.path,
                     if (input in selected.foreign) "different account" else "ownership unresolved",
@@ -167,7 +174,7 @@ object LogImporter {
             rebuilt.sparklings.forEach { it.ownerUuid = ownerUuid }
             Result(rebuilt.runs, rebuilt.sparklings, logs.size, logs.maxOfOrNull { it.modified } ?: 0L, failures, rebuilt.tickets,
                 skipped.size, rebuilt.alphaRuns, rebuilt.alphaSparklings, skipped, selected.unresolved.size, selected.unknownServers.size,
-                foreign.runs + foreign.alphaRuns, foreign.sparklings + foreign.alphaSparklings, encounters)
+                foreign.runs + foreign.alphaRuns, foreign.sparklings + foreign.alphaSparklings, encounters, lastDye)
         }, executor)
 
     data class CatchLog(val path: Path, val lines: List<String>, val line: Int)
@@ -267,6 +274,7 @@ object LogImporter {
                     val runs = RunHistory.importRuns(result.runs)
                     val sparks = SparklingLog.importEntries(result.sparklings, result.ticketTimes)
                     val checks = SafariEncounterHistory.import(owner, result.encounters)
+                    Achievements.importLastEmeraldDye(owner, result.lastEmeraldDyeAt)
                     val earned = Achievements.afterImport()
                     apiTotal?.let { total ->
                         val personal = SparklingLog.entries.count { SparklingLog.isPersonal(it, self) }

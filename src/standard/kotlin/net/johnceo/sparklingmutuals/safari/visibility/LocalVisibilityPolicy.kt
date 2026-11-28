@@ -22,8 +22,3 @@ internal object VisibleSparklingPolicy {
         modelVisible || !hiddenSpecies && labelVisible
     fun alertVisible(currentlyVisible: Boolean, started: Boolean) = started || currentlyVisible
 }
-
-internal object VisibleCritterHighlightPolicy {
-    fun box(explicitBoxes: Boolean, glow: Boolean, supportsGlow: Boolean, clearModel: Boolean) =
-        explicitBoxes || glow && (!supportsGlow || !clearModel)
-}

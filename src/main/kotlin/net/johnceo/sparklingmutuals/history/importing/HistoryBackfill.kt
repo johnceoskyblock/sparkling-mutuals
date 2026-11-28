@@ -7,6 +7,7 @@ import java.time.*
 import java.util.Locale
 import net.johnceo.sparklingmutuals.history.HistoryAccountId
 import net.johnceo.sparklingmutuals.history.CaptureProgress
+import net.johnceo.sparklingmutuals.history.EmeraldDyeDrop
 import net.johnceo.sparklingmutuals.history.SafariEncounter
 import net.johnceo.sparklingmutuals.history.RunRecord
 import net.johnceo.sparklingmutuals.history.RunTally
@@ -81,7 +82,7 @@ internal object HistoryBackfill {
         text.startsWith("Sending to server ") -> sending.matches(text)
         text.startsWith("+") -> summaryReward.matches(text)
         else -> text == SUMMARY || text == RunTally.MACAW_BONUS || text == STASH_FEATHER ||
-            admission.matches(text) || SafariEncounter.parse(text) != null
+            admission.matches(text) || SafariEncounter.parse(text) != null || EmeraldDyeDrop.candidate(text)
     }
 
     fun log(reader: BufferedReader, day: LocalDate, source: String, active: Boolean, expectedSelf: String? = null): List<Event> =

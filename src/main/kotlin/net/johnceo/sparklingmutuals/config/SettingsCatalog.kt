@@ -149,6 +149,7 @@ class SettingsCatalog(settings: SafariSettings) {
                 Row(entry,field,entry.canonical,"Blank restores the original name.",itemPath,navigationName=entry.canonical)
             }
             if(owner is FloorDropEspSettings)return owner.rows(path)
+            if(owner is CritterStyleSettings)return owner.rows(path)
             val result=fields(owner.javaClass).mapNotNull { field ->
                 if(owner is SafariSettings.SafariTeammateSettings && field.name in setOf("color","textScale"))return@mapNotNull null
                 if(owner is PanelAppearanceSettings && field.name=="expansion" && !owner.supportsExpansion)return@mapNotNull null
@@ -166,15 +167,9 @@ class SettingsCatalog(settings: SafariSettings) {
                 }
             }
             if(owner is EspGeneralSettings && !SafariSettings.standardEdition) {
-                val styles=result.map { row ->
-                    if(row.field.name in setOf("glow","boxes")) {
-                        val choices=owner.javaClass.getDeclaredField(if(row.field.name=="glow")"glowSpecies" else "boxSpecies").apply {isAccessible=true}.get(owner) as CritterStyleSettings
-                        row.copy(groupOverride=true,children=listOf(row.copy(name="Enable",path=row.path+" / Enable",navigationName="enabled"))+choices.rows(row.path))
-                    } else row
-                }
                 val reward=owner.drops.javaClass.getDeclaredField("rewardDrops").apply {isAccessible=true}
                 val meta=reward.getAnnotation(ConfigOption::class.java)
-                return SettingsOrder.rows(owner,styles+Row(owner.drops,reward,meta.name,meta.desc,path+" / "+meta.name))
+                return SettingsOrder.rows(owner,result+Row(owner.drops,reward,meta.name,meta.desc,path+" / "+meta.name))
             }
             return SettingsOrder.rows(owner,result)
         }

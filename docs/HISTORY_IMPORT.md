@@ -12,7 +12,7 @@ Keep local run and Sparkling histories, inspect totals/records, and award local 
 | `/sm achievements`, `/sm stats` | Opens the corresponding tab. |
 | **Achievements**, **Achievement sound** | Both on; party announcements default off. |
 | **Coins at insta-sell** | Off; live reward valuation uses sell-offer prices by default. |
-| `/sm history import [folder]` or **Import history from logs** | Backfills missing Main-server runs, sparklings, and encounter checks. |
+| `/sm history import [folder]` or **Import history from logs** | Backfills missing Main-server runs, sparklings, and encounter checks. Also recovers the selected account’s latest dated Emerald Dye drop for `!since dye`. |
 | **History UUID** | Defaults to the first account used after updating. Selects the account for live history and imports. |
 
 Copy all logs from your old Safari runs into the current Minecraft instance’s `logs` folder, then click **Import logs**. Include the previous day’s log for any run that passed midnight. The button closes settings so progress is visible above the hotbar. To scan a different folder, quote its path:
@@ -23,7 +23,7 @@ Copy all logs from your old Safari runs into the current Minecraft instance’s 
 
 `/sm history import` uses the current instance’s logs and starts the same import as **Import logs**.
 
-In **Sparklings**, **Open Critterdex** opens a dedicated screen for biome progress, rarity, and catch counts. In **Profit**, **New session** starts the same session as `/newsession` and selects **Current** in the Session timeframe.
+In **Sparklings**, **Open Critterdex** opens a dedicated screen for biome progress, rarity, and catch counts. A critter's name and rarity marker use its rarity color once its catch count meets the selected tier. Below that threshold, the entire row is gray. In **Profit**, **New session** starts the same session as `/newsession` and selects **Current** in the Session timeframe.
 
 ## Implemented behavior
 

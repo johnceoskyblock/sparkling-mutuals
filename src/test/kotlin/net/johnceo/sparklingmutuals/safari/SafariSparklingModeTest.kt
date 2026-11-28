@@ -121,7 +121,7 @@ class SafariSparklingModeTest : net.johnceo.sparklingmutuals.safari.esp.Profitab
     @Test fun `sparkling command help and config categories are discoverable`() {
         val names = SafariSettings::class.java.fields.mapNotNull { it.getAnnotation(net.johnceo.sparklingmutuals.config.Category::class.java)?.name }
         assertTrue("Modes" in names)
-        assertTrue(net.johnceo.sparklingmutuals.commands.CommandHelp.localLines().any { it.startsWith("§6/sparkle ") })
+        assertTrue(net.johnceo.sparklingmutuals.commands.CommandHelp.localLines().any { "/sparkle " in it.substringBefore("§7—") })
         assertFalse(net.johnceo.sparklingmutuals.commands.CommandHelp.partyReply().contains("/sparkle"))
     }
     @Test fun `loading conflicting legacy flags prefers sparkling mode without losing full clear records`() {

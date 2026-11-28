@@ -1,5 +1,7 @@
 package net.johnceo.sparklingmutuals.hud
 
+import net.johnceo.sparklingmutuals.safari.DoomspiralLottery
+
 /** Client-thread FIFO shared by the mod's timed alert presentations. */
 internal class AlertSequence(private val audioPlaying: () -> Boolean = { false }) {
     private data class Request(val owner: Any, val key: Any?, val duration: Long,
@@ -17,7 +19,8 @@ internal class AlertSequence(private val audioPlaying: () -> Boolean = { false }
         pending.addLast(Request(owner, key, duration, minimumTicks, valid, start, finish))
     }
 
-    fun tick(now: Long) {
+    fun tick(now: Long, paused: Boolean = false) {
+        if (paused) return
         active?.let {
             if (ticksRemaining > 0) ticksRemaining--
             if ((now >= endsAt && ticksRemaining == 0) || (it.minimumTicks == 0 && !it.valid())) finishActive()
@@ -55,5 +58,5 @@ internal object SafariAlertSequence {
             CatchCelebrationAudio.playing ||
             net.johnceo.sparklingmutuals.safari.sparkling.SparklingEncounters.audioPlaying()
     }
-    fun tick() = queue.tick(System.nanoTime() / 1_000_000)
+    fun tick() = queue.tick(System.nanoTime() / 1_000_000, paused = DoomspiralLottery.pendingOrActive)
 }

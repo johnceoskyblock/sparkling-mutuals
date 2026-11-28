@@ -2,14 +2,19 @@ package net.johnceo.sparklingmutuals.contest
 
 import net.johnceo.sparklingmutuals.compat.*
 import java.time.LocalTime
+import java.time.Instant
+import java.time.ZoneId
 import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.round
 import net.johnceo.sparklingmutuals.config.ContestConfig
+import net.johnceo.sparklingmutuals.hud.BannerKind
+import net.johnceo.sparklingmutuals.hud.SafariBanners
 import net.johnceo.sparklingmutuals.hud.SkyblockSidebar
 import net.johnceo.sparklingmutuals.party.PartyManager
 import net.johnceo.sparklingmutuals.safari.SafariEntryPresence
+import net.johnceo.sparklingmutuals.safari.SafariIsland
 import net.johnceo.sparklingmutuals.safari.automation.SafariDowntime
 import net.minecraft.client.Minecraft
 import net.minecraft.client.resources.sounds.SimpleSoundInstance
@@ -32,6 +37,7 @@ object ContestTracker {
 
     private val downtime = ContestDowntimeState()
     private val waiting = linkedSetOf<String>()
+    private val partyTickets = ContestPartyTickets()
     private var contestStartedAt = 0L
 
     fun bypassPartyContest() {
@@ -41,6 +47,17 @@ object ContestTracker {
     fun clearPartyContest() { waiting.clear() }
     fun confirmPartyTicket(id: String, receivedAt: Long) {
         if (receivedAt >= contestStartedAt) waiting.remove(id)
+    }
+
+    internal fun clearPartyTicketReports() = partyTickets.clear()
+
+    internal fun recordPartyTicket(client: Minecraft, id: String, receivedAt: Long, teammates: Set<String>) {
+        val self = client.player?.uuid?.toString() ?: return
+        val window = absoluteWindow(java.time.LocalDateTime.now())
+        val receivedWindow = absoluteWindow(Instant.ofEpochMilli(receivedAt).atZone(ZoneId.systemDefault()).toLocalDateTime())
+        if (receivedWindow != window) return
+        partyTickets.update(self, window, teammates)
+        partyTickets.confirm(id, window, teammates)
     }
 
     private fun otherMembers(self: String) = PartyManager.withLocal(self).orEmpty()
@@ -115,8 +132,25 @@ object ContestTracker {
         if (skyblock) {
             readSidebar(client)
             announceTicket(client)
+            if (PartyManager.hasInfo) {
+                val teammates = others.toSet()
+                val window = windowKey
+                partyTickets.update(self, window, teammates)
+                if (partyTickets.shouldAnnounce() && partyReadyInCanyon(client, window)) {
+                    SafariBanners.fire(BannerKind.CONTEST_PARTY_READY,
+                        visible = { partyReadyInCanyon(client, window) }, onStart = partyTickets::markShown)
+                }
+            }
         }
         if (ContestConfig.trackContest) maybeWarn(client)
+    }
+
+    private fun partyReadyInCanyon(client: Minecraft, window: Long): Boolean {
+        val self = client.player?.uuid?.toString() ?: return false
+        if (client.level == null || !PartyManager.hasInfo || betweenContests() || windowKey != window ||
+            window != absoluteWindow(java.time.LocalDateTime.now()) || SafariIsland.onIsland ||
+            !(SafariIsland.currentMode.equals("foraging_3", true) || SkyblockSidebar.areaName(client).equals("Torrhus Canyon", true))) return false
+        return partyTickets.ready(window, otherMembers(self).toSet(), isComplete())
     }
 
     /** The contest window a time of day falls in. */

@@ -630,7 +630,7 @@ object SafariEsp {
         if (!SafariAssist.inSafari || client.level == null || client.level !== level) return SafariEspObservations(emptyList(), emptyList())
         val critters = targets.filter { live(it, client) }.mapNotNull { target ->
             val e = target.entity
-            val biome = SafariEspRules.biomeAt(e.x, e.z) ?: return@mapNotNull null
+            val biome = SafariEspRules.critterBiomeAt(e.x, e.y, e.z) ?: return@mapNotNull null
             if (SafariRoster.named(target.species)?.biome != biome) return@mapNotNull null
             EspCritterObservation(e.id, target.species, biome, e.x, e.y, e.z, target.species == "Rockmite" && e is Display.ItemDisplay, e.uuid)
         }
@@ -682,7 +682,7 @@ object SafariEsp {
         val entity = target.entity
         val mob = SafariRoster.named(target.species) ?: return "Unknown species"
         val group = SafariEspConfig.groups.getValue(mob.biome.name.lowercase())
-        val actualBiome = SafariEspRules.biomeAt(entity.x, entity.z)
+        val actualBiome = SafariEspRules.critterBiomeAt(entity.x, entity.y, entity.z)
         val display = entity is Display.ItemDisplay
         val run = SafariTracking.ledger.current
         val party = SafariSparklingMode.state
@@ -717,7 +717,7 @@ object SafariEsp {
 
     internal fun visibleGlowColor(entity: Entity, delta: Float): Int? {
         val client = Minecraft.getInstance()
-        if (!SafariEspConfig.critterGlow || !SafariAssist.visualsActive(client) ||
+        if (!SafariEspConfig.standardCritterGlow || !SafariAssist.visualsActive(client) ||
             client.player == null || client.options.smHideGui || ConfigManager.hideCritterEsp()) return null
         if (indexedTargets !== targets) {
             indexedTargets = targets
@@ -733,7 +733,7 @@ object SafariEsp {
     private fun supportsGlow(target: Target): Boolean = when (target.entity) {
         is Player -> false
         is LivingEntity, is Display.BlockDisplay -> true
-        is Display.ItemDisplay -> target.species != "Rockmite"
+        is Display.ItemDisplay -> target.species != "Rockmite" || SafariEspConfig.moundModelGlow
         else -> false
     }
 
@@ -766,7 +766,7 @@ object SafariEsp {
         val client = Minecraft.getInstance()
         if (!SafariAssist.visualsActive(client) || client.player == null || client.options.smHideGui) return
         val playerBiome = SafariAssist.biome
-        if (SafariEspConfig.critterBoxes || SafariEspConfig.critterGlow) {
+        if (SafariEspConfig.standardCritterBoxes) {
             val delta = client.deltaTracker.getGameTimeDeltaPartialTick(false)
             val now = System.currentTimeMillis()
             for (target in targets) {
@@ -782,15 +782,11 @@ object SafariEsp {
                     if (!LocalVisibility.entity(entity, client, body)) continue
                     body
                 }
-                // Vanilla glow outlines the entire model; use depth-tested geometry when terrain
-                // hides part of it, or when this model cannot use the glow pass.
-                if (!net.johnceo.sparklingmutuals.safari.visibility.VisibleCritterHighlightPolicy.box(
-                        SafariEspConfig.critterBoxes, SafariEspConfig.critterGlow, supportsGlow(target),
-                        SafariEspConfig.critterGlow && supportsGlow(target) && LocalVisibility.clearModel(entity, client, box))) continue
                 WorldRenderCompat.box(context, lines, box, highlightColor(target))
             }
             WorldRenderCompat.flush(context, lines)
         }
+        RecatchWaypoints.render(context, captures) { LocalVisibility.position(it, client) }
         val floorColor = SafariEspConfig.rgb(SafariEspConfig.dropColor(FloorDropType.GENERIC))
         for ((pos, ids) in floorHighlightSites) {
             if (!visibleFloorDrop(pos, ids, client, playerBiome)) continue

@@ -1,5 +1,7 @@
 package net.johnceo.sparklingmutuals.commands
 
+import net.johnceo.sparklingmutuals.config.BiomeObjectiveConfig
+import net.johnceo.sparklingmutuals.safari.SafariMode
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -36,6 +38,47 @@ class PartyCommandTest {
         assertEquals(one.token, PartyCommand.fromChat("Party > Farmer: !TICKET JohnCEO")!!.token)
         assertNotEquals(one.token, PartyCommand.fromChat("Party > Other: !tickets JohnCEO")!!.token)
         assertNotEquals(one.token, PartyCommand.fromChat("Party > Farmer: !tickets Other")!!.token)
+    }
+
+    @Test fun `aliases keep the same command and request token`() {
+        val aliases = listOf(
+            "!sparklings Other" to "!sparkling Other", "!capture" to "!captures", "!dyes" to "!dye",
+            "!gemzies" to "!gemzie", "!doomspirals" to "!doom", "!profits week" to "!profit week",
+            "!rate" to "!rates", "!command" to "!commands", "!pbs doomspiral Other duo" to "!pb doom Other duo",
+            "!pbs wumpa duo" to "!pb wumpa duo", "!since emerald dyes" to "!since dye", "!since uniques" to "!since unique"
+        )
+        for ((alias, canonical) in aliases) {
+            val base = PartyCommand.fromChat("Party > Farmer: $canonical")!!
+            val actual = PartyCommand.fromChat("Party > Farmer: $alias")!!
+            assertEquals(base.command, actual.command, alias)
+            assertEquals(base.token, actual.token, alias)
+        }
+        assertEquals(true, HotspotToggle.requested("!hotspots ON"))
+    }
+
+    @Test fun `mode switches accept spacing and keep sparkling lookup separate`() {
+        assertEquals(SafariMode.UNIQUE, PartyCommand.requestedMode("!unique"))
+        for (command in listOf("!fc", "!fullclear", "!FULL   CLEAR"))
+            assertEquals(SafariMode.FULL_CLEAR, PartyCommand.requestedMode(command))
+        assertEquals(SafariMode.SPARKLING, PartyCommand.requestedMode("!sparkle"))
+        for (command in listOf("!sparkling", "!sparklings Other", "let's !unique", "!fc Other"))
+            assertNull(PartyCommand.requestedMode(command))
+    }
+
+    @Test fun `party sparkle check commands accept every optional critter and the doom shortcut`() {
+        for (species in BiomeObjectiveConfig.optionalSpecies) {
+            assertEquals(species to true, PartyCommand.requestedSparklingCheck("!sparkle $species on"))
+            assertEquals(species to false, PartyCommand.requestedSparklingCheck("!sparkle $species off"))
+        }
+        assertEquals("Doomspiral" to true, PartyCommand.requestedSparklingCheck(" !SPARKLE  DOOM  ON "))
+        assertEquals(PartyCommand.POST_CLEAR_CHECKS to true, PartyCommand.requestedSparklingCheck("!sparkle after clear on"))
+        assertEquals(PartyCommand.POST_CLEAR_CHECKS to false, PartyCommand.requestedSparklingCheck(" !SPARKLE  AFTER  CLEAR  OFF "))
+        assertNull(PartyCommand.requestedMode("!sparkle after clear on"))
+        assertTrue(CommandHelp.partyReply().contains("!sparkle after clear on/off"))
+        assertNull(PartyCommand.requestedMode("!sparkle doom on"))
+        for (invalid in listOf("!sparkle", "!sparkling Doom", "!sparkle doom", "!sparkle Foxtrot off",
+            "!sparkle doom toggle", "please !sparkle doom on", "!sparkle doom on now"))
+            assertNull(PartyCommand.requestedSparklingCheck(invalid), invalid)
     }
 
     private val members = listOf("00000000-0000-0000-0000-000000000001",

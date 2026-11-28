@@ -1,17 +1,18 @@
-# Credited party Sparkling streak commands
+# Safari streak commands
 
 ## Purpose
 
-Report runs since a Sparkling credited to the responding player's saved or current run. This is a history-based streak, not an account lifetime statistic.
+Report saved runs since a Sparkling credited to the responding player or since their latest personal Emerald Dye drop.
 
 ## Controls and defaults
 
-Type either command in party chat with `/pc` or `/p chat`:
+Type these commands in party chat with `/pc` or `/p chat`.
 
 | Command | Reply |
 | --- | --- |
 | `!since` | Latest credited Sparkling, its species/catcher, and later saved runs. |
 | `!since unique` | The same calculation restricted to entries whose saved unique flag is true. |
+| `!since dye` | Saved runs after the responding player's latest dated Emerald Dye drop. `!since dyes` and `!since emerald dye` also work. |
 
 **Respond to party commands** defaults on. Any party member can request these commands, including players without the mod. Every mod user with party commands enabled replies from their own history, using a known current party and available local history; no API key is required. They work outside Safari and in every mode. `!commands` and settings help list them.
 
@@ -25,9 +26,15 @@ The latest qualifying entry supplies the result. Count saved runs whose start is
 
 Examples: `1 run since last shiny: Foxtrot caught by OtherPlayer.` and `3 runs since last unique shiny: Wumpa caught by Friend.` With no eligible entry, report `N runs tracked; no shiny in history.` or its unique equivalent.
 
+### Emerald Dye
+
+Each player reports from their own selected History account. A personal Main-server drop notice supplies the date. Use `/sm history import` to recover dated drops from older logs for that account. Vincent's Dye Guide supplies a lifetime total. It has no drop date for the streak calculation.
+
+`3 runs since last Emerald Dye.` counts saved runs that started after the drop. With no dated drop it reports the tracked run count and says `no dated Emerald Dye drop in history.`
+
 ### Reply ownership
 
-Every mod user answers from their own history, without an IGN prefix: replies start with the run count. The last credited catch can belong to anyone in their party run. The ten-second request-token cooldown and party/context checks still apply. Responders stagger replies by roster UUID rank; streak replies bypass cross-user result suppression so even identical histories produce each user's reply. The result is snapshotted on the client thread. Pending replies are cancelled by mode or party changes.
+Every mod user who has replies enabled answers from their own history. Replies start with the run count. The last credited Sparkling can belong to anyone in their party run. The ten-second request-token cooldown and party/context checks still apply. Responders stagger replies by roster UUID rank, and each responder can send even when their streak matches another player's. The result is snapshotted on the client thread. Mode or party changes cancel pending replies.
 
 ## Lifecycle and persistence
 

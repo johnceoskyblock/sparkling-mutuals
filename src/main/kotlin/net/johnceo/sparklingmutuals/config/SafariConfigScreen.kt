@@ -311,7 +311,12 @@ class SafariConfigScreen(private val settings: SafariSettings = SafariSettings()
         }
         val doneX = left + whatsNewWidth + 6
         button(g,"Done",Rect(doneX,height-27,54,21),px,py) { onClose() }
-        val autosaveX = doneX + 68
+        val shareX = doneX + 60
+        val shareWidth = maxOf(82, font.width("Share Config") + 16).coerceAtMost((right - shareX).coerceAtLeast(1))
+        button(g, "Share Config", Rect(shareX, height - 27, shareWidth, 21), px, py) {
+            minecraft.smSetScreen(SettingsShareScreen(this))
+        }
+        val autosaveX = shareX + shareWidth + 14
         if (autosaveX + font.width("Changes save automatically") <= right)
             text(g,"Changes save automatically",autosaveX,height-20,SettingsPalette.muted)
         if(blocked) { hits.clear();drawModal(g,mx,my) }

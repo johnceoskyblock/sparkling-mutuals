@@ -15,7 +15,7 @@ class SparklingParticleLocations {
     private val quietUntil = mutableMapOf<SafariBiome, Long>()
     fun observe(inSafari: Boolean, waxOn: Boolean, x: Double, y: Double, z: Double, now: Long): Location? {
         if (!inSafari || !waxOn || !x.isFinite() || !y.isFinite() || !z.isFinite() || y !in 0.0..160.0) return null
-        val biome = SafariEspRules.biomeAt(x, z) ?: return null
+        val biome = SafariEspRules.critterBiomeAt(x, y, z) ?: return null
         if (now < (quietUntil[biome] ?: Long.MIN_VALUE)) return null
         val old = locations.filter { it.biome == biome && it.distanceSquared(x, y, z) <= 9.0 }
             .minByOrNull { it.distanceSquared(x, y, z) }

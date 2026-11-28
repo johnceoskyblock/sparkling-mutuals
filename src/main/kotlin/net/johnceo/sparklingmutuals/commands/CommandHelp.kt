@@ -1,56 +1,50 @@
 package net.johnceo.sparklingmutuals.commands
 
+import net.johnceo.sparklingmutuals.config.SafariSettings
 import net.johnceo.sparklingmutuals.safari.SafariMode
 import net.johnceo.sparklingmutuals.safari.completion.SafariFullClear
 
 /** Local slash-command help and the separate mode-aware party command reply. */
 object CommandHelp {
     private val party = listOf(
-        PartyCommandKind.MUTUALS, PartyCommandKind.MISSING, PartyCommandKind.TICKETS, PartyCommandKind.CAPTURES, PartyCommandKind.SPARKLING, PartyCommandKind.DYE,
-        PartyCommandKind.SINCE_SPARKLING, PartyCommandKind.SINCE_UNIQUE, PartyCommandKind.PROFIT, PartyCommandKind.RATES,
-        PartyCommandKind.DOOM_CHECKS, PartyCommandKind.WUMPA_CHECKS, PartyCommandKind.GEMZIE_CHECKS,
-        PartyCommandKind.PB_DOOM, PartyCommandKind.PB_WUMPA, PartyCommandKind.PB_FOREST,
-        PartyCommandKind.PB_CAVERN, PartyCommandKind.PB_ICY, PartyCommandKind.PB_HAUNTED,
-        PartyCommandKind.MISSING_RUN, PartyCommandKind.HELP
+        "!unique | !fc | !sparkle",
+        "!sparkle <critter> on/off",
+        "!sparkle ${PartyCommand.POST_CLEAR_CHECKS} on/off",
+        "!hotspot on/off",
+        "!dt [reason]",
+        "!m [biome]",
+        "!mutuals",
+        "(!missing|!tickets|!captures|!sparkling) [IGN]",
+        "!since [unique|dye|<critter>]",
+        "!profit [session|lifetime|week|day]",
+        "!rates | !dye",
+        "!doom | !wumpa | !gemzie"
     )
-    private val local = listOf(
-        "/sm" to "Settings",
-        "/sm help" to "Commands",
-        "/sm gui" to "Move and resize HUDs",
-        "/unique" to "Unique mode",
-        "/fc | /fullclear | /full clear" to "Full clear mode",
-        "/sparkle" to "Sparkle mode",
-        "/sparkling [IGN|party]" to "Sparkling collections and player capture stats",
-        "/captures" to "Run captures",
-        "/rates" to "Expected runs per sparkling",
-        "/profits [ticket]" to "Top 10 coins/run; /profit also works",
-        "/hotspot" to "Toggle Hotspot assigning",
-        "/sm history" to "Run history",
-        "/sm bests | sparklings | stats | profits" to "Open a history tab",
-        "/newsession" to "Start a new profit session",
-        "/sm history import" to "Import logs",
-        "/warping" to "Toggle auto warp",
-        "/start" to "Start the warping cycle",
-        "/warpingdelay <seconds>" to "Warp delay",
-        "/autoparty" to "Toggle Warp List invites",
-        "/duo <IGN>" to "Select your Duo runner",
-        "/leech" to "Toggle whitelisted invite acceptance",
-        "/apikey <key>" to "Optional personal API key",
-        "/sm debug" to "Save diagnostics"
-    )
-    private fun available(mode: SafariMode) = party.map { kind ->
-        PartyCommand(kind, if (kind in listOf(PartyCommandKind.MISSING, PartyCommandKind.TICKETS, PartyCommandKind.CAPTURES, PartyCommandKind.SPARKLING)) "[IGN]" else "")
-    }.filter { it.allowed(mode) }
+    private val local = buildList {
+        add("/sm [help]" to "Open settings or list commands")
+        add("/sm gui | /sm objectives" to "Edit HUDs or open Biome Objectives settings")
+        add("/unique | /fc | /sparkle" to "Set Safari mode. /fullclear and /full clear also work")
+        add("/hotspot [preferences]" to "Toggle Hotspot assigning or rank biomes")
+        add("/sparkling [IGN…|party] | /captures" to "Look up collections or view current-run captures")
+        add("/rates | /profits [ticket]" to "Estimate runs per sparkling or rank critters by coins per run")
+        add("/sm <history|bests|sparklings|stats|profits|achievements>" to "Open a history tab")
+        add("/sm history import [folder] | /newsession" to "Import logs or start a profit session")
+        if (!SafariSettings.standardEdition) {
+            add("/warping | /leech" to "Toggle hosting or automatic invite acceptance")
+            add("/start | /autoparty" to "Start the warp cycle or toggle Warp List invites")
+            add("/warpingdelay <seconds> | /duo [IGN]" to "Set the warp delay or view and set your duo runner")
+        }
+        add("/apikey <key>" to "Set a personal API key")
+        add("/sm debug" to "Save diagnostics")
+    }
 
-    @Suppress("UNUSED_PARAMETER")
-    fun localLines(mode: SafariMode = SafariFullClear.mode) = listOf("§6Sparkling Mutuals — Commands") +
+    fun localLines() = listOf("§6Sparkling Mutuals — Commands") +
         local.map { (command, description) -> "§6$command §7— $description" }
 
-    fun partyReply(mode: SafariMode = SafariFullClear.mode) = "[SM] Commands: " +
-        available(mode).joinToString(", ") { when(it.kind) {
-            PartyCommandKind.SINCE_UNIQUE -> "${it.text}, !since <critter>"
-            PartyCommandKind.PROFIT -> "!profit"
-            PartyCommandKind.PB_DOOM, PartyCommandKind.PB_WUMPA -> "${it.text} [IGN] [duo]"
-            else -> it.text
-        } } + ", !hotspot on|off"
+    fun partyReply(mode: SafariMode = SafariFullClear.mode) = buildList {
+        addAll(party)
+        if (PartyCommand(PartyCommandKind.PB_DOOM).allowed(mode)) add("!pb <doom|wumpa> [IGN] [duo]")
+        if (PartyCommand(PartyCommandKind.PB_FOREST).allowed(mode)) add("!pb <forest|cavern|icy|haunted> [IGN [party]]")
+        add("!commands")
+    }.joinToString(", ", prefix = "[SM] Commands: ")
 }

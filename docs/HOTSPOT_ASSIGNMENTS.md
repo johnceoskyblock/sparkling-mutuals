@@ -8,7 +8,7 @@ Announce the actual hotspot immediately after the server Hotspot message using `
 
 Only reports from verified current party members participate. During the first thirty seconds of the local run, manual party messages can contain surrounding text or the copied server hotspot line. Forest, fprest, for, f; Cavern, cav, c; Icy, ice, i; Haunted, haunt, haunte, hvant, h are supported. Single-letter aliases must be the entire message. A message naming multiple biomes is ambiguous and rejected. Assignment instructions are excluded. Coordinated mod reports remain supported outside this manual window.
 
-**Party → Interactions → Biome Hotspot Preferences** opens a four-row editor. Use the arrows to move a biome up or down, then save. The default order is Icy, Forest, Haunted, Cavern.
+Turning on Hotspot assigning adds a local chat message with a clickable **[Preferences]** link. You can also open the editor with `/hotspot preferences` or through **Party → Interactions → Biome Hotspot Preferences**. Use the arrows to move a biome up or down, then save. The default order is Icy, Forest, Haunted, Cavern.
 
 A sole claimant gets their hotspot. With a supporting WebSocket server, duplicate claims favor fewer pre-run wins, then assignment clients over manual reporters, then the higher preference for that hotspot, then the higher UUID. Saved changes are used for the next unlocked assignment. [Preference sync contract](PARTY_SYNC_HOTSPOT_PREFERENCES.md)
 
@@ -41,5 +41,7 @@ Unassigned reports retry every two seconds through the existing serialized, rate
 HUDs → Hotspot GUI → Show all players defaults on. Turning it off displays only the local player's card, including in the HUD editor preview. This filters the display without changing shared assignments or fairness counts.
 
 `/hotspot` controls assigning. **HUDs → HUDs → Hotspot GUI** has the display and appearance settings. Right-click the HUD in `/sm gui` to reach the same controls. Fresh installs place it in the bottom-right corner. The default shows party members with their actual hotspot (H), assignment (A), and win count. The display can show just your own card instead. Known Hypixel rank colors come from observed names and use no additional profile requests.
+
+The **H** line uses accepted reports from the shared backend, including reports from SafariUtils players who send nothing in party chat. Local and party-chat observations fill in when a player's backend report is unavailable.
 
 The run count includes the current run after Safari admission and consecutive completed Hotspot runs with the same roster. If teammates leave and rejoin between runs, the streak continues once the same party runs again. A recorded Safari with a different roster breaks the streak. The backend still determines assignments and wins.

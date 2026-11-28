@@ -8,20 +8,38 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class SafariSinceReplyTest {
-    @Test fun `both since forms are party wide and work without an API key in every mode`() {
-        for ((word, kind) in listOf("" to PartyCommandKind.SINCE_SPARKLING, "unique" to PartyCommandKind.SINCE_UNIQUE)) {
+    @Test fun `since forms are party wide and work without an API key in every mode`() {
+        for ((word, kind) in listOf("" to PartyCommandKind.SINCE_SPARKLING, "unique" to PartyCommandKind.SINCE_UNIQUE,
+            "dye" to PartyCommandKind.SINCE_DYE)) {
             val request = PartyCommand.fromChat("§9Party > §a[MVP+] Farmer: ${("!SiNcE   " + word).trim()}")!!
             assertEquals(kind, request.command.kind)
             assertEquals("", request.command.ign)
             assertEquals(("!since " + word).trim(), request.command.text)
             assertEquals("Other", request.command.forResponder("Other").ign)
             assertFalse(request.command.requiresApiKey)
+            assertTrue(request.command.personalResult)
             SafariMode.entries.forEach { assertTrue(request.command.allowed(it)) }
             assertTrue(PartyLookupResult.fetch(request.command, "", cloud = false) { "local result" }.successful)
         }
         for (line in listOf("Guild > Farmer: !since sparkling", "Party > Farmer: !since sparkling", "Party > Farmer: !since all",
             "Party > Farmer: !since unique Other", "Party > Farmer: !since sparkle", "!since unique"))
             assertNull(PartyCommand.fromChat(line), line)
+    }
+
+    @Test fun `dye counts saved runs after the last known personal drop`() {
+        val runs = listOf(RunRecord(start = 1_000, length = 600), RunRecord(start = 2_000), RunRecord(start = 3_000), RunRecord())
+        val dye = PartyCommand(PartyCommandKind.SINCE_DYE, "Farmer")
+        val tracked = SafariSinceReply.formatDye(runs, 2_300)
+        val unknown = SafariSinceReply.formatDye(runs, null)
+        assertEquals("1 run since last Emerald Dye.", tracked)
+        assertEquals("3 runs tracked; no dated Emerald Dye drop in history.", unknown)
+        assertEquals("0 runs since last Emerald Dye.", SafariSinceReply.formatDye(runs, 4_000))
+        assertTrue(dye.matchesResponse(tracked))
+        assertTrue(dye.matchesResponse(unknown))
+        assertFalse(dye.matchesResponse("Emerald Dyes: 1"))
+        val history = PartyResponseHistory()
+        history.record(tracked, null)
+        assertFalse(history.alreadyAnswered(dye, tracked, 0, emptyList()))
     }
     @Test fun `any party find in recorded runs resets the corresponding streak and the catch run is excluded`() {
         val runs = listOf(9000L, 1000L, 5000L, 7000L, 3000L).map { RunRecord(start = it, length = 1000) }
@@ -70,7 +88,7 @@ class SafariSinceReplyTest {
         }
         SafariMode.entries.forEach {
             val commands = CommandHelp.partyReply(it).split(", ").filter { it.startsWith("!since") }
-            assertEquals(listOf("!since", "!since unique", "!since <critter>"), commands)
+            assertEquals(listOf("!since [unique|dye|<critter>]"), commands)
         }
     }
 }

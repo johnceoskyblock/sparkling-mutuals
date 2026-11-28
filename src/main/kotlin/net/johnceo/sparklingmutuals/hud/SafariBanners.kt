@@ -33,7 +33,8 @@ object SafariBanners {
         val current=SafariTracking.ledger.current
         if(current!==run) { run=current;fired.clear();cooldown.clear();chamberTarget=null;previousBiome=null;feeder=0;heldFood=0 }
     }
-    fun fire(kind: BannerKind,biome: SafariBiome?=null,critter: String?=null,text: String?=null,preview: Boolean=false,location: String?=null) {
+    fun fire(kind: BannerKind,biome: SafariBiome?=null,critter: String?=null,text: String?=null,preview: Boolean=false,location: String?=null,
+        visible: () -> Boolean = { true }, onStart: () -> Unit = {}) {
         if(!kind.supported) return
         if(!preview && kind==BannerKind.HIDEYHO_LOCATION &&
             (!SafariAssist.inSafari || SafariAssist.biome!=SafariBiome.HAUNTED || SafariFullClear.mode==SafariMode.SPARKLING)) return
@@ -54,10 +55,11 @@ object SafariBanners {
         val contest = kind.name.startsWith("CONTEST_") || kind == BannerKind.TICKET
         SafariAlertSequence.queue.submit(this, notice.duration, kind to formatted,
             valid = { Minecraft.getInstance().player != null && (preview ||
-                BannerConfig.enabled && BannerConfig.options.getValue(kind).enabled &&
+                visible() && BannerConfig.enabled && BannerConfig.options.getValue(kind).enabled &&
                 (contest || SafariTracking.ledger.current === requestRun) &&
                 (kind != BannerKind.HIDEYHO_LOCATION || SafariAssist.inSafari && SafariAssist.biome==SafariBiome.HAUNTED && SafariFullClear.mode != SafariMode.SPARKLING)) },
             finish = { activeBanner = null }) {
+            onStart()
             if (!notice.soundOnly) activeBanner = ActiveBanner(notice, now())
             AlertSounds.play(Minecraft.getInstance(), notice.sound, notice.volume, notice.pitch)
         }

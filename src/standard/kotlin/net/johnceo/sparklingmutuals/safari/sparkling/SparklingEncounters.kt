@@ -9,7 +9,6 @@ import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.config.SafariEspConfig
 import net.johnceo.sparklingmutuals.hud.HudPanel
 import net.johnceo.sparklingmutuals.hud.HudRow
-import net.johnceo.sparklingmutuals.safari.DoomspiralLottery
 import net.johnceo.sparklingmutuals.safari.SafariAssist
 import net.johnceo.sparklingmutuals.safari.SafariBiome
 import net.minecraft.client.Minecraft
@@ -71,8 +70,10 @@ object SparklingEncounters {
     // The shared report still updates party progress. Detection output requires a local sighting.
     internal fun shared(@Suppress("UNUSED_PARAMETER") name: String) = Unit
 
-    internal fun doomspiralRevealed() {
-        requestAlert(SparklingNotice(UUID.randomUUID(), "Doomspiral", "Haunted Biome"))
+    internal fun doomspiralRevealed(visible: () -> Boolean) {
+        val notice = SparklingNotice(UUID.randomUUID(), "Doomspiral", "Haunted Biome")
+        visibility[notice.id] = visible
+        requestAlert(notice)
     }
 
     fun observeUnknown(id: UUID, biome: SafariBiome, pos: BlockPos) =

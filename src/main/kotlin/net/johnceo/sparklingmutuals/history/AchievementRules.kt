@@ -55,14 +55,44 @@ enum class SparklingDexType(val label: String,val required: Int) {
     NUEVADEX("Nuevadex",9),DECADEX("Decadex",10)
 }
 
-/** Pair a drop line with its broadcast; separate rapid drops of the same family still count. */
+internal object EmeraldDyeDrop {
+    private const val STASH = "Since you're in the Critter Safari, the Emerald Dye was sent to your stash!"
+    private val start = Regex("^(?:[A-Z!' ]*DROP!|WOW!|RNG METER|NICE!|You found )", RegexOption.IGNORE_CASE)
+    private val finder = Regex("([A-Za-z0-9_]{1,16}) found (?:an? )?Emerald Dye\\b", RegexOption.IGNORE_CASE)
+
+    fun candidate(text: String) = text.contains("Emerald Dye", ignoreCase = true) &&
+        (text == STASH || start.containsMatchIn(text))
+
+    fun owned(text: String, self: String): Boolean {
+        if (!candidate(text)) return false
+        val name = finder.find(text)?.groupValues?.get(1)
+        return if (name != null) name.equals("You", true) || name.equals(self, true)
+        else !text.contains(" found ", ignoreCase = true) && !text.startsWith("WOW!", true)
+    }
+
+    fun evidence(text: String) = when {
+        text == STASH -> DyeEvidence.STASH
+        text.startsWith("WOW!", true) -> DyeEvidence.BROADCAST
+        else -> DyeEvidence.DROP
+    }
+}
+
+internal enum class DyeEvidence { STASH, BROADCAST, DROP }
+
+/** Group matching notices for one drop while keeping separate drops of the same evidence type. */
 internal class DyeDropProofs {
-    private val unmatched=mutableListOf<Pair<Boolean,Long>>()
-    fun accept(text: String,now: Long): Boolean {
-        unmatched.removeAll { now-it.second>5000 }
-        val broadcast=text.startsWith("WOW!",true)
-        val paired=unmatched.indexOfFirst { it.first!=broadcast }
-        if(paired>=0) { unmatched.removeAt(paired);return false }
-        unmatched.add(broadcast to now);return true
+    private data class Drop(val at: Long, val evidence: MutableSet<DyeEvidence>)
+    private val recent = mutableListOf<Drop>()
+
+    fun accept(text: String, now: Long): Boolean {
+        recent.removeAll { now - it.at > 5_000 }
+        val evidence = EmeraldDyeDrop.evidence(text)
+        val match = recent.firstOrNull { evidence !in it.evidence }
+        if (match != null) {
+            match.evidence.add(evidence)
+            return false
+        }
+        recent.add(Drop(now, mutableSetOf(evidence)))
+        return true
     }
 }

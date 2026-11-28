@@ -42,6 +42,7 @@ object SafariTracking {
     val displayBiome get() = SafariAssist.biome ?: run?.lastBiome
     val visible get() = SafariVisibility.visible(ConfigManager.showWhere, SafariAssist.inSafari, SafariAssist.atEntrance)
     fun register() {
+        GazerBedShortcut.register()
         net.johnceo.sparklingmutuals.sync.SafariPartySync.register()
         ClientReceiveMessageEvents.GAME.register { message, overlay ->
             if (!overlay) Minecraft.getInstance().execute {
@@ -233,7 +234,7 @@ object SafariTracking {
         if (ConfigManager.profitableChecklist && SafariFullClear.mode != SafariMode.FULL_CLEAR) net.johnceo.sparklingmutuals.safari.ui.ProfitableChecklist.panel(run, biome)
             .draw(graphics, SafariHud.PROFITABLE)
         if (ConfigManager.biomeObjectives) {
-            val objectives = SafariPanels.objectives(run, biome, unique, BeeNests.unpunchedCount,
+            val objectives = SafariPanels.objectives(run, biome, unique, BeeNests.objectiveUnpunchedCount,
                 run?.moundSurvey?.remaining ?: 0, SafariStructures.walls)
             if (objectives.rows.isNotEmpty()) objectives.draw(graphics, SafariHud.OBJECTIVES)
         }

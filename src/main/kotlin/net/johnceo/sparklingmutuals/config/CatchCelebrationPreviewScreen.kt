@@ -6,10 +6,11 @@ import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.gui.screens.Screen
 import net.minecraft.network.chat.Component
 
-class CatchCelebrationPreviewScreen(private val parent: Screen) : Screen(Component.literal("Catch celebration preview")) {
+internal class CatchCelebrationPreviewScreen(private val parent: Screen, private val recipe: CelebrationRecipe? = null) :
+    Screen(Component.literal("Catch celebration preview")) {
     override fun init() {
-        SpecialCatchAlert.preview()
-        addRenderableWidget(ThemedButton.builder(Component.literal("Replay")) { SpecialCatchAlert.preview() }.bounds(width/2-104,height-30,100,20).build())
+        SpecialCatchAlert.preview(recipe)
+        addRenderableWidget(ThemedButton.builder(Component.literal("Replay")) { SpecialCatchAlert.preview(recipe) }.bounds(width/2-104,height-30,100,20).build())
         addRenderableWidget(ThemedButton.builder(Component.literal("Back")) { onClose() }.bounds(width/2+4,height-30,100,20).build())
     }
     override fun extractRenderState(g: GuiGraphicsExtractor,mx: Int,my: Int,delta: Float) {

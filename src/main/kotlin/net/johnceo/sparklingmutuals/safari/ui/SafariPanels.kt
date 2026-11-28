@@ -4,6 +4,7 @@ import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.config.ProgressRowDisplay
 import net.johnceo.sparklingmutuals.config.BiomeObjectiveConfig
 import net.johnceo.sparklingmutuals.config.BiomeObjectiveRow
+import net.johnceo.sparklingmutuals.config.SafariSettings
 import net.johnceo.sparklingmutuals.history.RunHistory
 import net.johnceo.sparklingmutuals.history.SafariSessionStats
 import net.johnceo.sparklingmutuals.hud.HudPanel
@@ -99,8 +100,13 @@ object SafariPanels {
     }
     fun missing(run: SafariRun?, biome: SafariBiome, unique: Boolean, nests: Int, mounds: Int = 0,
         walls: WallSummary = WallSummary(emptyList()), party: PartySparklingState = SafariSparklingMode.state): HudPanel {
-        val sparkling = SafariFullClear.mode == SafariMode.SPARKLING
-        if(run?.biomeComplete(SafariFullClear.mode,biome,party)==true && !ScannableCritterChecks.pending(biome,run,party))
+        val mode = SafariFullClear.mode
+        val sparkling = mode == SafariMode.SPARKLING
+        val biomeComplete = run?.biomeComplete(mode, biome, party) == true
+        if (run != null && SafariHelperRules.postClearActive(mode, run, biome, party, biomeComplete) &&
+            biome.critters.any { SafariHelperRules.needsPostClearCheck(it.name, run, party) })
+            return HudPanel("${biome.label} Biome — 0 left", biome.color, listOf(completedRow("All captured")))
+        if(run != null && biomeComplete && !ScannableCritterChecks.pending(biome,run,party))
             return HudPanel("${biome.label} ${if(sparkling) "Unchecked" else "Biome"} — 0 left",biome.color,listOf(completedRow(missingCompleteText(sparkling))))
         val missing = missingCritters(run, biome, party)
         val listed = missing
@@ -116,13 +122,21 @@ object SafariPanels {
         val mode = SafariFullClear.mode
         val sparkling = mode == SafariMode.SPARKLING
         fun show(row: BiomeObjectiveRow) = BiomeObjectiveConfig.show(row)
+        val biomeComplete = run?.biomeComplete(mode, biome, party) == true
+        val afterClear = run != null && SafariHelperRules.postClearActive(mode, run, biome, party, biomeComplete)
+        val postChecks = if (afterClear && run != null) biome.critters.filter {
+            SafariHelperRules.needsPostClearCheck(it.name, run, party)
+        }.mapTo(mutableSetOf()) { it.name } else emptySet()
+        fun sourceNeeded(name: String) = if (afterClear) name in postChecks else SafariHelperRules.needed(name, mode, run, party)
+        val birdNames = listOf("Bluebird", "Parakeet", "Macaw")
         val showSupplies = when (biome) {
             SafariBiome.FOREST -> show(BiomeObjectiveRow.STARTING_FOOD_SYNC)
-            SafariBiome.CAVERN -> show(BiomeObjectiveRow.GEM_SYNC) && BiomeObjectiveConfig.allowsEsp("Gemzie", mode, run)
+            SafariBiome.CAVERN -> show(BiomeObjectiveRow.GEM_SYNC) && ("Gemzie" in postChecks || BiomeObjectiveConfig.allowsEsp("Gemzie", mode, run))
             else -> false
         }
         val playerSupplies = if (!showSupplies) emptyList() else
-            net.johnceo.sparklingmutuals.sync.SafariPartySync.objectiveSupplies(run, biome, party, mode).map { (player, items) ->
+            net.johnceo.sparklingmutuals.sync.SafariPartySync.objectiveSupplies(run, biome, party, mode,
+                afterClearBirds = afterClear && birdNames.any { it in postChecks }).map { (player, items) ->
             HudRow(player, icon = null, counters = items.map { (item, count) ->
                 net.johnceo.sparklingmutuals.hud.HudIconCount(
                     net.johnceo.sparklingmutuals.hud.UiIcons.forLabel(item.label)!!, count,
@@ -132,34 +146,47 @@ object SafariPanels {
         val supplies = if (biome == SafariBiome.FOREST && playerSupplies.isNotEmpty())
             listOf(HudRow("Unused starting food", color = HudRow.GOLD, icon = null)) + playerSupplies
         else playerSupplies
-        if(run?.biomeComplete(mode,biome,party)==true && !ScannableCritterChecks.pending(biome,run,party))
+        if(run != null && (biomeComplete || afterClear) && postChecks.isEmpty() && !ScannableCritterChecks.pending(biome,run,party))
             return HudPanel("Biome Objectives",biome.color,listOfNotNull(completedRow("All objectives complete!")
                 .takeIf { show(BiomeObjectiveRow.COMPLETE) }) + supplies,net.johnceo.sparklingmutuals.hud.UiIcons.forLabel(biome.label))
+        if (afterClear && SafariSettings.standardEdition) {
+            val checks = if (ConfigManager.objectiveShinyReminder) postChecks.map { HudRow("Check $it", icon = null) } else emptyList()
+            return HudPanel("Biome Objectives", biome.color, supplies + checks, net.johnceo.sparklingmutuals.hud.UiIcons.forLabel(biome.label))
+        }
         val helpers = buildList {
             addAll(supplies)
-            if(missingCritters(run,biome,party).isNotEmpty() &&
+            if(!afterClear && missingCritters(run,biome,party).isNotEmpty() &&
                 (if(mode==SafariMode.SPARKLING) ConfigManager.objectiveShinyReminder else ConfigManager.objectiveCaptureReminder)) add(HudRow(when(mode) {
                 SafariMode.UNIQUE -> "Capture all uniques"
                 SafariMode.FULL_CLEAR -> "Capture all critters"
                 SafariMode.SPARKLING -> "Check needed critters"
             },icon=null))
-            val checksLeft = if (run != null && mode == SafariMode.UNIQUE)
-                biome.critters.filter { BiomeObjectiveConfig.needs(it.name, party, mode) && !run.sparklingComplete(it.name, party) }
-            else emptyList()
-            if (ConfigManager.objectiveShinyReminder && checksLeft.isNotEmpty()) add(HudRow("Finish shiny checks", icon = null))
+            if (ConfigManager.objectiveShinyReminder) {
+                if (afterClear) {
+                    val sourceRows = SafariHelperRules.species + birdNames + setOf("Gimmiegold", "Gazer", "Wumpa")
+                    for (name in postChecks - sourceRows) add(HudRow("Check $name",
+                        fixedCounter(name, run, SafariMode.SPARKLING, party), icon = null))
+                } else if (run != null && mode == SafariMode.UNIQUE && biome.critters.any {
+                    BiomeObjectiveConfig.requiresUniqueCheck(it.name, party) && !run.sparklingComplete(it.name, party)
+                }) add(HudRow("Finish shiny checks", icon = null))
+            }
             if (show(BiomeObjectiveRow.STARTING_ITEMS) && run?.hasUnusedStartingForBiome(biome, mode, party) == true)
                 add(HudRow("Use starting items", icon = null))
-            val birdNames=listOf("Bluebird","Parakeet","Macaw")
             val requiredBirds=birdNames.filter {
-                if (sparkling) party.needs(it) else BiomeObjectiveConfig.allowsEsp(it, mode, run)
+                when {
+                    afterClear -> it in postChecks
+                    sparkling -> party.needs(it)
+                    else -> BiomeObjectiveConfig.allowsEsp(it, mode, run)
+                }
             }.map { SafariRoster.named(it)!! }
-            val birdsDone=run!=null && run.completed(mode,requiredBirds,party)==requiredBirds.size
+            val birdsDone=!afterClear && run!=null && run.completed(mode,requiredBirds,party)==requiredBirds.size
             val showBirds=biome==SafariBiome.FOREST && requiredBirds.isNotEmpty() && !birdsDone
-            if (show(BiomeObjectiveRow.WUMPA) && biome == SafariBiome.ICY && (!sparkling || party.needs("Wumpa")) &&
+            if (show(BiomeObjectiveRow.WUMPA) && biome == SafariBiome.ICY && (if (afterClear) "Wumpa" in postChecks else !sparkling || party.needs("Wumpa")) &&
                 !net.johnceo.sparklingmutuals.sync.SafariPartySync.objectiveDone("Wumpa") &&
                 run?.sparklingComplete("Wumpa", party, localOnly = true) != true)
                 add(HudRow("Capture Wumpa", icon = net.johnceo.sparklingmutuals.hud.UiIcons.Kind.RAVAGER))
-            if (show(BiomeObjectiveRow.NESTS) && biome == SafariBiome.FOREST && SafariHelperRules.showNestCounter(mode, run, party))
+            if (show(BiomeObjectiveRow.NESTS) && biome == SafariBiome.FOREST &&
+                (if (afterClear) "Honeybug" in postChecks else SafariHelperRules.showNestCounter(mode, run, party)))
                 add(HudRow("Bee nests", if(nests>0) "$nests" else "?", HudRow.GOLD, HudRow.GRAY))
             if (show(BiomeObjectiveRow.FOOD_TOTAL) && showBirds && run?.birdSpawnsComplete()!=true)
                 add(HudRow("Bird food left to use", run?.knownBirdFoodLeftToUse?.toString() ?: "?", HudRow.GOLD, HudRow.GRAY))
@@ -184,22 +211,24 @@ object SafariPanels {
                 }))
             }
             if (biome == SafariBiome.CAVERN) {
-                if (show(BiomeObjectiveRow.PODIUMS) && run != null && SafariHelperRules.needed("Gemzie",mode,run,party) &&
+                if (show(BiomeObjectiveRow.PODIUMS) && run != null && sourceNeeded("Gemzie") &&
                     !run.gems.opened && !run.sparklingChecks.gemzieChamberOpened) {
                     val colors=mapOf(net.johnceo.sparklingmutuals.safari.automation.GemzieGem.ORANGE to 0xFFFF7733.toInt(),
                         net.johnceo.sparklingmutuals.safari.automation.GemzieGem.LIME to 0xFF99FF33.toInt(),
                         net.johnceo.sparklingmutuals.safari.automation.GemzieGem.PURPLE to 0xFFBB66FF.toInt())
                     add(HudRow("Podium gems",icon=net.johnceo.sparklingmutuals.hud.UiIcons.Kind.GEM,gems=colors.map { (gem,color) -> if(gem in run.gems.placed) color else HudRow.GRAY }))
                 }
-                if (show(BiomeObjectiveRow.WALLS) && SafariHelperRules.needed("Snoozle", mode, run, party) && walls.states.isNotEmpty() && !walls.allBroken)
+                if (show(BiomeObjectiveRow.WALLS) && sourceNeeded("Snoozle") && walls.states.isNotEmpty() && !walls.allBroken)
                     add(HudRow("Snoozle walls", walls.remaining, HudRow.GOLD, HudRow.GRAY))
-                if (show(BiomeObjectiveRow.MOUNDS) && SafariHelperRules.needed("Rockmite", mode, run, party) && mounds > 0)
+                if (show(BiomeObjectiveRow.MOUNDS) && sourceNeeded("Rockmite") && mounds > 0)
                     add(HudRow("Mounds", "$mounds", HudRow.GOLD, HudRow.GRAY))
             }
             if (biome == SafariBiome.HAUNTED && (mode == SafariMode.UNIQUE || sparkling)) {
-                if (show(BiomeObjectiveRow.COINS) && BiomeObjectiveConfig.needs("Gimmiegold", party, mode) && run?.sparklingComplete("Gimmiegold", party) != true)
+                if (show(BiomeObjectiveRow.COINS) && (if (afterClear) "Gimmiegold" in postChecks else
+                    BiomeObjectiveConfig.needs("Gimmiegold", party, mode) && run?.sparklingComplete("Gimmiegold", party) != true))
                     add(HudRow("Coins left to use", run?.coinsLeftToUse?.toString() ?: "?", HudRow.GOLD, HudRow.GRAY))
-                if (show(BiomeObjectiveRow.GAZERS) && BiomeObjectiveConfig.needs("Gazer", party, mode) && run?.sparklingComplete("Gazer", party) != true)
+                if (show(BiomeObjectiveRow.GAZERS) && (if (afterClear) "Gazer" in postChecks else
+                    BiomeObjectiveConfig.needs("Gazer", party, mode) && run?.sparklingComplete("Gazer", party) != true))
                     add(HudRow("Gazers left", "${(4 - (run?.checkedProgress("Gazer") ?: 0)).coerceAtLeast(0)}",
                         HudRow.GOLD, HudRow.GRAY))
             }
@@ -207,7 +236,7 @@ object SafariPanels {
         return HudPanel("Biome Objectives", biome.color, helpers.filter { it.value!="0" }.map { row ->
             row.copy(color = net.johnceo.sparklingmutuals.hud.ObjectivePalette.color(row.label),
                 valueColor = if (row.value == "0") 0xFF55FF55.toInt() else HudRow.WHITE)
-        }.ifEmpty { if(!show(BiomeObjectiveRow.CONFIRM_CLEAR) || !ConfigManager.objectiveCaptureReminder || !ConfigManager.objectiveShinyReminder) emptyList()
+        }.ifEmpty { if(afterClear || !show(BiomeObjectiveRow.CONFIRM_CLEAR) || !ConfigManager.objectiveCaptureReminder || !ConfigManager.objectiveShinyReminder) emptyList()
             else listOf(HudRow("Confirm biome clear", icon = null)) },net.johnceo.sparklingmutuals.hud.UiIcons.forLabel(biome.label))
     }
     private fun captureColor(complete: Boolean, verified: Boolean) = if (!ConfigManager.fullClearMode || !verified) HudRow.WHITE

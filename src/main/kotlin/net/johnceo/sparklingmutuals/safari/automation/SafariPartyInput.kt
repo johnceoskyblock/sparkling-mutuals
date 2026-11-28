@@ -5,6 +5,7 @@ import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents
 import net.johnceo.sparklingmutuals.api.HypixelApi
 import net.johnceo.sparklingmutuals.commands.PartyChat
 import net.johnceo.sparklingmutuals.config.ConfigManager
+import net.johnceo.sparklingmutuals.contest.ContestPartyTickets
 import net.johnceo.sparklingmutuals.contest.ContestTracker
 import net.johnceo.sparklingmutuals.party.PartyManager
 import net.johnceo.sparklingmutuals.party.PartyRosterSignals
@@ -54,6 +55,7 @@ object SafariPartyInput {
             if (SafariDowntime.partyResetSignal(text)) {
                 resetPending()
                 ContestTracker.clearPartyContest()
+                ContestTracker.clearPartyTicketReports()
             }
             SafariDowntime.chat(text, SafariManagerGuard.activeRun(client), client.player?.name?.string.orEmpty())
             return
@@ -69,10 +71,12 @@ object SafariPartyInput {
                 SafariDowntime.readyMessage(chat.body) || SafariDowntime.ticketMessage(chat.body))
         val kick = SafariManagerGuard.tracksKickReports() && SafariManagerGuard.inSafariInstance() &&
             SafariManagerGuard.isKickReport(chat.body)
-        if (!downtime && !kick) return
+        val contestTicket = ContestPartyTickets.reportsTicket(chat.body)
+        if (!downtime && !kick && !contestTicket) return
         displayNames[chat.sender.lowercase()] = chat.sender
         // Duplicate delivery on GAME/CHAT is idempotent while identity is pending.
-        queue.add(EntryPartyMessage(text.take(1024), chat.sender.lowercase(), client.level, kick, downtime))
+        queue.add(EntryPartyMessage(text.take(1024), chat.sender.lowercase(), client.level, kick, downtime,
+            contestTicket = contestTicket))
         tick(client)
     }
     fun tick(client: Minecraft) {
@@ -80,7 +84,7 @@ object SafariPartyInput {
         if (!ConfigManager.downtimeCommand && !contest) queue.disableDowntime()
         val trackKickReports = SafariManagerGuard.tracksKickReports()
         if (!trackKickReports) queue.disableKick()
-        if (!ConfigManager.downtimeCommand && !trackKickReports && !contest) { resetPending(); return }
+        if (!ConfigManager.downtimeCommand && !trackKickReports && !contest && !pending) return
         val world = client.level ?: return
         queue.observeWorld(world)
         val connection = client.connection ?: return
@@ -91,6 +95,7 @@ object SafariPartyInput {
             return
         }
         val roster = PartyManager.withLocal(self.uuid.toString())?.mapTo(HashSet(), SafariEntryPresence::normalize) ?: return
+        val teammates = roster - SafariEntryPresence.normalize(self.uuid.toString())
         connection.onlinePlayers.forEach { info ->
             val id = SafariEntryPresence.normalize(info.profile.id.toString())
             if (id in roster) {
@@ -129,6 +134,7 @@ object SafariPartyInput {
             if (id != null) {
                 queue.remove(key)
                 if (id !in roster) return@forEach
+                if (item.contestTicket) ContestTracker.recordPartyTicket(client, id, item.receivedAt, teammates)
                 if (contest && item.downtime && PartyChat.parse(item.text)?.body?.let(::confirmsTicket) == true)
                     ContestTracker.confirmPartyTicket(id, item.receivedAt)
                 if (item.downtime && ConfigManager.downtimeCommand) queue.validated(id,

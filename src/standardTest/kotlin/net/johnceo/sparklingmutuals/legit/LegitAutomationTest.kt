@@ -70,7 +70,7 @@ class LegitAutomationTest {
         assertFalse(ConfigManager.autoJoinSkyBlock)
         assertFalse(ConfigManager.candleHitbox)
         assertFalse(ConfigManager.clearWater)
-        assertFalse(SafariEspConfig.critterBoxes)
+        assertFalse(SafariEspConfig.standardCritterBoxes)
         assertTrue(SafariEspConfig.groups.getValue("cavern").onlyInBiome)
         assertEquals(27, ConfigManager.warpDelaySeconds)
         assertEquals(0, ConfigManager.safariTicketPreference)

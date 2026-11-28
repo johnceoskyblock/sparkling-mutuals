@@ -116,14 +116,14 @@ internal class SparklingDexScreen(
                 }
                 val countLabel = if (count == 0) "—" else "×" + "%,d".format(count)
                 val amountX = bx + columnWidth - 7 - font.width(countLabel)
-                val acquired = critter.name in completed
-                val nameColor = if (count > 0) critter.color else MUTED
+                val meetsTier = critter.name in completed
+                val nameColor = if (meetsTier) critter.color else MUTED
                 val hovered = mx >= gridX + (bx + 3) * scale && mx < gridX + (bx + columnWidth - 3) * scale &&
                     my in y until track.bottom && my >= y - gridOffset + rowY * scale && my < y - gridOffset + (rowY + ROW_HEIGHT) * scale
                 if (hovered) g.fill(bx + 3, rowY, bx + columnWidth - 3, rowY + ROW_HEIGHT, 0x22FFFFFF)
                 g.text(font, rarity.take(1), bx + 7, rowY + 2, nameColor)
                 g.text(font, font.plainSubstrByWidth(name, (amountX - bx - 24).coerceAtLeast(1)), bx + 19, rowY + 2, nameColor)
-                g.text(font, countLabel, amountX, rowY + 2, if (acquired) WHITE else MUTED)
+                g.text(font, countLabel, amountX, rowY + 2, if (meetsTier) WHITE else MUTED)
                 if (hovered) tooltip(g, mx, my, "$name · $rarity", "$count credited sparkling catches", "${tier.required} required for ${tier.label}")
             }
         }

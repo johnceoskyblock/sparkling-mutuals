@@ -52,6 +52,10 @@ Resolve every registered mound. Cracking/progress dialogue is not a terminal out
 | Automatic completion announcements | Shared local whole-biome/report-readiness gates in [mode rules](../../SAFARI_LOGIC.md). |
 | PB eligibility | Personal Unique: own catch of each spawned species; proven zero-spawn types exempt. Full Clear: personal captures/local proof. Party Unique: separate shared-capture/absence predicate; progress alone is insufficient. |
 
+In Full editions, **ESP > Always On Toggle > Rockmite** also keeps intact mounds highlighted when your mode no longer needs them.
+
+**Rockmite mound glow** under **ESP > General > Critter glow outlines** outlines the actual mound model. Standard lists the setting under **Highlights > General** and requires a clear view. Known mound waypoints still cover unloaded sites in Full.
+
 ## Party reports and late entry
 
 Track loaded sources from any Safari biome. Cavern entry retires inherited checking; newly observed intact sources reopen the combined result without erasing captures. Outside Cavern, a retained cd supplies checking despite earlier source observations; returning restores local source requirements. See [evidence/lifecycle](TRACKING.md).

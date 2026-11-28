@@ -10,6 +10,7 @@ import net.johnceo.sparklingmutuals.safari.sparkling.SparklingEncounters
 import net.johnceo.sparklingmutuals.sync.SafariPartySync
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphicsExtractor
+import net.minecraft.client.resources.sounds.SoundInstance
 import net.minecraft.world.entity.Display
 import net.minecraft.world.entity.monster.warden.Warden
 import net.minecraft.world.phys.AABB
@@ -26,6 +27,8 @@ object DoomspiralLottery {
     private const val RADIUS = 15.0
     private const val LAST_CANDLE = "You used the Soothing Incense to light the candle! The ground beneath your feet starts to shift..."
     private const val SUMMONED = "Your ritual summoned a Doomspiral into this world. Stay still."
+    private val chimes = setOf("minecraft:block.amethyst_block.chime", "minecraft:block.amethyst_block.resonate",
+        "minecraft:block.note_block.chime")
     private val ritualBounds = AABB(RITUAL_X, RITUAL_Y, RITUAL_Z, RITUAL_X, RITUAL_Y, RITUAL_Z).inflate(RADIUS)
     private val countdown = DoomspiralCountdown()
     private var run: SafariRun? = null
@@ -36,7 +39,9 @@ object DoomspiralLottery {
     private var settleAt: Long? = null
     private var resultMask = 0
     private var resultConfirmed = false
+    private var deferredChime: SoundInstance? = null
 
+    internal val pendingOrActive get() = startAt != null
     internal val active get() = startAt?.let { System.nanoTime() >= it } == true
 
     internal fun inRange(x: Double, y: Double, z: Double): Boolean {
@@ -62,22 +67,28 @@ object DoomspiralLottery {
         }
     }
 
+    private fun begin(client: Minecraft, start: Long) {
+        if (!ConfigManager.doomspiralLottery || !SafariAssist.inSafari || SafariAssist.departing || !inRange(client)) return
+        val level = client.level ?: return
+        SafariTracking.ensureRun(client)
+        val current = SafariTracking.ledger.current ?: return
+        if (current.endedAt != null || current.count("Doomspiral") > 0 || run === current && world === level) return
+        reset()
+        run = current
+        world = level
+        // Pick one losing layout per ritual. A positive Sparkling detection upgrades it to the jackpot.
+        resultMask = Random.nextInt(DOOMSPIRAL_JACKPOT_MASK)
+        startAt = start
+    }
+
     private fun observe(client: Minecraft, cue: String) {
         val now = System.nanoTime()
         if (cue == LAST_CANDLE) {
-            if (!ConfigManager.doomspiralLottery || !SafariAssist.inSafari || SafariAssist.departing || !inRange(client)) return
-            SafariTracking.ensureRun(client)
-            val current = SafariTracking.ledger.current ?: return
-            if (current.endedAt != null || current.count("Doomspiral") > 0 || client.level == null) return
-            if (run === current && world === client.level) return
-            reset()
-            run = current
-            world = client.level
-            // Pick one losing layout per ritual. A positive Sparkling detection upgrades it to the jackpot.
-            resultMask = Random.nextInt(DOOMSPIRAL_JACKPOT_MASK)
-            startAt = now + 1_000_000_000L
+            begin(client, now + 1_000_000_000L)
             return
         }
+        // Nearby players receive the public spawn cue without the candle placer's lead-in.
+        if (cue == DOOMSPIRAL_STIRS && startAt == null) begin(client, now)
         if (startAt == null || world !== client.level || run !== SafariTracking.ledger.current) return
         if (cue == SUMMONED) summoned = true
         if (cue == DOOMSPIRAL_STIRS && countdown.trigger(cue, true, DOOMSPIRAL_CAPTURE_TICKS, 0)) {
@@ -100,7 +111,7 @@ object DoomspiralLottery {
         if (timingExpired || !ConfigManager.doomspiralLottery || !inRange(client) ||
             client.smScreen != null || client.options.smHideGui || run?.endedAt != null ||
             (run?.count("Doomspiral") ?: 0) > 0) {
-            finish()
+            finish(client)
             return
         }
         if ((!summoned && remaining == null) || now < start || resultMask == DOOMSPIRAL_JACKPOT_MASK) return
@@ -109,18 +120,29 @@ object DoomspiralLottery {
             resultMask = DOOMSPIRAL_JACKPOT_MASK
             return
         }
-        val level = client.level ?: return
+        when (visibleSparklingResult(client)) {
+            true -> {
+                resultConfirmed = true
+                resultMask = DOOMSPIRAL_JACKPOT_MASK
+            }
+            false -> resultConfirmed = true
+            null -> Unit
+        }
+    }
+
+    private fun visibleSparklingResult(client: Minecraft): Boolean? {
+        val level = client.level ?: return null
         val warden = level.getEntitiesOfClass(Warden::class.java, ritualBounds) {
-            !it.isRemoved && it.isAlive && SafariPreviewVisibility.entity(client, it)
-        }.minByOrNull { it.distanceToSqr(RITUAL_X, RITUAL_Y, RITUAL_Z) } ?: return
+            !it.isRemoved && it.isAlive
+        }.minByOrNull { it.distanceToSqr(RITUAL_X, RITUAL_Y, RITUAL_Z) } ?: return null
         val labels = (level.getEntities(warden, warden.boundingBox.inflate(2.0)) + warden)
             .filter { SafariPreviewVisibility.label(client, it) }
-            .mapNotNull { if (SafariSettings.standardEdition && it is Display.TextDisplay) it.text.string else it.customName?.string }
-        if (labels.any { SafariRules.sparklingSpecies(it) == "Doomspiral" }) {
-            resultConfirmed = true
-            resultMask = DOOMSPIRAL_JACKPOT_MASK
-        } else if (SafariSettings.standardEdition && labels.any { SafariEspRules.labelSpecies(it) == "Doomspiral" })
-            resultConfirmed = true
+            .flatMap {
+                val text = if (it is Display.TextDisplay) it.text.string else it.customName?.string.orEmpty()
+                SafariMessages.lines(text)
+            }
+        if (labels.any { SafariRules.sparklingSpecies(it) == "Doomspiral" }) return true
+        return false.takeIf { labels.any { SafariEspRules.labelSpecies(it) == "Doomspiral" } }
     }
 
     fun serverTick(listener: Any, pingId: Int) {
@@ -128,20 +150,31 @@ object DoomspiralLottery {
         if (pingId == 0 || client.connection !== listener || world !== client.level || countdown.remaining == null) return
         countdown.serverTick()
         lastPulse = System.nanoTime()
-        if (SafariSettings.standardEdition && !resultConfirmed &&
-            (countdown.remaining ?: 0) <= DoomspiralCabinet.REVEAL_TICKS) {
-            finish()
-            return
-        }
         if (countdown.remaining == 0) {
-            finish()
-            if (!SafariSettings.standardEdition && resultMask == DOOMSPIRAL_JACKPOT_MASK) SparklingEncounters.doomspiralRevealed()
+            val jackpot = resultMask == DOOMSPIRAL_JACKPOT_MASK
+            finish(client)
+            if (jackpot) SparklingEncounters.doomspiralRevealed { visibleSparklingResult(client) == true }
         }
     }
 
-    private fun finish() {
+    internal fun isChime(id: String, alertSound: String) = id == alertSound || id in chimes
+
+    internal fun deferChime(sound: SoundInstance): Boolean {
+        if (!pendingOrActive || !ConfigManager.doomspiralLottery || !SafariAssist.inSafari || SafariAssist.departing) return false
+        val client = Minecraft.getInstance()
+        if (client.level !== world || !inRange(client) || !isChime(sound.identifier.toString(), ConfigManager.sparklingSound)) return false
+        if (!sound.isRelative && !ritualBounds.contains(sound.x, sound.y, sound.z)) return false
+        // Keep the first cue. Repeated chimes during the animation should not all play at once.
+        if (deferredChime == null) deferredChime = sound
+        return true
+    }
+
+    private fun finish(client: Minecraft) {
         countdown.clear()
         startAt = null
+        val chime = deferredChime
+        deferredChime = null
+        if (chime != null) client.soundManager.play(chime)
     }
 
     fun reset() {
@@ -153,6 +186,7 @@ object DoomspiralLottery {
         settleAt = null
         resultMask = 0
         resultConfirmed = false
+        deferredChime = null
     }
 
     /** Returns true when the lottery takes over the vanilla and mod HUD for this frame. */
@@ -169,7 +203,8 @@ object DoomspiralLottery {
         val settleElapsed = settleAt?.let { ((it - start) / 1_000_000_000f).coerceAtLeast(0f) }
         val ticksSinceStirs = if (remaining == null) 0f else DOOMSPIRAL_CAPTURE_TICKS - remaining +
             ((now - lastPulse) / 50_000_000f).coerceIn(0f, .99f)
-        val frame = DoomspiralCabinet.frame(elapsed, settleElapsed, remaining, ticksSinceStirs, resultMask)
+        val outcome = resultMask.takeIf { !SafariSettings.standardEdition || resultConfirmed }
+        val frame = DoomspiralCabinet.frame(elapsed, settleElapsed, remaining, ticksSinceStirs, outcome)
         DoomspiralCabinetRenderer.render(g, width, height, frame)
         return true
     }

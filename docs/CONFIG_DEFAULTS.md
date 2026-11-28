@@ -28,6 +28,8 @@ Fresh Safari HUDs use a black background with 20% transparency and borders off. 
 
 The progress HUD can show a run timer without progress rows. **Biome Objectives** has individual display controls. **Safari → Modes → Sparkling Checks Options** defaults all optional checks off in every edition. The update that moves these controls resets them to off once and saves subsequent choices. In Unique mode, enable the checks your party asks for and focus on catching one of each critter for faster runs. Automatic biome reports (`fd`, `hd`, `cd`) follow your selected checks. Sparkling mode uses the party's discovery requirements. [Safari logic](../SAFARI_LOGIC.md) · [Settings navigation](NATIVE_UI.md)
 
+Any party member can use `!sparkle <critter> on|off` to save one of these settings on all party members' updated clients, even with **Respond to party commands** off. Use the name from **Sparkling Checks Options**. `doom` also works for Doomspiral. Each client confirms the change in local chat.
+
 ## Lifecycle and persistence
 
 All editions use the active Minecraft instance’s `config/sparkling-mutuals` folder.

@@ -7,6 +7,7 @@ import net.johnceo.sparklingmutuals.commands.SafariMissingReply
 import net.johnceo.sparklingmutuals.config.BiomeObjectiveConfig
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.config.FreshInstallDefaults
+import net.johnceo.sparklingmutuals.config.SafariEspConfig
 import net.johnceo.sparklingmutuals.config.SafariSettings
 import net.johnceo.sparklingmutuals.config.SettingsCatalog
 import net.johnceo.sparklingmutuals.config.SettingsTarget
@@ -63,6 +64,28 @@ class BiomeObjectiveChoicesTest {
             assertEquals(listOf("Rockmite"), BiomeObjectiveConfig.optionalSpecies.filter(BiomeObjectiveConfig::check))
         } finally {
             BiomeObjectiveConfig.load(old)
+        }
+    }
+
+    @Test fun `an open settings draft picks up party check changes and keeps local edits`() {
+        withChoices("objectives.checks.doomspiral", "objectives.checks.macaw") {
+            val settings = SafariSettings()
+            val draft = settings.modes.sparklingChecks
+            assertFalse(draft.enabled("Doomspiral"))
+            assertTrue(BiomeObjectiveConfig.setCheck("Doomspiral", true))
+            assertFalse(BiomeObjectiveConfig.setCheck("Doomspiral", true))
+            assertFalse(BiomeObjectiveConfig.setCheck("Foxtrot", false))
+            draft.entries.single { it.key == "Macaw" }.enabled = true
+            assertTrue(BiomeObjectiveConfig.apply(settings.tracking.objectivesHud.rows, draft))
+            assertTrue(draft.enabled("Doomspiral"))
+            assertTrue(BiomeObjectiveConfig.check("Macaw"))
+
+            assertTrue(BiomeObjectiveConfig.setCheck("Doomspiral", false))
+            BiomeObjectiveConfig.load(Properties().also(BiomeObjectiveConfig::save))
+            assertFalse(BiomeObjectiveConfig.apply(settings.tracking.objectivesHud.rows, draft))
+            assertFalse(draft.enabled("Doomspiral"))
+            assertTrue(BiomeObjectiveConfig.check("Macaw"))
+            assertTrue(BiomeObjectiveConfig.check("Foxtrot"))
         }
     }
 
@@ -151,6 +174,62 @@ class BiomeObjectiveChoicesTest {
         }
     }
 
+    @Test fun postClearSourcesAndObjectivesDoNotReopenUniqueProgress(@TempDir directory: Path) {
+        ConfigManager.init(directory)
+        ConfigManager.fullClearMode = false
+        ConfigManager.sparklingMode = false
+        ConfigManager.profitableShardEsp = false
+        val biome = SafariBiome.CAVERN
+        val state = party("Rockmite", "Snoozle", "Shyworm")
+        val walls = WallSummary(listOf(WallState.INTACT))
+        val run = SafariRun(0).apply {
+            visitBiome(biome)
+            biome.critters.forEach { record(SafariCatch(it)) }
+            updateCaptureEvidence(biome, setOf("Rockmite Mound"), allWallsChecked = false)
+            observeCavernSources(moundsRemain = true, wallsRemain = true, allWallsBroken = false)
+        }
+        fun objectiveLabels() = SafariPanels.objectives(run, biome, true, 0, 3, walls, state).rows.map { it.label }
+        fun progress() = SafariPanels.progress(run, true, 0, state).rows
+        val before = progress()
+        assertEquals(listOf("All objectives complete!"), objectiveLabels())
+        assertEquals("cd", run.completion.announcement(run, biome, SafariMode.UNIQUE, state))
+        run.completion.sent(biome, SafariMode.UNIQUE)
+        try {
+            SafariEspConfig.uniqueRemainingChecks = true
+            assertEquals(before, progress())
+            assertTrue(SafariPanels.missingCritters(run, biome, state).isEmpty())
+            assertNull(run.completion.announcement(run, biome, SafariMode.UNIQUE, state))
+            val after = !SafariSettings.standardEdition
+            assertEquals("All captured", SafariPanels.missing(run, biome, true, 0, party = state).rows.single().label)
+            assertEquals(after, "Mounds" in objectiveLabels())
+            assertEquals(after, "Snoozle walls" in objectiveLabels())
+            assertEquals(!after, "Check Rockmite" in objectiveLabels())
+            assertEquals(!after, "Check Snoozle" in objectiveLabels())
+            assertEquals(after, SafariHelperRules.highlightSource("Rockmite", SafariMode.UNIQUE, run, state))
+            for (name in listOf("Rockmite", "Snoozle"))
+                assertFalse(SafariEspRules.neededForRun(name, false, run, false, false, state))
+        } finally {
+            SafariEspConfig.uniqueRemainingChecks = false
+        }
+    }
+
+    @Test fun `remaining checks use one saved setting in both editions and refresh open settings`(@TempDir directory: Path) {
+        ConfigManager.init(directory)
+        val settings = SafariSettings()
+        assertFalse(settings.modes.unique.remainingChecks)
+        assertTrue(SafariEspConfig.setRemainingChecks(true))
+        ConfigManager.saveSettings()
+        settings.apply()
+        assertTrue(settings.modes.unique.remainingChecks)
+        assertNotNull(SettingsCatalog(settings).locate(SettingsTarget("Modes", listOf("unique", "remainingChecks"))))
+        ConfigManager.init(directory)
+        assertTrue(SafariSettings().modes.unique.remainingChecks)
+        settings.modes.unique.remainingChecks = false
+        settings.apply()
+        ConfigManager.init(directory)
+        assertFalse(SafariSettings().modes.unique.remainingChecks)
+    }
+
     @Test fun biomeBannerAndReportWaitForTheSameOptionalChecks() = withChoices {
         val biome = SafariBiome.CAVERN
         val state = party("Gemzie")
@@ -163,6 +242,17 @@ class BiomeObjectiveChoicesTest {
         assertEquals(biome.critters.size, run.completed(mode, biome.critters, state, localOnly = true))
         assertFalse(run.completion.reportReady(run, biome, mode, state))
         assertNull(run.completion.announcement(run, biome, mode, state))
+        val savedStyles = java.util.Properties().also { SafariEspConfig.save(it, !SafariSettings.standardEdition) }
+        try {
+            SafariEspConfig.glowToggles["Gemzie"] = false
+            SafariEspConfig.boxToggles["Gemzie"] = false
+            SafariEspConfig.standardCritterGlow = false
+            SafariEspConfig.standardCritterBoxes = false
+            assertFalse(SafariEspConfig.styledHighlight("Gemzie"))
+            assertFalse(run.completion.reportReady(run, biome, mode, state))
+        } finally {
+            SafariEspConfig.load(savedStyles, !SafariSettings.standardEdition)
+        }
 
         val settings = SafariSettings()
         settings.modes.sparklingChecks.entries.single { it.key == "Gemzie" }.enabled = false

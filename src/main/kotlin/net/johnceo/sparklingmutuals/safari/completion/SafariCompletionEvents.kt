@@ -36,15 +36,15 @@ class SafariCompletionEvents(private val clock: () -> Long = System::currentTime
         if(!pending || !run.hasCaptureEvidence(biome) || mode==SafariMode.SPARKLING && !party.ready) return
         val others=biome.critters.filter { it.name !in special && (mode!=SafariMode.SPARKLING || party.needs(it.name)) }
         if(run.completed(mode,others,party,localOnly=true)!=others.size ||
-            mode==SafariMode.UNIQUE && others.any { BiomeObjectiveConfig.needs(it.name, party, mode) && !run.sparklingComplete(it.name,party,true) }) return
+            mode==SafariMode.UNIQUE && others.any { BiomeObjectiveConfig.requiresUniqueCheck(it.name, party) && !run.sparklingComplete(it.name,party,true) }) return
         // A full feeder batch can take longer than a short travel grace; retain its actual source proof.
-        departures[biome]=Departure(mode,biome.critters.filter { BiomeObjectiveConfig.needs(it.name, party, mode) }.map { it.name }.toSet(),
+        departures[biome]=Departure(mode,neededChecks(biome, mode, party),
             if(biome==SafariBiome.FOREST) Long.MAX_VALUE else clock()+30_000)
     }
     private fun departureComplete(run: SafariRun,biome: SafariBiome,mode: SafariMode,party: PartySparklingState): Boolean {
         val saved=departures[biome] ?: return false
         if(!pendingDeparture(biome) || saved.mode!=mode ||
-            saved.needed!=biome.critters.filter { BiomeObjectiveConfig.needs(it.name, party, mode) }.map { it.name }.toSet() ||
+            saved.needed!=neededChecks(biome, mode, party) ||
             run.uncaughtSparkling(biome, mode)) return false
         if(biome==SafariBiome.HAUNTED) return run.count("Hideyho")>0
         val birds=biome.critters.filter { it.name in setOf("Bluebird","Parakeet","Macaw") &&
@@ -53,6 +53,9 @@ class SafariCompletionEvents(private val clock: () -> Long = System::currentTime
             else run.birdSpawnsComplete(localOnly = true)
         return sourcesComplete && run.completed(mode,birds,party,localOnly=true)==birds.size
     }
+    private fun neededChecks(biome: SafariBiome, mode: SafariMode, party: PartySparklingState) = biome.critters.filter {
+        if (mode == SafariMode.UNIQUE) BiomeObjectiveConfig.requiresUniqueCheck(it.name, party) else party.needs(it.name)
+    }.map { it.name }.toSet()
     private val announced = mutableMapOf<SafariBiome, SafariMode?>()
     private val pending = mutableSetOf<SafariBiome>()
     private var alerted = false
@@ -73,8 +76,8 @@ class SafariCompletionEvents(private val clock: () -> Long = System::currentTime
             (mode != SafariMode.UNIQUE || allNeededChecked(run, biome, party, localOnly = true))
     }
     fun allNeededChecked(run: SafariRun, biome: SafariBiome, party: PartySparklingState, localOnly: Boolean = false) =
-        party.ready && biome.critters.none {
-            BiomeObjectiveConfig.needs(it.name, party, SafariMode.UNIQUE) && !run.sparklingComplete(it.name, party, localOnly)
+        biome.critters.none {
+            BiomeObjectiveConfig.requiresUniqueCheck(it.name, party) && (!party.ready || !run.sparklingComplete(it.name, party, localOnly))
         }
 
     /** Completion feedback belongs to each client even when a peer sent the shared biome report first. */
