@@ -1,12 +1,16 @@
 package net.johnceo.sparklingmutuals.commands
 
+import java.io.IOException
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents
 import net.johnceo.sparklingmutuals.LocalChat
 import net.johnceo.sparklingmutuals.api.ApiProvider
 import net.johnceo.sparklingmutuals.api.HypixelApi
+import net.johnceo.sparklingmutuals.config.BiomeObjectiveConfig
 import net.johnceo.sparklingmutuals.config.ConfigManager
+import net.johnceo.sparklingmutuals.config.SafariEspConfig
+import net.johnceo.sparklingmutuals.history.HistoryAccountId
 import net.johnceo.sparklingmutuals.party.PartyManager
 import net.johnceo.sparklingmutuals.safari.SafariAssist
 import net.johnceo.sparklingmutuals.safari.SafariMode
@@ -32,29 +36,52 @@ object PartyCommands {
 
     fun register() {
         // React to the server echo only: /pc and /p chat work without double-processing local messages.
-        ClientReceiveMessageEvents.GAME.register { message, _ ->
-            Minecraft.getInstance().execute { receive(message.string) }
+        ClientReceiveMessageEvents.GAME.register { message, overlay ->
+            if (!overlay) Minecraft.getInstance().execute { receive(message.string) }
         }
     }
 
     private fun receive(text: String) {
         if (HotspotToggle.fromParty(text) { message -> Minecraft.getInstance().player?.sendSystemMessage(message) }) return
-        if (!ConfigManager.partyCommandsEnabled) return
         val chat = PartyChat.parse(text) ?: return
+        val client = Minecraft.getInstance()
+        PartyCommand.requestedMode(chat.body)?.let { mode ->
+            SafariFullClear.select(mode)
+            SafariFullClear.modeLines().forEach { client.player?.sendSystemMessage(LocalChat.component(it)) }
+            return
+        }
+        PartyCommand.requestedSparklingCheck(chat.body)?.let { (target, enabled) ->
+            val postClear = target == PartyCommand.POST_CLEAR_CHECKS
+            val label = if (postClear) "Sparkling checks after biome completion" else "$target Sparkling check"
+            fun set(value: Boolean) = if (postClear) SafariEspConfig.setRemainingChecks(value)
+                else BiomeObjectiveConfig.setCheck(target, value)
+            if (set(enabled)) {
+                try {
+                    ConfigManager.saveSettings()
+                } catch (error: IOException) {
+                    set(!enabled)
+                    org.slf4j.LoggerFactory.getLogger(PartyCommands::class.java).warn("Could not save $label", error)
+                    client.player?.sendSystemMessage(LocalChat.component("[SM] Could not save the setting."))
+                    return
+                }
+            }
+            val state = if (enabled) "on" else "off"
+            client.player?.sendSystemMessage(LocalChat.component("[SM] $label $state in Unique mode."))
+            return
+        }
+        if (!ConfigManager.partyCommandsEnabled) return
         val now = System.currentTimeMillis()
-        val senderUuid = Minecraft.getInstance().connection?.getPlayerInfoIgnoreCase(chat.sender)?.profile?.id?.toString()
+        val senderUuid = client.connection?.getPlayerInfoIgnoreCase(chat.sender)?.profile?.id?.toString()
         history.record(chat.body, senderUuid)
         // Keep actual result bodies; a different result for the same command cannot cancel ours.
         val parsed = PartyCommand.fromChat(text) ?: return
-        if ((parsed.command.encounter != null || parsed.command.kind == PartyCommandKind.DYE) &&
-            net.johnceo.sparklingmutuals.history.HistoryAccountId.selected(Minecraft.getInstance()) == null) return
-        val responderCommand = parsed.command.forResponder(Minecraft.getInstance().player?.name?.string ?: return)
+        val responderCommand = parsed.command.forResponder(client.player?.name?.string ?: return)
         val request = parsed.copy(command = if (responderCommand.kind == PartyCommandKind.MISSING_RUN && responderCommand.biome == null)
             responderCommand.copy(biome = SafariTracking.ledger.current?.biomeAtThirtySeconds ?: return) else responderCommand)
         if (!request.command.allowed() || !request.command.answerable()) return
         // Bind run-scoped commands to the run they were asked in; every later stage rechecks it.
         val run = SafariTracking.ledger.current
-        val world = Minecraft.getInstance().level
+        val world = client.level
         if (!stillFor(request.command, run, world)) return
         val provider = HypixelApi.provider
         val chatCursor = history.cursor
@@ -62,7 +89,6 @@ object PartyCommands {
         recent[request.token] = now
         requests[request.token] = request
         pending.remove(request.token)?.task?.cancel(false)
-        val client = Minecraft.getInstance()
         val connection = client.connection ?: return
         val mode = SafariFullClear.mode
         PartyManager.withPartyInfo {
@@ -77,7 +103,8 @@ object PartyCommands {
     }
 
     private fun stillFor(command: PartyCommand, run: SafariRun?, world: Any?) =
-        SafariMissingReply.holds(command, run, SafariTracking.ledger.current, SafariAssist.inSafari,
+        (!command.requiresHistoryAccount || HistoryAccountId.selected(Minecraft.getInstance()) != null) &&
+            SafariMissingReply.holds(command, run, SafariTracking.ledger.current, SafariAssist.inSafari,
             world, Minecraft.getInstance().level)
 
     private fun stillUsing(command: PartyCommand, provider: ApiProvider) =

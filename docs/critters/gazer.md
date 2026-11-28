@@ -16,6 +16,7 @@
 ## What makes this critter different
 
 - Implemented fixed target: 4. Progress and missing-row removal use different Full Clear conditions.
+- **Left-click to leave Gazer beds** under **Safari → Helpers → Capture tools** lets you get out of bed by clicking the sleep screen in Haunted. It defaults on. Escape and the vanilla **Leave Bed** button still work.
 
 ## Spawn prerequisites
 

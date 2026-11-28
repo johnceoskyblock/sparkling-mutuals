@@ -131,12 +131,14 @@ object Achievements {
         var uniqueSinceLastRun: Boolean = false, var runsSinceMacaw: Int = 0, var longestRunsWithoutMacaw: Int = 0,
         var lastRunHadOwnSparkling: Boolean = false, var ticketsSinceOwnSparkling: Int = 0,
         var contestsCompleted: Int = 0, var lastContestWindow: Long = -1, var partyStreakVersion: Int = 0,
-        var catalogVersion: Int = 0,var emeraldDyes: Int = 0, var emeraldDyeOwner: String? = null)
+        var catalogVersion: Int = 0,var emeraldDyes: Int = 0, var emeraldDyeOwner: String? = null,
+        var lastEmeraldDyeAt: MutableMap<String, Long> = linkedMapOf())
     private var data = Data()
     val emeraldDyes: Int get() = if (data.emeraldDyeOwner == null || data.emeraldDyeOwner == ConfigManager.historyOwnerUuid) data.emeraldDyes else 0
+    val lastEmeraldDyeAt: Long? get() = data.lastEmeraldDyeAt[ConfigManager.historyOwnerUuid]
     private const val CATALOG_VERSION=2
     private var pendingHistoryCheck=true
-    private val dyeProofs=DyeDropProofs()
+    private val dyeProofs = mutableMapOf<String, DyeDropProofs>()
     private var sparklingRevision=-1L
     private var sparklingOwner = ""
     private var cachedDiscoveries: Set<String> = emptySet()
@@ -151,8 +153,6 @@ object Achievements {
     }
     private var ticks = 0
 
-    private val emeraldDrop = Regex("^(?:[A-Z!' ]*DROP!|WOW!|RNG METER|NICE!)", RegexOption.IGNORE_CASE)
-
     fun register() {
         data = HistoryStore.load("achievements", Data::class.java, ::Data)
         pendingHistoryCheck=true
@@ -164,9 +164,13 @@ object Achievements {
         }
         // Achievements that were removed (emblems, the 10-run Macaw drought) no longer count.
         data.unlocked.keys.retainAll(definitions.map { it.id }.toSet())
-        ClientReceiveMessageEvents.GAME.register { message, overlay ->
-            if (!overlay) Minecraft.getInstance().execute { SafariMessages.lines(message.string).forEach(::chat) }
-        }
+        ClientReceiveMessageEvents.GAME.register(::receiveDyeChat)
+        ClientReceiveMessageEvents.GAME_CANCELED.register(::receiveDyeChat)
+    }
+
+    private fun receiveDyeChat(message: Component, overlay: Boolean) {
+        if (!overlay && message.string.contains("Emerald Dye", ignoreCase = true))
+            Minecraft.getInstance().execute { SafariMessages.lines(message.string).forEach(::chat) }
     }
 
     internal fun migrateRequirements(saved: Data): Boolean {
@@ -255,12 +259,20 @@ object Achievements {
     }
 
     private fun chat(text: String) {
-        if (!ConfigManager.achievements) return
-        if ("Emerald Dye" in text && ownDrop(text) && HistoryServerPolicy.allows()) {
-            val owner = HistoryAccountId.selected(Minecraft.getInstance()) ?: return
-            val now=System.currentTimeMillis()
-            if(dyeProofs.accept(text,now)) syncEmeraldDyes(owner, emeraldDyes + 1, announce = true)
-        }
+        if (!ownDrop(text)) return
+        val client = Minecraft.getInstance()
+        if (!HistoryServerPolicy.verifiedMain(client)) return
+        val owner = HistoryAccountId.selected(client) ?: return
+        val now = System.currentTimeMillis()
+        if (!dyeProofs.getOrPut(owner, ::DyeDropProofs).accept(text, now)) return
+        data.lastEmeraldDyeAt[owner] = now
+        syncEmeraldDyes(owner, emeraldDyes + 1, announce = true)
+    }
+
+    internal fun importLastEmeraldDye(owner: String, at: Long?) {
+        if (at == null || at <= (data.lastEmeraldDyeAt[owner] ?: 0L)) return
+        data.lastEmeraldDyeAt[owner] = at
+        save()
     }
 
     internal fun syncEmeraldDyes(owner: String, count: Int, announce: Boolean = false) {
@@ -270,15 +282,8 @@ object Achievements {
         save()
         checkAll(announce)
     }
-    /** Your drop, not a broadcast of someone else's ("WOW! Name found Emerald Dye"). */
-    fun ownDrop(text: String, self: String = Minecraft.getInstance()?.player?.name?.string.orEmpty()): Boolean {
-        if (!emeraldDrop.containsMatchIn(text) && "You found" !in text) return false
-        val found = text.indexOf(" found ")
-        if (found < 0) return true
-        val before = text.substring(0, found)
-        val finder=before.substringAfterLast(' ').trim()
-        return finder.equals("You",true) || self.isNotEmpty() && finder.equals(self,true)
-    }
+    fun ownDrop(text: String, self: String = Minecraft.getInstance()?.player?.gameProfile?.name.orEmpty()) =
+        EmeraldDyeDrop.owned(text, self)
 
     // ------------------------------------------------------------------ checking
 

@@ -29,7 +29,7 @@ Sightings do not add capture requirements. Confirmed sparkling catches are evalu
 
 2026-11-23 (America/New_York) — Reconciled visible, shared, and particle-only sightings with the two gameplay editions.
 
-Standard critter highlighting uses a depth-tested box fallback when terrain partially blocks a model or the model cannot use glow. Fully hidden models stay unmarked; covered box edges remain hidden by terrain.
+Standard draws depth-tested boxes when **Box highlights** is enabled. **Glow highlights** outlines supported models with a clear line of sight. Fully hidden models stay unmarked, and terrain obscures covered box edges.
 
 ## Standard detection integration
 

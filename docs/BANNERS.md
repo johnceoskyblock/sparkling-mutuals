@@ -10,7 +10,7 @@ Safari → Banner contains the shared banner toggle, appearance, position and pe
 - **Full and Full No Auto Update** include **Warping now**. **Standard** includes **Party member kicked**, triggered by a verified teammate’s kick report in party chat during Safari. Use `<PLAYER>` for that teammate’s name.
 - Encounters: all bird food collected, birdfeeder empty, all gems ready, all coins collected, four incense ready.
 - **Full and Full No Auto Update** include **Hideyho location** in Haunted during Unique and Full Clear runs. Version 4.4.5 enables it once and saves subsequent choices.
-- Contest: start, five/three/one minutes remaining, end, selected ticket earned.
+- Contest: start, five/three/one minutes remaining, end, selected ticket earned, and **Party Ready** in Torrhus Canyon after the whole party confirms their tickets for the current contest.
 
 The Forest dropdown is merged into Encounters. Encounter alerts require a readiness transition witnessed while remaining in the relevant biome. A ready condition first observed elsewhere or inherited on entry does not replay. The retired hotspot/floor-drop/species/stage banners never play, including when an old config has them enabled. Saved legacy properties remain harmless for compatibility.
 

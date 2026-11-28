@@ -174,7 +174,29 @@ class PartySyncProtocolTest {
         }
         assertTrue(state.hotspots(accepted))
         assertEquals(SafariBiome.CAVERN,state.acknowledgedReports[peer])
+        assertEquals(SafariBiome.CAVERN,state.actualHotspot(peer))
         assertFalse(state.hotspots(accepted))
+    }
+    @Test fun `hotspot HUD prefers accepted reports over chat and keeps them across socket retries`() {
+        val state = PartySyncState(self, setOf(self, peer))
+        state.observeHotspot(self, SafariBiome.FOREST)
+        state.observeHotspot(peer, SafariBiome.HAUNTED)
+        assertEquals(SafariBiome.HAUNTED, state.actualHotspot(peer))
+        assertTrue(state.hotspots(snapshot().apply {
+            add("reports", objectOf("""{"$peer":"ICY"}"""))
+        }))
+        assertEquals(SafariBiome.ICY, state.actualHotspot(peer))
+        assertEquals(SafariBiome.CAVERN, state.locks[peer])
+        assertEquals(SafariBiome.FOREST, state.actualHotspot(self))
+
+        state.acknowledgedReports.clear()
+        state.observeHotspot(peer, SafariBiome.FOREST)
+        assertFalse(state.hotspots(snapshot(2).apply {
+            add("reports", objectOf("""{"$third":"FOREST"}"""))
+        }))
+        assertEquals(SafariBiome.ICY, state.actualHotspot(peer))
+        assertNull(state.actualHotspot(third))
+        assertNull(PartySyncState(self, setOf(self, peer)).actualHotspot(peer))
     }
     @Test fun `notification grace refresh at same revision is accepted without changing assignments`() {
         val state=PartySyncState(self,setOf(self,peer))

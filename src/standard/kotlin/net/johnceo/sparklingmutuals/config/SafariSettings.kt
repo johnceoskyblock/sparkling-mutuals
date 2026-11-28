@@ -116,7 +116,7 @@ class SafariSettings {
         @JvmField @ConfigOption(name = "Profitable critter highlights", desc = "Also highlight visible critters among the ten most valuable, plus their visible walls and mounds.")
         @ConfigEditorBoolean var profitable = ConfigManager.sparklingProfitableShardEsp
     }
-    class Unique {
+    class Unique : UniqueRemainingCheckSettings() {
         @JvmField @ConfigOption(name = "Hide critter ESP", desc = "")
         @ConfigEditorBoolean var hideCritters = ConfigManager.uniqueHideCritterEsp
         @JvmField @ConfigOption(name = "Hide floor-drop ESP", desc = "")
@@ -314,6 +314,10 @@ class SafariSettings {
         var ticketPreference = ConfigManager.safariTicketPreference
     }
     class SafariCaptureSettings {
+        @JvmField @ConfigOption(name = "Recatch waypoint", desc = "Mark where your capsule caught a critter so you can find it again if it escapes.")
+        @ConfigEditorBoolean var recatch = ConfigManager.recatchWaypoint
+        @JvmField @ConfigOption(name = "Left-click to leave Gazer beds", desc = "Left-click the sleep screen in Haunted to get out of bed.")
+        @ConfigEditorBoolean var gazerBed = ConfigManager.leftClickGazerBed
         @JvmField @ConfigOption(name = "Accept Hideyho quest key", desc = "Bind a key or mouse button to accept the quest from Hideyho's chat prompt.")
         @ConfigEditorButton(buttonText = "Set Keybind")
         val hideyhoKey = Runnable { net.johnceo.sparklingmutuals.safari.StandardSafariKeys.openSetup(net.minecraft.client.Minecraft.getInstance()) }
@@ -361,7 +365,7 @@ class SafariSettings {
             SafariBiome.ICY to icy, SafariBiome.HAUNTED to haunted).mapValues { it.value.coerceIn(0, 100) }
     }
     class SafariGamblingSettings {
-        @JvmField @ConfigOption(name = "Doomspiral Gambling", desc = "Play a slot animation when the ritual starts within 15 blocks. The reels reveal a result when you can see Doomspiral and its name.")
+        @JvmField @ConfigOption(name = "Doomspiral Gambling", desc = "Play the Doomspiral lottery when the ritual starts within 15 blocks. Look toward Doomspiral to reveal the result.")
         @ConfigEditorBoolean var doomspiral = ConfigManager.doomspiralLottery
     }
     class SafariVisibilitySettings {
@@ -379,6 +383,8 @@ class SafariSettings {
         @ConfigEditorSlider(minValue = .5f, maxValue = 6f, minStep = .5f)
         var capsuleHideDistance = ConfigManager.capsuleHideDistance
         var paintings = ConfigManager.hideHauntedPaintings
+        @JvmField @ConfigOption(name = "Hide Icy frost overlay", desc = "Hide the freezing vignette in the Icy Biome.")
+        @ConfigEditorBoolean var icyFrost = ConfigManager.removeIcyFrost
         @JvmField @ConfigOption(name = "Remove Safari darkness", desc = "Remove darkness from Haunted encounters.")
         @ConfigEditorBoolean var darkness = ConfigManager.removeDarkness
     }
@@ -390,9 +396,11 @@ class SafariSettings {
         @JvmField @ConfigOption(name = "Celebrate duplicate sparklings", desc = "Also play the catch celebration for sparkling types you already have.")
         @ConfigEditorBoolean var alwaysCelebrate = ConfigManager.alwaysCelebrateSparkling
         @JvmField @ConfigOption(name = "Celebration style", desc = "")
-        @ConfigEditorDropdown(values = ["Prismatic Whisper", "Prismatic Gleam", "Starlight Drift", "Starlight Waltz", "Aurora Rise", "Aurora Cascade", "Comet Shower", "Comet Tempest", "Firework Bloom", "Firework Symphony", "Celestial Chorus", "Celestial Carnival", "Nebula Surge", "Nebula Rhapsody", "Galactic Pulse", "Galactic Tempest", "Astral Reverie", "Astral Ascension", "Supernova", "Hypernova", "Cosmic Jubilee", "Cosmic Overdrive", "Radiant Singularity", "Celestial Transcendence", "Event Horizon", "Infinite Radiance", "Endless Cosmos", "Chromatic Zenith", "Ethereal Genesis", "Ethereal Ascendance", "Mythic Dominion", "Mythic Eternity", "Celestial Genesis", "Celestial Ascendance", "Infinite Transcendence", "Infinite Apotheosis", "Eternal Dawn", "Eternal Resonance", "Eternal Dominion", "Eternal Transcendence", "Eternal Apotheosis"]) var caughtStyle = ConfigManager.specialCatchStyle
+        @ConfigEditorDropdown(values = ["Prismatic Whisper", "Prismatic Gleam", "Starlight Drift", "Starlight Waltz", "Aurora Rise", "Aurora Cascade", "Comet Shower", "Comet Tempest", "Firework Bloom", "Firework Symphony", "Celestial Chorus", "Celestial Carnival", "Nebula Surge", "Nebula Rhapsody", "Galactic Pulse", "Galactic Tempest", "Astral Reverie", "Astral Ascension", "Supernova", "Hypernova", "Cosmic Jubilee", "Cosmic Overdrive", "Radiant Singularity", "Celestial Transcendence", "Event Horizon", "Infinite Radiance", "Endless Cosmos", "Chromatic Zenith", "Ethereal Genesis", "Ethereal Ascendance", "Mythic Dominion", "Mythic Eternity", "Celestial Genesis", "Celestial Ascendance", "Infinite Transcendence", "Infinite Apotheosis", "Eternal Dawn", "Eternal Resonance", "Eternal Dominion", "Eternal Transcendence", "Eternal Apotheosis", "Custom"]) var caughtStyle = ConfigManager.specialCatchStyle
         @JvmField @ConfigOption(name = "Preview catch celebration", desc = "")
         @ConfigEditorButton(runnableId = 13, buttonText = "Preview") var previewCatch = false
+        @JvmField @ConfigOption(name = "Build a Sparkling celebration", desc = "Mix effects, text, and music, then preview or save your design.")
+        @ConfigEditorButton(runnableId = 16, buttonText = "Customize") var customCatch = false
 
         @JvmField @ConfigOption(name = "Detect visible sparklings", desc = "Show sparkling critters you can see in Safari.")
         @ConfigEditorBoolean var shiny = ConfigManager.shinyDetection
@@ -536,6 +544,10 @@ class SafariSettings {
             9 -> { apply(); if (saveSparklingSound()) SparklingEncounters.playSound(client) }
             10 -> { apply(); client.execute { client.smSetScreen(HistoryScreen(client.smScreen)) } }
             13 -> { apply(); client.smSetScreen(CatchCelebrationPreviewScreen(client.smScreen ?: SafariConfigScreen(this))) }
+            16 -> (client.smScreen as? SafariConfigScreen)?.let {
+                apply()
+                client.smSetScreen(CustomCatchCelebrationScreen(it))
+            }
             14 -> (client.smScreen as? SafariConfigScreen)?.confirmBulkAction(resetDefaults = true)
             15 -> (client.smScreen as? SafariConfigScreen)?.confirmBulkAction(resetDefaults = false)
             11 -> { apply(); client.execute { LogImporter.runImport() } }
@@ -604,6 +616,9 @@ class SafariSettings {
             ConfigManager::gemzieGemAutoSelect to safari.gemzieGemAutoSelect,
             ConfigManager::showCapsuleGuideThroughTerrain to safari.showCapsuleGuideThroughTerrain,
             ConfigManager::profitableChecklist to tracking.profitableHud.enabled, ConfigManager::lakeClearAlert to tracking.lakeClearedHud.enabled, ConfigManager::missingPanel to tracking.missing, ConfigManager::biomeObjectives to tracking.objectives,
+            ConfigManager::removeIcyFrost to safari.visibility.icyFrost,
+            ConfigManager::recatchWaypoint to safari.capture.recatch,
+            ConfigManager::leftClickGazerBed to safari.capture.gazerBed,
             ConfigManager::removeDarkness to safari.darkness,
             ConfigManager::clearWater to safari.visibility.clearWater,
             ConfigManager::sparklingAlert to safari.alert, ConfigManager::sparklingPartyAnnouncer to safari.announce,
@@ -630,9 +645,10 @@ class SafariSettings {
         val alwaysOnCrittersChanged = alwaysOnCritters.apply(SafariEspConfig.alwaysOnToggles)
         val chatTogglesChanged = safari.visibility.chatToggles.apply()
         val objectivesChanged = BiomeObjectiveConfig.apply(tracking.objectivesHud.rows, modes.sparklingChecks)
+        val remainingChecksChanged = modes.unique.applyRemainingChecks()
         val splitTimeFormat = SplitTimeFormat.entries.getOrElse(tracking.splitsHud.timeFormat) { SplitTimeFormat.MILLISECONDS }
         val progressRows = tracking.progressHud.rows.values()
-        val generalChanged = ConfigManager.progressRows != progressRows || espChanged || highlightStyleChanged || modWideCrittersChanged || profitableCrittersChanged || alwaysOnCrittersChanged || chatTogglesChanged || objectivesChanged ||
+        val generalChanged = ConfigManager.progressRows != progressRows || espChanged || highlightStyleChanged || modWideCrittersChanged || profitableCrittersChanged || alwaysOnCrittersChanged || chatTogglesChanged || objectivesChanged || remainingChecksChanged ||
             ConfigManager.splitsTimeFormat != splitTimeFormat ||
             bannerChanged || ConfigManager.specialCatchStyle != safari.alerts.caughtStyle || ConfigManager.doomspiralEmergenceTicks != safari.capture.doomTicks.coerceIn(1, 600) ||
             ConfigManager.doomspiralThrowLeadTicks != safari.capture.doomLead.coerceIn(0, 40) || customizationChanged || changes.any { (property, value) -> property.get() != value } ||
@@ -647,7 +663,7 @@ class SafariSettings {
         ConfigManager.capsulePathWidth = pathWidth
         ConfigManager.doomspiralEmergenceTicks = safari.capture.doomTicks.coerceIn(1, 600)
         ConfigManager.doomspiralThrowLeadTicks = safari.capture.doomLead.coerceIn(0, 40)
-        ConfigManager.specialCatchStyle = safari.alerts.caughtStyle.coerceIn(0,40)
+        ConfigManager.specialCatchStyle = safari.alerts.caughtStyle.coerceIn(0, net.johnceo.sparklingmutuals.ui.SparklingAlertStyle.CUSTOM_INDEX)
         ConfigManager.runCompleteVolume = safari.alerts.runVolume.coerceIn(0, 100)
         ConfigManager.sparklingSoundVolume = safari.alerts.volume.coerceIn(0, 100)
         if (generalChanged) ConfigManager.saveSettings()

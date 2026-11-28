@@ -41,6 +41,19 @@ class SafariBannerTest {
         queue.tick(5_000)
         assertEquals(listOf("gems", "finish gems", "catch", "finish catch", "warp"), events)
     }
+    @Test fun `a queued discovery does not start during the lottery lead in or the reels`() {
+        val queue = AlertSequence()
+        var sounds = 0
+        queue.submit("sparkling", 2_000, "Doomspiral") { sounds++ }
+        queue.tick(0, paused = true)
+        queue.tick(4_000, paused = true)
+        queue.tick(8_900, paused = true)
+        assertEquals(0, sounds)
+        queue.tick(8_950)
+        queue.tick(9_000)
+        assertEquals(1, sounds)
+    }
+
     @Test fun `disabling features preserves both active and pending coin celebrations`() {
         val queue = AlertSequence()
         val events = mutableListOf<String>()

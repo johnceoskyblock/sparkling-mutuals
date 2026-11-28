@@ -37,6 +37,7 @@ object BeeNests {
         else it.partyNestsHandled
     } == true
     val unpunchedCount get() = if (handledByParty) 0 else survey.remaining.size
+    val objectiveUnpunchedCount get() = unpunchedCount
     val punchedCount get() = survey.resolvedNestCount
     val nestCount get() = survey.nestCount
     val allChecked get() = survey.allChecked

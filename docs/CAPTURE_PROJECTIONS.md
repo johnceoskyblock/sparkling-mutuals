@@ -12,6 +12,8 @@ The route starts from the player's interpolated eye and current player aim. Came
 
 The path is available in all editions. Standard can show the projected line through terrain when enabled and checks local visibility before displaying a critter contact. [Edition boundaries](EDITION_CONSOLIDATION_HANDOFF.md)
 
+**Recatch waypoint** under **Safari → Helpers → Capture tools** is off by default. It marks a locally confirmed capsule catch attempt while the critter is in the capsule and briefly after a confirmed escape. A confirmed capture clears the marker. Standard shows the marker within line of sight.
+
 ### Spatial guide and evidence boundary
 
 The compiled model is `ordinary-stationary-visual-ordinal-candidate-v1`:

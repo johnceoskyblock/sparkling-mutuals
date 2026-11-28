@@ -175,6 +175,27 @@ class HistoryArchiveOwnershipTest {
         assertEquals(1595L, PlaytimeReader.playtimeMinutes("Total Playtime: 1 day 2 hours 35 minutes"))
     }
 
+    @Test fun `last dye uses dated personal main server proof including an old account name`() {
+        val stash = "Since you're in the Critter Safari, the Emerald Dye was sent to your stash!"
+        log("2026-09-02-1.log.gz", client("18:00:00", "[SM History] Account $owner Former"),
+            client("18:00:01", "Connecting to mc.hypixel.net, 25565"),
+            system("18:41:07", "WOW! [MVP++] [Former head]Former found an Emerald Dye!"),
+            system("18:41:08", stash),
+            system("18:41:09", "RARE DROP! Emerald Dye"),
+            system("18:42:00", "WOW! [MVP+] Someone found an Emerald Dye!"),
+            system("18:43:00", "Party > Former: $stash"),
+            client("18:44:00", "Connecting to alpha.hypixel.net, 25565"),
+            system("18:45:00", stash))
+        log("2026-09-02-2.log", client("19:00:00", "[SM History] Account $other Someone"),
+            client("19:01:00", "Connecting to mc.hypixel.net, 25565"), system("19:02:00", stash))
+        val import = LogImporter.read(folder, "Current", ownerUuid = owner).join()
+        val expected = java.time.LocalDateTime.of(2026, 9, 2, 18, 41, 7)
+            .atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
+        assertEquals(expected, import.lastEmeraldDyeAt)
+        assertTrue(import.runs.isEmpty())
+        assertEquals(1, import.skippedAccounts)
+    }
+
     @Test fun `reimport corrects a previously counted free admission only on imported rows`() {
         val saved = RunRecord(start = 100_000, length = 60_000, imported = true, tickets = 1)
         val live = RunRecord(start = 200_000, length = 60_000, tickets = 1)

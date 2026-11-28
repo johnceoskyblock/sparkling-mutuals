@@ -14,6 +14,8 @@ A marker hidden by selection is not an absent resource. Unknown/partial markers 
 
 ### Visibility outside the current biome
 
+In Full editions, coins follow Gimmiegold’s glow and box switches, incense follows Doomspiral, and all three gems follow Gemzie. Wriggleworms follow Parakeet, Yogi Berries follow Bluebird, and Seeds follow Macaw. A linked marker can show when either style is enabled. Unique keeps uncollected Shining Coins and bird food eligible throughout the biome, subject to the linked switches and the floor-drop visibility settings.
+
 **ESP → Floor drops → Show outside current biome** has a separate switch for Bag of Seeds, Wriggleworm, Yogi Berry, Lime Gem, Purple Gem, Orange Gem, Icebreaker, Soothing Incense, Shining Coin and XP/Essence/Shard. Quest drops default to visible across biomes; reward drops default to current-biome only. The old shared restriction is replaced. Per-type choices persist across mode changes/restarts and do not change mode eligibility, collection cutoffs, tracking, colors or text sizes. Only currently received/loaded drops can be drawn, and reward ESP still needs its separate enable toggle.
 
 ### Starting resources
@@ -43,9 +45,9 @@ Unsupported prefixes or phase mismatch enter an XP / Essence / Shard tail for th
 | --- | --- |
 | XP / Essence / Shard | Optional ESP setting, off by default; default #6D6D75. Independent of mode quest requirements; current-biome/group controls still apply |
 | Gems | Hidden whenever Gemzie is complete under the current mode’s progress rules; otherwise Cavern Full Clear, needed Gemzie discovery, or uncaught Unique Gemzie; each acquired/starting gem color hides all remaining predicted markers of that color, including after placement |
-| Bird food | Configured floor group; Full Clear, or any needed bird discovery/uncaught Unique bird. Only predicted food groups are selected |
+| Bird food | Configured floor group throughout Unique and Full Clear; Sparkling requires a needed bird discovery. Only predicted food groups are selected |
 | Shining Coin | Every remaining coin throughout Unique and Full Clear, regardless of party discovery needs or pickup counts. Sparkling shows coins when Gimmiegold discovery is needed, or when Sparkle profitable-shard ESP is enabled and Gimmiegold is in the cached top ten. Collected drops disappear normally; this changes ESP presentation only, not completion requirements. |
-| Soothing Incense | All five predicted slots eligible, with no distance ranking or reduction for starting incense. Hide after four pickup units or a peak inventory of four. Sparkling additionally needs Doomspiral discovery; Unique/Full Clear additionally require Gimmiegold discovery needed or acquired units + known starting quantity (at least peak held inventory) below four |
+| Soothing Incense | All five predicted slots eligible, with no distance ranking. Hide once pickups plus known starting items reach four, or after a peak inventory of four, in every mode. Sparkling additionally needs Doomspiral discovery. Gimmiegold discovery does not override the incense cutoff |
 | Icebreaker | Automatic selection only in Full Clear, until one acquired/starting Icebreaker |
 | Generic/unknown | No quest-item ESP |
 

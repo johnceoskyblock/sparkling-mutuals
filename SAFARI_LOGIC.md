@@ -22,7 +22,7 @@ Authoritative reference for implemented mode outcomes, announcement eligibility 
 
 Unique can waive an uncaught Macaw after complete local bird feeding (including known party starting food) with no Macaw encounter. It can also waive an uncaught Rockmite/Snoozle after complete local source resolution and a Cavern absence scan with no encounter. These species disappear from Missing and may complete fd/cd once all other local requirements pass. No catch is fabricated.
 
-Ordinary Sparkling checks use retained qualified UUID evidence reconciled with shared catches. Ordinary Unique completion adds no discovery scan/radius requirement except the documented Honeybug, Gazer and Gimmiegold checking gates when their discovery is needed. In Haunted, Gazer requires four retained reconciled checks and Gimmiegold requires resolved floor coins, no held coins and qualified spawn evidence; a first ordinary catch or received hd cannot replace that local work. Full Clear uses actual catches, known population targets, source conditions and qualified empty scans; [tracking](docs/critters/TRACKING.md) explains those evidence paths.
+Ordinary Sparkling checks use retained qualified UUID evidence reconciled with shared catches. Unique requires its captures and gates completion on checks enabled in **Sparkling Checks Options** that the party still needs. When enabled for a needed discovery, Gazer requires four checks and Gimmiegold requires resolved floor coins, no held coins, and qualified spawn evidence. Full Clear uses actual catches, known population targets, source conditions and qualified empty scans. [Tracking](docs/critters/TRACKING.md)
 
 Valid selected profile members with no Safari/Sparkling discovery fields have zero discoveries and need every species checked. Actual failed background discovery lookups retry after one minute in the same mode; temporary roster changes cannot leave a finished lookup marked busy. See [API data and recovery](docs/API_LOOKUPS.md).
 
@@ -68,9 +68,13 @@ Species pages and [source evidence](docs/critters/TRACKING.md#source-evidence-an
 
 ## Full edition ESP presentation
 
-Full and Full No Auto Update provide independent species switches under **ESP > General > Critter glow outlines** and **Critter boxes**. The parent switches remain required. Glow uses boxes for non-living display models and Gazer so these targets remain visible without highlighting Gazer armor stands. Nameplates remain separately configurable.
+Full and Full No Auto Update provide independent per-critter switches under **ESP > General > Critter glow outlines** and **Critter boxes**. A critter gets a box only when its box switch is on. Linked sources such as Honeybug nests, Rockmite mounds, Snoozle walls and quest drops keep their own markers when either style is enabled. These switches affect presentation only.
 
-**Always show Rockmite mounds** in ESP General keeps intact mound targets and retained mound waypoints visible regardless of mode need; broken mounds stay excluded. **Safari > Modes > Unique > Show remaining Sparkling checks after biome completion** restores still-needed enabled checks. Both options default off and respect the overall ESP and biome controls. They do not change completion, catches or reports.
+**Rockmite mound glow** outlines loaded mound models. Standard requires a clear view of the mound. **Hide Icy frost overlay** under **Safari > Helpers > Visual cleanup** removes the freezing vignette in the Icy Biome.
+
+Enable **Rockmite** under **ESP > Always On Toggle** to keep intact mound targets and retained mound waypoints visible after mode requirements are met. **Safari > Modes > Unique > Show remaining Sparkling checks after biome completion** restores party-needed checks in Biome Objectives and highlights unchecked nests, mounds and walls after a clear. Rockmite, Snoozle and Honeybug themselves only stay highlighted during this phase with enabled top-ten Profitable Critter ESP. The Missing and Progress HUDs keep their normal Unique completion state. Both display options default off.
+
+Use `!sparkle after clear on/off` to set **Show remaining Sparkling checks after biome completion** for the party. Standard lists the remaining check names in Biome Objectives. Full editions also restore the relevant ESP.
 
 In Full Clear, known locally unpunched Forest nests retain their markers even if shared completion says Honeybug is complete. Punched/resolved sites remain excluded. Standard retains its existing settings and visibility behavior.
 

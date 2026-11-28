@@ -1,7 +1,6 @@
 package net.johnceo.sparklingmutuals.safari.structures
 
 import net.johnceo.sparklingmutuals.config.ConfigManager
-import net.johnceo.sparklingmutuals.config.BiomeObjectiveConfig
 
 import net.johnceo.sparklingmutuals.compat.*
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext
@@ -37,6 +36,7 @@ object BeeNests {
         else it.partyNestsHandled
     } == true
     val unpunchedCount get() = if (handledByParty) 0 else survey.remaining.size
+    val objectiveUnpunchedCount get() = if (postClearNests()) survey.physicallyUnconfirmed.size else unpunchedCount
     val punchedCount get() = survey.resolvedNestCount
     val nestCount get() = survey.nestCount
     val allChecked get() = survey.allChecked
@@ -66,7 +66,7 @@ object BeeNests {
     private fun syncRun() {
         if(SafariTracking.ledger.current?.trustLateForestNestReport == true) survey.acceptPartyClear()
         SafariTracking.ledger.current?.updateNestEvidence(survey.allChecked, survey.resolvedNestCount,
-            survey.nestCount, survey.unverified.size)
+            survey.nestCount, survey.unverified.size, verified = survey.individuallyChecked)
     }
     fun tick(client: Minecraft) {
         val level = client.level ?: return
@@ -86,7 +86,10 @@ object BeeNests {
         }
         syncRun()
     }
-    private fun showNestMarkers() = (net.johnceo.sparklingmutuals.config.SafariSettings.standardEdition || SafariEspConfig.entityEnabled("Honeybug")) &&
+    private fun postClearNests() = SafariHelperRules.postClearSource("Honeybug", SafariFullClear.mode,
+        SafariTracking.ledger.current, SafariSparklingMode.state)
+
+    private fun showNestMarkers() = SafariEspConfig.styledHighlight("Honeybug") && SafariEspConfig.groups.getValue("forest").enabled &&
         SafariHelperRules.showKnownNestMarkers(SafariFullClear.mode,
             SafariHelperRules.showNests(SafariFullClear.mode, SafariTracking.ledger.current, SafariSparklingMode.state),
             survey.remaining.isNotEmpty(), net.johnceo.sparklingmutuals.config.SafariSettings.standardEdition)
@@ -102,7 +105,7 @@ object BeeNests {
         val markers = when {
             SafariAssist.biome == SafariBiome.FOREST &&
                 showNestMarkers() ->
-                survey.waypoints(showNestMarkers()).mapNotNull { waypoint ->
+                survey.waypoints(needed = true, ignoreBiomeClear = postClearNests()).mapNotNull { waypoint ->
                     val pos = positions.getValue(waypoint.position)
                     val loaded = level.isLoaded(pos)
                     if (waypoint.nest && loaded && !level.getBlockState(pos).`is`(Blocks.BEE_NEST)) null
@@ -112,16 +115,16 @@ object BeeNests {
                         else -> "Nest"
                     }, if (waypoint.nest) SafariEspConfig.rgb(AppearanceConfig.nestColor) else 0xFFAAAAAA.toInt())
                 }
-            SafariAssist.biome == SafariBiome.CAVERN &&
+            SafariAssist.biome == SafariBiome.CAVERN && SafariEspConfig.styledHighlight("Snoozle") &&
+                SafariEspConfig.groups.getValue("cavern").enabled &&
                 SafariHelperRules.highlightSource("Snoozle", SafariFullClear.mode, SafariTracking.ledger.current, SafariSparklingMode.state) ->
                 SafariStructures.intactWalls.filter { level.isLoaded(it) && !level.getBlockState(it).isAir &&
                     it.distToCenterSqr(camera) < 40000 }.map { Triple(it, "Snoozle wall", SafariEspConfig.rgb(AppearanceConfig.snooperColor)) }
             else -> emptyList()
         }
         val moundGroup = SafariEspConfig.groups.getValue("cavern")
-        val alwaysShowMounds = SafariEspConfig.alwaysOn("Rockmite") || SafariEspConfig.moundAlwaysOn
-        val retainedMounds = if (moundGroup.enabled && SafariEspConfig.entityEnabled("Rockmite", mound = true) &&
-            (alwaysShowMounds || BiomeObjectiveConfig.allowsEsp("Rockmite", SafariFullClear.mode, run)) &&
+        val alwaysShowMounds = SafariEspConfig.alwaysOn("Rockmite")
+        val retainedMounds = if (moundGroup.enabled && SafariEspConfig.styledHighlight("Rockmite", mound = true) &&
             (SafariAssist.biome == SafariBiome.CAVERN || !moundGroup.onlyInBiome || alwaysShowMounds) &&
             (alwaysShowMounds || SafariHelperRules.highlightSource("Rockmite", SafariFullClear.mode, run, SafariSparklingMode.state))) {
             val rendered = net.johnceo.sparklingmutuals.safari.esp.SafariEsp.renderedMoundSites(client)

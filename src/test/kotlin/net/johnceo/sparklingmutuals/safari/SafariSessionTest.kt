@@ -2,10 +2,25 @@ package net.johnceo.sparklingmutuals.safari
 
 import net.johnceo.sparklingmutuals.config.ConfigManager
 import net.johnceo.sparklingmutuals.safari.completion.SafariPersonalBests
+import net.johnceo.sparklingmutuals.safari.esp.SafariEspRules
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class SafariSessionTest {
+    @Test fun `the western Forest canopy and the Cavern below map to different biomes`() {
+        val locations = listOf(
+            Triple(-54.814, 96.0, 41.162) to SafariBiome.FOREST,
+            Triple(-57.0, 93.0, 52.0) to SafariBiome.FOREST,
+            Triple(-54.814, 48.0, 41.162) to SafariBiome.CAVERN,
+            Triple(-60.0, 94.0, 51.0) to SafariBiome.CAVERN
+        )
+        for ((coordinate, biome) in locations) {
+            val (x, y, z) = coordinate
+            assertEquals(biome, SafariBiome.mapped(SafariAreaMap.biomeAt(x, y, z)), "$coordinate player biome")
+            assertEquals(biome, SafariEspRules.critterBiomeAt(x, y, z), "$coordinate critter biome")
+        }
+    }
+
     @Test fun `quoted multiline player chat cannot create catches entries or personal bests`() {
         for (prefix in listOf("Party > [VIP] Test:", "Guild > Test:", "Officer > Test:", "Co-op > Test:",
             "From [MVP+] Test:", "To Test:", "[MVP+] Test [GUILD]:", "Test:", "<Test>")) {

@@ -40,7 +40,8 @@ object CatchCelebrationAudio {
     val playing get() = current != null
     fun start(style: SparklingAlertStyle) {
         stop()
-        if (ConfigManager.sparklingSoundVolume <= 0 || scores.songs.getOrNull(style.soundSong()) == null) return
+        if (ConfigManager.sparklingSoundVolume <= 0 || style.soundVolumePercent() <= 0 ||
+            scores.songs.getOrNull(style.soundSong()) == null) return
         current=style;started=now();ends=started+style.displayMillis();indices=IntArray(13);cycle=-1 }
     fun tick(client: Minecraft) {
         val style=current?:return
@@ -52,7 +53,7 @@ object CatchCelebrationAudio {
         stems.take(13).forEachIndexed { stem,events ->
             val progress=style.soundTheme()-stem
             if(progress>=0) {
-                val gain=ConfigManager.sparklingSoundVolume/100f*3.75f*stemGains[stem]*(.58f+minOf(4,progress)*.12f)
+                val gain=ConfigManager.sparklingSoundVolume/100f*(style.soundVolumePercent()/100f)*3.75f*stemGains[stem]*(.58f+minOf(4,progress)*.12f)
                 var index=indices[stem]
                 while(index<events.size && events[index][0]<=within) {
                     val e=events[index++]

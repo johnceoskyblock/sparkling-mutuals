@@ -183,7 +183,7 @@ object SparklingMutuals : ModInitializer {
         net.johnceo.sparklingmutuals.safari.automation.SafariTicketSelect.tick(client)
         CapsulePreview.tick(client)
         DoomspiralLottery.tick(client)
-        if (!DoomspiralLottery.active) net.johnceo.sparklingmutuals.hud.SafariAlertSequence.tick()
+        net.johnceo.sparklingmutuals.hud.SafariAlertSequence.tick()
     }
 
     private fun resetSession() {

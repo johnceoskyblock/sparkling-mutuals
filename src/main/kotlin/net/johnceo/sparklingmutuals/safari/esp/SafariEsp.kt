@@ -629,7 +629,7 @@ object SafariEsp {
         if (!SafariAssist.inSafari || client.level == null || client.level !== level) return SafariEspObservations(emptyList(), emptyList())
         val critters = targets.filter { live(it, client) }.mapNotNull { target ->
             val e = target.entity
-            val biome = SafariEspRules.biomeAt(e.x, e.z) ?: return@mapNotNull null
+            val biome = SafariEspRules.critterBiomeAt(e.x, e.y, e.z) ?: return@mapNotNull null
             if (SafariRoster.named(target.species)?.biome != biome) return@mapNotNull null
             EspCritterObservation(e.id, target.species, biome, e.x, e.y, e.z, target.species == "Rockmite" && e is Display.ItemDisplay, e.uuid)
         }
@@ -676,26 +676,26 @@ object SafariEsp {
         val entity = target.entity
         val mob = SafariRoster.named(target.species) ?: return "Unknown species"
         val group = SafariEspConfig.groups.getValue(mob.biome.name.lowercase())
-        val actualBiome = SafariEspRules.biomeAt(entity.x, entity.z)
+        val actualBiome = SafariEspRules.critterBiomeAt(entity.x, entity.y, entity.z)
         val display = entity is Display.ItemDisplay
         val run = SafariTracking.ledger.current
         val party = SafariSparklingMode.state
         val mode = net.johnceo.sparklingmutuals.safari.completion.SafariFullClear.mode
+        val mound = mob.name == "Rockmite" && display
+        if (!SafariEspConfig.styledHighlight(mob.name, mound)) return "Species ESP disabled"
         val forceIcy = mob.biome == SafariBiome.ICY && BiomeObjectiveConfig.needs("Wumpa", party, mode) &&
             (run?.count("Wumpa") ?: 0) == 0 && (run?.count(mob.name) ?: 0) == 0
-        if (!BiomeObjectiveConfig.allowsEsp(mob.name, mode, run) && !(mob.name=="Rockmite" && display && SafariEspConfig.moundAlwaysOn) && !(mode == SafariMode.SPARKLING && forceIcy))
-            return "Optional sparkling check disabled"
         if (!forceIcy && !live(target, client, forEsp = true)) return "Inactive model or label"
-        val alwaysOn = SafariEspConfig.alwaysOn(mob.name) || mob.name=="Rockmite" && display && SafariEspConfig.moundAlwaysOn
-        val remainingCheck = mode==SafariMode.UNIQUE && SafariEspConfig.uniqueRemainingChecks &&
-            run?.biomeComplete(mode,mob.biome,party)==true && BiomeObjectiveConfig.needs(mob.name,party,mode) &&
-            !run.sparklingComplete(mob.name,party)
-        val needed = alwaysOn || remainingCheck || forceIcy || if (ConfigManager.sparklingMode)
-            SafariEspRules.neededForSparkling(mob.name, mob.name == "Rockmite" && display,
+        val alwaysOn = SafariEspConfig.alwaysOn(mob.name)
+        val helpers = net.johnceo.sparklingmutuals.safari.completion.SafariHelperRules
+        val afterClear = !mound && mob.name in helpers.species && helpers.postClearActive(mode, run, mob.biome, party)
+        val needed = if (afterClear) SafariEspRules.profitableEsp(mob.name, ConfigManager.profitableShardEsp)
+        else alwaysOn || forceIcy || if (mound) helpers.highlightSource(mob.name, mode, run, party)
+        else if (mode == SafariMode.SPARKLING)
+            SafariEspRules.neededForSparkling(mob.name, false,
                 party, ConfigManager.sparklingProfitableShardEsp, run, entity.uuid, now)
-        else SafariEspRules.neededForRun(mob.name, display, run, ConfigManager.fullClearMode, ConfigManager.profitableShardEsp, party)
+        else SafariEspRules.neededForRun(mob.name, false, run, mode == SafariMode.FULL_CLEAR, ConfigManager.profitableShardEsp, party)
         if (!needed) return "Species not needed for current mode"
-        if (!SafariEspConfig.entityEnabled(mob.name, display)) return "Species ESP disabled"
         if (actualBiome != mob.biome) return "Model outside species biome"
         if (!SafariEspRules.visible(true, group.enabled, group.onlyInBiome && !alwaysOn, playerBiome, actualBiome)) return "Biome visibility restricted"
         return "Eligible"
@@ -717,10 +717,10 @@ object SafariEsp {
     }
     fun outlineColor(entity: Entity): Int? {
         val client=Minecraft.getInstance()
-        if(!SafariEspConfig.critterGlow || !SafariAssist.visualsActive(client) || client.player==null || client.options.smHideGui)return null
+        if(!SafariAssist.visualsActive(client) || client.player==null || client.options.smHideGui)return null
         val target = indexedTarget(entity) ?: return null
-        if(!SafariEspConfig.showCritterGlow(target.species) || target.species=="Gazer")return null
-        if(target.species=="Rockmite" && entity is Display.ItemDisplay)return null
+        if(!SafariEspConfig.showCritterGlow(target.species))return null
+        if (target.species == "Rockmite" && entity is Display.ItemDisplay && !SafariEspConfig.moundModelGlow) return null
         if (target.species == "Shyworm" && (entity.y <= 2.0 || shyworms.hiddenHeight(entity.uuid, entity.y) != null)) return null
         if(!drawable(target,client) || critterEspDecision(target,client,SafariAssist.biome,System.currentTimeMillis())!="Eligible")return null
         return targetColor(target)
@@ -795,6 +795,7 @@ object SafariEsp {
         val camera = client.gameRenderer.smCamera.position()
         val playerBiome = SafariAssist.biome
         fun frame(box: AABB, color: Int) = WorldRenderCompat.box(context, lines, box, color)
+        RecatchWaypoints.render(context, captures) { true }
         val delta = client.deltaTracker.getGameTimeDeltaPartialTick(false)
         val now = System.currentTimeMillis()
         val run = SafariTracking.ledger.current
@@ -843,9 +844,7 @@ object SafariEsp {
                     }
                 }
                 val retainedWormHead = mob.name == "Shyworm" && height != null
-                if (SafariEspConfig.showCritterBox(mob.name) || mound ||
-                    SafariEspConfig.showCritterGlow(mob.name) && (e !is net.minecraft.world.entity.LivingEntity || mob.name=="Gazer") ||
-                    retainedWormHead && ShywormProjection.showRetainedHead(SafariEspConfig.critterBoxes, SafariEspConfig.critterGlow))
+                if (SafariEspConfig.showCritterBox(mob.name) || mound && !SafariEspConfig.moundModelGlow)
                     frame(projected, if (retainedWormHead && SafariAssist.isHighlighted(e.id))
                         SafariEspConfig.rgb(AppearanceConfig.sparklingColor) else color)
                 if (mob.name == "Scrappy" && food != null &&
@@ -865,12 +864,12 @@ object SafariEsp {
             SafariEspRules.neededForSparkling("Litterbug",false,SafariSparklingMode.state,ConfigManager.sparklingProfitableShardEsp,SafariTracking.ledger.current)
         else SafariEspRules.neededForRun("Litterbug",false,SafariTracking.ledger.current,ConfigManager.fullClearMode,ConfigManager.profitableShardEsp,SafariSparklingMode.state)
         if((retainedBugNeeded || SafariEspConfig.alwaysOn("Litterbug")) && SafariTracking.ledger.current?.captureComplete("Litterbug") != true &&
-            SafariEspConfig.entityEnabled("Litterbug",false) &&
+            SafariEspConfig.styledHighlight("Litterbug") &&
             SafariEspRules.visible(true,litterbugGroup.enabled,litterbugGroup.onlyInBiome && !SafariEspConfig.alwaysOn("Litterbug"),playerBiome,litterbugMob.biome)) {
             for(location in litterbugs.missingMarkers(now)) {
                 if(captures.hidden(location.id)) continue
                 val box=AABB(location.x-.4,location.marker.height,location.z-.4,location.x+.4,location.marker.height+.8,location.z+.4)
-                if(SafariEspConfig.critterBoxes) frame(box,SafariEspConfig.rgb(SafariEspConfig.entityColor("Litterbug",false)))
+                if(SafariEspConfig.showCritterBox("Litterbug")) frame(box,SafariEspConfig.rgb(SafariEspConfig.entityColor("Litterbug",false)))
                 timers.add(Triple(location.marker.text,location.marker.color,box))
             }
         }
@@ -882,14 +881,14 @@ object SafariEsp {
         else SafariEspRules.neededForRun("Shyworm", false, SafariTracking.ledger.current,
             ConfigManager.fullClearMode, ConfigManager.profitableShardEsp, SafariSparklingMode.state)
         if ((retainedWormNeeded || SafariEspConfig.alwaysOn("Shyworm")) && SafariTracking.ledger.current?.captureComplete("Shyworm") != true &&
-            SafariEspConfig.entityEnabled("Shyworm", false) &&
+            SafariEspConfig.styledHighlight("Shyworm") &&
             SafariEspRules.visible(true, wormGroup.enabled, wormGroup.onlyInBiome && !SafariEspConfig.alwaysOn("Shyworm"), playerBiome, wormMob.biome)) {
             for (marker in shyworms.missingMarkers()) {
                 if (captures.hidden(marker.id)) continue
                 val box = AABB(marker.x - .3, marker.y + 1.35, marker.z - .3,
                     marker.x + .3, marker.y + 1.95, marker.z + .3)
                 val color = SafariEspConfig.rgb(SafariEspConfig.entityColor("Shyworm", false))
-                if (ShywormProjection.showRetainedHead(SafariEspConfig.critterBoxes, SafariEspConfig.critterGlow)) frame(box, color)
+                if (SafariEspConfig.showCritterBox("Shyworm")) frame(box, color)
                 timers.add(Triple("Shyworm (last seen)", color, box))
             }
         }

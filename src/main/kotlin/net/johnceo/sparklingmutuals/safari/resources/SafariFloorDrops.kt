@@ -24,9 +24,7 @@ class FloorDropState {
         FloorDropType.LIME, FloorDropType.PURPLE, FloorDropType.ORANGE -> amount(type) == 0
         FloorDropType.ICEBREAKER -> mode == SafariMode.FULL_CLEAR && amount(type) == 0
         FloorDropType.COIN -> mode != SafariMode.SPARKLING || party.needs("Gimmiegold") || profitableGimmiegold
-        FloorDropType.INCENSE -> (acquired[type] ?: 0) < 4 && (inventoryPeak[type] ?: 0) < 4 &&
-            if (mode == SafariMode.SPARKLING) party.needs("Doomspiral")
-            else BiomeObjectiveConfig.needs("Gimmiegold", party, mode) || amount(type) < 4
+        FloorDropType.INCENSE -> amount(type) < 4 && (mode != SafariMode.SPARKLING || party.needs("Doomspiral"))
         FloorDropType.WORM, FloorDropType.BERRY, FloorDropType.SEEDS -> true
         FloorDropType.GENERIC -> false
     }
@@ -105,9 +103,8 @@ class FloorDropState {
         return when (biome) {
             SafariBiome.CAVERN -> (fullClear || BiomeObjectiveConfig.needs("Gemzie", party, mode) || mode == SafariMode.UNIQUE && !caught("Gemzie")) &&
                 listOf(FloorDropType.LIME, FloorDropType.PURPLE, FloorDropType.ORANGE).any { needed(it, mode, party) }
-            SafariBiome.FOREST -> configured && (fullClear || listOf("Bluebird", "Parakeet", "Macaw").any {
-                BiomeObjectiveConfig.needs(it, party, mode) || mode == SafariMode.UNIQUE && !caught(it)
-            })
+            SafariBiome.FOREST -> configured && (mode != SafariMode.SPARKLING ||
+                listOf("Bluebird", "Parakeet", "Macaw").any(party::needs))
             SafariBiome.HAUNTED -> configured && (needed(FloorDropType.COIN, mode, party, profitableGimmiegold) || needed(FloorDropType.INCENSE, mode, party))
             SafariBiome.ICY -> fullClear && needed(FloorDropType.ICEBREAKER, mode, party)
             else -> false
@@ -118,24 +115,24 @@ class FloorDropState {
 
 object SafariFloorDrops {
     val state = FloorDropState()
-    private val birds = listOf("Bluebird", "Parakeet", "Macaw")
-    private val gemzie = listOf("Gemzie")
     private val sourceObjectives = mapOf(
-        FloorDropType.LIME to gemzie, FloorDropType.PURPLE to gemzie, FloorDropType.ORANGE to gemzie,
-        FloorDropType.COIN to listOf("Gimmiegold"), FloorDropType.INCENSE to listOf("Doomspiral"),
-        FloorDropType.WORM to birds, FloorDropType.BERRY to birds, FloorDropType.SEEDS to birds)
+        FloorDropType.LIME to "Gemzie", FloorDropType.PURPLE to "Gemzie", FloorDropType.ORANGE to "Gemzie",
+        FloorDropType.COIN to "Gimmiegold", FloorDropType.INCENSE to "Doomspiral",
+        FloorDropType.WORM to "Parakeet", FloorDropType.BERRY to "Bluebird", FloorDropType.SEEDS to "Macaw")
+    internal fun sourceHighlightEnabled(type: FloorDropType) =
+        sourceObjectives[type]?.let { SafariEspConfig.styledHighlight(it) } ?: true
     private fun profitableGimmiegold() = SafariFullClear.mode == SafariMode.SPARKLING &&
         SafariEspRules.profitableEsp("Gimmiegold", ConfigManager.sparklingProfitableShardEsp)
     fun selected(drop: PredictedFloorDrop, incenseIds: Set<Int>): Boolean {
         val type = drop.type ?: return false
         val mode = SafariFullClear.mode
         val run = SafariTracking.ledger.current
-        if (sourceObjectives[type]?.none { BiomeObjectiveConfig.allowsEsp(it, mode, run) } == true) return false
-        if (SafariEspConfig.floorAlwaysOn(type)) return SafariEspConfig.groups.getValue("floor").enabled
+        if (!SafariEspConfig.groups.getValue("floor").enabled || !sourceHighlightEnabled(type)) return false
+        if (run?.gems?.placed(type) == true) return false
         if(type == FloorDropType.INCENSE && net.johnceo.sparklingmutuals.sync.SafariPartySync.doomSummoned()) return false
-        if (type == FloorDropType.GENERIC) return SafariEspConfig.rewardDrops && SafariEspConfig.groups.getValue("floor").enabled
+        if (SafariEspConfig.floorAlwaysOn(type)) return true
+        if (type == FloorDropType.GENERIC) return SafariEspConfig.rewardDrops
         val party = SafariSparklingMode.state
-        if (SafariTracking.ledger.current?.gems?.placed(type) == true) return false
         return (type != FloorDropType.INCENSE || drop.id in incenseIds) && enabled(drop.biome) &&
             state.needed(type, mode, party, profitableGimmiegold())
     }

@@ -39,13 +39,10 @@ class SafariModeAndInteractionIntegrationTest {
             val help = CommandHelp.partyReply(mode)
             val replies = PartyReplyChunks.split(help)
             assertTrue(replies.all { it.length + "/pc ".length <= 256 })
-            assertFalse(help.contains("doom/wumpa"))
             assertFalse(help.contains("[gui]"))
             assertFalse(help.contains("/sm gui"))
-            for (kind in PartyCommandKind.entries.filter { PartyCommand(it).pbName != null }) {
-                val command = PartyCommand(kind)
-                assertEquals(command.allowed(mode), help.contains(command.text), "$mode / ${command.text}")
-            }
+            assertEquals(mode != SafariMode.FULL_CLEAR, help.contains("!pb <doom|wumpa> [IGN] [duo]"))
+            assertEquals(mode != SafariMode.SPARKLING, help.contains("!pb <forest|cavern|icy|haunted> [IGN [party]]"))
             assertTrue(replies.all(PartyCommand(PartyCommandKind.HELP)::matchesResponse))
         }
     }

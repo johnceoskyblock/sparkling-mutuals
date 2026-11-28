@@ -82,6 +82,32 @@ public record SparklingAlertStyle(
 		return PRESETS[Math.clamp(index, 0, CUSTOM_INDEX - 1)];
 	}
 
+	public int[] effectLevels() {
+		var levels = new int[] {
+			stars, comets, bursts, orbits, confetti, ribbons, corners, rays, shockwaves, glitterWaves,
+			prisms, fireworks, halos, nebulae, spirals, curtains, chromaticRain, diamonds, horizonFlares,
+			constellations, lattice, embers, kaleidoscope, eclipses, runes, crownRays, hearts, mirrorComets,
+			sweeps, twinHelix, lightning, prismFans, satellites, hourglass, glyphRain, novaCrosses,
+			portalGates, crystalShards, infinityTrails, gravityWells, spectrumSteps, starfallColumns,
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+		};
+		System.arraycopy(additions, 0, levels, 42, 15);
+		return levels;
+	}
+
+	public static SparklingAlertStyle custom(int[] effects, int pulse, int frame, int callout, int shake,
+			int gradient, int song, int theme, float duration, int volume) {
+		return new SparklingAlertStyle(
+			effects[0], effects[1], effects[2], effects[3], effects[4], effects[5], effects[6],
+			effects[7], effects[8], effects[9], effects[10], effects[11], effects[12], effects[13],
+			effects[14], effects[15], effects[16], effects[17], effects[18], effects[19], effects[20],
+			effects[21], effects[22], effects[23], effects[24], effects[25], effects[26], effects[27],
+			effects[28], effects[29], effects[30], effects[31], effects[32], effects[33], effects[34],
+			effects[35], effects[36], effects[37], effects[38], effects[39], effects[40], effects[41],
+			java.util.Arrays.copyOfRange(effects, 42, 57), pulse, frame, callout, shake, gradient,
+			song, theme, duration, volume);
+	}
+
 	/** Precomputes a monotonic sequence and phases every new effect into later presets. */
 	private static SparklingAlertStyle[] createPresets() {
 		SparklingAlertStyle[] presets = new SparklingAlertStyle[CUSTOM_INDEX];

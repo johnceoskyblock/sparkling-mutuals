@@ -29,6 +29,15 @@ class DoomspiralCabinetTest {
         }
     }
 
+    @Test fun `reels keep spinning during the reveal window while the result is unknown`() {
+        val first = DoomspiralCabinet.frame(5f, 1f, 25, 73f, null)
+        val late = DoomspiralCabinet.frame(6f, 1f, 5, 93f, null)
+        assertFalse(first.revealed)
+        assertFalse(late.revealed)
+        assertTrue(late.offset(0) > first.offset(0))
+        assertTrue(DoomspiralCabinet.frame(6f, 1f, 5, 93f, 7).jackpot)
+    }
+
     @Test fun `server progress preserves original free spin and quadratic landing for every result`() {
         for (mask in 0..7) for (index in 0..2) {
             val free = DoomspiralCabinet.frame(0f, null, null, 0f, mask)

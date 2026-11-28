@@ -78,8 +78,7 @@ class HauntedDropAndPanelFixTest {
     @Test fun `four actual incense pickups hide incense in all modes even when Gimmiegold is missing`() {
         for (mode in SafariMode.entries) {
             val state = FloorDropState(); val missing = party("Gimmiegold", "Doomspiral")
-            state.startingGrant(FloorDropType.INCENSE)
-            state.inventory(listOf("Soothing Incense" to 2))
+            state.inventory(listOf("Soothing Incense" to 2), initial = false)
             state.record("FLOOR DROP! You found 3x Soothing Incense!", SafariBiome.HAUNTED)
             assertTrue(state.needed(FloorDropType.INCENSE, mode, missing))
             state.record("FLOOR DROP! Soothing Incense Shard", SafariBiome.HAUNTED)

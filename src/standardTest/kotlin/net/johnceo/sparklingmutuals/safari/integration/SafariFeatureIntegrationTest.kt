@@ -48,7 +48,7 @@ class SafariFeatureIntegrationTest {
         }
         inspect(SafariSettings())
         assertTrue(switches.size >= 40, "Inspect nested GUI options, including panel borders")
-        val exceptions = setOf("esp.nameplates.colors.fixedColor", "esp.nameplates.critters.litterbug", "warp.autoReconnectHypixel", "warp.autoJoinSkyBlock", "esp.nameplates.colors.uniqueColors", "esp.nameplates.colors.rarityColors", "esp.nameplates.distance", "esp.nameplates.colors.entityColorOverride", "customization.biomeBorders", "modes.sparkling.allScannable", "warp.autoPartyOnlineOnly", "safari.alerts.alwaysCelebrate", "tracking.progressHud.hotspot", "espGeneral.floorVisibility.icebreaker", "warp.autoEnter", "warp.leech", "skyblock.helpers.skillOverflowNumbers", "tracking.capturesHud.enabled", "history.instaSell", "history.toParty", "warp.enabled", "espGeneral.floorVisibility.generic", "miria.warning.five", "party.startingItems",
+        val exceptions = setOf("safari.capture.recatch", "modes.unique.remainingChecks", "esp.nameplates.colors.fixedColor", "esp.nameplates.critters.litterbug", "warp.autoReconnectHypixel", "warp.autoJoinSkyBlock", "esp.nameplates.colors.uniqueColors", "esp.nameplates.colors.rarityColors", "esp.nameplates.distance", "esp.nameplates.colors.entityColorOverride", "customization.biomeBorders", "modes.sparkling.allScannable", "warp.autoPartyOnlineOnly", "safari.alerts.alwaysCelebrate", "tracking.progressHud.hotspot", "espGeneral.floorVisibility.icebreaker", "warp.autoEnter", "warp.leech", "skyblock.helpers.skillOverflowNumbers", "tracking.capturesHud.enabled", "history.instaSell", "history.toParty", "warp.enabled", "espGeneral.floorVisibility.generic", "miria.warning.five", "party.startingItems",
             "espGeneral.boxes", "esp.biomeColors.enabled", "esp.floorDrops.visibility.icebreaker", "esp.floorDrops.visibility.generic", "general.font.pixelAlignedHuds", "esp.nameplates.pity",
             "modes.unique.hideCritters", "modes.unique.hideDrops", "modes.fullClear.hideCritters",
             "modes.fullClear.hideDrops", "modes.sparkling.hideCritters", "modes.sparkling.hideDrops", "skyblock.helpers.ubiksCubeTimer.enabled")
@@ -142,8 +142,7 @@ class SafariFeatureIntegrationTest {
 
     @Test fun `Sparkling incense is controlled by Doomspiral discovery and floor pickup cutoff`() {
         val state = FloorDropState()
-        state.startingGrant(FloorDropType.INCENSE)
-        state.inventory(listOf("Soothing Incense" to 2))
+        state.inventory(listOf("Soothing Incense" to 2), initial = false)
         assertTrue(state.needed(FloorDropType.INCENSE, SafariMode.SPARKLING, party("Doomspiral")))
         assertFalse(state.needed(FloorDropType.INCENSE, SafariMode.SPARKLING, party("Gimmiegold")))
         assertTrue(state.needed(FloorDropType.COIN, SafariMode.SPARKLING, party("Gimmiegold")))

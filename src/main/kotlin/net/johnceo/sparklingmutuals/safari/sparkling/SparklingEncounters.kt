@@ -71,7 +71,7 @@ object SparklingEncounters {
         net.johnceo.sparklingmutuals.alerts.SparkleAutoParty.detected(name)
     }
 
-    internal fun doomspiralRevealed() {
+    internal fun doomspiralRevealed(@Suppress("UNUSED_PARAMETER") visible: () -> Boolean) {
         requestAlert(SparklingNotice(UUID.randomUUID(), "Doomspiral", "Haunted Biome"))
     }
 
@@ -102,7 +102,7 @@ object SparklingEncounters {
     }
     private fun requestAlert(notice: SparklingNotice, alreadyAlertedByParticle: Boolean = false) {
         if (memory.alert(notice.id, ConfigManager.sparklingAlert, notice.name)) {
-            if (DoomspiralLottery.active && notice.name == "Doomspiral") {
+            if (DoomspiralLottery.pendingOrActive && notice.name == "Doomspiral") {
                 if (alreadyAlertedByParticle) {
                     net.johnceo.sparklingmutuals.hud.SafariAlertSequence.queue.clear(this) { it == SparklingAlert.UNKNOWN }
                     queuedParticle = null

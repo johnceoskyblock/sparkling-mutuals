@@ -29,7 +29,8 @@ class EntryKickHold {
 }
 
 /** The latest readiness state per sender is sufficient; kick evidence is independent and conservative. */
-data class EntryPartyMessage(val text: String, val sender: String, val world: Any?, val kickContext: Boolean, val downtime: Boolean, val receivedAt: Long = System.currentTimeMillis())
+data class EntryPartyMessage(val text: String, val sender: String, val world: Any?, val kickContext: Boolean,
+    val downtime: Boolean, val receivedAt: Long = System.currentTimeMillis(), val contestTicket: Boolean = false)
 class EntryPartyInbox(private val capacity: Int = 32) {
     private val messages = linkedMapOf<String, EntryPartyMessage>()
     private var lastWorld: Any? = null
@@ -52,7 +53,8 @@ class EntryPartyInbox(private val capacity: Int = 32) {
         fun put(kind: String, message: EntryPartyMessage) {
             val key = item.sender + kind
             if (messages.size >= capacity && key !in messages) {
-                if (kind == ":kick") overflowKick = true else { overflowReadiness = true; readyAfterOverflow.clear() }
+                if (kind == ":kick") overflowKick = true
+                if (kind == ":ready") { overflowReadiness = true; readyAfterOverflow.clear() }
                 return
             }
             val previous = messages.remove(key)
@@ -60,8 +62,9 @@ class EntryPartyInbox(private val capacity: Int = 32) {
             messages[key] = if (kind == ":kick" && previous != null && previous.text != message.text)
                 message.copy(text = "Party > ${item.sender}: kick") else message
         }
-        if (item.downtime) put(":ready", item.copy(kickContext = false))
-        if (item.kickContext) put(":kick", item.copy(downtime = false))
+        if (item.downtime) put(":ready", item.copy(kickContext = false, contestTicket = false))
+        if (item.kickContext) put(":kick", item.copy(downtime = false, contestTicket = false))
+        if (item.contestTicket) put(":ticket", item.copy(kickContext = false, downtime = false))
     }
     fun entries() = messages.entries.map { it.key to it.value }
     fun remove(key: String) { messages.remove(key) }

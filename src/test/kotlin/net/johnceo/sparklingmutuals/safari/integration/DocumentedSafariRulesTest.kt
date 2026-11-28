@@ -79,7 +79,7 @@ class DocumentedSafariRulesTest {
         s.record("FLOOR DROP! You found Shining Coin x1 on the ground!", SafariBiome.HAUNTED)
         s.inventory(emptyList())
         for (mode in SafariMode.entries) {
-            assertEquals(mode != SafariMode.SPARKLING, s.needed(FloorDropType.INCENSE, mode, party("Gimmiegold")))
+            assertFalse(s.needed(FloorDropType.INCENSE, mode, party("Gimmiegold")), "One starting incense plus three pickups reaches the cutoff in every mode")
             assertFalse(s.needed(FloorDropType.INCENSE, mode, party()))
             assertEquals(mode != SafariMode.SPARKLING, s.needed(FloorDropType.COIN, mode, party()))
             assertTrue(s.needed(FloorDropType.COIN, mode, party("Gimmiegold")))

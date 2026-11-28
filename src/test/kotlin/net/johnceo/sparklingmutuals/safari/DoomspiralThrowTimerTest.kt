@@ -18,6 +18,13 @@ class DoomspiralThrowTimerTest {
         assertTrue(DoomspiralLottery.inRange(-5.5, 56.0, -23.5))
         assertFalse(DoomspiralLottery.inRange(-5.5, 56.1, -23.5))
     }
+    @Test fun `lottery holds the configured alert and nearby chime sounds`() {
+        val custom = "minecraft:entity.player.levelup"
+        assertTrue(DoomspiralLottery.isChime(custom, custom))
+        assertTrue(DoomspiralLottery.isChime("minecraft:block.amethyst_block.chime", custom))
+        assertTrue(DoomspiralLottery.isChime("minecraft:block.note_block.chime", custom))
+        assertFalse(DoomspiralLottery.isChime("minecraft:entity.warden.emerge", custom))
+    }
     @Test fun `server ticks count to throw cue and then expire`() {
         val timer = DoomspiralCountdown()
         assertNull(timer.remaining)

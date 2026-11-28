@@ -14,12 +14,12 @@ internal object SettingsOrder {
             "autoParty", "autoPartyOnlineOnly", "list", "refresh", "leech", "whitelist", "autoReconnectHypixel", "autoJoinSkyBlock", "autoEnter"),
         "Safari" to listOf("alerts", "capture", "interactions", "entry", "entryCooldown", "teammates", "visibility", "gambling"),
         "SafariCaptureSettings" to listOf("experimentalCapsulePath", "capsulePathWidth", "showCapsuleGuideThroughTerrain",
-            "autoClicker", "doomTimer", "doomTicks", "doomLead", "doomAppearance"),
+            "recatch", "gazerBed", "autoClicker", "doomTimer", "doomTicks", "doomLead", "doomAppearance"),
         "SafariEntrySettings" to listOf("autoSelectTicket", "ticketPreference", "holdManagerOnKick"),
         "SafariVisibilitySettings" to listOf("hideCaptureChat", "chatToggles", "clearWater", "waterOpacity",
-            "darkness", "hideGroundCapsules", "hideFlyingCapsules", "capsuleHideDistance", "paintings"),
+            "icyFrost", "darkness", "hideGroundCapsules", "hideFlyingCapsules", "capsuleHideDistance", "paintings"),
         "Alerts" to listOf("shiny", "alert", "appearance", "sound", "volume", "saveSound", "announce", "nearbyAppearance",
-            "caught", "alwaysCelebrate", "caughtStyle", "previewCatch", "catchCount"),
+            "caught", "alwaysCelebrate", "caughtStyle", "customCatch", "previewCatch", "catchCount"),
         "Tracking" to listOf("where", "progressHud", "splitsHud", "missingHud", "objectivesHud", "capturesHud",
             "contestHud", "hotspotHud", "profitableHud", "lakeClearedHud"),
         "HotspotHudOptions" to listOf("enabled", "showAllPlayers", "appearance", "placement"),
@@ -27,13 +27,13 @@ internal object SettingsOrder {
         "BannerSettings" to listOf("enabled", "safari", "encounters", "contest", "appearance", "placement", "preview"),
         "SafariBannerOptions" to listOf("complete", "biome", "fullParty", "warp", "partyKicked"),
         "EncountersBanners" to listOf("hideyho", "gems", "food", "feeder", "incense", "coins"),
-        "ContestBanners" to listOf("ticket", "start", "five", "three", "one", "end"),
+        "ContestBanners" to listOf("ticket", "partyReady", "start", "five", "three", "one", "end"),
         "BannerOption" to listOf("enabled", "playback", "text", "color", "duration", "sound", "volume", "pitch", "preview"),
         "PanelAppearanceSettings" to listOf("text", "background", "transparency", "borderEnabled", "border", "expansion"),
         "BannerAppearance" to listOf("font", "shadow", "background", "color", "gradient", "tint", "border", "thickness", "topBar", "bottomBar", "expansion"),
         "NameplateSettings" to listOf("enabled", "display", "distance", "pity", "eagle", "critters", "colors"),
         "NameplateColors" to listOf("uniqueColors", "rarityColors", "fixedColor", "color", "entityColorOverride"),
-        "EspGeneralSettings" to listOf("critterEsp", "floorDropEsp", "glow", "boxes", "biomes", "rewardDrops", "floorVisibility")
+        "EspGeneralSettings" to listOf("critterEsp", "floorDropEsp", "glow", "moundGlow", "boxes", "biomes", "rewardDrops", "floorVisibility")
     )
 
     fun guide(field: String): String? = when(field) {

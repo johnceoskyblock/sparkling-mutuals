@@ -7,13 +7,14 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 public final class SparklingCatchEffects {
  private static final QuadCollector GEOMETRY=new QuadCollector(120_000);
  private static long cachedFrame=Long.MIN_VALUE;
- private static int cachedWidth,cachedHeight,cachedAlpha,cachedStyle;
- public static void render(GuiGraphicsExtractor graphics,int width,int height,int alpha,long age,int choice) {
+ private static int cachedWidth,cachedHeight,cachedAlpha,cachedBudget;
+ private static SparklingAlertStyle cachedStyle;
+ public static void render(GuiGraphicsExtractor graphics,int width,int height,int alpha,long age,SparklingAlertStyle style,int budget) {
   long frame=age/RainbowColours.FRAME_MILLIS;
-  if(frame!=cachedFrame || width!=cachedWidth || height!=cachedHeight || alpha!=cachedAlpha || choice!=cachedStyle) {
+  if(frame!=cachedFrame || width!=cachedWidth || height!=cachedHeight || alpha!=cachedAlpha || style!=cachedStyle || budget!=cachedBudget) {
    GEOMETRY.reset();
-   drawEffects(GEOMETRY,width,height,Math.max(2,height/90),alpha,frame*RainbowColours.FRAME_MILLIS,SparklingAlertStyle.preset(choice),2);
-   cachedFrame=frame;cachedWidth=width;cachedHeight=height;cachedAlpha=alpha;cachedStyle=choice;
+   drawEffects(GEOMETRY,width,height,Math.max(2,height/90),alpha,frame*RainbowColours.FRAME_MILLIS,style,budget);
+   cachedFrame=frame;cachedWidth=width;cachedHeight=height;cachedAlpha=alpha;cachedStyle=style;cachedBudget=budget;
   }
   GuiQuadBatchRenderState.submit(graphics,0,0,width,height,GEOMETRY.values(),GEOMETRY.size());
  }

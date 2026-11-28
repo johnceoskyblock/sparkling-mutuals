@@ -75,7 +75,7 @@ class CustomizationAndNameplatesTest {
         assertTrue(panel.width(String::length,style)>panel.width(String::length))
     }
     @Test fun `objective reminder toggles only hide their text and retain the missing panel`() {
-        ConfigManager.init(dir);SafariFullClear.select(SafariMode.UNIQUE)
+        initWithOptionalSparklingChecks(dir);SafariFullClear.select(SafariMode.UNIQUE)
         val run=SafariRun(0);val party=PartySparklingState();val biome=SafariBiome.CAVERN
         fun rows()=SafariPanels.objectives(run,biome,true,0,party=party).rows.map {it.label}
         assertTrue("Capture all uniques" in rows());assertTrue("Finish shiny checks" in rows())

@@ -16,6 +16,7 @@
 ## What makes this critter different
 
 - Implemented Forest coverage is 50 Full Clear / 55 Sparkling blocks around X/Z (3, 47). Earlier approximate notes did not verify a server boundary.
+- The western canopy near X −55, Y 96, Z 41 counts as Forest for both players and critter highlights.
 
 ## Spawn prerequisites
 

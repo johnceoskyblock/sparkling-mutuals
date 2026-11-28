@@ -11,7 +11,13 @@ object SafariAreaMap {
             }.toList()
         }.orEmpty()
     }
+
+    /** The western Forest canopy extends over Cavern near the Woodchucker trees. */
+    internal fun isForestCanopy(x: Double, y: Double, z: Double) =
+        x in -58.0..-50.0 && y in 89.0..112.0 && z in 36.0..56.0
+
     fun areaAt(x: Double, y: Double, z: Double): Int? {
+        if (isForestCanopy(x, y, z)) return 1
         var best = 1600.0
         var area: Int? = null
         nodes.forEach { node ->

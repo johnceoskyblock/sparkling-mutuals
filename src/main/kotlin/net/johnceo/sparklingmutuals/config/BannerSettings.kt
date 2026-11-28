@@ -40,6 +40,8 @@ class ContestBanners {
     @JvmField @ConfigOption(name = "1 minute remaining", desc = "") @Accordion val one=BannerOption(BannerKind.CONTEST_ONE)
     @JvmField @ConfigOption(name="Contest ended",desc="") @Accordion val end=BannerOption(BannerKind.CONTEST_END)
     @JvmField @ConfigOption(name="Ticket earned",desc="") @Accordion val ticket=BannerOption(BannerKind.TICKET)
+    @JvmField @ConfigOption(name = "Party Ready", desc = "Show in Torrhus Canyon when you earn your ticket and every teammate confirms theirs in party chat.")
+    @Accordion val partyReady = BannerOption(BannerKind.CONTEST_PARTY_READY)
 }
 class BannerOption(private val kind: BannerKind) {
     val textHint get()=when(kind) {

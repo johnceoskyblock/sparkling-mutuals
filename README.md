@@ -67,9 +67,13 @@ The features below are available in **Standard**, the default edition of Sparkli
 <details>
 <summary><strong>Party commands</strong></summary>
 
-- `!commands` lists available commands. `!captures [IGN]` and `!sparkling [IGN]` look up the sender when you omit the name.
+- `!commands` lists available commands. `!captures [IGN]` and `!sparkling [IGN]` look up the sender when you omit the name. `!capture` and `!sparklings` also work.
 - `!rates` shows responding players’ session sparkling catches and runs per sparkling. `!profit [session|lifetime|week|day]` shows their recorded Safari profit.
+- `!since dye` asks each responding player for their recorded Safari runs since their last Emerald Dye. Use `/sm history import` to recover older drop dates from local logs.
 - `!dt [reason]` requests downtime. `!hotspot on` and `!hotspot off` set Hotspot assigning for party members using Sparkling Mutuals.
+- `!unique`, `!fc` (`!full clear` or `!fullclear`), and `!sparkle` switch Safari modes for party members using Sparkling Mutuals, even with **Respond to party commands** off.
+- `!sparkle <critter> on/off` sets that critter's optional Unique-mode Sparkling check for everyone using the mod. For example, `!sparkle doom on` enables the Doomspiral check.
+- `!sparkle after clear on/off` toggles the remaining Sparkling checks shown after a Unique biome clear for everyone using the mod.
 
 </details>
 

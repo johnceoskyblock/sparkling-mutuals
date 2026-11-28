@@ -320,7 +320,7 @@ object SafariPartySync {
         val current=state ?: return emptyList()
         val client=Minecraft.getInstance()
         val wins = if (current.serverRun != null) current.hotspotWins else hotspotWinHistory.counts(current.roster)
-        return current.roster.sorted().map { id -> HotspotRow(name(client,id) ?: id.take(8),current.reports[id],
+        return current.roster.sorted().map { id -> HotspotRow(name(client,id) ?: id.take(8),current.actualHotspot(id),
             current.locks[id].takeUnless { current.conflict || !hotspotReady() },wins[id] ?: 0) }
     }
     private fun hotspotReady() = ticketed
@@ -340,7 +340,7 @@ object SafariPartySync {
     fun report(id: String,biome: SafariBiome) {
         val current=state ?: return
         if(id !in current.roster || discoveryReports.containsKey(id)) return
-        discoveryReports[id]=biome;current.reports[id]=biome;pendingReports[id]=biome
+        discoveryReports[id]=biome;current.observeHotspot(id,biome);pendingReports[id]=biome
     }
     private fun observeReport(raw: String) {
         if(!SafariIsland.onIsland || transferRevision == SafariIsland.locationRevision) return
@@ -772,11 +772,11 @@ object SafariPartySync {
     }
 
     internal fun objectiveSupplies(run: SafariRun?, biome: SafariBiome,
-        party: PartySparklingState, mode: SafariMode): List<Pair<String, Map<FloorDropType, Int>>> {
+        party: PartySparklingState, mode: SafariMode, afterClearBirds: Boolean = false): List<Pair<String, Map<FloorDropType, Int>>> {
         if (biome == SafariBiome.FOREST) {
             val current = state ?: return emptyList()
             if (run == null || run !== SafariTracking.ledger.current || !transport.ready ||
-                !party.ready || listOf("Bluebird", "Parakeet", "Macaw").none { BiomeObjectiveConfig.needs(it, party, mode) }) return emptyList()
+                !party.ready || !afterClearBirds && listOf("Bluebird", "Parakeet", "Macaw").none { BiomeObjectiveConfig.needs(it, party, mode) }) return emptyList()
             val client = Minecraft.getInstance()
             return current.roster.filter { it in lastRoster }.mapNotNull { id ->
                 val items = startingFoodSlots.keys.associateWith { food ->

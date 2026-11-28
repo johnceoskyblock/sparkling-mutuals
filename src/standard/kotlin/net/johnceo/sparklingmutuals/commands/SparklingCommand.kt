@@ -4,6 +4,7 @@ import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallba
 import net.fabricmc.fabric.api.client.command.v2.ClientCommands
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource
 import net.johnceo.sparklingmutuals.config.ConfigManager
+import net.johnceo.sparklingmutuals.config.HotspotPreferencesScreen
 import net.johnceo.sparklingmutuals.LocalChat
 import net.johnceo.sparklingmutuals.config.SafariConfigScreen
 import net.johnceo.sparklingmutuals.config.ReleaseHighlights
@@ -104,10 +105,14 @@ object SparklingCommand {
                         1
                     })
             )
-            dispatcher.register(ClientCommands.literal("hotspot").executes {
-                HotspotToggle.set(!ConfigManager.hotspotAnnouncer, { message -> it.source.sendFeedback(message) }, manual=true)
-                1
-            })
+            dispatcher.register(ClientCommands.literal("hotspot")
+                .executes {
+                    HotspotToggle.set(!ConfigManager.hotspotAnnouncer, { message -> it.source.sendFeedback(message) }, manual=true)
+                    1
+                }
+                .then(ClientCommands.literal(HotspotToggle.PREFERENCES_SUBCOMMAND).executes {
+                    open { HotspotPreferencesScreen() }
+                }))
             dispatcher.register(ClientCommands.literal("rates").executes { SparklingRates.show(it.source) })
             for (alias in listOf("profit", "profits")) {
                 val command = ClientCommands.literal(alias).executes { ProfitableCritters.show(it.source) }
