@@ -144,8 +144,7 @@ class SafariFeatureIntegrationTest {
 
     @Test fun `Sparkling incense is controlled by Doomspiral discovery and floor pickup cutoff`() {
         val state = FloorDropState()
-        state.startingGrant(FloorDropType.INCENSE)
-        state.inventory(listOf("Soothing Incense" to 2))
+        state.inventory(listOf("Soothing Incense" to 2), initial = false)
         assertTrue(state.needed(FloorDropType.INCENSE, SafariMode.SPARKLING, party("Doomspiral")))
         assertFalse(state.needed(FloorDropType.INCENSE, SafariMode.SPARKLING, party("Gimmiegold")))
         assertTrue(state.needed(FloorDropType.COIN, SafariMode.SPARKLING, party("Gimmiegold")))

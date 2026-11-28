@@ -622,7 +622,7 @@ class SafariSettings {
             11 -> { apply(); client.execute { LogImporter.runImport() } }
         }
     }
-    fun isValidRunnable(id: Int) = id in 1..15
+    fun isValidRunnable(id: Int) = id in 1..16
     private fun saveDelay() {
         val seconds=warp.delay.coerceIn(1,86400)
         warp.reparty=ConfigManager.validRepartyDelay(warp.reparty,seconds)
